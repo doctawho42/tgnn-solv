@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environments
+.venv/
+venv/
+*.conda/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Data & checkpoints (large files)
+data/raw/
+data/processed/
+checkpoints/*.pt
+*.pt
+*.pth
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_metadata
+
+# OS
+.DS_Store
+Thumbs.db

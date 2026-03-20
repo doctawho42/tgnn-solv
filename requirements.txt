@@ -1,0 +1,9 @@
+torch>=2.0
+torch-geometric>=2.4
+rdkit
+numpy>=1.24
+pandas>=2.0
+requests
+jupyter
+matplotlib
+scikit-learn

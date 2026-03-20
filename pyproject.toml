@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tgnn-solv"
+version = "0.1.0"
+description = "Thermodynamic Graph Neural Network for Solubility Prediction"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+
+dependencies = [
+    "torch>=2.0",
+    "torch-geometric>=2.4",
+    "rdkit",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "requests",
+]
+
+[project.optional-dependencies]
+dev = [
+    "jupyter",
+    "matplotlib",
+    "scikit-learn",
+    "pytest",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
