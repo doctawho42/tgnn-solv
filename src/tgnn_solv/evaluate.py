@@ -110,24 +110,29 @@ class Evaluator:
             out = self.model(sol_b, slv_b, T)
 
             if mask.any():
-                all_pred.append(out["ln_x2"][mask].cpu().numpy())
-                all_true.append(tgt["ln_x2"][mask].cpu().numpy())
+                mask_cpu = mask.detach().cpu()
+                all_pred.append(
+                    out["ln_x2"].detach().cpu()[mask_cpu].numpy()
+                )
+                all_true.append(tgt["ln_x2"][mask_cpu].cpu().numpy())
 
                 # Metadata for stratification
                 meta_lists["T_m_pred"].append(
-                    out["fusion_params"]["T_m"][mask].cpu().numpy()
+                    out["fusion_params"]["T_m"].detach().cpu()[mask_cpu].numpy()
                 )
                 meta_lists["dH_pred"].append(
-                    out["fusion_params"]["dH_fus"][mask].cpu().numpy()
+                    out["fusion_params"]["dH_fus"].detach().cpu()[mask_cpu].numpy()
                 )
                 meta_lists["gamma_pred"].append(
-                    torch.exp(out["physics"]["ln_gamma_2"][mask]).cpu().numpy()
+                    torch.exp(
+                        out["physics"]["ln_gamma_2"].detach().cpu()[mask_cpu]
+                    ).numpy()
                 )
                 meta_lists["correction"].append(
-                    out["correction"][mask].cpu().numpy()
+                    out["correction"].detach().cpu()[mask_cpu].numpy()
                 )
                 meta_lists["Phi"].append(
-                    out["physics"]["Phi"][mask].cpu().numpy()
+                    out["physics"]["Phi"].detach().cpu()[mask_cpu].numpy()
                 )
 
         pred = np.concatenate(all_pred) if all_pred else np.array([])

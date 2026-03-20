@@ -1,13 +1,13 @@
 """
-Scaffold-based train / validation / test splitting.
+Train / validation / test splitting with group-based bin-packing.
 
-Uses greedy bin-packing: each scaffold is assigned to whichever
+Uses greedy bin-packing: each group is assigned to whichever
 split is most under-filled relative to its target size.
-This guarantees non-empty splits regardless of scaffold size distribution.
+This guarantees non-empty splits regardless of group size distribution.
 """
 
 from collections import defaultdict
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -21,39 +21,57 @@ def scaffold_split(
     val_frac: float = 0.1,
     test_frac: float = 0.1,
     seed: int = 42,
+    mode: str = "solute_scaffold",
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Split by Murcko scaffolds using greedy bin-packing.
+    Split by group using greedy bin-packing.
 
-    Each scaffold goes entirely to one split (no leakage).
-    Scaffolds are assigned to whichever split is most under-filled,
+    Modes:
+      - "solute_scaffold": Murcko scaffold of solute (default)
+      - "solvent": solvent SMILES (no solvent overlap across splits)
+
+    Each group goes entirely to one split (no leakage within that grouping).
+    Groups are assigned to whichever split is most under-filled,
     ensuring all splits get approximately the target fraction.
     """
     print("\n" + "=" * 60)
-    print("Scaffold-based splitting")
+    label = "Scaffold-based splitting"
+    if mode == "solvent":
+        label = "Solvent-based splitting"
+    elif mode != "solute_scaffold":
+        raise ValueError(f"Unknown split mode: {mode}")
+    print(label)
     print("=" * 60)
 
-    # Compute scaffold for each solute
-    scaffolds = defaultdict(list)  # scaffold SMILES → [row indices]
-    no_scaffold = []
+    def group_key(row) -> Optional[str]:
+        if mode == "solute_scaffold":
+            return get_scaffold(row["solute_smiles"])
+        key = row["solvent_smiles"]
+        if pd.isna(key):
+            return None
+        return key
+
+    # Compute group for each record
+    groups = defaultdict(list)  # group key → [row indices]
+    no_group = []
 
     for idx, row in df.iterrows():
-        s = get_scaffold(row["solute_smiles"])
-        if s:
-            scaffolds[s].append(idx)
+        key = group_key(row)
+        if key:
+            groups[key].append(idx)
         else:
-            no_scaffold.append(idx)
+            no_group.append(idx)
 
-    print(f"  Unique scaffolds: {len(scaffolds):,}")
-    print(f"  No-scaffold: {len(no_scaffold):,}")
+    print(f"  Unique groups: {len(groups):,}")
+    print(f"  No-group: {len(no_group):,}")
 
-    # Shuffle scaffolds deterministically
-    scaffold_list = list(scaffolds.items())
+    # Shuffle groups deterministically
+    group_list = list(groups.items())
     rng = np.random.RandomState(seed)
-    rng.shuffle(scaffold_list)
+    rng.shuffle(group_list)
 
     # Sort by size (largest first) — greedy bin-packing works best this way
-    scaffold_list.sort(key=lambda x: len(x[1]), reverse=True)
+    group_list.sort(key=lambda x: len(x[1]), reverse=True)
 
     # Target sizes
     n = len(df)
@@ -65,33 +83,35 @@ def scaffold_split(
     current = {"train": 0, "val": 0, "test": 0}
     buckets = {"train": [], "val": [], "test": []}
 
-    # Greedy assignment: each scaffold goes to the most under-filled split
-    for _, indices in scaffold_list:
+    # Greedy assignment: each group goes to the most under-filled split
+    for _, indices in group_list:
         deficits = {k: targets[k] - current[k] for k in targets}
         best = max(deficits, key=deficits.get)
         buckets[best].extend(indices)
         current[best] += len(indices)
 
-    # No-scaffold records go to train
-    buckets["train"].extend(no_scaffold)
+    # No-group records go to train
+    buckets["train"].extend(no_group)
 
     train_df = df.loc[df.index.isin(buckets["train"])].reset_index(drop=True)
     val_df = df.loc[df.index.isin(buckets["val"])].reset_index(drop=True)
     test_df = df.loc[df.index.isin(buckets["test"])].reset_index(drop=True)
 
-    # Verify no scaffold leakage
-    train_scaf = {
-        get_scaffold(s) for s in train_df["solute_smiles"].unique()
-    } - {None}
-    val_scaf = {
-        get_scaffold(s) for s in val_df["solute_smiles"].unique()
-    } - {None}
-    test_scaf = {
-        get_scaffold(s) for s in test_df["solute_smiles"].unique()
-    } - {None}
+    # Verify no group leakage
+    def _group_set(split_df: pd.DataFrame) -> set:
+        keys = set()
+        for _, row in split_df.iterrows():
+            key = group_key(row)
+            if key:
+                keys.add(key)
+        return keys
 
-    tv_leak = train_scaf & val_scaf
-    tt_leak = train_scaf & test_scaf
+    train_groups = _group_set(train_df)
+    val_groups = _group_set(val_df)
+    test_groups = _group_set(test_df)
+
+    tv_leak = train_groups & val_groups
+    tt_leak = train_groups & test_groups
 
     for name, split in [("Train", train_df), ("Val", val_df), ("Test", test_df)]:
         n_sol = split["has_solubility"].sum() if "has_solubility" in split else len(split)

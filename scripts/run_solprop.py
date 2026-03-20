@@ -185,8 +185,13 @@ def run_solprop_predictions(
         print("  Using SolProp predictor object")
     except Exception as e:
         print(f"  Predictor load failed: {e}")
-        print("  Will try command-line interface")
         use_predictor = False
+
+    if not use_predictor:
+        raise RuntimeError(
+            "SolProp predictor not available. Install solprop_ml or add a "
+            "local SolProp_ML clone to PYTHONPATH."
+        )
 
     if use_predictor:
         for i, (_, row) in enumerate(work_df.iterrows()):

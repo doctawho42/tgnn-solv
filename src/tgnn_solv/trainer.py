@@ -321,11 +321,13 @@ class TGNNSolvTrainer:
         if phase >= 2:
             self.best_val_loss = float("inf")
 
-        # Phase 1: freeze correction (no solubility target)
+        # Freeze correction in Phase 1 and early Phase 2
         if phase == 1:
             self._freeze_correction(True)
+        elif phase == 2:
+            self._freeze_correction(True)
         else:
-            self._freeze_correction(False)  # always unfrozen in Phase 2+
+            self._freeze_correction(False)
 
         optimizer = self._build_optimizer(phase)
         scheduler = self._build_scheduler(optimizer, phase, n_epochs)

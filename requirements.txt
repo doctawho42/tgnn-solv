@@ -7,3 +7,4 @@ requests
 jupyter
 matplotlib
 scikit-learn
+optuna

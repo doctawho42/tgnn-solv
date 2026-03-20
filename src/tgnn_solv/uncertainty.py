@@ -46,7 +46,7 @@ from .features import smiles_to_graph
 def _enable_dropout(model: nn.Module):
     """Force all Dropout layers into training mode (stochastic)."""
     for m in model.modules():
-        if isinstance(m, nn.Dropout):
+        if isinstance(m, (nn.Dropout, nn.MultiheadAttention)):
             m.train()
 
 

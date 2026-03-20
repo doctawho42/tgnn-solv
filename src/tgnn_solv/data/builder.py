@@ -196,18 +196,53 @@ class DataBuilder:
         for c in ["hansen_d", "hansen_p", "hansen_h"]:
             df[c] = df[c].fillna(0.0)
 
-        # --- Merge γ∞ (pair match, temperature within 5 K) ---
+        # --- Merge γ∞ (pair match, nearest temperature within 5 K) ---
         if self.gamma_df is not None:
-            df = df.merge(
-                self.gamma_df,
-                on=["solute_smiles", "solvent_smiles"],
-                how="left",
+            df = df.copy()
+            df["_row_id"] = np.arange(len(df))
+            df["temperature"] = pd.to_numeric(
+                df["temperature"], errors="coerce"
             )
-            # Only keep γ∞ if temperature matches within 5 K
-            t_match = (df["gamma_T"] - df["temperature"]).abs() < 5.0
-            df.loc[~t_match, "ln_gamma_inf"] = np.nan
-            df = df.drop(columns=["gamma_T"], errors="ignore")
+
+            gamma = self.gamma_df.copy()
+            gamma["gamma_T"] = pd.to_numeric(
+                gamma["gamma_T"], errors="coerce"
+            )
+            gamma = gamma.dropna(subset=["gamma_T"])
+            if not gamma.empty:
+                gamma = gamma.sort_values(
+                    ["gamma_T", "solute_smiles", "solvent_smiles"]
+                )
+                df_merge = df[df["temperature"].notna()].copy()
+                df_no_temp = df[df["temperature"].isna()].copy()
+                if not df_merge.empty:
+                    df_merge = df_merge.sort_values(
+                        [
+                            "temperature",
+                            "solute_smiles",
+                            "solvent_smiles",
+                            "_row_id",
+                        ]
+                    )
+                    df_merge = pd.merge_asof(
+                        df_merge,
+                        gamma,
+                        by=["solute_smiles", "solvent_smiles"],
+                        left_on="temperature",
+                        right_on="gamma_T",
+                        direction="nearest",
+                        tolerance=5.0,
+                    )
+                df = pd.concat(
+                    [df_merge, df_no_temp], ignore_index=False
+                )
+                df = df.sort_values("_row_id").drop(columns=["_row_id"])
+                df = df.drop(columns=["gamma_T"], errors="ignore")
+            else:
+                df = df.drop(columns=["_row_id"])
         else:
+            df["ln_gamma_inf"] = np.nan
+        if "ln_gamma_inf" not in df.columns:
             df["ln_gamma_inf"] = np.nan
         df["has_gamma_inf"] = df["ln_gamma_inf"].notna()
         df["ln_gamma_inf"] = df["ln_gamma_inf"].fillna(0.0)

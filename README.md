@@ -7,12 +7,14 @@ solubility by learning physical parameters — not solubility directly.
 
 ## Architecture
 
-Some fine image)
-
 **Key principle**: The GNN predicts *physical parameters*
 (melting point, fusion enthalpy, NRTL interaction energies).
 Thermodynamic equations are hardcoded and differentiable —
 gradients flow through physics back to the GNN.
+
+Forward pass: solute/solvent GNN encoders -> cross-attention -> physics heads
+-> SLE solver -> adaptive correction blend.
+For full details, see `AGENTS.md` and `CODEBASE_PROMPT.md`.
 
 ## Features
 
@@ -80,3 +82,21 @@ print(interpret_prediction(result))
 ```bash
 jupyter notebook notebooks/04_evaluation.ipynb
 ```
+
+## Hyperparameter tuning (Optuna)
+
+```bash
+pip install optuna
+python scripts/run_optuna.py --models tgnn_solv,direct_gnn --n-trials 20
+```
+
+Or use the notebook:
+
+```bash
+jupyter notebook notebooks/08_optuna_tuning.ipynb
+```
+
+## Codebase prompt
+
+`CODEBASE_PROMPT.md` contains the full project structure and contents of all
+non-ignored text files (notebooks are included as code cells only, no outputs).

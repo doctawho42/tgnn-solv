@@ -36,6 +36,7 @@ from .config import TGNNSolvConfig
 from .model import TGNNSolv
 from .trainer import TGNNSolvTrainer
 from .evaluate import Evaluator
+from .layers import pad_atom_features
 
 
 # ================================================================== #
@@ -73,7 +74,7 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
         nrtl_params = self.head_nrtl(g_pair)
 
         # SLE solver
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.amp.autocast(device_type="cpu", enabled=False):
             T_f32 = T.float()
             fus_f32 = {k: v.float() for k, v in fusion_params.items()}
             nrtl_f32 = {k: v.float() for k, v in nrtl_params.items()}
@@ -90,8 +91,11 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
             (T - 300.0) / 50.0,
         ], dim=-1)
 
-        correction, gate = self.correction(g_pair, param_summary)
-        ln_x2 = physics_out["ln_x2"] + correction
+        ln_x2, confidence, ln_x2_direct = self.correction(
+            g_pair, param_summary, physics_out["ln_x2"]
+        )
+        correction = ln_x2 - physics_out["ln_x2"]
+        gate = confidence.mean()
 
         return {
             "ln_x2": ln_x2,
@@ -104,6 +108,8 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
             "aux_sol": aux_sol,
             "aux_slv": aux_slv,
             "Ra": Ra,
+            "confidence": confidence,
+            "ln_x2_direct": ln_x2_direct,
             "correction": correction,
             "gate": gate,
             "attn_maps": [],
@@ -115,25 +121,121 @@ class TGNNSolvNoNRTL(TGNNSolv):
     correction only.  γ₂ is always 1."""
 
     def forward(self, solute_data, solvent_data, T):
-        # Standard encoding with cross-attention
-        out = super().forward(solute_data, solvent_data, T)
+        # ---- 1. Encode both molecules ----
+        h_sol_atoms, g_sol_pre = self._encode_and_readout(
+            solute_data, "solute"
+        )
+        h_slv_atoms, g_slv_pre = self._encode_and_readout(
+            solvent_data, "solvent"
+        )
 
-        # Override: use ideal solubility only (γ₂ = 1)
-        Phi = out["physics"]["Phi"]
-        ln_x2_ideal = -Phi
+        # ---- 2. Auxiliary heads (before cross-attention) ----
+        hansen_sol = self.head_hansen(g_sol_pre)
+        hansen_slv = self.head_hansen(g_slv_pre)
+        aux_sol = self.head_aux(g_sol_pre)
+        aux_slv = self.head_aux(g_slv_pre)
 
-        # Correction still applied on top of ideal
-        ln_x2 = ln_x2_ideal + out["correction"]
+        # ---- 3. Cross-attention: solute attends to solvent ----
+        sol_atoms_list = self._split_atoms_by_graph(
+            h_sol_atoms, solute_data.batch
+        )
+        slv_atoms_list = self._split_atoms_by_graph(
+            h_slv_atoms, solvent_data.batch
+        )
 
-        out["ln_x2"] = ln_x2
-        out["x2"] = torch.exp(ln_x2).clamp(0, 1)
+        h_sol_padded, sol_mask = pad_atom_features(sol_atoms_list)
+        h_slv_padded, slv_mask = pad_atom_features(slv_atoms_list)
 
-        # Zero out NRTL outputs for consistency
-        B = T.shape[0]
-        out["physics"]["ln_gamma_2"] = torch.zeros(B, device=T.device)
-        out["physics"]["ln_gamma_inf"] = torch.zeros(B, device=T.device)
+        attn_maps = []
+        for cross_layer in self.cross_attn_layers:
+            h_sol_padded, attn_w = cross_layer(
+                h_sol_padded, h_slv_padded, sol_mask, slv_mask
+            )
+            attn_maps.append(attn_w.detach())
 
-        return out
+        # ---- 4. Post-cross-attention readout for solute ----
+        h_sol_cross = h_sol_padded[sol_mask]
+        g_sol_post = self.readout(h_sol_cross, solute_data.batch)
+        g_slv_post = g_slv_pre
+
+        # ---- 5. Pair representation ----
+        g_pair = self.pair_repr(g_sol_post, g_slv_post)
+
+        # ---- 6. Fusion head ----
+        fusion_params = self.head_fusion(g_sol_pre)
+
+        # ---- 7. Ideal solubility only (γ₂ = 1) ----
+        with torch.amp.autocast(device_type="cpu", enabled=False):
+            T_f32 = T.float()
+            fus_f32 = {k: v.float() for k, v in fusion_params.items()}
+            Phi = self.sle_solver.ideal_layer(
+                T_f32,
+                fus_f32["T_m"],
+                fus_f32["dH_fus"],
+                fus_f32["dCp_fus"],
+            )
+
+        ln_x2_physics = -Phi
+        x2 = torch.exp(ln_x2_physics).clamp(0, 1)
+
+        zeros = torch.zeros_like(T)
+        ones = torch.ones_like(T)
+        nrtl_params = {
+            "dg_12": zeros,
+            "dg_21": zeros,
+            "alpha_12": torch.full_like(T, 0.3),
+            "a_T12": zeros,
+            "a_T21": zeros,
+        }
+
+        physics_out = {
+            "x2": x2,
+            "ln_x2": ln_x2_physics,
+            "ln_gamma_2": zeros,
+            "ln_gamma_inf": zeros,
+            "Phi": Phi,
+            "x_ideal": x2.clamp(0, 1),
+            "tau_12": zeros,
+            "tau_21": zeros,
+            "G_12": ones,
+            "G_21": ones,
+        }
+
+        # ---- 8. Hansen distance ----
+        Ra = self.sle_solver.hansen_layer(hansen_sol, hansen_slv)
+
+        # ---- 9. Adaptive correction ----
+        param_summary = torch.stack([
+            (fusion_params["T_m"] - 400.0) / 200.0,
+            (fusion_params["dH_fus"] - 20000.0) / 10000.0,
+            nrtl_params["dg_12"] / self.cfg.S_g,
+            nrtl_params["dg_21"] / self.cfg.S_g,
+            (nrtl_params["alpha_12"] - 0.3) / 0.15,
+            (T - 300.0) / 50.0,
+        ], dim=-1)
+
+        ln_x2, confidence, ln_x2_direct = self.correction(
+            g_pair, param_summary, ln_x2_physics
+        )
+        correction = ln_x2 - ln_x2_physics
+
+        return {
+            "ln_x2": ln_x2,
+            "x2": torch.exp(ln_x2).clamp(0, 1),
+            "physics": physics_out,
+            "fusion_params": fusion_params,
+            "nrtl_params": nrtl_params,
+            "hansen_sol": hansen_sol,
+            "hansen_slv": hansen_slv,
+            "aux_sol": aux_sol,
+            "aux_slv": aux_slv,
+            "Ra": Ra,
+            "confidence": confidence,
+            "ln_x2_direct": ln_x2_direct,
+            "correction": correction,
+            "gate": confidence.mean(),
+            "attn_maps": attn_maps,
+        }
 
 
 class TGNNSolvNoCorrection(TGNNSolv):

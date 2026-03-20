@@ -25,6 +25,7 @@ dev = [
     "matplotlib",
     "scikit-learn",
     "pytest",
+    "optuna",
 ]
 
 [tool.setuptools.packages.find]

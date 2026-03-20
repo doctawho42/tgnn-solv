@@ -224,15 +224,15 @@ class PretrainDataset(Dataset):
         n_mask = max(1, int(n_atoms * self.mask_ratio))
         mask_indices = torch.randperm(n_atoms)[:n_mask]
 
-        # Store original features as target
-        atom_targets = graph.x[mask_indices].clone()
-
         # Create mask boolean tensor
         mask = torch.zeros(n_atoms, dtype=torch.bool)
         mask[mask_indices] = True
 
+        # Store original features as target
+        atom_targets = graph.x[mask].clone()
+
         # Zero out masked atom features
-        graph.x[mask_indices] = 0.0
+        graph.x[mask] = 0.0
 
         # Property targets
         prop_tensor = torch.tensor(props, dtype=torch.float)

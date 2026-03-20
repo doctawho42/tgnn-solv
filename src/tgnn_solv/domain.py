@@ -153,6 +153,10 @@ class ApplicabilityDomain:
         # 1. Pair vectors → centroid + covariance
         pair_vectors = self._extract_pair_vectors(train_loader)
         N, D = pair_vectors.shape
+        if N < 2:
+            raise ValueError(
+                "ApplicabilityDomain.fit requires at least 2 samples"
+            )
 
         self.centroid = pair_vectors.mean(dim=0)  # (D,)
         centered = pair_vectors - self.centroid.unsqueeze(0)

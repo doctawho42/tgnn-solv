@@ -134,7 +134,9 @@ def _process_bigsoldb_raw(df: pd.DataFrame) -> pd.DataFrame:
         result = result[
             (result["temperature"] >= 200) & (result["temperature"] <= 500)
         ]
-    result["temperature"] = result["temperature"].fillna(298.15)
+        result["temperature"] = result["temperature"].fillna(298.15)
+    else:
+        result["temperature"] = 298.15
 
     # --- QC ---
     result = result[(result["ln_x2"] > -30) & (result["ln_x2"] <= 0)]
