@@ -9,7 +9,7 @@ Architecture:
   [g_sol || g_slv || g_sol * g_slv || |g_sol - g_slv| || t_enc]
     → MLP → ln(x₂)
 
-Same GNN backbone as TGNN-Solv. Same cross-attention.
+Same GNN backbone as TGNN-Solv. Same co-attention with global tokens.
 No physics layer, no NRTL, no SLE solver.
 Pure data-driven prediction.
 
@@ -29,8 +29,11 @@ from ..features import NODE_FEAT_DIM, EDGE_FEAT_DIM
 from ..layers import (
     GNNEncoder,
     SoluteSolventCrossAttention,
+    BipartiteMessagePassing,
     PhysicsAwareReadout,
     pad_atom_features,
+    make_temperature_features,
+    build_batch_from_lists,
 )
 from .temperature import ThermometerEncoder
 
@@ -66,15 +69,39 @@ class DirectGNN(nn.Module):
             hidden_dim=F, n_layers=cfg.n_gnn_layers,
         )
 
-        # --- Same cross-attention ---
-        self.cross_attn_layers = nn.ModuleList([
-            SoluteSolventCrossAttention(F, cfg.n_attn_heads)
-            for _ in range(cfg.n_cross_attn_layers)
-        ])
+        # --- Same interaction stack ---
+        self.interaction_mode = cfg.interaction_mode
+        self.cross_attn_layers = nn.ModuleList()
+        self.bipartite_layers = nn.ModuleList()
+        if cfg.interaction_mode == "cross_attn":
+            self.cross_attn_layers = nn.ModuleList([
+                SoluteSolventCrossAttention(F, cfg.n_attn_heads)
+                for _ in range(cfg.n_cross_attn_layers)
+            ])
+        elif cfg.interaction_mode == "bipartite":
+            self.bipartite_layers = nn.ModuleList([
+                BipartiteMessagePassing(F, dropout=cfg.dropout)
+                for _ in range(cfg.n_cross_attn_layers)
+            ])
+        else:
+            raise ValueError(
+                f"Unknown interaction_mode: {cfg.interaction_mode}"
+            )
 
         # --- Same readout ---
-        self.readout = PhysicsAwareReadout(F)
+        self.readout = PhysicsAwareReadout(
+            F, set2set_steps=cfg.set2set_steps
+        )
         D_r = self.readout.output_dim  # hidden_dim * 3
+
+        # --- Global tokens for co-attention ---
+        self.sol_token = nn.Parameter(torch.zeros(1, 1, F))
+        self.slv_token = nn.Parameter(torch.zeros(1, 1, F))
+        nn.init.normal_(self.sol_token, mean=0.0, std=0.02)
+        nn.init.normal_(self.slv_token, mean=0.0, std=0.02)
+        self.token_proj = nn.Linear(F, D_r)
+        self.sol_token_gate = nn.Parameter(torch.tensor(0.0))
+        self.slv_token_gate = nn.Parameter(torch.tensor(0.0))
 
         # --- Temperature encoder ---
         self.temp_encoder = ThermometerEncoder(n_temp_bins, T_min, T_max)
@@ -99,9 +126,14 @@ class DirectGNN(nn.Module):
             nn.Linear(64, 1),
         )
 
-    def _encode_and_readout(self, data, role="solute"):
+    def _encode_and_readout(self, data, role="solute", temp_feat=None):
         h_atoms = self.gnn(
-            data.x, data.edge_index, data.edge_attr, role=role
+            data.x,
+            data.edge_index,
+            data.edge_attr,
+            role=role,
+            batch=data.batch,
+            temp_feat=temp_feat,
         )
         g_mol = self.readout(h_atoms, data.batch)
         return h_atoms, g_mol
@@ -112,36 +144,91 @@ class DirectGNN(nn.Module):
             graphs.append(h_atoms[batch == i])
         return graphs
 
+    def _append_global_token(self, atoms_list, token):
+        token = token[0]
+        return [torch.cat([h, token.to(h)], dim=0) for h in atoms_list]
+
+    def _slice_padded(self, padded, lengths, drop_last=False):
+        out = []
+        for i, length in enumerate(lengths):
+            end = length - 1 if drop_last else length
+            out.append(padded[i, :end, :])
+        return out
+
+    def _extract_tokens(self, padded, lengths):
+        idx = torch.tensor(
+            [length - 1 for length in lengths], device=padded.device
+        )
+        return padded[torch.arange(padded.size(0), device=padded.device), idx]
+
     def forward(
         self,
         solute_data: Batch,
         solvent_data: Batch,
         T: torch.Tensor,
+        solvent_type: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
         """
         Forward pass.
 
         Returns dict with ln_x2, x2 (for compatibility with eval code).
         """
+        t_feat = make_temperature_features(T)
         # --- Encode both molecules ---
-        h_sol_atoms, g_sol = self._encode_and_readout(solute_data, "solute")
-        h_slv_atoms, g_slv = self._encode_and_readout(solvent_data, "solvent")
+        h_sol_atoms, g_sol = self._encode_and_readout(
+            solute_data, "solute", temp_feat=t_feat
+        )
+        h_slv_atoms, g_slv = self._encode_and_readout(
+            solvent_data, "solvent", temp_feat=t_feat
+        )
 
-        # --- Cross-attention ---
+        # --- Cross-attention / Bipartite MP ---
         sol_list = self._split_atoms_by_graph(h_sol_atoms, solute_data.batch)
         slv_list = self._split_atoms_by_graph(h_slv_atoms, solvent_data.batch)
+
+        sol_list = self._append_global_token(sol_list, self.sol_token)
+        slv_list = self._append_global_token(slv_list, self.slv_token)
+        sol_lengths = [h.shape[0] for h in sol_list]
+        slv_lengths = [h.shape[0] for h in slv_list]
 
         h_sol_padded, sol_mask = pad_atom_features(sol_list)
         h_slv_padded, slv_mask = pad_atom_features(slv_list)
 
-        for cross_layer in self.cross_attn_layers:
-            h_sol_padded, _ = cross_layer(
-                h_sol_padded, h_slv_padded, sol_mask, slv_mask
-            )
+        if self.interaction_mode == "cross_attn":
+            for cross_layer in self.cross_attn_layers:
+                sol_prev = h_sol_padded
+                slv_prev = h_slv_padded
+                h_sol_padded, _ = cross_layer(
+                    sol_prev, slv_prev, sol_mask, slv_mask, t_feat
+                )
+                h_slv_padded, _ = cross_layer(
+                    slv_prev, sol_prev, slv_mask, sol_mask, t_feat
+                )
+        else:
+            for mp_layer in self.bipartite_layers:
+                h_sol_padded, h_slv_padded = mp_layer(
+                    h_sol_padded, h_slv_padded, sol_mask, slv_mask, t_feat
+                )
 
         # Post-cross-attention readout for solute
-        h_sol_cross = h_sol_padded[sol_mask]
-        g_sol_post = self.readout(h_sol_cross, solute_data.batch)
+        sol_no_token = self._slice_padded(
+            h_sol_padded, sol_lengths, drop_last=True
+        )
+        slv_no_token = self._slice_padded(
+            h_slv_padded, slv_lengths, drop_last=True
+        )
+        sol_batch = build_batch_from_lists(
+            sol_no_token, dtype=solute_data.batch.dtype
+        )
+        slv_batch = build_batch_from_lists(
+            slv_no_token, dtype=solvent_data.batch.dtype
+        )
+        g_sol_post = self.readout(torch.cat(sol_no_token, dim=0), sol_batch)
+        g_slv_post = self.readout(torch.cat(slv_no_token, dim=0), slv_batch)
+        g_sol_tok = self._extract_tokens(h_sol_padded, sol_lengths)
+        g_slv_tok = self._extract_tokens(h_slv_padded, slv_lengths)
+        g_sol_post = g_sol_post + self.sol_token_gate * self.token_proj(g_sol_tok)
+        g_slv_post = g_slv_post + self.slv_token_gate * self.token_proj(g_slv_tok)
 
         # --- Temperature encoding ---
         t_enc = self.temp_encoder.encode(T)  # (B, n_bins)
@@ -149,9 +236,9 @@ class DirectGNN(nn.Module):
         # --- Pair features ---
         pair_input = torch.cat([
             g_sol_post,
-            g_slv,
-            g_sol_post * g_slv,
-            (g_sol_post - g_slv).abs(),
+            g_slv_post,
+            g_sol_post * g_slv_post,
+            (g_sol_post - g_slv_post).abs(),
             t_enc,
         ], dim=-1)
 
@@ -219,13 +306,16 @@ class DirectGNNTrainer:
                 sol_b = sol_b.to(self.device)
                 slv_b = slv_b.to(self.device)
                 T = tgt["T"].to(self.device)
+                solvent_type = tgt.get("solvent_type")
                 mask = tgt["has_solubility"].to(self.device)
 
                 if not mask.any():
                     continue
 
                 optimizer.zero_grad()
-                out = self.model(sol_b, slv_b, T)
+                out = self.model(
+                    sol_b, slv_b, T, solvent_type=solvent_type
+                )
 
                 pred = out["ln_x2"][mask]
                 true = tgt["ln_x2"].to(self.device)[mask]
@@ -282,12 +372,15 @@ class DirectGNNTrainer:
             sol_b = sol_b.to(self.device)
             slv_b = slv_b.to(self.device)
             T = tgt["T"].to(self.device)
+            solvent_type = tgt.get("solvent_type")
             mask = tgt["has_solubility"]  # keep on CPU
 
             if not mask.any():
                 continue
 
-            out = self.model(sol_b, slv_b, T)
+            out = self.model(
+                sol_b, slv_b, T, solvent_type=solvent_type
+            )
             all_pred.append(out["ln_x2"].cpu()[mask])
             all_true.append(tgt["ln_x2"][mask])
 

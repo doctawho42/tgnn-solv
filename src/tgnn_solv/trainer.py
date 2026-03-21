@@ -27,6 +27,8 @@ from torch.utils.data import DataLoader
 from .config import TGNNSolvConfig
 from .model import TGNNSolv
 from .loss import TGNNSolvLoss
+from .layers import make_temperature_features
+from .data.solvent_types import SOLVENT_TYPE_OTHER_ID
 
 
 class TGNNSolvTrainer:
@@ -44,7 +46,8 @@ class TGNNSolvTrainer:
                 "sol": 0.0, "T_m": 1.0, "dH": 1.0, "hansen": 1.0,
                 "gamma_inf": 1.0,
                 "mono": 0.0, "res": 0.0, "bridge": 0.0, "tau_reg": 0.0,
-                "phys_pref": 0.0, "direct_reg": 0.0,
+                "phys_pref": 0.0, "direct_reg": 0.0, "direct_nll": 0.0,
+                "moe_balance": 0.0,
             },
             2: {
                 "sol": 1.0, "T_m": 0.3, "dH": 0.3, "hansen": 0.2,
@@ -53,6 +56,8 @@ class TGNNSolvTrainer:
                 "tau_reg": 0.01,
                 "phys_pref": 0.03,
                 "direct_reg": 0.02,
+                "direct_nll": 0.1,
+                "moe_balance": 0.02,
             },
             3: {
                 "sol": 1.0, "T_m": 0.2, "dH": 0.2, "hansen": 0.1,
@@ -61,6 +66,8 @@ class TGNNSolvTrainer:
                 "tau_reg": 0.01,
                 "phys_pref": 0.01,
                 "direct_reg": 0.01,
+                "direct_nll": 0.1,
+                "moe_balance": 0.03,
             },
         }
 
@@ -124,7 +131,7 @@ class TGNNSolvTrainer:
     #  Phase 1 forward (no SLE solve)                                 #
     # -------------------------------------------------------------- #
 
-    def _forward_phase1(self, sol_batch, slv_batch, T):
+    def _forward_phase1(self, sol_batch, slv_batch, T, solvent_type=None):
         """
         Lightweight forward for Phase 1: encode + heads only.
 
@@ -133,10 +140,27 @@ class TGNNSolvTrainer:
         """
         model = self.model
 
-        # Encode
-        _, g_sol = model._encode_and_readout(sol_batch, "solute")
-        _, g_slv = model._encode_and_readout(slv_batch, "solvent")
+        t_feat = make_temperature_features(T)
+
+        # Encode (no cross-attention), include temperature conditioning
+        _, g_sol = model._encode_and_readout(
+            sol_batch, "solute", temp_feat=t_feat
+        )
+        _, g_slv = model._encode_and_readout(
+            slv_batch, "solvent", temp_feat=t_feat
+        )
         g_pair = model.pair_repr(g_sol, g_slv)
+        if model.solvent_moe is not None:
+            if solvent_type is None:
+                solvent_type = torch.full(
+                    (g_pair.shape[0],),
+                    SOLVENT_TYPE_OTHER_ID,
+                    device=g_pair.device,
+                    dtype=torch.long,
+                )
+            else:
+                solvent_type = solvent_type.to(g_pair.device)
+            g_pair, _ = model.solvent_moe(g_pair, solvent_type)
 
         # Heads
         fusion_params = model.head_fusion(g_sol)
@@ -146,11 +170,25 @@ class TGNNSolvTrainer:
 
         # ln(γ∞) from NRTL params directly
         nrtl = model.sle_solver.nrtl_layer
+        if "tau_a12" in nrtl_params:
+            a12 = nrtl_params["tau_a12"]
+            b12 = nrtl_params["tau_b12"]
+            c12 = nrtl_params["tau_c12"]
+            a21 = nrtl_params["tau_a21"]
+            b21 = nrtl_params["tau_b21"]
+            c21 = nrtl_params["tau_c21"]
+        else:
+            a_T12 = nrtl_params["a_T12"]
+            a_T21 = nrtl_params["a_T21"]
+            a12 = -a_T12
+            a21 = -a_T21
+            b12 = nrtl_params["dg_12"] / self.cfg.R + a_T12 * self.cfg.T_ref
+            b21 = nrtl_params["dg_21"] / self.cfg.R + a_T21 * self.cfg.T_ref
+            c12 = torch.zeros_like(a12)
+            c21 = torch.zeros_like(a21)
+
         tau_12, tau_21, G_12, G_21 = nrtl.compute_tau_G(
-            nrtl_params["dg_12"], nrtl_params["dg_21"],
-            nrtl_params["alpha_12"],
-            nrtl_params["a_T12"], nrtl_params["a_T21"],
-            T,
+            a12, b12, c12, a21, b21, c21, nrtl_params["alpha_12"], T
         )
         lng_inf = nrtl.ln_gamma_inf(tau_12, tau_21, G_21)
 
@@ -204,13 +242,18 @@ class TGNNSolvTrainer:
                 for k, v in targets.items()
             }
             T = targets["T"]
+            solvent_type = targets.get("solvent_type")
 
             optimizer.zero_grad()
 
             if phase == 1:
-                output = self._forward_phase1(sol_batch, slv_batch, T)
+                output = self._forward_phase1(
+                    sol_batch, slv_batch, T, solvent_type
+                )
             else:
-                output = self.model(sol_batch, slv_batch, T)
+                output = self.model(
+                    sol_batch, slv_batch, T, solvent_type=solvent_type
+                )
 
             loss, loss_dict = self.loss_fn(
                 output, targets, weights=weights,
@@ -219,6 +262,7 @@ class TGNNSolvTrainer:
                 model=self.model if compute_mono else None,
                 solute_data=sol_batch,
                 solvent_data=slv_batch,
+                solvent_type=solvent_type,
             )
 
             loss.backward()
@@ -267,11 +311,16 @@ class TGNNSolvTrainer:
                 for k, v in targets.items()
             }
             T = targets["T"]
+            solvent_type = targets.get("solvent_type")
 
             if phase == 1:
-                output = self._forward_phase1(sol_batch, slv_batch, T)
+                output = self._forward_phase1(
+                    sol_batch, slv_batch, T, solvent_type
+                )
             else:
-                output = self.model(sol_batch, slv_batch, T)
+                output = self.model(
+                    sol_batch, slv_batch, T, solvent_type=solvent_type
+                )
 
             loss, _ = self.loss_fn(output, targets, weights=weights)
             total_loss += loss.item()

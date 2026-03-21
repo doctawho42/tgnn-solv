@@ -35,11 +35,11 @@ class SLESolverFunction(torch.autograd.Function):
     @staticmethod
     def forward(
         ctx,
-        Phi, dg_12, dg_21, alpha_12, a_T12, a_T21,
+        Phi, a_12, b_12, c_12, a_21, b_21, c_21, alpha_12,
         T, n_iter, damping, nrtl_layer,
     ):
         tau_12, tau_21, G_12, G_21 = nrtl_layer.compute_tau_G(
-            dg_12, dg_21, alpha_12, a_T12, a_T21, T
+            a_12, b_12, c_12, a_21, b_21, c_21, alpha_12, T
         )
 
         x2 = torch.exp(-Phi).clamp(1e-10, 1.0 - 1e-10)
@@ -60,7 +60,7 @@ class SLESolverFunction(torch.autograd.Function):
         )
 
         ctx.save_for_backward(
-            x2, Phi, dg_12, dg_21, alpha_12, a_T12, a_T21,
+            x2, Phi, a_12, b_12, c_12, a_21, b_21, c_21, alpha_12,
             T, tau_12, tau_21, G_12, G_21, lng2_final,
         )
         ctx.nrtl_layer = nrtl_layer
@@ -69,7 +69,7 @@ class SLESolverFunction(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_x2, grad_lng2):
         (
-            x2, Phi, dg_12, dg_21, alpha_12, a_T12, a_T21,
+            x2, Phi, a_12, b_12, c_12, a_21, b_21, c_21, alpha_12,
             T, tau_12, tau_21, G_12, G_21, lng2,
         ) = ctx.saved_tensors
         nrtl = ctx.nrtl_layer
@@ -79,14 +79,17 @@ class SLESolverFunction(torch.autograd.Function):
         with torch.enable_grad():
             x2_var = x2.detach().requires_grad_(True)
             x1_var = 1.0 - x2_var
-            dg12_var = dg_12.detach().requires_grad_(True)
-            dg21_var = dg_21.detach().requires_grad_(True)
+            a12_var = a_12.detach().requires_grad_(True)
+            b12_var = b_12.detach().requires_grad_(True)
+            c12_var = c_12.detach().requires_grad_(True)
+            a21_var = a_21.detach().requires_grad_(True)
+            b21_var = b_21.detach().requires_grad_(True)
+            c21_var = c_21.detach().requires_grad_(True)
             alpha_var = alpha_12.detach().requires_grad_(True)
-            aT12_var = a_T12.detach().requires_grad_(True)
-            aT21_var = a_T21.detach().requires_grad_(True)
 
             tau12_v, tau21_v, G12_v, G21_v = nrtl.compute_tau_G(
-                dg12_var, dg21_var, alpha_var, aT12_var, aT21_var, T
+                a12_var, b12_var, c12_var, a21_var, b21_var, c21_var,
+                alpha_var, T
             )
             lng2_v = nrtl.ln_gamma_2(
                 x1_var, x2_var, tau12_v, tau21_v, G12_v, G21_v
@@ -113,7 +116,11 @@ class SLESolverFunction(torch.autograd.Function):
             grad_Phi = implicit_mult * x2
 
             # Gradients w.r.t. NRTL parameters
-            param_vars = [dg12_var, dg21_var, alpha_var, aT12_var, aT21_var]
+            param_vars = [
+                a12_var, b12_var, c12_var,
+                a21_var, b21_var, c21_var,
+                alpha_var,
+            ]
             grad_params = torch.autograd.grad(
                 lng2_v,
                 param_vars,
@@ -127,20 +134,27 @@ class SLESolverFunction(torch.autograd.Function):
             with torch.enable_grad():
                 x2_v2 = x2.detach().requires_grad_(True)
                 x1_v2 = 1.0 - x2_v2
-                dg12_v2 = dg_12.detach().requires_grad_(True)
-                dg21_v2 = dg_21.detach().requires_grad_(True)
+                a12_v2 = a_12.detach().requires_grad_(True)
+                b12_v2 = b_12.detach().requires_grad_(True)
+                c12_v2 = c_12.detach().requires_grad_(True)
+                a21_v2 = a_21.detach().requires_grad_(True)
+                b21_v2 = b_21.detach().requires_grad_(True)
+                c21_v2 = c_21.detach().requires_grad_(True)
                 alpha_v2 = alpha_12.detach().requires_grad_(True)
-                aT12_v2 = a_T12.detach().requires_grad_(True)
-                aT21_v2 = a_T21.detach().requires_grad_(True)
 
                 t12, t21, g12, g21 = nrtl.compute_tau_G(
-                    dg12_v2, dg21_v2, alpha_v2, aT12_v2, aT21_v2, T
+                    a12_v2, b12_v2, c12_v2, a21_v2, b21_v2, c21_v2,
+                    alpha_v2, T
                 )
                 lng2_v2 = nrtl.ln_gamma_2(x1_v2, x2_v2, t12, t21, g12, g21)
 
                 direct_grads = torch.autograd.grad(
                     lng2_v2,
-                    [dg12_v2, dg21_v2, alpha_v2, aT12_v2, aT21_v2],
+                    [
+                        a12_v2, b12_v2, c12_v2,
+                        a21_v2, b21_v2, c21_v2,
+                        alpha_v2,
+                    ],
                     grad_outputs=grad_lng2,
                     allow_unused=True,
                 )
@@ -155,7 +169,8 @@ class SLESolverFunction(torch.autograd.Function):
         return (
             grad_Phi,
             grad_params[0], grad_params[1], grad_params[2],
-            grad_params[3], grad_params[4],
+            grad_params[3], grad_params[4], grad_params[5],
+            grad_params[6],
             grad_T,
             None, None, None,
         )
@@ -200,7 +215,8 @@ class SLESolver(nn.Module):
         ----------
         T : (B,) temperature [K]
         fusion_params : dict with T_m, dH_fus, dCp_fus
-        nrtl_params : dict with dg_12, dg_21, alpha_12, a_T12, a_T21
+        nrtl_params : dict with tau_a12, tau_b12, tau_c12, tau_a21,
+                      tau_b21, tau_c21, alpha_12
         use_implicit : override config setting
 
         Returns
@@ -218,28 +234,38 @@ class SLESolver(nn.Module):
         damping = self.cfg.damping
         use_impl = use_implicit if use_implicit is not None else self.cfg.use_implicit_diff
 
+        if "tau_a12" in nrtl_params:
+            a12 = nrtl_params["tau_a12"]
+            b12 = nrtl_params["tau_b12"]
+            c12 = nrtl_params["tau_c12"]
+            a21 = nrtl_params["tau_a21"]
+            b21 = nrtl_params["tau_b21"]
+            c21 = nrtl_params["tau_c21"]
+        else:
+            a_T12 = nrtl_params["a_T12"]
+            a_T21 = nrtl_params["a_T21"]
+            a12 = -a_T12
+            a21 = -a_T21
+            b12 = nrtl_params["dg_12"] / self.cfg.R + a_T12 * self.cfg.T_ref
+            b21 = nrtl_params["dg_21"] / self.cfg.R + a_T21 * self.cfg.T_ref
+            c12 = torch.zeros_like(a12)
+            c21 = torch.zeros_like(a21)
+
         # Solve
         if use_impl and self.training:
             x2, lng2 = SLESolverFunction.apply(
                 Phi,
-                nrtl_params["dg_12"], nrtl_params["dg_21"],
+                a12, b12, c12, a21, b21, c21,
                 nrtl_params["alpha_12"],
-                nrtl_params["a_T12"], nrtl_params["a_T21"],
                 T, n_iter, damping, self.nrtl_layer,
             )
             tau_12, tau_21, G_12, G_21 = self.nrtl_layer.compute_tau_G(
-                nrtl_params["dg_12"], nrtl_params["dg_21"],
-                nrtl_params["alpha_12"],
-                nrtl_params["a_T12"], nrtl_params["a_T21"],
-                T,
+                a12, b12, c12, a21, b21, c21, nrtl_params["alpha_12"], T
             )
         else:
             # Explicit successive substitution
             tau_12, tau_21, G_12, G_21 = self.nrtl_layer.compute_tau_G(
-                nrtl_params["dg_12"], nrtl_params["dg_21"],
-                nrtl_params["alpha_12"],
-                nrtl_params["a_T12"], nrtl_params["a_T21"],
-                T,
+                a12, b12, c12, a21, b21, c21, nrtl_params["alpha_12"], T
             )
             x2 = torch.exp(-Phi).clamp(1e-10, 1.0 - 1e-10)
             lng2 = torch.zeros_like(x2)

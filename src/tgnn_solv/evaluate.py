@@ -105,9 +105,12 @@ class Evaluator:
             sol_b = sol_b.to(self.device)
             slv_b = slv_b.to(self.device)
             T = tgt["T"].to(self.device)
+            solvent_type = tgt.get("solvent_type")
             mask = tgt["has_solubility"].to(self.device)
 
-            out = self.model(sol_b, slv_b, T)
+            out = self.model(
+                sol_b, slv_b, T, solvent_type=solvent_type
+            )
 
             if mask.any():
                 mask_cpu = mask.detach().cpu()

@@ -154,7 +154,8 @@ class OptunaTuner:
             if not mask.any().item():
                 continue
             T = tgt["T"].to(self.device)
-            out = model(sol_b, slv_b, T)
+            solvent_type = tgt.get("solvent_type")
+            out = model(sol_b, slv_b, T, solvent_type=solvent_type)
             pred = out["ln_x2"].detach().cpu()[mask]
             true = tgt["ln_x2"][mask]
             all_pred.append(pred)
@@ -196,6 +197,13 @@ class OptunaTuner:
                 "pair_dim_mult", [2, 3, 4]
             )
             pair_dim = hidden_dim * pair_dim_mult
+            set2set_steps = trial.suggest_int("set2set_steps", 2, 4)
+            moe_experts = trial.suggest_categorical(
+                "solvent_moe_experts", [4, 6, 8]
+            )
+            moe_hidden = trial.suggest_categorical(
+                "solvent_moe_hidden", [128, 256]
+            )
             params.update(
                 {
                     "hidden_dim": hidden_dim,
@@ -203,6 +211,9 @@ class OptunaTuner:
                     "n_cross_attn_layers": n_cross_attn_layers,
                     "n_attn_heads": n_attn_heads,
                     "pair_dim": pair_dim,
+                    "set2set_steps": set2set_steps,
+                    "solvent_moe_experts": moe_experts,
+                    "solvent_moe_hidden": moe_hidden,
                 }
             )
         if tune_dropout:
@@ -218,6 +229,10 @@ class OptunaTuner:
         arch = self._suggest_shared_arch(trial, tune_arch, tune_dropout=True)
         for k, v in arch.items():
             setattr(cfg, k, v)
+
+        cfg.nrtl_tau_mode = trial.suggest_categorical(
+            "nrtl_tau_mode", ["legacy", "abc"]
+        )
 
         lr_base = trial.suggest_float("lr_base", 5e-5, 5e-4, log=True)
         lr_phase1_mult = trial.suggest_categorical(

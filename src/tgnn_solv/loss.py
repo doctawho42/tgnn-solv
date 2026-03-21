@@ -13,6 +13,8 @@ Components:
   tau_reg    : L2 on NRTL τ parameters
   phys_pref  : Encourage high physics confidence
   direct_reg : Keep direct prediction close to physics
+  direct_nll : Heteroskedastic NLL on direct path
+  moe_balance: Encourage balanced MoE expert usage
 """
 
 from typing import Dict, Optional, Tuple
@@ -47,6 +49,8 @@ class TGNNSolvLoss(nn.Module):
             "tau_reg": 0.01,
             "phys_pref": 0.1,
             "direct_reg": 0.05,
+            "direct_nll": 0.2,
+            "moe_balance": 0.02,
         }
         if weights is not None:
             self.default_weights.update(weights)
@@ -89,6 +93,7 @@ class TGNNSolvLoss(nn.Module):
         model: Optional[nn.Module] = None,
         solute_data=None,
         solvent_data=None,
+        solvent_type: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Dict[str, float]]:
         w = weights if weights is not None else self.default_weights
         losses = {}
@@ -110,6 +115,21 @@ class TGNNSolvLoss(nn.Module):
                 output["ln_x2"][sol_mask],
                 targets["ln_x2"].to(dev)[sol_mask],
             )
+
+        if (
+            w.get("direct_nll", 0) > 0
+            and sol_mask.any()
+            and "ln_x2_direct" in output
+            and "ln_x2_direct_log_sigma" in output
+        ):
+            mu = output["ln_x2_direct"][sol_mask]
+            log_sigma = output["ln_x2_direct_log_sigma"][sol_mask]
+            true = targets["ln_x2"].to(dev)[sol_mask]
+            res = mu - true
+            inv_var = torch.exp(-2.0 * log_sigma)
+            losses["direct_nll"] = (
+                0.5 * inv_var * res.pow(2) + log_sigma
+            ).mean()
 
         # ============================================================
         # 2. Melting point
@@ -166,7 +186,7 @@ class TGNNSolvLoss(nn.Module):
         if compute_mono and T is not None and model is not None:
             if w.get("mono", 0) > 0:
                 losses["mono"] = self._monotonicity_loss(
-                    model, solute_data, solvent_data, T
+                    model, solute_data, solvent_data, T, solvent_type
                 )
 
         # ============================================================
@@ -213,6 +233,17 @@ class TGNNSolvLoss(nn.Module):
                 ).pow(2).mean()
 
         # ============================================================
+        # 12. MoE balance (expert usage)
+        # ============================================================
+        moe_gate = output.get("moe_gate")
+        if moe_gate is not None and w.get("moe_balance", 0) > 0:
+            avg_gate = moe_gate.mean(dim=0)
+            target = torch.full_like(
+                avg_gate, 1.0 / max(avg_gate.numel(), 1)
+            )
+            losses["moe_balance"] = (avg_gate - target).pow(2).mean()
+
+        # ============================================================
         # Weighted sum
         # ============================================================
         total = torch.tensor(0.0, device=dev)
@@ -238,7 +269,7 @@ class TGNNSolvLoss(nn.Module):
         return ((lng_nrtl - lng_hansen) / self.S_bridge).pow(2).mean()
 
     def _monotonicity_loss(
-        self, model, solute_data, solvent_data, T
+        self, model, solute_data, solvent_data, T, solvent_type=None
     ) -> torch.Tensor:
         """Penalize dx₂/dT < 0. Forces explicit mode."""
         T_var = T.detach().requires_grad_(True)
@@ -248,7 +279,10 @@ class TGNNSolvLoss(nn.Module):
 
         try:
             with torch.enable_grad():
-                out = model(solute_data, solvent_data, T_var)
+                out = model(
+                    solute_data, solvent_data, T_var,
+                    solvent_type=solvent_type,
+                )
                 d_lnx2_dT = torch.autograd.grad(
                     out["ln_x2"].sum(),
                     T_var,

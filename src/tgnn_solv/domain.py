@@ -35,7 +35,12 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, DataStructs
 
 from .model import TGNNSolv
+from .layers import make_temperature_features
 from .features import smiles_to_graph
+from .data.solvent_types import (
+    solvent_type_id_from_smiles,
+    SOLVENT_TYPE_OTHER_ID,
+)
 
 
 class ApplicabilityDomain:
@@ -128,11 +133,28 @@ class ApplicabilityDomain:
             sol_b = sol_b.to(self.device)
             slv_b = slv_b.to(self.device)
             T = tgt["T"].to(self.device)
+            solvent_type = tgt.get("solvent_type")
 
             # Get pair vectors (stop before SLE solver)
-            _, g_sol = self.model._encode_and_readout(sol_b, "solute")
-            _, g_slv = self.model._encode_and_readout(slv_b, "solvent")
+            t_feat = make_temperature_features(T)
+            _, g_sol = self.model._encode_and_readout(
+                sol_b, "solute", temp_feat=t_feat
+            )
+            _, g_slv = self.model._encode_and_readout(
+                slv_b, "solvent", temp_feat=t_feat
+            )
             g_pair = self.model.pair_repr(g_sol, g_slv)
+            if getattr(self.model, "solvent_moe", None) is not None:
+                if solvent_type is None:
+                    solvent_type = torch.full(
+                        (g_pair.shape[0],),
+                        SOLVENT_TYPE_OTHER_ID,
+                        device=g_pair.device,
+                        dtype=torch.long,
+                    )
+                else:
+                    solvent_type = solvent_type.to(g_pair.device)
+                g_pair, _ = self.model.solvent_moe(g_pair, solvent_type)
             all_pairs.append(g_pair.cpu())
 
         return torch.cat(all_pairs, dim=0)  # (N_train, D_pair)
@@ -235,10 +257,23 @@ class ApplicabilityDomain:
 
         sol_b = Batch.from_data_list([sol_g]).to(self.device)
         slv_b = Batch.from_data_list([slv_g]).to(self.device)
+        T_tensor = torch.tensor([T], device=self.device)
+        t_feat = make_temperature_features(T_tensor)
 
-        _, g_sol = self.model._encode_and_readout(sol_b, "solute")
-        _, g_slv = self.model._encode_and_readout(slv_b, "solvent")
+        _, g_sol = self.model._encode_and_readout(
+            sol_b, "solute", temp_feat=t_feat
+        )
+        _, g_slv = self.model._encode_and_readout(
+            slv_b, "solvent", temp_feat=t_feat
+        )
         g_pair = self.model.pair_repr(g_sol, g_slv)
+        if getattr(self.model, "solvent_moe", None) is not None:
+            solvent_type = torch.tensor(
+                [solvent_type_id_from_smiles(solvent_smiles)],
+                device=g_pair.device,
+                dtype=torch.long,
+            )
+            g_pair, _ = self.model.solvent_moe(g_pair, solvent_type)
         return g_pair.cpu().squeeze(0)  # (D,)
 
     # -------------------------------------------------------------- #

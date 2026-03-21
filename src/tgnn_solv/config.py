@@ -20,6 +20,13 @@ class TGNNSolvConfig:
     n_attn_heads: int = 8
     dropout: float = 0.1
     pair_dim: int = 512
+    interaction_mode: str = "cross_attn"  # "cross_attn" or "bipartite"
+    nrtl_tau_mode: str = "legacy"  # "legacy" (dg/aT) or "abc" (a+b/T+c*logT)
+    set2set_steps: int = 3
+    use_solvent_moe: bool = True
+    solvent_moe_experts: int = 6
+    solvent_moe_hidden: int = 256
+    solvent_type_emb_dim: int = 16
 
     # --- Physics constants (NOT learnable) ---
     R: float = 8.314          # Gas constant, J/(mol·K)
@@ -36,6 +43,9 @@ class TGNNSolvConfig:
     S_Cp: float = 100.0       # dCp_fus scale, J/(mol·K)
     S_g: float = 5000.0      # NRTL energy scale, J/mol
     S_aT: float = 10.0        # NRTL temperature coeff scale
+    S_tau_a: float = 1.0      # NRTL tau offset scale (dimensionless)
+    S_tau_b: float = 300.0    # NRTL tau 1/T scale (K)
+    S_tau_c: float = 1.0      # NRTL tau log(T/T_ref) scale (dimensionless)
     S_delta: float = 10.0     # Hansen parameter scale, MPa^0.5
 
     # --- SLE solver ---

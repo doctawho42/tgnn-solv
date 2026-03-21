@@ -57,6 +57,57 @@ class PairRepresentation(nn.Module):
         return self.mlp(pair_input)
 
 
+class SolventTypeMoE(nn.Module):
+    """
+    Mixture-of-Experts conditioned on solvent type.
+
+    Uses a type embedding + gating MLP to mix expert transformations
+    of the pair representation. Residual-scaled for safety.
+    """
+
+    def __init__(
+        self,
+        input_dim: int,
+        num_types: int,
+        num_experts: int = 4,
+        type_emb_dim: int = 16,
+        hidden_dim: int = 128,
+        dropout: float = 0.1,
+    ):
+        super().__init__()
+        self.type_embed = nn.Embedding(num_types, type_emb_dim)
+        self.gate = nn.Sequential(
+            nn.Linear(input_dim + type_emb_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, num_experts),
+        )
+        self.experts = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(input_dim, input_dim),
+                nn.SiLU(),
+                nn.Dropout(dropout),
+                nn.Linear(input_dim, input_dim),
+            )
+            for _ in range(num_experts)
+        ])
+        self.res_scale = nn.Parameter(torch.tensor(0.0))
+
+    def forward(
+        self, g_pair: torch.Tensor, solvent_type: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        type_ids = solvent_type.long().view(-1)
+        type_emb = self.type_embed(type_ids)
+        gate_logits = self.gate(torch.cat([g_pair, type_emb], dim=-1))
+        gate = torch.softmax(gate_logits, dim=-1)
+        expert_out = torch.stack(
+            [expert(g_pair) for expert in self.experts], dim=1
+        )  # (B, E, D)
+        mixed = torch.sum(gate.unsqueeze(-1) * expert_out, dim=1)
+        scale = torch.tanh(self.res_scale)
+        return g_pair + scale * mixed, gate
+
+
 # ================================================================== #
 #  Fusion Head — crystal properties of the solute                     #
 # ================================================================== #
@@ -101,12 +152,17 @@ class NRTLHead(nn.Module):
     Predict NRTL parameters from the pair representation.
 
     Outputs:
-      dg_12, dg_21 : energy parameters [J/mol]
-      alpha_12     : non-randomness, sigmoid-bounded [α_min, α_max]
-      a_T12, a_T21 : temperature-dependence coefficients
+      If cfg.nrtl_tau_mode == "abc":
+        tau_a12, tau_b12, tau_c12 : tau(T) coefficients for 1->2
+        tau_a21, tau_b21, tau_c21 : tau(T) coefficients for 2->1
+        alpha_12                  : non-randomness, sigmoid-bounded [α_min, α_max]
+      If cfg.nrtl_tau_mode == "legacy":
+        dg_12, dg_21 : energy parameters [J/mol]
+        alpha_12     : non-randomness, sigmoid-bounded [α_min, α_max]
+        a_T12, a_T21 : temperature-dependence coefficients
 
     Initialization:
-      - dg, aT outputs zero-initialized → near-ideal starting point
+      - tau outputs zero-initialized → near-ideal starting point
       - alpha bias set to give α ≈ 0.3 at init
     """
 
@@ -125,35 +181,57 @@ class NRTLHead(nn.Module):
             nn.SiLU(),
             nn.Dropout(cfg.dropout),
         )
-        self.output = nn.Linear(128, 5)
+        self.output = nn.Linear(128, 7)
 
         # Careful initialization: start near ideal (γ ≈ 1)
         with torch.no_grad():
-            self.output.weight[:2].zero_()     # dg_12, dg_21
-            self.output.bias[:2].zero_()
-            self.output.weight[2].zero_()      # alpha
-            self.output.bias[2] = -0.405       # sigmoid(-0.405) ≈ 0.4 → α ≈ 0.3
-            self.output.weight[3:].zero_()     # a_T12, a_T21
-            self.output.bias[3:].zero_()
+            self.output.weight.zero_()
+            self.output.bias.zero_()
+            if cfg.nrtl_tau_mode == "legacy":
+                self.output.bias[2] = -0.405   # alpha index in legacy mode
+            else:
+                self.output.bias[6] = -0.405   # alpha index in abc mode
 
     def forward(self, g_pair: torch.Tensor) -> Dict[str, torch.Tensor]:
         h = self.backbone(g_pair)
-        z = self.output(h)  # (B, 5)
+        z = self.output(h)  # (B, 7)
 
-        dg_12 = z[:, 0] * self.cfg.S_g
-        dg_21 = z[:, 1] * self.cfg.S_g
+        if self.cfg.nrtl_tau_mode == "legacy":
+            dg_12 = z[:, 0] * self.cfg.S_g
+            dg_21 = z[:, 1] * self.cfg.S_g
+            alpha_12 = self.cfg.alpha_min + (
+                (self.cfg.alpha_max - self.cfg.alpha_min)
+                * torch.sigmoid(z[:, 2])
+            )
+            a_T12 = z[:, 3] * self.cfg.S_aT
+            a_T21 = z[:, 4] * self.cfg.S_aT
+            return {
+                "dg_12": dg_12,
+                "dg_21": dg_21,
+                "alpha_12": alpha_12,
+                "a_T12": a_T12,
+                "a_T21": a_T21,
+            }
+
+        tau_a12 = z[:, 0] * self.cfg.S_tau_a
+        tau_b12 = z[:, 1] * self.cfg.S_tau_b
+        tau_c12 = z[:, 2] * self.cfg.S_tau_c
+        tau_a21 = z[:, 3] * self.cfg.S_tau_a
+        tau_b21 = z[:, 4] * self.cfg.S_tau_b
+        tau_c21 = z[:, 5] * self.cfg.S_tau_c
         alpha_12 = self.cfg.alpha_min + (
-            (self.cfg.alpha_max - self.cfg.alpha_min) * torch.sigmoid(z[:, 2])
+            (self.cfg.alpha_max - self.cfg.alpha_min)
+            * torch.sigmoid(z[:, 6])
         )
-        a_T12 = z[:, 3] * self.cfg.S_aT
-        a_T21 = z[:, 4] * self.cfg.S_aT
 
         return {
-            "dg_12": dg_12,
-            "dg_21": dg_21,
+            "tau_a12": tau_a12,
+            "tau_b12": tau_b12,
+            "tau_c12": tau_c12,
+            "tau_a21": tau_a21,
+            "tau_b21": tau_b21,
+            "tau_c21": tau_c21,
             "alpha_12": alpha_12,
-            "a_T12": a_T12,
-            "a_T21": a_T21,
         }
 
 
@@ -243,14 +321,14 @@ class AdaptivePhysicsCorrection(nn.Module):
             nn.Linear(64, 1),
         )
 
-        # Direct prediction path (bypass physics)
+        # Direct prediction path (bypass physics): mean + log_sigma
         self.direct_net = nn.Sequential(
             nn.Linear(pair_dim + n_param_features, 128),
             nn.SiLU(),
             nn.Dropout(0.2),
             nn.Linear(128, 64),
             nn.SiLU(),
-            nn.Linear(64, 1),
+            nn.Linear(64, 2),
         )
 
         # Initialize confidence bias high → σ(2.2) ≈ 0.9
@@ -266,7 +344,8 @@ class AdaptivePhysicsCorrection(nn.Module):
         -------
         ln_x2_final : (B,) blended prediction
         confidence  : (B,) physics confidence σ(w)
-        ln_x2_direct : (B,) direct (non-physics) prediction
+        ln_x2_direct : (B,) direct (non-physics) prediction (mean)
+        ln_x2_direct_log_sigma : (B,) log sigma for direct path
         """
         inp = torch.cat([g_pair, param_summary], dim=-1)
 
@@ -276,7 +355,9 @@ class AdaptivePhysicsCorrection(nn.Module):
         )  # (B,) in [0, 1]
 
         # Direct prediction path
-        ln_x2_direct = self.direct_net(inp).squeeze(-1)  # (B,)
+        direct_out = self.direct_net(inp)
+        ln_x2_direct = direct_out[:, 0]
+        ln_x2_direct_log_sigma = direct_out[:, 1].clamp(-6.0, 2.0)
 
         # Blend
         ln_x2_final = (
@@ -284,4 +365,9 @@ class AdaptivePhysicsCorrection(nn.Module):
             + (1.0 - confidence) * ln_x2_direct
         )
 
-        return ln_x2_final, confidence, ln_x2_direct
+        return (
+            ln_x2_final,
+            confidence,
+            ln_x2_direct,
+            ln_x2_direct_log_sigma,
+        )

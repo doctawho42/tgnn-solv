@@ -19,6 +19,7 @@ from torch_geometric.data import Batch
 from .config import TGNNSolvConfig
 from .features import NODE_FEAT_DIM, EDGE_FEAT_DIM, smiles_to_graph
 from .model import TGNNSolv
+from .data.solvent_types import solvent_type_id_from_smiles
 
 
 # ================================================================== #
@@ -54,7 +55,38 @@ def predict_solubility(
     slv_batch = Batch.from_data_list([slv_graph]).to(device)
     T_tensor = torch.tensor([T], device=device)
 
-    output = model(sol_batch, slv_batch, T_tensor)
+    solvent_type = torch.tensor(
+        [solvent_type_id_from_smiles(solvent_smiles)],
+        device=device,
+        dtype=torch.long,
+    )
+    output = model(sol_batch, slv_batch, T_tensor, solvent_type=solvent_type)
+
+    direct_sigma = None
+    direct_log_sigma = None
+    if "ln_x2_direct_sigma" in output:
+        direct_sigma = output["ln_x2_direct_sigma"].item()
+    if "ln_x2_direct_log_sigma" in output:
+        direct_log_sigma = output["ln_x2_direct_log_sigma"].item()
+
+    nrtl_params = output["nrtl_params"]
+    nrtl_payload = {}
+    if "tau_a12" in nrtl_params:
+        nrtl_payload = {
+            "tau_a12": nrtl_params["tau_a12"].item(),
+            "tau_b12": nrtl_params["tau_b12"].item(),
+            "tau_c12": nrtl_params["tau_c12"].item(),
+            "tau_a21": nrtl_params["tau_a21"].item(),
+            "tau_b21": nrtl_params["tau_b21"].item(),
+            "tau_c21": nrtl_params["tau_c21"].item(),
+        }
+    else:
+        nrtl_payload = {
+            "dg_12": nrtl_params["dg_12"].item(),
+            "dg_21": nrtl_params["dg_21"].item(),
+            "a_T12": nrtl_params["a_T12"].item(),
+            "a_T21": nrtl_params["a_T21"].item(),
+        }
 
     return {
         "solute": solute_smiles,
@@ -69,14 +101,17 @@ def predict_solubility(
         "T_m": output["fusion_params"]["T_m"].item(),
         "dH_fus": output["fusion_params"]["dH_fus"].item(),
         "dCp_fus": output["fusion_params"]["dCp_fus"].item(),
-        "dg_12": output["nrtl_params"]["dg_12"].item(),
-        "dg_21": output["nrtl_params"]["dg_21"].item(),
+        "tau_12": output["physics"]["tau_12"].item(),
+        "tau_21": output["physics"]["tau_21"].item(),
         "alpha_12": output["nrtl_params"]["alpha_12"].item(),
         "hansen_sol": output["hansen_sol"][0].tolist(),
         "hansen_slv": output["hansen_slv"][0].tolist(),
         "Ra": output["Ra"].item(),
         "correction": output["correction"].item(),
         "gate": output["gate"].item(),
+        "direct_sigma": direct_sigma,
+        "direct_log_sigma": direct_log_sigma,
+        **nrtl_payload,
     }
 
 
@@ -163,7 +198,7 @@ def interpret_prediction(result: Dict) -> str:
     )
     if abs(result["correction"]) > 0.5:
         lines.append(
-            f"  ⚠ Large correction ({result['correction']:.3f}) — "
+            f"  WARNING: Large correction ({result['correction']:.3f}) - "
             f"NRTL may be inadequate"
         )
 
@@ -193,12 +228,20 @@ def interpret_prediction(result: Dict) -> str:
     else:
         lines.append("  → Negative deviation (favorable interactions)")
 
+    # Direct-path uncertainty (if available)
+    if result.get("direct_sigma") is not None:
+        lines.append("")
+        lines.append("DIRECT-PATH UNCERTAINTY:")
+        lines.append(
+            f"  sigma_ln_x2 = {result['direct_sigma']:.3f}"
+        )
+
     # NRTL
     lines.append("")
     lines.append("NRTL PARAMETERS:")
-    lines.append(f"  Δg₁₂ = {result['dg_12']:.0f} J/mol")
-    lines.append(f"  Δg₂₁ = {result['dg_21']:.0f} J/mol")
-    lines.append(f"  α₁₂ = {result['alpha_12']:.3f}")
+    lines.append(f"  tau_12(T) = {result['tau_12']:.3f}")
+    lines.append(f"  tau_21(T) = {result['tau_21']:.3f}")
+    lines.append(f"  alpha_12 = {result['alpha_12']:.3f}")
 
     # Hansen
     h_sol = result["hansen_sol"]

@@ -14,7 +14,6 @@ gradients flow through physics back to the GNN.
 
 Forward pass: solute/solvent GNN encoders -> cross-attention -> physics heads
 -> SLE solver -> adaptive correction blend.
-For full details, see `AGENTS.md` and `CODEBASE_PROMPT.md`.
 
 ## Features
 
@@ -95,8 +94,3 @@ Or use the notebook:
 ```bash
 jupyter notebook notebooks/08_optuna_tuning.ipynb
 ```
-
-## Codebase prompt
-
-`CODEBASE_PROMPT.md` contains the full project structure and contents of all
-non-ignored text files (notebooks are included as code cells only, no outputs).

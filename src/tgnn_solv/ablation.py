@@ -36,7 +36,12 @@ from .config import TGNNSolvConfig
 from .model import TGNNSolv
 from .trainer import TGNNSolvTrainer
 from .evaluate import Evaluator
-from .layers import pad_atom_features
+from .data.solvent_types import SOLVENT_TYPE_OTHER_ID
+from .layers import (
+    pad_atom_features,
+    make_temperature_features,
+    build_batch_from_lists,
+)
 
 
 # ================================================================== #
@@ -47,18 +52,43 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
     """TGNN-Solv without cross-attention: solute and solvent
     are encoded independently."""
 
-    def forward(self, solute_data, solvent_data, T):
+    def forward(self, solute_data, solvent_data, T, solvent_type=None):
+        t_feat = make_temperature_features(T)
         # Encode without cross-attention
         h_sol_atoms, g_sol_pre = self._encode_and_readout(
-            solute_data, "solute"
+            solute_data, "solute", temp_feat=t_feat
         )
         h_slv_atoms, g_slv_pre = self._encode_and_readout(
-            solvent_data, "solvent"
+            solvent_data, "solvent", temp_feat=t_feat
         )
 
-        # Skip cross-attention entirely — use pre-cross readout
-        g_sol_post = g_sol_pre
-        g_slv_post = g_slv_pre
+        # Skip cross-attention entirely — readout with global tokens
+        sol_list = self._append_global_token(
+            self._split_atoms_by_graph(h_sol_atoms, solute_data.batch),
+            self.sol_token,
+        )
+        slv_list = self._append_global_token(
+            self._split_atoms_by_graph(h_slv_atoms, solvent_data.batch),
+            self.slv_token,
+        )
+        sol_no_token = [h[:-1] for h in sol_list]
+        slv_no_token = [h[:-1] for h in slv_list]
+        sol_batch = build_batch_from_lists(
+            sol_no_token, dtype=solute_data.batch.dtype
+        )
+        slv_batch = build_batch_from_lists(
+            slv_no_token, dtype=solvent_data.batch.dtype
+        )
+        g_sol_post = self.readout(
+            torch.cat(sol_no_token, dim=0), sol_batch
+        )
+        g_slv_post = self.readout(
+            torch.cat(slv_no_token, dim=0), slv_batch
+        )
+        g_sol_tok = torch.stack([h[-1] for h in sol_list], dim=0)
+        g_slv_tok = torch.stack([h[-1] for h in slv_list], dim=0)
+        g_sol_post = g_sol_post + self.sol_token_gate * self.token_proj(g_sol_tok)
+        g_slv_post = g_slv_post + self.slv_token_gate * self.token_proj(g_slv_tok)
 
         # Auxiliary heads
         hansen_sol = self.head_hansen(g_sol_pre)
@@ -68,6 +98,18 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
 
         # Pair representation
         g_pair = self.pair_repr(g_sol_post, g_slv_post)
+        moe_gate = None
+        if self.solvent_moe is not None:
+            if solvent_type is None:
+                solvent_type = torch.full(
+                    (g_pair.shape[0],),
+                    SOLVENT_TYPE_OTHER_ID,
+                    device=g_pair.device,
+                    dtype=torch.long,
+                )
+            else:
+                solvent_type = solvent_type.to(g_pair.device)
+            g_pair, moe_gate = self.solvent_moe(g_pair, solvent_type)
 
         # Prediction heads
         fusion_params = self.head_fusion(g_sol_pre)
@@ -82,17 +124,21 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
 
         Ra = self.sle_solver.hansen_layer(hansen_sol, hansen_slv)
 
-        param_summary = torch.stack([
-            (fusion_params["T_m"] - 400.0) / 200.0,
-            (fusion_params["dH_fus"] - 20000.0) / 10000.0,
-            nrtl_params["dg_12"] / self.cfg.S_g,
-            nrtl_params["dg_21"] / self.cfg.S_g,
-            (nrtl_params["alpha_12"] - 0.3) / 0.15,
-            (T - 300.0) / 50.0,
+        tau_12 = physics_out["tau_12"].to(T.dtype)
+        tau_21 = physics_out["tau_21"].to(T.dtype)
+        t_feat = t_feat.to(T.dtype)
+        param_summary = torch.cat([
+            ((fusion_params["T_m"] - 400.0) / 200.0).unsqueeze(-1),
+            ((fusion_params["dH_fus"] - 20000.0) / 10000.0).unsqueeze(-1),
+            (tau_12 / self.cfg.tau_clamp).unsqueeze(-1),
+            (tau_21 / self.cfg.tau_clamp).unsqueeze(-1),
+            ((nrtl_params["alpha_12"] - 0.3) / 0.15).unsqueeze(-1),
+            t_feat,
+            (Ra.to(T.dtype) / 10.0).unsqueeze(-1),
         ], dim=-1)
 
-        ln_x2, confidence, ln_x2_direct = self.correction(
-            g_pair, param_summary, physics_out["ln_x2"]
+        ln_x2, confidence, ln_x2_direct, ln_x2_direct_log_sigma = (
+            self.correction(g_pair, param_summary, physics_out["ln_x2"])
         )
         correction = ln_x2 - physics_out["ln_x2"]
         gate = confidence.mean()
@@ -110,8 +156,11 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
             "Ra": Ra,
             "confidence": confidence,
             "ln_x2_direct": ln_x2_direct,
+            "ln_x2_direct_log_sigma": ln_x2_direct_log_sigma,
+            "ln_x2_direct_sigma": ln_x2_direct_log_sigma.exp(),
             "correction": correction,
             "gate": gate,
+            "moe_gate": moe_gate,
             "attn_maps": [],
         }
 
@@ -120,13 +169,14 @@ class TGNNSolvNoNRTL(TGNNSolv):
     """TGNN-Solv without NRTL: uses ideal solubility + learned
     correction only.  γ₂ is always 1."""
 
-    def forward(self, solute_data, solvent_data, T):
+    def forward(self, solute_data, solvent_data, T, solvent_type=None):
+        t_feat = make_temperature_features(T)
         # ---- 1. Encode both molecules ----
         h_sol_atoms, g_sol_pre = self._encode_and_readout(
-            solute_data, "solute"
+            solute_data, "solute", temp_feat=t_feat
         )
         h_slv_atoms, g_slv_pre = self._encode_and_readout(
-            solvent_data, "solvent"
+            solvent_data, "solvent", temp_feat=t_feat
         )
 
         # ---- 2. Auxiliary heads (before cross-attention) ----
@@ -135,7 +185,7 @@ class TGNNSolvNoNRTL(TGNNSolv):
         aux_sol = self.head_aux(g_sol_pre)
         aux_slv = self.head_aux(g_slv_pre)
 
-        # ---- 3. Cross-attention: solute attends to solvent ----
+        # ---- 3. Cross-attention / Bipartite MP ----
         sol_atoms_list = self._split_atoms_by_graph(
             h_sol_atoms, solute_data.batch
         )
@@ -143,23 +193,90 @@ class TGNNSolvNoNRTL(TGNNSolv):
             h_slv_atoms, solvent_data.batch
         )
 
+        sol_atoms_list = self._append_global_token(
+            sol_atoms_list, self.sol_token
+        )
+        slv_atoms_list = self._append_global_token(
+            slv_atoms_list, self.slv_token
+        )
+        sol_lengths = [h.shape[0] for h in sol_atoms_list]
+        slv_lengths = [h.shape[0] for h in slv_atoms_list]
+
         h_sol_padded, sol_mask = pad_atom_features(sol_atoms_list)
         h_slv_padded, slv_mask = pad_atom_features(slv_atoms_list)
 
         attn_maps = []
-        for cross_layer in self.cross_attn_layers:
-            h_sol_padded, attn_w = cross_layer(
-                h_sol_padded, h_slv_padded, sol_mask, slv_mask
-            )
-            attn_maps.append(attn_w.detach())
+        if self.interaction_mode == "cross_attn":
+            for cross_layer in self.cross_attn_layers:
+                sol_prev = h_sol_padded
+                slv_prev = h_slv_padded
+                h_sol_padded, attn_w = cross_layer(
+                    sol_prev, slv_prev, sol_mask, slv_mask, t_feat
+                )
+                attn_maps.append(attn_w.detach())
+                h_slv_padded, _ = cross_layer(
+                    slv_prev, sol_prev, slv_mask, sol_mask, t_feat
+                )
+        else:
+            for mp_layer in self.bipartite_layers:
+                h_sol_padded, h_slv_padded = mp_layer(
+                    h_sol_padded, h_slv_padded, sol_mask, slv_mask, t_feat
+                )
 
         # ---- 4. Post-cross-attention readout for solute ----
-        h_sol_cross = h_sol_padded[sol_mask]
-        g_sol_post = self.readout(h_sol_cross, solute_data.batch)
-        g_slv_post = g_slv_pre
+        sol_no_token = [
+            h_sol_padded[i, :h.shape[0] - 1, :]
+            for i, h in enumerate(sol_atoms_list)
+        ]
+        slv_no_token = [
+            h_slv_padded[i, :h.shape[0] - 1, :]
+            for i, h in enumerate(slv_atoms_list)
+        ]
+        sol_batch = build_batch_from_lists(
+            sol_no_token, dtype=solute_data.batch.dtype
+        )
+        slv_batch = build_batch_from_lists(
+            slv_no_token, dtype=solvent_data.batch.dtype
+        )
+        g_sol_post = self.readout(
+            torch.cat(sol_no_token, dim=0), sol_batch
+        )
+        g_slv_post = self.readout(
+            torch.cat(slv_no_token, dim=0), slv_batch
+        )
+        sol_idx = torch.tensor(
+            [length - 1 for length in sol_lengths],
+            device=h_sol_padded.device,
+        )
+        slv_idx = torch.tensor(
+            [length - 1 for length in slv_lengths],
+            device=h_slv_padded.device,
+        )
+        g_sol_tok = h_sol_padded[
+            torch.arange(h_sol_padded.size(0), device=h_sol_padded.device),
+            sol_idx,
+        ]
+        g_slv_tok = h_slv_padded[
+            torch.arange(h_slv_padded.size(0), device=h_slv_padded.device),
+            slv_idx,
+        ]
+        g_sol_post = g_sol_post + self.sol_token_gate * self.token_proj(g_sol_tok)
+        g_slv_post = g_slv_post + self.slv_token_gate * self.token_proj(g_slv_tok)
 
         # ---- 5. Pair representation ----
         g_pair = self.pair_repr(g_sol_post, g_slv_post)
+        moe_gate = None
+        if self.solvent_moe is not None:
+            if solvent_type is None:
+                solvent_type = torch.full(
+                    (g_pair.shape[0],),
+                    SOLVENT_TYPE_OTHER_ID,
+                    device=g_pair.device,
+                    dtype=torch.long,
+                )
+            else:
+                solvent_type = solvent_type.to(g_pair.device)
+            g_pair, moe_gate = self.solvent_moe(g_pair, solvent_type)
 
         # ---- 6. Fusion head ----
         fusion_params = self.head_fusion(g_sol_pre)
@@ -181,11 +298,13 @@ class TGNNSolvNoNRTL(TGNNSolv):
         zeros = torch.zeros_like(T)
         ones = torch.ones_like(T)
         nrtl_params = {
-            "dg_12": zeros,
-            "dg_21": zeros,
+            "tau_a12": zeros,
+            "tau_b12": zeros,
+            "tau_c12": zeros,
+            "tau_a21": zeros,
+            "tau_b21": zeros,
+            "tau_c21": zeros,
             "alpha_12": torch.full_like(T, 0.3),
-            "a_T12": zeros,
-            "a_T21": zeros,
         }
 
         physics_out = {
@@ -205,17 +324,19 @@ class TGNNSolvNoNRTL(TGNNSolv):
         Ra = self.sle_solver.hansen_layer(hansen_sol, hansen_slv)
 
         # ---- 9. Adaptive correction ----
-        param_summary = torch.stack([
-            (fusion_params["T_m"] - 400.0) / 200.0,
-            (fusion_params["dH_fus"] - 20000.0) / 10000.0,
-            nrtl_params["dg_12"] / self.cfg.S_g,
-            nrtl_params["dg_21"] / self.cfg.S_g,
-            (nrtl_params["alpha_12"] - 0.3) / 0.15,
-            (T - 300.0) / 50.0,
+        t_feat = t_feat.to(T.dtype)
+        param_summary = torch.cat([
+            ((fusion_params["T_m"] - 400.0) / 200.0).unsqueeze(-1),
+            ((fusion_params["dH_fus"] - 20000.0) / 10000.0).unsqueeze(-1),
+            (physics_out["tau_12"].to(T.dtype) / self.cfg.tau_clamp).unsqueeze(-1),
+            (physics_out["tau_21"].to(T.dtype) / self.cfg.tau_clamp).unsqueeze(-1),
+            ((nrtl_params["alpha_12"] - 0.3) / 0.15).unsqueeze(-1),
+            t_feat,
+            (Ra.to(T.dtype) / 10.0).unsqueeze(-1),
         ], dim=-1)
 
-        ln_x2, confidence, ln_x2_direct = self.correction(
-            g_pair, param_summary, ln_x2_physics
+        ln_x2, confidence, ln_x2_direct, ln_x2_direct_log_sigma = (
+            self.correction(g_pair, param_summary, ln_x2_physics)
         )
         correction = ln_x2 - ln_x2_physics
 
@@ -232,8 +353,11 @@ class TGNNSolvNoNRTL(TGNNSolv):
             "Ra": Ra,
             "confidence": confidence,
             "ln_x2_direct": ln_x2_direct,
+            "ln_x2_direct_log_sigma": ln_x2_direct_log_sigma,
+            "ln_x2_direct_sigma": ln_x2_direct_log_sigma.exp(),
             "correction": correction,
             "gate": confidence.mean(),
+            "moe_gate": moe_gate,
             "attn_maps": attn_maps,
         }
 
@@ -242,8 +366,10 @@ class TGNNSolvNoCorrection(TGNNSolv):
     """TGNN-Solv without gated residual correction.
     ln(x₂) = physics only."""
 
-    def forward(self, solute_data, solvent_data, T):
-        out = super().forward(solute_data, solvent_data, T)
+    def forward(self, solute_data, solvent_data, T, solvent_type=None):
+        out = super().forward(
+            solute_data, solvent_data, T, solvent_type=solvent_type
+        )
 
         # Remove correction
         out["ln_x2"] = out["physics"]["ln_x2"]
@@ -267,6 +393,7 @@ class NoCurriculumTrainer(TGNNSolvTrainer):
             "sol": 1.0, "T_m": 0.3, "dH": 0.3, "hansen": 0.2,
             "gamma_inf": 0.5, "mono": 0.1,
             "res": 0.05, "bridge": 0.05, "tau_reg": 0.001,
+            "direct_nll": 0.1,
         }
         total_epochs = (
             self.cfg.epochs_phase1

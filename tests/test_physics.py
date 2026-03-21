@@ -189,11 +189,13 @@ class TestSLESolver:
         fus = {"T_m": torch.tensor([353.0]),
                "dH_fus": torch.tensor([19060.0]),
                "dCp_fus": torch.tensor([0.0])}
-        nrtl_p = {"dg_12": torch.tensor([0.0]),
-                  "dg_21": torch.tensor([0.0]),
-                  "alpha_12": torch.tensor([0.3]),
-                  "a_T12": torch.tensor([0.0]),
-                  "a_T21": torch.tensor([0.0])}
+        nrtl_p = {"tau_a12": torch.tensor([0.0]),
+                  "tau_b12": torch.tensor([0.0]),
+                  "tau_c12": torch.tensor([0.0]),
+                  "tau_a21": torch.tensor([0.0]),
+                  "tau_b21": torch.tensor([0.0]),
+                  "tau_c21": torch.tensor([0.0]),
+                  "alpha_12": torch.tensor([0.3])}
 
         with torch.no_grad():
             out = solver(T, fus, nrtl_p, use_implicit=False)
@@ -207,14 +209,18 @@ class TestSLESolver:
         """Positive NRTL params → x₂ < x_ideal."""
         solver.eval()
         T = torch.tensor([298.15])
+        R = 8.314
+        T_ref = 298.15
         fus = {"T_m": torch.tensor([442.0]),
                "dH_fus": torch.tensor([26400.0]),
                "dCp_fus": torch.tensor([80.0])}
-        nrtl_p = {"dg_12": torch.tensor([5000.0]),
-                  "dg_21": torch.tensor([3000.0]),
-                  "alpha_12": torch.tensor([0.3]),
-                  "a_T12": torch.tensor([0.0]),
-                  "a_T21": torch.tensor([0.0])}
+        nrtl_p = {"tau_a12": torch.tensor([5000.0 / (R * T_ref)]),
+                  "tau_b12": torch.tensor([0.0]),
+                  "tau_c12": torch.tensor([0.0]),
+                  "tau_a21": torch.tensor([3000.0 / (R * T_ref)]),
+                  "tau_b21": torch.tensor([0.0]),
+                  "tau_c21": torch.tensor([0.0]),
+                  "alpha_12": torch.tensor([0.3])}
 
         with torch.no_grad():
             out = solver(T, fus, nrtl_p, use_implicit=False)
@@ -226,22 +232,26 @@ class TestSLESolver:
         """Gradients must flow through the solver to NRTL params."""
         solver.train()
         T = torch.tensor([298.15])
+        R = 8.314
+        T_ref = 298.15
         fus = {"T_m": torch.tensor([400.0]),
                "dH_fus": torch.tensor([20000.0]),
                "dCp_fus": torch.tensor([50.0])}
 
-        dg12 = torch.tensor([1000.0], requires_grad=True)
-        nrtl_p = {"dg_12": dg12,
-                  "dg_21": torch.tensor([500.0]),
-                  "alpha_12": torch.tensor([0.3]),
-                  "a_T12": torch.tensor([0.0]),
-                  "a_T21": torch.tensor([0.0])}
+        a12 = torch.tensor([1000.0 / (R * T_ref)], requires_grad=True)
+        nrtl_p = {"tau_a12": a12,
+                  "tau_b12": torch.tensor([0.0]),
+                  "tau_c12": torch.tensor([0.0]),
+                  "tau_a21": torch.tensor([500.0 / (R * T_ref)]),
+                  "tau_b21": torch.tensor([0.0]),
+                  "tau_c21": torch.tensor([0.0]),
+                  "alpha_12": torch.tensor([0.3])}
 
         out = solver(T, fus, nrtl_p, use_implicit=False)
         out["ln_x2"].backward()
 
-        assert dg12.grad is not None
-        assert dg12.grad.abs().item() > 0, "No gradient through solver"
+        assert a12.grad is not None
+        assert a12.grad.abs().item() > 0, "No gradient through solver"
 
 
 # ------------------------------------------------------------------ #

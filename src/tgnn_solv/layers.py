@@ -5,8 +5,9 @@ Contains:
   - MPNNLayer        : Message-passing with edge features and attention
   - GNNEncoder       : Multi-layer MPNN with solute/solvent role adapters
   - SoluteSolventCrossAttention : Cross-attention between solute and solvent
+  - BipartiteMessagePassing : Bipartite message passing alternative
   - AttentionPooling : Learnable attention-based graph readout
-  - PhysicsAwareReadout : Multi-strategy pooling (attention + sum + mean)
+  - PhysicsAwareReadout : Multi-strategy pooling (attention + Set2Set)
   - IdealSolubilityLayer : Hardcoded Φ(T) from SLE theory (0 params)
   - NRTLLayer        : Hardcoded NRTL activity coefficient model (0 params)
   - HansenDistanceLayer : Hardcoded Hansen Ra distance (0 params)
@@ -20,7 +21,23 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import MessagePassing, global_add_pool, global_mean_pool
+from torch_geometric.nn import (
+    MessagePassing,
+    Set2Set,
+)
+
+
+def make_temperature_features(T: torch.Tensor) -> torch.Tensor:
+    """
+    Build normalized temperature features.
+
+    Returns (B, 3): [ (T-300)/50, (1/T - 1/300)*300, log(T/300) ].
+    """
+    t = torch.clamp(T.float(), min=1e-6)
+    t_norm = (t - 300.0) / 50.0
+    inv_norm = (1.0 / t - 1.0 / 300.0) * 300.0
+    log_norm = torch.log(t / 300.0)
+    return torch.stack([t_norm, inv_norm, log_norm], dim=-1)
 
 
 # ================================================================== #
@@ -144,17 +161,48 @@ class GNNEncoder(nn.Module):
             nn.Linear(hidden_dim, hidden_dim), nn.SiLU()
         )
 
-    def forward(self, x, edge_index, edge_attr, role: str = "solute"):
+        self.temp_mlp = nn.Sequential(
+            nn.Linear(3, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim * 2),
+        )
+
+    def _apply_temp_film(
+        self,
+        h: torch.Tensor,
+        batch: torch.Tensor,
+        temp_feat: torch.Tensor,
+    ) -> torch.Tensor:
+        gamma_beta = self.temp_mlp(temp_feat)  # (B, 2D)
+        gamma, beta = gamma_beta.chunk(2, dim=-1)
+        gamma = gamma[batch]
+        beta = beta[batch]
+        return h * (1.0 + gamma) + beta
+
+    def forward(
+        self,
+        x,
+        edge_index,
+        edge_attr,
+        role: str = "solute",
+        batch: Optional[torch.Tensor] = None,
+        temp_feat: Optional[torch.Tensor] = None,
+    ):
         h = self.node_embed(x)
         e = self.edge_embed(edge_attr)
 
         for layer in self.layers:
             h = layer(h, edge_index, e)
+            if temp_feat is not None and batch is not None:
+                h = self._apply_temp_film(h, batch, temp_feat)
 
         if role == "solute":
             h = h + self.solute_adapter(h)
         else:
             h = h + self.solvent_adapter(h)
+
+        if temp_feat is not None and batch is not None:
+            h = self._apply_temp_film(h, batch, temp_feat)
 
         return h
 
@@ -184,6 +232,11 @@ class SoluteSolventCrossAttention(nn.Module):
             nn.Dropout(0.1),
         )
         self.norm2 = nn.LayerNorm(hidden_dim)
+        self.temp_mlp = nn.Sequential(
+            nn.Linear(3, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim * 2),
+        )
 
     def forward(
         self,
@@ -191,6 +244,7 @@ class SoluteSolventCrossAttention(nn.Module):
         h_solvent: torch.Tensor,
         solute_mask: Optional[torch.Tensor] = None,
         solvent_mask: Optional[torch.Tensor] = None,
+        temp_feat: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Parameters
@@ -220,8 +274,86 @@ class SoluteSolventCrossAttention(nn.Module):
         )
 
         h_out = self.norm1(h_solute + h_cross)
+        if temp_feat is not None:
+            gamma_beta = self.temp_mlp(temp_feat)  # (B, 2D)
+            gamma, beta = gamma_beta.chunk(2, dim=-1)
+            h_out = h_out * (1.0 + gamma[:, None, :]) + beta[:, None, :]
         h_out = self.norm2(h_out + self.ffn(h_out))
         return h_out, attn_weights
+
+
+class BipartiteMessagePassing(nn.Module):
+    """
+    Bipartite message passing between solute and solvent atoms.
+
+    Each block aggregates messages across the complete bipartite
+    graph (solute ↔ solvent) using MLP-based pairwise transforms.
+    """
+
+    def __init__(self, hidden_dim: int, dropout: float = 0.1):
+        super().__init__()
+        self.msg_sol = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+        self.msg_slv = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+        self.norm_sol = nn.LayerNorm(hidden_dim)
+        self.norm_slv = nn.LayerNorm(hidden_dim)
+        self.temp_mlp = nn.Sequential(
+            nn.Linear(3, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim * 2),
+        )
+
+    def forward(
+        self,
+        h_sol: torch.Tensor,
+        h_slv: torch.Tensor,
+        sol_mask: Optional[torch.Tensor] = None,
+        slv_mask: Optional[torch.Tensor] = None,
+        temp_feat: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        B, Ns, D = h_sol.shape
+        Nv = h_slv.shape[1]
+
+        sol_exp = h_sol[:, :, None, :].expand(-1, -1, Nv, -1)
+        slv_exp = h_slv[:, None, :, :].expand(-1, Ns, -1, -1)
+
+        pair_sol = torch.cat([sol_exp, slv_exp], dim=-1)
+        msg_sol = self.msg_sol(pair_sol)  # (B, Ns, Nv, D)
+        if slv_mask is not None:
+            msg_sol = msg_sol * slv_mask[:, None, :, None]
+            denom = slv_mask.sum(dim=1).clamp(min=1).view(B, 1, 1)
+        else:
+            denom = float(Nv)
+        agg_sol = msg_sol.sum(dim=2) / denom
+
+        pair_slv = torch.cat([slv_exp, sol_exp], dim=-1)
+        msg_slv = self.msg_slv(pair_slv)  # (B, Ns, Nv, D)
+        if sol_mask is not None:
+            msg_slv = msg_slv * sol_mask[:, :, None, None]
+            denom = sol_mask.sum(dim=1).clamp(min=1).view(B, 1, 1)
+        else:
+            denom = float(Ns)
+        agg_slv = msg_slv.sum(dim=1) / denom
+
+        h_sol_out = self.norm_sol(h_sol + agg_sol)
+        h_slv_out = self.norm_slv(h_slv + agg_slv)
+
+        if temp_feat is not None:
+            gamma_beta = self.temp_mlp(temp_feat)  # (B, 2D)
+            gamma, beta = gamma_beta.chunk(2, dim=-1)
+            h_sol_out = h_sol_out * (1.0 + gamma[:, None, :]) + beta[:, None, :]
+            h_slv_out = h_slv_out * (1.0 + gamma[:, None, :]) + beta[:, None, :]
+
+        return h_sol_out, h_slv_out
 
 
 def pad_atom_features(
@@ -249,6 +381,22 @@ def pad_atom_features(
         mask[i, :n] = True
 
     return padded, mask
+
+
+def build_batch_from_lists(
+    h_atoms_list: List[torch.Tensor],
+    dtype: Optional[torch.dtype] = None,
+) -> torch.Tensor:
+    """Build a batch vector for concatenated per-graph tensors."""
+    device = h_atoms_list[0].device
+    if dtype is None:
+        dtype = torch.long
+    chunks = []
+    for i, h in enumerate(h_atoms_list):
+        chunks.append(
+            torch.full((h.shape[0],), i, device=device, dtype=dtype)
+        )
+    return torch.cat(chunks, dim=0)
 
 
 # ================================================================== #
@@ -292,21 +440,21 @@ class AttentionPooling(nn.Module):
 
 class PhysicsAwareReadout(nn.Module):
     """
-    Multi-strategy readout: attention + sum + mean pooling → concat.
+    Multi-strategy readout: attention + Set2Set pooling → concat.
 
     Output dimension = hidden_dim * 3.
     """
 
-    def __init__(self, hidden_dim: int):
+    def __init__(self, hidden_dim: int, set2set_steps: int = 3):
         super().__init__()
         self.attn_pool = AttentionPooling(hidden_dim)
+        self.set2set = Set2Set(hidden_dim, processing_steps=set2set_steps)
         self.output_dim = hidden_dim * 3
 
     def forward(self, h: torch.Tensor, batch: torch.Tensor) -> torch.Tensor:
         h_attn = self.attn_pool(h, batch)       # (B, D)
-        h_sum = global_add_pool(h, batch)       # (B, D)
-        h_mean = global_mean_pool(h, batch)     # (B, D)
-        return torch.cat([h_attn, h_sum, h_mean], dim=-1)  # (B, 3D)
+        h_s2s = self.set2set(h, batch)          # (B, 2D)
+        return torch.cat([h_attn, h_s2s], dim=-1)  # (B, 3D)
 
 
 # ================================================================== #
@@ -346,7 +494,7 @@ class NRTLLayer(nn.Module):
     """
     Non-Random Two-Liquid model for activity coefficients.
 
-    τ_ij = Δg_ij / (R·T) + a_T,ij · (T_ref/T - 1)
+    τ_ij = a_ij + b_ij / T + c_ij · ln(T/T_ref)
     G_ij = exp(-α_ij · τ_ij)
     ln γ_2, ln γ_1, ln γ_∞  — standard NRTL expressions.
 
@@ -366,10 +514,13 @@ class NRTLLayer(nn.Module):
         self.tau_clamp = tau_clamp
         self.eps = eps
 
-    def compute_tau_G(self, dg_12, dg_21, alpha_12, a_T12, a_T21, T):
-        """Compute τ and G parameters from energy differences."""
-        tau_12 = dg_12 / (self.R * T) + a_T12 * (self.T_ref / T - 1.0)
-        tau_21 = dg_21 / (self.R * T) + a_T21 * (self.T_ref / T - 1.0)
+    def compute_tau_G(
+        self, a_12, b_12, c_12, a_21, b_21, c_21, alpha_12, T
+    ):
+        """Compute τ and G parameters from temperature coefficients."""
+        log_term = torch.log(T / self.T_ref + self.eps)
+        tau_12 = a_12 + b_12 / T + c_12 * log_term
+        tau_21 = a_21 + b_21 / T + c_21 * log_term
         tau_12 = torch.clamp(tau_12, -self.tau_clamp, self.tau_clamp)
         tau_21 = torch.clamp(tau_21, -self.tau_clamp, self.tau_clamp)
         G_12 = torch.exp(-alpha_12 * tau_12)
@@ -396,11 +547,13 @@ class NRTLLayer(nn.Module):
         """ln γ_2^∞ (infinite dilution: x_2 → 0)."""
         return tau_12 + tau_21 * G_21
 
-    def forward(self, x2, dg_12, dg_21, alpha_12, a_T12, a_T21, T):
+    def forward(
+        self, x2, a_12, b_12, c_12, a_21, b_21, c_21, alpha_12, T
+    ):
         """Full NRTL forward: returns ln γ_2 and intermediate quantities."""
         x1 = 1.0 - x2
         tau_12, tau_21, G_12, G_21 = self.compute_tau_G(
-            dg_12, dg_21, alpha_12, a_T12, a_T21, T
+            a_12, b_12, c_12, a_21, b_21, c_21, alpha_12, T
         )
         lng2 = self.ln_gamma_2(x1, x2, tau_12, tau_21, G_12, G_21)
         return {

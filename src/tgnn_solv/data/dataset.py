@@ -17,6 +17,7 @@ from torch_geometric.data import Batch
 import pandas as pd
 
 from ..features import smiles_to_graph
+from .solvent_types import solvent_type_id_from_smiles
 
 
 class TGNNSolvDataset(Dataset):
@@ -30,6 +31,7 @@ class TGNNSolvDataset(Dataset):
       T              — temperature (K)
       ln_x2          — log mole fraction (0.0 if no solubility data)
       has_solubility — bool mask
+      solvent_type   — int solvent type id
       T_m, T_m_mask
       dH_fus, dH_mask
       hansen_sol (3,), hansen_mask
@@ -49,6 +51,12 @@ class TGNNSolvDataset(Dataset):
                 valid.append(row.Index)
 
         self.df = df.loc[valid].reset_index(drop=True)
+        # Precompute solvent type ids (for MoE routing)
+        unique_solv = self.df["solvent_smiles"].unique()
+        type_map = {
+            smi: solvent_type_id_from_smiles(smi) for smi in unique_solv
+        }
+        self.df["solvent_type"] = self.df["solvent_smiles"].map(type_map)
         n_drop = len(df) - len(valid)
         n_cached = len(self.cache) if self.cache else 0
         print(
@@ -82,6 +90,9 @@ class TGNNSolvDataset(Dataset):
             ),
             "has_solubility": torch.tensor(
                 bool(r["has_solubility"]), dtype=torch.bool
+            ),
+            "solvent_type": torch.tensor(
+                int(r["solvent_type"]), dtype=torch.long
             ),
             "T_m": torch.tensor(float(r["T_m"]), dtype=torch.float),
             "T_m_mask": torch.tensor(
