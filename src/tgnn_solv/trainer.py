@@ -29,6 +29,7 @@ from .model import TGNNSolv
 from .loss import TGNNSolvLoss
 from .layers import make_temperature_features
 from .data.solvent_types import SOLVENT_TYPE_OTHER_ID
+from .progress import progress, trange
 
 
 class TGNNSolvTrainer:
@@ -234,7 +235,11 @@ class TGNNSolvTrainer:
         if phase == 2 and epoch >= 20:
             self._freeze_correction(False)
 
-        for sol_batch, slv_batch, targets in loader:
+        for sol_batch, slv_batch, targets in progress(
+            loader,
+            desc=f"Phase {phase} train",
+            leave=False,
+        ):
             sol_batch = sol_batch.to(self.device)
             slv_batch = slv_batch.to(self.device)
             targets = {
@@ -303,7 +308,11 @@ class TGNNSolvTrainer:
 
         weights = self.phase_weights[phase]
 
-        for sol_batch, slv_batch, targets in loader:
+        for sol_batch, slv_batch, targets in progress(
+            loader,
+            desc=f"Phase {phase} val",
+            leave=False,
+        ):
             sol_batch = sol_batch.to(self.device)
             slv_batch = slv_batch.to(self.device)
             targets = {
@@ -381,7 +390,7 @@ class TGNNSolvTrainer:
         optimizer = self._build_optimizer(phase)
         scheduler = self._build_scheduler(optimizer, phase, n_epochs)
 
-        for epoch in range(n_epochs):
+        for epoch in trange(n_epochs, desc=f"Phase {phase} epochs"):
             compute_mono = phase >= 2 and epoch % 5 == 0
 
             train_loss, train_comp = self.train_epoch(

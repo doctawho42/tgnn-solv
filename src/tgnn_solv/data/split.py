@@ -28,6 +28,7 @@ def scaffold_split(
 
     Modes:
       - "solute_scaffold": Murcko scaffold of solute (default)
+      - "solute": solute SMILES (random split by solute)
       - "solvent": solvent SMILES (no solvent overlap across splits)
 
     Each group goes entirely to one split (no leakage within that grouping).
@@ -38,6 +39,8 @@ def scaffold_split(
     label = "Scaffold-based splitting"
     if mode == "solvent":
         label = "Solvent-based splitting"
+    elif mode == "solute":
+        label = "Solute-based splitting"
     elif mode != "solute_scaffold":
         raise ValueError(f"Unknown split mode: {mode}")
     print(label)
@@ -46,6 +49,11 @@ def scaffold_split(
     def group_key(row) -> Optional[str]:
         if mode == "solute_scaffold":
             return get_scaffold(row["solute_smiles"])
+        if mode == "solute":
+            key = row["solute_smiles"]
+            if pd.isna(key):
+                return None
+            return key
         key = row["solvent_smiles"]
         if pd.isna(key):
             return None
@@ -70,9 +78,6 @@ def scaffold_split(
     rng = np.random.RandomState(seed)
     rng.shuffle(group_list)
 
-    # Sort by size (largest first) — greedy bin-packing works best this way
-    group_list.sort(key=lambda x: len(x[1]), reverse=True)
-
     # Target sizes
     n = len(df)
     targets = {
@@ -83,12 +88,27 @@ def scaffold_split(
     current = {"train": 0, "val": 0, "test": 0}
     buckets = {"train": [], "val": [], "test": []}
 
-    # Greedy assignment: each group goes to the most under-filled split
-    for _, indices in group_list:
-        deficits = {k: targets[k] - current[k] for k in targets}
-        best = max(deficits, key=deficits.get)
-        buckets[best].extend(indices)
-        current[best] += len(indices)
+    if mode == "solute":
+        # Random assignment by shuffled solute groups
+        for _, indices in group_list:
+            if current["train"] < targets["train"]:
+                best = "train"
+            elif current["val"] < targets["val"]:
+                best = "val"
+            else:
+                best = "test"
+            buckets[best].extend(indices)
+            current[best] += len(indices)
+    else:
+        # Sort by size (largest first) — greedy bin-packing works best this way
+        group_list.sort(key=lambda x: len(x[1]), reverse=True)
+
+        # Greedy assignment: each group goes to the most under-filled split
+        for _, indices in group_list:
+            deficits = {k: targets[k] - current[k] for k in targets}
+            best = max(deficits, key=deficits.get)
+            buckets[best].extend(indices)
+            current[best] += len(indices)
 
     # No-group records go to train
     buckets["train"].extend(no_group)
@@ -124,7 +144,7 @@ def scaffold_split(
 
     status_tv = "clean" if len(tv_leak) == 0 else f"LEAK ({len(tv_leak)})"
     status_tt = "clean" if len(tt_leak) == 0 else f"LEAK ({len(tt_leak)})"
-    print(f"  Train↔Val:  {status_tv}")
-    print(f"  Train↔Test: {status_tt}")
+    print(f"  Train ↔ Val:  {status_tv}")
+    print(f"  Train ↔ Test: {status_tt}")
 
     return train_df, val_df, test_df

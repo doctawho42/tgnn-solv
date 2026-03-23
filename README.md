@@ -12,8 +12,8 @@ solubility by learning physical parameters — not solubility directly.
 Thermodynamic equations are hardcoded and differentiable —
 gradients flow through physics back to the GNN.
 
-Forward pass: solute/solvent GNN encoders -> cross-attention -> physics heads
--> SLE solver -> adaptive correction blend.
+Forward pass: solute/solvent GNN encoders -> interaction (cross-attn or
+bipartite MP) -> physics heads -> SLE solver -> adaptive correction blend.
 
 ## Features
 
@@ -23,6 +23,8 @@ Forward pass: solute/solvent GNN encoders -> cross-attention -> physics heads
 - **Uncertainty**: MC-Dropout and Deep Ensemble support
 - **Applicability domain**: Mahalanobis distance + Tanimoto similarity
 - **Curriculum learning**: 3-phase training (pretrain → SLE → fine-tune)
+- **Solvent-type MoE**: optional expert routing by solvent class
+- **Interaction modes**: default cross-attention, optional bipartite message passing
 
 ## Installation
 
@@ -93,4 +95,13 @@ Or use the notebook:
 
 ```bash
 jupyter notebook notebooks/08_optuna_tuning.ipynb
+```
+
+## Diagnostics
+
+Quick dataset stats + overfit check:
+
+```bash
+python scripts/diagnose_training.py stats
+python scripts/diagnose_training.py overfit --sample-size 1000 --epochs 200
 ```

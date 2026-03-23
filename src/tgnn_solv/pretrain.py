@@ -3,14 +3,18 @@ GNN encoder pretraining for TGNN-Solv.
 
 Two self-supervised / weakly-supervised tasks on unlabeled molecules:
 
-Stage 0a — Masked Atom Prediction (self-supervised):
-  Mask 15% of atom features, predict them from graph context.
-  Teaches the GNN about chemical environments.
+Stage 0a — Masked Subgraph + Bond Prediction (self-supervised):
+  Mask 2-hop subgraphs and a fraction of bonds, predict them
+  from graph context. Harder than single-atom masking.
 
 Stage 0b — RDKit Property Prediction (weakly-supervised):
   Predict computed molecular descriptors (logP, TPSA, MolWt, ...).
   These are free to compute for any SMILES — unlimited "labels".
   Teaches the GNN about molecular properties relevant to solubility.
+
+Stage 0c — Graph Contrastive Learning (self-supervised):
+  Two augmented views of the same molecule → projection head → NT-Xent.
+  Encourages global invariances at the molecule level.
 
 Data source: ZINC250k (freely available, ~250k drug-like molecules)
 or any large SMILES collection.
@@ -48,6 +52,7 @@ from .features import (
 )
 from .layers import GNNEncoder, PhysicsAwareReadout
 from .data.utils import download_file, RAW_DIR, canonicalize
+from .progress import progress, trange
 
 
 # ================================================================== #
@@ -177,19 +182,31 @@ class PretrainDataset(Dataset):
     """
     Dataset for GNN pretraining.
 
-    Each sample: (graph, masked_graph, atom_targets, property_targets)
+    Each sample:
+      (masked_graph, atom_mask, atom_targets,
+       bond_mask, bond_targets,
+       property_targets, aug_graph1, aug_graph2)
 
-    Atom masking: 15% of atoms have their features zeroed out.
-    The model must predict the original features.
+    Atom masking: 2-hop subgraph masking.
+    Bond masking: predict bond type for a subset of bonds.
+    Augmented views: node/edge feature masking.
     """
 
     def __init__(
         self,
         smiles_list: List[str],
         mask_ratio: float = 0.15,
+        mask_hops: int = 2,
+        bond_mask_ratio: float = 0.15,
+        aug_node_mask_ratio: float = 0.15,
+        aug_edge_mask_ratio: float = 0.15,
         cache: bool = True,
     ):
         self.mask_ratio = mask_ratio
+        self.mask_hops = mask_hops
+        self.bond_mask_ratio = bond_mask_ratio
+        self.aug_node_mask_ratio = aug_node_mask_ratio
+        self.aug_edge_mask_ratio = aug_edge_mask_ratio
         self.cache = {} if cache else None
 
         # Filter valid SMILES
@@ -215,42 +232,142 @@ class PretrainDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, idx):
-        smi, props = self.data[idx]
-        graph = self._get_graph(smi).clone()
-
-        # --- Mask atoms ---
+    def _mask_subgraph(self, graph: Data) -> Tuple[torch.Tensor, torch.Tensor]:
         n_atoms = graph.x.shape[0]
         n_mask = max(1, int(n_atoms * self.mask_ratio))
-        mask_indices = torch.randperm(n_atoms)[:n_mask]
+        if n_atoms == 1:
+            mask = torch.ones(1, dtype=torch.bool)
+            return mask, graph.x[mask].clone()
 
-        # Create mask boolean tensor
+        adj = [[] for _ in range(n_atoms)]
+        edge_index = graph.edge_index
+        for i in range(edge_index.size(1)):
+            u = int(edge_index[0, i])
+            v = int(edge_index[1, i])
+            if u != v:
+                adj[u].append(v)
+
         mask = torch.zeros(n_atoms, dtype=torch.bool)
-        mask[mask_indices] = True
+        candidates = list(range(n_atoms))
+        random.shuffle(candidates)
+        for seed in candidates:
+            if mask.sum().item() >= n_mask:
+                break
+            if mask[seed]:
+                continue
+            frontier = {seed}
+            visited = {seed}
+            for _ in range(self.mask_hops):
+                next_frontier = set()
+                for node in frontier:
+                    for nb in adj[node]:
+                        if nb not in visited:
+                            next_frontier.add(nb)
+                            visited.add(nb)
+                frontier = next_frontier
+                if not frontier:
+                    break
+            for node in visited:
+                mask[node] = True
+                if mask.sum().item() >= n_mask:
+                    break
 
-        # Store original features as target
         atom_targets = graph.x[mask].clone()
+        return mask, atom_targets
 
-        # Zero out masked atom features
-        graph.x[mask] = 0.0
+    def _mask_bonds(
+        self, graph: Data
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        n_edges = graph.edge_attr.size(0)
+        if n_edges == 0:
+            bond_mask = torch.zeros(0, dtype=torch.bool)
+            bond_targets = torch.zeros(0, dtype=torch.long)
+            return bond_mask, bond_targets
+
+        if n_edges == 1:
+            bond_mask = torch.ones(1, dtype=torch.bool)
+            bond_targets = graph.edge_attr[:, :4].argmax(dim=1).long()
+            return bond_mask, bond_targets
+
+        n_pairs = n_edges // 2
+        n_mask_pairs = max(1, int(n_pairs * self.bond_mask_ratio))
+        pair_indices = torch.randperm(n_pairs)[:n_mask_pairs]
+        bond_mask = torch.zeros(n_edges, dtype=torch.bool)
+        for idx in pair_indices:
+            i = int(idx) * 2
+            if i < n_edges:
+                bond_mask[i] = True
+            if i + 1 < n_edges:
+                bond_mask[i + 1] = True
+        bond_targets = graph.edge_attr[bond_mask][:, :4].argmax(dim=1).long()
+        return bond_mask, bond_targets
+
+    def _augment_graph(self, graph: Data) -> Data:
+        g = graph.clone()
+        n_atoms = g.x.shape[0]
+        if n_atoms > 0 and self.aug_node_mask_ratio > 0:
+            n_mask = max(1, int(n_atoms * self.aug_node_mask_ratio))
+            idx = torch.randperm(n_atoms)[:n_mask]
+            g.x[idx] = 0.0
+        n_edges = g.edge_attr.size(0)
+        if n_edges > 0 and self.aug_edge_mask_ratio > 0:
+            n_mask_e = max(1, int(n_edges * self.aug_edge_mask_ratio))
+            idx_e = torch.randperm(n_edges)[:n_mask_e]
+            g.edge_attr[idx_e] = 0.0
+        return g
+
+    def __getitem__(self, idx):
+        smi, props = self.data[idx]
+        base_graph = self._get_graph(smi).clone()
+        graph = base_graph.clone()
+
+        # --- Mask subgraph atoms ---
+        atom_mask, atom_targets = self._mask_subgraph(graph)
+        graph.x[atom_mask] = 0.0
+
+        # --- Mask bonds (bond type prediction) ---
+        bond_mask, bond_targets = self._mask_bonds(graph)
+        if bond_mask.numel() > 0:
+            graph.edge_attr[bond_mask] = 0.0
 
         # Property targets
         prop_tensor = torch.tensor(props, dtype=torch.float)
 
-        return graph, mask, atom_targets, prop_tensor
+        # Augmented views for contrastive
+        aug1 = self._augment_graph(base_graph)
+        aug2 = self._augment_graph(base_graph)
+
+        return (
+            graph,
+            atom_mask,
+            atom_targets,
+            bond_mask,
+            bond_targets,
+            prop_tensor,
+            aug1,
+            aug2,
+        )
 
 
 def pretrain_collate(batch):
     """Collate for pretraining: batch graphs + collect masks/targets."""
-    graphs, masks, atom_targets_list, prop_list = zip(*batch)
+    (
+        graphs,
+        masks,
+        atom_targets_list,
+        bond_masks,
+        bond_targets_list,
+        prop_list,
+        aug1_list,
+        aug2_list,
+    ) = zip(*batch)
 
     batched_graph = Batch.from_data_list(list(graphs))
     props = torch.stack(prop_list)  # (B, N_properties)
 
-    # Offset mask indices to match batched graph
+    # Collect per-graph masks in batch order (matches Batch concatenation)
     all_mask = []
     all_atom_targets = []
-    offset = 0
     for i, (graph, mask, atom_tgt) in enumerate(
         zip(graphs, masks, atom_targets_list)
     ):
@@ -260,13 +377,33 @@ def pretrain_collate(batch):
         global_mask[mask] = True
         all_mask.append(global_mask)
         all_atom_targets.append(atom_tgt)
-        offset += n
 
     # Concatenate masks and targets
     full_mask = torch.cat(all_mask)  # (N_total,)
     full_atom_targets = torch.cat(all_atom_targets)  # (N_masked, D_atom)
+    if any(x.numel() > 0 for x in bond_masks):
+        full_bond_mask = torch.cat(bond_masks)  # (E_total,)
+    else:
+        full_bond_mask = torch.zeros(0, dtype=torch.bool)
 
-    return batched_graph, full_mask, full_atom_targets, props
+    if any(x.numel() > 0 for x in bond_targets_list):
+        full_bond_targets = torch.cat(bond_targets_list)
+    else:
+        full_bond_targets = torch.zeros(0, dtype=torch.long)
+
+    aug1_batch = Batch.from_data_list(list(aug1_list))
+    aug2_batch = Batch.from_data_list(list(aug2_list))
+
+    return (
+        batched_graph,
+        full_mask,
+        full_atom_targets,
+        full_bond_mask,
+        full_bond_targets,
+        props,
+        aug1_batch,
+        aug2_batch,
+    )
 
 
 # ================================================================== #
@@ -304,17 +441,49 @@ class PropertyPredictionHead(nn.Module):
         return self.mlp(g_mol)
 
 
+class BondPredictionHead(nn.Module):
+    """Predict bond type from concatenated endpoint embeddings."""
+
+    def __init__(self, hidden_dim: int, num_classes: int = 4):
+        super().__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, num_classes),
+        )
+
+    def forward(self, h_edges: torch.Tensor) -> torch.Tensor:
+        return self.mlp(h_edges)
+
+
+class ProjectionHead(nn.Module):
+    """Projection head for contrastive learning."""
+
+    def __init__(self, input_dim: int, proj_dim: int = 128):
+        super().__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(input_dim, input_dim),
+            nn.SiLU(),
+            nn.Linear(input_dim, proj_dim),
+        )
+
+    def forward(self, g: torch.Tensor) -> torch.Tensor:
+        return self.mlp(g)
+
+
 # ================================================================== #
 #  Pretrainer                                                         #
 # ================================================================== #
 
 class Pretrainer:
     """
-    Two-task GNN pretrainer.
+    Multi-task GNN pretrainer.
 
     Trains the GNN encoder and readout on:
-      1. Masked atom prediction (atom-level)
-      2. RDKit property prediction (graph-level)
+      1. Masked subgraph atom prediction (atom-level)
+      2. Bond type prediction (bond-level)
+      3. RDKit property prediction (graph-level)
+      4. Graph contrastive learning (graph-level)
 
     After pretraining, the GNN weights are used as initialization
     for the full TGNN-Solv model.
@@ -352,6 +521,26 @@ class Pretrainer:
             readout.output_dim, N_PROPERTIES
         ).to(self.device)
 
+        self.bond_head = BondPredictionHead(
+            cfg.hidden_dim, num_classes=4
+        ).to(self.device)
+
+        self.proj_head = ProjectionHead(
+            readout.output_dim, proj_dim=128
+        ).to(self.device)
+
+    @staticmethod
+    def _contrastive_loss(
+        z1: torch.Tensor, z2: torch.Tensor, temperature: float = 0.1
+    ) -> torch.Tensor:
+        z1 = F.normalize(z1, dim=-1)
+        z2 = F.normalize(z2, dim=-1)
+        logits = z1 @ z2.t() / temperature
+        labels = torch.arange(z1.size(0), device=z1.device)
+        loss_1 = F.cross_entropy(logits, labels)
+        loss_2 = F.cross_entropy(logits.t(), labels)
+        return 0.5 * (loss_1 + loss_2)
+
     def pretrain(
         self,
         smiles_list: List[str],
@@ -359,8 +548,15 @@ class Pretrainer:
         batch_size: int = 128,
         lr: float = 3e-4,
         mask_ratio: float = 0.15,
+        mask_hops: int = 2,
+        bond_mask_ratio: float = 0.15,
+        aug_node_mask_ratio: float = 0.15,
+        aug_edge_mask_ratio: float = 0.15,
         atom_loss_weight: float = 1.0,
+        bond_loss_weight: float = 0.5,
         prop_loss_weight: float = 1.0,
+        contrastive_weight: float = 0.5,
+        contrastive_temp: float = 0.1,
     ) -> Dict[str, List[float]]:
         """
         Run pretraining.
@@ -384,11 +580,18 @@ class Pretrainer:
         print("=" * 60)
         print(f"  Molecules: {len(smiles_list):,}")
         print(f"  Epochs: {n_epochs}")
-        print(f"  Tasks: masked atom prediction + property prediction")
+        print(
+            "  Tasks: masked subgraph + bond prediction + properties + contrastive"
+        )
 
         # Build dataset
         dataset = PretrainDataset(
-            smiles_list, mask_ratio=mask_ratio
+            smiles_list,
+            mask_ratio=mask_ratio,
+            mask_hops=mask_hops,
+            bond_mask_ratio=bond_mask_ratio,
+            aug_node_mask_ratio=aug_node_mask_ratio,
+            aug_edge_mask_ratio=aug_edge_mask_ratio,
         )
         loader = DataLoader(
             dataset,
@@ -405,28 +608,57 @@ class Pretrainer:
             + list(self.readout.parameters())
             + list(self.atom_head.parameters())
             + list(self.prop_head.parameters())
+            + list(self.bond_head.parameters())
+            + list(self.proj_head.parameters())
         )
         optimizer = torch.optim.AdamW(params, lr=lr, weight_decay=1e-5)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, T_max=n_epochs
         )
 
-        history = {"total": [], "atom": [], "prop": []}
+        history = {
+            "total": [],
+            "atom": [],
+            "bond": [],
+            "prop": [],
+            "contrastive": [],
+        }
 
-        for epoch in range(n_epochs):
+        for epoch in trange(n_epochs, desc="Pretrain epochs"):
             self.gnn.train()
             self.readout.train()
             self.atom_head.train()
             self.prop_head.train()
+            self.bond_head.train()
+            self.proj_head.train()
 
-            epoch_loss = {"total": 0, "atom": 0, "prop": 0}
+            epoch_loss = {
+                "total": 0,
+                "atom": 0,
+                "bond": 0,
+                "prop": 0,
+                "contrastive": 0,
+            }
             n_batches = 0
 
-            for batch_graph, mask, atom_targets, props in loader:
+            for (
+                batch_graph,
+                mask,
+                atom_targets,
+                bond_mask,
+                bond_targets,
+                props,
+                aug1_batch,
+                aug2_batch,
+            ) in progress(loader, desc="Pretrain batches", leave=False):
                 batch_graph = batch_graph.to(self.device)
                 mask = mask.to(self.device)
                 atom_targets = atom_targets.to(self.device)
+                bond_mask = bond_mask.to(self.device)
+                bond_targets = bond_targets.to(self.device)
                 props = props.to(self.device)
+                aug1_batch = aug1_batch.to(self.device)
+                aug2_batch = aug2_batch.to(self.device)
 
                 optimizer.zero_grad()
 
@@ -438,20 +670,54 @@ class Pretrainer:
                     role="solute",
                 )
 
-                # Task 1: Masked atom prediction
+                # Task 1: Masked atom prediction (subgraph)
                 h_masked = h_atoms[mask]  # (N_masked, hidden)
                 atom_pred = self.atom_head(h_masked)  # (N_masked, D_atom)
                 loss_atom = F.mse_loss(atom_pred, atom_targets)
+
+                # Task 1b: Bond type prediction
+                if bond_mask.any():
+                    edge_index = batch_graph.edge_index[:, bond_mask]
+                    h_src = h_atoms[edge_index[0]]
+                    h_dst = h_atoms[edge_index[1]]
+                    h_edges = torch.cat([h_src, h_dst], dim=-1)
+                    bond_logits = self.bond_head(h_edges)
+                    loss_bond = F.cross_entropy(bond_logits, bond_targets)
+                else:
+                    loss_bond = torch.tensor(0.0, device=self.device)
 
                 # Task 2: Property prediction
                 g_mol = self.readout(h_atoms, batch_graph.batch)
                 prop_pred = self.prop_head(g_mol)  # (B, N_properties)
                 loss_prop = F.mse_loss(prop_pred, props)
 
+                # Task 3: Contrastive (graph-level)
+                h_aug1 = self.gnn(
+                    aug1_batch.x,
+                    aug1_batch.edge_index,
+                    aug1_batch.edge_attr,
+                    role="solute",
+                )
+                h_aug2 = self.gnn(
+                    aug2_batch.x,
+                    aug2_batch.edge_index,
+                    aug2_batch.edge_attr,
+                    role="solute",
+                )
+                g_aug1 = self.readout(h_aug1, aug1_batch.batch)
+                g_aug2 = self.readout(h_aug2, aug2_batch.batch)
+                z1 = self.proj_head(g_aug1)
+                z2 = self.proj_head(g_aug2)
+                loss_ctr = self._contrastive_loss(
+                    z1, z2, temperature=contrastive_temp
+                )
+
                 # Combined loss
                 loss = (
                     atom_loss_weight * loss_atom
+                    + bond_loss_weight * loss_bond
                     + prop_loss_weight * loss_prop
+                    + contrastive_weight * loss_ctr
                 )
 
                 loss.backward()
@@ -460,7 +726,9 @@ class Pretrainer:
 
                 epoch_loss["total"] += loss.item()
                 epoch_loss["atom"] += loss_atom.item()
+                epoch_loss["bond"] += loss_bond.item()
                 epoch_loss["prop"] += loss_prop.item()
+                epoch_loss["contrastive"] += loss_ctr.item()
                 n_batches += 1
 
             scheduler.step()
@@ -474,12 +742,16 @@ class Pretrainer:
                     f"  Epoch {epoch:3d}/{n_epochs}: "
                     f"total={epoch_loss['total']:.4f}, "
                     f"atom={epoch_loss['atom']:.4f}, "
-                    f"prop={epoch_loss['prop']:.4f}"
+                    f"bond={epoch_loss['bond']:.4f}, "
+                    f"prop={epoch_loss['prop']:.4f}, "
+                    f"ctr={epoch_loss['contrastive']:.4f}"
                 )
 
         # Discard pretraining heads (not needed for fine-tuning)
         del self.atom_head
         del self.prop_head
+        del self.bond_head
+        del self.proj_head
 
         print(f"\n  Pretraining complete.")
         print(f"  GNN and Readout weights updated in-place.")

@@ -37,6 +37,7 @@ from torch_geometric.data import Batch
 
 from .model import TGNNSolv
 from .features import smiles_to_graph
+from .progress import progress, trange
 
 
 # ================================================================== #
@@ -144,7 +145,7 @@ class MCDropoutPredictor:
             "correction": [],
         }
 
-        for _ in range(self.n_samples):
+        for _ in trange(self.n_samples, desc="MC-dropout samples", leave=False):
             out = self.model(sol_b, slv_b, T_t)
             samples["ln_x2"].append(out["ln_x2"].item())
             samples["x2"].append(out["x2"].item())
@@ -188,7 +189,9 @@ class MCDropoutPredictor:
         DataFrame with uncertainty estimates for each system.
         """
         results = []
-        for sol, slv, T in systems:
+        for sol, slv, T in progress(
+            systems, desc="MC-dropout batch", leave=False
+        ):
             try:
                 r = self.predict(sol, slv, T)
                 results.append(r)
@@ -241,7 +244,9 @@ class EnsemblePredictor:
             "correction": [],
         }
 
-        for model in self.models:
+        for model in progress(
+            self.models, desc="Ensemble models", leave=False
+        ):
             model.eval()
             out = model(sol_b, slv_b, T_t)
             samples["ln_x2"].append(out["ln_x2"].item())

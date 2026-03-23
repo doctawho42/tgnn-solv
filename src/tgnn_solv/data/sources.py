@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Descriptors
+from rdkit.Chem import AllChem, rdMolDescriptors
 
 from .utils import (
     canonicalize,
@@ -24,6 +25,47 @@ from .utils import (
     verify_csv,
     RAW_DIR,
 )
+
+
+# Common solvent densities at ~20-25 C (g/mL).
+_DENSITY_G_ML_RAW = {
+    "O": 0.997,
+    "CO": 0.792,
+    "CCO": 0.789,
+    "CCCO": 0.804,
+    "CC(O)C": 0.786,
+    "CCCCO": 0.810,
+    "OCCO": 1.113,
+    "CCOCC": 0.713,
+    "CC(=O)C": 0.784,
+    "CC#N": 0.786,
+    "CS(=O)C": 1.095,
+    "CN(C)C=O": 0.944,
+    "ClCCl": 1.326,
+    "ClC(Cl)Cl": 1.489,
+    "c1ccccc1": 0.879,
+    "Cc1ccccc1": 0.867,
+    "CCCCCC": 0.655,
+    "CCCCCCC": 0.684,
+    "CCCCCCCC": 0.703,
+    "CCOC(=O)C": 0.902,
+    "C1CCOC1": 0.889,
+    "C1COCCO1": 1.033,
+    "CC(=O)O": 1.049,
+    "O=Cc1ccccc1": 1.045,
+}
+_DENSITY_G_ML_CANON = None
+
+
+def _density_map() -> dict:
+    global _DENSITY_G_ML_CANON
+    if _DENSITY_G_ML_CANON is None:
+        _DENSITY_G_ML_CANON = {}
+        for smi, rho in _DENSITY_G_ML_RAW.items():
+            can = canonicalize(smi)
+            if can:
+                _DENSITY_G_ML_CANON[can] = rho
+    return _DENSITY_G_ML_CANON
 
 
 # ================================================================== #
@@ -113,12 +155,53 @@ def _process_bigsoldb_raw(df: pd.DataFrame) -> pd.DataFrame:
 
         C_solvent = pd.Series(np.nan, index=result.loc[missing].index)
         C_solvent[is_water] = 55.35
+        density_map = _density_map()
 
+        def _estimate_c_solvent_molarity(mol: Chem.Mol) -> Optional[float]:
+            """Estimate solvent molarity from 3D molar volume."""
+            if mol is None:
+                return None
+            try:
+                mol_h = Chem.AddHs(mol)
+                params = AllChem.ETKDGv3()
+                params.randomSeed = 0xF00D
+                if AllChem.EmbedMolecule(mol_h, params) != 0:
+                    return None
+                try:
+                    AllChem.UFFOptimizeMolecule(mol_h, maxIters=200)
+                except Exception:
+                    pass
+                vol_a3 = rdMolDescriptors.CalcMolVolume(mol_h)
+            except Exception:
+                return None
+            if not np.isfinite(vol_a3) or vol_a3 <= 0:
+                return None
+            # 1 Å^3 = 1e-24 cm^3; V_m(cm^3/mol) = vol_a3 * NA * 1e-24
+            v_m_cm3 = vol_a3 * 0.602214076
+            if v_m_cm3 <= 0 or not np.isfinite(v_m_cm3):
+                return None
+            return 1000.0 / v_m_cm3  # mol/L
+
+        solvent_cache = {}
         for idx in C_solvent[C_solvent.isna()].index:
             slv = result.loc[idx, "solvent_smiles"]
+            if slv in solvent_cache:
+                C_solvent[idx] = solvent_cache[slv]
+                continue
             mol = Chem.MolFromSmiles(slv) if slv else None
-            if mol:
-                C_solvent[idx] = 850.0 / Descriptors.MolWt(mol)
+            c_est = None
+            rho = density_map.get(slv)
+            if rho is not None and mol is not None:
+                mw = Descriptors.MolWt(mol)
+                if mw > 0:
+                    c_est = 1000.0 * rho / mw
+            if c_est is None:
+                c_est = _estimate_c_solvent_molarity(mol)
+            if c_est is None and mol is not None:
+                c_est = 850.0 / Descriptors.MolWt(mol)
+            if c_est is not None:
+                solvent_cache[slv] = c_est
+                C_solvent[idx] = c_est
 
         x2_calc = S_mol_L / (S_mol_L + C_solvent)
         ok = x2_calc.notna() & (x2_calc > 0) & (x2_calc <= 1)

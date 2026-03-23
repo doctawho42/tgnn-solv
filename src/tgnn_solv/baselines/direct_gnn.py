@@ -35,6 +35,7 @@ from ..layers import (
     make_temperature_features,
     build_batch_from_lists,
 )
+from ..progress import progress, trange
 from .temperature import ThermometerEncoder
 
 
@@ -296,13 +297,17 @@ class DirectGNNTrainer:
         best_state = None
         patience_counter = 0
 
-        for epoch in range(n_epochs):
+        for epoch in trange(n_epochs, desc="DirectGNN epochs"):
             # --- Train ---
             self.model.train()
             train_loss = 0.0
             n_batches = 0
 
-            for sol_b, slv_b, tgt in train_loader:
+            for sol_b, slv_b, tgt in progress(
+                train_loader,
+                desc="DirectGNN train",
+                leave=False,
+            ):
                 sol_b = sol_b.to(self.device)
                 slv_b = slv_b.to(self.device)
                 T = tgt["T"].to(self.device)
@@ -368,7 +373,11 @@ class DirectGNNTrainer:
         self.model.eval()
         all_pred, all_true = [], []
 
-        for sol_b, slv_b, tgt in loader:
+        for sol_b, slv_b, tgt in progress(
+            loader,
+            desc="DirectGNN eval",
+            leave=False,
+        ):
             sol_b = sol_b.to(self.device)
             slv_b = slv_b.to(self.device)
             T = tgt["T"].to(self.device)
