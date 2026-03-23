@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """
-Run SolProp (Vermeire et al., JACS 2022) predictions on TGNN-Solv test set.
+Run SolProp (Vermeire et al., JACS 2022) predictions on TGNN-Solv datasets.
 
 Run in solprop conda environment:
     conda activate solprop
-    python scripts/run_solprop.py \
+    python scripts/run_solprop.py predict \
         --input data/processed/test.csv \
         --output data/processed/solprop_predictions.csv \
         --temperature_dependent
@@ -15,6 +15,7 @@ Outputs CSV with columns:
 """
 
 import argparse
+import json
 import sys
 import time
 import warnings
@@ -158,6 +159,7 @@ def run_solprop_predictions(
     df: pd.DataFrame,
     temperature_dependent: bool = True,
     batch_size: int = 100,
+    include_row_id: bool = False,
 ) -> pd.DataFrame:
     """
     Run SolProp on a DataFrame with solute_smiles, solvent_smiles, temperature.
@@ -194,7 +196,7 @@ def run_solprop_predictions(
         )
 
     if use_predictor:
-        for i, (_, row) in enumerate(work_df.iterrows()):
+        for i, (row_id, row) in enumerate(work_df.iterrows()):
             sol_smi = row["solute_smiles"]
             slv_smi = row["solvent_smiles"]
             T = row.get("temperature", 298.15)
@@ -211,13 +213,16 @@ def run_solprop_predictions(
                     log_S = result
                     ln_x2 = convert_logS_to_ln_x2(log_S, slv_smi, T)
 
-                    results.append({
+                    payload = {
                         "solute_smiles": sol_smi,
                         "solvent_smiles": slv_smi,
                         "temperature": T,
                         "log_S_solprop": log_S,
                         "ln_x2_solprop": ln_x2,
-                    })
+                    }
+                    if include_row_id:
+                        payload["row_id"] = row_id
+                    results.append(payload)
                     n_success += 1
                 else:
                     n_fail += 1
@@ -243,6 +248,70 @@ def run_solprop_predictions(
         return pd.DataFrame()
 
     return pd.DataFrame(results)
+
+
+def _metrics(true: np.ndarray, pred: np.ndarray) -> dict:
+    errors = pred - true
+    mae = float(np.abs(errors).mean())
+    rmse = float(np.sqrt((errors ** 2).mean()))
+    bias = float(errors.mean())
+    ss_res = float((errors ** 2).sum())
+    ss_tot = float(((true - true.mean()) ** 2).sum())
+    r2 = float(1.0 - ss_res / (ss_tot + 1e-10))
+    return {"mae": mae, "rmse": rmse, "r2": r2, "bias": bias}
+
+
+def _prepare_pred_frame(
+    df: pd.DataFrame,
+    temperature_dependent: bool,
+) -> pd.DataFrame:
+    work_df = df[df["has_solubility"]] if "has_solubility" in df.columns else df
+    preds = run_solprop_predictions(
+        work_df, temperature_dependent=temperature_dependent, include_row_id=True
+    )
+    if preds.empty:
+        return pd.DataFrame()
+    preds = preds.set_index("row_id")
+    merged = work_df.loc[preds.index].copy()
+    merged = merged.join(preds, how="inner")
+    return merged.reset_index(drop=True)
+
+
+def _fit_calibrator(
+    pred_ln_x2: np.ndarray,
+    true_ln_x2: np.ndarray,
+    temperatures: np.ndarray,
+    include_temperature: bool,
+) -> dict:
+    from sklearn.linear_model import LinearRegression
+
+    mask = np.isfinite(pred_ln_x2) & np.isfinite(true_ln_x2)
+    if include_temperature:
+        X = np.column_stack([pred_ln_x2[mask], temperatures[mask]])
+    else:
+        X = pred_ln_x2[mask].reshape(-1, 1)
+    y = true_ln_x2[mask]
+    model = LinearRegression().fit(X, y)
+    calib = {
+        "intercept": float(model.intercept_),
+        "coef": [float(c) for c in np.atleast_1d(model.coef_)],
+        "include_temperature": bool(include_temperature),
+    }
+    return calib
+
+
+def _apply_calibrator(
+    pred_ln_x2: np.ndarray,
+    temperatures: np.ndarray,
+    calib: dict,
+) -> np.ndarray:
+    if calib.get("include_temperature"):
+        return (
+            calib["intercept"]
+            + calib["coef"][0] * pred_ln_x2
+            + calib["coef"][1] * temperatures
+        )
+    return calib["intercept"] + calib["coef"][0] * pred_ln_x2
 
 
 def _call_solprop(predictor, sol_smi, slv_smi, T, T_dependent):
@@ -295,34 +364,7 @@ def _call_solprop(predictor, sol_smi, slv_smi, T, T_dependent):
     return None
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Run SolProp predictions on TGNN-Solv test data"
-    )
-    parser.add_argument(
-        "--input", type=str, required=True,
-        help="Input CSV (from TGNN-Solv data pipeline)"
-    )
-    parser.add_argument(
-        "--output", type=str, required=True,
-        help="Output CSV with SolProp predictions"
-    )
-    parser.add_argument(
-        "--temperature_dependent", action="store_true",
-        help="Use temperature-dependent predictions"
-    )
-    parser.add_argument(
-        "--max_records", type=int, default=None,
-        help="Limit number of records (for testing)"
-    )
-    args = parser.parse_args()
-
-    # Check SolProp
-    status = check_solprop_available()
-    if status is None:
-        sys.exit(1)
-
-    # Load data
+def run_predict(args: argparse.Namespace) -> int:
     print(f"\nLoading {args.input}...")
     df = pd.read_csv(args.input)
     print(f"  Records: {len(df):,}")
@@ -331,19 +373,152 @@ def main():
         df = df.head(args.max_records)
         print(f"  Limited to: {len(df):,}")
 
-    # Run predictions
     results = run_solprop_predictions(
         df,
         temperature_dependent=args.temperature_dependent,
     )
 
-    # Save
     if len(results) > 0:
         results.to_csv(args.output, index=False)
         print(f"\nSaved {len(results):,} predictions to {args.output}")
     else:
         print("\nNo predictions generated!")
+        return 1
+    return 0
+
+
+def run_train(args: argparse.Namespace) -> int:
+    train_df = pd.read_csv(args.train)
+    val_df = pd.read_csv(args.val)
+    test_df = pd.read_csv(args.test) if args.test else None
+
+    train_pred = _prepare_pred_frame(
+        train_df, temperature_dependent=args.temperature_dependent
+    )
+    val_pred = _prepare_pred_frame(
+        val_df, temperature_dependent=args.temperature_dependent
+    )
+    test_pred = (
+        _prepare_pred_frame(
+            test_df, temperature_dependent=args.temperature_dependent
+        )
+        if test_df is not None
+        else pd.DataFrame()
+    )
+
+    if train_pred.empty or val_pred.empty:
+        print("Not enough SolProp predictions for training/validation.")
+        return 1
+
+    pred_train = train_pred["ln_x2_solprop"].to_numpy(dtype=float)
+    true_train = train_pred["ln_x2"].to_numpy(dtype=float)
+    temp_train = train_pred["temperature"].to_numpy(dtype=float)
+
+    calib = _fit_calibrator(
+        pred_train, true_train, temp_train, args.include_temperature
+    )
+
+    metrics = {
+        "calibrator": calib,
+        "train": {
+            "raw": _metrics(true_train, pred_train),
+            "calibrated": _metrics(
+                true_train,
+                _apply_calibrator(pred_train, temp_train, calib),
+            ),
+            "n": int(len(pred_train)),
+        },
+    }
+
+    for split_name, split_df in [
+        ("val", val_pred),
+        ("test", test_pred),
+    ]:
+        if split_df.empty:
+            continue
+        pred = split_df["ln_x2_solprop"].to_numpy(dtype=float)
+        true = split_df["ln_x2"].to_numpy(dtype=float)
+        temp = split_df["temperature"].to_numpy(dtype=float)
+        metrics[split_name] = {
+            "raw": _metrics(true, pred),
+            "calibrated": _metrics(
+                true,
+                _apply_calibrator(pred, temp, calib),
+            ),
+            "n": int(len(pred)),
+        }
+
+        if args.export_preds:
+            out_df = split_df.copy()
+            out_df["ln_x2_calibrated"] = _apply_calibrator(pred, temp, calib)
+            out_path = Path(args.outdir) / f"solprop_{split_name}.csv"
+            out_df.to_csv(out_path, index=False)
+            print(f"Saved predictions to {out_path}")
+
+    if args.outdir:
+        Path(args.outdir).mkdir(parents=True, exist_ok=True)
+        metrics_path = Path(args.outdir) / "solprop_metrics.json"
+        with open(metrics_path, "w", encoding="utf-8") as f:
+            json.dump(metrics, f, indent=2)
+        print(f"Saved metrics to {metrics_path}")
+
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Run SolProp predictions or fit a calibration on TGNN-Solv data."
+    )
+    sub = parser.add_subparsers(dest="cmd")
+
+    pred = sub.add_parser("predict", help="Run SolProp predictions")
+    pred.add_argument("--input", type=str, required=True)
+    pred.add_argument("--output", type=str, required=True)
+    pred.add_argument(
+        "--temperature_dependent", action="store_true",
+        help="Use temperature-dependent predictions",
+    )
+    pred.add_argument("--max_records", type=int, default=None)
+
+    train = sub.add_parser(
+        "train", help="Fit a calibration model and evaluate"
+    )
+    train.add_argument("--train", required=True)
+    train.add_argument("--val", required=True)
+    train.add_argument("--test", default=None)
+    train.add_argument("--outdir", required=True)
+    train.add_argument(
+        "--temperature_dependent", action="store_true",
+        help="Use temperature-dependent predictions",
+    )
+    train.add_argument(
+        "--include_temperature", action="store_true",
+        help="Include temperature as calibration feature",
+    )
+    train.add_argument(
+        "--export_preds", action="store_true",
+        help="Export per-split prediction CSVs",
+    )
+    return parser
+
+
+def main() -> int:
+    # Check SolProp
+    status = check_solprop_available()
+    if status is None:
+        return 1
+
+    parser = build_parser()
+    # Backward compatible: if no subcommand, treat as predict
+    if len(sys.argv) > 1 and sys.argv[1] in {"predict", "train"}:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(["predict", *sys.argv[1:]])
+
+    if args.cmd == "train":
+        return run_train(args)
+    return run_predict(args)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

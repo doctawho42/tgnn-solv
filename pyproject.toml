@@ -17,6 +17,7 @@ dependencies = [
     "numpy>=1.24",
     "pandas>=2.0",
     "requests",
+    "tqdm",
 ]
 
 [project.optional-dependencies]
@@ -26,6 +27,10 @@ dev = [
     "scikit-learn",
     "pytest",
     "optuna",
+]
+
+baselines = [
+    "fastsolv",
 ]
 
 [tool.setuptools.packages.find]
