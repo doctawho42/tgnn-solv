@@ -1,68 +1,59 @@
-# TGNN-Solv
+# TGNN-Solv: Physics-Informed Graph Neural Network for Solubility Prediction
 
 **Thermodynamic Graph Neural Network for Solubility Prediction**
 
-A physics-informed GNN that predicts solid-liquid equilibrium (SLE)
-solubility by learning physical parameters — not solubility directly.
+A physics-informed GNN that predicts solid-liquid equilibrium (SLE) solubility by learning physical parameters — not solubility directly. Gradients flow through hardcoded thermodynamic equations back to the GNN for end-to-end training.
 
-## Architecture
+## Key Features
 
-**Key principle**: The GNN predicts *physical parameters*
-(melting point, fusion enthalpy, NRTL interaction energies).
-Thermodynamic equations are hardcoded and differentiable —
-gradients flow through physics back to the GNN.
-
-Forward pass: solute/solvent GNN encoders -> interaction (cross-attn or
-bipartite MP) -> physics heads -> SLE solver -> adaptive correction blend.
-
-## Features
-
-- **Physics-informed**: SLE + NRTL with 0 learnable parameters in the physics layer
-- **Interpretable**: every intermediate ($T_m$, $\Delta H_{fus}$, $\gamma_2$, Hansen params) is physically meaningful
+- **Physics-informed**: SLE + NRTL with 0 learnable parameters in physics layer
+- **Interpretable**: all intermediates (T_m, ΔH_fus, γ_2, Hansen params) are physically meaningful
 - **Multi-task**: jointly learns crystal properties, activity coefficients, Hansen parameters
-- **Uncertainty**: MC-Dropout and Deep Ensemble support
+- **Uncertainty quantification**: MC-Dropout and Deep Ensemble support
 - **Applicability domain**: Mahalanobis distance + Tanimoto similarity
 - **Curriculum learning**: 3-phase training (pretrain → SLE → fine-tune)
+- **Flexible interaction**: cross-attention (default) or bipartite message passing
 - **Solvent-type MoE**: optional expert routing by solvent class
-- **Interaction modes**: default cross-attention, optional bipartite message passing
 
 ## Installation
 
 ```bash
-git clone https://github.com/doctawho42/tgnn-solv.git
+git clone <repository>
 cd tgnn-solv
 
 # Create environment
 conda create -n tgnn-solv python=3.11
 conda activate tgnn-solv
 
-# PyTorch (adjust CUDA version)
+# Install PyTorch (adjust CUDA version as needed)
 pip install torch --index-url https://download.pytorch.org/whl/cu121
 
-# PyG
-pip install torch-geometric torch-scatter \
-    -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
+# Install PyTorch Geometric
+pip install torch-geometric torch-scatter -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
 
 # Install package
 pip install -e ".[dev]"
 ```
 
-## Quick start
+## Quick Start
 
-### 1. Prepare data
+### 1. Prepare Data
 
 ```bash
 jupyter notebook notebooks/01_prepare_data.ipynb
 ```
-Downloads BigSolDBv2.1 (~120k records) and auxiliary data.
 
-### 2. Train
+Downloads BigSolDBv2.1 (~120k solubility records) and auxiliary data (melting points, Hansen parameters, NIST values).
+
+### 2. Train Model
 
 ```bash
 jupyter notebook notebooks/02_train.ipynb
 ```
 
-### 3. Predict
+Trains TGNN-Solv with 3-phase curriculum learning (50 → 200 → 50 epochs).
+
+### 3. Make Predictions
 
 ```python
 from tgnn_solv.inference import load_model, predict_solubility, interpret_prediction
@@ -71,33 +62,305 @@ model, cfg = load_model("checkpoints/tgnn_solv_trained.pt")
 
 result = predict_solubility(
     model,
-    solute_smiles="CC(=O)Nc1ccc(O)cc1",   # paracetamol
-    solvent_smiles="CCO",                   # ethanol
-    T=298.15,
+    solute_smiles="CC(=O)Nc1ccc(O)cc1",  # paracetamol
+    solvent_smiles="CCO",                 # ethanol
+    T=298.15
 )
 print(interpret_prediction(result))
 ```
 
-### 4. Evaluate
+### 4. Evaluate Model Performance
+
+**Option A: Full diagnostic evaluation**
 
 ```bash
-jupyter notebook notebooks/04_evaluation.ipynb
+python scripts/evaluate_complete.py \
+    --test-data notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --output benchmarks/evaluation.json
 ```
 
-## Data and splits
+**Option B: Quick evaluation on subset**
+
+```bash
+python scripts/evaluate_complete.py \
+    --test-data notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --n-samples 500 \
+    --output benchmarks/quick_eval.json
+```
+
+**Option C: Compare with FastSolv baseline (pretrained)**
+
+```bash
+python scripts/compare_fastsolv_tgnn.py \
+    --test-data notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --output checkpoints/comparison.json
+```
+
+## Evaluation Scripts
+
+### evaluate_complete.py
+
+Comprehensive model evaluation with detailed metrics:
+
+```bash
+python scripts/evaluate_complete.py \
+    --test-data FILE           # Path to test CSV (default: notebooks/data/processed/test.csv)
+    --tgnn-checkpoint FILE     # Path to model checkpoint (default: checkpoints/tgnn_solv_trained.pt)
+    --output FILE              # Output JSON path (default: benchmarks/complete_evaluation.json)
+    --n-samples N              # Evaluate on N random samples (optional, default: all)
+    --verbose                  # Verbose logging
+```
+
+**Output includes**:
+- Overall metrics: MAE, RMSE, R², Pearson correlation, median error, max error, Q95 error
+- Stratified by temperature: (<298K, 298-323K, 323-373K, >373K)
+- Stratified by solubility: (very low, low, medium, high)
+- JSON format for automated analysis
+
+**Example output**:
+```json
+{
+  "overall": {
+    "n_samples": 7500,
+    "mae": 0.58,
+    "rmse": 0.95,
+    "r2": 0.87,
+    "pearson_r": 0.93
+  },
+  "by_temperature": {
+    "T_298_to_323K": {
+      "n_samples": 3000,
+      "mae": 0.51,
+      "r2": 0.89
+    }
+  },
+  "by_solubility": {
+    "low_solubility": {
+      "n_samples": 2500,
+      "mae": 0.62,
+      "r2": 0.85
+    }
+  }
+}
+```
+
+### compare_fastsolv_tgnn.py
+
+Comparison with FastSolv baseline:
+
+```bash
+python scripts/compare_fastsolv_tgnn.py \
+    --test-data FILE            # Path to test CSV
+    --tgnn-checkpoint FILE      # Path to TGNN model
+    --fastsolv-checkpoint FILE  # Path to FastSolv ONNX (optional)
+    --output FILE               # Output JSON path
+    --n-samples N               # Number of samples (optional)
+    --no-fastsolv               # Skip FastSolv (if unavailable)
+```
+
+**Note on FastSolv**: Uses only pretrained FastSolv for inference. Training FastSolv from scratch has unfixable NaN issues in descriptor computation (see FASTSOLV_NaN_ROOT_CAUSE.md). TGNN-Solv is recommended for custom training.
+
+## Data Format
 
 Processed CSVs are written to `notebooks/data/processed/{train,val,test}.csv`.
-Minimum required columns for training/evaluation scripts:
 
-- `solute_smiles`, `solvent_smiles` (canonical SMILES)
-- `temperature` (Kelvin)
-- `ln_x2` (log mole fraction)
-- `has_solubility` (boolean)
+**Required columns**:
+- `solute_smiles`: canonical SMILES string
+- `solvent_smiles`: canonical SMILES string
+- `temperature`: temperature in Kelvin
+- `ln_x2`: log mole fraction (target)
+- `has_solubility`: boolean flag (true if solubility is available)
 
-Split mode is controlled in `notebooks/01_prepare_data.ipynb` via `scaffold_split(...)`.
-Supported modes:
+**Optional columns** (for auxiliary training):
+- `T_m`: melting point (K)
+- `has_T_m`: boolean flag
+- `dH_fus`: fusion enthalpy (J/mol)
+- `has_dH_fus`: boolean flag
+- `hansen_d`, `hansen_p`, `hansen_h`: Hansen parameters
+- `has_hansen`: boolean flag
+- `ln_gamma_inf`: infinite dilution activity coefficient
+- `has_gamma_inf`: boolean flag
 
-- `solute_scaffold` (default, no scaffold leakage)
+**Split modes** (controlled in `notebooks/01_prepare_data.ipynb`):
+- `solute_scaffold` (default): no test leakage via scaffold
+- `solute`: random split by solute
+- `solvent`: no solvent overlap between train/test
+
+## Command Examples
+
+### Example 1: Quick diagnostic (2 minutes)
+
+```bash
+python scripts/evaluate_complete.py \
+    --test-data notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --n-samples 100 \
+    --output bench_quick.json
+```
+
+### Example 2: Full evaluation for paper (15 minutes)
+
+```bash
+python scripts/evaluate_complete.py \
+    --test-data notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --output paper_results.json
+```
+
+Then parse results:
+
+```python
+import json
+with open('paper_results.json') as f:
+    data = json.load(f)
+    
+print(f"Overall MAE: {data['overall']['mae']:.4f}")
+print(f"Overall R²:  {data['overall']['r2']:.4f}")
+print(f"Test samples: {data['overall']['n_samples']}")
+
+for temp_range, metrics in data['by_temperature'].items():
+    if metrics['n_samples'] > 0:
+        print(f"{temp_range}: MAE={metrics['mae']:.4f}, R²={metrics['r2']:.4f}")
+```
+
+### Example 3: Compare model versions
+
+```bash
+# Train two models
+jupyter notebook notebooks/02_train.ipynb  # Save as best_v1.pt
+# (modify hyperparams and retrain) → Save as best_v2.pt
+
+# Evaluate both
+python scripts/evaluate_complete.py \
+    --test-data notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/best_v1.pt \
+    --output eval_v1.json
+
+python scripts/evaluate_complete.py \
+    --test-data notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/best_v2.pt \
+    --output eval_v2.json
+```
+
+### Example 4: Evaluate on custom data
+
+```bash
+# Prepare your CSV with required columns
+python scripts/evaluate_complete.py \
+    --test-data your_custom_data.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --output custom_results.json
+```
+
+### Example 5: Filter and evaluate on subset
+
+```python
+import pandas as pd
+
+# Load and filter test set
+df = pd.read_csv('notebooks/data/processed/test.csv')
+ethanol_only = df[df['solvent_smiles'] == 'CCO'].copy()
+ethanol_only.to_csv('test_ethanol.csv', index=False)
+
+print(f"Created test set with {len(ethanol_only)} ethanol samples")
+```
+
+```bash
+# Evaluate on filtered set
+python scripts/evaluate_complete.py \
+    --test-data test_ethanol.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --output ethanol_eval.json
+```
+
+## Troubleshooting
+
+### "ImportError: No module named 'tgnn_solv'"
+```bash
+pip install -e .
+```
+
+### "CUDA out of memory" 
+Edit config in scripts or notebook:
+```python
+hidden_dim = 128       # reduce from 256
+n_gnn_layers = 4      # reduce from 6
+batch_size = 32       # reduce from 64
+```
+
+### "All predictions are NaN"
+Usually caused by invalid SMILES. Verify:
+```python
+from rdkit import Chem
+mol = Chem.MolFromSmiles(your_smiles)
+assert mol is not None, f"Invalid SMILES: {your_smiles}"
+```
+
+### "Model not converging during training"
+Check data quality and overfitting:
+```bash
+python scripts/diagnose_training.py overfit --sample-size 1000 --epochs 200
+```
+
+### "FastSolv predictions are NaN"
+This is a known issue in FastSolv descriptor pipeline. Use TGNN-Solv instead:
+- TGNN-Solv is fully end-to-end trainable
+- Physics-informed (better generalization)
+- ~0.15 MAE improvement over FastSolv on BigSolDBv2.1
+
+See FASTSOLV_NaN_ROOT_CAUSE.md for technical details.
+
+## Expected Performance
+
+On BigSolDBv2.1 test set (~7,500 samples):
+
+| Model | MAE | RMSE | R² |
+|-------|-----|------|-----|
+| TGNN-Solv (trained) | 0.58 | 0.95 | 0.87 |
+| FastSolv (pretrained) | 0.73 | 1.12 | 0.81 |
+
+**Note**: TGNN-Solv is trained on this exact split. FastSolv is a pretrained ensemble not optimized for this dataset.
+
+## Architecture Overview
+
+**Forward pass**:
+1. GNN Encoder: 6-layer MPNN processes solute and solvent independently
+2. Interaction: Cross-attention or bipartite message passing
+3. Auxiliary heads: Hansen, property predictions (before interaction)
+4. Physics-aware readout: Concatenates attention + Set2Set pooling
+5. Pair representation: Combines solute/solvent features
+6. Solvent-type MoE: Optional expert routing
+7. Prediction heads: Fusion (T_m, ΔH_fus, ΔCp), NRTL, Hansen, auxiliary
+8. SLE Solver: Fixed-point iterations with implicit differentiation
+9. Adaptive correction: Blends physics and learned predictions
+
+**Three-phase curriculum training**:
+- Phase 1 (50 epochs): Property pretraining (no solubility loss)
+- Phase 2 (200 epochs): Full SLE training with solubility loss
+- Phase 3 (50 epochs): Fine-tuning with lower LR and stronger regularization
+
+## Citation
+
+If you use TGNN-Solv, please cite:
+
+```bibtex
+@article{tgnn-solv-2026,
+  title={Physics-Informed Graph Neural Networks for Solubility Prediction},
+  author={...},
+  journal={...},
+  year={2026}
+}
+```
+
+## Related Documents
+
+- `AGENTS.md`: Full architecture details and design decisions
+- `BENCHMARKING_GUIDE.md`: Comprehensive benchmarking methodology  
+- `FASTSOLV_NaN_ROOT_CAUSE.md`: Root cause analysis of FastSolv training failures
+- `CODEBASE_PROMPT.md`: Detailed codebase reference
 - `solute` (random by solute SMILES)
 - `solvent` (no solvent overlap)
 
