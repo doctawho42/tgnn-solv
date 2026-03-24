@@ -20,7 +20,7 @@ A physics-informed GNN that predicts solid-liquid equilibrium (SLE) solubility b
 ## Installation
 
 ```bash
-git clone <repository>
+git clone https://github.com/doctawho42/tgnn-solv.git
 cd tgnn-solv
 
 # Create environment
