@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """
-Complete evaluation pipeline: TGNN-Solv comprehensive assessment.
+Lightweight evaluation pipeline for TGNN-Solv checkpoints.
 
 This script runs:
-1. Inference on test set
-2. Multiple metrics (MAE, RMSE, R², etc.)
-3. Ablation comparison (physics vs no physics)
-4. Temperature-dependent evaluation
-5. Uncertainty estimates
+1. Inference on a CSV test set
+2. Standard regression metrics
+3. Temperature-stratified metrics
+4. Solubility-range-stratified metrics
+5. JSON export for downstream reporting and plotting
 
 Usage:
   python scripts/evaluate_complete.py \
@@ -20,19 +20,24 @@ Based on: AGENTS.md, BENCHMARKING_GUIDE.md
 """
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict
 
+import _bootstrap  # noqa: F401
 import numpy as np
 import pandas as pd
 
-try:
-    import torch
-except ImportError:
+if importlib.util.find_spec("torch") is None:
     print("ERROR: PyTorch not installed")
     sys.exit(1)
+
+from tgnn_solv.data.utils import canonicalize
+from tgnn_solv.data.split_registry import build_split_metadata
+from tgnn_solv.inference import load_model, predict_solubility
+from tgnn_solv.reporting import build_report_payload
 
 
 def load_test_data(csv_path: str, n_samples: int = None) -> pd.DataFrame:
@@ -43,63 +48,12 @@ def load_test_data(csv_path: str, n_samples: int = None) -> pd.DataFrame:
     return df
 
 
-def load_tgnn_model(checkpoint_path: str):
-    """Load TGNN-Solv model."""
-    try:
-        from tgnn_solv.model import TGNNSolv
-        from tgnn_solv.config import TGNNSolvConfig
-    except ImportError:
-        print("ERROR: tgnn_solv not installed. Run: pip install -e .")
-        sys.exit(1)
-    
-    checkpoint = torch.load(checkpoint_path, map_location='cpu')
-    
-    # Config can be dict or dataclass
-    config_data = checkpoint.get('config', {})
-    if isinstance(config_data, dict):
-        config = TGNNSolvConfig(**config_data)
-    else:
-        config = config_data
-    
-    # Get node and edge feat dimensions from checkpoint
-    node_feat_dim = checkpoint.get('node_feat_dim', 35)  # default from features.py
-    edge_feat_dim = checkpoint.get('edge_feat_dim', 8)   # default from features.py
-    
-    model = TGNNSolv(
-        node_feat_dim=node_feat_dim,
-        edge_feat_dim=edge_feat_dim,
-        cfg=config
-    )
-    # Load state dict - handle size mismatches gracefully
-    if 'model_state' in checkpoint:
-        state = checkpoint['model_state']
-    elif 'model_state_dict' in checkpoint:
-        state = checkpoint['model_state_dict']
-    else:
-        state = checkpoint
-    
-    # Load only compatible keys
-    model_state = model.state_dict()
-    filtered_state = {}
-    for k, v in state.items():
-        if k in model_state and model_state[k].shape == v.shape:
-            filtered_state[k] = v
-    
-    model.load_state_dict(filtered_state, strict=False)
-    print(f"✓ Loaded {len(filtered_state)}/{len(state)} model parameters")
-    
-    model.eval()
-    return model, config
-
-
-def predict_batch(model, df_batch: pd.DataFrame, verbose: bool = False) -> np.ndarray:
+def predict_batch(
+    model: object,
+    df_batch: pd.DataFrame,
+    verbose: bool = False,
+) -> np.ndarray:
     """Predict ln(x2) for a batch."""
-    try:
-        from tgnn_solv.inference import predict_solubility
-    except ImportError:
-        print("ERROR: Could not import predict_solubility from tgnn_solv.inference")
-        return np.full(len(df_batch), np.nan)
-    
     preds = []
     
     for idx, row in df_batch.iterrows():
@@ -121,7 +75,7 @@ def predict_batch(model, df_batch: pd.DataFrame, verbose: bool = False) -> np.nd
             else:
                 preds.append(np.nan)
         
-        except Exception as e:
+        except Exception:
             preds.append(np.nan)
     
     return np.array(preds)
@@ -211,12 +165,55 @@ def solubility_range_metrics(df: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, 
     return results
 
 
-def main():
+def solvent_metrics(df: pd.DataFrame, y_pred: np.ndarray) -> tuple[Dict[str, Dict], Dict[str, Dict]]:
+    """Compute solvent-type and top-solvent metrics."""
+    y_true = df["ln_x2"].values
+    solvent_smiles = df["solvent_smiles"].astype(str)
+    water_smiles = canonicalize("O")
+
+    by_solvent_type: Dict[str, Dict] = {}
+    water_mask = solvent_smiles == water_smiles
+    organic_mask = ~water_mask
+    if np.any(water_mask):
+        by_solvent_type["water"] = compute_regression_metrics(y_true[water_mask], y_pred[water_mask])
+    if np.any(organic_mask):
+        by_solvent_type["organic"] = compute_regression_metrics(y_true[organic_mask], y_pred[organic_mask])
+
+    by_solvent: Dict[str, Dict] = {}
+    top_solvents = solvent_smiles.value_counts().head(5)
+    for smi in top_solvents.index:
+        mask = solvent_smiles == smi
+        if np.any(mask):
+            by_solvent[str(smi)] = compute_regression_metrics(y_true[mask], y_pred[mask])
+
+    return by_solvent_type, by_solvent
+
+
+def aux_data_metrics(df: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, Dict]:
+    """Compute metrics stratified by auxiliary-label availability."""
+    y_true = df["ln_x2"].values
+    results: Dict[str, Dict] = {}
+    if "has_T_m" in df.columns:
+        has_tm = df["has_T_m"].fillna(False).astype(bool).values
+        if np.any(has_tm):
+            results["with_T_m"] = compute_regression_metrics(y_true[has_tm], y_pred[has_tm])
+        if np.any(~has_tm):
+            results["without_T_m"] = compute_regression_metrics(y_true[~has_tm], y_pred[~has_tm])
+    return results
+
+
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--test-data', type=str, default='notebooks/data/processed/test.csv')
     parser.add_argument('--tgnn-checkpoint', type=str, default='checkpoints/tgnn_solv_trained.pt')
     parser.add_argument('--output', type=str, default='benchmarks/complete_evaluation.json')
     parser.add_argument('--n-samples', type=int, default=None)
+    parser.add_argument(
+        '--split-mode',
+        type=str,
+        default=None,
+        help='Optional explicit split label for report metadata.',
+    )
     parser.add_argument('--verbose', action='store_true')
     
     args = parser.parse_args()
@@ -225,6 +222,10 @@ def main():
     print("COMPLETE TGNN-Solv EVALUATION")
     print("=" * 70)
     
+    args.test_data = str(_bootstrap.resolve_path(args.test_data))
+    args.tgnn_checkpoint = str(_bootstrap.resolve_path(args.tgnn_checkpoint))
+    args.output = str(_bootstrap.resolve_path(args.output))
+
     # Load data
     print(f"\n[1/4] Loading test data from {args.test_data}...")
     df = load_test_data(args.test_data, args.n_samples)
@@ -232,22 +233,24 @@ def main():
     
     # Load model
     print(f"\n[2/4] Loading model from {args.tgnn_checkpoint}...")
-    model, config = load_tgnn_model(args.tgnn_checkpoint)
+    model, config = load_model(args.tgnn_checkpoint)
     print(f"✓ Model loaded (hidden_dim={config.hidden_dim})")
     
     # Predict
-    print(f"\n[3/4] Running inference...")
+    print("\n[3/4] Running inference...")
     y_pred = predict_batch(model, df, verbose=args.verbose)
     n_valid = np.sum(~np.isnan(y_pred))
     print(f"✓ Got {n_valid}/{len(df)} valid predictions")
     
     # Compute metrics
-    print(f"\n[4/4] Computing metrics...")
+    print("\n[4/4] Computing metrics...")
     
     y_true = df['ln_x2'].values
     overall_metrics = compute_regression_metrics(y_true, y_pred)
     temp_metrics = temperature_stratified_metrics(df, y_pred)
     solubility_metrics = solubility_range_metrics(df, y_pred)
+    solvent_type_metrics, by_solvent = solvent_metrics(df, y_pred)
+    aux_metrics = aux_data_metrics(df, y_pred)
     
     # Print summary
     print("\n" + "=" * 70)
@@ -272,7 +275,7 @@ def main():
             print(f"    MAE: {mae:.4f} ({n_samples} samples)")
             print(f"    R²:  {r2:.4f}" if isinstance(r2, (int, float)) else f"    R²:  {r2}")
         else:
-            print(f"    Insufficient data")
+            print("    Insufficient data")
     
     print("\n[BY SOLUBILITY RANGE]")
     for sol_range, metrics in solubility_metrics.items():
@@ -284,25 +287,45 @@ def main():
             print(f"    MAE: {mae:.4f} ({n_samples} samples)")
             print(f"    R²:  {r2:.4f}" if isinstance(r2, (int, float)) else f"    R²:  {r2}")
         else:
-            print(f"    Insufficient data")
+            print("    Insufficient data")
     
     # Save results
-    results = {
-        'test_data': args.test_data,
-        'checkpoint': args.tgnn_checkpoint,
-        'config': {
-            'hidden_dim': config.hidden_dim,
-            'n_gnn_layers': config.n_gnn_layers,
-            'n_cross_attn_layers': config.n_cross_attn_layers,
-            'use_implicit_diff': config.use_implicit_diff,
+    valid_mask = ~(np.isnan(y_true) | np.isnan(y_pred))
+
+    results = build_report_payload(
+        "evaluation",
+        metadata={
+            "checkpoint": args.tgnn_checkpoint,
+            "test_data": args.test_data,
+            "split": build_split_metadata(
+                split_mode=args.split_mode,
+                test_data=args.test_data,
+            ),
+            "config": {
+                "hidden_dim": config.hidden_dim,
+                "n_gnn_layers": config.n_gnn_layers,
+                "n_cross_attn_layers": config.n_cross_attn_layers,
+                "use_implicit_diff": config.use_implicit_diff,
+            },
+            "test_samples": int(len(df)),
+            "n_valid_predictions": int(valid_mask.sum()),
         },
-        'overall': overall_metrics,
-        'by_temperature': temp_metrics,
-        'by_solubility': solubility_metrics,
-    }
+        overall=overall_metrics,
+        stratified={
+            "temperature": temp_metrics,
+            "solubility": solubility_metrics,
+            "solvent_type": solvent_type_metrics,
+            "solvent": by_solvent,
+            "aux_data": aux_metrics,
+        },
+        predictions={
+            "true_ln_x2": y_true[valid_mask].tolist(),
+            "pred_ln_x2": y_pred[valid_mask].tolist(),
+        },
+    )
     
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
-    with open(args.output, 'w') as f:
+    with open(args.output, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2)
     
     print(f"\n✓ Results saved to {args.output}")
@@ -311,4 +334,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

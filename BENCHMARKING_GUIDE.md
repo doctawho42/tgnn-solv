@@ -15,6 +15,10 @@ python scripts/benchmark_tgnn_solv.py \
 
 **Output:**
 ```
+
+For quick lightweight evaluation and plot-ready prediction arrays, use
+`scripts/evaluate_complete.py`. For richer stratified benchmarks backed by the
+`Evaluator` class, use `scripts/benchmark_tgnn_solv.py`.
 MAE:            0.5432
 RMSE:           0.8765
 R²:             0.7654
@@ -23,8 +27,8 @@ Bias:           0.0123
 
 ### 2. Key Metrics Explained
 
-| Метрика | Что означает | Хорошее значение |
-|---------|------------|-----------------|
+| Metric | Meaning | Good target |
+|--------|---------|-------------|
 | **MAE** | Mean Absolute Error | < 0.5 |
 | **RMSE** | Root Mean Squared Error | < 1.0 |
 | **R²** | Coefficient of determination | > 0.7 |
@@ -236,4 +240,3 @@ python scripts/benchmark_tgnn_solv.py \
 - 🔧 **Hyperparameter Tuning** — use 08_optuna_tuning.ipynb
 - 📈 **Temperature Dependency** — use 07_temperature.ipynb
 - 🧪 **Ablation Study** — use 06_ablations.ipynb
-

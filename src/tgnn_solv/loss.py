@@ -12,18 +12,26 @@ Components:
   bridge     : Consistency between Hansen and NRTL γ∞
   tau_reg    : L2 on NRTL τ parameters
   phys_pref  : Encourage high physics confidence
-  direct_reg : Keep direct prediction close to physics
-  direct_nll : Heteroskedastic NLL on direct path
+  direct_reg : Keep residual proposal close to physics
+  direct_nll : Heteroskedastic NLL on residual proposal
+  pair_temp_rank : Same-pair temperature ranking consistency
+  vant_hoff_local : Local linearity in ln(x₂) vs 1/T for same-pair batches
   moe_balance: Encourage balanced MoE expert usage
 """
 
-from typing import Dict, Optional, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
 
 from .config import TGNNSolvConfig
+
+if TYPE_CHECKING:
+    from .model import TGNNSolv
 
 
 class TGNNSolvLoss(nn.Module):
@@ -32,8 +40,8 @@ class TGNNSolvLoss(nn.Module):
     def __init__(
         self,
         cfg: TGNNSolvConfig,
-        weights: Optional[Dict[str, float]] = None,
-    ):
+        weights: dict[str, float] | None = None,
+    ) -> None:
         super().__init__()
         self.cfg = cfg
 
@@ -50,6 +58,8 @@ class TGNNSolvLoss(nn.Module):
             "phys_pref": 0.1,
             "direct_reg": 0.05,
             "direct_nll": 0.2,
+            "pair_temp_rank": 0.0,
+            "vant_hoff_local": 0.0,
             "moe_balance": 0.02,
         }
         if weights is not None:
@@ -62,8 +72,8 @@ class TGNNSolvLoss(nn.Module):
         self.huber_delta = 1.0
 
     def huber_loss(
-        self, pred: torch.Tensor, target: torch.Tensor, delta: float = None
-    ) -> torch.Tensor:
+        self, pred: Tensor, target: Tensor, delta: float | None = None
+    ) -> Tensor:
         if delta is None:
             delta = self.huber_delta
         r = pred - target
@@ -74,27 +84,44 @@ class TGNNSolvLoss(nn.Module):
 
     def masked_mse(
         self,
-        pred: torch.Tensor,
-        target: torch.Tensor,
-        mask: torch.Tensor,
+        pred: Tensor,
+        target: Tensor,
+        mask: Tensor,
         scale: float = 1.0,
-    ) -> torch.Tensor:
+    ) -> Tensor:
         if mask is None or mask.sum() == 0:
             return torch.tensor(0.0, device=pred.device)
         return ((pred[mask] - target[mask]) / scale).pow(2).mean()
 
+    def _find_grad_anchor(self, value: object) -> Tensor | None:
+        """Find a tensor with autograd history inside a nested output structure."""
+        if isinstance(value, Tensor):
+            return value if value.requires_grad else None
+        if isinstance(value, dict):
+            for child in value.values():
+                anchor = self._find_grad_anchor(child)
+                if anchor is not None:
+                    return anchor
+            return None
+        if isinstance(value, (list, tuple)):
+            for child in value:
+                anchor = self._find_grad_anchor(child)
+                if anchor is not None:
+                    return anchor
+        return None
+
     def forward(
         self,
-        output: Dict,
-        targets: Dict,
-        weights: Optional[Dict[str, float]] = None,
+        output: dict[str, object],
+        targets: dict[str, object],
+        weights: dict[str, float] | None = None,
         compute_mono: bool = False,
-        T: Optional[torch.Tensor] = None,
-        model: Optional[nn.Module] = None,
-        solute_data=None,
-        solvent_data=None,
-        solvent_type: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, Dict[str, float]]:
+        T: Tensor | None = None,
+        model: TGNNSolv | None = None,
+        solute_data: object | None = None,
+        solvent_data: object | None = None,
+        solvent_type: Tensor | None = None,
+    ) -> tuple[Tensor, dict[str, float]]:
         w = weights if weights is not None else self.default_weights
         losses = {}
         dev = output["ln_x2"].device
@@ -233,7 +260,23 @@ class TGNNSolvLoss(nn.Module):
                 ).pow(2).mean()
 
         # ============================================================
-        # 12. MoE balance (expert usage)
+        # 12. Same-pair temperature consistency
+        # ============================================================
+        pair_keys = targets.get("pair_key")
+        if pair_keys is not None and T is not None:
+            if w.get("pair_temp_rank", 0) > 0 or w.get("vant_hoff_local", 0) > 0:
+                pair_losses = self._pair_temperature_losses(
+                    output["ln_x2"],
+                    T.to(dev),
+                    pair_keys,
+                )
+                if w.get("pair_temp_rank", 0) > 0:
+                    losses["pair_temp_rank"] = pair_losses["pair_temp_rank"]
+                if w.get("vant_hoff_local", 0) > 0:
+                    losses["vant_hoff_local"] = pair_losses["vant_hoff_local"]
+
+        # ============================================================
+        # 13. MoE balance (expert usage)
         # ============================================================
         moe_gate = output.get("moe_gate")
         if moe_gate is not None and w.get("moe_balance", 0) > 0:
@@ -246,7 +289,11 @@ class TGNNSolvLoss(nn.Module):
         # ============================================================
         # Weighted sum
         # ============================================================
-        total = torch.tensor(0.0, device=dev)
+        anchor = self._find_grad_anchor(output)
+        if anchor is not None:
+            total = anchor.sum() * 0.0
+        else:
+            total = torch.zeros((), device=dev)
         for key, val in losses.items():
             wt = w.get(key, 0.0)
             if wt > 0:
@@ -254,7 +301,7 @@ class TGNNSolvLoss(nn.Module):
 
         return total, {k: v.item() for k, v in losses.items()}
 
-    def _bridge_loss(self, output: Dict, T: torch.Tensor) -> torch.Tensor:
+    def _bridge_loss(self, output: dict[str, object], T: Tensor) -> Tensor:
         """Consistency: Hansen-estimated γ∞ ≈ NRTL γ∞."""
         h_sol = output["hansen_sol"]
         h_slv = output["hansen_slv"]
@@ -268,14 +315,67 @@ class TGNNSolvLoss(nn.Module):
 
         return ((lng_nrtl - lng_hansen) / self.S_bridge).pow(2).mean()
 
-    def _monotonicity_loss(
-        self, model, solute_data, solvent_data, T, solvent_type=None
-    ) -> torch.Tensor:
-        """Penalize dx₂/dT < 0. Forces explicit mode."""
-        T_var = T.detach().requires_grad_(True)
+    def _pair_temperature_losses(
+        self,
+        pred_ln_x2: Tensor,
+        T: Tensor,
+        pair_keys: list[str] | tuple[str, ...],
+    ) -> dict[str, Tensor]:
+        """Same-pair temperature ranking and local van't Hoff consistency."""
+        groups: dict[str, list[int]] = {}
+        for idx, key in enumerate(pair_keys):
+            groups.setdefault(str(key), []).append(idx)
 
+        rank_losses = []
+        vant_hoff_losses = []
+
+        for indices in groups.values():
+            if len(indices) < 2:
+                continue
+
+            idx_tensor = torch.tensor(indices, device=pred_ln_x2.device, dtype=torch.long)
+            T_group = T[idx_tensor]
+            pred_group = pred_ln_x2[idx_tensor]
+            order = torch.argsort(T_group)
+            T_sorted = T_group[order]
+            pred_sorted = pred_group[order]
+
+            delta_pred = pred_sorted[1:] - pred_sorted[:-1]
+            rank_losses.append(F.relu(-delta_pred).mean())
+
+            if len(indices) >= 3:
+                inv_T = 1.0 / T_sorted.clamp(min=self.cfg.eps)
+                dx = inv_T[1:] - inv_T[:-1]
+                dy = pred_sorted[1:] - pred_sorted[:-1]
+                dx_safe = torch.where(
+                    dx.abs() < self.cfg.eps,
+                    torch.sign(dx).masked_fill(dx == 0, 1.0) * self.cfg.eps,
+                    dx,
+                )
+                slopes = dy / dx_safe
+                vant_hoff_losses.append((slopes[1:] - slopes[:-1]).pow(2).mean())
+
+        zero = pred_ln_x2.new_zeros(())
+        return {
+            "pair_temp_rank": torch.stack(rank_losses).mean() if rank_losses else zero,
+            "vant_hoff_local": (
+                torch.stack(vant_hoff_losses).mean() if vant_hoff_losses else zero
+            ),
+        }
+
+    def _monotonicity_loss(
+        self,
+        model: TGNNSolv,
+        solute_data: object,
+        solvent_data: object,
+        T: Tensor,
+        solvent_type: Tensor | None = None,
+    ) -> Tensor:
+        """Penalize dx₂/dT < 0 using the configured solver path."""
+        T_var = T.detach().requires_grad_(True)
         saved = model.cfg.use_implicit_diff
-        model.cfg.use_implicit_diff = False
+        if model.cfg.monotonicity_force_explicit:
+            model.cfg.use_implicit_diff = False
 
         try:
             with torch.enable_grad():

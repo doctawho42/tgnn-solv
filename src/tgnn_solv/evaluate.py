@@ -17,7 +17,8 @@ Usage::
     evaluator.print_report(report)
 """
 
-from typing import Dict, List, Optional, Tuple
+from __future__ import annotations
+
 from collections import defaultdict
 
 import numpy as np
@@ -36,7 +37,7 @@ from .data.utils import canonicalize
 
 def _compute_metrics(
     pred: np.ndarray, true: np.ndarray
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Compute regression metrics on numpy arrays."""
     if len(pred) == 0:
         return {"n": 0, "mae": float("nan"), "rmse": float("nan"),
@@ -78,7 +79,7 @@ class Evaluator:
         "very_low": (-30.0, -7.0),     # x₂ < 9e-4
     }
 
-    def __init__(self, model: TGNNSolv, cfg: TGNNSolvConfig):
+    def __init__(self, model: TGNNSolv, cfg: TGNNSolvConfig) -> None:
         self.model = model
         self.cfg = cfg
         self.device = next(model.parameters()).device
@@ -86,7 +87,7 @@ class Evaluator:
     @torch.no_grad()
     def _collect_predictions(
         self, loader: DataLoader
-    ) -> Tuple[np.ndarray, np.ndarray, Dict[str, np.ndarray]]:
+    ) -> tuple[np.ndarray, np.ndarray, dict[str, np.ndarray]]:
         """
         Run model on entire loader, collect predictions and metadata.
 
@@ -147,8 +148,8 @@ class Evaluator:
     def evaluate(
         self,
         loader: DataLoader,
-        df: Optional[pd.DataFrame] = None,
-    ) -> Dict:
+        df: pd.DataFrame | None = None,
+    ) -> dict[str, object]:
         """
         Full evaluation with stratified metrics.
 
@@ -255,13 +256,13 @@ class Evaluator:
     # -------------------------------------------------------------- #
 
     @staticmethod
-    def print_report(report: Dict):
+    def print_report(report: dict[str, object]) -> None:
         """Print formatted evaluation report."""
         print("\n" + "=" * 65)
         print("  TGNN-Solv Evaluation Report")
         print("=" * 65)
 
-        def _fmt(m: Dict) -> str:
+        def _fmt(m: dict[str, float]) -> str:
             if m["n"] == 0:
                 return "  (no data)"
             return (
@@ -271,11 +272,11 @@ class Evaluator:
             )
 
         # Overall
-        print(f"\n  OVERALL")
+        print("\n  OVERALL")
         print(_fmt(report["overall"]))
 
         # By solubility range
-        print(f"\n  BY SOLUBILITY RANGE")
+        print("\n  BY SOLUBILITY RANGE")
         for name, metrics in report.get("by_range", {}).items():
             lo, hi = Evaluator.SOL_RANGES[name]
             print(f"    {name:10s} [{lo:6.1f}, {hi:5.1f})")
@@ -283,21 +284,21 @@ class Evaluator:
 
         # By solvent
         if report.get("by_solvent"):
-            print(f"\n  BY SOLVENT")
+            print("\n  BY SOLVENT")
             for name, metrics in report["by_solvent"].items():
                 print(f"    {name:30s}")
                 print(f"  {_fmt(metrics)}")
 
         # By temperature
         if report.get("by_temp"):
-            print(f"\n  BY TEMPERATURE")
+            print("\n  BY TEMPERATURE")
             for name, metrics in report["by_temp"].items():
                 print(f"    {name:15s}")
                 print(f"  {_fmt(metrics)}")
 
         # By auxiliary target
         if report.get("by_aux"):
-            print(f"\n  BY AUXILIARY DATA")
+            print("\n  BY AUXILIARY DATA")
             for name, metrics in report["by_aux"].items():
                 print(f"    {name:15s}")
                 print(f"  {_fmt(metrics)}")
@@ -305,7 +306,7 @@ class Evaluator:
         # Physics summary
         ps = report.get("physics_summary", {})
         if ps:
-            print(f"\n  PHYSICS SUMMARY")
+            print("\n  PHYSICS SUMMARY")
             print(f"    Predicted T_m median:       "
                   f"{ps.get('T_m_median', 0):.0f} K")
             print(f"    Predicted ΔH_fus median:    "

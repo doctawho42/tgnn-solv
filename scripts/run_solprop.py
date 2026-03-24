@@ -5,8 +5,8 @@ Run SolProp (Vermeire et al., JACS 2022) predictions on TGNN-Solv datasets.
 Run in solprop conda environment:
     conda activate solprop
     python scripts/run_solprop.py predict \
-        --input data/processed/test.csv \
-        --output data/processed/solprop_predictions.csv \
+        --input notebooks/data/processed/test.csv \
+        --output notebooks/data/processed/solprop_predictions.csv \
         --temperature_dependent
 
 Outputs CSV with columns:
@@ -27,13 +27,11 @@ import pandas as pd
 warnings.filterwarnings("ignore")
 
 
-def check_solprop_available():
+def check_solprop_available() -> str | None:
     """Check if SolProp is importable."""
     try:
         # SolProp ML package
-        from solprop_ml.solprop_ml import (
-            SolPropPredictor,
-        )
+        __import__("solprop_ml.solprop_ml")
         print("SolProp ML package found.")
         return "package"
     except ImportError:
@@ -42,7 +40,7 @@ def check_solprop_available():
     try:
         # Direct import from cloned repo
         sys.path.insert(0, "SolProp_ML")
-        from solprop_ml import SolPropPredictor
+        __import__("solprop_ml")
         print("SolProp found via local clone.")
         return "local"
     except ImportError:
@@ -50,7 +48,7 @@ def check_solprop_available():
 
     # Try notebook-style import
     try:
-        from SolProp_ML.solprop_ml.solprop_ml import SolPropPredictor
+        __import__("SolProp_ML.solprop_ml.solprop_ml")
         print("SolProp found via SolProp_ML directory.")
         return "subdir"
     except ImportError:
@@ -62,7 +60,7 @@ def check_solprop_available():
     return None
 
 
-def load_solprop_predictor():
+def load_solprop_predictor() -> object:
     """Load SolProp predictor, handling different import paths."""
     try:
         from solprop_ml.solprop_ml import SolPropPredictor
@@ -314,7 +312,13 @@ def _apply_calibrator(
     return calib["intercept"] + calib["coef"][0] * pred_ln_x2
 
 
-def _call_solprop(predictor, sol_smi, slv_smi, T, T_dependent):
+def _call_solprop(
+    predictor: object,
+    sol_smi: str,
+    slv_smi: str,
+    T: float,
+    T_dependent: bool,
+) -> float | None:
     """
     Call SolProp predictor with different API versions.
 
@@ -503,17 +507,19 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    # Check SolProp
+    parser = build_parser()
+    if any(arg in {"-h", "--help"} for arg in sys.argv[1:]):
+        args = parser.parse_args()
+    # Backward compatible: if no subcommand, treat as predict
+    elif len(sys.argv) > 1 and sys.argv[1] in {"predict", "train"}:
+        args = parser.parse_args()
+    # Backward compatible: if no subcommand, treat as predict
+    else:
+        args = parser.parse_args(["predict", *sys.argv[1:]])
+
     status = check_solprop_available()
     if status is None:
         return 1
-
-    parser = build_parser()
-    # Backward compatible: if no subcommand, treat as predict
-    if len(sys.argv) > 1 and sys.argv[1] in {"predict", "train"}:
-        args = parser.parse_args()
-    else:
-        args = parser.parse_args(["predict", *sys.argv[1:]])
 
     if args.cmd == "train":
         return run_train(args)

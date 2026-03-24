@@ -7,6 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
+import _bootstrap  # noqa: F401
 import torch
 
 from tgnn_solv.optuna_tuner import AVAILABLE_MODELS, OptunaTuner

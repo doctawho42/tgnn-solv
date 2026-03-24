@@ -19,12 +19,16 @@ Bond features (8 dims):
   - Stereo E / Z
 """
 
-from typing import List, Optional
+from __future__ import annotations
+
+from typing import TypeAlias
 
 import torch
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from torch_geometric.data import Data
+
+FeatureVector: TypeAlias = list[float]
 
 
 ELECTRONEG = {
@@ -62,7 +66,7 @@ FORMAL_CHARGE_LIST = [-2, -1, 0, 1, 2]
 #  Helpers                                                            #
 # ------------------------------------------------------------------ #
 
-def _one_hot(value, choices: list) -> List[float]:
+def _one_hot(value: object, choices: list[object]) -> FeatureVector:
     """One-hot with an extra 'unknown' slot at the end."""
     enc = [0.0] * (len(choices) + 1)
     if value in choices:
@@ -76,7 +80,7 @@ def _one_hot(value, choices: list) -> List[float]:
 #  Per-atom / per-bond feature vectors                                #
 # ------------------------------------------------------------------ #
 
-def get_atom_features(atom) -> List[float]:
+def get_atom_features(atom: object) -> FeatureVector:
     """Return ~35-dim feature vector for a single atom."""
     anum = atom.GetAtomicNum()
     feats = []
@@ -92,7 +96,7 @@ def get_atom_features(atom) -> List[float]:
     return feats  # total = 35
 
 
-def get_bond_features(bond) -> List[float]:
+def get_bond_features(bond: object) -> FeatureVector:
     """Return 8-dim feature vector for a single bond."""
     bt = bond.GetBondType()
     return [
@@ -111,7 +115,7 @@ def get_bond_features(bond) -> List[float]:
 #  SMILES → PyG graph                                                 #
 # ------------------------------------------------------------------ #
 
-def smiles_to_graph(smiles: str, compute_3d: bool = False) -> Optional[Data]:
+def smiles_to_graph(smiles: str, compute_3d: bool = False) -> Data | None:
     """
     Convert a SMILES string into a PyTorch-Geometric ``Data`` object.
 
@@ -186,7 +190,7 @@ def smiles_to_graph(smiles: str, compute_3d: bool = False) -> Optional[Data]:
 #  Feature dimensions (computed once at import time)                   #
 # ------------------------------------------------------------------ #
 
-def _compute_dims():
+def _compute_dims() -> tuple[int, int]:
     """Compute feature dimensions from a reference molecule."""
     g = smiles_to_graph("C")  # methane
     if g is None:

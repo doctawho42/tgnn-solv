@@ -46,7 +46,7 @@ def scaffold_split(
     print(label)
     print("=" * 60)
 
-    def group_key(row) -> Optional[str]:
+    def group_key(row: pd.Series) -> Optional[str]:
         if mode == "solute_scaffold":
             return get_scaffold(row["solute_smiles"])
         if mode == "solute":

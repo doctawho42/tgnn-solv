@@ -30,70 +30,116 @@ import os
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Tuple, TYPE_CHECKING
 
+import _bootstrap  # noqa: F401
 import numpy as np
 import pandas as pd
 
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
 
-try:
-    from fastprop.defaults import ALL_2D
-    from fastprop.descriptors import get_descriptors
-    from fastprop.data import fastpropDataLoader, standard_scale
-except Exception as exc:  # pragma: no cover - optional dependency
-    raise ImportError(
-        "fastprop is required. Install with `pip install fastsolv`."
-    ) from exc
-
-try:
-    from pytorch_lightning import Trainer, Callback
-    from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-except Exception as exc:  # pragma: no cover - optional dependency
-    raise ImportError(
-        "pytorch-lightning is required (installed via fastsolv dependencies)."
-    ) from exc
-
-try:
-    from fastsolv._classes import SolubilityDataset, _fastsolv
-    from fastsolv._module import fastsolv as fastsolv_predict
-except Exception as exc:  # pragma: no cover - optional dependency
-    raise ImportError(
-        "fastsolv is required. Install with `pip install fastsolv`."
-    ) from exc
-
-
-class NaNTolerantFastsolv(_fastsolv):
-    """
-    Wrapper around _fastsolv that handles NaN values in validation gracefully.
-    
-    During early training, model predictions may contain NaNs which cause
-    metric calculations to fail. This wrapper catches those errors and
-    skips the problematic metric instead of crashing.
-    """
-    
-    def validation_step(self, batch, batch_idx):
-        """Override validation_step to catch NaN errors in metrics."""
-        try:
-            return super().validation_step(batch, batch_idx)
-        except ValueError as e:
-            if "Input contains NaN" in str(e):
-                # Log that we skipped validation metrics due to NaN
-                print(f"\n[Warning] Validation step skipped: NaN in predictions (epoch {self.trainer.current_epoch})")
-                # Return minimal output to keep training going
-                import torch
-                return {"loss": torch.tensor(0.0)}
-            raise
-
-
-
 from tgnn_solv.data.utils import canonicalize
 from tgnn_solv.data.sources import _density_map
+from tgnn_solv.data.split_registry import build_split_metadata
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
 
+ALL_2D = None
+get_descriptors = None
+fastpropDataLoader = None
+standard_scale = None
+Trainer = None
+Callback = None
+EarlyStopping = None
+ModelCheckpoint = None
+SolubilityDataset = None
+FastsolvModel = None
+fastsolv_predict = None
+
 
 REQUIRED_COLUMNS = {"solute_smiles", "solvent_smiles", "temperature"}
+
+
+def _load_fastsolv_runtime() -> None:
+    """Import optional FastSolv dependencies only when a runtime command needs them."""
+    global ALL_2D
+    global get_descriptors
+    global fastpropDataLoader
+    global standard_scale
+    global Trainer
+    global Callback
+    global EarlyStopping
+    global ModelCheckpoint
+    global SolubilityDataset
+    global FastsolvModel
+    global fastsolv_predict
+
+    if FastsolvModel is not None:
+        return
+
+    try:
+        from fastprop.defaults import ALL_2D as _ALL_2D
+        from fastprop.descriptors import get_descriptors as _get_descriptors
+        from fastprop.data import (
+            fastpropDataLoader as _fastpropDataLoader,
+            standard_scale as _standard_scale,
+        )
+        from pytorch_lightning import Trainer as _Trainer, Callback as _Callback
+        from pytorch_lightning.callbacks import (
+            EarlyStopping as _EarlyStopping,
+            ModelCheckpoint as _ModelCheckpoint,
+        )
+        from fastsolv._classes import (
+            SolubilityDataset as _SolubilityDataset,
+            _fastsolv as _FastsolvModel,
+        )
+        from fastsolv._module import fastsolv as _fastsolv_predict
+    except Exception as exc:  # pragma: no cover - optional dependency
+        raise ImportError(
+            "FastSolv runtime is not available. Install with `pip install fastsolv`."
+        ) from exc
+
+    ALL_2D = _ALL_2D
+    get_descriptors = _get_descriptors
+    fastpropDataLoader = _fastpropDataLoader
+    standard_scale = _standard_scale
+    Trainer = _Trainer
+    Callback = _Callback
+    EarlyStopping = _EarlyStopping
+    ModelCheckpoint = _ModelCheckpoint
+    SolubilityDataset = _SolubilityDataset
+    FastsolvModel = _FastsolvModel
+    fastsolv_predict = _fastsolv_predict
+
+
+def _get_nan_tolerant_fastsolv_class() -> type[object]:
+    """Build the NaN-tolerant FastSolv subclass lazily after imports are available."""
+    _load_fastsolv_runtime()
+
+    class NaNTolerantFastsolv(FastsolvModel):
+        """
+        Wrapper around the FastSolv Lightning module that tolerates NaN metrics.
+
+        During early training, predictions may contain NaNs. This subclass skips
+        the problematic validation metric step instead of crashing the entire run.
+        """
+
+        def validation_step(self, batch: object, batch_idx: int) -> object:
+            """Override validation_step to catch NaN errors in metrics."""
+            try:
+                return super().validation_step(batch, batch_idx)
+            except ValueError as exc:
+                if "Input contains NaN" in str(exc):
+                    print(
+                        "\n[Warning] Validation step skipped: "
+                        f"NaN in predictions (epoch {self.trainer.current_epoch})"
+                    )
+                    import torch
+
+                    return {"loss": torch.tensor(0.0)}
+                raise
+
+    return NaNTolerantFastsolv
 
 
 
@@ -188,6 +234,7 @@ def _clean_df(df: pd.DataFrame) -> pd.DataFrame:
 def _compute_descriptors(
     unique_smiles: np.ndarray,
 ) -> Dict[str, np.ndarray]:
+    _load_fastsolv_runtime()
     mols = [Chem.MolFromSmiles(s) for s in unique_smiles]
     descs = get_descriptors(False, ALL_2D, mols).to_numpy(dtype=np.float32)
     return {smi: desc for smi, desc in zip(unique_smiles, descs)}
@@ -211,6 +258,8 @@ def _scale_split(
     stats: Optional[Dict[str, "torch.Tensor"]] = None,
 ) -> Tuple["torch.Tensor", "torch.Tensor", "torch.Tensor", "torch.Tensor", Dict[str, "torch.Tensor"]]:
     import torch
+
+    _load_fastsolv_runtime()
 
     sol_t = torch.tensor(sol, dtype=torch.float32)
     slv_t = torch.tensor(slv, dtype=torch.float32)
@@ -281,12 +330,14 @@ def _masked_metrics(
 
 
 def _predict_with_model(
-    model: _fastsolv,
+    model: object,
     sol: np.ndarray,
     slv: np.ndarray,
     T: np.ndarray,
 ) -> np.ndarray:
     import torch
+
+    _load_fastsolv_runtime()
 
     ds = SolubilityDataset(
         torch.tensor(sol, dtype=torch.float32),
@@ -306,6 +357,7 @@ def _fastsolv_predict_ordered(
     df: pd.DataFrame,
     checkpoint: Optional[str] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    _load_fastsolv_runtime()
     unique_smiles = np.unique(
         np.hstack([df["solute_smiles"].unique(), df["solvent_smiles"].unique()])
     )
@@ -313,7 +365,7 @@ def _fastsolv_predict_ordered(
     sol, slv, T = _assemble_features(df, desc_map)
 
     if checkpoint:
-        model = _fastsolv.load_from_checkpoint(checkpoint)
+        model = FastsolvModel.load_from_checkpoint(checkpoint)
         pred = _predict_with_model(model, sol, slv, T)
         return pred, np.full_like(pred, np.nan)
 
@@ -332,7 +384,7 @@ def _fastsolv_predict_ordered(
 
 
 def _tgnn_predict_ordered(
-    dataset,
+    dataset: object,
     checkpoint: str,
     batch_size: int,
     device: Optional[str],
@@ -372,10 +424,11 @@ def _tgnn_predict_ordered(
 
 
 def run_predict(args: argparse.Namespace) -> int:
+    _load_fastsolv_runtime()
     df = _clean_df(pd.read_csv(args.input))
 
     if args.checkpoint:
-        model = _fastsolv.load_from_checkpoint(args.checkpoint)
+        model = FastsolvModel.load_from_checkpoint(args.checkpoint)
         unique_smiles = np.unique(
             np.hstack([df["solute_smiles"].unique(), df["solvent_smiles"].unique()])
         )
@@ -417,7 +470,9 @@ def run_predict(args: argparse.Namespace) -> int:
 
 def run_train(args: argparse.Namespace) -> int:
     import torch
-    
+
+    _load_fastsolv_runtime()
+
     # Disable problematic metrics that fail on NaN during early training
     os.environ["FASTPROP_SKIP_MAPE"] = "1"
     
@@ -497,11 +552,12 @@ def run_train(args: argparse.Namespace) -> int:
 
     # Apply learning rate scaling to prevent NaN issues
     effective_lr = args.lr * args.lr_scale
-    print(f"\n[Training Config]")
+    print("\n[Training Config]")
     print(f"  Base LR: {args.lr:.2e}")
     print(f"  LR Scale: {args.lr_scale}")
     print(f"  Effective LR: {effective_lr:.2e}")
 
+    NaNTolerantFastsolv = _get_nan_tolerant_fastsolv_class()
     model = NaNTolerantFastsolv(
         num_layers=args.num_layers,
         hidden_size=args.hidden_size,
@@ -566,7 +622,7 @@ def run_train(args: argparse.Namespace) -> int:
 
     # Evaluate
     metrics = {}
-    model = _fastsolv.load_from_checkpoint(best_ckpt) if best_ckpt else model
+    model = FastsolvModel.load_from_checkpoint(best_ckpt) if best_ckpt else model
     pred_val = _predict_with_model(model, val_sol, val_slv, val_T)
     metrics["val_logS"] = _metrics(val_y.squeeze(), pred_val)
 
@@ -585,6 +641,7 @@ def run_train(args: argparse.Namespace) -> int:
 
 
 def run_compare(args: argparse.Namespace) -> int:
+    _load_fastsolv_runtime()
     base_df = _clean_df(pd.read_csv(args.input))
 
     # Use TGNN dataset filtering to ensure comparable rows
@@ -626,6 +683,10 @@ def run_compare(args: argparse.Namespace) -> int:
 
     result = {
         "n_samples": int(has_sol.sum()),
+        "split": build_split_metadata(
+            split_mode=getattr(args, "split_mode", None),
+            test_data=args.input,
+        ),
         "tgnn_solv": {
             "n": tgnn_n,
             "ln_x2": tgnn_metrics,
@@ -702,6 +763,11 @@ def build_parser() -> argparse.ArgumentParser:
     compare_p.add_argument("--fastsolv-checkpoint", default=None)
     compare_p.add_argument("--batch-size", type=int, default=128)
     compare_p.add_argument("--device", default=None)
+    compare_p.add_argument(
+        "--split-mode",
+        default=None,
+        help="Optional explicit split label for comparison metadata.",
+    )
     compare_p.add_argument("--metrics", default=None)
     compare_p.add_argument("--preds", default=None)
 

@@ -13,13 +13,19 @@ import argparse
 import math
 import random
 import time
-from pathlib import Path
 
 import csv
+import _bootstrap  # noqa: F401
+
+from typing import TYPE_CHECKING
+
 from tgnn_solv.progress import progress, trange
 
+if TYPE_CHECKING:
+    from tgnn_solv.config import TGNNSolvConfig
 
-def _device_from_arg(arg: str | None):
+
+def _device_from_arg(arg: str | None) -> object:
     import torch
 
     if arg:
@@ -146,7 +152,7 @@ def _make_overfit_cfg(
     interaction_mode: str,
     use_moe: bool,
     use_implicit_diff: bool,
-) -> TGNNSolvConfig:
+) -> "TGNNSolvConfig":
     from tgnn_solv.config import TGNNSolvConfig
 
     return TGNNSolvConfig(
@@ -213,11 +219,13 @@ def run_overfit(args: argparse.Namespace) -> None:
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.0)
 
     class _CsvDataset(Dataset):
-        def __init__(self, rows, cache=True):
+        def __init__(
+            self, rows: list[dict[str, object]], cache: bool = True
+        ) -> None:
             self.rows = rows
             self.cache = {} if cache else None
 
-        def _graph(self, smi: str):
+        def _graph(self, smi: str) -> object | None:
             if self.cache is not None and smi in self.cache:
                 return self.cache[smi]
             g = smiles_to_graph(smi)
@@ -225,10 +233,12 @@ def run_overfit(args: argparse.Namespace) -> None:
                 self.cache[smi] = g
             return g
 
-        def __len__(self):
+        def __len__(self) -> int:
             return len(self.rows)
 
-        def __getitem__(self, idx):
+        def __getitem__(
+            self, idx: int
+        ) -> tuple[object, object, dict[str, torch.Tensor]]:
             r = self.rows[idx]
             sol_g = self._graph(r["solute_smiles"]).clone()
             slv_g = self._graph(r["solvent_smiles"]).clone()
@@ -242,7 +252,9 @@ def run_overfit(args: argparse.Namespace) -> None:
             }
             return sol_g, slv_g, t
 
-    def _collate_min(batch):
+    def _collate_min(
+        batch: list[tuple[object, object, dict[str, torch.Tensor]]]
+    ) -> tuple[object, object, dict[str, torch.Tensor]]:
         sol_gs, slv_gs, tgts = zip(*batch)
         sol_batch = Batch.from_data_list(list(sol_gs))
         slv_batch = Batch.from_data_list(list(slv_gs))
@@ -336,7 +348,7 @@ def main() -> int:
 
     sub = parser.add_subparsers(dest="cmd", required=True)
 
-    stats_p = sub.add_parser("stats", help="Dataset statistics")
+    sub.add_parser("stats", help="Dataset statistics")
 
     overfit_p = sub.add_parser("overfit", help="Overfit check")
     overfit_p.add_argument("--sample-size", type=int, default=1000)

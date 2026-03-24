@@ -71,7 +71,14 @@ def predict_solubility(
 
     nrtl_params = output["nrtl_params"]
     nrtl_payload = {}
-    if "tau_a12" in nrtl_params:
+    if "tau_ref_12" in nrtl_params:
+        nrtl_payload = {
+            "tau_ref_12": nrtl_params["tau_ref_12"].item(),
+            "tau_ref_21": nrtl_params["tau_ref_21"].item(),
+            "tau_inv_12": nrtl_params["tau_inv_12"].item(),
+            "tau_inv_21": nrtl_params["tau_inv_21"].item(),
+        }
+    elif "tau_a12" in nrtl_params:
         nrtl_payload = {
             "tau_a12": nrtl_params["tau_a12"].item(),
             "tau_b12": nrtl_params["tau_b12"].item(),
@@ -276,7 +283,7 @@ def save_model(
     cfg: TGNNSolvConfig,
     path: str,
     metadata: Optional[Dict] = None,
-):
+) -> None:
     """Save model checkpoint with config and metadata."""
     checkpoint = {
         "model_state": model.state_dict(),
@@ -299,12 +306,27 @@ def load_model(
 
     checkpoint = torch.load(path, map_location=device, weights_only=False)
     cfg = TGNNSolvConfig(**checkpoint["config"])
+    node_feat_dim = int(checkpoint.get("node_feat_dim", NODE_FEAT_DIM))
+    edge_feat_dim = int(checkpoint.get("edge_feat_dim", EDGE_FEAT_DIM))
     model = TGNNSolv(
-        checkpoint["node_feat_dim"],
-        checkpoint["edge_feat_dim"],
-        cfg,
+        node_feat_dim=node_feat_dim,
+        edge_feat_dim=edge_feat_dim,
+        cfg=cfg,
     ).to(device)
-    model.load_state_dict(checkpoint["model_state"])
+    if "model_state" in checkpoint:
+        state = checkpoint["model_state"]
+    elif "model_state_dict" in checkpoint:
+        state = checkpoint["model_state_dict"]
+    else:
+        state = checkpoint
+
+    model_state = model.state_dict()
+    compatible_state = {
+        key: value
+        for key, value in state.items()
+        if key in model_state and tuple(model_state[key].shape) == tuple(value.shape)
+    }
+    model.load_state_dict(compatible_state, strict=False)
 
     print(f"Model loaded from {path}")
     if checkpoint.get("metadata"):

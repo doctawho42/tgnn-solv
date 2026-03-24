@@ -19,9 +19,16 @@ venv/
 # Data & checkpoints (large files)
 data/raw/
 data/processed/
+notebooks/data/raw/
+notebooks/data/processed/
 checkpoints/*.pt
 *.pt
 *.pth
+logs/
+results/*
+!results/.gitkeep
+figures/*
+!figures/.gitkeep
 
 # Jupyter
 .ipynb_checkpoints/

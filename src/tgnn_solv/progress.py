@@ -12,14 +12,14 @@ except Exception:  # pragma: no cover - tqdm not installed
     _tqdm = None
 
 
-def progress(iterable: Iterable[T], **kwargs):
+def progress(iterable: Iterable[T], **kwargs: object) -> Iterable[T]:
     """Return a tqdm-wrapped iterable if available, otherwise the iterable."""
     if _tqdm is None:
         return iterable
     return _tqdm(iterable, **kwargs)
 
 
-def trange(n: int, **kwargs):
+def trange(n: int, **kwargs: object) -> Iterable[int]:
     """Return a tqdm-wrapped range if available, otherwise range."""
     if _tqdm is None:
         return range(n)

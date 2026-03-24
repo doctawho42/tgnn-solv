@@ -7,7 +7,7 @@ sys.path.insert(0, "src")
 from tgnn_solv.data.builder import DataBuilder, filter_for_sle
 
 
-def test_builder_gamma_merge_nearest_temperature():
+def test_builder_gamma_merge_nearest_temperature() -> None:
     solubility_df = pd.DataFrame(
         {
             "solute_smiles": ["CCO", "CCO"],
@@ -40,7 +40,7 @@ def test_builder_gamma_merge_nearest_temperature():
     assert row_310["ln_gamma_inf"] == 0.0
 
 
-def test_builder_gamma_merge_handles_nan_temperature():
+def test_builder_gamma_merge_handles_nan_temperature() -> None:
     solubility_df = pd.DataFrame(
         {
             "solute_smiles": ["CCO", "CCO"],
@@ -69,7 +69,7 @@ def test_builder_gamma_merge_handles_nan_temperature():
     assert not row_nan["has_gamma_inf"]
 
 
-def test_filter_for_sle_excludes_invalid_and_miscible():
+def test_filter_for_sle_excludes_invalid_and_miscible() -> None:
     df = pd.DataFrame(
         {
             "solute_smiles": [

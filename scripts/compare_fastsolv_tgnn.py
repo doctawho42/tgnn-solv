@@ -23,14 +23,13 @@ import sys
 from pathlib import Path
 from typing import Dict, Tuple
 
+import _bootstrap  # noqa: F401
 import numpy as np
 import pandas as pd
 
 # Try to import all required modules
 try:
     import torch
-    import torch.nn.functional as F
-    from torch_geometric.data import Data
 except ImportError as e:
     print(f"ERROR: PyTorch not installed: {e}")
     sys.exit(1)
@@ -41,17 +40,37 @@ except ImportError as e:
     print(f"ERROR: RDKit not installed: {e}")
     sys.exit(1)
 
-# Optional FastSolv dependencies
 FASTSOLV_AVAILABLE = False
-try:
-    from fastprop.defaults import ALL_2D
-    from fastprop.descriptors import get_descriptors
-    from fastprop.data import standard_scale
-    import onnxruntime as rt
+ALL_2D = None
+get_descriptors = None
+rt = None
+
+
+def _load_fastsolv_runtime(verbose: bool = True) -> bool:
+    """Load optional FastSolv/ONNX dependencies lazily."""
+    global FASTSOLV_AVAILABLE
+    global ALL_2D
+    global get_descriptors
+    global rt
+
+    if FASTSOLV_AVAILABLE:
+        return True
+
+    try:
+        from fastprop.defaults import ALL_2D as _ALL_2D
+        from fastprop.descriptors import get_descriptors as _get_descriptors
+        import onnxruntime as _rt
+    except Exception as exc:
+        if verbose:
+            print(f"⚠️  FastSolv/ONNX not available: {exc}")
+            print("   Continuing with TGNN-Solv only")
+        return False
+
+    ALL_2D = _ALL_2D
+    get_descriptors = _get_descriptors
+    rt = _rt
     FASTSOLV_AVAILABLE = True
-except Exception as e:
-    print(f"⚠️  FastSolv/ONNX not available: {e}")
-    print("   Continuing with TGNN-Solv only")
+    return True
 
 
 def load_test_data(csv_path: str, n_samples: int = None) -> pd.DataFrame:
@@ -69,6 +88,9 @@ def compute_fastsolv_descriptors(solute_smiles: str, solvent_smiles: str) -> Tup
     
     Returns: (solute_desc, solvent_desc, success)
     """
+    if not _load_fastsolv_runtime(verbose=False):
+        return None, None, False
+
     try:
         solute_mol = Chem.MolFromSmiles(solute_smiles)
         solvent_mol = Chem.MolFromSmiles(solvent_smiles)
@@ -84,7 +106,7 @@ def compute_fastsolv_descriptors(solute_smiles: str, solvent_smiles: str) -> Tup
             return None, None, False
         
         return solute_desc, solvent_desc, True
-    except Exception as e:
+    except Exception:
         return None, None, False
 
 
@@ -92,7 +114,7 @@ def predict_fastsolv_single(
     solute_smiles: str,
     solvent_smiles: str,
     temperature: float,
-    sess: 'rt.InferenceSession',
+    sess: object,
 ) -> float:
     """
     Predict with FastSolv pretrained ensemble.
@@ -120,7 +142,7 @@ def predict_fastsolv_single(
         pred = sess.run([output_name], {input_name: combined.astype(np.float32).reshape(1, -1)})
         
         return float(pred[0][0])
-    except Exception as e:
+    except Exception:
         return np.nan
 
 
@@ -202,7 +224,7 @@ def predict_tgnn(
         else:
             return np.nan
     
-    except Exception as e:
+    except Exception:
         return np.nan
 
 
@@ -238,7 +260,7 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
     }
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         '--test-data',
@@ -287,7 +309,9 @@ def main():
     
     # Load FastSolv if available
     sess = None
-    if not args.no_fastsolv and FASTSOLV_AVAILABLE and args.fastsolv_checkpoint:
+    fastsolv_ready = False if args.no_fastsolv else _load_fastsolv_runtime(verbose=True)
+
+    if not args.no_fastsolv and fastsolv_ready and args.fastsolv_checkpoint:
         print("\n[2/3] Loading FastSolv ONNX model...")
         try:
             sess = rt.InferenceSession(args.fastsolv_checkpoint)
@@ -295,7 +319,7 @@ def main():
         except Exception as e:
             print(f"⚠️  Failed to load FastSolv: {e}")
             sess = None
-    elif not args.no_fastsolv and not FASTSOLV_AVAILABLE:
+    elif not args.no_fastsolv and not fastsolv_ready:
         print("\n[2/3] FastSolv dependencies not available - skipping FastSolv predictions")
     
     # Run predictions
@@ -338,7 +362,7 @@ def main():
     print("\n\n=== RESULTS ===\n")
     
     tgnn_metrics = compute_metrics(target_vals, tgnn_preds)
-    print(f"TGNN-Solv Performance:")
+    print("TGNN-Solv Performance:")
     for k, v in tgnn_metrics.items():
         if k != 'n_valid':
             print(f"  {k:15s}: {v:8.4f}")
@@ -346,7 +370,7 @@ def main():
     
     if sess is not None:
         fastsolv_metrics = compute_metrics(target_vals, fastsolv_preds)
-        print(f"\nFastSolv Performance:")
+        print("\nFastSolv Performance:")
         for k, v in fastsolv_metrics.items():
             if k != 'n_valid':
                 print(f"  {k:15s}: {v:8.4f}")
@@ -386,4 +410,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

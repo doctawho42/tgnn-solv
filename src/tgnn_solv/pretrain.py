@@ -29,8 +29,10 @@ Usage::
     # model.gnn is now pretrained — proceed with normal training
 """
 
+from __future__ import annotations
+
 import random
-from typing import Dict, List, Optional, Tuple
+from typing import TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -40,19 +42,39 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
 from rdkit import Chem
-from rdkit.Chem import Descriptors, rdMolDescriptors
+from rdkit.Chem import Descriptors
 from torch_geometric.data import Data, Batch
 
 from .config import TGNNSolvConfig
 from .features import (
     smiles_to_graph,
-    get_atom_features,
     NODE_FEAT_DIM,
-    EDGE_FEAT_DIM,
 )
 from .layers import GNNEncoder, PhysicsAwareReadout
 from .data.utils import download_file, RAW_DIR, canonicalize
 from .progress import progress, trange
+
+PropertyVector: TypeAlias = np.ndarray
+PretrainSample: TypeAlias = tuple[
+    Data,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    Data,
+    Data,
+]
+PretrainBatch: TypeAlias = tuple[
+    Batch,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    Batch,
+    Batch,
+]
 
 
 # ================================================================== #
@@ -65,7 +87,7 @@ ZINC_URL = (
 )
 
 
-def download_zinc250k(max_molecules: int = 250000) -> List[str]:
+def download_zinc250k(max_molecules: int = 250000) -> list[str]:
     """
     Download ZINC250k dataset (~250k drug-like SMILES).
 
@@ -156,7 +178,7 @@ PROPERTY_SCALES = {
 N_PROPERTIES = len(PROPERTY_FUNCTIONS)
 
 
-def compute_properties(smi: str) -> Optional[np.ndarray]:
+def compute_properties(smi: str) -> PropertyVector | None:
     """Compute normalized RDKit properties for a SMILES."""
     mol = Chem.MolFromSmiles(smi)
     if mol is None:
@@ -194,14 +216,14 @@ class PretrainDataset(Dataset):
 
     def __init__(
         self,
-        smiles_list: List[str],
+        smiles_list: list[str],
         mask_ratio: float = 0.15,
         mask_hops: int = 2,
         bond_mask_ratio: float = 0.15,
         aug_node_mask_ratio: float = 0.15,
         aug_edge_mask_ratio: float = 0.15,
         cache: bool = True,
-    ):
+    ) -> None:
         self.mask_ratio = mask_ratio
         self.mask_hops = mask_hops
         self.bond_mask_ratio = bond_mask_ratio
@@ -221,7 +243,7 @@ class PretrainDataset(Dataset):
         self.data = valid
         print(f"  PretrainDataset: {len(self.data):,} molecules")
 
-    def _get_graph(self, smi):
+    def _get_graph(self, smi: str) -> Data | None:
         if self.cache is not None and smi in self.cache:
             return self.cache[smi]
         g = smiles_to_graph(smi)
@@ -229,10 +251,10 @@ class PretrainDataset(Dataset):
             self.cache[smi] = g
         return g
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)
 
-    def _mask_subgraph(self, graph: Data) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _mask_subgraph(self, graph: Data) -> tuple[torch.Tensor, torch.Tensor]:
         n_atoms = graph.x.shape[0]
         n_mask = max(1, int(n_atoms * self.mask_ratio))
         if n_atoms == 1:
@@ -277,7 +299,7 @@ class PretrainDataset(Dataset):
 
     def _mask_bonds(
         self, graph: Data
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         n_edges = graph.edge_attr.size(0)
         if n_edges == 0:
             bond_mask = torch.zeros(0, dtype=torch.bool)
@@ -316,7 +338,7 @@ class PretrainDataset(Dataset):
             g.edge_attr[idx_e] = 0.0
         return g
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> PretrainSample:
         smi, props = self.data[idx]
         base_graph = self._get_graph(smi).clone()
         graph = base_graph.clone()
@@ -349,7 +371,7 @@ class PretrainDataset(Dataset):
         )
 
 
-def pretrain_collate(batch):
+def pretrain_collate(batch: list[PretrainSample]) -> PretrainBatch:
     """Collate for pretraining: batch graphs + collect masks/targets."""
     (
         graphs,
@@ -413,7 +435,7 @@ def pretrain_collate(batch):
 class AtomPredictionHead(nn.Module):
     """Predict masked atom features from GNN hidden states."""
 
-    def __init__(self, hidden_dim: int, atom_feat_dim: int):
+    def __init__(self, hidden_dim: int, atom_feat_dim: int) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
@@ -428,7 +450,7 @@ class AtomPredictionHead(nn.Module):
 class PropertyPredictionHead(nn.Module):
     """Predict molecular properties from graph-level vector."""
 
-    def __init__(self, readout_dim: int, n_properties: int):
+    def __init__(self, readout_dim: int, n_properties: int) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(readout_dim, 256),
@@ -444,7 +466,7 @@ class PropertyPredictionHead(nn.Module):
 class BondPredictionHead(nn.Module):
     """Predict bond type from concatenated endpoint embeddings."""
 
-    def __init__(self, hidden_dim: int, num_classes: int = 4):
+    def __init__(self, hidden_dim: int, num_classes: int = 4) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(hidden_dim * 2, hidden_dim),
@@ -459,7 +481,7 @@ class BondPredictionHead(nn.Module):
 class ProjectionHead(nn.Module):
     """Projection head for contrastive learning."""
 
-    def __init__(self, input_dim: int, proj_dim: int = 128):
+    def __init__(self, input_dim: int, proj_dim: int = 128) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(input_dim, input_dim),
@@ -501,8 +523,8 @@ class Pretrainer:
         gnn: GNNEncoder,
         readout: PhysicsAwareReadout,
         cfg: TGNNSolvConfig,
-        device: torch.device = None,
-    ):
+        device: torch.device | None = None,
+    ) -> None:
         self.gnn = gnn
         self.readout = readout
         self.cfg = cfg
@@ -543,7 +565,7 @@ class Pretrainer:
 
     def pretrain(
         self,
-        smiles_list: List[str],
+        smiles_list: list[str],
         n_epochs: int = 30,
         batch_size: int = 128,
         lr: float = 3e-4,
@@ -557,7 +579,7 @@ class Pretrainer:
         prop_loss_weight: float = 1.0,
         contrastive_weight: float = 0.5,
         contrastive_temp: float = 0.1,
-    ) -> Dict[str, List[float]]:
+    ) -> dict[str, list[float]]:
         """
         Run pretraining.
 
@@ -753,8 +775,8 @@ class Pretrainer:
         del self.bond_head
         del self.proj_head
 
-        print(f"\n  Pretraining complete.")
-        print(f"  GNN and Readout weights updated in-place.")
-        print(f"  Pretraining heads discarded.")
+        print("\n  Pretraining complete.")
+        print("  GNN and Readout weights updated in-place.")
+        print("  Pretraining heads discarded.")
 
         return history

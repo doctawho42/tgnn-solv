@@ -5,7 +5,6 @@ Run baseline and compare with TGNN-Solv.
 import time
 from typing import Dict, Optional
 
-import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
@@ -47,7 +46,7 @@ def run_baseline(
     metrics = trainer.evaluate(test_loader)
     metrics["time_s"] = time.time() - t0
 
-    print(f"\n  DirectGNN test results:")
+    print("\n  DirectGNN test results:")
     print(f"    MAE  = {metrics['mae']:.3f}")
     print(f"    RMSE = {metrics['rmse']:.3f}")
     print(f"    R²   = {metrics['r2']:.4f}")
@@ -91,7 +90,7 @@ def compare_with_tgnn(
     delta = bl_mae - tgnn_mae
     pct = delta / bl_mae * 100 if bl_mae > 0 else 0
 
-    print(f"\n  TGNN-Solv improvement over DirectGNN:")
+    print("\n  TGNN-Solv improvement over DirectGNN:")
     print(f"    ΔMAE = {delta:+.3f} ({pct:+.1f}%)")
 
     if delta > 0:

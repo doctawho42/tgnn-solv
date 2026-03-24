@@ -11,22 +11,23 @@ Usage:
 
 import argparse
 import json
-import sys
 from pathlib import Path
 from typing import Dict, List, Any
 
+import _bootstrap  # noqa: F401
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-from scripts.benchmark_tgnn_solv import benchmark_model
+from benchmark_tgnn_solv import benchmark_model
+from tgnn_solv.data.split_registry import build_split_metadata
+from tgnn_solv.reporting import json_safe
 
 
 def compare_models(
     model_paths: List[str],
     test_csv: str,
     output_json: str = None,
+    split_mode: str | None = None,
     verbose: bool = True,
 ) -> Dict[str, Any]:
     """
@@ -65,14 +66,18 @@ def compare_models(
                 model_path=model_path,
                 test_csv=test_csv,
                 output_json=None,
+                split_mode=split_mode,
                 verbose=False,
             )
             results[model_name] = result
-            print(f"  ✓ Complete")
+            print("  ✓ Complete")
         except Exception as e:
             print(f"  ✗ Error: {e}")
             continue
     
+    if not results:
+        raise RuntimeError("All benchmark runs failed; no comparison report was generated.")
+
     # Generate comparison table
     if verbose:
         print("\n" + "=" * 80)
@@ -129,15 +134,19 @@ def compare_models(
         "timestamp": pd.Timestamp.now().isoformat(),
         "n_models": len(model_paths),
         "test_file": test_csv,
+        "split": build_split_metadata(
+            split_mode=split_mode,
+            test_data=test_csv,
+        ),
         "models": results,
         "summary": {
             "best_mae": min(
-                (name, result['overall']['mae']) 
-                for name, result in results.items()
+                results.items(),
+                key=lambda item: item[1]["overall"]["mae"],
             )[0],
             "best_r2": max(
-                (name, result['overall']['r2']) 
-                for name, result in results.items()
+                results.items(),
+                key=lambda item: item[1]["overall"]["r2"],
             )[0],
         }
     }
@@ -146,17 +155,7 @@ def compare_models(
         output_path = Path(output_json)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Convert NaN to None for JSON
-        def convert_nan(obj):
-            if isinstance(obj, dict):
-                return {k: convert_nan(v) for k, v in obj.items()}
-            elif isinstance(obj, (list, tuple)):
-                return [convert_nan(v) for v in obj]
-            elif isinstance(obj, float) and np.isnan(obj):
-                return None
-            return obj
-        
-        results_json = convert_nan(comparison_results)
+        results_json = json_safe(comparison_results)
         
         with open(output_path, 'w') as f:
             json.dump(results_json, f, indent=2)
@@ -165,12 +164,17 @@ def compare_models(
     return comparison_results
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Compare multiple TGNN-Solv models")
     parser.add_argument("--models", nargs='+', required=True, help="Paths to model checkpoints")
     parser.add_argument("--test-data", required=True, help="Path to test CSV file")
     parser.add_argument("--output", default=None, help="Path to save comparison results (JSON)")
-    parser.add_argument("--verbose", action="store_true", default=True, help="Print detailed comparison")
+    parser.add_argument(
+        "--split-mode",
+        default=None,
+        help="Optional explicit split label for comparison metadata.",
+    )
+    parser.add_argument("--verbose", action="store_true", help="Print detailed comparison")
     
     args = parser.parse_args()
     
@@ -178,10 +182,10 @@ def main():
         model_paths=args.models,
         test_csv=args.test_data,
         output_json=args.output,
+        split_mode=args.split_mode,
         verbose=args.verbose,
     )
 
 
 if __name__ == "__main__":
     main()
-

@@ -6,5 +6,14 @@ concatenated, temperature encoded as thermometer bins.
 No physics layer, no NRTL, no SLE — pure data-driven.
 """
 
-from .direct_gnn import DirectGNN, DirectGNNTrainer
-from .runner import run_baseline, compare_with_tgnn
+from .direct_gnn import DirectGNN as DirectGNN
+from .direct_gnn import DirectGNNTrainer as DirectGNNTrainer
+from .runner import compare_with_tgnn as compare_with_tgnn
+from .runner import run_baseline as run_baseline
+
+__all__ = [
+    "DirectGNN",
+    "DirectGNNTrainer",
+    "run_baseline",
+    "compare_with_tgnn",
+]

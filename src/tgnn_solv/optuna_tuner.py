@@ -231,7 +231,7 @@ class OptunaTuner:
             setattr(cfg, k, v)
 
         cfg.nrtl_tau_mode = trial.suggest_categorical(
-            "nrtl_tau_mode", ["legacy", "abc"]
+            "nrtl_tau_mode", ["ref_invT", "legacy", "abc"]
         )
 
         lr_base = trial.suggest_float("lr_base", 5e-5, 5e-4, log=True)

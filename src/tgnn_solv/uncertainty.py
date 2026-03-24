@@ -26,8 +26,9 @@ Usage::
     result = ens.predict("CC(=O)Nc1ccc(O)cc1", "CCO", T=298.15)
 """
 
+from __future__ import annotations
+
 import math
-from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -44,7 +45,7 @@ from .progress import progress, trange
 #  Helpers                                                            #
 # ================================================================== #
 
-def _enable_dropout(model: nn.Module):
+def _enable_dropout(model: nn.Module) -> None:
     """Force all Dropout layers into training mode (stochastic)."""
     for m in model.modules():
         if isinstance(m, (nn.Dropout, nn.MultiheadAttention)):
@@ -56,7 +57,7 @@ def _prepare_inputs(
     solvent_smiles: str,
     T: float,
     device: torch.device,
-):
+) -> tuple[Batch, Batch, torch.Tensor]:
     """Build batched graph inputs for a single system."""
     sol_g = smiles_to_graph(solute_smiles)
     slv_g = smiles_to_graph(solvent_smiles)
@@ -71,7 +72,7 @@ def _prepare_inputs(
     return sol_batch, slv_batch, T_tensor
 
 
-def _summarize_samples(samples: Dict[str, List[float]]) -> Dict[str, float]:
+def _summarize_samples(samples: dict[str, list[float]]) -> dict[str, float]:
     """Compute mean, std, and confidence intervals from samples."""
     result = {}
     for key, values in samples.items():
@@ -102,7 +103,7 @@ class MCDropoutPredictor:
         Number of stochastic forward passes (default 30).
     """
 
-    def __init__(self, model: TGNNSolv, n_samples: int = 30):
+    def __init__(self, model: TGNNSolv, n_samples: int = 30) -> None:
         self.model = model
         self.n_samples = n_samples
         self.device = next(model.parameters()).device
@@ -113,7 +114,7 @@ class MCDropoutPredictor:
         solute_smiles: str,
         solvent_smiles: str,
         T: float = 298.15,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float | int | str]:
         """
         Predict with uncertainty.
 
@@ -175,7 +176,7 @@ class MCDropoutPredictor:
     @torch.no_grad()
     def predict_batch(
         self,
-        systems: List[tuple],
+        systems: list[tuple[str, str, float]],
     ) -> pd.DataFrame:
         """
         Predict for multiple (solute, solvent, T) systems.
@@ -217,7 +218,7 @@ class EnsemblePredictor:
         K trained models (different random seeds / data folds).
     """
 
-    def __init__(self, models: List[TGNNSolv]):
+    def __init__(self, models: list[TGNNSolv]) -> None:
         if len(models) < 2:
             raise ValueError("Ensemble requires ≥ 2 models")
         self.models = models
@@ -229,7 +230,7 @@ class EnsemblePredictor:
         solute_smiles: str,
         solvent_smiles: str,
         T: float = 298.15,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float | int | str]:
         """Predict with ensemble uncertainty."""
         sol_b, slv_b, T_t = _prepare_inputs(
             solute_smiles, solvent_smiles, T, self.device
@@ -273,9 +274,9 @@ class EnsemblePredictor:
 # ================================================================== #
 
 def calibration_report(
-    predictions: List[Dict],
-    true_ln_x2: List[float],
-) -> Dict[str, float]:
+    predictions: list[dict[str, float | int | str]],
+    true_ln_x2: list[float],
+) -> dict[str, float | int]:
     """
     Check if predicted confidence intervals are well-calibrated.
 

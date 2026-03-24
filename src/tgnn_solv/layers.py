@@ -16,18 +16,23 @@ Physics layers have ZERO learnable parameters — all thermodynamic
 equations are implemented as fixed differentiable functions.
 """
 
-from typing import List, Optional, Tuple
+from __future__ import annotations
+
+from typing import Optional, TypeAlias
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torch import Tensor
 from torch_geometric.nn import (
     MessagePassing,
     Set2Set,
 )
 
+TensorList: TypeAlias = list[Tensor]
+NRTLState: TypeAlias = dict[str, Tensor]
 
-def make_temperature_features(T: torch.Tensor) -> torch.Tensor:
+
+def make_temperature_features(T: Tensor) -> Tensor:
     """
     Build normalized temperature features.
 
@@ -45,11 +50,11 @@ def make_temperature_features(T: torch.Tensor) -> torch.Tensor:
 # ================================================================== #
 
 def scatter_add(
-    src: torch.Tensor,
-    index: torch.Tensor,
+    src: Tensor,
+    index: Tensor,
     dim: int = 0,
-    dim_size: int = None,
-) -> torch.Tensor:
+    dim_size: int | None = None,
+) -> Tensor:
     """Scatter-add using native PyTorch."""
     if dim_size is None:
         dim_size = int(index.max().item()) + 1
@@ -63,11 +68,11 @@ def scatter_add(
 
 
 def scatter_mean(
-    src: torch.Tensor,
-    index: torch.Tensor,
+    src: Tensor,
+    index: Tensor,
     dim: int = 0,
-    dim_size: int = None,
-) -> torch.Tensor:
+    dim_size: int | None = None,
+) -> Tensor:
     """Scatter-mean using native PyTorch."""
     if dim_size is None:
         dim_size = int(index.max().item()) + 1
@@ -96,7 +101,7 @@ class MPNNLayer(MessagePassing):
     update:   h_i' = LayerNorm(h_i + MLP([h_i || agg_j m_ij]))
     """
 
-    def __init__(self, hidden_dim: int, edge_dim: int):
+    def __init__(self, hidden_dim: int, edge_dim: int) -> None:
         super().__init__(aggr="add")
 
         self.msg_mlp = nn.Sequential(
@@ -116,12 +121,12 @@ class MPNNLayer(MessagePassing):
         )
         self.norm = nn.LayerNorm(hidden_dim)
 
-    def forward(self, x, edge_index, edge_attr):
+    def forward(self, x: Tensor, edge_index: Tensor, edge_attr: Tensor) -> Tensor:
         out = self.propagate(edge_index, x=x, edge_attr=edge_attr)
         x_new = self.upd_mlp(torch.cat([x, out], dim=-1))
         return self.norm(x + x_new)
 
-    def message(self, x_i, x_j, edge_attr):
+    def message(self, x_i: Tensor, x_j: Tensor, edge_attr: Tensor) -> Tensor:
         msg_input = torch.cat([x_i, x_j, edge_attr], dim=-1)
         msg = self.msg_mlp(msg_input)
         attn = torch.sigmoid(self.attn_mlp(msg))
@@ -132,10 +137,11 @@ class GNNEncoder(nn.Module):
     """
     Multi-layer GNN encoder with role-specific adapters.
 
-    The same backbone processes both solute and solvent molecules.
-    A lightweight adapter residual distinguishes the two roles,
-    allowing shared low-level features with role-specific high-level
-    representations.
+    Two modes are supported:
+      - ``shared_residual``: the full stack is shared, then lightweight role
+        adapters provide a small late specialization.
+      - ``split_late``: early layers are shared, while the last
+        ``role_specific_layers`` are separate for solute and solvent.
     """
 
     def __init__(
@@ -144,14 +150,45 @@ class GNNEncoder(nn.Module):
         edge_feat_dim: int,
         hidden_dim: int = 256,
         n_layers: int = 6,
-    ):
+        role_mode: str = "shared_residual",
+        role_specific_layers: int = 2,
+    ) -> None:
         super().__init__()
+        if n_layers <= 0:
+            raise ValueError("n_layers must be positive")
+        if role_mode not in {"shared_residual", "split_late"}:
+            raise ValueError(f"Unsupported role_mode: {role_mode}")
+
+        self.role_mode = role_mode
+        if role_mode == "split_late":
+            self.role_specific_layers = min(
+                max(int(role_specific_layers), 0),
+                max(n_layers - 1, 0),
+            )
+        else:
+            self.role_specific_layers = 0
+        self.shared_layer_count = n_layers - self.role_specific_layers
 
         self.node_embed = nn.Linear(node_feat_dim, hidden_dim)
         self.edge_embed = nn.Linear(edge_feat_dim, hidden_dim)
 
-        self.layers = nn.ModuleList(
-            [MPNNLayer(hidden_dim, hidden_dim) for _ in range(n_layers)]
+        self.shared_layers = nn.ModuleList(
+            [
+                MPNNLayer(hidden_dim, hidden_dim)
+                for _ in range(self.shared_layer_count)
+            ]
+        )
+        self.solute_layers = nn.ModuleList(
+            [
+                MPNNLayer(hidden_dim, hidden_dim)
+                for _ in range(self.role_specific_layers)
+            ]
+        )
+        self.solvent_layers = nn.ModuleList(
+            [
+                MPNNLayer(hidden_dim, hidden_dim)
+                for _ in range(self.role_specific_layers)
+            ]
         )
 
         self.solute_adapter = nn.Sequential(
@@ -167,12 +204,27 @@ class GNNEncoder(nn.Module):
             nn.Linear(hidden_dim, hidden_dim * 2),
         )
 
+    def _run_layer_stack(
+        self,
+        h: Tensor,
+        e: Tensor,
+        edge_index: Tensor,
+        layers: nn.ModuleList,
+        batch: Optional[Tensor],
+        temp_feat: Optional[Tensor],
+    ) -> Tensor:
+        for layer in layers:
+            h = layer(h, edge_index, e)
+            if temp_feat is not None and batch is not None:
+                h = self._apply_temp_film(h, batch, temp_feat)
+        return h
+
     def _apply_temp_film(
         self,
-        h: torch.Tensor,
-        batch: torch.Tensor,
-        temp_feat: torch.Tensor,
-    ) -> torch.Tensor:
+        h: Tensor,
+        batch: Tensor,
+        temp_feat: Tensor,
+    ) -> Tensor:
         gamma_beta = self.temp_mlp(temp_feat)  # (B, 2D)
         gamma, beta = gamma_beta.chunk(2, dim=-1)
         gamma = gamma[batch]
@@ -181,22 +233,38 @@ class GNNEncoder(nn.Module):
 
     def forward(
         self,
-        x,
-        edge_index,
-        edge_attr,
+        x: Tensor,
+        edge_index: Tensor,
+        edge_attr: Tensor,
         role: str = "solute",
-        batch: Optional[torch.Tensor] = None,
-        temp_feat: Optional[torch.Tensor] = None,
-    ):
+        batch: Optional[Tensor] = None,
+        temp_feat: Optional[Tensor] = None,
+    ) -> Tensor:
         h = self.node_embed(x)
         e = self.edge_embed(edge_attr)
 
-        for layer in self.layers:
-            h = layer(h, edge_index, e)
-            if temp_feat is not None and batch is not None:
-                h = self._apply_temp_film(h, batch, temp_feat)
+        h = self._run_layer_stack(
+            h,
+            e,
+            edge_index,
+            self.shared_layers,
+            batch,
+            temp_feat,
+        )
 
-        if role == "solute":
+        if self.role_mode == "split_late":
+            role_layers = (
+                self.solute_layers if role == "solute" else self.solvent_layers
+            )
+            h = self._run_layer_stack(
+                h,
+                e,
+                edge_index,
+                role_layers,
+                batch,
+                temp_feat,
+            )
+        elif role == "solute":
             h = h + self.solute_adapter(h)
         else:
             h = h + self.solvent_adapter(h)
@@ -218,7 +286,7 @@ class SoluteSolventCrossAttention(nn.Module):
     One block = MultiheadAttention + LayerNorm + FFN + LayerNorm.
     """
 
-    def __init__(self, hidden_dim: int, n_heads: int = 8):
+    def __init__(self, hidden_dim: int, n_heads: int = 8) -> None:
         super().__init__()
         self.cross_attn = nn.MultiheadAttention(
             hidden_dim, n_heads, batch_first=True, dropout=0.1
@@ -240,12 +308,12 @@ class SoluteSolventCrossAttention(nn.Module):
 
     def forward(
         self,
-        h_solute: torch.Tensor,
-        h_solvent: torch.Tensor,
-        solute_mask: Optional[torch.Tensor] = None,
-        solvent_mask: Optional[torch.Tensor] = None,
-        temp_feat: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        h_solute: Tensor,
+        h_solvent: Tensor,
+        solute_mask: Optional[Tensor] = None,
+        solvent_mask: Optional[Tensor] = None,
+        temp_feat: Optional[Tensor] = None,
+    ) -> tuple[Tensor, Tensor]:
         """
         Parameters
         ----------
@@ -290,7 +358,7 @@ class BipartiteMessagePassing(nn.Module):
     graph (solute ↔ solvent) using MLP-based pairwise transforms.
     """
 
-    def __init__(self, hidden_dim: int, dropout: float = 0.1):
+    def __init__(self, hidden_dim: int, dropout: float = 0.1) -> None:
         super().__init__()
         self.msg_sol = nn.Sequential(
             nn.Linear(hidden_dim * 2, hidden_dim),
@@ -314,12 +382,12 @@ class BipartiteMessagePassing(nn.Module):
 
     def forward(
         self,
-        h_sol: torch.Tensor,
-        h_slv: torch.Tensor,
-        sol_mask: Optional[torch.Tensor] = None,
-        slv_mask: Optional[torch.Tensor] = None,
-        temp_feat: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        h_sol: Tensor,
+        h_slv: Tensor,
+        sol_mask: Optional[Tensor] = None,
+        slv_mask: Optional[Tensor] = None,
+        temp_feat: Optional[Tensor] = None,
+    ) -> tuple[Tensor, Tensor]:
         B, Ns, D = h_sol.shape
         Nv = h_slv.shape[1]
 
@@ -357,8 +425,8 @@ class BipartiteMessagePassing(nn.Module):
 
 
 def pad_atom_features(
-    h_atoms_list: List[torch.Tensor],
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    h_atoms_list: TensorList,
+) -> tuple[Tensor, Tensor]:
     """
     Pad variable-length atom tensors into a single (B, N_max, D) batch.
 
@@ -384,9 +452,9 @@ def pad_atom_features(
 
 
 def build_batch_from_lists(
-    h_atoms_list: List[torch.Tensor],
+    h_atoms_list: TensorList,
     dtype: Optional[torch.dtype] = None,
-) -> torch.Tensor:
+) -> Tensor:
     """Build a batch vector for concatenated per-graph tensors."""
     device = h_atoms_list[0].device
     if dtype is None:
@@ -406,7 +474,7 @@ def build_batch_from_lists(
 class AttentionPooling(nn.Module):
     """Learnable attention-weighted sum pooling over graph nodes."""
 
-    def __init__(self, hidden_dim: int):
+    def __init__(self, hidden_dim: int) -> None:
         super().__init__()
         self.gate = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim // 4),
@@ -414,7 +482,7 @@ class AttentionPooling(nn.Module):
             nn.Linear(hidden_dim // 4, 1),
         )
 
-    def forward(self, h: torch.Tensor, batch: torch.Tensor) -> torch.Tensor:
+    def forward(self, h: Tensor, batch: Tensor) -> Tensor:
         """
         Parameters
         ----------
@@ -445,13 +513,13 @@ class PhysicsAwareReadout(nn.Module):
     Output dimension = hidden_dim * 3.
     """
 
-    def __init__(self, hidden_dim: int, set2set_steps: int = 3):
+    def __init__(self, hidden_dim: int, set2set_steps: int = 3) -> None:
         super().__init__()
         self.attn_pool = AttentionPooling(hidden_dim)
         self.set2set = Set2Set(hidden_dim, processing_steps=set2set_steps)
         self.output_dim = hidden_dim * 3
 
-    def forward(self, h: torch.Tensor, batch: torch.Tensor) -> torch.Tensor:
+    def forward(self, h: Tensor, batch: Tensor) -> Tensor:
         h_attn = self.attn_pool(h, batch)       # (B, D)
         h_s2s = self.set2set(h, batch)          # (B, 2D)
         return torch.cat([h_attn, h_s2s], dim=-1)  # (B, 3D)
@@ -471,17 +539,17 @@ class IdealSolubilityLayer(nn.Module):
     x_ideal = exp(-Φ)
     """
 
-    def __init__(self, R: float = 8.314):
+    def __init__(self, R: float = 8.314) -> None:
         super().__init__()
         self.R = R
 
     def forward(
         self,
-        T: torch.Tensor,
-        T_m: torch.Tensor,
-        dH_fus: torch.Tensor,
-        dCp_fus: torch.Tensor,
-    ) -> torch.Tensor:
+        T: Tensor,
+        T_m: Tensor,
+        dH_fus: Tensor,
+        dCp_fus: Tensor,
+    ) -> Tensor:
         """Return Φ (always ≥ 0 when T ≤ T_m)."""
         term1 = (dH_fus / self.R) * (1.0 / T - 1.0 / T_m)
         ratio = T_m / T
@@ -494,7 +562,11 @@ class NRTLLayer(nn.Module):
     """
     Non-Random Two-Liquid model for activity coefficients.
 
-    τ_ij = a_ij + b_ij / T + c_ij · ln(T/T_ref)
+    Supported parameterizations:
+      ref_invT : tau(T) = tau_ref + tau_inv · (T_ref / T - 1)
+      abc      : tau(T) = a_ij + b_ij / T + c_ij · ln(T/T_ref)
+      legacy   : converted internally to the ABC form
+
     G_ij = exp(-α_ij · τ_ij)
     ln γ_2, ln γ_1, ln γ_∞  — standard NRTL expressions.
 
@@ -507,7 +579,7 @@ class NRTLLayer(nn.Module):
         T_ref: float = 298.15,
         tau_clamp: float = 30.0,
         eps: float = 1e-10,
-    ):
+    ) -> None:
         super().__init__()
         self.R = R
         self.T_ref = T_ref
@@ -515,8 +587,16 @@ class NRTLLayer(nn.Module):
         self.eps = eps
 
     def compute_tau_G(
-        self, a_12, b_12, c_12, a_21, b_21, c_21, alpha_12, T
-    ):
+        self,
+        a_12: Tensor,
+        b_12: Tensor,
+        c_12: Tensor,
+        a_21: Tensor,
+        b_21: Tensor,
+        c_21: Tensor,
+        alpha_12: Tensor,
+        T: Tensor,
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         """Compute τ and G parameters from temperature coefficients."""
         log_term = torch.log(T / self.T_ref + self.eps)
         tau_12 = a_12 + b_12 / T + c_12 * log_term
@@ -527,7 +607,119 @@ class NRTLLayer(nn.Module):
         G_21 = torch.exp(-alpha_12 * tau_21)
         return tau_12, tau_21, G_12, G_21
 
-    def ln_gamma_1(self, x1, x2, tau_12, tau_21, G_12, G_21):
+    def compute_tau_G_ref_invT(
+        self,
+        tau_ref_12: Tensor,
+        tau_inv_12: Tensor,
+        tau_ref_21: Tensor,
+        tau_inv_21: Tensor,
+        alpha_12: Tensor,
+        T: Tensor,
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        """Compute tau(T) from a compact reference-temperature parameterization."""
+        inv_ratio = (self.T_ref / T) - 1.0
+        tau_12 = tau_ref_12 + tau_inv_12 * inv_ratio
+        tau_21 = tau_ref_21 + tau_inv_21 * inv_ratio
+        tau_12 = torch.clamp(tau_12, -self.tau_clamp, self.tau_clamp)
+        tau_21 = torch.clamp(tau_21, -self.tau_clamp, self.tau_clamp)
+        G_12 = torch.exp(-alpha_12 * tau_12)
+        G_21 = torch.exp(-alpha_12 * tau_21)
+        return tau_12, tau_21, G_12, G_21
+
+    def params_to_abc(
+        self,
+        nrtl_params: NRTLState,
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+        """Convert supported NRTL parameter layouts into the ABC solver form."""
+        alpha_12 = nrtl_params["alpha_12"]
+
+        if "tau_a12" in nrtl_params:
+            return (
+                nrtl_params["tau_a12"],
+                nrtl_params["tau_b12"],
+                nrtl_params["tau_c12"],
+                nrtl_params["tau_a21"],
+                nrtl_params["tau_b21"],
+                nrtl_params["tau_c21"],
+                alpha_12,
+            )
+
+        if "tau_ref_12" in nrtl_params:
+            tau_ref_12 = nrtl_params["tau_ref_12"]
+            tau_ref_21 = nrtl_params["tau_ref_21"]
+            tau_inv_12 = nrtl_params["tau_inv_12"]
+            tau_inv_21 = nrtl_params["tau_inv_21"]
+            zeros = torch.zeros_like(tau_ref_12)
+            return (
+                tau_ref_12 - tau_inv_12,
+                tau_inv_12 * self.T_ref,
+                zeros,
+                tau_ref_21 - tau_inv_21,
+                tau_inv_21 * self.T_ref,
+                zeros,
+                alpha_12,
+            )
+
+        if "dg_12" in nrtl_params:
+            a_T12 = nrtl_params["a_T12"]
+            a_T21 = nrtl_params["a_T21"]
+            zeros = torch.zeros_like(a_T12)
+            return (
+                -a_T12,
+                nrtl_params["dg_12"] / self.R + a_T12 * self.T_ref,
+                zeros,
+                -a_T21,
+                nrtl_params["dg_21"] / self.R + a_T21 * self.T_ref,
+                zeros,
+                alpha_12,
+            )
+
+        raise KeyError("Unsupported NRTL parameter layout")
+
+    def compute_tau_G_from_params(
+        self,
+        nrtl_params: NRTLState,
+        T: Tensor,
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        """Compute tau(T) and G(T) from any supported NRTL parameter layout."""
+        if "tau_12" in nrtl_params and "tau_21" in nrtl_params:
+            tau_12 = torch.clamp(
+                nrtl_params["tau_12"], -self.tau_clamp, self.tau_clamp
+            )
+            tau_21 = torch.clamp(
+                nrtl_params["tau_21"], -self.tau_clamp, self.tau_clamp
+            )
+            alpha_12 = nrtl_params["alpha_12"]
+            G_12 = torch.exp(-alpha_12 * tau_12)
+            G_21 = torch.exp(-alpha_12 * tau_21)
+            return tau_12, tau_21, G_12, G_21
+
+        if "tau_ref_12" in nrtl_params:
+            return self.compute_tau_G_ref_invT(
+                nrtl_params["tau_ref_12"],
+                nrtl_params["tau_inv_12"],
+                nrtl_params["tau_ref_21"],
+                nrtl_params["tau_inv_21"],
+                nrtl_params["alpha_12"],
+                T,
+            )
+
+        a_12, b_12, c_12, a_21, b_21, c_21, alpha_12 = self.params_to_abc(
+            nrtl_params
+        )
+        return self.compute_tau_G(
+            a_12, b_12, c_12, a_21, b_21, c_21, alpha_12, T
+        )
+
+    def ln_gamma_1(
+        self,
+        x1: Tensor,
+        x2: Tensor,
+        tau_12: Tensor,
+        tau_21: Tensor,
+        G_12: Tensor,
+        G_21: Tensor,
+    ) -> Tensor:
         """ln γ_1 (solvent activity coefficient)."""
         A = x2 + x1 * G_12 + self.eps
         B = x1 + x2 * G_21 + self.eps
@@ -535,7 +727,15 @@ class NRTLLayer(nn.Module):
         term2 = tau_12 * G_12 / A ** 2
         return x2 ** 2 * (term1 + term2)
 
-    def ln_gamma_2(self, x1, x2, tau_12, tau_21, G_12, G_21):
+    def ln_gamma_2(
+        self,
+        x1: Tensor,
+        x2: Tensor,
+        tau_12: Tensor,
+        tau_21: Tensor,
+        G_12: Tensor,
+        G_21: Tensor,
+    ) -> Tensor:
         """ln γ_2 (solute activity coefficient)."""
         A = x2 + x1 * G_12 + self.eps
         B = x1 + x2 * G_21 + self.eps
@@ -543,13 +743,22 @@ class NRTLLayer(nn.Module):
         term2 = tau_21 * G_21 / B ** 2
         return x1 ** 2 * (term1 + term2)
 
-    def ln_gamma_inf(self, tau_12, tau_21, G_21):
+    def ln_gamma_inf(self, tau_12: Tensor, tau_21: Tensor, G_21: Tensor) -> Tensor:
         """ln γ_2^∞ (infinite dilution: x_2 → 0)."""
         return tau_12 + tau_21 * G_21
 
     def forward(
-        self, x2, a_12, b_12, c_12, a_21, b_21, c_21, alpha_12, T
-    ):
+        self,
+        x2: Tensor,
+        a_12: Tensor,
+        b_12: Tensor,
+        c_12: Tensor,
+        a_21: Tensor,
+        b_21: Tensor,
+        c_21: Tensor,
+        alpha_12: Tensor,
+        T: Tensor,
+    ) -> NRTLState:
         """Full NRTL forward: returns ln γ_2 and intermediate quantities."""
         x1 = 1.0 - x2
         tau_12, tau_21, G_12, G_21 = self.compute_tau_G(
@@ -575,8 +784,8 @@ class HansenDistanceLayer(nn.Module):
     """
 
     def forward(
-        self, hansen_1: torch.Tensor, hansen_2: torch.Tensor
-    ) -> torch.Tensor:
+        self, hansen_1: Tensor, hansen_2: Tensor
+    ) -> Tensor:
         dd = hansen_1[:, 0] - hansen_2[:, 0]
         dp = hansen_1[:, 1] - hansen_2[:, 1]
         dh = hansen_1[:, 2] - hansen_2[:, 2]

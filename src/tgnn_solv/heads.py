@@ -2,24 +2,15 @@
 Prediction heads for TGNN-Solv.
 
 Each head maps a learned representation to physically meaningful
-parameters.  Constrained activations ensure outputs stay in
-valid ranges (e.g. T_m > 0, α ∈ [0.1, 0.6]).
-
-Heads
------
-PairRepresentation     : (g_sol, g_slv) → pair vector
-FusionHead             : g_solute → (T_m, ΔH_fus, ΔCp_fus)
-NRTLHead               : g_pair  → (Δg12, Δg21, α12, aT12, aT21)
-HansenHead             : g_mol   → (δd, δp, δh)
-AuxPropsHead           : g_mol   → (V_m, ε_r, μ, n_D)
-GatedResidualCorrection: (g_pair, summary) → scalar correction
+parameters. Constrained activations keep outputs in valid ranges.
 """
 
-from typing import Dict
+from __future__ import annotations
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
 
 from .config import TGNNSolvConfig
 
@@ -38,7 +29,7 @@ class PairRepresentation(nn.Module):
     Concatenates: [g_sol, g_slv, g_sol * g_slv, |g_sol - g_slv|]
     """
 
-    def __init__(self, readout_dim: int, pair_dim: int):
+    def __init__(self, readout_dim: int, pair_dim: int) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(readout_dim * 4, pair_dim * 2),
@@ -49,7 +40,7 @@ class PairRepresentation(nn.Module):
             nn.Dropout(0.1),
         )
 
-    def forward(self, g_sol: torch.Tensor, g_slv: torch.Tensor) -> torch.Tensor:
+    def forward(self, g_sol: Tensor, g_slv: Tensor) -> Tensor:
         pair_input = torch.cat(
             [g_sol, g_slv, g_sol * g_slv, (g_sol - g_slv).abs()],
             dim=-1,
@@ -73,7 +64,7 @@ class SolventTypeMoE(nn.Module):
         type_emb_dim: int = 16,
         hidden_dim: int = 128,
         dropout: float = 0.1,
-    ):
+    ) -> None:
         super().__init__()
         self.type_embed = nn.Embedding(num_types, type_emb_dim)
         self.gate = nn.Sequential(
@@ -94,8 +85,8 @@ class SolventTypeMoE(nn.Module):
         self.res_scale = nn.Parameter(torch.tensor(0.0))
 
     def forward(
-        self, g_pair: torch.Tensor, solvent_type: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        self, g_pair: Tensor, solvent_type: Tensor
+    ) -> tuple[Tensor, Tensor]:
         type_ids = solvent_type.long().view(-1)
         type_emb = self.type_embed(type_ids)
         gate_logits = self.gate(torch.cat([g_pair, type_emb], dim=-1))
@@ -122,7 +113,7 @@ class FusionHead(nn.Module):
       dCp_fus : heat capacity change [J/(mol·K)], unbounded
     """
 
-    def __init__(self, input_dim: int, cfg: TGNNSolvConfig):
+    def __init__(self, input_dim: int, cfg: TGNNSolvConfig) -> None:
         super().__init__()
         self.cfg = cfg
         self.mlp = nn.Sequential(
@@ -133,7 +124,7 @@ class FusionHead(nn.Module):
             nn.Linear(128, 3),
         )
 
-    def forward(self, g_solute: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, g_solute: Tensor) -> dict[str, Tensor]:
         z = self.mlp(g_solute)  # (B, 3)
         T_m = self.cfg.T_m_min + (
             (self.cfg.T_m_max - self.cfg.T_m_min) * torch.sigmoid(z[:, 0])
@@ -149,9 +140,14 @@ class FusionHead(nn.Module):
 
 class NRTLHead(nn.Module):
     """
-    Predict NRTL parameters from the pair representation.
+    Predict NRTL parameters from the pair representation and temperature state.
 
     Outputs:
+      If cfg.nrtl_tau_mode == "ref_invT":
+        tau_ref_12, tau_ref_21 : tau values at T_ref
+        tau_inv_12, tau_inv_21 : inverse-temperature slopes in
+                                 tau(T) = tau_ref + tau_inv * (T_ref / T - 1)
+        alpha_12               : non-randomness, sigmoid-bounded [α_min, α_max]
       If cfg.nrtl_tau_mode == "abc":
         tau_a12, tau_b12, tau_c12 : tau(T) coefficients for 1->2
         tau_a21, tau_b21, tau_c21 : tau(T) coefficients for 2->1
@@ -166,12 +162,14 @@ class NRTLHead(nn.Module):
       - alpha bias set to give α ≈ 0.3 at init
     """
 
-    def __init__(self, input_dim: int, cfg: TGNNSolvConfig):
+    def __init__(self, input_dim: int, cfg: TGNNSolvConfig) -> None:
         super().__init__()
         self.cfg = cfg
+        self.use_temperature_features = cfg.use_temperature_in_nrtl_head
+        backbone_input_dim = input_dim + (3 if self.use_temperature_features else 0)
 
         self.backbone = nn.Sequential(
-            nn.Linear(input_dim, 512),
+            nn.Linear(backbone_input_dim, 512),
             nn.SiLU(),
             nn.Dropout(cfg.dropout),
             nn.Linear(512, 256),
@@ -181,20 +179,58 @@ class NRTLHead(nn.Module):
             nn.SiLU(),
             nn.Dropout(cfg.dropout),
         )
-        self.output = nn.Linear(128, 7)
+        output_dim = {
+            "ref_invT": 5,
+            "abc": 7,
+            "legacy": 7,
+        }.get(cfg.nrtl_tau_mode)
+        if output_dim is None:
+            raise ValueError(f"Unsupported nrtl_tau_mode: {cfg.nrtl_tau_mode}")
+        self.output = nn.Linear(128, output_dim)
 
         # Careful initialization: start near ideal (γ ≈ 1)
         with torch.no_grad():
             self.output.weight.zero_()
             self.output.bias.zero_()
-            if cfg.nrtl_tau_mode == "legacy":
+            if cfg.nrtl_tau_mode == "ref_invT":
+                self.output.bias[4] = -0.405
+            elif cfg.nrtl_tau_mode == "legacy":
                 self.output.bias[2] = -0.405   # alpha index in legacy mode
             else:
                 self.output.bias[6] = -0.405   # alpha index in abc mode
 
-    def forward(self, g_pair: torch.Tensor) -> Dict[str, torch.Tensor]:
-        h = self.backbone(g_pair)
+    def forward(
+        self,
+        g_pair: Tensor,
+        temp_feat: Tensor | None = None,
+    ) -> dict[str, Tensor]:
+        if self.use_temperature_features:
+            if temp_feat is None:
+                raise ValueError(
+                    "NRTLHead requires temperature features when "
+                    "cfg.use_temperature_in_nrtl_head is enabled."
+                )
+            h = self.backbone(torch.cat([g_pair, temp_feat], dim=-1))
+        else:
+            h = self.backbone(g_pair)
         z = self.output(h)  # (B, 7)
+
+        if self.cfg.nrtl_tau_mode == "ref_invT":
+            tau_ref_12 = z[:, 0] * self.cfg.S_tau_ref
+            tau_ref_21 = z[:, 1] * self.cfg.S_tau_ref
+            tau_inv_12 = z[:, 2] * self.cfg.S_tau_inv
+            tau_inv_21 = z[:, 3] * self.cfg.S_tau_inv
+            alpha_12 = self.cfg.alpha_min + (
+                (self.cfg.alpha_max - self.cfg.alpha_min)
+                * torch.sigmoid(z[:, 4])
+            )
+            return {
+                "tau_ref_12": tau_ref_12,
+                "tau_ref_21": tau_ref_21,
+                "tau_inv_12": tau_inv_12,
+                "tau_inv_21": tau_inv_21,
+                "alpha_12": alpha_12,
+            }
 
         if self.cfg.nrtl_tau_mode == "legacy":
             dg_12 = z[:, 0] * self.cfg.S_g
@@ -246,7 +282,7 @@ class HansenHead(nn.Module):
     All three are non-negative → softplus activation.
     """
 
-    def __init__(self, input_dim: int, cfg: TGNNSolvConfig):
+    def __init__(self, input_dim: int, cfg: TGNNSolvConfig) -> None:
         super().__init__()
         self.cfg = cfg
         self.mlp = nn.Sequential(
@@ -255,7 +291,7 @@ class HansenHead(nn.Module):
             nn.Linear(128, 3),
         )
 
-    def forward(self, g_mol: torch.Tensor) -> torch.Tensor:
+    def forward(self, g_mol: Tensor) -> Tensor:
         z = self.mlp(g_mol)
         return F.softplus(z) * self.cfg.S_delta  # (B, 3)
 
@@ -266,50 +302,58 @@ class HansenHead(nn.Module):
 
 class AuxPropsHead(nn.Module):
     """
-    Predict auxiliary molecular properties.
+    Predict the auxiliary molecular property used by the current objective.
 
-    V_m   : molar volume [cm³/mol], softplus → (30, +∞)
-    eps_r : relative permittivity, softplus → (1, +∞)
-    mu    : dipole moment [Debye], softplus → (0, +∞)
-    n_D   : refractive index, sigmoid → (1.0, 1.8)
+    Only molar volume is retained in the maintained architecture. Earlier
+    versions also emitted `eps_r`, `mu`, and `n_D`, but those outputs were not
+    supervised anywhere in the training objective and only added latent noise.
+
+    V_m : molar volume [cm³/mol], softplus → (30, +∞)
     """
 
-    def __init__(self, input_dim: int):
+    def __init__(self, input_dim: int) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(input_dim, 128),
             nn.SiLU(),
-            nn.Linear(128, 4),
+            nn.Linear(128, 1),
         )
 
-    def forward(self, g_mol: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, g_mol: Tensor) -> dict[str, Tensor]:
         z = self.mlp(g_mol)
         V_m = F.softplus(z[:, 0]) * 50.0 + 30.0
-        eps_r = 1.0 + F.softplus(z[:, 1]) * 10.0
-        mu = F.softplus(z[:, 2]) * 2.0
-        n_D = 1.0 + 0.8 * torch.sigmoid(z[:, 3])
-        return {"V_m": V_m, "eps_r": eps_r, "mu": mu, "n_D": n_D}
+        return {"V_m": V_m}
 
 
 class AdaptivePhysicsCorrection(nn.Module):
     """
-    Adaptive correction that learns when physics is unreliable.
+    Adaptive residual around the physics prediction.
 
-    Instead of a single scalar gate, predicts a per-sample
-    mixing weight between physics prediction and learned correction.
+    The correction path operates in parameter space.
 
-    ln(x₂) = σ(w) · ln(x₂)_physics + (1 - σ(w)) · ln(x₂)_learned
+    It predicts bounded deltas for:
+      - T_m
+      - dH_fus
+      - tau_12(T)
+      - tau_21(T)
 
-    When the model is confident in physics (familiar molecule),
-    σ(w) → 1 and physics dominates.
-    When physics is unreliable (novel scaffold, unusual T_m),
-    σ(w) → 0 and the learned path dominates.
-
-    Initialized so that σ(w) ≈ 0.9 (physics-first).
+    The corrected parameter proposal is then passed back through the SLE
+    solver, and the resulting residual around the base physics solution is
+    blended via a confidence gate.
     """
 
-    def __init__(self, pair_dim: int, n_param_features: int = 6):
+    def __init__(
+        self,
+        pair_dim: int,
+        n_param_features: int = 6,
+        Tm_limit: float = 60.0,
+        dH_fraction_limit: float = 0.25,
+        tau_limit: float = 2.0,
+    ) -> None:
         super().__init__()
+        self.Tm_limit = Tm_limit
+        self.dH_fraction_limit = dH_fraction_limit
+        self.tau_limit = tau_limit
 
         # Confidence network: estimates how reliable physics is
         self.confidence_net = nn.Sequential(
@@ -321,31 +365,34 @@ class AdaptivePhysicsCorrection(nn.Module):
             nn.Linear(64, 1),
         )
 
-        # Direct prediction path (bypass physics): mean + log_sigma
-        self.direct_net = nn.Sequential(
+        # Parameter-space correction: delta_Tm, delta_dH_frac, delta_tau12,
+        # delta_tau21, log_sigma
+        self.param_delta_net = nn.Sequential(
             nn.Linear(pair_dim + n_param_features, 128),
             nn.SiLU(),
             nn.Dropout(0.2),
             nn.Linear(128, 64),
             nn.SiLU(),
-            nn.Linear(64, 2),
+            nn.Linear(64, 5),
         )
 
         # Initialize confidence bias high → σ(2.2) ≈ 0.9
         with torch.no_grad():
             self.confidence_net[-1].bias.fill_(2.2)
+            self.param_delta_net[-1].weight.zero_()
+            self.param_delta_net[-1].bias.zero_()
 
     def forward(
-        self, g_pair: torch.Tensor, param_summary: torch.Tensor,
-        ln_x2_physics: torch.Tensor,
-    ) -> tuple:
+        self,
+        g_pair: Tensor,
+        param_summary: Tensor,
+    ) -> tuple[Tensor, dict[str, Tensor], Tensor]:
         """
         Returns
         -------
-        ln_x2_final : (B,) blended prediction
         confidence  : (B,) physics confidence σ(w)
-        ln_x2_direct : (B,) direct (non-physics) prediction (mean)
-        ln_x2_direct_log_sigma : (B,) log sigma for direct path
+        param_deltas : bounded parameter deltas used to build the proposal
+        proposal_log_sigma : (B,) log sigma for the corrected-parameter proposal
         """
         inp = torch.cat([g_pair, param_summary], dim=-1)
 
@@ -354,20 +401,12 @@ class AdaptivePhysicsCorrection(nn.Module):
             self.confidence_net(inp).squeeze(-1)
         )  # (B,) in [0, 1]
 
-        # Direct prediction path
-        direct_out = self.direct_net(inp)
-        ln_x2_direct = direct_out[:, 0]
-        ln_x2_direct_log_sigma = direct_out[:, 1].clamp(-6.0, 2.0)
-
-        # Blend
-        ln_x2_final = (
-            confidence * ln_x2_physics
-            + (1.0 - confidence) * ln_x2_direct
-        )
-
-        return (
-            ln_x2_final,
-            confidence,
-            ln_x2_direct,
-            ln_x2_direct_log_sigma,
-        )
+        delta_out = self.param_delta_net(inp)
+        param_deltas = {
+            "delta_T_m": self.Tm_limit * torch.tanh(delta_out[:, 0]),
+            "delta_dH_fraction": self.dH_fraction_limit * torch.tanh(delta_out[:, 1]),
+            "delta_tau_12": self.tau_limit * torch.tanh(delta_out[:, 2]),
+            "delta_tau_21": self.tau_limit * torch.tanh(delta_out[:, 3]),
+        }
+        proposal_log_sigma = delta_out[:, 4].clamp(-6.0, 2.0)
+        return confidence, param_deltas, proposal_log_sigma

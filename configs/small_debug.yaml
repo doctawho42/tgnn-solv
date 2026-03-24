@@ -1,0 +1,108 @@
+# TGNN-Solv Configuration for Debug and Development
+# Lightweight configuration for fast iteration, debugging, and unit tests.
+# All parameters scaled down: 1/4 hidden dims, fewer layers, shorter training.
+
+model:
+  # Reduced GNN backbone for fast debug iterations
+  hidden_dim: 64  # Reduced from 256 for quick forward/backward passes
+  n_gnn_layers: 2  # Reduced from 6; minimal MPNN depth for speed
+  encoder_role_mode: "shared_residual"  # Keep the current canonical backbone by default
+  encoder_role_specific_layers: 1  # Used only when encoder_role_mode="split_late"
+  n_cross_attn_layers: 1  # Reduced from 3; single cross-attention layer
+  
+  # Smaller pair representation
+  pair_dim: 128  # Reduced from 512; smaller feature dimension for faster MLP
+  interaction_mode: "cross_attn"  # Same as paper config, but with fewer layers
+  
+  # Physics and differentiation
+  use_implicit_diff: true  # Keep physics-informed architecture for correctness testing
+  use_solvent_moe: true  # Keep MoE enabled to test all code paths
+  nrtl_tau_mode: "ref_invT"  # Exercise the compact NRTL parameterization during debug runs
+  use_temperature_in_encoder: false  # Keep crystal-property heads temperature-invariant
+  use_temperature_in_interaction: false  # Avoid T leakage into generic molecular embeddings
+  use_temperature_in_nrtl_head: true  # Inject T explicitly in the NRTL block
+
+  # Minimal fixed-point solver iterations
+  set2set_steps: 3  # Keep same as paper for consistency
+  n_iter_train: 5  # Same iterations, but overall model is smaller
+  n_iter_eval: 20  # Same as paper for debugging evaluation code
+  damping: 0.7
+  solver_min_damping: 0.1
+  solver_tol_train: 1.0e-5
+  solver_tol_eval: 1.0e-7
+  solver_adaptive_damping: true
+  correction_max_abs: 2.0
+  correction_Tm_max_delta: 60.0
+  correction_dH_fraction: 0.25
+  correction_tau_max_delta: 2.0
+  monotonicity_force_explicit: false
+
+training:
+  # Very short training schedule for debug cycles
+  epochs_phase1: 5  # Down from 50; enough to test pretraining loss computation
+  epochs_phase2: 20  # Down from 200; fast full SLE training test
+  epochs_phase3: 5  # Down from 50; quick fine-tuning verification
+
+  # Small batch size for GPU memory efficiency
+  batch_size: 16  # Down from 64; allows testing on limited memory devices
+  use_pair_temperature_batching: true  # Exercise same-pair temperature losses during debug training
+  pair_temperature_min_group_size: 2
+  pair_temperature_group_chunk_size: 4
+  lr_phase1: 3.0e-4
+  lr_phase2: 1.0e-4
+  lr_phase3: 1.0e-6
+  warmup_epochs: 2
+  patience: 30  # Keep same patience logic for testing
+  grad_clip: 1.0  # Same clipping for stability
+
+data:
+  # Same split strategy as paper for valid testing
+  split_mode: "solute_scaffold"  # Maintain paper's split method
+  train_ratio: 0.8  # Same proportions
+  val_ratio: 0.1
+  test_ratio: 0.1
+  aux_only_fraction: 0.3  # Same auxiliary data fraction for curriculum testing
+
+loss_weights:
+  # Phase 1: Property pretraining
+  phase1:
+    sol: 0.0
+    T_m: 1.0
+    dH: 1.0
+    hansen: 0.5
+    gamma_inf: 0.5
+    mono: 0.0
+    res: 0.0
+    bridge: 0.0
+  
+  # Phase 2: Full SLE training
+  phase2:
+    sol: 1.0
+    T_m: 0.3
+    dH: 0.3
+    hansen: 0.2
+    gamma_inf: 0.5
+    mono: 0.05
+    res: 0.03
+    bridge: 0.05
+    phys_pref: 0.05
+    direct_reg: 0.05
+    direct_nll: 0.05
+    pair_temp_rank: 0.02
+    vant_hoff_local: 0.01
+  
+  # Phase 3: Fine-tuning
+  phase3:
+    sol: 1.0
+    T_m: 0.2
+    dH: 0.2
+    hansen: 0.1
+    gamma_inf: 0.3
+    mono: 0.3
+    res: 0.05
+    bridge: 0.1
+    phys_pref: 0.03
+    direct_reg: 0.05
+    direct_nll: 0.05
+    pair_temp_rank: 0.05
+    vant_hoff_local: 0.03

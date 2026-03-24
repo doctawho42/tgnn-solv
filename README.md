@@ -12,6 +12,8 @@ A physics-informed GNN that predicts solid-liquid equilibrium (SLE) solubility b
 - **Uncertainty quantification**: MC-Dropout and Deep Ensemble support
 - **Applicability domain**: Mahalanobis distance + Tanimoto similarity
 - **Curriculum learning**: 3-phase training (pretrain → SLE → fine-tune)
+- **Temperature-aware state block**: crystal-property heads stay temperature-invariant by default, while temperature enters the NRTL/state block explicitly
+- **Parameter-space correction**: the correction path adjusts physical parameters and re-solves SLE instead of bypassing physics with a free direct head
 - **Flexible interaction**: cross-attention (default) or bipartite message passing
 - **Solvent-type MoE**: optional expert routing by solvent class
 
@@ -29,11 +31,25 @@ conda activate tgnn-solv
 pip install torch --index-url https://download.pytorch.org/whl/cu121
 
 # Install PyTorch Geometric
-pip install torch-geometric torch-scatter -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
+pip install torch-geometric -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
 
 # Install package
 pip install -e ".[dev]"
 ```
+
+## Documentation Map
+
+- `docs/README.md`: entry point for the project documentation set
+- `docs/architecture.md`: model architecture and design decisions
+- `docs/data_preparation.md`: source datasets, CSV schema, and split modes
+- `docs/training.md`: notebook and CLI training workflows
+- `docs/evaluation.md`: evaluation scripts and worked examples
+- `docs/baselines.md`: baseline overview and execution paths
+- `docs/reproducing_paper.md`: end-to-end reproduction workflow
+- `docs/script_reference.md`: script and notebook maturity map
+- `docs/repository_audit.md`: detailed structural audit and open gaps
+- `AGENTS.md`: condensed architecture and workflow notes for coding agents
+- `BENCHMARKING_GUIDE.md`: benchmarking methodology and interpretation
 
 ## Quick Start
 
@@ -93,13 +109,65 @@ python scripts/evaluate_complete.py \
 **Option C: Compare with FastSolv baseline (pretrained)**
 
 ```bash
-python scripts/compare_fastsolv_tgnn.py \
-    --test-data notebooks/data/processed/test.csv \
+python scripts/run_fastsolv.py compare \
+    --input notebooks/data/processed/test.csv \
     --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
-    --output checkpoints/comparison.json
+    --metrics checkpoints/fastsolv_compare.json
 ```
 
+**Option D: Compare the default shared backbone against the `split_late`
+encoder**
+
+```bash
+python scripts/run_seeds.py \
+    --config configs/paper_config.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --n-seeds 5 \
+    --base-seed 42 \
+    --output results/multi_seed_results.json
+
+python scripts/run_seeds.py \
+    --config configs/paper_config_split_late.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --n-seeds 5 \
+    --base-seed 42 \
+    --output results/split_late_multi_seed_results.json
+```
+
+The dedicated `paper_config_split_late.yaml` file keeps the paper setup fixed
+and switches only the encoder from `shared_residual` to `split_late`.
+
 ## Evaluation Scripts
+
+There are two complementary evaluation entry points:
+
+- `scripts/evaluate_complete.py`
+  - lightweight checkpoint evaluation,
+  - emits `true_ln_x2` / `pred_ln_x2` arrays for parity and residual plots,
+  - best default for quick reports and figure generation.
+- `scripts/benchmark_tgnn_solv.py`
+  - richer `Evaluator`-backed benchmark,
+  - best choice for detailed stratified benchmarking and model-to-model
+    comparison.
+
+Both scripts now emit a shared JSON report schema with:
+
+- `metadata`
+- `overall`
+- `stratified.temperature`
+- `stratified.solubility`
+- `stratified.solvent_type`
+- `stratified.solvent`
+- `stratified.aux_data`
+- optional `predictions.true_ln_x2` / `predictions.pred_ln_x2`
+
+Legacy aliases such as `by_temperature`, `by_solubility_range`,
+`by_solvent_type`, `true_ln_x2`, and `pred_ln_x2` are preserved for backward
+compatibility.
 
 ### evaluate_complete.py
 
@@ -163,6 +231,9 @@ python scripts/compare_fastsolv_tgnn.py \
 
 **Note on FastSolv**: Uses only pretrained FastSolv for inference. Training FastSolv from scratch has unfixable NaN issues in descriptor computation (see FASTSOLV_NaN_ROOT_CAUSE.md). TGNN-Solv is recommended for custom training.
 
+For the main FastSolv wrapper, see `scripts/run_fastsolv.py` and
+`docs/baselines.md`.
+
 ## Data Format
 
 Processed CSVs are written to `notebooks/data/processed/{train,val,test}.csv`.
@@ -184,10 +255,21 @@ Processed CSVs are written to `notebooks/data/processed/{train,val,test}.csv`.
 - `ln_gamma_inf`: infinite dilution activity coefficient
 - `has_gamma_inf`: boolean flag
 
-**Split modes** (controlled in `notebooks/01_prepare_data.ipynb`):
+**Split modes** (available in `scripts/prepare_data.py` and `notebooks/01_prepare_data.ipynb`):
 - `solute_scaffold` (default): no test leakage via scaffold
 - `solute`: random split by solute
 - `solvent`: no solvent overlap between train/test
+
+One `scripts/prepare_data.py` run now writes all three split families plus
+`split_manifest.json`. The canonical filenames are:
+
+- scaffold: `train.csv`, `val.csv`, `test.csv`
+- solute: `train_solute.csv`, `val_solute.csv`, `test_solute.csv`
+- solvent: `train_solvent.csv`, `val_solvent.csv`, `test_solvent.csv`
+
+For fair baseline reporting against older work that did not use scaffold
+holdout, use `scripts/run_split_comparisons.py` and report the `solute` split
+alongside the stricter `solute_scaffold` split.
 
 ## Command Examples
 
@@ -327,20 +409,25 @@ On BigSolDBv2.1 test set (~7,500 samples):
 ## Architecture Overview
 
 **Forward pass**:
-1. GNN Encoder: 6-layer MPNN processes solute and solvent independently
-2. Interaction: Cross-attention or bipartite message passing
-3. Auxiliary heads: Hansen, property predictions (before interaction)
+1. GNN Encoder: the default `shared_residual` path uses one shared 6-layer MPNN plus lightweight role adapters; an optional `split_late` variant keeps early layers shared and splits the last few layers by role
+2. Auxiliary heads: crystal and Hansen properties, plus a lightweight `V_m` auxiliary prediction, are computed from temperature-invariant pre-interaction representations
+3. Interaction: Cross-attention or bipartite message passing
 4. Physics-aware readout: Concatenates attention + Set2Set pooling
 5. Pair representation: Combines solute/solvent features
 6. Solvent-type MoE: Optional expert routing
-7. Prediction heads: Fusion (T_m, ΔH_fus, ΔCp), NRTL, Hansen, auxiliary
-8. SLE Solver: Fixed-point iterations with implicit differentiation
-9. Adaptive correction: Blends physics and learned predictions
+7. Prediction heads: Fusion (T_m, ΔH_fus, ΔCp), NRTL, Hansen, auxiliary; the canonical configuration uses a compact `tau(T_ref)` + inverse-temperature-slope NRTL parameterization, and temperature is injected explicitly into the NRTL/state block
+8. SLE Solver: Residual-controlled fixed-point iterations with implicit differentiation
+9. Adaptive correction: Bounded parameter-space correction around the physics prediction, followed by a second SLE solve
 
 **Three-phase curriculum training**:
 - Phase 1 (50 epochs): Property pretraining (no solubility loss)
 - Phase 2 (200 epochs): Full SLE training with solubility loss
 - Phase 3 (50 epochs): Fine-tuning with lower LR and stronger regularization
+
+The canonical training CLI also uses pair-aware batching, so repeated
+`(solute, solvent)` measurements at different temperatures are grouped into the
+same training minibatches when possible. This makes the temperature ranking and
+local van't Hoff regularizers active by construction rather than only by chance.
 
 ## Citation
 
@@ -357,19 +444,20 @@ If you use TGNN-Solv, please cite:
 
 ## Related Documents
 
+- `docs/README.md`: Navigation index for the full docs set
+- `docs/script_reference.md`: Script and notebook inventory
+- `docs/repository_audit.md`: Detailed audit of repository structure
 - `AGENTS.md`: Full architecture details and design decisions
-- `BENCHMARKING_GUIDE.md`: Comprehensive benchmarking methodology  
+- `BENCHMARKING_GUIDE.md`: Comprehensive benchmarking methodology
 - `FASTSOLV_NaN_ROOT_CAUSE.md`: Root cause analysis of FastSolv training failures
 - `CODEBASE_PROMPT.md`: Detailed codebase reference
-- `solute` (random by solute SMILES)
-- `solvent` (no solvent overlap)
 
 ## Training details
 
 Training uses a three‑phase curriculum (pretrain → SLE → fine‑tune). See
 `src/tgnn_solv/trainer.py` and `TGNNSolvConfig` in `src/tgnn_solv/config.py`
-for phase lengths, loss weights, and hyperparameters. The notebooks save
-checkpoints under `checkpoints/`.
+for phase lengths, loss weights, pair-aware temperature batching controls, and
+other hyperparameters. The notebooks save checkpoints under `checkpoints/`.
 
 ## Evaluation and comparison
 
@@ -435,7 +523,48 @@ python scripts/run_fastsolv.py compare \
 ```
 
 **DirectGNN (no-physics ablation)**  
-Train and evaluate in `notebooks/05_baselines.ipynb` (same data, same metrics).
+Standalone CLI:
+
+```bash
+python scripts/train_directgnn.py \
+    --config configs/paper_config.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/directgnn.pt
+```
+
+For exploratory inspection and manual comparisons, `notebooks/05_baselines.ipynb`
+remains useful.
+
+**Split-wise comparison across scaffold / solute / solvent protocols**
+
+```bash
+python scripts/run_split_comparisons.py \
+    --processed-dir notebooks/data/processed \
+    --splits "solute_scaffold,solute,solvent" \
+    --models "tgnn_solv,direct_gnn,rf_baseline" \
+    --config configs/paper_config.yaml \
+    --output results/split_comparisons.json
+```
+
+This runner writes per-split multi-seed artifacts under
+`results/split_comparisons/` and an aggregate summary at
+`results/split_comparisons.json`. The supplementary pipeline can turn this into
+`Table S9`, and `generate_paper_figures.py` can render `Figure S2` when the
+result file is available.
+
+**Ablation study**
+
+```bash
+python scripts/run_ablation.py \
+    --config configs/paper_config.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --n-seeds 3 \
+    --output results/ablation.json
+```
 
 **SolProp (external baseline)**  
 Requires separate `solprop` conda env.
@@ -443,8 +572,8 @@ Requires separate `solprop` conda env.
 ```bash
 conda activate solprop
 python scripts/run_solprop.py \
-    --input data/processed/test.csv \
-    --output data/processed/solprop_predictions.csv \
+    --input notebooks/data/processed/test.csv \
+    --output notebooks/data/processed/solprop_predictions.csv \
     --temperature_dependent
 ```
 

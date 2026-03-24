@@ -1,0 +1,54 @@
+services:
+  train:
+    build: .
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./data:/app/data
+      - ./notebooks/data:/app/notebooks/data
+      - ./checkpoints:/app/checkpoints
+      - ./logs:/app/logs
+      - ./results:/app/results
+      - ./configs:/app/configs
+    command:
+      - scripts/train.py
+      - --config
+      - configs/paper_config.yaml
+      - --train-data
+      - notebooks/data/processed/train.csv
+      - --val-data
+      - notebooks/data/processed/val.csv
+      - --test-data
+      - notebooks/data/processed/test.csv
+      - --checkpoint
+      - checkpoints/model.pt
+      - --device
+      - cuda
+
+  evaluate:
+    build: .
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./data:/app/data
+      - ./notebooks/data:/app/notebooks/data
+      - ./checkpoints:/app/checkpoints
+      - ./results:/app/results
+    command:
+      - scripts/evaluate_complete.py
+      - --test-data
+      - notebooks/data/processed/test.csv
+      - --tgnn-checkpoint
+      - checkpoints/model.pt
+      - --output
+      - results/evaluation.json

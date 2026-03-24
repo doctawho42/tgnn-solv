@@ -7,6 +7,7 @@ train_fn) triple that trains a full model and evaluates on test.
 
 Ablations:
   full              — complete TGNN-Solv (reference)
+  split_late_encoder — shared early GNN + role-specific late GNN layers
   no_cross_attn     — remove cross-attention layers
   no_nrtl           — remove NRTL, predict ln(x₂) from Φ + MLP
   no_curriculum     — train all losses from epoch 0 (no phases)
@@ -22,26 +23,32 @@ Usage::
     results = run_ablation_study(train_loader, val_loader, test_loader)
 """
 
-import copy
+from __future__ import annotations
+
 import time
 from dataclasses import replace
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import TypeAlias
 
-import torch
-import torch.nn as nn
 import pandas as pd
+import torch
 from torch.utils.data import DataLoader
+from torch_geometric.data import Batch
 
 from .config import TGNNSolvConfig
+from .data.solvent_types import SOLVENT_TYPE_OTHER_ID
+from .evaluate import Evaluator
+from .layers import (
+    build_batch_from_lists,
+    make_temperature_features,
+    pad_atom_features,
+)
 from .model import TGNNSolv
 from .trainer import TGNNSolvTrainer
-from .evaluate import Evaluator
-from .data.solvent_types import SOLVENT_TYPE_OTHER_ID
-from .layers import (
-    pad_atom_features,
-    make_temperature_features,
-    build_batch_from_lists,
-)
+
+AblationResult: TypeAlias = dict[str, object]
+AblationDefinition: TypeAlias = tuple[
+    str, TGNNSolvConfig, type[TGNNSolv], type[TGNNSolvTrainer]
+]
 
 
 # ================================================================== #
@@ -52,14 +59,21 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
     """TGNN-Solv without cross-attention: solute and solvent
     are encoded independently."""
 
-    def forward(self, solute_data, solvent_data, T, solvent_type=None):
+    def forward(
+        self,
+        solute_data: Batch,
+        solvent_data: Batch,
+        T: torch.Tensor,
+        solvent_type: torch.Tensor | None = None,
+    ) -> AblationResult:
         t_feat = make_temperature_features(T)
+        encoder_t_feat = self._encoder_temp_features(t_feat)
         # Encode without cross-attention
         h_sol_atoms, g_sol_pre = self._encode_and_readout(
-            solute_data, "solute", temp_feat=t_feat
+            solute_data, "solute", temp_feat=encoder_t_feat
         )
         h_slv_atoms, g_slv_pre = self._encode_and_readout(
-            solvent_data, "solvent", temp_feat=t_feat
+            solvent_data, "solvent", temp_feat=encoder_t_feat
         )
 
         # Skip cross-attention entirely — readout with global tokens
@@ -113,7 +127,10 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
 
         # Prediction heads
         fusion_params = self.head_fusion(g_sol_pre)
-        nrtl_params = self.head_nrtl(g_pair)
+        nrtl_params = self.head_nrtl(
+            g_pair,
+            temp_feat=self._nrtl_temp_features(t_feat),
+        )
 
         # SLE solver
         with torch.amp.autocast(device_type="cpu", enabled=False):
@@ -124,22 +141,44 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
 
         Ra = self.sle_solver.hansen_layer(hansen_sol, hansen_slv)
 
-        tau_12 = physics_out["tau_12"].to(T.dtype)
-        tau_21 = physics_out["tau_21"].to(T.dtype)
-        t_feat = t_feat.to(T.dtype)
-        param_summary = torch.cat([
-            ((fusion_params["T_m"] - 400.0) / 200.0).unsqueeze(-1),
-            ((fusion_params["dH_fus"] - 20000.0) / 10000.0).unsqueeze(-1),
-            (tau_12 / self.cfg.tau_clamp).unsqueeze(-1),
-            (tau_21 / self.cfg.tau_clamp).unsqueeze(-1),
-            ((nrtl_params["alpha_12"] - 0.3) / 0.15).unsqueeze(-1),
-            t_feat,
-            (Ra.to(T.dtype) / 10.0).unsqueeze(-1),
-        ], dim=-1)
-
-        ln_x2, confidence, ln_x2_direct, ln_x2_direct_log_sigma = (
-            self.correction(g_pair, param_summary, physics_out["ln_x2"])
+        param_summary = self._build_param_summary(
+            fusion_params=fusion_params,
+            nrtl_params=nrtl_params,
+            physics_out=physics_out,
+            temp_feat=t_feat,
+            Ra=Ra,
+            dtype=T.dtype,
         )
+
+        confidence, param_deltas, proposal_log_sigma = self.correction(
+            g_pair,
+            param_summary,
+        )
+        corrected_fusion_params = self._build_corrected_fusion_params(
+            fusion_params,
+            param_deltas,
+        )
+        corrected_nrtl_state = self._build_corrected_nrtl_state(
+            nrtl_params=nrtl_params,
+            physics_out=physics_out,
+            param_deltas=param_deltas,
+        )
+        with torch.amp.autocast(device_type="cpu", enabled=False):
+            proposal_out = self.sle_solver(
+                T.float(),
+                {k: v.float() for k, v in corrected_fusion_params.items()},
+                {k: v.float() for k, v in corrected_nrtl_state.items()},
+                use_implicit=False,
+            )
+
+        raw_residual = proposal_out["ln_x2"].to(T.dtype) - physics_out["ln_x2"]
+        bounded_residual = raw_residual.clamp(
+            min=-self.cfg.correction_max_abs,
+            max=self.cfg.correction_max_abs,
+        )
+        ln_x2_direct = physics_out["ln_x2"] + bounded_residual
+        ln_x2_direct_log_sigma = proposal_log_sigma
+        ln_x2 = physics_out["ln_x2"] + (1.0 - confidence) * bounded_residual
         correction = ln_x2 - physics_out["ln_x2"]
         gate = confidence.mean()
 
@@ -147,8 +186,11 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
             "ln_x2": ln_x2,
             "x2": torch.exp(ln_x2).clamp(0, 1),
             "physics": physics_out,
+            "proposal_physics": proposal_out,
             "fusion_params": fusion_params,
+            "corrected_fusion_params": corrected_fusion_params,
             "nrtl_params": nrtl_params,
+            "corrected_nrtl_state": corrected_nrtl_state,
             "hansen_sol": hansen_sol,
             "hansen_slv": hansen_slv,
             "aux_sol": aux_sol,
@@ -169,14 +211,22 @@ class TGNNSolvNoNRTL(TGNNSolv):
     """TGNN-Solv without NRTL: uses ideal solubility + learned
     correction only.  γ₂ is always 1."""
 
-    def forward(self, solute_data, solvent_data, T, solvent_type=None):
+    def forward(
+        self,
+        solute_data: Batch,
+        solvent_data: Batch,
+        T: torch.Tensor,
+        solvent_type: torch.Tensor | None = None,
+    ) -> AblationResult:
         t_feat = make_temperature_features(T)
+        encoder_t_feat = self._encoder_temp_features(t_feat)
+        interaction_t_feat = self._interaction_temp_features(t_feat)
         # ---- 1. Encode both molecules ----
         h_sol_atoms, g_sol_pre = self._encode_and_readout(
-            solute_data, "solute", temp_feat=t_feat
+            solute_data, "solute", temp_feat=encoder_t_feat
         )
         h_slv_atoms, g_slv_pre = self._encode_and_readout(
-            solvent_data, "solvent", temp_feat=t_feat
+            solvent_data, "solvent", temp_feat=encoder_t_feat
         )
 
         # ---- 2. Auxiliary heads (before cross-attention) ----
@@ -211,16 +261,28 @@ class TGNNSolvNoNRTL(TGNNSolv):
                 sol_prev = h_sol_padded
                 slv_prev = h_slv_padded
                 h_sol_padded, attn_w = cross_layer(
-                    sol_prev, slv_prev, sol_mask, slv_mask, t_feat
+                    sol_prev,
+                    slv_prev,
+                    sol_mask,
+                    slv_mask,
+                    interaction_t_feat,
                 )
                 attn_maps.append(attn_w.detach())
                 h_slv_padded, _ = cross_layer(
-                    slv_prev, sol_prev, slv_mask, sol_mask, t_feat
+                    slv_prev,
+                    sol_prev,
+                    slv_mask,
+                    sol_mask,
+                    interaction_t_feat,
                 )
         else:
             for mp_layer in self.bipartite_layers:
                 h_sol_padded, h_slv_padded = mp_layer(
-                    h_sol_padded, h_slv_padded, sol_mask, slv_mask, t_feat
+                    h_sol_padded,
+                    h_slv_padded,
+                    sol_mask,
+                    slv_mask,
+                    interaction_t_feat,
                 )
 
         # ---- 4. Post-cross-attention readout for solute ----
@@ -324,28 +386,54 @@ class TGNNSolvNoNRTL(TGNNSolv):
         Ra = self.sle_solver.hansen_layer(hansen_sol, hansen_slv)
 
         # ---- 9. Adaptive correction ----
-        t_feat = t_feat.to(T.dtype)
-        param_summary = torch.cat([
-            ((fusion_params["T_m"] - 400.0) / 200.0).unsqueeze(-1),
-            ((fusion_params["dH_fus"] - 20000.0) / 10000.0).unsqueeze(-1),
-            (physics_out["tau_12"].to(T.dtype) / self.cfg.tau_clamp).unsqueeze(-1),
-            (physics_out["tau_21"].to(T.dtype) / self.cfg.tau_clamp).unsqueeze(-1),
-            ((nrtl_params["alpha_12"] - 0.3) / 0.15).unsqueeze(-1),
-            t_feat,
-            (Ra.to(T.dtype) / 10.0).unsqueeze(-1),
-        ], dim=-1)
-
-        ln_x2, confidence, ln_x2_direct, ln_x2_direct_log_sigma = (
-            self.correction(g_pair, param_summary, ln_x2_physics)
+        param_summary = self._build_param_summary(
+            fusion_params=fusion_params,
+            nrtl_params=nrtl_params,
+            physics_out=physics_out,
+            temp_feat=t_feat,
+            Ra=Ra,
+            dtype=T.dtype,
         )
+
+        confidence, param_deltas, proposal_log_sigma = self.correction(
+            g_pair,
+            param_summary,
+        )
+        corrected_fusion_params = self._build_corrected_fusion_params(
+            fusion_params,
+            param_deltas,
+        )
+        corrected_nrtl_state = self._build_corrected_nrtl_state(
+            nrtl_params=nrtl_params,
+            physics_out=physics_out,
+            param_deltas=param_deltas,
+        )
+        with torch.amp.autocast(device_type="cpu", enabled=False):
+            proposal_out = self.sle_solver(
+                T.float(),
+                {k: v.float() for k, v in corrected_fusion_params.items()},
+                {k: v.float() for k, v in corrected_nrtl_state.items()},
+                use_implicit=False,
+            )
+        raw_residual = proposal_out["ln_x2"].to(T.dtype) - ln_x2_physics
+        bounded_residual = raw_residual.clamp(
+            min=-self.cfg.correction_max_abs,
+            max=self.cfg.correction_max_abs,
+        )
+        ln_x2_direct = ln_x2_physics + bounded_residual
+        ln_x2_direct_log_sigma = proposal_log_sigma
+        ln_x2 = ln_x2_physics + (1.0 - confidence) * bounded_residual
         correction = ln_x2 - ln_x2_physics
 
         return {
             "ln_x2": ln_x2,
             "x2": torch.exp(ln_x2).clamp(0, 1),
             "physics": physics_out,
+            "proposal_physics": proposal_out,
             "fusion_params": fusion_params,
+            "corrected_fusion_params": corrected_fusion_params,
             "nrtl_params": nrtl_params,
+            "corrected_nrtl_state": corrected_nrtl_state,
             "hansen_sol": hansen_sol,
             "hansen_slv": hansen_slv,
             "aux_sol": aux_sol,
@@ -366,7 +454,13 @@ class TGNNSolvNoCorrection(TGNNSolv):
     """TGNN-Solv without gated residual correction.
     ln(x₂) = physics only."""
 
-    def forward(self, solute_data, solvent_data, T, solvent_type=None):
+    def forward(
+        self,
+        solute_data: Batch,
+        solvent_data: Batch,
+        T: torch.Tensor,
+        solvent_type: torch.Tensor | None = None,
+    ) -> AblationResult:
         out = super().forward(
             solute_data, solvent_data, T, solvent_type=solvent_type
         )
@@ -387,7 +481,7 @@ class TGNNSolvNoCorrection(TGNNSolv):
 class NoCurriculumTrainer(TGNNSolvTrainer):
     """Train all losses from epoch 0 — no phase separation."""
 
-    def train_full(self, train_loader, val_loader):
+    def train_full(self, train_loader: DataLoader, val_loader: DataLoader) -> None:
         # Single phase with all weights active from start
         self.phase_weights[1] = {
             "sol": 1.0, "T_m": 0.3, "dH": 0.3, "hansen": 0.2,
@@ -412,7 +506,7 @@ class NoCurriculumTrainer(TGNNSolvTrainer):
 class NoAuxLossTrainer(TGNNSolvTrainer):
     """Train with solubility loss only — no auxiliary targets."""
 
-    def __init__(self, model, cfg):
+    def __init__(self, model: TGNNSolv, cfg: TGNNSolvConfig) -> None:
         super().__init__(model, cfg)
         # Override all phases: only solubility + minimal regularization
         no_aux = {
@@ -422,7 +516,7 @@ class NoAuxLossTrainer(TGNNSolvTrainer):
         }
         self.phase_weights = {1: no_aux, 2: no_aux, 3: no_aux}
 
-    def train_full(self, train_loader, val_loader):
+    def train_full(self, train_loader: DataLoader, val_loader: DataLoader) -> None:
         # Skip phase 1 entirely (no aux targets to pretrain on)
         self._freeze_correction(True)
         total_epochs = (
@@ -442,7 +536,7 @@ class NoAuxLossTrainer(TGNNSolvTrainer):
 
 def _define_ablations(
     base_cfg: TGNNSolvConfig,
-) -> List[Tuple[str, TGNNSolvConfig, type, type]]:
+) -> list[AblationDefinition]:
     """
     Define all ablation experiments.
 
@@ -458,7 +552,23 @@ def _define_ablations(
         TGNNSolvTrainer,
     ))
 
-    # 2. No cross-attention
+    # 2. Shared-vs-asymmetric late encoder comparison
+    cfg_split_late = replace(
+        base_cfg,
+        encoder_role_mode="split_late",
+        encoder_role_specific_layers=min(
+            max(base_cfg.encoder_role_specific_layers, 1),
+            max(base_cfg.n_gnn_layers - 1, 1),
+        ),
+    )
+    ablations.append((
+        "split_late_encoder",
+        cfg_split_late,
+        TGNNSolv,
+        TGNNSolvTrainer,
+    ))
+
+    # 3. No cross-attention
     ablations.append((
         "no_cross_attn",
         base_cfg,
@@ -466,7 +576,7 @@ def _define_ablations(
         TGNNSolvTrainer,
     ))
 
-    # 3. No NRTL (ideal + correction only)
+    # 4. No NRTL (ideal + correction only)
     ablations.append((
         "no_nrtl",
         base_cfg,
@@ -474,7 +584,7 @@ def _define_ablations(
         TGNNSolvTrainer,
     ))
 
-    # 4. No curriculum (all losses from start)
+    # 5. No curriculum (all losses from start)
     ablations.append((
         "no_curriculum",
         base_cfg,
@@ -482,7 +592,7 @@ def _define_ablations(
         NoCurriculumTrainer,
     ))
 
-    # 5. No auxiliary losses
+    # 6. No auxiliary losses
     ablations.append((
         "no_aux_losses",
         base_cfg,
@@ -490,7 +600,7 @@ def _define_ablations(
         NoAuxLossTrainer,
     ))
 
-    # 6. No correction
+    # 7. No correction
     ablations.append((
         "no_correction",
         base_cfg,
@@ -498,7 +608,7 @@ def _define_ablations(
         TGNNSolvTrainer,
     ))
 
-    # 7. No implicit differentiation
+    # 8. No implicit differentiation
     cfg_no_impl = replace(base_cfg, use_implicit_diff=False)
     ablations.append((
         "no_implicit_diff",
@@ -507,7 +617,7 @@ def _define_ablations(
         TGNNSolvTrainer,
     ))
 
-    # 8. Small model (scaling)
+    # 9. Small model (scaling)
     cfg_small = replace(
         base_cfg,
         hidden_dim=128,
@@ -522,7 +632,7 @@ def _define_ablations(
         TGNNSolvTrainer,
     ))
 
-    # 9. Large model (scaling)
+    # 10. Large model (scaling)
     cfg_large = replace(
         base_cfg,
         hidden_dim=512,
@@ -547,15 +657,15 @@ def _define_ablations(
 def run_single_ablation(
     name: str,
     cfg: TGNNSolvConfig,
-    model_class: type,
-    trainer_class: type,
+    model_class: type[TGNNSolv],
+    trainer_class: type[TGNNSolvTrainer],
     train_loader: DataLoader,
     val_loader: DataLoader,
     test_loader: DataLoader,
     device: torch.device,
-    test_df: Optional[pd.DataFrame] = None,
+    test_df: pd.DataFrame | None = None,
     seed: int = 42,
-) -> Dict:
+) -> AblationResult:
     """
     Run one ablation experiment: build, train, evaluate.
 
@@ -586,7 +696,7 @@ def run_single_ablation(
     report = evaluator.evaluate(test_loader, test_df)
     metrics = report["overall"]
 
-    print(f"\n  Results:")
+    print("\n  Results:")
     print(f"    MAE  = {metrics['mae']:.3f}")
     print(f"    RMSE = {metrics['rmse']:.3f}")
     print(f"    R²   = {metrics['r2']:.4f}")
@@ -604,10 +714,10 @@ def run_ablation_study(
     val_loader: DataLoader,
     test_loader: DataLoader,
     device: torch.device,
-    base_cfg: Optional[TGNNSolvConfig] = None,
-    test_df: Optional[pd.DataFrame] = None,
-    seeds: List[int] = None,
-    skip: Optional[List[str]] = None,
+    base_cfg: TGNNSolvConfig | None = None,
+    test_df: pd.DataFrame | None = None,
+    seeds: list[int] | None = None,
+    skip: list[str] | None = None,
 ) -> pd.DataFrame:
     """
     Run full ablation study.

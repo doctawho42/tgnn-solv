@@ -44,7 +44,7 @@ class ThermometerEncoder:
             n_bins: int = 20,
             T_min: float = 200.0,
             T_max: float = 500.0,
-    ):
+    ) -> None:
         self.n_bins = n_bins
         self.T_min = T_min
         self.T_max = T_max

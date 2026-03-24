@@ -14,66 +14,80 @@ Phase 3 — Fine-tuning with monotonicity:
   Restores best model at the end.
 """
 
+from __future__ import annotations
+
 import math
-from typing import Dict, Optional
+from typing import TypeAlias
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from torch import Tensor
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
+from torch_geometric.data import Batch
 
 from .config import TGNNSolvConfig
+from .data.solvent_types import SOLVENT_TYPE_OTHER_ID
+from .layers import make_temperature_features
 from .model import TGNNSolv
 from .loss import TGNNSolvLoss
-from .layers import make_temperature_features
-from .data.solvent_types import SOLVENT_TYPE_OTHER_ID
 from .progress import progress, trange
 
+HistoryDict: TypeAlias = dict[str, list[float | int]]
+MetricDict: TypeAlias = dict[str, float]
+ModelOutput: TypeAlias = dict[str, object]
+
+DEFAULT_PHASE_WEIGHTS = {
+    1: {
+        "sol": 0.0, "T_m": 1.0, "dH": 1.0, "hansen": 1.0,
+        "gamma_inf": 1.0,
+        "mono": 0.0, "res": 0.0, "bridge": 0.0, "tau_reg": 0.0,
+        "phys_pref": 0.0, "direct_reg": 0.0, "direct_nll": 0.0,
+        "pair_temp_rank": 0.0, "vant_hoff_local": 0.0,
+        "moe_balance": 0.0,
+    },
+    2: {
+        "sol": 1.0, "T_m": 0.3, "dH": 0.3, "hansen": 0.2,
+        "gamma_inf": 0.5,
+        "mono": 0.0, "res": 0.03, "bridge": 0.05,
+        "tau_reg": 0.01,
+        "phys_pref": 0.05,
+        "direct_reg": 0.05,
+        "direct_nll": 0.05,
+        "pair_temp_rank": 0.02,
+        "vant_hoff_local": 0.01,
+        "moe_balance": 0.02,
+    },
+    3: {
+        "sol": 1.0, "T_m": 0.2, "dH": 0.2, "hansen": 0.1,
+        "gamma_inf": 0.3,
+        "mono": 0.3, "res": 0.05, "bridge": 0.1,
+        "tau_reg": 0.01,
+        "phys_pref": 0.03,
+        "direct_reg": 0.05,
+        "direct_nll": 0.05,
+        "pair_temp_rank": 0.05,
+        "vant_hoff_local": 0.03,
+        "moe_balance": 0.03,
+    },
+}
 
 class TGNNSolvTrainer:
     """Curriculum trainer with three phases."""
 
-    def __init__(self, model: TGNNSolv, cfg: TGNNSolvConfig):
+    def __init__(self, model: TGNNSolv, cfg: TGNNSolvConfig) -> None:
         self.model = model
         self.cfg = cfg
         self.loss_fn = TGNNSolvLoss(cfg)
         self.device = next(model.parameters()).device
 
-        # Per-phase loss weights
         self.phase_weights = {
-            1: {
-                "sol": 0.0, "T_m": 1.0, "dH": 1.0, "hansen": 1.0,
-                "gamma_inf": 1.0,
-                "mono": 0.0, "res": 0.0, "bridge": 0.0, "tau_reg": 0.0,
-                "phys_pref": 0.0, "direct_reg": 0.0, "direct_nll": 0.0,
-                "moe_balance": 0.0,
-            },
-            2: {
-                "sol": 1.0, "T_m": 0.3, "dH": 0.3, "hansen": 0.2,
-                "gamma_inf": 0.5,
-                "mono": 0.0, "res": 0.01, "bridge": 0.05,
-                "tau_reg": 0.01,
-                "phys_pref": 0.03,
-                "direct_reg": 0.02,
-                "direct_nll": 0.1,
-                "moe_balance": 0.02,
-            },
-            3: {
-                "sol": 1.0, "T_m": 0.2, "dH": 0.2, "hansen": 0.1,
-                "gamma_inf": 0.3,
-                "mono": 0.3, "res": 0.01, "bridge": 0.1,
-                "tau_reg": 0.01,
-                "phys_pref": 0.01,
-                "direct_reg": 0.01,
-                "direct_nll": 0.1,
-                "moe_balance": 0.03,
-            },
+            phase: self._get_phase_weights(phase)
+            for phase in (1, 2, 3)
         }
 
         # Training history
-        self.history = {
+        self.history: HistoryDict = {
             "train_loss": [],
             "val_loss": [],
             "val_mae": [],
@@ -84,6 +98,24 @@ class TGNNSolvTrainer:
         self.best_val_loss = float("inf")
         self.best_state = None
         self.patience_counter = 0
+
+    def _get_phase_weights(self, phase: int) -> dict:
+        """Return loss weights for a phase, merging config overrides
+        onto hardcoded defaults.
+
+        If ``cfg.phase{N}_loss_weights`` is ``None``, the full default
+        dict is used.  If it is a partial dict, only the provided keys
+        override the defaults — missing keys keep their default values.
+        """
+        defaults = DEFAULT_PHASE_WEIGHTS[phase].copy()
+        overrides = {
+            1: self.cfg.phase1_loss_weights,
+            2: self.cfg.phase2_loss_weights,
+            3: self.cfg.phase3_loss_weights,
+        }.get(phase)
+        if overrides is not None:
+            defaults.update(overrides)
+        return defaults
 
     # -------------------------------------------------------------- #
     #  Optimizer / scheduler                                          #
@@ -98,7 +130,7 @@ class TGNNSolvTrainer:
         return AdamW(
             self.model.parameters(),
             lr=lr,
-            weight_decay=5e-4,  # усилить регуляризацию
+            weight_decay=5e-4,  # Slightly stronger regularization for stability.
             betas=(0.9, 0.999),
         )
 
@@ -107,7 +139,7 @@ class TGNNSolvTrainer:
     ) -> LambdaLR:
         warmup = self.cfg.warmup_epochs
 
-        def lr_lambda(epoch):
+        def lr_lambda(epoch: int) -> float:
             if epoch < warmup:
                 return epoch / max(warmup, 1)
             progress = (epoch - warmup) / max(n_epochs - warmup, 1)
@@ -119,7 +151,7 @@ class TGNNSolvTrainer:
     #  Correction gate control                                        #
     # -------------------------------------------------------------- #
 
-    def _freeze_correction(self, freeze: bool):
+    def _freeze_correction(self, freeze: bool) -> None:
         """Freeze or unfreeze the adaptive correction."""
         for p in self.model.correction.parameters():
             p.requires_grad = not freeze
@@ -128,11 +160,27 @@ class TGNNSolvTrainer:
             with torch.no_grad():
                 self.model.correction.confidence_net[-1].bias.fill_(2.2)
 
+    def _has_phase1_supervision(
+        self, targets: dict[str, Tensor | object]
+    ) -> bool:
+        """Return whether a batch contains any Phase 1 auxiliary labels."""
+        for key in ("T_m_mask", "dH_mask", "hansen_mask", "gamma_mask"):
+            mask = targets.get(key)
+            if isinstance(mask, Tensor) and bool(mask.any().item()):
+                return True
+        return False
+
     # -------------------------------------------------------------- #
     #  Phase 1 forward (no SLE solve)                                 #
     # -------------------------------------------------------------- #
 
-    def _forward_phase1(self, sol_batch, slv_batch, T, solvent_type=None):
+    def _forward_phase1(
+        self,
+        sol_batch: Batch,
+        slv_batch: Batch,
+        T: Tensor,
+        solvent_type: Tensor | None = None,
+    ) -> ModelOutput:
         """
         Lightweight forward for Phase 1: encode + heads only.
 
@@ -142,13 +190,15 @@ class TGNNSolvTrainer:
         model = self.model
 
         t_feat = make_temperature_features(T)
+        encoder_t_feat = model._encoder_temp_features(t_feat)
+        nrtl_t_feat = model._nrtl_temp_features(t_feat)
 
-        # Encode (no cross-attention), include temperature conditioning
+        # Encode without leaking temperature into crystal-property heads unless requested.
         _, g_sol = model._encode_and_readout(
-            sol_batch, "solute", temp_feat=t_feat
+            sol_batch, "solute", temp_feat=encoder_t_feat
         )
         _, g_slv = model._encode_and_readout(
-            slv_batch, "solvent", temp_feat=t_feat
+            slv_batch, "solvent", temp_feat=encoder_t_feat
         )
         g_pair = model.pair_repr(g_sol, g_slv)
         if model.solvent_moe is not None:
@@ -165,31 +215,15 @@ class TGNNSolvTrainer:
 
         # Heads
         fusion_params = model.head_fusion(g_sol)
-        nrtl_params = model.head_nrtl(g_pair)
+        nrtl_params = model.head_nrtl(g_pair, temp_feat=nrtl_t_feat)
         hansen_sol = model.head_hansen(g_sol)
         hansen_slv = model.head_hansen(g_slv)
 
         # ln(γ∞) from NRTL params directly
         nrtl = model.sle_solver.nrtl_layer
-        if "tau_a12" in nrtl_params:
-            a12 = nrtl_params["tau_a12"]
-            b12 = nrtl_params["tau_b12"]
-            c12 = nrtl_params["tau_c12"]
-            a21 = nrtl_params["tau_a21"]
-            b21 = nrtl_params["tau_b21"]
-            c21 = nrtl_params["tau_c21"]
-        else:
-            a_T12 = nrtl_params["a_T12"]
-            a_T21 = nrtl_params["a_T21"]
-            a12 = -a_T12
-            a21 = -a_T21
-            b12 = nrtl_params["dg_12"] / self.cfg.R + a_T12 * self.cfg.T_ref
-            b21 = nrtl_params["dg_21"] / self.cfg.R + a_T21 * self.cfg.T_ref
-            c12 = torch.zeros_like(a12)
-            c21 = torch.zeros_like(a21)
-
-        tau_12, tau_21, G_12, G_21 = nrtl.compute_tau_G(
-            a12, b12, c12, a21, b21, c21, nrtl_params["alpha_12"], T
+        tau_12, tau_21, G_12, G_21 = nrtl.compute_tau_G_from_params(
+            nrtl_params,
+            T,
         )
         lng_inf = nrtl.ln_gamma_inf(tau_12, tau_21, G_21)
 
@@ -222,7 +256,7 @@ class TGNNSolvTrainer:
         phase: int,
         epoch: int,
         compute_mono: bool = False,
-    ) -> tuple[float, Dict[str, float]]:
+    ) -> tuple[float, MetricDict]:
         """Train for one epoch. Returns avg loss and component dict."""
         self.model.train()
         total_loss = 0.0
@@ -248,6 +282,9 @@ class TGNNSolvTrainer:
             }
             T = targets["T"]
             solvent_type = targets.get("solvent_type")
+
+            if phase == 1 and not self._has_phase1_supervision(targets):
+                continue
 
             optimizer.zero_grad()
 
@@ -299,7 +336,7 @@ class TGNNSolvTrainer:
     @torch.no_grad()
     def validate(
         self, loader: DataLoader, phase: int
-    ) -> Dict[str, float]:
+    ) -> MetricDict:
         """Validate and return metrics dict."""
         self.model.eval()
         total_loss = 0.0
@@ -321,6 +358,9 @@ class TGNNSolvTrainer:
             }
             T = targets["T"]
             solvent_type = targets.get("solvent_type")
+
+            if phase == 1 and not self._has_phase1_supervision(targets):
+                continue
 
             if phase == 1:
                 output = self._forward_phase1(
@@ -366,7 +406,7 @@ class TGNNSolvTrainer:
         train_loader: DataLoader,
         val_loader: DataLoader,
         n_epochs: int,
-    ):
+    ) -> None:
         """Run a single training phase."""
         print(f"\n{'=' * 60}")
         print(f"Phase {phase}: {n_epochs} epochs")
@@ -452,7 +492,7 @@ class TGNNSolvTrainer:
         self,
         train_loader: DataLoader,
         val_loader: DataLoader,
-    ):
+    ) -> None:
         """Run all three training phases sequentially."""
         self.train_phase(1, train_loader, val_loader, self.cfg.epochs_phase1)
         self.train_phase(2, train_loader, val_loader, self.cfg.epochs_phase2)

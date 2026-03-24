@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install PyTorch (CPU)
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install PyG (CPU)
+        run: pip install torch-geometric -f https://data.pyg.org/whl/torch-2.4.0+cpu.html
+
+      - name: Install package
+        run: pip install -e ".[dev]"
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short -x
+
+      - name: Check imports
+        run: python -c "from tgnn_solv.model import TGNNSolv; from tgnn_solv.config import TGNNSolvConfig; print('All imports OK')"
+
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install PyTorch (CPU)
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install PyG (CPU)
+        run: pip install torch-geometric -f https://data.pyg.org/whl/torch-2.4.0+cpu.html
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Smoke test - model forward pass
+        run: |
+          python -c "
+          import torch
+          from tgnn_solv.model import TGNNSolv
+          from tgnn_solv.config import TGNNSolvConfig
+
+          cfg = TGNNSolvConfig(hidden_dim=32, n_gnn_layers=2, n_cross_attn_layers=1)
+          model = TGNNSolv(cfg)
+          model.eval()
+
+          n_params = sum(p.numel() for p in model.parameters())
+          print(f'Model created: {n_params:,} parameters')
+          print('Smoke test PASSED')
+          "

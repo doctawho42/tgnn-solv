@@ -23,11 +23,12 @@ Usage::
     print(score["tanimoto_solute"])   # similarity to nearest train solute
 """
 
-from typing import Dict, List, Optional, Set
+from __future__ import annotations
+
+from typing import TypeAlias
 
 import numpy as np
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch_geometric.data import Batch
 
@@ -41,6 +42,8 @@ from .data.solvent_types import (
     solvent_type_id_from_smiles,
     SOLVENT_TYPE_OTHER_ID,
 )
+
+ScoreDict: TypeAlias = dict[str, float | bool]
 
 
 class ApplicabilityDomain:
@@ -70,12 +73,12 @@ class ApplicabilityDomain:
     def __init__(
         self,
         model: TGNNSolv,
-        train_loader: Optional[DataLoader] = None,
+        train_loader: DataLoader | None = None,
         fp_radius: int = 2,
         fp_bits: int = 2048,
         mahalanobis_threshold: float = 0.95,
         tanimoto_threshold: float = 0.3,
-    ):
+    ) -> None:
         self.model = model
         self.device = next(model.parameters()).device
         self.fp_radius = fp_radius
@@ -89,8 +92,8 @@ class ApplicabilityDomain:
         self.mahal_cutoff = None     # scalar threshold
         self.train_solute_fps = []   # list of RDKit fingerprints
         self.train_solvent_fps = []
-        self.train_solute_smiles: Set[str] = set()
-        self.train_solvent_smiles: Set[str] = set()
+        self.train_solute_smiles: set[str] = set()
+        self.train_solvent_smiles: set[str] = set()
 
         self.is_fitted = False
 
@@ -101,7 +104,7 @@ class ApplicabilityDomain:
     #  Fingerprint helpers                                            #
     # -------------------------------------------------------------- #
 
-    def _smiles_to_fp(self, smi: str):
+    def _smiles_to_fp(self, smi: str) -> object | None:
         """Compute Morgan fingerprint from SMILES."""
         mol = Chem.MolFromSmiles(smi)
         if mol is None:
@@ -110,7 +113,7 @@ class ApplicabilityDomain:
             mol, self.fp_radius, nBits=self.fp_bits,
         )
 
-    def _max_tanimoto(self, query_fp, ref_fps: list) -> float:
+    def _max_tanimoto(self, query_fp: object | None, ref_fps: list[object]) -> float:
         """Max Tanimoto similarity between query and reference set."""
         if query_fp is None or len(ref_fps) == 0:
             return 0.0
@@ -163,7 +166,7 @@ class ApplicabilityDomain:
     #  Fit: compute training statistics                               #
     # -------------------------------------------------------------- #
 
-    def fit(self, train_loader: DataLoader):
+    def fit(self, train_loader: DataLoader) -> None:
         """
         Compute reference statistics from training data.
 
@@ -285,7 +288,7 @@ class ApplicabilityDomain:
         solute_smiles: str,
         solvent_smiles: str,
         T: float = 298.15,
-    ) -> Dict[str, float]:
+    ) -> ScoreDict:
         """
         Score how "in-domain" a query system is.
 

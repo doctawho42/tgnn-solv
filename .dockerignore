@@ -1,0 +1,14 @@
+__pycache__
+*.pyc
+.git
+.github
+*.egg-info
+dist
+build
+logs/
+results/
+figures/
+checkpoints/
+notebooks/data/raw/
+.env
+*.ipynb_checkpoints

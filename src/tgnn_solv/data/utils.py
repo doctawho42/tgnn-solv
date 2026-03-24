@@ -4,7 +4,6 @@ Core data utilities: SMILES handling, file download, paths.
 
 from pathlib import Path
 from typing import Optional
-import warnings
 
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
@@ -19,7 +18,20 @@ except ImportError:
 #  Directory layout                                                   #
 # ------------------------------------------------------------------ #
 
-DATA_DIR = Path("data")
+def _find_repo_root() -> Path:
+    """Find the repository root without depending on the current working directory."""
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "pyproject.toml").exists() and (parent / "src").exists():
+            return parent
+    return Path.cwd().resolve()
+
+
+# The repository-standard dataset layout lives under notebooks/data so that
+# the CLI scripts, notebooks, tests, and documentation all point to the same
+# raw and processed files by default.
+REPO_ROOT = _find_repo_root()
+DATA_DIR = REPO_ROOT / "notebooks" / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 
@@ -80,7 +92,7 @@ def download_file(url: str, path: Path, desc: str = "") -> bool:
         return True
 
     if not HAS_REQUESTS:
-        print(f"  Install `requests` or manually download:")
+        print("  Install `requests` or manually download:")
         print(f"    URL:  {url}")
         print(f"    Save: {path}")
         return False

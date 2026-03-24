@@ -241,12 +241,12 @@ def _process_bigsoldb_raw(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def _print_solubility_stats(df: pd.DataFrame):
+def _print_solubility_stats(df: pd.DataFrame) -> None:
     """Print summary statistics for a solubility DataFrame."""
     n = len(df)
     n_sol = df["solute_smiles"].nunique()
     n_slv = df["solvent_smiles"].nunique()
-    print(f"\n  === Summary ===")
+    print("\n  === Summary ===")
     print(f"  Records:    {n:,}")
     print(f"  Solutes:    {n_sol:,}")
     print(f"  Solvents:   {n_slv:,}")

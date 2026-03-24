@@ -10,12 +10,22 @@ Usage:
 
 import argparse
 import json
-import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Mapping
 
 import numpy as np
 import pandas as pd
+
+import _bootstrap  # noqa: F401
+from tgnn_solv.reporting import normalize_report_payload
+
+
+def _get_count(metrics: Mapping[str, object]) -> int | str:
+    """Return the sample-count field from either current or legacy metrics."""
+    value = metrics.get("n", metrics.get("n_samples", "N/A"))
+    if isinstance(value, (int, float)):
+        return int(value)
+    return "N/A"
 
 
 def analyze_benchmark(results_json: str, output_txt: str = None) -> str:
@@ -36,8 +46,8 @@ def analyze_benchmark(results_json: str, output_txt: str = None) -> str:
     """
     
     # Load results
-    with open(results_json) as f:
-        results = json.load(f)
+    with open(results_json, encoding="utf-8") as f:
+        results = normalize_report_payload(json.load(f))
     
     report_lines = []
     
@@ -54,7 +64,7 @@ def analyze_benchmark(results_json: str, output_txt: str = None) -> str:
     overall = results.get('overall', {})
     report_lines.append("OVERALL PERFORMANCE")
     report_lines.append("-" * 80)
-    report_lines.append(f"  Samples:        {overall.get('n', 'N/A'):>10}")
+    report_lines.append(f"  Samples:        {_get_count(overall):>10}")
     report_lines.append(f"  MAE:            {overall.get('mae', np.nan):>10.4f}")
     report_lines.append(f"  RMSE:           {overall.get('rmse', np.nan):>10.4f}")
     report_lines.append(f"  R²:             {overall.get('r2', np.nan):>10.4f}")
@@ -82,7 +92,7 @@ def analyze_benchmark(results_json: str, output_txt: str = None) -> str:
     report_lines.append("")
     
     # By solvent type
-    by_solvent = results.get('by_solvent_type', {})
+    by_solvent = results.get('by_solvent', {}) or results.get('by_solvent_type', {})
     if by_solvent:
         report_lines.append("PERFORMANCE BY SOLVENT TYPE")
         report_lines.append("-" * 80)
@@ -91,7 +101,7 @@ def analyze_benchmark(results_json: str, output_txt: str = None) -> str:
         for solvent_type, metrics in by_solvent.items():
             solvent_data.append({
                 'Solvent': solvent_type,
-                'N': metrics.get('n', 0),
+                'N': _get_count(metrics),
                 'MAE': metrics.get('mae', np.nan),
                 'RMSE': metrics.get('rmse', np.nan),
                 'R²': metrics.get('r2', np.nan),
@@ -111,7 +121,7 @@ def analyze_benchmark(results_json: str, output_txt: str = None) -> str:
         report_lines.append("")
     
     # By solubility range
-    by_range = results.get('by_solubility_range', {})
+    by_range = results.get('by_solubility_range', results.get('by_range', {}))
     if by_range:
         report_lines.append("PERFORMANCE BY SOLUBILITY RANGE")
         report_lines.append("-" * 80)
@@ -120,7 +130,7 @@ def analyze_benchmark(results_json: str, output_txt: str = None) -> str:
         for sol_range, metrics in by_range.items():
             range_data.append({
                 'Range': sol_range,
-                'N': metrics.get('n', 0),
+                'N': _get_count(metrics),
                 'MAE': metrics.get('mae', np.nan),
                 'RMSE': metrics.get('rmse', np.nan),
                 'R²': metrics.get('r2', np.nan),
@@ -145,7 +155,7 @@ def analyze_benchmark(results_json: str, output_txt: str = None) -> str:
             report_lines.append("")
     
     # By temperature
-    by_temp = results.get('by_temperature', {})
+    by_temp = results.get('by_temperature', results.get('by_temp', {}))
     if by_temp:
         report_lines.append("PERFORMANCE BY TEMPERATURE")
         report_lines.append("-" * 80)
@@ -182,8 +192,9 @@ def analyze_benchmark(results_json: str, output_txt: str = None) -> str:
     
     if by_range:
         for name, metrics in by_range.items():
-            if metrics.get('n', 0) < 100:
-                recommendations.append(f"• {name} range has few samples ({metrics['n']}) - consider stratified resampling")
+            n_count = _get_count(metrics)
+            if isinstance(n_count, (int, float)) and n_count < 100:
+                recommendations.append(f"• {name} range has few samples ({int(n_count)}) - consider stratified resampling")
     
     if not recommendations:
         recommendations.append("✅ Model performance is solid - no critical improvements needed")
@@ -201,19 +212,22 @@ def analyze_benchmark(results_json: str, output_txt: str = None) -> str:
     if output_txt:
         output_path = Path(output_txt)
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w') as f:
+        with open(output_path, 'w', encoding="utf-8") as f:
             f.write(report)
         print(f"✓ Report saved to {output_txt}")
     
     return report
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze benchmark results")
     parser.add_argument("--results", required=True, help="Path to benchmark results JSON")
     parser.add_argument("--output", default=None, help="Path to save text report")
     
     args = parser.parse_args()
+    args.results = str(_bootstrap.resolve_path(args.results))
+    if args.output:
+        args.output = str(_bootstrap.resolve_path(args.output))
     
     # Generate and print report
     report = analyze_benchmark(
@@ -226,4 +240,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

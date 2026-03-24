@@ -17,10 +17,13 @@ This is the key ablation: if TGNN-Solv does not beat this,
 the physics-informed approach adds no value.
 """
 
-from typing import Dict, Optional
+from __future__ import annotations
+
+from typing import Optional, TypeAlias
 
 import torch
 import torch.nn as nn
+from torch import Tensor
 from torch.utils.data import DataLoader
 from torch_geometric.data import Batch
 
@@ -37,6 +40,9 @@ from ..layers import (
 )
 from ..progress import progress, trange
 from .temperature import ThermometerEncoder
+
+TensorList: TypeAlias = list[Tensor]
+MetricDict: TypeAlias = dict[str, float]
 
 
 class DirectGNN(nn.Module):
@@ -59,7 +65,7 @@ class DirectGNN(nn.Module):
         n_temp_bins: int = 20,
         T_min: float = 200.0,
         T_max: float = 500.0,
-    ):
+    ) -> None:
         super().__init__()
         self.cfg = cfg
         F = cfg.hidden_dim
@@ -67,7 +73,10 @@ class DirectGNN(nn.Module):
         # --- Same GNN encoder (shared backbone with role adapters) ---
         self.gnn = GNNEncoder(
             node_feat_dim, edge_feat_dim,
-            hidden_dim=F, n_layers=cfg.n_gnn_layers,
+            hidden_dim=F,
+            n_layers=cfg.n_gnn_layers,
+            role_mode=cfg.encoder_role_mode,
+            role_specific_layers=cfg.encoder_role_specific_layers,
         )
 
         # --- Same interaction stack ---
@@ -127,7 +136,12 @@ class DirectGNN(nn.Module):
             nn.Linear(64, 1),
         )
 
-    def _encode_and_readout(self, data, role="solute", temp_feat=None):
+    def _encode_and_readout(
+        self,
+        data: Batch,
+        role: str = "solute",
+        temp_feat: Tensor | None = None,
+    ) -> tuple[Tensor, Tensor]:
         h_atoms = self.gnn(
             data.x,
             data.edge_index,
@@ -139,24 +153,28 @@ class DirectGNN(nn.Module):
         g_mol = self.readout(h_atoms, data.batch)
         return h_atoms, g_mol
 
-    def _split_atoms_by_graph(self, h_atoms, batch):
-        graphs = []
-        for i in range(batch.max().item() + 1):
+    def _split_atoms_by_graph(self, h_atoms: Tensor, batch: Tensor) -> TensorList:
+        graphs: TensorList = []
+        for i in range(int(batch.max().item()) + 1):
             graphs.append(h_atoms[batch == i])
         return graphs
 
-    def _append_global_token(self, atoms_list, token):
+    def _append_global_token(
+        self, atoms_list: TensorList, token: Tensor
+    ) -> TensorList:
         token = token[0]
         return [torch.cat([h, token.to(h)], dim=0) for h in atoms_list]
 
-    def _slice_padded(self, padded, lengths, drop_last=False):
-        out = []
+    def _slice_padded(
+        self, padded: Tensor, lengths: list[int], drop_last: bool = False
+    ) -> TensorList:
+        out: TensorList = []
         for i, length in enumerate(lengths):
             end = length - 1 if drop_last else length
             out.append(padded[i, :end, :])
         return out
 
-    def _extract_tokens(self, padded, lengths):
+    def _extract_tokens(self, padded: Tensor, lengths: list[int]) -> Tensor:
         idx = torch.tensor(
             [length - 1 for length in lengths], device=padded.device
         )
@@ -166,9 +184,9 @@ class DirectGNN(nn.Module):
         self,
         solute_data: Batch,
         solvent_data: Batch,
-        T: torch.Tensor,
-        solvent_type: Optional[torch.Tensor] = None,
-    ) -> Dict[str, torch.Tensor]:
+        T: Tensor,
+        solvent_type: Optional[Tensor] = None,
+    ) -> dict[str, Tensor]:
         """
         Forward pass.
 
@@ -264,7 +282,9 @@ class DirectGNNTrainer:
     Cosine annealing LR schedule. Early stopping on val MAE.
     """
 
-    def __init__(self, model: DirectGNN, device: torch.device = None):
+    def __init__(
+        self, model: DirectGNN, device: torch.device | None = None
+    ) -> None:
         self.model = model
         if device is None:
             self.device = next(model.parameters()).device
@@ -278,11 +298,11 @@ class DirectGNNTrainer:
         n_epochs: int = 200,
         lr: float = 1e-4,
         patience: int = 20,
-    ) -> Dict[str, float]:
+    ) -> MetricDict:
         """
         Train the model. Returns dict with best_val_mae.
         """
-        print(f"\n  Training DirectGNN...")
+        print("\n  Training DirectGNN...")
         n_params = sum(p.numel() for p in self.model.parameters())
         print(f"  Parameters: {n_params:,}")
 
@@ -368,7 +388,7 @@ class DirectGNNTrainer:
         return {"best_val_mae": best_val_mae}
 
     @torch.no_grad()
-    def _evaluate_loader(self, loader: DataLoader) -> Dict[str, float]:
+    def _evaluate_loader(self, loader: DataLoader) -> MetricDict:
         """Evaluate on a DataLoader, return metrics dict."""
         self.model.eval()
         all_pred, all_true = [], []
@@ -415,7 +435,7 @@ class DirectGNNTrainer:
             "bias": float(errors.mean()),
         }
 
-    def evaluate(self, test_loader: DataLoader) -> Dict[str, float]:
+    def evaluate(self, test_loader: DataLoader) -> dict[str, float | str]:
         """Final evaluation on test set."""
         metrics = self._evaluate_loader(test_loader)
         metrics["name"] = "DirectGNN"

@@ -106,13 +106,13 @@ class DataBuilder:
         unified = builder.build(bigsoldb_df)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.mp_df: Optional[pd.DataFrame] = None
         self.dh_df: Optional[pd.DataFrame] = None
         self.hansen_df: Optional[pd.DataFrame] = None
         self.gamma_df: Optional[pd.DataFrame] = None
 
-    def add_mp(self, df: pd.DataFrame):
+    def add_mp(self, df: pd.DataFrame) -> None:
         """Add melting points: solute_smiles, T_m."""
         self.mp_df = (
             df[["solute_smiles", "T_m"]]
@@ -120,7 +120,7 @@ class DataBuilder:
             .copy()
         )
 
-    def add_dh(self, df: pd.DataFrame):
+    def add_dh(self, df: pd.DataFrame) -> None:
         """Add fusion enthalpies: solute_smiles, dH_fus."""
         self.dh_df = (
             df[["solute_smiles", "dH_fus"]]
@@ -128,7 +128,7 @@ class DataBuilder:
             .copy()
         )
 
-    def add_hansen(self, df: pd.DataFrame):
+    def add_hansen(self, df: pd.DataFrame) -> None:
         """Add Hansen parameters: solute_smiles, hansen_d/p/h."""
         self.hansen_df = (
             df[["solute_smiles", "hansen_d", "hansen_p", "hansen_h"]]
@@ -136,7 +136,7 @@ class DataBuilder:
             .copy()
         )
 
-    def add_gamma(self, df: pd.DataFrame):
+    def add_gamma(self, df: pd.DataFrame) -> None:
         """Add IDAC: solute_smiles, solvent_smiles, ln_gamma_inf, temperature."""
         self.gamma_df = (
             df[["solute_smiles", "solvent_smiles",
@@ -145,7 +145,7 @@ class DataBuilder:
             .copy()
         )
 
-    def add_dg(self, df: pd.DataFrame):
+    def add_dg(self, df: pd.DataFrame) -> None:
         """Add solvation free energies: solute/solvent_smiles, dG_solv, temperature."""
         self.dg_df = (
             df[["solute_smiles", "solvent_smiles",
@@ -307,7 +307,7 @@ class DataBuilder:
 
         # --- Statistics ---
         n = len(df)
-        print(f"\n  === Unified Dataset ===")
+        print("\n  === Unified Dataset ===")
         print(f"  Total:          {n:>7,d}")
         print(f"  Solubility:     {df['has_solubility'].sum():>7,d}")
         print(f"  T_m:            {df['has_T_m'].sum():>7,d} "

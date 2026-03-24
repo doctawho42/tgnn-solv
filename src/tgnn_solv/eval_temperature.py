@@ -8,18 +8,14 @@ Key experiments:
 4. Per-pair temperature curves vs experimental data
 """
 
-from typing import Dict, List, Optional, Tuple
-from collections import defaultdict
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader
 
-from .config import TGNNSolvConfig
 from .model import TGNNSolv
 from .inference import predict_solubility, temperature_scan
-from .data.utils import canonicalize
 
 
 # ================================================================== #
@@ -41,7 +37,6 @@ def temperature_coverage(df: pd.DataFrame) -> Dict:
 
     # Unique temperatures
     T_unique = sol_df["temperature"].nunique()
-    T_median = sol_df["temperature"].median()
     at_298 = (sol_df["temperature"] - 298.15).abs() < 1.0
 
     print(f"  Total records:       {n_total:,}")
@@ -80,7 +75,7 @@ def temperature_coverage(df: pd.DataFrame) -> Dict:
         print(f"  Records from multi-T pairs:     {n_records_multi:,}")
 
     # Temperature histogram
-    print(f"\n  Temperature distribution:")
+    print("\n  Temperature distribution:")
     bins = [200, 270, 290, 300, 310, 330, 360, 400, 500]
     for i in range(len(bins) - 1):
         lo, hi = bins[i], bins[i + 1]
@@ -174,8 +169,6 @@ def vant_hoff_check(
     If experimental data is provided, compare predicted and
     measured temperature dependence.
     """
-    T_values = np.linspace(T_range[0], T_range[1], n_points)
-
     scan = temperature_scan(
         model, solute_smiles, solvent_smiles,
         T_min=T_range[0], T_max=T_range[1], n_points=n_points,
