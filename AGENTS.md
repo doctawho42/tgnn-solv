@@ -199,22 +199,23 @@ python scripts/diagnose_training.py overfit --sample-size 1000 --epochs 200
 The `TGNNSolv` forward pass runs in this sequence:
 
 1. **GNNEncoder** (`layers.py`) — the default `shared_residual` backbone uses a shared 6-layer MPNN for both solute and solvent, then applies lightweight role-specific adapters at the end. An alternative `split_late` mode keeps early layers shared but gives the last few message-passing layers separate solute/solvent weights for direct shared-vs-asymmetric comparison. In the v2 architecture, encoder outputs used by crystal-property heads are temperature-invariant by default.
-2. **Auxiliary heads** (`heads.py`) — `HansenHead` and the lightweight `AuxPropsHead` run *before* interaction on the pre-interaction representations. In the maintained architecture `AuxPropsHead` predicts only molar volume `V_m`, because that is the only auxiliary quantity currently used by the loss.
+2. **Auxiliary heads** (`heads.py`) — `HansenHead` and the lightweight `AuxPropsHead` run *before* interaction on the pre-interaction representations. In the maintained architecture `AuxPropsHead` predicts only molar volume `V_m`, because that is the only auxiliary quantity currently used by the loss. When `use_descriptor_priors=True`, both heads switch to `prior + bounded residual`: a small descriptor-side prior network maps fixed RDKit descriptors to coarse `Hansen` / `V_m` estimates, and the graph path only learns a bounded correction around that prior. A stricter `use_group_priors=True` path instead uses deterministic fixed fragment-count priors for the same heads; the two prior modes are mutually exclusive.
 3. **Interaction** (`layers.py`) — default `SoluteSolventCrossAttention` (stacked Transformer cross-attention with global tokens), optional `BipartiteMessagePassing` (complete bipartite message passing between solute/solvent atoms). The default paper config keeps temperature out of the encoder and interaction stack to avoid leakage into crystal-property heads. Requires padding via `pad_atom_features()`.
 4. **PhysicsAwareReadout** (`layers.py`) — concatenates attention pooling + Set2Set pooling → 3× hidden_dim vector per molecule.
-5. **PairRepresentation** (`heads.py`) — combines `[g_sol, g_slv, g_sol * g_slv, |g_sol - g_slv|]` into a single pair vector.
-6. **SolventTypeMoE** (`heads.py`) — optional mixture‑of‑experts routing based on solvent type, applied to the pair vector.
-7. **Prediction heads** — `FusionHead` (T_m, ΔH_fus, ΔCp_fus from solute only), `NRTLHead` (default compact `ref_invT` form with `tau(T_ref)` + inverse-temperature slopes; legacy `dg/a_T` and `abc` remain supported) receives explicit temperature features, `HansenHead`, and a `V_m`-only `AuxPropsHead`.
-8. **SLESolver** (`solver.py`) — iterative fixed-point solver (SLE + NRTL) with **zero learnable parameters**. Uses `SLESolverFunction` (custom `torch.autograd.Function`) with implicit differentiation via the implicit function theorem for stable training gradients. The v2 solver adds residual-based stopping, adaptive damping, and a temperature gradient term in the implicit backward.
-9. **AdaptivePhysicsCorrection** (`heads.py`) — per-sample gating between the physics prediction and a bounded parameter-space proposal. The module predicts bounded deltas for `T_m`, `ΔH_fus`, `tau_12(T)`, and `tau_21(T)`, re-runs the corrected parameters through the SLE solver, then blends the resulting residual: `ln(x₂)_proposal = SLE(theta + delta_theta)`, `ln(x₂) = ln(x₂)_physics + (1 - σ(w)) · clip(ln(x₂)_proposal - ln(x₂)_physics)`.
+5. **Optional Morgan augmentation** (`features.py`, `heads.py`) — when `use_morgan_features=True`, solute and solvent Morgan fingerprints are projected into the molecular readout space and added to the pre-head and post-interaction graph representations. This keeps the physics path intact while letting the model reuse descriptor-like substructure information.
+6. **PairRepresentation** (`heads.py`) — combines `[g_sol, g_slv, g_sol * g_slv, |g_sol - g_slv|]` into a single pair vector.
+7. **SolventTypeMoE** (`heads.py`) — optional mixture‑of‑experts routing based on solvent type, applied to the pair vector.
+8. **Prediction heads** — `FusionHead` (T_m, ΔH_fus, and by default a fixed `ΔCp_fus = 0`; per-sample `ΔCp_fus` prediction is only used when `predict_dCp_fus=True` is explicitly enabled), `NRTLHead` (default compact `ref_invT` form with `tau(T_ref)` + inverse-temperature slopes; legacy `dg/a_T` and `abc` remain supported) receives explicit temperature features, `HansenHead`, and a `V_m`-only `AuxPropsHead`.
+9. **SLESolver** (`solver.py`) — iterative fixed-point solver (SLE + NRTL) with **zero learnable parameters**. Uses `SLESolverFunction` (custom `torch.autograd.Function`) with implicit differentiation via the implicit function theorem for stable training gradients. The v2 solver adds residual-based stopping, adaptive damping, and a temperature gradient term in the implicit backward.
+10. **AdaptivePhysicsCorrection** (`heads.py`) — per-sample gating between the physics prediction and a bounded parameter-space proposal. The module predicts bounded deltas for `T_m`, `ΔH_fus`, `tau_12(T)`, and `tau_21(T)`, re-runs the corrected parameters through the SLE solver, then blends the resulting residual: `ln(x₂)_proposal = SLE(theta + delta_theta)`, `ln(x₂) = ln(x₂)_physics + (1 - σ(w)) · clip(ln(x₂)_proposal - ln(x₂)_physics)`.
 
 ### Training: Three-Phase Curriculum (`trainer.py`)
 
 - **Phase 1** (50 epochs): Property pretraining only — no solubility loss. Trains heads on T_m, ΔH_fus, Hansen, γ∞. Correction gate is frozen.
-- **Phase 2** (200 epochs): Full SLE training with solubility loss. Correction gate unfreezes at epoch 20. Early stopping on val MAE.
-- **Phase 3** (50 epochs): Fine-tuning — lower LR, stronger monotonicity and correction penalties. Restores best model at end.
+- **Phase 2** (200 epochs): Full SLE training with solubility loss. The maintained configs now keep auxiliary/property losses deliberately light so `ln x₂` fitting dominates, and correction unfreezing is controlled by `phase2_correction_unfreeze_epoch` (paper default: 20). Early stopping still uses val MAE.
+- **Phase 3** (50 epochs): Fine-tuning — lower LR, moderate monotonicity and correction penalties. Restores best model at end.
 
-Loss components (weights vary by phase, see `trainer.py::phase_weights`): `sol` (Huber on ln x₂), `T_m`, `dH`, `hansen`, `gamma_inf`, `mono` (dx₂/dT ≥ 0 penalty), `res` (correction magnitude), `bridge` (Hansen–NRTL consistency), `tau_reg`, `phys_pref`, `direct_reg` (keep the residual proposal local), `direct_nll` (uncertainty on the residual proposal), `pair_temp_rank` (same-pair temperature monotonicity), `vant_hoff_local` (local linearity in `ln x₂` vs `1/T`), `moe_balance`.
+Loss components (weights vary by phase, see `src/tgnn_solv/trainer.py::DEFAULT_PHASE_WEIGHTS` and config overrides): `sol` (Huber on ln x₂), `T_m`, `dH`, `hansen`, `gamma_inf`, `mono` (dx₂/dT ≥ 0 penalty), `res` (correction magnitude), `bridge` (Hansen–NRTL consistency), `tau_reg`, `phys_pref`, `direct_reg` (keep the residual proposal local), `direct_nll` (uncertainty on the residual proposal), `pair_temp_rank` (same-pair temperature monotonicity), `vant_hoff_local` (local linearity in `ln x₂` vs `1/T`), `moe_balance`, `descriptor_prior`, `group_prior`.
 
 The canonical `scripts/train.py` path now uses pair-aware train batching by
 default, so the same-pair temperature losses are exercised whenever the split
@@ -234,6 +235,8 @@ contains repeated `(solute, solvent)` pairs at different temperatures.
 
 - **Implicit differentiation**: During training, `SLESolverFunction` runs successive substitution *without* gradient tracking in the forward pass, then computes exact gradients through the converged fixed point using the implicit function theorem. The solver also propagates the NRTL contribution to `d ln(x₂) / dT`, so monotonicity regularization no longer depends on a separate explicit-only path by default. Controlled by `TGNNSolvConfig.use_implicit_diff`.
 - **Temperature enters the state block explicitly**: The default v2 setup keeps `T` out of the crystal-property encoder path and injects it directly into the NRTL head and correction summary instead. This reduces temperature leakage into `T_m`, `ΔH_fus`, and other temperature-invariant predictions.
+- **Morgan fingerprints are optional side information, not a replacement path**: when enabled, fingerprints are injected into the molecular graph representations before the crystal-property heads and before pair construction. The solver, NRTL parameterization, and correction path remain unchanged, so the architecture stays physics-first.
+- **Descriptor priors are optional side information, not a replacement path**: when enabled, fixed RDKit descriptors are converted into coarse priors for `Hansen` and `V_m`, and the graph heads learn only bounded residuals around those priors. This is currently an experimental bridge toward stronger group-contribution priors.
 - **Switchable encoder asymmetry**: The maintained default is still the current shared backbone (`encoder_role_mode="shared_residual"`). The codebase also supports `encoder_role_mode="split_late"` for direct shared-vs-asymmetric comparisons without changing the rest of the architecture.
 - **Compact NRTL parameterization**: The default configuration uses the more identifiable `ref_invT` mode, where the network predicts `tau(T_ref)` and a single inverse-temperature slope per direction. This is converted internally to the ABC solver form, while `legacy` and `abc` remain loadable for older checkpoints and experiments.
 - **Physics layers have zero learnable parameters**: `IdealSolubilityLayer`, `NRTLLayer`, and `HansenDistanceLayer` are fully hardcoded thermodynamic equations.
@@ -252,7 +255,7 @@ contains repeated `(solute, solvent)` pairs at different temperatures.
 - `uncertainty.py` — `MCDropoutPredictor` (N forward passes with dropout active) and `EnsemblePredictor` (K trained models).
 - `domain.py` — `ApplicabilityDomain`: Mahalanobis distance in pair-representation space + Tanimoto similarity to training set. Call `ad.fit(train_loader)` once, then `ad.score(smi_solute, smi_solvent, T)`.
 - `pretrain.py` — Optional Stage 0 GNN pretraining on ZINC250k: masked subgraph + bond prediction + contrastive + RDKit property prediction.
-- `ablation.py` — Full ablation study framework (10 variants: split-late encoder, no cross-attn, no NRTL, no curriculum, no aux losses, no correction, no implicit diff, small/large model).
+- `ablation.py` — Full ablation study framework. The current CLI variants include the reference model, fixed-group-prior ablation, split-late encoder, no cross-attn, no NRTL, no curriculum, no aux losses, no correction, no implicit diff, DirectGNN, and small/large scaling variants.
 - `baselines/` — `DirectGNN`: same GNN+cross-attn backbone but with direct MLP → ln(x₂) prediction (no physics). Used as the key ablation to validate physics adds value. `ThermometerEncoder`: ordinal temperature encoding with fractional bin filling for smooth gradients.
 
 ### Configuration (`config.py`)
@@ -269,13 +272,18 @@ All hyperparameters live in `TGNNSolvConfig` (a `dataclass`). Key fields:
 - `nrtl_tau_mode="ref_invT"` (default), `"legacy"`, or `"abc"`
 - `use_solvent_moe=True`, `solvent_moe_experts`, `solvent_moe_hidden`, `solvent_type_emb_dim`
 - `use_temperature_in_encoder=False`, `use_temperature_in_interaction=False`, `use_temperature_in_nrtl_head=True` — default v2 temperature routing
+- `use_morgan_features=False`, `morgan_radius=2`, `morgan_n_bits=2048`, `morgan_hidden_dim=256` — optional Morgan fingerprint augmentation for TGNN-Solv and DirectGNN
+- `use_descriptor_priors=False`, `descriptor_prior_hidden_dim=128`, `descriptor_prior_hansen_residual_max=5.0`, `descriptor_prior_vm_residual_max=30.0`, `descriptor_prior_reg_weight=0.0` — optional descriptor-conditioned `prior + residual` path for `Hansen` and `V_m`
+- `use_group_priors=False`, `group_prior_hansen_residual_max=5.0`, `group_prior_vm_residual_max=30.0`, `group_prior_reg_weight=0.0` — optional fixed fragment-count group priors for `Hansen` and `V_m`; mutually exclusive with `use_descriptor_priors`
 - `correction_max_abs=2.0` — trust-region width for bounded residual correction
+- `predict_dCp_fus=False`, `fixed_dCp_fus=0.0` — keep the ideal-solubility branch identifiable unless direct `ΔCp_fus` supervision is introduced
+- `phase2_correction_unfreeze_epoch=20` — epoch index inside Phase 2 where the bounded correction starts training
 - `correction_Tm_max_delta`, `correction_dH_fraction`, `correction_tau_max_delta` — bounds for parameter-space correction
 - Scale factors (`S_H`, `S_g`, `S_delta`, etc.) normalize head outputs into physically stable ranges.
 
 ### Molecular Featurization (`features.py`)
 
-`smiles_to_graph(smiles)` → PyG `Data`. Atom features (35-dim): atomic number (one-hot over 12 elements), hybridization, formal charge, H count, aromaticity, ring membership, electronegativity, vdW radius, polarizability. Bond features (8-dim): bond type (single/double/triple/aromatic), conjugated, in ring, stereo E/Z.
+`smiles_to_graph(smiles)` → PyG `Data`. Atom features (35-dim): atomic number (one-hot over 12 elements), hybridization, formal charge, H count, aromaticity, ring membership, electronegativity, vdW radius, polarizability. Bond features (8-dim): bond type (single/double/triple/aromatic), conjugated, in ring, stereo E/Z. The same module also exposes `smiles_to_morgan_fp(smiles)`, `compute_pair_morgan_features(...)`, and `smiles_to_descriptor_prior_features(smiles)` for optional side-information paths and baseline experiments.
 
 ## Data Layout
 

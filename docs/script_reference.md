@@ -55,7 +55,7 @@ dependencies, and recommended usage.
 
 ### `scripts/run_ablation.py`
 **Status**: Research
-**Purpose**: CLI for ablation study (9 architecture variants × N seeds)
+**Purpose**: CLI for ablation study (reference model plus current comparison variants such as `fixed_group_priors`, `split_late_encoder`, `direct_gnn`, and small/large scaling sweeps)
 **Depends on**: `configs/paper_config.yaml`, train/val/test CSVs, `src/tgnn_solv/ablation.py`
 **Produces**: `results/ablation.json`
 

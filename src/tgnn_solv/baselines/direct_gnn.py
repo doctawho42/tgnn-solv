@@ -28,6 +28,7 @@ from torch.utils.data import DataLoader
 from torch_geometric.data import Batch
 
 from ..config import TGNNSolvConfig
+from ..heads import MorganFeatureAdapter
 from ..features import NODE_FEAT_DIM, EDGE_FEAT_DIM
 from ..layers import (
     GNNEncoder,
@@ -115,6 +116,25 @@ class DirectGNN(nn.Module):
 
         # --- Temperature encoder ---
         self.temp_encoder = ThermometerEncoder(n_temp_bins, T_min, T_max)
+        self.solute_fp_adapter = None
+        self.solvent_fp_adapter = None
+        self.fp_pre_scale = None
+        self.fp_post_scale = None
+        if cfg.use_morgan_features:
+            self.solute_fp_adapter = MorganFeatureAdapter(
+                cfg.morgan_n_bits,
+                D_r,
+                cfg.morgan_hidden_dim,
+                cfg.dropout,
+            )
+            self.solvent_fp_adapter = MorganFeatureAdapter(
+                cfg.morgan_n_bits,
+                D_r,
+                cfg.morgan_hidden_dim,
+                cfg.dropout,
+            )
+            self.fp_pre_scale = nn.Parameter(torch.tensor(0.5))
+            self.fp_post_scale = nn.Parameter(torch.tensor(0.5))
 
         # --- Pair + temperature → prediction ---
         # Input: g_sol(D_r) + g_slv(D_r) + g_sol*g_slv(D_r) +
@@ -186,6 +206,8 @@ class DirectGNN(nn.Module):
         solvent_data: Batch,
         T: Tensor,
         solvent_type: Optional[Tensor] = None,
+        solute_morgan_fp: Tensor | None = None,
+        solvent_morgan_fp: Tensor | None = None,
     ) -> dict[str, Tensor]:
         """
         Forward pass.
@@ -200,6 +222,18 @@ class DirectGNN(nn.Module):
         h_slv_atoms, g_slv = self._encode_and_readout(
             solvent_data, "solvent", temp_feat=t_feat
         )
+        sol_fp_emb = None
+        slv_fp_emb = None
+        if self.cfg.use_morgan_features:
+            if solute_morgan_fp is None or solvent_morgan_fp is None:
+                raise ValueError(
+                    "Morgan fingerprint features are enabled in the config, "
+                    "but solute_morgan_fp/solvent_morgan_fp were not provided."
+                )
+            sol_fp_emb = self.solute_fp_adapter(solute_morgan_fp.to(g_sol))
+            slv_fp_emb = self.solvent_fp_adapter(solvent_morgan_fp.to(g_slv))
+            g_sol = g_sol + self.fp_pre_scale * sol_fp_emb
+            g_slv = g_slv + self.fp_pre_scale * slv_fp_emb
 
         # --- Cross-attention / Bipartite MP ---
         sol_list = self._split_atoms_by_graph(h_sol_atoms, solute_data.batch)
@@ -248,6 +282,9 @@ class DirectGNN(nn.Module):
         g_slv_tok = self._extract_tokens(h_slv_padded, slv_lengths)
         g_sol_post = g_sol_post + self.sol_token_gate * self.token_proj(g_sol_tok)
         g_slv_post = g_slv_post + self.slv_token_gate * self.token_proj(g_slv_tok)
+        if self.cfg.use_morgan_features:
+            g_sol_post = g_sol_post + self.fp_post_scale * sol_fp_emb
+            g_slv_post = g_slv_post + self.fp_post_scale * slv_fp_emb
 
         # --- Temperature encoding ---
         t_enc = self.temp_encoder.encode(T)  # (B, n_bins)
@@ -332,6 +369,8 @@ class DirectGNNTrainer:
                 slv_b = slv_b.to(self.device)
                 T = tgt["T"].to(self.device)
                 solvent_type = tgt.get("solvent_type")
+                solute_morgan_fp = tgt.get("solute_morgan_fp")
+                solvent_morgan_fp = tgt.get("solvent_morgan_fp")
                 mask = tgt["has_solubility"].to(self.device)
 
                 if not mask.any():
@@ -339,7 +378,20 @@ class DirectGNNTrainer:
 
                 optimizer.zero_grad()
                 out = self.model(
-                    sol_b, slv_b, T, solvent_type=solvent_type
+                    sol_b,
+                    slv_b,
+                    T,
+                    solvent_type=solvent_type,
+                    solute_morgan_fp=(
+                        solute_morgan_fp.to(self.device)
+                        if isinstance(solute_morgan_fp, Tensor)
+                        else None
+                    ),
+                    solvent_morgan_fp=(
+                        solvent_morgan_fp.to(self.device)
+                        if isinstance(solvent_morgan_fp, Tensor)
+                        else None
+                    ),
                 )
 
                 pred = out["ln_x2"][mask]
@@ -402,13 +454,28 @@ class DirectGNNTrainer:
             slv_b = slv_b.to(self.device)
             T = tgt["T"].to(self.device)
             solvent_type = tgt.get("solvent_type")
+            solute_morgan_fp = tgt.get("solute_morgan_fp")
+            solvent_morgan_fp = tgt.get("solvent_morgan_fp")
             mask = tgt["has_solubility"]  # keep on CPU
 
             if not mask.any():
                 continue
 
             out = self.model(
-                sol_b, slv_b, T, solvent_type=solvent_type
+                sol_b,
+                slv_b,
+                T,
+                solvent_type=solvent_type,
+                solute_morgan_fp=(
+                    solute_morgan_fp.to(self.device)
+                    if isinstance(solute_morgan_fp, Tensor)
+                    else None
+                ),
+                solvent_morgan_fp=(
+                    solvent_morgan_fp.to(self.device)
+                    if isinstance(solvent_morgan_fp, Tensor)
+                    else None
+                ),
             )
             all_pred.append(out["ln_x2"].cpu()[mask])
             all_true.append(tgt["ln_x2"][mask])

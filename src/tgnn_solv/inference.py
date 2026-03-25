@@ -17,7 +17,14 @@ import torch
 from torch_geometric.data import Batch
 
 from .config import TGNNSolvConfig
-from .features import NODE_FEAT_DIM, EDGE_FEAT_DIM, smiles_to_graph
+from .features import (
+    EDGE_FEAT_DIM,
+    NODE_FEAT_DIM,
+    smiles_to_descriptor_prior_features,
+    smiles_to_graph,
+    smiles_to_group_prior_features,
+    smiles_to_morgan_fp,
+)
 from .model import TGNNSolv
 from .data.solvent_types import solvent_type_id_from_smiles
 
@@ -54,13 +61,71 @@ def predict_solubility(
     sol_batch = Batch.from_data_list([sol_graph]).to(device)
     slv_batch = Batch.from_data_list([slv_graph]).to(device)
     T_tensor = torch.tensor([T], device=device)
+    solute_morgan_fp = None
+    solvent_morgan_fp = None
+    solute_descriptor_prior_features = None
+    solvent_descriptor_prior_features = None
+    solute_group_prior_features = None
+    solvent_group_prior_features = None
+    if model.cfg.use_morgan_features:
+        sol_fp = smiles_to_morgan_fp(
+            solute_smiles,
+            radius=model.cfg.morgan_radius,
+            n_bits=model.cfg.morgan_n_bits,
+        )
+        slv_fp = smiles_to_morgan_fp(
+            solvent_smiles,
+            radius=model.cfg.morgan_radius,
+            n_bits=model.cfg.morgan_n_bits,
+        )
+        if sol_fp is None or slv_fp is None:
+            raise ValueError("Failed to compute Morgan fingerprints for inference.")
+        solute_morgan_fp = torch.tensor(sol_fp, device=device).unsqueeze(0)
+        solvent_morgan_fp = torch.tensor(slv_fp, device=device).unsqueeze(0)
+    if model.cfg.use_descriptor_priors:
+        sol_desc = smiles_to_descriptor_prior_features(solute_smiles)
+        slv_desc = smiles_to_descriptor_prior_features(solvent_smiles)
+        if sol_desc is None or slv_desc is None:
+            raise ValueError("Failed to compute descriptor priors for inference.")
+        solute_descriptor_prior_features = torch.tensor(
+            sol_desc,
+            device=device,
+        ).unsqueeze(0)
+        solvent_descriptor_prior_features = torch.tensor(
+            slv_desc,
+            device=device,
+        ).unsqueeze(0)
+    if model.cfg.use_group_priors:
+        sol_group = smiles_to_group_prior_features(solute_smiles)
+        slv_group = smiles_to_group_prior_features(solvent_smiles)
+        if sol_group is None or slv_group is None:
+            raise ValueError("Failed to compute fixed group priors for inference.")
+        solute_group_prior_features = torch.tensor(
+            sol_group,
+            device=device,
+        ).unsqueeze(0)
+        solvent_group_prior_features = torch.tensor(
+            slv_group,
+            device=device,
+        ).unsqueeze(0)
 
     solvent_type = torch.tensor(
         [solvent_type_id_from_smiles(solvent_smiles)],
         device=device,
         dtype=torch.long,
     )
-    output = model(sol_batch, slv_batch, T_tensor, solvent_type=solvent_type)
+    output = model(
+        sol_batch,
+        slv_batch,
+        T_tensor,
+        solvent_type=solvent_type,
+        solute_morgan_fp=solute_morgan_fp,
+        solvent_morgan_fp=solvent_morgan_fp,
+        solute_descriptor_prior_features=solute_descriptor_prior_features,
+        solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+        solute_group_prior_features=solute_group_prior_features,
+        solvent_group_prior_features=solvent_group_prior_features,
+    )
 
     direct_sigma = None
     direct_log_sigma = None

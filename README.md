@@ -169,6 +169,52 @@ Legacy aliases such as `by_temperature`, `by_solubility_range`,
 `by_solvent_type`, `true_ln_x2`, and `pred_ln_x2` are preserved for backward
 compatibility.
 
+## Optional Morgan Fingerprints
+
+The maintained codebase now supports optional Morgan fingerprint augmentation
+for both `TGNN-Solv` and `DirectGNN` through `TGNNSolvConfig`:
+
+- `use_morgan_features`
+- `morgan_radius`
+- `morgan_n_bits`
+- `morgan_hidden_dim`
+
+This path injects fingerprints into the learned molecular representations
+before the thermodynamic heads and pair block. It does not replace the
+physics-informed solver path.
+
+## Optional Descriptor Priors
+
+The maintained codebase also supports an experimental descriptor-conditioned
+`prior + residual` path for the `Hansen` and `V_m` heads:
+
+- `use_descriptor_priors`
+- `descriptor_prior_hidden_dim`
+- `descriptor_prior_hansen_residual_max`
+- `descriptor_prior_vm_residual_max`
+- `descriptor_prior_reg_weight`
+
+When enabled, fixed RDKit descriptors are converted into coarse priors and the
+graph heads learn only bounded residuals around those priors. This path is
+currently experimental, is not enabled in the paper configs by default, and is
+mutually exclusive with `use_group_priors`.
+
+## Optional Fixed Group Priors
+
+The codebase also supports a stricter fixed fragment-count
+group-contribution prior path for the same `Hansen` and `V_m` heads:
+
+- `use_group_priors`
+- `group_prior_hansen_residual_max`
+- `group_prior_vm_residual_max`
+- `group_prior_reg_weight`
+
+When enabled, the prior is a deterministic function of fixed molecular
+group counts and the graph branch learns only a bounded residual on top.
+This is intended as a cleaner ablation than the learned descriptor-prior
+adapter when you want to test whether explicit fixed priors help. This mode is
+mutually exclusive with `use_descriptor_priors`.
+
 ### evaluate_complete.py
 
 Comprehensive model evaluation with detailed metrics:
@@ -188,7 +234,8 @@ python scripts/evaluate_complete.py \
 - Stratified by solubility: (very low, low, medium, high)
 - JSON format for automated analysis
 
-**Example output**:
+**Example output** (illustrative schema only; values depend on the checkpoint
+and split you evaluate):
 ```json
 {
   "overall": {
@@ -388,23 +435,32 @@ python scripts/diagnose_training.py overfit --sample-size 1000 --epochs 200
 ```
 
 ### "FastSolv predictions are NaN"
-This is a known issue in FastSolv descriptor pipeline. Use TGNN-Solv instead:
-- TGNN-Solv is fully end-to-end trainable
-- Physics-informed (better generalization)
-- ~0.15 MAE improvement over FastSolv on BigSolDBv2.1
+This usually reflects the known FastSolv descriptor-pipeline instability when
+training from scratch. Preferred paths:
+- use `python scripts/run_fastsolv.py predict ...` for pretrained FastSolv inference,
+- use `python scripts/run_fastsolv.py compare ...` for TGNN-vs-FastSolv comparison,
+- use TGNN-Solv or SolProp for custom training workflows instead of relying on
+  FastSolv retraining.
 
 See FASTSOLV_NaN_ROOT_CAUSE.md for technical details.
 
-## Expected Performance
+## Benchmarking Status
 
-On BigSolDBv2.1 test set (~7,500 samples):
+The repository does not currently ship a single blessed checkpoint or a
+committed benchmark JSON that should be treated as the canonical scorecard.
+Authoritative metrics depend on:
 
-| Model | MAE | RMSE | R² |
-|-------|-----|------|-----|
-| TGNN-Solv (trained) | 0.58 | 0.95 | 0.87 |
-| FastSolv (pretrained) | 0.73 | 1.12 | 0.81 |
+- the split protocol (`solute_scaffold`, `solute`, `solvent`),
+- the exact checkpoint or seed sweep,
+- optional baseline availability (for example FastSolv / SolProp),
+- and the current training configuration.
 
-**Note**: TGNN-Solv is trained on this exact split. FastSolv is a pretrained ensemble not optimized for this dataset.
+Use one of the following to generate the numbers that matter for your setup:
+
+- `python scripts/evaluate_complete.py ...` for lightweight checkpoint metrics,
+- `python scripts/benchmark_tgnn_solv.py ...` for richer stratified reporting,
+- `python scripts/run_split_comparisons.py ...` for fair split-wise comparison,
+- `bash reproduce.sh` for the broader paper-style artifact set.
 
 ## Architecture Overview
 
@@ -413,16 +469,18 @@ On BigSolDBv2.1 test set (~7,500 samples):
 2. Auxiliary heads: crystal and Hansen properties, plus a lightweight `V_m` auxiliary prediction, are computed from temperature-invariant pre-interaction representations
 3. Interaction: Cross-attention or bipartite message passing
 4. Physics-aware readout: Concatenates attention + Set2Set pooling
-5. Pair representation: Combines solute/solvent features
-6. Solvent-type MoE: Optional expert routing
-7. Prediction heads: Fusion (T_m, ΔH_fus, ΔCp), NRTL, Hansen, auxiliary; the canonical configuration uses a compact `tau(T_ref)` + inverse-temperature-slope NRTL parameterization, and temperature is injected explicitly into the NRTL/state block
-8. SLE Solver: Residual-controlled fixed-point iterations with implicit differentiation
-9. Adaptive correction: Bounded parameter-space correction around the physics prediction, followed by a second SLE solve
+5. Optional Morgan augmentation: Morgan fingerprints can be injected into the learned molecular representations before the thermodynamic heads and pair block
+6. Optional molecular priors: descriptor-conditioned priors or fixed group-count priors can provide coarse `Hansen` / `V_m` estimates, and the graph path learns only bounded residuals around them; the two prior modes are mutually exclusive
+7. Pair representation: Combines solute/solvent features
+8. Solvent-type MoE: Optional expert routing
+9. Prediction heads: Fusion (`T_m`, `ΔH_fus`, and by default a fixed `ΔCp_fus = 0` unless explicit `ΔCp_fus` prediction is enabled), NRTL, Hansen, auxiliary; the canonical configuration uses a compact `tau(T_ref)` + inverse-temperature-slope NRTL parameterization, and temperature is injected explicitly into the NRTL/state block
+10. SLE Solver: Residual-controlled fixed-point iterations with implicit differentiation
+11. Adaptive correction: Bounded parameter-space correction around the physics prediction, followed by a second SLE solve
 
 **Three-phase curriculum training**:
 - Phase 1 (50 epochs): Property pretraining (no solubility loss)
-- Phase 2 (200 epochs): Full SLE training with solubility loss
-- Phase 3 (50 epochs): Fine-tuning with lower LR and stronger regularization
+- Phase 2 (200 epochs): Full SLE training with solubility loss; maintained configs keep auxiliary losses light and unfreeze the correction path via `phase2_correction_unfreeze_epoch`
+- Phase 3 (50 epochs): Fine-tuning with lower LR and moderate regularization
 
 The canonical training CLI also uses pair-aware batching, so repeated
 `(solute, solvent)` measurements at different temperatures are grouped into the
@@ -521,6 +579,10 @@ python scripts/run_fastsolv.py compare \
     --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
     --metrics checkpoints/fastsolv_compare.json
 ```
+
+FastSolv retraining remains available, but pretrained prediction / comparison is
+the safer default because descriptor-path NaNs can still break custom
+retraining on new splits.
 
 **DirectGNN (no-physics ablation)**  
 Standalone CLI:

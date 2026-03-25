@@ -79,7 +79,15 @@ def benchmark_model(
     # Build dataset and dataloader
     print("\n[3/4] Building dataset...")
     try:
-        dataset = TGNNSolvDataset(test_df, cache=True)
+        dataset = TGNNSolvDataset(
+            test_df,
+            cache=True,
+            use_morgan_features=cfg.use_morgan_features,
+            morgan_radius=cfg.morgan_radius,
+            morgan_n_bits=cfg.morgan_n_bits,
+            use_descriptor_priors=cfg.use_descriptor_priors,
+            use_group_priors=cfg.use_group_priors,
+        )
         loader = DataLoader(
             dataset,
             batch_size=64,

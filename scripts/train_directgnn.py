@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 
 from tgnn_solv.baselines.direct_gnn import DirectGNN, DirectGNNTrainer
 from tgnn_solv.config import TGNNSolvConfig
-from tgnn_solv.data.dataset import TGNNSolvDataset, collate_fn
+from tgnn_solv.data.dataset import make_loader
 from tgnn_solv.experiment_logger import ExperimentLogger
 from tgnn_solv.seed import set_seed
 
@@ -91,18 +91,31 @@ def resolve_device(device_str: str) -> torch.device:
     return torch.device(device_str)
 
 
-def load_data(csv_path: Path, batch_size: int, shuffle: bool) -> DataLoader:
+def load_data(
+    csv_path: Path,
+    config: TGNNSolvConfig,
+    shuffle: bool,
+    seed: int,
+) -> DataLoader:
     """Load a CSV dataset and wrap it in a DataLoader."""
     df = pd.read_csv(csv_path)
-    dataset = TGNNSolvDataset(df, cache=True)
-    return DataLoader(
-        dataset,
-        batch_size=batch_size,
+    return make_loader(
+        df,
+        batch_size=config.batch_size,
         shuffle=shuffle,
-        collate_fn=collate_fn,
         num_workers=0,
-        pin_memory=torch.cuda.is_available(),
-        drop_last=shuffle and len(dataset) > batch_size,
+        cache=True,
+        use_pair_temperature_batching=(
+            shuffle and config.use_pair_temperature_batching
+        ),
+        pair_temperature_min_group_size=config.pair_temperature_min_group_size,
+        pair_temperature_group_chunk_size=config.pair_temperature_group_chunk_size,
+        use_morgan_features=config.use_morgan_features,
+        morgan_radius=config.morgan_radius,
+        morgan_n_bits=config.morgan_n_bits,
+        use_descriptor_priors=config.use_descriptor_priors,
+        use_group_priors=config.use_group_priors,
+        seed=seed,
     )
 
 
@@ -161,13 +174,13 @@ def main() -> None:
 
         print("\n4. Loading datasets...")
         print("   Train:")
-        train_loader = load_data(train_path, config.batch_size, shuffle=True)
+        train_loader = load_data(train_path, config, shuffle=True, seed=args.seed)
         print("   Val:")
-        val_loader = load_data(val_path, config.batch_size, shuffle=False)
+        val_loader = load_data(val_path, config, shuffle=False, seed=args.seed)
         test_loader = None
         if test_path is not None:
             print("   Test:")
-            test_loader = load_data(test_path, config.batch_size, shuffle=False)
+            test_loader = load_data(test_path, config, shuffle=False, seed=args.seed)
 
         print("\n5. Initializing DirectGNN...")
         model = DirectGNN(cfg=config).to(device)

@@ -23,9 +23,18 @@ from __future__ import annotations
 
 from typing import TypeAlias
 
+import numpy as np
 import torch
 from rdkit import Chem
-from rdkit.Chem import AllChem
+from rdkit.Chem import (
+    AllChem,
+    Crippen,
+    Descriptors,
+    Fragments,
+    Lipinski,
+    rdMolDescriptors,
+)
+from rdkit.DataStructs import ConvertToNumpyArray
 from torch_geometric.data import Data
 
 FeatureVector: TypeAlias = list[float]
@@ -186,6 +195,137 @@ def smiles_to_graph(smiles: str, compute_3d: bool = False) -> Data | None:
     return data
 
 
+def smiles_to_morgan_fp(
+    smiles: str,
+    radius: int = 2,
+    n_bits: int = 2048,
+) -> np.ndarray | None:
+    """Convert a SMILES string into a Morgan fingerprint bit vector."""
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+
+    bitvect = AllChem.GetMorganFingerprintAsBitVect(
+        mol,
+        radius=radius,
+        nBits=n_bits,
+    )
+    array = np.zeros((n_bits,), dtype=np.float32)
+    ConvertToNumpyArray(bitvect, array)
+    return array
+
+
+def compute_pair_morgan_features(
+    solute_smiles: str,
+    solvent_smiles: str,
+    temperature: float,
+    *,
+    radius: int = 2,
+    n_bits: int = 2048,
+) -> np.ndarray | None:
+    """Build a pair feature vector from Morgan fingerprints and temperature."""
+    solute_fp = smiles_to_morgan_fp(solute_smiles, radius=radius, n_bits=n_bits)
+    solvent_fp = smiles_to_morgan_fp(solvent_smiles, radius=radius, n_bits=n_bits)
+    if solute_fp is None or solvent_fp is None:
+        return None
+
+    temp = float(temperature)
+    inv_temperature = 1.0 / temp
+    return np.concatenate([solute_fp, solvent_fp, [temp, inv_temperature]]).astype(
+        np.float32,
+        copy=False,
+    )
+
+
+def smiles_to_descriptor_prior_features(smiles: str) -> np.ndarray | None:
+    """Compute a compact fixed descriptor vector for prior-style heads."""
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+
+    features = np.array(
+        [
+            Descriptors.MolWt(mol) / 500.0,
+            Crippen.MolLogP(mol) / 5.0,
+            Crippen.MolMR(mol) / 150.0,
+            rdMolDescriptors.CalcTPSA(mol) / 200.0,
+            float(Lipinski.NumHDonors(mol)) / 10.0,
+            float(Lipinski.NumHAcceptors(mol)) / 12.0,
+            float(rdMolDescriptors.CalcNumRotatableBonds(mol)) / 15.0,
+            float(rdMolDescriptors.CalcNumRings(mol)) / 8.0,
+            float(mol.GetNumHeavyAtoms()) / 60.0,
+            float(rdMolDescriptors.CalcFractionCSP3(mol)),
+        ],
+        dtype=np.float32,
+    )
+    return np.nan_to_num(features, nan=0.0, posinf=10.0, neginf=-10.0)
+
+
+def smiles_to_group_prior_features(smiles: str) -> np.ndarray | None:
+    """Compute fixed fragment-count features for group-contribution priors."""
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+
+    heavy_atom_count = float(mol.GetNumHeavyAtoms())
+    sp3_carbon_count = 0.0
+    sp2_sp_carbon_count = 0.0
+    aromatic_carbon_count = 0.0
+    n_count = 0.0
+    o_count = 0.0
+    s_p_count = 0.0
+    halogen_count = 0.0
+
+    for atom in mol.GetAtoms():
+        atomic_num = atom.GetAtomicNum()
+        if atomic_num == 6:
+            if atom.GetIsAromatic():
+                aromatic_carbon_count += 1.0
+            elif atom.GetHybridization() == Chem.rdchem.HybridizationType.SP3:
+                sp3_carbon_count += 1.0
+            else:
+                sp2_sp_carbon_count += 1.0
+        elif atomic_num == 7:
+            n_count += 1.0
+        elif atomic_num == 8:
+            o_count += 1.0
+        elif atomic_num in (15, 16):
+            s_p_count += 1.0
+        elif atomic_num in (9, 17, 35, 53):
+            halogen_count += 1.0
+
+    features = np.array(
+        [
+            heavy_atom_count,
+            sp3_carbon_count,
+            sp2_sp_carbon_count,
+            aromatic_carbon_count,
+            n_count,
+            o_count,
+            s_p_count,
+            halogen_count,
+            float(rdMolDescriptors.CalcNumRings(mol)),
+            float(rdMolDescriptors.CalcNumRotatableBonds(mol)),
+            float(Fragments.fr_Al_OH(mol)),
+            float(Fragments.fr_Ar_OH(mol)),
+            float(Fragments.fr_COO(mol)),
+            float(Fragments.fr_ester(mol)),
+            float(Fragments.fr_ether(mol)),
+            float(Fragments.fr_amide(mol)),
+            float(
+                Fragments.fr_NH0(mol)
+                + Fragments.fr_NH1(mol)
+                + Fragments.fr_NH2(mol)
+            ),
+            float(Fragments.fr_nitrile(mol)),
+            float(Fragments.fr_nitro(mol)),
+            float(Fragments.fr_C_O_noCOO(mol)),
+        ],
+        dtype=np.float32,
+    )
+    return np.nan_to_num(features, nan=0.0, posinf=100.0, neginf=0.0)
+
+
 # ------------------------------------------------------------------ #
 #  Feature dimensions (computed once at import time)                   #
 # ------------------------------------------------------------------ #
@@ -201,3 +341,9 @@ def _compute_dims() -> tuple[int, int]:
 
 
 NODE_FEAT_DIM, EDGE_FEAT_DIM = _compute_dims()
+DESCRIPTOR_PRIOR_DIM = int(
+    smiles_to_descriptor_prior_features("CCO").shape[0]
+)
+GROUP_PRIOR_DIM = int(
+    smiles_to_group_prior_features("CCO").shape[0]
+)

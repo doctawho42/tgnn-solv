@@ -32,6 +32,8 @@ MODEL_LABELS = {
     "tgnn_solv": "TGNN-Solv",
     "direct_gnn": "DirectGNN",
     "rf_baseline": "RF Baseline",
+    "rf_morgan": "RF Morgan",
+    "rf_hybrid": "RF Hybrid",
 }
 
 
@@ -205,6 +207,7 @@ def build_rf_multi_seed_results(
     n_seeds: int,
     base_seed: int,
     output_path: Path,
+    feature_mode: str = "descriptors",
 ) -> dict[str, Any]:
     """Train and evaluate the RF baseline across seeds on one split."""
     from tgnn_solv.baselines.rf_baseline import RFBaseline
@@ -215,8 +218,8 @@ def build_rf_multi_seed_results(
     per_seed: list[dict[str, Any]] = []
     seeds = [base_seed + idx for idx in range(n_seeds)]
     for seed in seeds:
-        print(f"  [rf_baseline][seed {seed}] fitting...")
-        model = RFBaseline(random_state=seed)
+        print(f"  [rf:{feature_mode}][seed {seed}] fitting...")
+        model = RFBaseline(random_state=seed, feature_mode=feature_mode)
         model.fit(train_df)
         metrics = model.evaluate(test_df)
         per_seed.append(
@@ -240,7 +243,7 @@ def build_rf_multi_seed_results(
         best_seed = {"seed": best["seed"], "mae": best["mae"], "checkpoint": None}
 
     payload = {
-        "model": "rf_baseline",
+        "model": f"rf_{feature_mode}",
         "split": build_split_metadata(
             split_mode=split_mode,
             train_data=train_path,
@@ -433,6 +436,11 @@ def main() -> int:
                     base_seed=args.base_seed,
                 )
             else:
+                rf_mode = {
+                    "rf_baseline": "descriptors",
+                    "rf_morgan": "morgan",
+                    "rf_hybrid": "hybrid",
+                }[model_name]
                 result = build_rf_multi_seed_results(
                     train_path=paths["train"],
                     test_path=paths["test"],
@@ -440,6 +448,7 @@ def main() -> int:
                     n_seeds=args.n_seeds,
                     base_seed=args.base_seed,
                     output_path=model_output_path,
+                    feature_mode=rf_mode,
                 )
 
             split_payload["models"][model_name] = {

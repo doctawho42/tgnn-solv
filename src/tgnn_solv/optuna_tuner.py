@@ -98,11 +98,37 @@ class OptunaTuner:
         train_df: pd.DataFrame,
         val_df: pd.DataFrame,
         test_df: pd.DataFrame,
+        cfg: TGNNSolvConfig | None = None,
         cache: bool = True,
     ) -> Tuple[TGNNSolvDataset, TGNNSolvDataset, TGNNSolvDataset]:
-        train_ds = TGNNSolvDataset(train_df, cache=cache)
-        val_ds = TGNNSolvDataset(val_df, cache=cache)
-        test_ds = TGNNSolvDataset(test_df, cache=cache)
+        cfg = cfg or TGNNSolvConfig()
+        train_ds = TGNNSolvDataset(
+            train_df,
+            cache=cache,
+            use_morgan_features=cfg.use_morgan_features,
+            morgan_radius=cfg.morgan_radius,
+            morgan_n_bits=cfg.morgan_n_bits,
+            use_descriptor_priors=cfg.use_descriptor_priors,
+            use_group_priors=cfg.use_group_priors,
+        )
+        val_ds = TGNNSolvDataset(
+            val_df,
+            cache=cache,
+            use_morgan_features=cfg.use_morgan_features,
+            morgan_radius=cfg.morgan_radius,
+            morgan_n_bits=cfg.morgan_n_bits,
+            use_descriptor_priors=cfg.use_descriptor_priors,
+            use_group_priors=cfg.use_group_priors,
+        )
+        test_ds = TGNNSolvDataset(
+            test_df,
+            cache=cache,
+            use_morgan_features=cfg.use_morgan_features,
+            morgan_radius=cfg.morgan_radius,
+            morgan_n_bits=cfg.morgan_n_bits,
+            use_descriptor_priors=cfg.use_descriptor_priors,
+            use_group_priors=cfg.use_group_priors,
+        )
         return train_ds, val_ds, test_ds
 
     def _build_loaders(
@@ -155,7 +181,56 @@ class OptunaTuner:
                 continue
             T = tgt["T"].to(self.device)
             solvent_type = tgt.get("solvent_type")
-            out = model(sol_b, slv_b, T, solvent_type=solvent_type)
+            solute_morgan_fp = tgt.get("solute_morgan_fp")
+            solvent_morgan_fp = tgt.get("solvent_morgan_fp")
+            solute_descriptor_prior_features = tgt.get(
+                "solute_descriptor_prior_features"
+            )
+            solvent_descriptor_prior_features = tgt.get(
+                "solvent_descriptor_prior_features"
+            )
+            solute_group_prior_features = tgt.get(
+                "solute_group_prior_features"
+            )
+            solvent_group_prior_features = tgt.get(
+                "solvent_group_prior_features"
+            )
+            out = model(
+                sol_b,
+                slv_b,
+                T,
+                solvent_type=solvent_type,
+                solute_morgan_fp=(
+                    solute_morgan_fp.to(self.device)
+                    if isinstance(solute_morgan_fp, torch.Tensor)
+                    else None
+                ),
+                solvent_morgan_fp=(
+                    solvent_morgan_fp.to(self.device)
+                    if isinstance(solvent_morgan_fp, torch.Tensor)
+                    else None
+                ),
+                solute_descriptor_prior_features=(
+                    solute_descriptor_prior_features.to(self.device)
+                    if isinstance(solute_descriptor_prior_features, torch.Tensor)
+                    else None
+                ),
+                solvent_descriptor_prior_features=(
+                    solvent_descriptor_prior_features.to(self.device)
+                    if isinstance(solvent_descriptor_prior_features, torch.Tensor)
+                    else None
+                ),
+                solute_group_prior_features=(
+                    solute_group_prior_features.to(self.device)
+                    if isinstance(solute_group_prior_features, torch.Tensor)
+                    else None
+                ),
+                solvent_group_prior_features=(
+                    solvent_group_prior_features.to(self.device)
+                    if isinstance(solvent_group_prior_features, torch.Tensor)
+                    else None
+                ),
+            )
             pred = out["ln_x2"].detach().cpu()[mask]
             true = tgt["ln_x2"][mask]
             all_pred.append(pred)
@@ -427,6 +502,13 @@ def build_datasets(
     train_df: pd.DataFrame,
     val_df: pd.DataFrame,
     test_df: pd.DataFrame,
+    cfg: TGNNSolvConfig | None = None,
     cache: bool = True,
 ) -> Tuple[TGNNSolvDataset, TGNNSolvDataset, TGNNSolvDataset]:
-    return OptunaTuner.build_datasets(train_df, val_df, test_df, cache=cache)
+    return OptunaTuner.build_datasets(
+        train_df,
+        val_df,
+        test_df,
+        cfg=cfg,
+        cache=cache,
+    )

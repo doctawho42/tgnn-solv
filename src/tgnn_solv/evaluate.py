@@ -107,10 +107,57 @@ class Evaluator:
             slv_b = slv_b.to(self.device)
             T = tgt["T"].to(self.device)
             solvent_type = tgt.get("solvent_type")
+            solute_morgan_fp = tgt.get("solute_morgan_fp")
+            solvent_morgan_fp = tgt.get("solvent_morgan_fp")
+            solute_descriptor_prior_features = tgt.get(
+                "solute_descriptor_prior_features"
+            )
+            solvent_descriptor_prior_features = tgt.get(
+                "solvent_descriptor_prior_features"
+            )
+            solute_group_prior_features = tgt.get(
+                "solute_group_prior_features"
+            )
+            solvent_group_prior_features = tgt.get(
+                "solvent_group_prior_features"
+            )
             mask = tgt["has_solubility"].to(self.device)
 
             out = self.model(
-                sol_b, slv_b, T, solvent_type=solvent_type
+                sol_b,
+                slv_b,
+                T,
+                solvent_type=solvent_type,
+                solute_morgan_fp=(
+                    solute_morgan_fp.to(self.device)
+                    if isinstance(solute_morgan_fp, torch.Tensor)
+                    else None
+                ),
+                solvent_morgan_fp=(
+                    solvent_morgan_fp.to(self.device)
+                    if isinstance(solvent_morgan_fp, torch.Tensor)
+                    else None
+                ),
+                solute_descriptor_prior_features=(
+                    solute_descriptor_prior_features.to(self.device)
+                    if isinstance(solute_descriptor_prior_features, torch.Tensor)
+                    else None
+                ),
+                solvent_descriptor_prior_features=(
+                    solvent_descriptor_prior_features.to(self.device)
+                    if isinstance(solvent_descriptor_prior_features, torch.Tensor)
+                    else None
+                ),
+                solute_group_prior_features=(
+                    solute_group_prior_features.to(self.device)
+                    if isinstance(solute_group_prior_features, torch.Tensor)
+                    else None
+                ),
+                solvent_group_prior_features=(
+                    solvent_group_prior_features.to(self.device)
+                    if isinstance(solvent_group_prior_features, torch.Tensor)
+                    else None
+                ),
             )
 
             if mask.any():

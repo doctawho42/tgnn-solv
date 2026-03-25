@@ -257,30 +257,28 @@ python scripts/generate_paper_figures.py \
 When `results/split_comparisons.json` exists, the figure script also produces
 `Figure S2` for split-wise comparison.
 
-## Expected Results
+## Result Validation
 
-The repository does not currently ship a committed five-seed
-`results/multi_seed_results.json`, so the table below should be treated as an
-expected target range inferred from the README single-model benchmark and the
-intended multi-seed workflow.
+The repository does not currently ship a committed multi-seed benchmark JSON
+that should be treated as a fixed numeric target for every environment. Exact
+metrics depend on the checkpoint, split protocol, optional baseline
+availability, and hardware / dependency stack.
 
-| Metric | Expected Mean ± Std | Notes |
-|--------|---------------------|-------|
-| MAE | ≈ 0.58 ± 0.05 | TGNN-Solv target on BigSolDBv2.1 test split |
-| RMSE | ≈ 0.95 ± 0.10 | Should remain clearly below FastSolv |
-| R² | ≈ 0.87 ± 0.03 | Stable positive fit on the held-out test set |
-
-Reference baseline from `README.md`:
-
-| Model | MAE | RMSE | R² |
-|-------|-----|------|----|
-| TGNN-Solv (trained) | 0.58 | 0.95 | 0.87 |
-| FastSolv (pretrained) | 0.73 | 1.12 | 0.81 |
-
-After running `reproduce.sh`, the authoritative numbers are the ones written to:
+After running `reproduce.sh`, treat the generated artifacts below as the
+authoritative outputs:
 
 - `results/multi_seed_results.json`
 - `results/full_evaluation.json`
+- `results/split_late_multi_seed_results.json`
+- `results/split_comparisons.json`
+
+Validate reproduction by checking that:
+
+- the expected JSON / CSV artifacts are produced,
+- the best-seed checkpoint resolves correctly into `results/full_evaluation.json`,
+- optional baseline steps are either completed or explicitly skipped with a warning,
+- figure and supplementary-generation steps consume the produced result files
+  without schema errors.
 
 ## Expected Wall-Clock Time
 

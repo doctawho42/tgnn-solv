@@ -29,7 +29,14 @@ except Exception:  # pragma: no cover - optional dependency
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import TGNNSolvDataset, collate_fn
 from tgnn_solv.data.solvent_types import solvent_type_id_from_smiles
-from tgnn_solv.features import EDGE_FEAT_DIM, NODE_FEAT_DIM, smiles_to_graph
+from tgnn_solv.features import (
+    EDGE_FEAT_DIM,
+    NODE_FEAT_DIM,
+    smiles_to_descriptor_prior_features,
+    smiles_to_graph,
+    smiles_to_group_prior_features,
+    smiles_to_morgan_fp,
+)
 from tgnn_solv.model import TGNNSolv
 
 
@@ -209,9 +216,21 @@ def load_model_from_checkpoint(path: Path, device: torch.device) -> tuple[TGNNSo
     return model, cfg
 
 
-def make_test_loader(test_df: pd.DataFrame, batch_size: int) -> tuple[TGNNSolvDataset, DataLoader]:
+def make_test_loader(
+    test_df: pd.DataFrame,
+    cfg: TGNNSolvConfig,
+    batch_size: int,
+) -> tuple[TGNNSolvDataset, DataLoader]:
     """Create a deterministic test DataLoader."""
-    dataset = TGNNSolvDataset(test_df, cache=True)
+    dataset = TGNNSolvDataset(
+        test_df,
+        cache=True,
+        use_morgan_features=cfg.use_morgan_features,
+        morgan_radius=cfg.morgan_radius,
+        morgan_n_bits=cfg.morgan_n_bits,
+        use_descriptor_priors=cfg.use_descriptor_priors,
+        use_group_priors=cfg.use_group_priors,
+    )
     loader = DataLoader(
         dataset,
         batch_size=batch_size,
@@ -229,6 +248,12 @@ def invoke_model(
     slv_batch: Batch,
     temperatures: torch.Tensor,
     solvent_type: torch.Tensor,
+    solute_morgan_fp: torch.Tensor | None = None,
+    solvent_morgan_fp: torch.Tensor | None = None,
+    solute_descriptor_prior_features: torch.Tensor | None = None,
+    solvent_descriptor_prior_features: torch.Tensor | None = None,
+    solute_group_prior_features: torch.Tensor | None = None,
+    solvent_group_prior_features: torch.Tensor | None = None,
 ) -> tuple[dict[str, torch.Tensor], str]:
     """Try the intermediate-aware forward call, then fall back to the standard one."""
     try:
@@ -237,6 +262,12 @@ def invoke_model(
             slv_batch,
             temperatures,
             solvent_type=solvent_type,
+            solute_morgan_fp=solute_morgan_fp,
+            solvent_morgan_fp=solvent_morgan_fp,
+            solute_descriptor_prior_features=solute_descriptor_prior_features,
+            solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+            solute_group_prior_features=solute_group_prior_features,
+            solvent_group_prior_features=solvent_group_prior_features,
             return_intermediates=True,
         )
         if isinstance(output, tuple) and len(output) == 2 and isinstance(output[0], dict):
@@ -251,6 +282,12 @@ def invoke_model(
         slv_batch,
         temperatures,
         solvent_type=solvent_type,
+        solute_morgan_fp=solute_morgan_fp,
+        solvent_morgan_fp=solvent_morgan_fp,
+        solute_descriptor_prior_features=solute_descriptor_prior_features,
+        solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+        solute_group_prior_features=solute_group_prior_features,
+        solvent_group_prior_features=solvent_group_prior_features,
     )
     if isinstance(output, dict) and "physics" in output and "fusion_params" in output:
         return output, "standard_forward"
@@ -276,6 +313,20 @@ def collect_intermediates(
             slv_batch = slv_batch.to(device)
             temperatures = targets["T"].to(device)
             solvent_type = targets.get("solvent_type")
+            solute_morgan_fp = targets.get("solute_morgan_fp")
+            solvent_morgan_fp = targets.get("solvent_morgan_fp")
+            solute_descriptor_prior_features = targets.get(
+                "solute_descriptor_prior_features"
+            )
+            solvent_descriptor_prior_features = targets.get(
+                "solvent_descriptor_prior_features"
+            )
+            solute_group_prior_features = targets.get(
+                "solute_group_prior_features"
+            )
+            solvent_group_prior_features = targets.get(
+                "solvent_group_prior_features"
+            )
             if solvent_type is None:
                 solvent_type = torch.zeros_like(temperatures, dtype=torch.long)
             else:
@@ -287,6 +338,36 @@ def collect_intermediates(
                 slv_batch=slv_batch,
                 temperatures=temperatures,
                 solvent_type=solvent_type,
+                solute_morgan_fp=(
+                    solute_morgan_fp.to(device)
+                    if isinstance(solute_morgan_fp, torch.Tensor)
+                    else None
+                ),
+                solvent_morgan_fp=(
+                    solvent_morgan_fp.to(device)
+                    if isinstance(solvent_morgan_fp, torch.Tensor)
+                    else None
+                ),
+                solute_descriptor_prior_features=(
+                    solute_descriptor_prior_features.to(device)
+                    if isinstance(solute_descriptor_prior_features, torch.Tensor)
+                    else None
+                ),
+                solvent_descriptor_prior_features=(
+                    solvent_descriptor_prior_features.to(device)
+                    if isinstance(solvent_descriptor_prior_features, torch.Tensor)
+                    else None
+                ),
+                solute_group_prior_features=(
+                    solute_group_prior_features.to(device)
+                    if isinstance(solute_group_prior_features, torch.Tensor)
+                    else None
+                ),
+                solvent_group_prior_features=(
+                    solvent_group_prior_features.to(device)
+                    if isinstance(solvent_group_prior_features, torch.Tensor)
+                    else None
+                ),
             )
 
             batch_size = int(temperatures.shape[0])
@@ -402,6 +483,57 @@ def predict_pair_temperatures(
         dtype=torch.long,
         device=device,
     )
+    solute_morgan_fp = None
+    solvent_morgan_fp = None
+    solute_descriptor_prior_features = None
+    solvent_descriptor_prior_features = None
+    solute_group_prior_features = None
+    solvent_group_prior_features = None
+    if model.cfg.use_morgan_features:
+        sol_fp = smiles_to_morgan_fp(
+            solute_smiles,
+            radius=model.cfg.morgan_radius,
+            n_bits=model.cfg.morgan_n_bits,
+        )
+        slv_fp = smiles_to_morgan_fp(
+            solvent_smiles,
+            radius=model.cfg.morgan_radius,
+            n_bits=model.cfg.morgan_n_bits,
+        )
+        if sol_fp is None or slv_fp is None:
+            raise ValueError("Failed to compute Morgan fingerprints for van't Hoff analysis.")
+        solute_morgan_fp = torch.tensor(sol_fp, dtype=torch.float32, device=device).repeat(len(temperatures), 1)
+        solvent_morgan_fp = torch.tensor(slv_fp, dtype=torch.float32, device=device).repeat(len(temperatures), 1)
+    if model.cfg.use_descriptor_priors:
+        sol_desc = smiles_to_descriptor_prior_features(solute_smiles)
+        slv_desc = smiles_to_descriptor_prior_features(solvent_smiles)
+        if sol_desc is None or slv_desc is None:
+            raise ValueError("Failed to compute descriptor priors for van't Hoff analysis.")
+        solute_descriptor_prior_features = torch.tensor(
+            sol_desc,
+            dtype=torch.float32,
+            device=device,
+        ).repeat(len(temperatures), 1)
+        solvent_descriptor_prior_features = torch.tensor(
+            slv_desc,
+            dtype=torch.float32,
+            device=device,
+        ).repeat(len(temperatures), 1)
+    if model.cfg.use_group_priors:
+        sol_group = smiles_to_group_prior_features(solute_smiles)
+        slv_group = smiles_to_group_prior_features(solvent_smiles)
+        if sol_group is None or slv_group is None:
+            raise ValueError("Failed to compute fixed group priors for van't Hoff analysis.")
+        solute_group_prior_features = torch.tensor(
+            sol_group,
+            dtype=torch.float32,
+            device=device,
+        ).repeat(len(temperatures), 1)
+        solvent_group_prior_features = torch.tensor(
+            slv_group,
+            dtype=torch.float32,
+            device=device,
+        ).repeat(len(temperatures), 1)
 
     with torch.no_grad():
         output, _ = invoke_model(
@@ -410,6 +542,12 @@ def predict_pair_temperatures(
             slv_batch=slv_batch,
             temperatures=t_tensor,
             solvent_type=solvent_type,
+            solute_morgan_fp=solute_morgan_fp,
+            solvent_morgan_fp=solvent_morgan_fp,
+            solute_descriptor_prior_features=solute_descriptor_prior_features,
+            solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+            solute_group_prior_features=solute_group_prior_features,
+            solvent_group_prior_features=solvent_group_prior_features,
         )
 
     return {
@@ -606,7 +744,7 @@ def main() -> int:
 
     test_df = pd.read_csv(test_data_path)
     model, cfg = load_model_from_checkpoint(checkpoint_path, device=device)
-    dataset, loader = make_test_loader(test_df, batch_size=cfg.batch_size)
+    dataset, loader = make_test_loader(test_df, cfg=cfg, batch_size=cfg.batch_size)
 
     collected_df, mode_used = collect_intermediates(
         model=model,

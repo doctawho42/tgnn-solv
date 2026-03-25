@@ -113,3 +113,91 @@ class TestPairTemperatureBatchSampler:
             len(temperatures) >= 2 and len(set(temperatures)) >= 2
             for temperatures in grouped_temperatures.values()
         )
+
+    def test_make_loader_emits_morgan_features_when_enabled(
+        self,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        """Morgan fingerprints should be present in the batch when requested."""
+        monkeypatch.setattr(
+            dataset_module,
+            "smiles_to_graph",
+            lambda _smiles: _fake_graph(),
+        )
+        monkeypatch.setattr(
+            dataset_module,
+            "smiles_to_morgan_fp",
+            lambda _smiles, radius=2, n_bits=256: torch.ones(n_bits, dtype=torch.float32).numpy(),
+        )
+
+        loader = make_loader(
+            _toy_dataframe(),
+            batch_size=4,
+            shuffle=False,
+            use_morgan_features=True,
+            morgan_n_bits=256,
+        )
+
+        _, _, targets = next(iter(loader))
+        assert "solute_morgan_fp" in targets
+        assert "solvent_morgan_fp" in targets
+        assert tuple(targets["solute_morgan_fp"].shape) == (4, 256)
+        assert tuple(targets["solvent_morgan_fp"].shape) == (4, 256)
+
+    def test_make_loader_emits_descriptor_priors_when_enabled(
+        self,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        """Descriptor prior features should be present in the batch when requested."""
+        monkeypatch.setattr(
+            dataset_module,
+            "smiles_to_graph",
+            lambda _smiles: _fake_graph(),
+        )
+        monkeypatch.setattr(
+            dataset_module,
+            "smiles_to_descriptor_prior_features",
+            lambda _smiles: torch.arange(10, dtype=torch.float32).numpy(),
+        )
+
+        loader = make_loader(
+            _toy_dataframe(),
+            batch_size=4,
+            shuffle=False,
+            use_descriptor_priors=True,
+        )
+
+        _, _, targets = next(iter(loader))
+        assert "solute_descriptor_prior_features" in targets
+        assert "solvent_descriptor_prior_features" in targets
+        assert tuple(targets["solute_descriptor_prior_features"].shape) == (4, 10)
+        assert tuple(targets["solvent_descriptor_prior_features"].shape) == (4, 10)
+
+    def test_make_loader_emits_group_priors_when_enabled(
+        self,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        """Fixed group prior features should be present in the batch when requested."""
+        monkeypatch.setattr(
+            dataset_module,
+            "smiles_to_graph",
+            lambda _smiles: _fake_graph(),
+        )
+        monkeypatch.setattr(
+            dataset_module,
+            "smiles_to_group_prior_features",
+            lambda _smiles: torch.arange(20, dtype=torch.float32).numpy(),
+        )
+
+        loader = make_loader(
+            _toy_dataframe(),
+            batch_size=4,
+            shuffle=False,
+            use_group_priors=True,
+        )
+
+        _, _, targets = next(iter(loader))
+        assert "solute_group_prior_features" in targets
+        assert "solvent_group_prior_features" in targets
+        assert tuple(targets["solute_group_prior_features"].shape) == (4, 20)
+        assert tuple(targets["solvent_group_prior_features"].shape) == (4, 20)

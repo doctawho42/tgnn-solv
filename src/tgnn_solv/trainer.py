@@ -6,7 +6,8 @@ Phase 1 — Property pretraining (no solubility loss):
   Correction gate frozen at 0.
 
 Phase 2 — Full SLE training:
-  Add solubility loss.  Correction gate unfrozen after epoch 50.
+  Add solubility loss. Correction gate unfreezes via
+  cfg.phase2_correction_unfreeze_epoch (default: 20).
   Early stopping on validation MAE.
 
 Phase 3 — Fine-tuning with monotonicity:
@@ -44,31 +45,35 @@ DEFAULT_PHASE_WEIGHTS = {
         "mono": 0.0, "res": 0.0, "bridge": 0.0, "tau_reg": 0.0,
         "phys_pref": 0.0, "direct_reg": 0.0, "direct_nll": 0.0,
         "pair_temp_rank": 0.0, "vant_hoff_local": 0.0,
-        "moe_balance": 0.0,
+        "moe_balance": 0.0, "descriptor_prior": 0.0, "group_prior": 0.0,
     },
     2: {
-        "sol": 1.0, "T_m": 0.3, "dH": 0.3, "hansen": 0.2,
-        "gamma_inf": 0.5,
-        "mono": 0.0, "res": 0.03, "bridge": 0.05,
-        "tau_reg": 0.01,
-        "phys_pref": 0.05,
-        "direct_reg": 0.05,
-        "direct_nll": 0.05,
-        "pair_temp_rank": 0.02,
-        "vant_hoff_local": 0.01,
-        "moe_balance": 0.02,
+        "sol": 1.0, "T_m": 0.05, "dH": 0.05, "hansen": 0.05,
+        "gamma_inf": 0.1,
+        "mono": 0.0, "res": 0.01, "bridge": 0.01,
+        "tau_reg": 0.002,
+        "phys_pref": 0.01,
+        "direct_reg": 0.01,
+        "direct_nll": 0.01,
+        "pair_temp_rank": 0.005,
+        "vant_hoff_local": 0.002,
+        "moe_balance": 0.005,
+        "descriptor_prior": 0.0,
+        "group_prior": 0.0,
     },
     3: {
-        "sol": 1.0, "T_m": 0.2, "dH": 0.2, "hansen": 0.1,
-        "gamma_inf": 0.3,
-        "mono": 0.3, "res": 0.05, "bridge": 0.1,
-        "tau_reg": 0.01,
-        "phys_pref": 0.03,
-        "direct_reg": 0.05,
-        "direct_nll": 0.05,
-        "pair_temp_rank": 0.05,
-        "vant_hoff_local": 0.03,
-        "moe_balance": 0.03,
+        "sol": 1.0, "T_m": 0.03, "dH": 0.03, "hansen": 0.03,
+        "gamma_inf": 0.05,
+        "mono": 0.1, "res": 0.02, "bridge": 0.02,
+        "tau_reg": 0.002,
+        "phys_pref": 0.01,
+        "direct_reg": 0.02,
+        "direct_nll": 0.02,
+        "pair_temp_rank": 0.01,
+        "vant_hoff_local": 0.005,
+        "moe_balance": 0.01,
+        "descriptor_prior": 0.0,
+        "group_prior": 0.0,
     },
 }
 
@@ -115,6 +120,10 @@ class TGNNSolvTrainer:
         }.get(phase)
         if overrides is not None:
             defaults.update(overrides)
+        if phase >= 2 and self.cfg.descriptor_prior_reg_weight > 0:
+            defaults["descriptor_prior"] = self.cfg.descriptor_prior_reg_weight
+        if phase >= 2 and self.cfg.group_prior_reg_weight > 0:
+            defaults["group_prior"] = self.cfg.group_prior_reg_weight
         return defaults
 
     # -------------------------------------------------------------- #
@@ -180,6 +189,12 @@ class TGNNSolvTrainer:
         slv_batch: Batch,
         T: Tensor,
         solvent_type: Tensor | None = None,
+        solute_morgan_fp: Tensor | None = None,
+        solvent_morgan_fp: Tensor | None = None,
+        solute_descriptor_prior_features: Tensor | None = None,
+        solvent_descriptor_prior_features: Tensor | None = None,
+        solute_group_prior_features: Tensor | None = None,
+        solvent_group_prior_features: Tensor | None = None,
     ) -> ModelOutput:
         """
         Lightweight forward for Phase 1: encode + heads only.
@@ -200,6 +215,32 @@ class TGNNSolvTrainer:
         _, g_slv = model._encode_and_readout(
             slv_batch, "solvent", temp_feat=encoder_t_feat
         )
+        if model.cfg.use_morgan_features:
+            if solute_morgan_fp is None or solvent_morgan_fp is None:
+                raise ValueError(
+                    "Morgan fingerprint features are enabled, but the batch does not "
+                    "provide solute_morgan_fp/solvent_morgan_fp."
+                )
+            sol_fp_emb = model.solute_fp_adapter(solute_morgan_fp.to(g_sol))
+            slv_fp_emb = model.solvent_fp_adapter(solvent_morgan_fp.to(g_slv))
+            g_sol = g_sol + model.fp_pre_scale * sol_fp_emb
+            g_slv = g_slv + model.fp_pre_scale * slv_fp_emb
+        sol_prior = None
+        slv_prior = None
+        if model.cfg.use_descriptor_priors:
+            sol_prior, slv_prior = model._require_descriptor_prior_features(
+                solute_descriptor_prior_features,
+                solvent_descriptor_prior_features,
+            )
+            sol_prior = sol_prior.to(g_sol)
+            slv_prior = slv_prior.to(g_slv)
+        elif model.cfg.use_group_priors:
+            sol_prior, slv_prior = model._require_group_prior_features(
+                solute_group_prior_features,
+                solvent_group_prior_features,
+            )
+            sol_prior = sol_prior.to(g_sol)
+            slv_prior = slv_prior.to(g_slv)
         g_pair = model.pair_repr(g_sol, g_slv)
         if model.solvent_moe is not None:
             if solvent_type is None:
@@ -216,8 +257,36 @@ class TGNNSolvTrainer:
         # Heads
         fusion_params = model.head_fusion(g_sol)
         nrtl_params = model.head_nrtl(g_pair, temp_feat=nrtl_t_feat)
-        hansen_sol = model.head_hansen(g_sol)
-        hansen_slv = model.head_hansen(g_slv)
+        hansen_sol_parts = model.head_hansen(
+            g_sol,
+            prior_features=sol_prior,
+            return_parts=(model.cfg.use_descriptor_priors or model.cfg.use_group_priors),
+        )
+        hansen_slv_parts = model.head_hansen(
+            g_slv,
+            prior_features=slv_prior,
+            return_parts=(model.cfg.use_descriptor_priors or model.cfg.use_group_priors),
+        )
+        aux_sol_parts = model.head_aux(
+            g_sol,
+            prior_features=sol_prior,
+            return_parts=(model.cfg.use_descriptor_priors or model.cfg.use_group_priors),
+        )
+        aux_slv_parts = model.head_aux(
+            g_slv,
+            prior_features=slv_prior,
+            return_parts=(model.cfg.use_descriptor_priors or model.cfg.use_group_priors),
+        )
+        hansen_sol = (
+            hansen_sol_parts["value"]
+            if isinstance(hansen_sol_parts, dict)
+            else hansen_sol_parts
+        )
+        hansen_slv = (
+            hansen_slv_parts["value"]
+            if isinstance(hansen_slv_parts, dict)
+            else hansen_slv_parts
+        )
 
         # ln(γ∞) from NRTL params directly
         nrtl = model.sle_solver.nrtl_layer
@@ -236,6 +305,8 @@ class TGNNSolvTrainer:
             "nrtl_params": nrtl_params,
             "hansen_sol": hansen_sol,
             "hansen_slv": hansen_slv,
+            "aux_sol": {"V_m": aux_sol_parts["V_m"]},
+            "aux_slv": {"V_m": aux_slv_parts["V_m"]},
             "physics": {
                 "ln_gamma_inf": lng_inf,
                 "tau_12": tau_12,
@@ -266,7 +337,7 @@ class TGNNSolvTrainer:
         weights = self.phase_weights[phase].copy()
 
         # Unfreeze correction mid-Phase 2
-        if phase == 2 and epoch >= 20:
+        if phase == 2 and epoch >= self.cfg.phase2_correction_unfreeze_epoch:
             self._freeze_correction(False)
 
         for sol_batch, slv_batch, targets in progress(
@@ -282,6 +353,20 @@ class TGNNSolvTrainer:
             }
             T = targets["T"]
             solvent_type = targets.get("solvent_type")
+            solute_morgan_fp = targets.get("solute_morgan_fp")
+            solvent_morgan_fp = targets.get("solvent_morgan_fp")
+            solute_descriptor_prior_features = targets.get(
+                "solute_descriptor_prior_features"
+            )
+            solvent_descriptor_prior_features = targets.get(
+                "solvent_descriptor_prior_features"
+            )
+            solute_group_prior_features = targets.get(
+                "solute_group_prior_features"
+            )
+            solvent_group_prior_features = targets.get(
+                "solvent_group_prior_features"
+            )
 
             if phase == 1 and not self._has_phase1_supervision(targets):
                 continue
@@ -290,11 +375,29 @@ class TGNNSolvTrainer:
 
             if phase == 1:
                 output = self._forward_phase1(
-                    sol_batch, slv_batch, T, solvent_type
+                    sol_batch,
+                    slv_batch,
+                    T,
+                    solvent_type,
+                    solute_morgan_fp=solute_morgan_fp,
+                    solvent_morgan_fp=solvent_morgan_fp,
+                    solute_descriptor_prior_features=solute_descriptor_prior_features,
+                    solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+                    solute_group_prior_features=solute_group_prior_features,
+                    solvent_group_prior_features=solvent_group_prior_features,
                 )
             else:
                 output = self.model(
-                    sol_batch, slv_batch, T, solvent_type=solvent_type
+                    sol_batch,
+                    slv_batch,
+                    T,
+                    solvent_type=solvent_type,
+                    solute_morgan_fp=solute_morgan_fp,
+                    solvent_morgan_fp=solvent_morgan_fp,
+                    solute_descriptor_prior_features=solute_descriptor_prior_features,
+                    solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+                    solute_group_prior_features=solute_group_prior_features,
+                    solvent_group_prior_features=solvent_group_prior_features,
                 )
 
             loss, loss_dict = self.loss_fn(
@@ -305,6 +408,12 @@ class TGNNSolvTrainer:
                 solute_data=sol_batch,
                 solvent_data=slv_batch,
                 solvent_type=solvent_type,
+                solute_morgan_fp=solute_morgan_fp,
+                solvent_morgan_fp=solvent_morgan_fp,
+                solute_descriptor_prior_features=solute_descriptor_prior_features,
+                solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+                solute_group_prior_features=solute_group_prior_features,
+                solvent_group_prior_features=solvent_group_prior_features,
             )
 
             loss.backward()
@@ -358,17 +467,49 @@ class TGNNSolvTrainer:
             }
             T = targets["T"]
             solvent_type = targets.get("solvent_type")
+            solute_morgan_fp = targets.get("solute_morgan_fp")
+            solvent_morgan_fp = targets.get("solvent_morgan_fp")
+            solute_descriptor_prior_features = targets.get(
+                "solute_descriptor_prior_features"
+            )
+            solvent_descriptor_prior_features = targets.get(
+                "solvent_descriptor_prior_features"
+            )
+            solute_group_prior_features = targets.get(
+                "solute_group_prior_features"
+            )
+            solvent_group_prior_features = targets.get(
+                "solvent_group_prior_features"
+            )
 
             if phase == 1 and not self._has_phase1_supervision(targets):
                 continue
 
             if phase == 1:
                 output = self._forward_phase1(
-                    sol_batch, slv_batch, T, solvent_type
+                    sol_batch,
+                    slv_batch,
+                    T,
+                    solvent_type,
+                    solute_morgan_fp=solute_morgan_fp,
+                    solvent_morgan_fp=solvent_morgan_fp,
+                    solute_descriptor_prior_features=solute_descriptor_prior_features,
+                    solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+                    solute_group_prior_features=solute_group_prior_features,
+                    solvent_group_prior_features=solvent_group_prior_features,
                 )
             else:
                 output = self.model(
-                    sol_batch, slv_batch, T, solvent_type=solvent_type
+                    sol_batch,
+                    slv_batch,
+                    T,
+                    solvent_type=solvent_type,
+                    solute_morgan_fp=solute_morgan_fp,
+                    solvent_morgan_fp=solvent_morgan_fp,
+                    solute_descriptor_prior_features=solute_descriptor_prior_features,
+                    solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+                    solute_group_prior_features=solute_group_prior_features,
+                    solvent_group_prior_features=solvent_group_prior_features,
                 )
 
             loss, _ = self.loss_fn(output, targets, weights=weights)

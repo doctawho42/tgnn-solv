@@ -60,7 +60,8 @@ Backward-compatible aliases such as `by_temperature`,
 `by_solubility_range`, `by_solvent_type`, `true_ln_x2`, and `pred_ln_x2`
 are still written for downstream scripts and older notebooks.
 
-Example output:
+Example output (illustrative schema only; the numeric values below are not a
+guaranteed benchmark for the current repository state):
 
 ```json
 {

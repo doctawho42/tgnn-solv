@@ -15,13 +15,17 @@ import random
 from collections.abc import Iterator, Sequence
 from typing import TypeAlias
 
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset, Sampler
 from torch_geometric.data import Batch, Data
 
-import pandas as pd
-
-from ..features import smiles_to_graph
+from ..features import (
+    smiles_to_descriptor_prior_features,
+    smiles_to_graph,
+    smiles_to_group_prior_features,
+    smiles_to_morgan_fp,
+)
 from .solvent_types import solvent_type_id_from_smiles
 
 TargetValue: TypeAlias = torch.Tensor | str
@@ -170,8 +174,30 @@ class TGNNSolvDataset(Dataset):
       dG_solv, dG_mask
     """
 
-    def __init__(self, df: pd.DataFrame, cache: bool = True) -> None:
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        cache: bool = True,
+        *,
+        use_morgan_features: bool = False,
+        morgan_radius: int = 2,
+        morgan_n_bits: int = 2048,
+        use_descriptor_priors: bool = False,
+        use_group_priors: bool = False,
+    ) -> None:
         self.cache: dict[str, Data] | None = {} if cache else None
+        self.use_morgan_features = use_morgan_features
+        self.morgan_radius = morgan_radius
+        self.morgan_n_bits = morgan_n_bits
+        self.use_descriptor_priors = use_descriptor_priors
+        self.use_group_priors = use_group_priors
+        self.fp_cache: dict[str, torch.Tensor] | None = {} if cache and use_morgan_features else None
+        self.descriptor_cache: dict[str, torch.Tensor] | None = (
+            {} if cache and use_descriptor_priors else None
+        )
+        self.group_prior_cache: dict[str, torch.Tensor] | None = (
+            {} if cache and use_group_priors else None
+        )
 
         # Validate all SMILES upfront (fast: uses cache after first pass)
         valid = []
@@ -210,6 +236,55 @@ class TGNNSolvDataset(Dataset):
             self.cache[smi] = g
         return g
 
+    def _morgan_fp(self, smi: str) -> torch.Tensor | None:
+        """Get a Morgan fingerprint tensor from cache or compute it."""
+        if not self.use_morgan_features:
+            return None
+        if self.fp_cache is not None and smi in self.fp_cache:
+            return self.fp_cache[smi]
+
+        fp = smiles_to_morgan_fp(
+            smi,
+            radius=self.morgan_radius,
+            n_bits=self.morgan_n_bits,
+        )
+        if fp is None:
+            return None
+        fp_tensor = torch.tensor(fp, dtype=torch.float)
+        if self.fp_cache is not None:
+            self.fp_cache[smi] = fp_tensor
+        return fp_tensor
+
+    def _descriptor_prior_features(self, smi: str) -> torch.Tensor | None:
+        """Get cached fixed descriptor features for prior-conditioned heads."""
+        if not self.use_descriptor_priors:
+            return None
+        if self.descriptor_cache is not None and smi in self.descriptor_cache:
+            return self.descriptor_cache[smi]
+
+        features = smiles_to_descriptor_prior_features(smi)
+        if features is None:
+            return None
+        tensor = torch.tensor(features, dtype=torch.float)
+        if self.descriptor_cache is not None:
+            self.descriptor_cache[smi] = tensor
+        return tensor
+
+    def _group_prior_features(self, smi: str) -> torch.Tensor | None:
+        """Get cached fixed group-count features for group priors."""
+        if not self.use_group_priors:
+            return None
+        if self.group_prior_cache is not None and smi in self.group_prior_cache:
+            return self.group_prior_cache[smi]
+
+        features = smiles_to_group_prior_features(smi)
+        if features is None:
+            return None
+        tensor = torch.tensor(features, dtype=torch.float)
+        if self.group_prior_cache is not None:
+            self.group_prior_cache[smi] = tensor
+        return tensor
+
     def __len__(self) -> int:
         return len(self.df)
 
@@ -218,6 +293,12 @@ class TGNNSolvDataset(Dataset):
 
         sol_g = self._graph(r["solute_smiles"]).clone()
         slv_g = self._graph(r["solvent_smiles"]).clone()
+        sol_fp = self._morgan_fp(r["solute_smiles"])
+        slv_fp = self._morgan_fp(r["solvent_smiles"])
+        sol_desc = self._descriptor_prior_features(r["solute_smiles"])
+        slv_desc = self._descriptor_prior_features(r["solvent_smiles"])
+        sol_group = self._group_prior_features(r["solute_smiles"])
+        slv_group = self._group_prior_features(r["solvent_smiles"])
 
         t = {
             "T": torch.tensor(float(r["temperature"]), dtype=torch.float),
@@ -260,6 +341,27 @@ class TGNNSolvDataset(Dataset):
             "solute_smiles": str(r["solute_smiles"]),
             "solvent_smiles": str(r["solvent_smiles"]),
         }
+        if self.use_morgan_features:
+            if sol_fp is None or slv_fp is None:
+                raise ValueError(
+                    "Morgan fingerprint computation failed for a supposedly valid sample."
+                )
+            t["solute_morgan_fp"] = sol_fp
+            t["solvent_morgan_fp"] = slv_fp
+        if self.use_descriptor_priors:
+            if sol_desc is None or slv_desc is None:
+                raise ValueError(
+                    "Descriptor prior feature computation failed for a supposedly valid sample."
+                )
+            t["solute_descriptor_prior_features"] = sol_desc
+            t["solvent_descriptor_prior_features"] = slv_desc
+        if self.use_group_priors:
+            if sol_group is None or slv_group is None:
+                raise ValueError(
+                    "Group prior feature computation failed for a supposedly valid sample."
+                )
+            t["solute_group_prior_features"] = sol_group
+            t["solvent_group_prior_features"] = slv_group
         return sol_g, slv_g, t
 
 
@@ -297,10 +399,23 @@ def make_loader(
     use_pair_temperature_batching: bool = False,
     pair_temperature_min_group_size: int = 2,
     pair_temperature_group_chunk_size: int = 4,
+    use_morgan_features: bool = False,
+    morgan_radius: int = 2,
+    morgan_n_bits: int = 2048,
+    use_descriptor_priors: bool = False,
+    use_group_priors: bool = False,
     seed: int = 42,
 ) -> DataLoader:
     """Create a single DataLoader with optional same-pair temperature batching."""
-    dataset = TGNNSolvDataset(df, cache=cache)
+    dataset = TGNNSolvDataset(
+        df,
+        cache=cache,
+        use_morgan_features=use_morgan_features,
+        morgan_radius=morgan_radius,
+        morgan_n_bits=morgan_n_bits,
+        use_descriptor_priors=use_descriptor_priors,
+        use_group_priors=use_group_priors,
+    )
 
     if drop_last is None:
         drop_last = shuffle and len(dataset) > batch_size
@@ -340,6 +455,11 @@ def make_loaders(
     use_pair_temperature_batching: bool = False,
     pair_temperature_min_group_size: int = 2,
     pair_temperature_group_chunk_size: int = 4,
+    use_morgan_features: bool = False,
+    morgan_radius: int = 2,
+    morgan_n_bits: int = 2048,
+    use_descriptor_priors: bool = False,
+    use_group_priors: bool = False,
     seed: int = 42,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
@@ -367,6 +487,11 @@ def make_loaders(
         use_pair_temperature_batching=use_pair_temperature_batching,
         pair_temperature_min_group_size=pair_temperature_min_group_size,
         pair_temperature_group_chunk_size=pair_temperature_group_chunk_size,
+        use_morgan_features=use_morgan_features,
+        morgan_radius=morgan_radius,
+        morgan_n_bits=morgan_n_bits,
+        use_descriptor_priors=use_descriptor_priors,
+        use_group_priors=use_group_priors,
         seed=seed,
     )
     val_ld = make_loader(
@@ -376,6 +501,11 @@ def make_loaders(
         num_workers=num_workers,
         cache=True,
         drop_last=False,
+        use_morgan_features=use_morgan_features,
+        morgan_radius=morgan_radius,
+        morgan_n_bits=morgan_n_bits,
+        use_descriptor_priors=use_descriptor_priors,
+        use_group_priors=use_group_priors,
     )
     test_ld = make_loader(
         test_df,
@@ -384,6 +514,11 @@ def make_loaders(
         num_workers=num_workers,
         cache=True,
         drop_last=False,
+        use_morgan_features=use_morgan_features,
+        morgan_radius=morgan_radius,
+        morgan_n_bits=morgan_n_bits,
+        use_descriptor_priors=use_descriptor_priors,
+        use_group_priors=use_group_priors,
     )
 
     for name, frame, loader in [

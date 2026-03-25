@@ -21,6 +21,8 @@ model:
   use_temperature_in_encoder: false  # Keep crystal-property heads temperature-invariant
   use_temperature_in_interaction: false  # Avoid leaking T into generic molecular embeddings
   use_temperature_in_nrtl_head: true  # Inject T explicitly into the state/NRTL block
+  predict_dCp_fus: false  # Avoid a free latent heat-capacity term without direct supervision
+  fixed_dCp_fus: 0.0  # Default to the standard ideal-solubility expression unless dCp labels are added
 
   # Fixed-point solver iterations
   set2set_steps: 3  # Set2Set pooling steps for attention pooling aggregation
@@ -42,6 +44,7 @@ training:
   epochs_phase1: 50  # Phase 1: Property pretraining only (T_m, ΔH_fus, Hansen, γ∞)
   epochs_phase2: 200  # Phase 2: Full SLE training with solubility loss
   epochs_phase3: 50  # Phase 3: Fine-tuning with stronger monotonicity penalties
+  phase2_correction_unfreeze_epoch: 20  # Delay correction until the base physics path has settled
 
   # Batch and optimization
   batch_size: 64  # Training batch size; increase for faster training if GPU memory allows
@@ -78,31 +81,31 @@ loss_weights:
   # Phase 2: Full SLE training
   phase2:
     sol: 1.0  # Main solubility loss (Huber on ln x₂)
-    T_m: 0.3  # Maintain some property accuracy
-    dH: 0.3  # Maintain fusion enthalpy accuracy
-    hansen: 0.2  # Light Hansen constraint
-    gamma_inf: 0.5  # Activity coefficient consistency
-    mono: 0.05  # Weak monotonicity penalty (dx₂/dT ≥ 0)
-    res: 0.03  # Stronger bounded-residual regularization
-    bridge: 0.05  # Hansen-NRTL consistency constraint
-    phys_pref: 0.05  # Keep the model physics-first
-    direct_reg: 0.05  # Keep the residual proposal local
-    direct_nll: 0.05  # Calibrate proposal uncertainty
-    pair_temp_rank: 0.02  # Same-pair temperature ranking consistency
-    vant_hoff_local: 0.01  # Local linearity in ln(x₂) vs 1/T
+    T_m: 0.05  # Keep weak crystal-property supervision without dominating ln x₂
+    dH: 0.05  # Keep weak fusion-enthalpy supervision
+    hansen: 0.05  # Keep Hansen support light during main fitting
+    gamma_inf: 0.1  # Retain some activity-coefficient structure
+    mono: 0.0  # Delay monotonicity to the fine-tuning stage
+    res: 0.01  # Keep the correction local without over-penalizing the fit
+    bridge: 0.01  # Light Hansen-NRTL consistency
+    phys_pref: 0.01  # Keep a soft physics preference
+    direct_reg: 0.01  # Keep the residual proposal local
+    direct_nll: 0.01  # Calibrate proposal uncertainty lightly
+    pair_temp_rank: 0.005  # Gentle same-pair temperature ranking consistency
+    vant_hoff_local: 0.002  # Gentle local linearity in ln(x₂) vs 1/T
   
   # Phase 3: Fine-tuning
   phase3:
     sol: 1.0  # Primary solubility loss
-    T_m: 0.2  # Lower property weight for final tuning
-    dH: 0.2  # Lower fusion enthalpy weight
-    hansen: 0.1  # Maintain Hansen constraint
-    gamma_inf: 0.3  # Lighter activity coefficient constraint
-    mono: 0.3  # Stronger monotonicity penalty in final phase
-    res: 0.05  # Increased correction gate regularization
-    bridge: 0.1  # Maintain bridge consistency
-    phys_pref: 0.03  # Keep the correction physics-first
-    direct_reg: 0.05  # Keep the residual proposal local
-    direct_nll: 0.05  # Calibrate proposal uncertainty
-    pair_temp_rank: 0.05  # Stronger same-pair temperature ranking
-    vant_hoff_local: 0.03  # Stronger local van't Hoff regularization
+    T_m: 0.03  # Keep only light auxiliary anchoring in the final stage
+    dH: 0.03  # Same for fusion enthalpy
+    hansen: 0.03  # Light Hansen support
+    gamma_inf: 0.05  # Light activity-coefficient anchoring
+    mono: 0.1  # Add monotonicity without overwhelming the main target
+    res: 0.02  # Moderate correction regularization
+    bridge: 0.02  # Moderate bridge consistency
+    phys_pref: 0.01  # Soft physics-first bias
+    direct_reg: 0.02  # Keep the proposal local
+    direct_nll: 0.02  # Calibrate proposal uncertainty
+    pair_temp_rank: 0.01  # Moderate same-pair temperature ranking
+    vant_hoff_local: 0.005  # Moderate local van't Hoff regularization

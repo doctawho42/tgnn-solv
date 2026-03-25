@@ -11,6 +11,7 @@ from typing import Any
 import _bootstrap  # noqa: F401
 import numpy as np
 import pandas as pd
+from tgnn_solv.reporting import normalize_report_payload
 
 try:
     from scipy.stats import spearmanr
@@ -72,17 +73,43 @@ def to_float_array(values: object, key: str) -> np.ndarray:
     return arr
 
 
-def load_predictions(path: Path) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
+def extract_row_indices(
+    payload: dict[str, Any],
+    n_expected: int,
+) -> np.ndarray | None:
+    """Extract valid row indices from a prediction payload when available."""
+    candidates = [
+        payload.get("row_indices"),
+        payload.get("valid_row_indices"),
+    ]
+    predictions = payload.get("predictions")
+    if isinstance(predictions, dict):
+        candidates.extend([
+            predictions.get("row_indices"),
+            predictions.get("valid_row_indices"),
+        ])
+
+    for candidate in candidates:
+        if not isinstance(candidate, list):
+            continue
+        arr = np.asarray(candidate, dtype=int)
+        if arr.ndim == 1 and len(arr) == n_expected:
+            return arr
+    return None
+
+
+def load_predictions(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray | None, dict[str, Any]]:
     """Load prediction arrays from evaluate_complete.py output."""
     with path.open("r", encoding="utf-8") as f:
-        payload = json.load(f)
+        payload = normalize_report_payload(json.load(f))
 
     true = to_float_array(payload.get("true_ln_x2"), "true_ln_x2")
     pred = to_float_array(payload.get("pred_ln_x2"), "pred_ln_x2")
     if true.shape != pred.shape:
         raise ValueError("true_ln_x2 and pred_ln_x2 must have the same length.")
+    row_indices = extract_row_indices(payload, len(true))
 
-    return true, pred, payload
+    return true, pred, row_indices, payload
 
 
 def load_test_data(path: Path) -> pd.DataFrame:
@@ -99,6 +126,8 @@ def align_rows(
     df: pd.DataFrame,
     true_values: np.ndarray,
     pred_values: np.ndarray,
+    prediction_payload: dict[str, Any],
+    row_indices: np.ndarray | None = None,
 ) -> pd.DataFrame:
     """Align valid prediction rows back to the original test dataframe.
 
@@ -107,37 +136,70 @@ def align_rows(
     by matching the ordered `true_ln_x2` sequence against finite `ln_x2` values
     in the CSV.
     """
-    finite_df = df[np.isfinite(df["ln_x2"].to_numpy(dtype=float))].copy()
-    finite_df = finite_df.reset_index().rename(columns={"index": "row_index"})
-    finite_true = finite_df["ln_x2"].to_numpy(dtype=float)
+    indexed_df = df.reset_index().rename(columns={"index": "row_index"})
 
-    if len(true_values) > len(finite_df):
-        raise ValueError(
-            "Prediction JSON contains more valid targets than the test CSV provides."
-        )
-
-    if len(true_values) == len(finite_df) and np.allclose(
-        finite_true, true_values, rtol=1e-7, atol=1e-8
-    ):
-        aligned = finite_df.copy()
+    if row_indices is not None:
+        aligned = indexed_df[indexed_df["row_index"].isin(row_indices)].copy()
+        if len(aligned) != len(row_indices):
+            raise ValueError(
+                "Prediction row indices do not match the provided test-data rows."
+            )
+        aligned = aligned.set_index("row_index").loc[row_indices].reset_index()
     else:
-        matched_positions: list[int] = []
-        cursor = 0
-        for target in true_values:
-            found = False
-            while cursor < len(finite_true):
-                if np.isclose(finite_true[cursor], target, rtol=1e-7, atol=1e-8):
-                    matched_positions.append(cursor)
-                    cursor += 1
-                    found = True
-                    break
-                cursor += 1
-            if not found:
+        metadata = prediction_payload.get("metadata", {})
+        sample_count = None
+        if isinstance(metadata, dict):
+            sample_count = metadata.get("test_samples")
+        if sample_count is None:
+            sample_count = prediction_payload.get("test_samples")
+
+        try:
+            sample_count_int = int(sample_count) if sample_count is not None else None
+        except (TypeError, ValueError):
+            sample_count_int = None
+
+        aligned = None
+        if sample_count_int is not None and 0 < sample_count_int < len(indexed_df):
+            sampled_df = indexed_df.sample(sample_count_int, random_state=42).reset_index(drop=True)
+            finite_sampled = sampled_df[np.isfinite(sampled_df["ln_x2"].to_numpy(dtype=float))].copy()
+            sampled_true = finite_sampled["ln_x2"].to_numpy(dtype=float)
+            if len(true_values) == len(finite_sampled) and np.allclose(
+                sampled_true, true_values, rtol=1e-7, atol=1e-8
+            ):
+                aligned = finite_sampled
+
+        if aligned is None:
+            finite_df = indexed_df[np.isfinite(indexed_df["ln_x2"].to_numpy(dtype=float))].copy()
+            finite_true = finite_df["ln_x2"].to_numpy(dtype=float)
+
+            if len(true_values) > len(finite_df):
                 raise ValueError(
-                    "Could not align prediction arrays with test-data rows. "
-                    "The evaluation JSON does not expose sample indices."
+                    "Prediction JSON contains more valid targets than the test CSV provides."
                 )
-        aligned = finite_df.iloc[matched_positions].copy()
+
+            if len(true_values) == len(finite_df) and np.allclose(
+                finite_true, true_values, rtol=1e-7, atol=1e-8
+            ):
+                aligned = finite_df.copy()
+            else:
+                matched_positions: list[int] = []
+                cursor = 0
+                for target in true_values:
+                    found = False
+                    while cursor < len(finite_true):
+                        if np.isclose(finite_true[cursor], target, rtol=1e-7, atol=1e-8):
+                            matched_positions.append(cursor)
+                            cursor += 1
+                            found = True
+                            break
+                        cursor += 1
+                    if not found:
+                        raise ValueError(
+                            "Could not align prediction arrays with test-data rows. "
+                            "Re-run scripts/evaluate_complete.py so it writes row_indices, "
+                            "or pass the exact sampled CSV that was evaluated."
+                        )
+                aligned = finite_df.iloc[matched_positions].copy()
 
     aligned = aligned.reset_index(drop=True)
     aligned["true_ln_x2"] = true_values
@@ -492,9 +554,15 @@ def main() -> int:
     test_data_path = _bootstrap.resolve_path(args.test_data)
     output_path = _bootstrap.resolve_path(args.output)
 
-    true_values, pred_values, prediction_payload = load_predictions(predictions_path)
+    true_values, pred_values, row_indices, prediction_payload = load_predictions(predictions_path)
     test_df = load_test_data(test_data_path)
-    aligned_df = align_rows(test_df, true_values, pred_values)
+    aligned_df = align_rows(
+        test_df,
+        true_values,
+        pred_values,
+        prediction_payload=prediction_payload,
+        row_indices=row_indices,
+    )
 
     overall_mae = float(aligned_df["abs_error"].mean()) if len(aligned_df) else float("nan")
     worst_predictions = analyze_worst_predictions(aligned_df, top_n=args.top_n)

@@ -61,6 +61,8 @@ class TGNNSolvLoss(nn.Module):
             "pair_temp_rank": 0.0,
             "vant_hoff_local": 0.0,
             "moe_balance": 0.02,
+            "descriptor_prior": 0.0,
+            "group_prior": 0.0,
         }
         if weights is not None:
             self.default_weights.update(weights)
@@ -121,6 +123,12 @@ class TGNNSolvLoss(nn.Module):
         solute_data: object | None = None,
         solvent_data: object | None = None,
         solvent_type: Tensor | None = None,
+        solute_morgan_fp: Tensor | None = None,
+        solvent_morgan_fp: Tensor | None = None,
+        solute_descriptor_prior_features: Tensor | None = None,
+        solvent_descriptor_prior_features: Tensor | None = None,
+        solute_group_prior_features: Tensor | None = None,
+        solvent_group_prior_features: Tensor | None = None,
     ) -> tuple[Tensor, dict[str, float]]:
         w = weights if weights is not None else self.default_weights
         losses = {}
@@ -213,7 +221,17 @@ class TGNNSolvLoss(nn.Module):
         if compute_mono and T is not None and model is not None:
             if w.get("mono", 0) > 0:
                 losses["mono"] = self._monotonicity_loss(
-                    model, solute_data, solvent_data, T, solvent_type
+                    model,
+                    solute_data,
+                    solvent_data,
+                    T,
+                    solvent_type,
+                    solute_morgan_fp,
+                    solvent_morgan_fp,
+                    solute_descriptor_prior_features,
+                    solvent_descriptor_prior_features,
+                    solute_group_prior_features,
+                    solvent_group_prior_features,
                 )
 
         # ============================================================
@@ -285,6 +303,20 @@ class TGNNSolvLoss(nn.Module):
                 avg_gate, 1.0 / max(avg_gate.numel(), 1)
             )
             losses["moe_balance"] = (avg_gate - target).pow(2).mean()
+
+        descriptor_prior_reg = output.get("descriptor_prior_reg")
+        if (
+            isinstance(descriptor_prior_reg, Tensor)
+            and w.get("descriptor_prior", 0) > 0
+        ):
+            losses["descriptor_prior"] = descriptor_prior_reg
+
+        group_prior_reg = output.get("group_prior_reg")
+        if (
+            isinstance(group_prior_reg, Tensor)
+            and w.get("group_prior", 0) > 0
+        ):
+            losses["group_prior"] = group_prior_reg
 
         # ============================================================
         # Weighted sum
@@ -370,6 +402,12 @@ class TGNNSolvLoss(nn.Module):
         solvent_data: object,
         T: Tensor,
         solvent_type: Tensor | None = None,
+        solute_morgan_fp: Tensor | None = None,
+        solvent_morgan_fp: Tensor | None = None,
+        solute_descriptor_prior_features: Tensor | None = None,
+        solvent_descriptor_prior_features: Tensor | None = None,
+        solute_group_prior_features: Tensor | None = None,
+        solvent_group_prior_features: Tensor | None = None,
     ) -> Tensor:
         """Penalize dx₂/dT < 0 using the configured solver path."""
         T_var = T.detach().requires_grad_(True)
@@ -380,8 +418,16 @@ class TGNNSolvLoss(nn.Module):
         try:
             with torch.enable_grad():
                 out = model(
-                    solute_data, solvent_data, T_var,
+                    solute_data,
+                    solvent_data,
+                    T_var,
                     solvent_type=solvent_type,
+                    solute_morgan_fp=solute_morgan_fp,
+                    solvent_morgan_fp=solvent_morgan_fp,
+                    solute_descriptor_prior_features=solute_descriptor_prior_features,
+                    solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+                    solute_group_prior_features=solute_group_prior_features,
+                    solvent_group_prior_features=solvent_group_prior_features,
                 )
                 d_lnx2_dT = torch.autograd.grad(
                     out["ln_x2"].sum(),

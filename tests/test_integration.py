@@ -9,7 +9,12 @@ import torch
 sys.path.insert(0, "src")
 
 from tgnn_solv.config import TGNNSolvConfig
-from tgnn_solv.features import smiles_to_graph
+from tgnn_solv.features import (
+    smiles_to_descriptor_prior_features,
+    smiles_to_graph,
+    smiles_to_group_prior_features,
+    smiles_to_morgan_fp,
+)
 from tgnn_solv.model import TGNNSolv
 
 
@@ -47,9 +52,67 @@ def make_split_late_config() -> TGNNSolvConfig:
     )
 
 
+def make_morgan_config() -> TGNNSolvConfig:
+    """Create a reduced config that exercises Morgan fingerprint augmentation."""
+    return TGNNSolvConfig(
+        hidden_dim=32,
+        n_gnn_layers=2,
+        n_cross_attn_layers=1,
+        n_attn_heads=4,
+        pair_dim=64,
+        solvent_moe_hidden=64,
+        solvent_type_emb_dim=8,
+        n_iter_train=2,
+        n_iter_eval=2,
+        set2set_steps=2,
+        use_morgan_features=True,
+        morgan_n_bits=256,
+        morgan_hidden_dim=64,
+    )
+
+
+def make_descriptor_prior_config() -> TGNNSolvConfig:
+    """Create a reduced config that exercises descriptor priors."""
+    return TGNNSolvConfig(
+        hidden_dim=32,
+        n_gnn_layers=2,
+        n_cross_attn_layers=1,
+        n_attn_heads=4,
+        pair_dim=64,
+        solvent_moe_hidden=64,
+        solvent_type_emb_dim=8,
+        n_iter_train=2,
+        n_iter_eval=2,
+        set2set_steps=2,
+        use_descriptor_priors=True,
+        descriptor_prior_hidden_dim=32,
+    )
+
+
+def make_group_prior_config() -> TGNNSolvConfig:
+    """Create a reduced config that exercises fixed group priors."""
+    return TGNNSolvConfig(
+        hidden_dim=32,
+        n_gnn_layers=2,
+        n_cross_attn_layers=1,
+        n_attn_heads=4,
+        pair_dim=64,
+        solvent_moe_hidden=64,
+        solvent_type_emb_dim=8,
+        n_iter_train=2,
+        n_iter_eval=2,
+        set2set_steps=2,
+        use_group_priors=True,
+    )
+
+
 def make_test_batch(
     pairs: list[tuple[str, str, float]],
-) -> tuple[object, object, torch.Tensor, torch.Tensor]:
+    *,
+    include_morgan: bool = False,
+    include_descriptor_priors: bool = False,
+    include_group_priors: bool = False,
+) -> tuple[object, object, torch.Tensor, torch.Tensor, dict[str, torch.Tensor]]:
     """Build model inputs from `(solute_smiles, solvent_smiles, temperature)` tuples.
 
     The real dataset returns `(solute_graph, solvent_graph, targets_dict)` and
@@ -77,23 +140,80 @@ def make_test_batch(
                 dtype=torch.long,
             ),
         }
+        if include_morgan:
+            solute_fp = smiles_to_morgan_fp(solute_smiles, n_bits=256)
+            solvent_fp = smiles_to_morgan_fp(solvent_smiles, n_bits=256)
+            assert solute_fp is not None
+            assert solvent_fp is not None
+            targets["solute_morgan_fp"] = torch.tensor(solute_fp, dtype=torch.float32)
+            targets["solvent_morgan_fp"] = torch.tensor(solvent_fp, dtype=torch.float32)
+        if include_descriptor_priors:
+            solute_desc = smiles_to_descriptor_prior_features(solute_smiles)
+            solvent_desc = smiles_to_descriptor_prior_features(solvent_smiles)
+            assert solute_desc is not None
+            assert solvent_desc is not None
+            targets["solute_descriptor_prior_features"] = torch.tensor(
+                solute_desc,
+                dtype=torch.float32,
+            )
+            targets["solvent_descriptor_prior_features"] = torch.tensor(
+                solvent_desc,
+                dtype=torch.float32,
+            )
+        if include_group_priors:
+            solute_group = smiles_to_group_prior_features(solute_smiles)
+            solvent_group = smiles_to_group_prior_features(solvent_smiles)
+            assert solute_group is not None
+            assert solvent_group is not None
+            targets["solute_group_prior_features"] = torch.tensor(
+                solute_group,
+                dtype=torch.float32,
+            )
+            targets["solvent_group_prior_features"] = torch.tensor(
+                solvent_group,
+                dtype=torch.float32,
+            )
         samples.append((solute_graph, solvent_graph, targets))
 
     solute_batch, solvent_batch, targets = collate_fn(samples)
-    return solute_batch, solvent_batch, targets["T"], targets["solvent_type"]
+    extras: dict[str, torch.Tensor] = {}
+    if include_morgan:
+        extras["solute_morgan_fp"] = targets["solute_morgan_fp"]
+        extras["solvent_morgan_fp"] = targets["solvent_morgan_fp"]
+    if include_descriptor_priors:
+        extras["solute_descriptor_prior_features"] = targets[
+            "solute_descriptor_prior_features"
+        ]
+        extras["solvent_descriptor_prior_features"] = targets[
+            "solvent_descriptor_prior_features"
+        ]
+    if include_group_priors:
+        extras["solute_group_prior_features"] = targets[
+            "solute_group_prior_features"
+        ]
+        extras["solvent_group_prior_features"] = targets[
+            "solvent_group_prior_features"
+        ]
+    return solute_batch, solvent_batch, targets["T"], targets["solvent_type"], extras
 
 
 def run_model(
     model: TGNNSolv,
-    batch: tuple[object, object, torch.Tensor, torch.Tensor],
+    batch: tuple[object, object, torch.Tensor, torch.Tensor, dict[str, torch.Tensor]],
 ) -> dict[str, torch.Tensor]:
     """Run the model on a test batch using the real forward signature."""
-    solute_batch, solvent_batch, temperature, solvent_type = batch
+    solute_batch, solvent_batch, temperature, solvent_type, extras = batch
     return model(
         solute_batch,
         solvent_batch,
         temperature,
         solvent_type=solvent_type,
+        solute_morgan_fp=extras.get("solute_morgan_fp"),
+        solvent_morgan_fp=extras.get("solvent_morgan_fp"),
+        solute_descriptor_prior_features=extras.get("solute_descriptor_prior_features"),
+        solvent_descriptor_prior_features=extras.get("solvent_descriptor_prior_features"),
+        solute_group_prior_features=extras.get("solute_group_prior_features"),
+        solvent_group_prior_features=extras.get("solvent_group_prior_features"),
     )
 
 
@@ -168,6 +288,18 @@ class TestForwardPass:
                 atol=1e-6,
                 rtol=0.0,
             ), f"{key} changed with temperature: {fusion[key]}"
+
+    def test_default_dcp_fus_is_fixed(self, small_model: TGNNSolv) -> None:
+        """The maintained default keeps dCp_fus fixed unless explicitly enabled."""
+        batch = make_test_batch([("CCO", "O", 298.15), ("CCN", "CCO", 310.0)])
+        out = run_model(small_model, batch)
+
+        assert torch.allclose(
+            out["fusion_params"]["dCp_fus"],
+            torch.zeros_like(out["fusion_params"]["dCp_fus"]),
+            atol=1e-8,
+            rtol=0.0,
+        )
 
     def test_correction_is_bounded(self, small_model: TGNNSolv) -> None:
         """The residual proposal must stay within the configured trust region."""
@@ -244,6 +376,54 @@ class TestForwardPass:
         assert set(out["aux_slv"].keys()) == {"V_m"}
         assert torch.isfinite(out["aux_sol"]["V_m"]).all()
         assert torch.isfinite(out["aux_slv"]["V_m"]).all()
+
+    def test_morgan_augmented_forward(self) -> None:
+        """Optional Morgan features should integrate into the forward path cleanly."""
+        model = TGNNSolv(cfg=make_morgan_config())
+        model.eval()
+        batch = make_test_batch(
+            [("CCO", "O", 298.15), ("CCN", "CCO", 315.0)],
+            include_morgan=True,
+        )
+
+        with torch.no_grad():
+            out = run_model(model, batch)
+
+        assert torch.isfinite(out["ln_x2"]).all()
+
+    def test_descriptor_prior_forward(self) -> None:
+        """Descriptor priors should integrate into the physics path cleanly."""
+        model = TGNNSolv(cfg=make_descriptor_prior_config())
+        model.eval()
+        batch = make_test_batch(
+            [("CCO", "O", 298.15), ("CCN", "CCO", 315.0)],
+            include_descriptor_priors=True,
+        )
+
+        with torch.no_grad():
+            out = run_model(model, batch)
+
+        assert torch.isfinite(out["ln_x2"]).all()
+        assert "hansen_sol_prior" in out
+        assert "aux_sol_prior" in out
+        assert "descriptor_prior_reg" in out
+
+    def test_group_prior_forward(self) -> None:
+        """Fixed group priors should integrate into the physics path cleanly."""
+        model = TGNNSolv(cfg=make_group_prior_config())
+        model.eval()
+        batch = make_test_batch(
+            [("CCO", "O", 298.15), ("CCN", "CCO", 315.0)],
+            include_group_priors=True,
+        )
+
+        with torch.no_grad():
+            out = run_model(model, batch)
+
+        assert torch.isfinite(out["ln_x2"]).all()
+        assert "hansen_sol_prior" in out
+        assert "aux_sol_prior" in out
+        assert "group_prior_reg" in out
 
 
 class TestGradientFlow:

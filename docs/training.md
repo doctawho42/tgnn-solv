@@ -10,11 +10,12 @@ TGNN-Solv uses a three-phase curriculum:
    - The correction gate remains frozen.
 2. **Phase 2: Full SLE training**
    - Adds the main solubility objective.
-   - Unfreezes the bounded residual correction after the warmup portion of training.
+   - Keeps auxiliary/property losses deliberately light so `ln x₂` fitting dominates.
+   - Unfreezes the bounded residual correction at `phase2_correction_unfreeze_epoch`.
    - Uses early stopping on validation MAE.
 3. **Phase 3: Fine-tuning**
    - Uses a lower learning rate.
-   - Increases monotonicity and correction regularization.
+   - Uses moderate monotonicity and correction regularization.
    - Restores the best state at the end.
 
 The v2 architecture keeps temperature out of the crystal-property encoder path
@@ -22,13 +23,37 @@ by default. `T_m`, `ΔH_fus`, and other temperature-invariant properties are
 predicted from the solute graph alone, while temperature enters explicitly in
 the NRTL/state block and the bounded residual corrector.
 
+The maintained configs also keep `ΔCp_fus` fixed at `0.0` by default. The
+solver still supports the extended heat-capacity term, but per-sample `ΔCp_fus`
+prediction is now opt-in through `predict_dCp_fus=True`, because that variable
+otherwise acts like an unsupervised latent degree of freedom.
+
 The maintained configs now use the compact `ref_invT` NRTL parameterization by
 default. In that mode the network predicts `tau(T_ref)` and one inverse-
 temperature slope per direction, while older `legacy` and `abc` layouts remain
 supported for compatibility with older checkpoints and experiments.
 
+Morgan fingerprints can also be enabled as optional side information through
+`use_morgan_features=True`. In that mode the training pipeline computes
+fingerprints in the dataset/loader path and injects them into the learned
+molecular representations before the crystal-property heads and pair block.
+
+The maintained codebase also supports experimental descriptor-conditioned
+priors for the `Hansen` and `V_m` heads. When `use_descriptor_priors=True`,
+the dataset computes a compact fixed RDKit descriptor vector per molecule, a
+small descriptor-side network predicts coarse priors, and the graph heads
+learn only bounded residuals around those priors. This path is optional and
+disabled by default.
+
+The codebase also supports a stricter deterministic prior path through
+`use_group_priors=True`. In that mode the dataset computes fixed
+fragment-count features per molecule, and the `Hansen` / `V_m` heads learn
+bounded residuals around a fixed group-contribution prior. The descriptor-prior
+and group-prior modes are mutually exclusive.
+
 The implementation lives in `src/tgnn_solv/trainer.py`, and the phase-specific
-weights are defined in `trainer.py::phase_weights`.
+defaults are defined in `src/tgnn_solv/trainer.py::DEFAULT_PHASE_WEIGHTS` and
+then merged with any config overrides inside `TGNNSolvTrainer`.
 
 The current v3 training objective also includes two same-pair temperature
 regularizers, and the canonical `scripts/train.py` path now uses pair-aware
@@ -45,6 +70,14 @@ The relevant config controls are:
 - `pair_temperature_group_chunk_size`
 - `encoder_role_mode`
 - `encoder_role_specific_layers`
+- `use_morgan_features`
+- `morgan_radius`
+- `morgan_n_bits`
+- `morgan_hidden_dim`
+- `use_descriptor_priors`
+- `descriptor_prior_*`
+- `use_group_priors`
+- `group_prior_*`
 
 The canonical processed split for both CLI and notebook training is:
 

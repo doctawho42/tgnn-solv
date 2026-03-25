@@ -18,6 +18,8 @@ model:
   use_temperature_in_encoder: false
   use_temperature_in_interaction: false
   use_temperature_in_nrtl_head: true
+  predict_dCp_fus: false
+  fixed_dCp_fus: 0.0
 
   set2set_steps: 3
   n_iter_train: 5
@@ -37,6 +39,7 @@ training:
   epochs_phase1: 50
   epochs_phase2: 200
   epochs_phase3: 50
+  phase2_correction_unfreeze_epoch: 20
 
   batch_size: 64
   use_pair_temperature_batching: true
@@ -69,30 +72,30 @@ loss_weights:
 
   phase2:
     sol: 1.0
-    T_m: 0.3
-    dH: 0.3
-    hansen: 0.2
-    gamma_inf: 0.5
-    mono: 0.05
-    res: 0.03
-    bridge: 0.05
-    phys_pref: 0.05
-    direct_reg: 0.05
-    direct_nll: 0.05
-    pair_temp_rank: 0.02
-    vant_hoff_local: 0.01
+    T_m: 0.05
+    dH: 0.05
+    hansen: 0.05
+    gamma_inf: 0.1
+    mono: 0.0
+    res: 0.01
+    bridge: 0.01
+    phys_pref: 0.01
+    direct_reg: 0.01
+    direct_nll: 0.01
+    pair_temp_rank: 0.005
+    vant_hoff_local: 0.002
 
   phase3:
     sol: 1.0
-    T_m: 0.2
-    dH: 0.2
-    hansen: 0.1
-    gamma_inf: 0.3
-    mono: 0.3
-    res: 0.05
-    bridge: 0.1
-    phys_pref: 0.03
-    direct_reg: 0.05
-    direct_nll: 0.05
-    pair_temp_rank: 0.05
-    vant_hoff_local: 0.03
+    T_m: 0.03
+    dH: 0.03
+    hansen: 0.03
+    gamma_inf: 0.05
+    mono: 0.1
+    res: 0.02
+    bridge: 0.02
+    phys_pref: 0.01
+    direct_reg: 0.02
+    direct_nll: 0.02
+    pair_temp_rank: 0.01
+    vant_hoff_local: 0.005

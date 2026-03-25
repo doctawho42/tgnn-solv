@@ -77,7 +77,7 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Comma-separated variant list or 'all'. Supported names: "
             "full,split_late_encoder,asymmetric_encoder,no_nrtl,no_crossattn,no_cross_attn,no_curriculum,"
-            "no_aux,no_aux_losses,no_correction,no_implicit_diff,"
+            "no_aux,no_aux_losses,no_correction,no_implicit_diff,fixed_group_priors,"
             "direct_gnn,small_model,small_128,large_model,large_512"
         ),
     )
@@ -145,8 +145,7 @@ def make_dataloader(
 
 def build_variant_specs(base_cfg: TGNNSolvConfig) -> OrderedDict[str, dict[str, Any]]:
     """Build ablation variants, mirroring definitions in `tgnn_solv.ablation`."""
-    return OrderedDict(
-        [
+    specs: list[tuple[str, dict[str, Any]]] = [
             (
                 "full",
                 {
@@ -158,6 +157,34 @@ def build_variant_specs(base_cfg: TGNNSolvConfig) -> OrderedDict[str, dict[str, 
                     "kind": "tgnn",
                 },
             ),
+    ]
+    if not base_cfg.use_group_priors:
+        specs.append(
+            (
+                "fixed_group_priors",
+                {
+                    "display_name": "Fixed Group Priors",
+                    "description": (
+                        "Coarse fixed fragment-count group-contribution priors "
+                        "for Hansen and V_m with bounded graph residuals."
+                    ),
+                    "config": replace(
+                        base_cfg,
+                        use_descriptor_priors=False,
+                        use_group_priors=True,
+                    ),
+                    "model_class": TGNNSolv,
+                    "trainer_class": TGNNSolvTrainer,
+                    "kind": "tgnn",
+                    "config_overrides": {
+                        "use_descriptor_priors": False,
+                        "use_group_priors": True,
+                    },
+                },
+            )
+        )
+    specs.extend(
+        [
             (
                 "split_late_encoder",
                 {
@@ -309,6 +336,7 @@ def build_variant_specs(base_cfg: TGNNSolvConfig) -> OrderedDict[str, dict[str, 
             ),
         ]
     )
+    return OrderedDict(specs)
 
 
 VARIANT_ALIASES = {
@@ -316,6 +344,8 @@ VARIANT_ALIASES = {
     "split_late_encoder": "split_late_encoder",
     "asymmetric_encoder": "split_late_encoder",
     "split_late": "split_late_encoder",
+    "fixed_group_priors": "fixed_group_priors",
+    "group_priors": "fixed_group_priors",
     "no_nrtl": "no_nrtl",
     "no_crossattn": "no_cross_attn",
     "no_cross_attn": "no_cross_attn",
@@ -348,6 +378,8 @@ def resolve_variant_order(
         canonical = VARIANT_ALIASES.get(name)
         if canonical is None:
             raise ValueError(f"Unknown variant: {name}")
+        if canonical not in variant_specs:
+            raise ValueError(f"Variant {name} is unavailable for the current config.")
         if canonical not in selected:
             selected.append(canonical)
 
@@ -356,6 +388,38 @@ def resolve_variant_order(
         print("WARNING: Added 'full' automatically for delta-vs-full comparisons.")
 
     return selected
+
+
+def _resolve_union_feature_flags(
+    variant_order: list[str],
+    variant_specs: OrderedDict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Enable any optional dataset feature path required by selected variants."""
+    configs = [variant_specs[name]["config"] for name in variant_order]
+    if not configs:
+        return {
+            "use_morgan_features": False,
+            "morgan_radius": 2,
+            "morgan_n_bits": 2048,
+            "use_descriptor_priors": False,
+            "use_group_priors": False,
+        }
+
+    first_cfg = configs[0]
+    if any(cfg.morgan_radius != first_cfg.morgan_radius for cfg in configs):
+        raise ValueError("Selected variants disagree on morgan_radius.")
+    if any(cfg.morgan_n_bits != first_cfg.morgan_n_bits for cfg in configs):
+        raise ValueError("Selected variants disagree on morgan_n_bits.")
+
+    return {
+        "use_morgan_features": any(cfg.use_morgan_features for cfg in configs),
+        "morgan_radius": first_cfg.morgan_radius,
+        "morgan_n_bits": first_cfg.morgan_n_bits,
+        "use_descriptor_priors": any(
+            cfg.use_descriptor_priors for cfg in configs
+        ),
+        "use_group_priors": any(cfg.use_group_priors for cfg in configs),
+    }
 
 
 def metric_summary(values: list[float]) -> tuple[float | None, float | None]:
@@ -633,14 +697,39 @@ def main() -> None:
 
     variant_specs = build_variant_specs(base_cfg)
     variant_order = resolve_variant_order(args.variants, variant_specs)
+    feature_flags = _resolve_union_feature_flags(variant_order, variant_specs)
 
     train_df = pd.read_csv(train_path)
     val_df = pd.read_csv(val_path)
     test_df = pd.read_csv(test_path)
 
-    train_dataset = TGNNSolvDataset(train_df, cache=True)
-    val_dataset = TGNNSolvDataset(val_df, cache=True)
-    test_dataset = TGNNSolvDataset(test_df, cache=True)
+    train_dataset = TGNNSolvDataset(
+        train_df,
+        cache=True,
+        use_morgan_features=feature_flags["use_morgan_features"],
+        morgan_radius=feature_flags["morgan_radius"],
+        morgan_n_bits=feature_flags["morgan_n_bits"],
+        use_descriptor_priors=feature_flags["use_descriptor_priors"],
+        use_group_priors=feature_flags["use_group_priors"],
+    )
+    val_dataset = TGNNSolvDataset(
+        val_df,
+        cache=True,
+        use_morgan_features=feature_flags["use_morgan_features"],
+        morgan_radius=feature_flags["morgan_radius"],
+        morgan_n_bits=feature_flags["morgan_n_bits"],
+        use_descriptor_priors=feature_flags["use_descriptor_priors"],
+        use_group_priors=feature_flags["use_group_priors"],
+    )
+    test_dataset = TGNNSolvDataset(
+        test_df,
+        cache=True,
+        use_morgan_features=feature_flags["use_morgan_features"],
+        morgan_radius=feature_flags["morgan_radius"],
+        morgan_n_bits=feature_flags["morgan_n_bits"],
+        use_descriptor_priors=feature_flags["use_descriptor_priors"],
+        use_group_priors=feature_flags["use_group_priors"],
+    )
 
     train_loader = make_dataloader(train_dataset, base_cfg.batch_size, shuffle=True)
     val_loader = make_dataloader(val_dataset, base_cfg.batch_size, shuffle=False)

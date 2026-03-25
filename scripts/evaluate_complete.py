@@ -42,7 +42,7 @@ from tgnn_solv.reporting import build_report_payload
 
 def load_test_data(csv_path: str, n_samples: int = None) -> pd.DataFrame:
     """Load test CSV."""
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path).reset_index().rename(columns={"index": "row_index"})
     if n_samples and len(df) > n_samples:
         df = df.sample(n_samples, random_state=42).reset_index(drop=True)
     return df
@@ -297,6 +297,7 @@ def main() -> None:
         metadata={
             "checkpoint": args.tgnn_checkpoint,
             "test_data": args.test_data,
+            "sample_random_state": 42 if args.n_samples else None,
             "split": build_split_metadata(
                 split_mode=args.split_mode,
                 test_data=args.test_data,
@@ -321,6 +322,7 @@ def main() -> None:
         predictions={
             "true_ln_x2": y_true[valid_mask].tolist(),
             "pred_ln_x2": y_pred[valid_mask].tolist(),
+            "row_indices": df.loc[valid_mask, "row_index"].astype(int).tolist(),
         },
     )
     

@@ -396,7 +396,7 @@ def _tgnn_predict_ordered(
     from tgnn_solv.inference import load_model
 
     dev = torch.device(device) if device else None
-    model, _cfg = load_model(checkpoint, device=dev)
+    model, cfg = load_model(checkpoint, device=dev)
     loader = DataLoader(
         dataset,
         batch_size=batch_size,
@@ -416,7 +416,56 @@ def _tgnn_predict_ordered(
             slv_b = slv_b.to(device)
             T = tgt["T"].to(device)
             solvent_type = tgt.get("solvent_type")
-            out = model(sol_b, slv_b, T, solvent_type=solvent_type)
+            solute_morgan_fp = tgt.get("solute_morgan_fp")
+            solvent_morgan_fp = tgt.get("solvent_morgan_fp")
+            solute_descriptor_prior_features = tgt.get(
+                "solute_descriptor_prior_features"
+            )
+            solvent_descriptor_prior_features = tgt.get(
+                "solvent_descriptor_prior_features"
+            )
+            solute_group_prior_features = tgt.get(
+                "solute_group_prior_features"
+            )
+            solvent_group_prior_features = tgt.get(
+                "solvent_group_prior_features"
+            )
+            out = model(
+                sol_b,
+                slv_b,
+                T,
+                solvent_type=solvent_type,
+                solute_morgan_fp=(
+                    solute_morgan_fp.to(device)
+                    if isinstance(solute_morgan_fp, torch.Tensor)
+                    else None
+                ),
+                solvent_morgan_fp=(
+                    solvent_morgan_fp.to(device)
+                    if isinstance(solvent_morgan_fp, torch.Tensor)
+                    else None
+                ),
+                solute_descriptor_prior_features=(
+                    solute_descriptor_prior_features.to(device)
+                    if isinstance(solute_descriptor_prior_features, torch.Tensor)
+                    else None
+                ),
+                solvent_descriptor_prior_features=(
+                    solvent_descriptor_prior_features.to(device)
+                    if isinstance(solvent_descriptor_prior_features, torch.Tensor)
+                    else None
+                ),
+                solute_group_prior_features=(
+                    solute_group_prior_features.to(device)
+                    if isinstance(solute_group_prior_features, torch.Tensor)
+                    else None
+                ),
+                solvent_group_prior_features=(
+                    solvent_group_prior_features.to(device)
+                    if isinstance(solvent_group_prior_features, torch.Tensor)
+                    else None
+                ),
+            )
             preds.append(out["ln_x2"].detach().cpu().numpy())
             masks.append(tgt["has_solubility"].cpu().numpy())
 
@@ -642,11 +691,21 @@ def run_train(args: argparse.Namespace) -> int:
 
 def run_compare(args: argparse.Namespace) -> int:
     _load_fastsolv_runtime()
+    from tgnn_solv.inference import load_model
     base_df = _clean_df(pd.read_csv(args.input))
 
     # Use TGNN dataset filtering to ensure comparable rows
     from tgnn_solv.data.dataset import TGNNSolvDataset
-    dataset = TGNNSolvDataset(base_df, cache=True)
+    model, cfg = load_model(args.tgnn_checkpoint)
+    dataset = TGNNSolvDataset(
+        base_df,
+        cache=True,
+        use_morgan_features=cfg.use_morgan_features,
+        morgan_radius=cfg.morgan_radius,
+        morgan_n_bits=cfg.morgan_n_bits,
+        use_descriptor_priors=cfg.use_descriptor_priors,
+        use_group_priors=cfg.use_group_priors,
+    )
     df = dataset.df.reset_index(drop=True)
 
     pred_tgnn, mask_tgnn = _tgnn_predict_ordered(

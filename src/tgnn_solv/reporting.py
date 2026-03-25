@@ -126,12 +126,15 @@ def normalize_predictions(payload: Mapping[str, object]) -> dict[str, list[JSONV
 
     true = predictions.get("true_ln_x2", payload.get("true_ln_x2"))
     pred = predictions.get("pred_ln_x2", payload.get("pred_ln_x2"))
+    row_indices = predictions.get("row_indices", payload.get("row_indices"))
 
     result: dict[str, list[JSONValue]] = {}
     if true is not None:
         result["true_ln_x2"] = json_safe(list(true))
     if pred is not None:
         result["pred_ln_x2"] = json_safe(list(pred))
+    if row_indices is not None:
+        result["row_indices"] = json_safe(list(row_indices))
     return result
 
 
@@ -221,6 +224,8 @@ def normalize_report_payload(payload: Mapping[str, object]) -> dict[str, JSONVal
         normalized["true_ln_x2"] = predictions["true_ln_x2"]
     if "pred_ln_x2" in predictions:
         normalized["pred_ln_x2"] = predictions["pred_ln_x2"]
+    if "row_indices" in predictions:
+        normalized["row_indices"] = predictions["row_indices"]
 
     return json_safe(normalized)
 

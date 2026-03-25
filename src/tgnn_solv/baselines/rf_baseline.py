@@ -29,11 +29,17 @@ except Exception as exc:  # pragma: no cover - optional dependency
         "Install it with `conda install -c conda-forge rdkit` or an equivalent package."
     ) from exc
 
+try:
+    from ..features import compute_pair_morgan_features
+except ImportError:  # pragma: no cover - script fallback
+    from tgnn_solv.features import compute_pair_morgan_features
+
 
 SUPPORTED_TREE_REGRESSORS = {
     "random_forest": RandomForestRegressor,
     "gradient_boosting": GradientBoostingRegressor,
 }
+SUPPORTED_FEATURE_MODES = {"descriptors", "morgan", "hybrid"}
 
 REQUIRED_COLUMNS = {"solute_smiles", "solvent_smiles", "temperature", "ln_x2"}
 
@@ -80,6 +86,9 @@ class RFBaseline:
         max_depth: int = 30,
         n_jobs: int = -1,
         random_state: int = 42,
+        feature_mode: str = "descriptors",
+        morgan_radius: int = 2,
+        morgan_n_bits: int = 2048,
     ) -> None:
         """Initialize the baseline model and feature scaler.
 
@@ -97,6 +106,14 @@ class RFBaseline:
         )
         self.scaler = StandardScaler()
         self.fitted = False
+        if feature_mode not in SUPPORTED_FEATURE_MODES:
+            raise ValueError(
+                f"Unsupported feature_mode '{feature_mode}'. "
+                f"Expected one of {sorted(SUPPORTED_FEATURE_MODES)}."
+            )
+        self.feature_mode = feature_mode
+        self.morgan_radius = morgan_radius
+        self.morgan_n_bits = morgan_n_bits
 
     @staticmethod
     def _validate_columns(df: pd.DataFrame) -> None:
@@ -127,7 +144,7 @@ class RFBaseline:
         targets: list[float] = []
 
         for row in train_df.itertuples(index=False):
-            descriptor = compute_pair_descriptors(
+            descriptor = self._compute_pair_features(
                 row.solute_smiles,
                 row.solvent_smiles,
                 row.temperature,
@@ -154,7 +171,7 @@ class RFBaseline:
         self.fitted = True
 
         print(
-            f"RFBaseline fitted on {len(X)} samples "
+            f"RFBaseline[{self.feature_mode}] fitted on {len(X)} samples "
             f"({len(train_df) - len(X)} skipped)"
         )
         return self
@@ -175,7 +192,7 @@ class RFBaseline:
         valid_indices: list[int] = []
 
         for idx, row in enumerate(test_df.itertuples(index=False)):
-            descriptor = compute_pair_descriptors(
+            descriptor = self._compute_pair_features(
                 row.solute_smiles,
                 row.solvent_smiles,
                 row.temperature,
@@ -234,6 +251,42 @@ class RFBaseline:
             "n_skipped": int(len(test_df) - len(valid_idx)),
         }
 
+    def _compute_pair_features(
+        self,
+        solute_smiles: str,
+        solvent_smiles: str,
+        temperature: float,
+    ) -> np.ndarray | None:
+        """Compute a pair feature vector according to the configured feature mode."""
+        descriptor_features = None
+        morgan_features = None
+
+        if self.feature_mode in {"descriptors", "hybrid"}:
+            descriptor_features = compute_pair_descriptors(
+                solute_smiles,
+                solvent_smiles,
+                temperature,
+            )
+        if self.feature_mode in {"morgan", "hybrid"}:
+            morgan_features = compute_pair_morgan_features(
+                solute_smiles,
+                solvent_smiles,
+                temperature,
+                radius=self.morgan_radius,
+                n_bits=self.morgan_n_bits,
+            )
+
+        if self.feature_mode == "descriptors":
+            return descriptor_features
+        if self.feature_mode == "morgan":
+            return morgan_features
+        if descriptor_features is None or morgan_features is None:
+            return None
+        return np.concatenate([descriptor_features, morgan_features]).astype(
+            np.float32,
+            copy=False,
+        )
+
 
 def _json_ready(metrics: dict[str, float | int]) -> dict[str, float | int | None]:
     """Convert non-finite metric values to JSON-safe values.
@@ -268,12 +321,35 @@ def main() -> None:
         default="results/rf_baseline.json",
         help="Path to save evaluation metrics as JSON.",
     )
+    parser.add_argument(
+        "--feature-mode",
+        type=str,
+        default="descriptors",
+        choices=sorted(SUPPORTED_FEATURE_MODES),
+        help="Feature family used by the tree baseline.",
+    )
+    parser.add_argument(
+        "--morgan-radius",
+        type=int,
+        default=2,
+        help="Morgan fingerprint radius.",
+    )
+    parser.add_argument(
+        "--morgan-n-bits",
+        type=int,
+        default=2048,
+        help="Morgan fingerprint length.",
+    )
     args = parser.parse_args()
 
     train_df = pd.read_csv(args.train)
     test_df = pd.read_csv(args.test)
 
-    baseline = RFBaseline()
+    baseline = RFBaseline(
+        feature_mode=args.feature_mode,
+        morgan_radius=args.morgan_radius,
+        morgan_n_bits=args.morgan_n_bits,
+    )
     baseline.fit(train_df)
     metrics = baseline.evaluate(test_df)
 

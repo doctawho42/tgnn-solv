@@ -39,6 +39,21 @@ class TGNNSolvConfig:
     use_temperature_in_encoder: bool = False
     use_temperature_in_interaction: bool = False
     use_temperature_in_nrtl_head: bool = True
+    use_morgan_features: bool = False
+    morgan_radius: int = 2
+    morgan_n_bits: int = 2048
+    morgan_hidden_dim: int = 256
+    use_descriptor_priors: bool = False
+    descriptor_prior_hidden_dim: int = 128
+    descriptor_prior_hansen_residual_max: float = 5.0
+    descriptor_prior_vm_residual_max: float = 30.0
+    descriptor_prior_reg_weight: float = 0.0
+    use_group_priors: bool = False
+    group_prior_hansen_residual_max: float = 5.0
+    group_prior_vm_residual_max: float = 30.0
+    group_prior_reg_weight: float = 0.0
+    predict_dCp_fus: bool = False
+    fixed_dCp_fus: float = 0.0
 
     # --- Physics constants (NOT learnable) ---
     R: float = 8.314          # Gas constant, J/(mol·K)
@@ -93,6 +108,7 @@ class TGNNSolvConfig:
     epochs_phase1: int = 50
     epochs_phase2: int = 200
     epochs_phase3: int = 50
+    phase2_correction_unfreeze_epoch: int = 20
     warmup_epochs: int = 5
     patience: int = 20
 

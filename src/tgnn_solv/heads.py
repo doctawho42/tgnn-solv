@@ -13,6 +13,20 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from .config import TGNNSolvConfig
+from .features import DESCRIPTOR_PRIOR_DIM, GROUP_PRIOR_DIM
+
+
+def _resolve_prior_mode(cfg: TGNNSolvConfig) -> str:
+    """Return which optional molecular prior path is active."""
+    if cfg.use_descriptor_priors and cfg.use_group_priors:
+        raise ValueError(
+            "Descriptor priors and fixed group priors are mutually exclusive."
+        )
+    if cfg.use_group_priors:
+        return "group"
+    if cfg.use_descriptor_priors:
+        return "descriptor"
+    return "none"
 
 
 # ================================================================== #
@@ -46,6 +60,199 @@ class PairRepresentation(nn.Module):
             dim=-1,
         )
         return self.mlp(pair_input)
+
+
+class MorganFeatureAdapter(nn.Module):
+    """Project Morgan fingerprints into the shared molecular representation space."""
+
+    def __init__(
+        self,
+        n_bits: int,
+        output_dim: int,
+        hidden_dim: int,
+        dropout: float,
+    ) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_bits, hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim),
+        )
+
+    def forward(self, fingerprints: Tensor) -> Tensor:
+        """Project fingerprint bits into a dense embedding."""
+        return self.net(fingerprints)
+
+
+class DescriptorPriorAdapter(nn.Module):
+    """Map fixed molecular descriptors to a coarse physics prior."""
+
+    def __init__(
+        self,
+        output_dim: int,
+        hidden_dim: int,
+        dropout: float,
+    ) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(DESCRIPTOR_PRIOR_DIM, hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim),
+        )
+
+    def forward(self, descriptor_features: Tensor) -> Tensor:
+        """Project descriptor features into the target prior space."""
+        return self.net(descriptor_features)
+
+
+class FixedGroupContributionPrior(nn.Module):
+    """Deterministic fragment-count prior used by the optional group path."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        if GROUP_PRIOR_DIM != 20:
+            raise ValueError(
+                f"Unexpected GROUP_PRIOR_DIM={GROUP_PRIOR_DIM}; update prior indices."
+            )
+
+        self.register_buffer(
+            "vm_weights",
+            torch.tensor(
+                [
+                    0.0,
+                    15.5,
+                    13.0,
+                    12.5,
+                    3.5,
+                    5.0,
+                    9.5,
+                    20.0,
+                    3.0,
+                    2.0,
+                    1.0,
+                    1.0,
+                    2.0,
+                    3.0,
+                    1.5,
+                    2.0,
+                    1.5,
+                    1.0,
+                    1.5,
+                    2.0,
+                ],
+                dtype=torch.float32,
+            ),
+            persistent=False,
+        )
+        self.register_buffer(
+            "delta_d_weights",
+            torch.tensor(
+                [
+                    0.0,
+                    0.35,
+                    0.55,
+                    0.95,
+                    -0.10,
+                    -0.20,
+                    0.10,
+                    1.20,
+                    0.25,
+                    0.05,
+                    0.15,
+                    0.20,
+                    0.10,
+                    0.15,
+                    0.10,
+                    0.10,
+                    0.05,
+                    0.15,
+                    0.10,
+                    0.25,
+                ],
+                dtype=torch.float32,
+            ),
+            persistent=False,
+        )
+        self.register_buffer(
+            "delta_p_weights",
+            torch.tensor(
+                [
+                    0.0,
+                    0.0,
+                    0.20,
+                    0.20,
+                    0.90,
+                    1.00,
+                    0.70,
+                    0.20,
+                    0.10,
+                    0.0,
+                    8.0,
+                    6.0,
+                    9.0,
+                    7.0,
+                    4.0,
+                    9.0,
+                    7.0,
+                    8.0,
+                    10.0,
+                    8.0,
+                ],
+                dtype=torch.float32,
+            ),
+            persistent=False,
+        )
+        self.register_buffer(
+            "delta_h_weights",
+            torch.tensor(
+                [
+                    0.0,
+                    0.0,
+                    0.10,
+                    0.10,
+                    0.80,
+                    1.00,
+                    0.40,
+                    0.0,
+                    0.05,
+                    0.0,
+                    20.0,
+                    16.0,
+                    18.0,
+                    4.0,
+                    2.5,
+                    16.0,
+                    7.0,
+                    1.0,
+                    1.0,
+                    6.0,
+                ],
+                dtype=torch.float32,
+            ),
+            persistent=False,
+        )
+
+    def _norm(self, group_features: Tensor) -> Tensor:
+        heavy_atoms = group_features[:, 0].clamp(min=1.0)
+        return heavy_atoms.pow(0.35)
+
+    def hansen(self, group_features: Tensor) -> Tensor:
+        """Return fixed Hansen priors from group-count features."""
+        norm = self._norm(group_features)
+        delta_d = 14.8 + (group_features @ self.delta_d_weights) / norm
+        delta_p = 1.8 + (group_features @ self.delta_p_weights) / norm
+        delta_h = 0.8 + (group_features @ self.delta_h_weights) / norm
+        return torch.stack([delta_d, delta_p, delta_h], dim=-1).clamp(
+            min=0.0,
+            max=40.0,
+        )
+
+    def vm(self, group_features: Tensor) -> Tensor:
+        """Return a fixed molar-volume prior from group-count features."""
+        volume = 18.0 + group_features @ self.vm_weights
+        return volume.clamp(min=30.0)
 
 
 class SolventTypeMoE(nn.Module):
@@ -116,21 +323,25 @@ class FusionHead(nn.Module):
     def __init__(self, input_dim: int, cfg: TGNNSolvConfig) -> None:
         super().__init__()
         self.cfg = cfg
+        output_dim = 3 if cfg.predict_dCp_fus else 2
         self.mlp = nn.Sequential(
             nn.Linear(input_dim, 256),
             nn.SiLU(),
             nn.Linear(256, 128),
             nn.SiLU(),
-            nn.Linear(128, 3),
+            nn.Linear(128, output_dim),
         )
 
     def forward(self, g_solute: Tensor) -> dict[str, Tensor]:
-        z = self.mlp(g_solute)  # (B, 3)
+        z = self.mlp(g_solute)
         T_m = self.cfg.T_m_min + (
             (self.cfg.T_m_max - self.cfg.T_m_min) * torch.sigmoid(z[:, 0])
         )
         dH_fus = F.softplus(z[:, 1]) * self.cfg.S_H
-        dCp_fus = z[:, 2] * self.cfg.S_Cp
+        if self.cfg.predict_dCp_fus:
+            dCp_fus = z[:, 2] * self.cfg.S_Cp
+        else:
+            dCp_fus = torch.full_like(T_m, self.cfg.fixed_dCp_fus)
         return {"T_m": T_m, "dH_fus": dH_fus, "dCp_fus": dCp_fus}
 
 
@@ -285,15 +496,70 @@ class HansenHead(nn.Module):
     def __init__(self, input_dim: int, cfg: TGNNSolvConfig) -> None:
         super().__init__()
         self.cfg = cfg
+        self.prior_mode = _resolve_prior_mode(cfg)
+        self.residual_limit = (
+            cfg.group_prior_hansen_residual_max
+            if self.prior_mode == "group"
+            else cfg.descriptor_prior_hansen_residual_max
+        )
         self.mlp = nn.Sequential(
             nn.Linear(input_dim, 128),
             nn.SiLU(),
             nn.Linear(128, 3),
         )
+        self.prior_net = None
+        self.group_prior = None
+        if self.prior_mode == "descriptor":
+            self.prior_net = DescriptorPriorAdapter(
+                3,
+                cfg.descriptor_prior_hidden_dim,
+                cfg.dropout,
+            )
+        elif self.prior_mode == "group":
+            self.group_prior = FixedGroupContributionPrior()
+        if self.prior_mode != "none":
+            with torch.no_grad():
+                self.mlp[-1].weight.zero_()
+                self.mlp[-1].bias.zero_()
 
-    def forward(self, g_mol: Tensor) -> Tensor:
-        z = self.mlp(g_mol)
-        return F.softplus(z) * self.cfg.S_delta  # (B, 3)
+    def forward(
+        self,
+        g_mol: Tensor,
+        prior_features: Tensor | None = None,
+        *,
+        return_parts: bool = False,
+    ) -> Tensor | dict[str, Tensor]:
+        residual_raw = self.mlp(g_mol)
+        if self.prior_mode == "none":
+            value = F.softplus(residual_raw) * self.cfg.S_delta
+            if not return_parts:
+                return value
+            return {
+                "value": value,
+                "prior": torch.zeros_like(value),
+                "residual": value,
+            }
+
+        if prior_features is None:
+            raise ValueError(
+                "A molecular prior path is enabled, but prior_features were not "
+                "provided to HansenHead."
+            )
+
+        if self.prior_mode == "descriptor":
+            prior_raw = self.prior_net(prior_features)
+            prior = F.softplus(prior_raw) * self.cfg.S_delta
+        else:
+            prior = self.group_prior.hansen(prior_features).to(g_mol)
+        residual = self.residual_limit * torch.tanh(residual_raw)
+        value = (prior + residual).clamp(min=0.0)
+        if not return_parts:
+            return value
+        return {
+            "value": value,
+            "prior": prior,
+            "residual": residual,
+        }
 
 
 # ================================================================== #
@@ -311,18 +577,73 @@ class AuxPropsHead(nn.Module):
     V_m : molar volume [cm³/mol], softplus → (30, +∞)
     """
 
-    def __init__(self, input_dim: int) -> None:
+    def __init__(self, input_dim: int, cfg: TGNNSolvConfig) -> None:
         super().__init__()
+        self.cfg = cfg
+        self.prior_mode = _resolve_prior_mode(cfg)
+        self.residual_limit = (
+            cfg.group_prior_vm_residual_max
+            if self.prior_mode == "group"
+            else cfg.descriptor_prior_vm_residual_max
+        )
         self.mlp = nn.Sequential(
             nn.Linear(input_dim, 128),
             nn.SiLU(),
             nn.Linear(128, 1),
         )
+        self.prior_net = None
+        self.group_prior = None
+        if self.prior_mode == "descriptor":
+            self.prior_net = DescriptorPriorAdapter(
+                1,
+                cfg.descriptor_prior_hidden_dim,
+                cfg.dropout,
+            )
+        elif self.prior_mode == "group":
+            self.group_prior = FixedGroupContributionPrior()
+        if self.prior_mode != "none":
+            with torch.no_grad():
+                self.mlp[-1].weight.zero_()
+                self.mlp[-1].bias.zero_()
 
-    def forward(self, g_mol: Tensor) -> dict[str, Tensor]:
-        z = self.mlp(g_mol)
-        V_m = F.softplus(z[:, 0]) * 50.0 + 30.0
-        return {"V_m": V_m}
+    def forward(
+        self,
+        g_mol: Tensor,
+        prior_features: Tensor | None = None,
+        *,
+        return_parts: bool = False,
+    ) -> dict[str, Tensor]:
+        residual_raw = self.mlp(g_mol)[:, 0]
+        if self.prior_mode == "none":
+            V_m = F.softplus(residual_raw) * 50.0 + 30.0
+            if not return_parts:
+                return {"V_m": V_m}
+            return {
+                "V_m": V_m,
+                "V_m_prior": torch.zeros_like(V_m),
+                "V_m_residual": V_m,
+            }
+
+        if prior_features is None:
+            raise ValueError(
+                "A molecular prior path is enabled, but prior_features were not "
+                "provided to AuxPropsHead."
+            )
+
+        if self.prior_mode == "descriptor":
+            prior_raw = self.prior_net(prior_features)[:, 0]
+            V_m_prior = F.softplus(prior_raw) * 50.0 + 30.0
+        else:
+            V_m_prior = self.group_prior.vm(prior_features).to(g_mol)
+        V_m_residual = self.residual_limit * torch.tanh(residual_raw)
+        V_m = (V_m_prior + V_m_residual).clamp(min=30.0)
+        if not return_parts:
+            return {"V_m": V_m}
+        return {
+            "V_m": V_m,
+            "V_m_prior": V_m_prior,
+            "V_m_residual": V_m_residual,
+        }
 
 
 class AdaptivePhysicsCorrection(nn.Module):

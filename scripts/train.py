@@ -167,6 +167,11 @@ def load_data(
         pair_temperature_group_chunk_size=(
             config.pair_temperature_group_chunk_size
         ),
+        use_morgan_features=config.use_morgan_features,
+        morgan_radius=config.morgan_radius,
+        morgan_n_bits=config.morgan_n_bits,
+        use_descriptor_priors=config.use_descriptor_priors,
+        use_group_priors=config.use_group_priors,
         seed=seed,
     )
 

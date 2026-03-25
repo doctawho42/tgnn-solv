@@ -20,6 +20,7 @@ from .heads import (
     AuxPropsHead,
     FusionHead,
     HansenHead,
+    MorganFeatureAdapter,
     NRTLHead,
     PairRepresentation,
     SolventTypeMoE,
@@ -58,7 +59,14 @@ class TGNNSolv(nn.Module):
         cfg: TGNNSolvConfig = TGNNSolvConfig(),
     ) -> None:
         super().__init__()
+        if cfg.use_descriptor_priors and cfg.use_group_priors:
+            raise ValueError(
+                "Descriptor priors and fixed group priors are mutually exclusive."
+            )
         self.cfg = cfg
+        self.use_molecular_priors = (
+            cfg.use_descriptor_priors or cfg.use_group_priors
+        )
         F = cfg.hidden_dim
 
         # --- Encoder ---
@@ -112,7 +120,26 @@ class TGNNSolv(nn.Module):
         self.head_fusion = FusionHead(D_r, cfg)
         self.head_nrtl = NRTLHead(cfg.pair_dim, cfg)
         self.head_hansen = HansenHead(D_r, cfg)
-        self.head_aux = AuxPropsHead(D_r)
+        self.head_aux = AuxPropsHead(D_r, cfg)
+        self.solute_fp_adapter = None
+        self.solvent_fp_adapter = None
+        self.fp_pre_scale = None
+        self.fp_post_scale = None
+        if cfg.use_morgan_features:
+            self.solute_fp_adapter = MorganFeatureAdapter(
+                cfg.morgan_n_bits,
+                D_r,
+                cfg.morgan_hidden_dim,
+                cfg.dropout,
+            )
+            self.solvent_fp_adapter = MorganFeatureAdapter(
+                cfg.morgan_n_bits,
+                D_r,
+                cfg.morgan_hidden_dim,
+                cfg.dropout,
+            )
+            self.fp_pre_scale = nn.Parameter(torch.tensor(0.5))
+            self.fp_post_scale = nn.Parameter(torch.tensor(0.5))
 
         # --- Physics solver (0 learnable params) ---
         self.sle_solver = SLESolver(cfg)
@@ -279,12 +306,65 @@ class TGNNSolv(nn.Module):
             "alpha_12": nrtl_params["alpha_12"],
         }
 
+    def _require_morgan_features(
+        self,
+        solute_morgan_fp: Optional[torch.Tensor],
+        solvent_morgan_fp: Optional[torch.Tensor],
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Validate and return Morgan fingerprints when the feature path is enabled."""
+        if solute_morgan_fp is None or solvent_morgan_fp is None:
+            raise ValueError(
+                "Morgan fingerprint features are enabled in the config, "
+                "but solute_morgan_fp/solvent_morgan_fp were not provided."
+            )
+        return solute_morgan_fp, solvent_morgan_fp
+
+    def _require_descriptor_prior_features(
+        self,
+        solute_descriptor_prior_features: Optional[torch.Tensor],
+        solvent_descriptor_prior_features: Optional[torch.Tensor],
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Validate and return descriptor priors when the prior path is enabled."""
+        if (
+            solute_descriptor_prior_features is None
+            or solvent_descriptor_prior_features is None
+        ):
+            raise ValueError(
+                "Descriptor priors are enabled in the config, but "
+                "solute_descriptor_prior_features/solvent_descriptor_prior_features "
+                "were not provided."
+            )
+        return solute_descriptor_prior_features, solvent_descriptor_prior_features
+
+    def _require_group_prior_features(
+        self,
+        solute_group_prior_features: Optional[torch.Tensor],
+        solvent_group_prior_features: Optional[torch.Tensor],
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Validate and return fixed group priors when the path is enabled."""
+        if (
+            solute_group_prior_features is None
+            or solvent_group_prior_features is None
+        ):
+            raise ValueError(
+                "Fixed group priors are enabled in the config, but "
+                "solute_group_prior_features/solvent_group_prior_features were "
+                "not provided."
+            )
+        return solute_group_prior_features, solvent_group_prior_features
+
     def forward(
             self,
             solute_data: Batch,
             solvent_data: Batch,
             T: torch.Tensor,
             solvent_type: Optional[torch.Tensor] = None,
+            solute_morgan_fp: Optional[torch.Tensor] = None,
+            solvent_morgan_fp: Optional[torch.Tensor] = None,
+            solute_descriptor_prior_features: Optional[torch.Tensor] = None,
+            solvent_descriptor_prior_features: Optional[torch.Tensor] = None,
+            solute_group_prior_features: Optional[torch.Tensor] = None,
+            solvent_group_prior_features: Optional[torch.Tensor] = None,
             return_intermediates: bool = False,  # ✦ NEW
     ) -> Dict[str, torch.Tensor]:
         """
@@ -329,12 +409,64 @@ class TGNNSolv(nn.Module):
         h_slv_atoms, g_slv_pre = self._encode_and_readout(
             solvent_data, "solvent", temp_feat=encoder_t_feat
         )
+        sol_fp_emb = None
+        slv_fp_emb = None
+        if self.cfg.use_morgan_features:
+            solute_morgan_fp, solvent_morgan_fp = self._require_morgan_features(
+                solute_morgan_fp,
+                solvent_morgan_fp,
+            )
+            sol_fp_emb = self.solute_fp_adapter(solute_morgan_fp.to(g_sol_pre))
+            slv_fp_emb = self.solvent_fp_adapter(solvent_morgan_fp.to(g_slv_pre))
+            g_sol_pre = g_sol_pre + self.fp_pre_scale * sol_fp_emb
+            g_slv_pre = g_slv_pre + self.fp_pre_scale * slv_fp_emb
+        sol_prior = None
+        slv_prior = None
+        if self.cfg.use_descriptor_priors:
+            sol_prior, slv_prior = self._require_descriptor_prior_features(
+                solute_descriptor_prior_features,
+                solvent_descriptor_prior_features,
+            )
+            sol_prior = sol_prior.to(g_sol_pre)
+            slv_prior = slv_prior.to(g_slv_pre)
+        elif self.cfg.use_group_priors:
+            sol_prior, slv_prior = self._require_group_prior_features(
+                solute_group_prior_features,
+                solvent_group_prior_features,
+            )
+            sol_prior = sol_prior.to(g_sol_pre)
+            slv_prior = slv_prior.to(g_slv_pre)
 
         # ---- 2. Auxiliary heads (before cross-attention) ----
-        hansen_sol = self.head_hansen(g_sol_pre)
-        hansen_slv = self.head_hansen(g_slv_pre)
-        aux_sol = self.head_aux(g_sol_pre)
-        aux_slv = self.head_aux(g_slv_pre)
+        return_head_parts = return_intermediates or self.use_molecular_priors
+        hansen_sol_parts = self.head_hansen(
+            g_sol_pre,
+            prior_features=sol_prior,
+            return_parts=return_head_parts,
+        )
+        hansen_slv_parts = self.head_hansen(
+            g_slv_pre,
+            prior_features=slv_prior,
+            return_parts=return_head_parts,
+        )
+        aux_sol_parts = self.head_aux(
+            g_sol_pre,
+            prior_features=sol_prior,
+            return_parts=return_head_parts,
+        )
+        aux_slv_parts = self.head_aux(
+            g_slv_pre,
+            prior_features=slv_prior,
+            return_parts=return_head_parts,
+        )
+        if isinstance(hansen_sol_parts, dict):
+            hansen_sol = hansen_sol_parts["value"]
+            hansen_slv = hansen_slv_parts["value"]
+        else:
+            hansen_sol = hansen_sol_parts
+            hansen_slv = hansen_slv_parts
+        aux_sol = {"V_m": aux_sol_parts["V_m"]}
+        aux_slv = {"V_m": aux_slv_parts["V_m"]}
 
         # ---- 3. Cross-attention / Bipartite MP ----
         sol_atoms_list = self._split_atoms_by_graph(
@@ -407,6 +539,9 @@ class TGNNSolv(nn.Module):
         g_slv_tok = self._extract_tokens(h_slv_padded, slv_lengths)
         g_sol_post = g_sol_post + self.sol_token_gate * self.token_proj(g_sol_tok)
         g_slv_post = g_slv_post + self.slv_token_gate * self.token_proj(g_slv_tok)
+        if self.cfg.use_morgan_features:
+            g_sol_post = g_sol_post + self.fp_post_scale * sol_fp_emb
+            g_slv_post = g_slv_post + self.fp_post_scale * slv_fp_emb
 
         # ---- 5. Pair representation ----
         g_pair = self.pair_repr(g_sol_post, g_slv_post)
@@ -504,6 +639,26 @@ class TGNNSolv(nn.Module):
             "moe_gate": moe_gate,
             "attn_maps": attn_maps,
         }
+        if isinstance(hansen_sol_parts, dict):
+            output["hansen_sol_prior"] = hansen_sol_parts["prior"]
+            output["hansen_slv_prior"] = hansen_slv_parts["prior"]
+            output["hansen_sol_residual"] = hansen_sol_parts["residual"]
+            output["hansen_slv_residual"] = hansen_slv_parts["residual"]
+        if "V_m_prior" in aux_sol_parts:
+            output["aux_sol_prior"] = {"V_m": aux_sol_parts["V_m_prior"]}
+            output["aux_slv_prior"] = {"V_m": aux_slv_parts["V_m_prior"]}
+            output["aux_sol_residual"] = {"V_m": aux_sol_parts["V_m_residual"]}
+            output["aux_slv_residual"] = {"V_m": aux_slv_parts["V_m_residual"]}
+            prior_reg = (
+                hansen_sol_parts["residual"].pow(2).mean()
+                + hansen_slv_parts["residual"].pow(2).mean()
+                + aux_sol_parts["V_m_residual"].pow(2).mean()
+                + aux_slv_parts["V_m_residual"].pow(2).mean()
+            )
+            if self.cfg.use_descriptor_priors:
+                output["descriptor_prior_reg"] = prior_reg
+            if self.cfg.use_group_priors:
+                output["group_prior_reg"] = prior_reg
 
         # ✦ NEW — flat intermediates for analysis scripts
         if return_intermediates:
@@ -550,10 +705,42 @@ class TGNNSolv(nn.Module):
                 # Hansen solubility parameters
                 "hansen_sol": hansen_sol,
                 "hansen_slv": hansen_slv,
+                "hansen_sol_prior": (
+                    hansen_sol_parts["prior"]
+                    if isinstance(hansen_sol_parts, dict)
+                    else torch.zeros_like(hansen_sol)
+                ),
+                "hansen_slv_prior": (
+                    hansen_slv_parts["prior"]
+                    if isinstance(hansen_slv_parts, dict)
+                    else torch.zeros_like(hansen_slv)
+                ),
+                "hansen_sol_residual": (
+                    hansen_sol_parts["residual"]
+                    if isinstance(hansen_sol_parts, dict)
+                    else hansen_sol
+                ),
+                "hansen_slv_residual": (
+                    hansen_slv_parts["residual"]
+                    if isinstance(hansen_slv_parts, dict)
+                    else hansen_slv
+                ),
                 "Ra": Ra,
                 # Auxiliary properties
                 "aux_sol": aux_sol,
                 "aux_slv": aux_slv,
+                "aux_sol_prior": aux_sol_parts.get(
+                    "V_m_prior", torch.zeros_like(aux_sol["V_m"])
+                ),
+                "aux_slv_prior": aux_slv_parts.get(
+                    "V_m_prior", torch.zeros_like(aux_slv["V_m"])
+                ),
+                "aux_sol_residual": aux_sol_parts.get(
+                    "V_m_residual", aux_sol["V_m"]
+                ),
+                "aux_slv_residual": aux_slv_parts.get(
+                    "V_m_residual", aux_slv["V_m"]
+                ),
                 # Learned representations (detached — no grad needed)
                 "g_sol_pre": g_sol_pre.detach(),
                 "g_slv_pre": g_slv_pre.detach(),

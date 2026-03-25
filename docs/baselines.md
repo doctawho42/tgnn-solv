@@ -38,6 +38,10 @@ python scripts/run_fastsolv.py train \
     --metrics checkpoints/fastsolv_run/metrics.json
 ```
 
+Warning: custom FastSolv retraining is still vulnerable to descriptor-path NaN
+failures on some data regimes. The pretrained `predict` / `compare` flows are
+the safer default when you need a baseline rather than a debugging target.
+
 Compare FastSolv vs TGNN-Solv:
 
 ```bash
@@ -125,8 +129,11 @@ python scripts/run_solprop.py train \
 
 ## RF Baseline
 
-The Random Forest baseline uses concatenated RDKit 2D descriptors for the
-solute and solvent, plus temperature features.
+The Random Forest baseline supports three feature modes:
+
+- `descriptors` — concatenated RDKit 2D descriptors for the solute and solvent
+- `morgan` — concatenated Morgan fingerprints for the solute and solvent
+- `hybrid` — RDKit descriptors + Morgan fingerprints
 
 Run it directly:
 
@@ -134,7 +141,19 @@ Run it directly:
 python -m tgnn_solv.baselines.rf_baseline \
     --train notebooks/data/processed/train.csv \
     --test notebooks/data/processed/test.csv \
+    --feature-mode descriptors \
     --output results/rf_baseline.json
+```
+
+You can switch to Morgan or hybrid features with:
+
+```bash
+python -m tgnn_solv.baselines.rf_baseline \
+    --train notebooks/data/processed/train.csv \
+    --test notebooks/data/processed/test.csv \
+    --feature-mode morgan \
+    --morgan-n-bits 2048 \
+    --output results/rf_morgan.json
 ```
 
 Requirements:
@@ -142,7 +161,8 @@ Requirements:
 - RDKit
 - scikit-learn
 
-The RF baseline is also supported by `scripts/run_split_comparisons.py`.
+The RF baseline is also supported by `scripts/run_split_comparisons.py` as
+`rf_baseline`, `rf_morgan`, and `rf_hybrid`.
 
 ## Ideal SLE
 
