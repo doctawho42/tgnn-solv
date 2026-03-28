@@ -37,6 +37,7 @@ from tgnn_solv.features import (
     smiles_to_group_prior_features,
     smiles_to_morgan_fp,
 )
+from tgnn_solv.group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from tgnn_solv.model import TGNNSolv
 
 
@@ -230,6 +231,7 @@ def make_test_loader(
         morgan_n_bits=cfg.morgan_n_bits,
         use_descriptor_priors=cfg.use_descriptor_priors,
         use_group_priors=cfg.use_group_priors,
+        use_gc_priors_crystal=cfg.use_gc_priors_crystal,
     )
     loader = DataLoader(
         dataset,
@@ -254,6 +256,9 @@ def invoke_model(
     solvent_descriptor_prior_features: torch.Tensor | None = None,
     solute_group_prior_features: torch.Tensor | None = None,
     solvent_group_prior_features: torch.Tensor | None = None,
+    T_m_gc: torch.Tensor | None = None,
+    dH_fus_gc: torch.Tensor | None = None,
+    dCp_fus_gc: torch.Tensor | None = None,
 ) -> tuple[dict[str, torch.Tensor], str]:
     """Try the intermediate-aware forward call, then fall back to the standard one."""
     try:
@@ -268,6 +273,9 @@ def invoke_model(
             solvent_descriptor_prior_features=solvent_descriptor_prior_features,
             solute_group_prior_features=solute_group_prior_features,
             solvent_group_prior_features=solvent_group_prior_features,
+            T_m_gc=T_m_gc,
+            dH_fus_gc=dH_fus_gc,
+            dCp_fus_gc=dCp_fus_gc,
             return_intermediates=True,
         )
         if isinstance(output, tuple) and len(output) == 2 and isinstance(output[0], dict):
@@ -288,6 +296,9 @@ def invoke_model(
         solvent_descriptor_prior_features=solvent_descriptor_prior_features,
         solute_group_prior_features=solute_group_prior_features,
         solvent_group_prior_features=solvent_group_prior_features,
+        T_m_gc=T_m_gc,
+        dH_fus_gc=dH_fus_gc,
+        dCp_fus_gc=dCp_fus_gc,
     )
     if isinstance(output, dict) and "physics" in output and "fusion_params" in output:
         return output, "standard_forward"
@@ -327,6 +338,9 @@ def collect_intermediates(
             solvent_group_prior_features = targets.get(
                 "solvent_group_prior_features"
             )
+            T_m_gc = targets.get("T_m_gc")
+            dH_fus_gc = targets.get("dH_fus_gc")
+            dCp_fus_gc = targets.get("dCp_fus_gc")
             if solvent_type is None:
                 solvent_type = torch.zeros_like(temperatures, dtype=torch.long)
             else:
@@ -366,6 +380,21 @@ def collect_intermediates(
                 solvent_group_prior_features=(
                     solvent_group_prior_features.to(device)
                     if isinstance(solvent_group_prior_features, torch.Tensor)
+                    else None
+                ),
+                T_m_gc=(
+                    T_m_gc.to(device)
+                    if isinstance(T_m_gc, torch.Tensor)
+                    else None
+                ),
+                dH_fus_gc=(
+                    dH_fus_gc.to(device)
+                    if isinstance(dH_fus_gc, torch.Tensor)
+                    else None
+                ),
+                dCp_fus_gc=(
+                    dCp_fus_gc.to(device)
+                    if isinstance(dCp_fus_gc, torch.Tensor)
                     else None
                 ),
             )
@@ -489,6 +518,9 @@ def predict_pair_temperatures(
     solvent_descriptor_prior_features = None
     solute_group_prior_features = None
     solvent_group_prior_features = None
+    T_m_gc = None
+    dH_fus_gc = None
+    dCp_fus_gc = None
     if model.cfg.use_morgan_features:
         sol_fp = smiles_to_morgan_fp(
             solute_smiles,
@@ -534,6 +566,25 @@ def predict_pair_temperatures(
             dtype=torch.float32,
             device=device,
         ).repeat(len(temperatures), 1)
+    if model.cfg.use_gc_priors_crystal:
+        gc_priors = compute_gc_priors(solute_smiles)
+        if any(gc_priors[key] is None for key in ("T_m_gc", "dH_fus_gc", "dCp_fus_gc")):
+            gc_priors = GC_FALLBACK_PRIORS
+        T_m_gc = torch.tensor(
+            [gc_priors["T_m_gc"]],
+            dtype=torch.float32,
+            device=device,
+        ).repeat(len(temperatures))
+        dH_fus_gc = torch.tensor(
+            [gc_priors["dH_fus_gc"]],
+            dtype=torch.float32,
+            device=device,
+        ).repeat(len(temperatures))
+        dCp_fus_gc = torch.tensor(
+            [gc_priors["dCp_fus_gc"]],
+            dtype=torch.float32,
+            device=device,
+        ).repeat(len(temperatures))
 
     with torch.no_grad():
         output, _ = invoke_model(
@@ -548,6 +599,9 @@ def predict_pair_temperatures(
             solvent_descriptor_prior_features=solvent_descriptor_prior_features,
             solute_group_prior_features=solute_group_prior_features,
             solvent_group_prior_features=solvent_group_prior_features,
+            T_m_gc=T_m_gc,
+            dH_fus_gc=dH_fus_gc,
+            dCp_fus_gc=dCp_fus_gc,
         )
 
     return {

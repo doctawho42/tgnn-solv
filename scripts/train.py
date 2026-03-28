@@ -13,6 +13,7 @@ import argparse
 import dataclasses
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 import _bootstrap  # noqa: F401
@@ -23,6 +24,11 @@ from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import make_loader
 from tgnn_solv.experiment_logger import ExperimentLogger
 from tgnn_solv.features import NODE_FEAT_DIM, EDGE_FEAT_DIM
+from tgnn_solv.group_contribution import (
+    GC_FALLBACK_PRIORS,
+    compute_gc_priors,
+    fit_tm_gc_calibration,
+)
 from tgnn_solv.model import TGNNSolv
 from tgnn_solv.seed import set_seed
 from tgnn_solv.trainer import TGNNSolvTrainer
@@ -82,6 +88,18 @@ def parse_args() -> argparse.Namespace:
         default="checkpoints/model.pt",
         help="Path to save trained model checkpoint",
     )
+    parser.add_argument(
+        "--resume",
+        type=str,
+        default=None,
+        help="Path to a saved training checkpoint to resume from",
+    )
+    parser.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=0,
+        help="Save a resumable checkpoint every N epochs per phase (0 disables periodic saves)",
+    )
     
     # Training settings
     parser.add_argument(
@@ -140,6 +158,47 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def atomic_torch_save(payload: dict, path: Path) -> None:
+    """Atomically save a checkpoint to avoid partial files on preemption."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        dir=path.parent,
+        prefix=f".{path.name}.tmp.",
+        suffix=".pt",
+        delete=False,
+    ) as tmp:
+        tmp_path = Path(tmp.name)
+    try:
+        torch.save(payload, tmp_path)
+        tmp_path.replace(path)
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+
+
+def build_checkpoint_payload(
+    *,
+    model: TGNNSolv,
+    config: TGNNSolvConfig,
+    seed: int,
+    experiment_name: str,
+    trainer: TGNNSolvTrainer,
+    resume_state: dict | None,
+) -> dict:
+    """Build a training checkpoint that supports both inference and resume."""
+    return {
+        "model_state": model.state_dict(),
+        "model_state_dict": model.state_dict(),
+        "config": dataclasses.asdict(config),
+        "node_feat_dim": NODE_FEAT_DIM,
+        "edge_feat_dim": EDGE_FEAT_DIM,
+        "seed": seed,
+        "experiment_name": experiment_name,
+        "trainer_state_dict": trainer.state_dict(),
+        "resume_state": resume_state,
+    }
+
+
 def load_data(
     csv_path: str,
     config: TGNNSolvConfig,
@@ -172,7 +231,75 @@ def load_data(
         morgan_n_bits=config.morgan_n_bits,
         use_descriptor_priors=config.use_descriptor_priors,
         use_group_priors=config.use_group_priors,
+        use_gc_priors_crystal=config.use_gc_priors_crystal,
         seed=seed,
+    )
+
+
+def maybe_fit_gc_tm_calibration(
+    train_csv_path: str,
+    config: TGNNSolvConfig,
+) -> None:
+    """Fit and store a train-only affine calibration for the GC melting prior."""
+    if not config.use_gc_priors_crystal:
+        return
+
+    import numpy as np
+    import pandas as pd
+
+    df = pd.read_csv(train_csv_path, low_memory=False)
+    required_cols = {"solute_smiles", "T_m", "has_T_m"}
+    if not required_cols.issubset(df.columns):
+        print(
+            "   Skipping GC T_m calibration; "
+            f"missing columns: {sorted(required_cols - set(df.columns))}"
+        )
+        return
+
+    unique_tm = (
+        df.loc[df["has_T_m"].fillna(False).astype(bool), ["solute_smiles", "T_m"]]
+        .drop_duplicates(subset=["solute_smiles"], keep="first")
+    )
+    if unique_tm.empty:
+        print("   Skipping GC T_m calibration; no training rows with T_m labels.")
+        return
+
+    raw_tm_gc: list[float] = []
+    tm_true: list[float] = []
+    fallback_count = 0
+    for smiles, tm_value in unique_tm.itertuples(index=False):
+        priors = compute_gc_priors(str(smiles))
+        tm_gc = priors["T_m_gc"]
+        if tm_gc is None or not np.isfinite(tm_gc) or not np.isfinite(tm_value):
+            continue
+        raw_tm_gc.append(float(tm_gc))
+        tm_true.append(float(tm_value))
+        if abs(float(tm_gc) - GC_FALLBACK_PRIORS["T_m_gc"]) < 1.0e-6:
+            fallback_count += 1
+
+    if not raw_tm_gc:
+        print("   Skipping GC T_m calibration; no usable GC priors in training split.")
+        return
+
+    scale, bias = fit_tm_gc_calibration(raw_tm_gc, tm_true)
+    config.gc_prior_tm_scale = scale
+    config.gc_prior_tm_bias = bias
+
+    raw_arr = np.asarray(raw_tm_gc, dtype=float)
+    true_arr = np.asarray(tm_true, dtype=float)
+    calibrated_arr = scale * raw_arr + bias
+    raw_mae = float(np.mean(np.abs(raw_arr - true_arr)))
+    calibrated_mae = float(np.mean(np.abs(calibrated_arr - true_arr)))
+    fallback_frac = fallback_count / len(raw_tm_gc)
+
+    print(
+        "   GC T_m calibration: "
+        f"n_unique={len(raw_tm_gc)}, "
+        f"fallback={fallback_frac:.1%}, "
+        f"raw_mae={raw_mae:.2f} K, "
+        f"calibrated_mae={calibrated_mae:.2f} K, "
+        f"scale={scale:.6f}, "
+        f"bias={bias:.3f}"
     )
 
 
@@ -187,19 +314,44 @@ def main() -> None:
         print("=" * 70)
         
         # Load configuration from YAML
-        print(f"\n1. Loading configuration from {args.config}...")
-        config = TGNNSolvConfig.from_yaml(args.config)
+        resume_checkpoint = None
+        if args.resume is not None:
+            print(f"\n1. Loading resume checkpoint from {args.resume}...")
+            resume_checkpoint = torch.load(args.resume, map_location="cpu")
+            config = TGNNSolvConfig(**resume_checkpoint["config"])
+            args.seed = int(resume_checkpoint.get("seed", args.seed))
+        else:
+            print(f"\n1. Loading configuration from {args.config}...")
+            config = TGNNSolvConfig.from_yaml(args.config)
         device = resolve_device(args.device)
-        
-        # Apply CLI overrides
-        if args.hidden_dim is not None:
-            config.hidden_dim = args.hidden_dim
-        if args.n_gnn_layers is not None:
-            config.n_gnn_layers = args.n_gnn_layers
-        if args.batch_size is not None:
-            config.batch_size = args.batch_size
-        if args.lr is not None:
-            config.lr_phase2 = args.lr
+
+        # Apply CLI overrides for fresh runs only. Resumed runs must keep the
+        # exact model/training config stored in the checkpoint.
+        if resume_checkpoint is None:
+            if args.hidden_dim is not None:
+                config.hidden_dim = args.hidden_dim
+            if args.n_gnn_layers is not None:
+                config.n_gnn_layers = args.n_gnn_layers
+            if args.batch_size is not None:
+                config.batch_size = args.batch_size
+            if args.lr is not None:
+                config.lr_phase2 = args.lr
+        elif any(
+            override is not None
+            for override in (
+                args.hidden_dim,
+                args.n_gnn_layers,
+                args.batch_size,
+                args.lr,
+            )
+        ):
+            print(
+                "   Ignoring CLI config overrides for resumed training; "
+                "using the checkpoint's saved config."
+            )
+
+        if resume_checkpoint is None:
+            maybe_fit_gc_tm_calibration(args.train_data, config)
         
         print(f"   Device: {device}")
         print(f"   Seed: {args.seed}")
@@ -210,7 +362,10 @@ def main() -> None:
         
         # Create experiment logger
         print("\n3. Initializing experiment logger...")
-        logger = ExperimentLogger(args.log_dir, args.experiment_name)
+        experiment_name = args.experiment_name
+        if experiment_name is None and resume_checkpoint is not None:
+            experiment_name = resume_checkpoint.get("experiment_name")
+        logger = ExperimentLogger(args.log_dir, experiment_name)
         logger.log_config(config)
         print(f"   Experiment: {logger.experiment_name}")
         print(f"   Log directory: {logger.exp_dir}")
@@ -235,6 +390,13 @@ def main() -> None:
         # Initialize model
         print("\n5. Initializing model...")
         model = TGNNSolv(cfg=config).to(device)
+        if resume_checkpoint is not None:
+            model.load_state_dict(
+                resume_checkpoint.get(
+                    "model_state_dict",
+                    resume_checkpoint["model_state"],
+                )
+            )
         logger.log_model_summary(model)
         total_params = sum(p.numel() for p in model.parameters())
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -244,25 +406,68 @@ def main() -> None:
         # Initialize trainer
         print("\n6. Initializing trainer...")
         trainer = TGNNSolvTrainer(model, config)
-        
+        if resume_checkpoint is not None:
+            trainer.load_state_dict(
+                resume_checkpoint.get("trainer_state_dict")
+            )
+
         # Train model
         print("\n7. Starting training (3-phase curriculum)...")
-        trainer.train_full(train_loader, val_loader)
-        
+        checkpoint_path = Path(args.checkpoint)
+
+        def maybe_save_resume_checkpoint(state: dict) -> None:
+            if args.checkpoint_every <= 0:
+                return
+            next_epoch = int(state["next_epoch_in_phase"])
+            phase_epochs = int(state["phase_epochs"])
+            if next_epoch % args.checkpoint_every != 0 and next_epoch < phase_epochs:
+                return
+            payload = build_checkpoint_payload(
+                model=model,
+                config=config,
+                seed=args.seed,
+                experiment_name=logger.experiment_name,
+                trainer=trainer,
+                resume_state=state,
+            )
+            atomic_torch_save(payload, checkpoint_path)
+            print(
+                "  Saved resume checkpoint "
+                f"(phase {state['phase']} epoch {next_epoch}/{phase_epochs}) "
+                f"to {checkpoint_path}"
+            )
+
+        resume_state = (
+            resume_checkpoint.get("resume_state")
+            if resume_checkpoint is not None
+            else None
+        )
+        if resume_state and resume_state.get("status") == "completed":
+            print("   Resume checkpoint already marks training as completed; skipping fit.")
+        else:
+            trainer.train_full(
+                train_loader,
+                val_loader,
+                resume_state=resume_state,
+                on_epoch_end=maybe_save_resume_checkpoint,
+            )
+
         # Save checkpoint
         print("\n8. Saving checkpoint...")
-        checkpoint_path = Path(args.checkpoint)
-        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        checkpoint = {
-            "model_state": model.state_dict(),
-            "model_state_dict": model.state_dict(),
-            "config": dataclasses.asdict(config),
-            "node_feat_dim": NODE_FEAT_DIM,
-            "edge_feat_dim": EDGE_FEAT_DIM,
-            "seed": args.seed,
-        }
-        torch.save(checkpoint, checkpoint_path)
+        checkpoint = build_checkpoint_payload(
+            model=model,
+            config=config,
+            seed=args.seed,
+            experiment_name=logger.experiment_name,
+            trainer=trainer,
+            resume_state={
+                "status": "completed",
+                "phase": 4,
+                "next_epoch_in_phase": 0,
+                "trainer_state_dict": trainer.state_dict(),
+            },
+        )
+        atomic_torch_save(checkpoint, checkpoint_path)
         print(f"   Model saved to {checkpoint_path}")
         
         # Optional test evaluation

@@ -121,6 +121,9 @@ class Evaluator:
             solvent_group_prior_features = tgt.get(
                 "solvent_group_prior_features"
             )
+            T_m_gc = tgt.get("T_m_gc")
+            dH_fus_gc = tgt.get("dH_fus_gc")
+            dCp_fus_gc = tgt.get("dCp_fus_gc")
             mask = tgt["has_solubility"].to(self.device)
 
             out = self.model(
@@ -156,6 +159,21 @@ class Evaluator:
                 solvent_group_prior_features=(
                     solvent_group_prior_features.to(self.device)
                     if isinstance(solvent_group_prior_features, torch.Tensor)
+                    else None
+                ),
+                T_m_gc=(
+                    T_m_gc.to(self.device)
+                    if isinstance(T_m_gc, torch.Tensor)
+                    else None
+                ),
+                dH_fus_gc=(
+                    dH_fus_gc.to(self.device)
+                    if isinstance(dH_fus_gc, torch.Tensor)
+                    else None
+                ),
+                dCp_fus_gc=(
+                    dCp_fus_gc.to(self.device)
+                    if isinstance(dCp_fus_gc, torch.Tensor)
                     else None
                 ),
             )

@@ -21,6 +21,7 @@ Bond features (8 dims):
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import TypeAlias
 
 import numpy as np
@@ -34,6 +35,7 @@ from rdkit.Chem import (
     Lipinski,
     rdMolDescriptors,
 )
+from rdkit.ML.Descriptors import MoleculeDescriptors
 from rdkit.DataStructs import ConvertToNumpyArray
 from torch_geometric.data import Data
 
@@ -69,6 +71,17 @@ HYBRIDIZATION_LIST = [
 ]
 
 FORMAL_CHARGE_LIST = [-2, -1, 0, 1, 2]
+RDKitDescriptorArray: TypeAlias = np.ndarray
+RDKitDescriptorStats: TypeAlias = tuple[np.ndarray, np.ndarray]
+RDKitDescriptorNames: TypeAlias = tuple[str, ...]
+DESCRIPTOR_RAW_ABS_CLIP = 1.0e6
+
+RDKIT_DESCRIPTOR_NAMES: RDKitDescriptorNames = tuple(
+    name for name, _ in Descriptors.descList
+)
+_RDKIT_DESCRIPTOR_CALCULATOR = MoleculeDescriptors.MolecularDescriptorCalculator(
+    list(RDKIT_DESCRIPTOR_NAMES)
+)
 
 
 # ------------------------------------------------------------------ #
@@ -237,6 +250,69 @@ def compute_pair_morgan_features(
     )
 
 
+def compute_molecular_descriptors(smiles: str) -> RDKitDescriptorArray | None:
+    """Compute the standard RDKit 2D descriptor vector for one molecule."""
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+
+    try:
+        descriptors = np.asarray(
+            _RDKIT_DESCRIPTOR_CALCULATOR.CalcDescriptors(mol),
+            dtype=np.float32,
+        )
+    except Exception:
+        return None
+
+    descriptors = np.nan_to_num(
+        descriptors,
+        nan=0.0,
+        posinf=0.0,
+        neginf=0.0,
+    )
+    # RDKit includes descriptors such as Ipc that can explode to ~1e18 for
+    # large salts or highly connected molecules. Bounding the raw range keeps
+    # the shared augmentation path numerically stable without changing the
+    # descriptor dimensionality.
+    return np.clip(
+        descriptors,
+        -DESCRIPTOR_RAW_ABS_CLIP,
+        DESCRIPTOR_RAW_ABS_CLIP,
+    )
+
+
+def compute_descriptor_normalization_stats(
+    smiles_iterable: Iterable[str],
+) -> RDKitDescriptorStats:
+    """Compute per-feature mean/std for the shared RDKit descriptor set."""
+    descriptor_rows: list[np.ndarray] = []
+    for smiles in smiles_iterable:
+        descriptors = compute_molecular_descriptors(str(smiles))
+        if descriptors is not None:
+            descriptor_rows.append(descriptors)
+
+    if not descriptor_rows:
+        raise ValueError(
+            "No valid molecules were available to compute descriptor statistics."
+        )
+
+    stacked = np.stack(descriptor_rows, axis=0).astype(np.float32, copy=False)
+    mean = np.nan_to_num(
+        stacked.mean(axis=0),
+        nan=0.0,
+        posinf=0.0,
+        neginf=0.0,
+    ).astype(np.float32, copy=False)
+    std = np.nan_to_num(
+        stacked.std(axis=0),
+        nan=1.0,
+        posinf=1.0,
+        neginf=1.0,
+    ).astype(np.float32, copy=False)
+    std = np.where(std < 1e-8, 1.0, std).astype(np.float32, copy=False)
+    return mean, std
+
+
 def smiles_to_descriptor_prior_features(smiles: str) -> np.ndarray | None:
     """Compute a compact fixed descriptor vector for prior-style heads."""
     mol = Chem.MolFromSmiles(smiles)
@@ -341,6 +417,7 @@ def _compute_dims() -> tuple[int, int]:
 
 
 NODE_FEAT_DIM, EDGE_FEAT_DIM = _compute_dims()
+RDKIT_DESCRIPTOR_DIM = len(RDKIT_DESCRIPTOR_NAMES)
 DESCRIPTOR_PRIOR_DIM = int(
     smiles_to_descriptor_prior_features("CCO").shape[0]
 )

@@ -4,6 +4,9 @@ Solid-Liquid Equilibrium (SLE) solver.
 Solves:  x₂ · γ₂(x₂, T) = exp(-Φ(T))
 
 where Φ is the ideal (crystal) contribution and γ₂ comes from NRTL.
+The solver is agnostic to where ``T_m``, ``dH_fus``, and ``dCp_fus`` come
+from; the crystal branch can therefore swap from learned ``dCp_fus`` or a
+fixed constant to per-sample GC priors without changing the math here.
 
 Two modes:
   - Successive substitution (always used at eval)

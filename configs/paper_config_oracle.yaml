@@ -1,9 +1,9 @@
-# Tuned TGNN-Solv configuration for the split-late encoder comparison.
+# Tuned TGNN-Solv configuration with oracle injection.
 
 model:
   hidden_dim: 256
   n_gnn_layers: 6
-  encoder_role_mode: "split_late"
+  encoder_role_mode: "shared_residual"
   encoder_role_specific_layers: 2
   n_cross_attn_layers: 3
   pair_dim: 512
@@ -18,6 +18,8 @@ model:
   use_temperature_in_nrtl_head: true
   predict_dCp_fus: false
   fixed_dCp_fus: 0.0
+  use_oracle_injection: true
+  oracle_injection_prob: 1.0
   set2set_steps: 3
   n_iter_train: 5
   n_iter_eval: 20

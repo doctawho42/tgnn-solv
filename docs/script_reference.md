@@ -1,139 +1,123 @@
 # Script Reference
 
-This document maps every script and notebook to its intended role, maturity,
-dependencies, and recommended usage.
+This document maps scripts and notebooks to their intended role and current
+stability.
 
 ## Maturity Legend
 
-- **Production**: tested, documented, used in `reproduce.sh`
-- **Research**: functional but may require manual intervention
-- **Experimental**: may need adaptation to current APIs
-- **Infrastructure**: internal utility, not user-facing
+- `Canonical`
+  - expected reproducible workflow entry point
+- `Stable utility`
+  - maintained and useful, but not necessarily part of `reproduce.sh`
+- `Research`
+  - useful experiment runner or analysis tool, but more likely to evolve
+- `Optional`
+  - depends on external stacks such as FastSolv or SolProp
+- `Infrastructure`
+  - internal helper, not a user-facing workflow
 
-## Canonical CLI Workflow
+## Canonical Workflow
 
-| Entry point | Role | Status | Key dependencies | Notes |
-|-------------|------|--------|------------------|-------|
-| `scripts/prepare_data.py` | Download, merge, and split datasets | Canonical | pandas, RDKit, requests | CLI equivalent of `notebooks/01_prepare_data.ipynb` |
-| `scripts/train.py` | Train one TGNN-Solv model | Canonical | PyTorch, PyG | Direct CLI mirror of the notebook training path |
-| `scripts/run_seeds.py` | Run multiple training seeds and aggregate metrics | Canonical | Standard library, optional SciPy | Calls `scripts/train.py` repeatedly |
-| `scripts/run_split_comparisons.py` | Compare multiple models across all canonical split protocols | Canonical | pandas, optional RDKit/scikit-learn, training CLIs | Produces split-wise comparison JSON and per-split artifacts |
-| `scripts/evaluate_complete.py` | Lightweight checkpoint evaluation | Canonical | PyTorch, pandas, NumPy | Emits `true_ln_x2` and `pred_ln_x2` arrays for plotting |
-| `scripts/generate_paper_figures.py` | Generate publication figures from result files | Canonical | matplotlib, NumPy, scikit-learn | Gracefully skips missing result artifacts |
-| `reproduce.sh` | End-to-end reproduction driver | Canonical | Bash, Python, PyTorch, PyG | Orchestrates data, training, evaluation, optional baselines, and figures |
+| Entry point | Role | Status | Notes |
+|-------------|------|--------|-------|
+| `scripts/prepare_data.py` | Build processed splits from raw sources | Canonical | Writes all supported split families |
+| `scripts/train.py` | Train one TGNN-Solv model | Canonical | Three-phase curriculum |
+| `scripts/run_seeds.py` | Multi-seed wrapper | Canonical | Can call other train scripts too |
+| `scripts/evaluate_complete.py` | Quick checkpoint evaluation | Canonical | Figure-ready arrays |
+| `scripts/run_split_comparisons.py` | Fair split-wise comparison | Canonical | TGNN, DirectGNN, RF modes |
+| `scripts/generate_paper_figures.py` | Figure generation | Canonical | Consumes result JSONs |
+| `reproduce.sh` | End-to-end driver | Canonical | Orchestrates the paper-style workflow |
 
-## Benchmarking and Analysis
+## Stable Utilities
 
-| Entry point | Role | Status | Key dependencies | Notes |
-|-------------|------|--------|------------------|-------|
-| `scripts/benchmark_tgnn_solv.py` | Rich benchmark using `Evaluator` | Stable utility | PyTorch, PyG, pandas | Best choice for detailed stratified benchmarks |
-| `scripts/analyze_benchmark.py` | Text summary of benchmark JSON | Stable utility | pandas, NumPy | Accepts both legacy and current benchmark key layouts |
-| `scripts/compare_models.py` | Compare multiple TGNN-Solv checkpoints | Stable utility | Same as benchmark script | Wraps `benchmark_tgnn_solv.py` |
+| Entry point | Role | Status | Notes |
+|-------------|------|--------|-------|
+| `scripts/train_directgnn.py` | Train DirectGNN baseline | Stable utility | Supports descriptor augmentation |
+| `scripts/run_resume_safe_train.sh` | Resume-safe TGNN wrapper for cloud sessions | Stable utility | Wraps `train.py --resume` |
+| `scripts/benchmark_tgnn_solv.py` | Rich benchmark via `Evaluator` | Stable utility | Use when you want more than quick eval |
+| `scripts/analyze_benchmark.py` | Text summary of benchmark JSON | Stable utility | Lightweight reporting helper |
+| `scripts/compare_models.py` | Compare multiple TGNN checkpoints | Stable utility | Wraps benchmark logic |
+| `scripts/diagnose_training.py` | Dataset stats and overfit sanity check | Stable utility | Good pre-flight tool |
+| `scripts/run_optuna.py` | Hyperparameter tuning | Stable utility | Supports TGNN and DirectGNN |
 
-## Diagnostics and Tuning
+## Research Experiment Runners
 
-| Entry point | Role | Status | Key dependencies | Notes |
-|-------------|------|--------|------------------|-------|
-| `scripts/diagnose_training.py` | Dataset statistics and overfit sanity check | Stable utility | PyTorch, PyG | Useful before expensive long training runs |
-| `scripts/run_optuna.py` | Hyperparameter tuning for TGNN-Solv and baselines | Stable utility | Optuna, PyTorch, PyG | Uses the `OptunaTuner` API directly |
+| Entry point | Role | Status | Notes |
+|-------------|------|--------|-------|
+| `scripts/run_ablation.py` | Multi-seed ablation sweeps | Research | Includes `fixed_group_priors` and `direct_gnn` |
+| `scripts/run_full_budget_experiment.py` | Full-budget TGNN-vs-DirectGNN diagnostic study | Research | Exports TGNN intermediates and oracle diagnostics |
+| `scripts/run_medium_budget_comparison.py` | Full-split medium-budget architecture comparison | Research | 4 TGNN variants, 2 DirectGNN variants, RF baseline |
+| `scripts/validate_physics.py` | Physics-parameter diagnostics | Research | Useful for TGNN checkpoint inspection |
+| `scripts/error_analysis.py` | Detailed residual analysis | Research | Consumes evaluation JSON |
+| `scripts/learning_curves.py` | Data-efficiency study | Research | Multi-fraction, multi-seed |
+| `scripts/temperature_extrapolation.py` | Temperature extrapolation study | Research | Uses a combined dataset CSV |
+| `scripts/statistical_tests.py` | Paired significance testing | Research | Used by `reproduce.sh`, but still analysis-oriented |
+| `scripts/generate_supplementary.py` | Supplementary table generation | Research | Consumes produced result JSONs |
 
-## Optional Baseline and Comparison Scripts
+## Optional External Baseline Wrappers
 
-| Entry point | Role | Status | Key dependencies | Notes |
-|-------------|------|--------|------------------|-------|
-| `scripts/run_fastsolv.py` | Predict, train, or compare FastSolv | Optional | `fastsolv`, `fastprop`, Lightning | Main FastSolv wrapper |
-| `scripts/run_solprop.py` | Predict or calibrate SolProp | Optional | `solprop_ml`, RDKit, scikit-learn | Supports a backward-compatible default `predict` mode |
-| `scripts/compare_fastsolv_tgnn.py` | Lightweight TGNN-Solv vs FastSolv comparison | Legacy utility | Optional FastSolv/ONNX stack | Useful for quick comparisons, but `run_fastsolv.py compare` is the preferred baseline wrapper |
+| Entry point | Role | Status | Notes |
+|-------------|------|--------|-------|
+| `scripts/run_fastsolv.py` | Predict, train, or compare FastSolv | Optional | Preferred FastSolv wrapper |
+| `scripts/compare_fastsolv_tgnn.py` | Lightweight TGNN-vs-FastSolv comparison | Optional | Older convenience wrapper |
+| `scripts/run_solprop.py` | Predict or calibrate SolProp | Optional | Usually run in a separate environment |
 
-## Detailed Entries
+## Infrastructure
 
-### `scripts/_bootstrap.py`
-**Status**: Infrastructure
-**Purpose**: Shared path bootstrap for all scripts (import instead of inline `sys.path` hacks)
-**Depends on**: nothing
-**Produces**: nothing (side effect: adds `src/` to `sys.path`)
+| Entry point | Role | Status | Notes |
+|-------------|------|--------|-------|
+| `scripts/_bootstrap.py` | Adds repo `src/` to `sys.path` for CLIs | Infrastructure | Imported by most scripts |
 
-### `scripts/run_ablation.py`
-**Status**: Research
-**Purpose**: CLI for ablation study (reference model plus current comparison variants such as `fixed_group_priors`, `split_late_encoder`, `direct_gnn`, and small/large scaling sweeps)
-**Depends on**: `configs/paper_config.yaml`, train/val/test CSVs, `src/tgnn_solv/ablation.py`
-**Produces**: `results/ablation.json`
+## High-Signal Usage Notes
+
+### `scripts/run_seeds.py`
+
+- default train script is `scripts/train.py`
+- can also launch `scripts/train_directgnn.py`
+- aggregates `mae`, `rmse`, `r2`, and `pearson_r`
 
 ### `scripts/train_directgnn.py`
-**Status**: Research
-**Purpose**: CLI for training DirectGNN baseline (no physics)
-**Depends on**: `configs/paper_config.yaml`, train/val CSVs, `src/tgnn_solv/baselines/`
-**Produces**: `checkpoints/directgnn.pt`
 
-### `scripts/statistical_tests.py`
-**Status**: Production
-**Purpose**: Paired statistical significance tests between model variants
-**Depends on**: multi-seed result JSONs from `run_seeds.py`
-**Produces**: `results/significance.json`
+- computes descriptor normalization stats automatically when
+  `use_descriptor_augmentation=True`
+- saves `descriptor_mean` and `descriptor_std` into the checkpoint
+- supports `--checkpoint-every` and `--resume`
 
-### `scripts/error_analysis.py`
-**Status**: Research
-**Purpose**: Detailed error analysis by solvent type, temperature, molecular descriptors
-**Depends on**: `results/full_evaluation.json`, test CSV
-**Produces**: `results/error_analysis.json`
+### `scripts/train.py`
 
-### `scripts/learning_curves.py`
-**Status**: Research
-**Purpose**: Data efficiency experiment (performance vs training set size)
-**Depends on**: `configs/`, train/val/test CSVs
-**Produces**: `results/learning_curves.json`
+- supports `--checkpoint-every` and `--resume`
+- fits `gc_prior_tm_scale` / `gc_prior_tm_bias` on the training split when
+  `use_gc_priors_crystal=True`
+- preserves those calibrated GC settings inside the saved config
 
-### `scripts/temperature_extrapolation.py`
-**Status**: Research
-**Purpose**: Train on `T≤T_cut`, test on `T>T_cut` (physics extrapolation argument)
-**Depends on**: `configs/`, full dataset CSV
-**Produces**: `results/temperature_extrapolation.json`
+### `scripts/run_ablation.py`
 
-### `scripts/validate_physics.py`
-**Status**: Research (requires `return_intermediates` in model)
-**Purpose**: Validate predicted physical parameters and van't Hoff consistency
-**Depends on**: model checkpoint, test CSV
-**Produces**: `results/physics_validation.json`
+- resolves canonical variant aliases
+- automatically enables any optional dataset feature paths required by the
+  selected variants
 
-### `scripts/generate_supplementary.py`
-**Status**: Production
-**Purpose**: Generate LaTeX tables for Supplementary Information
-**Depends on**: `results/*.json`
-**Produces**: `tables/*.tex`, `tables/*.csv`
+### `scripts/run_full_budget_experiment.py`
 
-### `scripts/run_split_comparisons.py`
-**Status**: Production
-**Purpose**: Run fair split-wise comparisons across scaffold, solute, and solvent protocols
-**Depends on**: processed split CSVs, `scripts/run_seeds.py`, `scripts/train_directgnn.py`, optional RDKit/scikit-learn for RF baseline
-**Produces**: `results/split_comparisons.json`, `results/split_comparisons/*.json`
+- trains TGNN-Solv and DirectGNN on matched budgets
+- exports `metrics.json`, `diagnostics.json`, and `tgnn_intermediates.csv`
+- passes `--checkpoint-every` through to the training CLIs
+- resumes from existing per-seed checkpoints when available
 
-## Script Overlaps
+### `scripts/run_medium_budget_comparison.py`
 
-Several scripts partially overlap on purpose:
-
-- `scripts/evaluate_complete.py` vs `scripts/benchmark_tgnn_solv.py`
-  - Use `evaluate_complete.py` for quick checkpoint metrics and figure-ready
-    arrays.
-  - Use `benchmark_tgnn_solv.py` for richer `Evaluator`-based stratification.
-- `scripts/run_fastsolv.py compare` vs `scripts/compare_fastsolv_tgnn.py`
-  - Prefer `run_fastsolv.py compare` when the FastSolv stack is installed.
-  - Use `compare_fastsolv_tgnn.py` as a lightweight convenience wrapper.
-- Notebook vs CLI workflows
-  - Notebooks remain the best place for exploratory analysis and manual
-    debugging.
-  - The CLI workflow is the reproducible path for preparation, training,
-    multi-seed runs, evaluation, ablations, paper-analysis experiments, figure
-    generation, and supplementary tables.
+- runs the medium-budget full-scaffold comparison under `results/medium_budget`
+- derives a no-oracle training config from `paper_config_combined.yaml`
+- writes `summary.json`, `comparison_table.md`, and per-model artifacts
 
 ## Notebook Reference
 
 | Notebook | Role | Recommended usage |
 |----------|------|-------------------|
-| `notebooks/01_prepare_data.ipynb` | Data download, merge, split creation | Canonical notebook for data preparation |
-| `notebooks/02_train.ipynb` | Training walkthrough | Canonical notebook for interactive training |
-| `notebooks/03_inference.ipynb` | Interactive predictions | Examples and interpretation |
-| `notebooks/04_evaluation.ipynb` | Rich evaluation workflow | Interactive inspection of trained models |
-| `notebooks/05_baselines.ipynb` | DirectGNN baseline | Main manual baseline notebook |
-| `notebooks/06_ablations.ipynb` | Ablation study | Main manual ablation workflow |
-| `notebooks/07_temperature.ipynb` | Temperature analysis | Research notebook for temperature dependence |
-| `notebooks/08_optuna_tuning.ipynb` | Optuna tuning | Notebook alternative to `scripts/run_optuna.py` |
+| `notebooks/01_prepare_data.ipynb` | Data preparation | Canonical interactive equivalent of `prepare_data.py` |
+| `notebooks/02_train.ipynb` | TGNN training walkthrough | Interactive training |
+| `notebooks/03_inference.ipynb` | Inference examples | Manual inspection |
+| `notebooks/04_evaluation.ipynb` | Evaluation workflow | Rich inspection |
+| `notebooks/05_baselines.ipynb` | Baseline experiments | Exploratory baseline work |
+| `notebooks/06_ablations.ipynb` | Ablation experiments | Exploratory ablations |
+| `notebooks/07_temperature.ipynb` | Temperature analysis | Research notebook |
+| `notebooks/08_optuna_tuning.ipynb` | Optuna tuning | Interactive tuning |

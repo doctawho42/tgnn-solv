@@ -20,19 +20,18 @@ except Exception as exc:  # pragma: no cover - optional dependency
     ) from exc
 
 try:
-    from rdkit import Chem
-    from rdkit.Chem import Descriptors
-    from rdkit.ML.Descriptors import MoleculeDescriptors
-except Exception as exc:  # pragma: no cover - optional dependency
-    raise ImportError(
-        "RDKit is required for rf_baseline.py. "
-        "Install it with `conda install -c conda-forge rdkit` or an equivalent package."
-    ) from exc
-
-try:
-    from ..features import compute_pair_morgan_features
+    from ..features import compute_molecular_descriptors, compute_pair_morgan_features
 except ImportError:  # pragma: no cover - script fallback
-    from tgnn_solv.features import compute_pair_morgan_features
+    try:
+        from tgnn_solv.features import (
+            compute_molecular_descriptors,
+            compute_pair_morgan_features,
+        )
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise ImportError(
+            "RDKit-backed feature computation is required for rf_baseline.py. "
+            "Install TGNN-Solv with its RDKit dependencies."
+        ) from exc
 
 
 SUPPORTED_TREE_REGRESSORS = {
@@ -59,22 +58,19 @@ def compute_pair_descriptors(
     Returns:
         Concatenated descriptor vector, or None if either molecule is invalid.
     """
-    mol_sol = Chem.MolFromSmiles(solute_smiles)
-    mol_slv = Chem.MolFromSmiles(solvent_smiles)
-    if mol_sol is None or mol_slv is None:
+    desc_sol = compute_molecular_descriptors(solute_smiles)
+    desc_slv = compute_molecular_descriptors(solvent_smiles)
+    if desc_sol is None or desc_slv is None:
         return None
 
-    calc = MoleculeDescriptors.MolecularDescriptorCalculator(
-        [name for name, _ in Descriptors.descList]
-    )
-    desc_sol = np.array(calc.CalcDescriptors(mol_sol), dtype=float)
-    desc_slv = np.array(calc.CalcDescriptors(mol_slv), dtype=float)
-
-    desc_sol = np.nan_to_num(desc_sol, nan=0.0, posinf=1e6, neginf=-1e6)
-    desc_slv = np.nan_to_num(desc_slv, nan=0.0, posinf=1e6, neginf=-1e6)
-
     inv_temperature = 1.0 / float(temperature)
-    return np.concatenate([desc_sol, desc_slv, [float(temperature), inv_temperature]])
+    return np.concatenate(
+        [
+            desc_sol.astype(float, copy=False),
+            desc_slv.astype(float, copy=False),
+            [float(temperature), inv_temperature],
+        ]
+    )
 
 
 class RFBaseline:

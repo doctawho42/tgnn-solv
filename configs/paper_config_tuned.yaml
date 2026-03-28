@@ -1,9 +1,9 @@
-# Tuned TGNN-Solv configuration for the split-late encoder comparison.
+# Tuned hyperparameters from Optuna search (proxy MAE 5.37 → 2.12)
 
 model:
   hidden_dim: 256
   n_gnn_layers: 6
-  encoder_role_mode: "split_late"
+  encoder_role_mode: "shared_residual"
   encoder_role_specific_layers: 2
   n_cross_attn_layers: 3
   pair_dim: 512

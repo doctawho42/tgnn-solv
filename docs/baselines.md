@@ -2,118 +2,179 @@
 
 ## Overview
 
-The repository currently contains or references the following baselines:
+The repository contains or wraps five main baseline families:
 
-- FastSolv
-- DirectGNN
-- SolProp
-- Random Forest baseline on RDKit descriptors
-- Ideal SLE baseline
+- `DirectGNN`
+- `DirectGNN + descriptors`
+- `RandomForest` on RDKit descriptors / Morgan / hybrid features
+- `Ideal SLE`
+- optional external baselines: FastSolv and SolProp
 
-These baselines cover both learned alternatives and physics-only references.
+These baselines answer different failure-mode questions. They should not be
+treated as interchangeable.
 
-For script maturity and overlap notes, see `docs/script_reference.md` and
-`docs/repository_audit.md`.
+## DirectGNN
+
+`DirectGNN` is the main matched no-physics ablation:
+
+- same graph backbone as TGNN-Solv
+- same interaction stack
+- no NRTL head
+- no SLE solver
+- direct prediction of `ln(x2)`
+
+Train the maintained tuned baseline with:
+
+```bash
+python scripts/train_directgnn.py \
+    --config configs/paper_config_directgnn_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/directgnn_tuned.pt \
+    --device cuda
+```
+
+Multi-seed runs:
+
+```bash
+python scripts/run_seeds.py \
+    --train-script scripts/train_directgnn.py \
+    --config configs/paper_config_directgnn_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --n-seeds 5 \
+    --base-seed 42 \
+    --output results/directgnn_multi_seed_results.json \
+    --checkpoint-dir checkpoints/directgnn_seeds \
+    --device cuda
+```
+
+`train_directgnn.py` also supports resumable checkpoints through
+`--checkpoint-every` and `--resume`.
+
+## DirectGNN + Descriptor Augmentation
+
+This baseline tests whether the remaining gap is mostly missing chemical side
+information rather than the absence of the physics bottleneck.
+
+Enabled config:
+
+- `configs/paper_config_directgnn_descriptors.yaml`
+
+Run:
+
+```bash
+python scripts/train_directgnn.py \
+    --config configs/paper_config_directgnn_descriptors.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/directgnn_desc.pt \
+    --device cuda
+```
+
+Maintained descriptor-path behavior:
+
+- uses the standard RDKit descriptor set from `Descriptors.descList`
+- computes descriptors for both solute and solvent
+- sanitizes NaN/Inf descriptor values to zero before normalization
+- normalizes with train-set mean/std only
+- stores `descriptor_mean` and `descriptor_std` in the checkpoint
+- reuses one descriptor MLP for both molecular roles
+
+## RandomForest Baselines
+
+`src/tgnn_solv/baselines/rf_baseline.py` supports three feature modes:
+
+- `descriptors`
+- `morgan`
+- `hybrid`
+
+Run directly:
+
+```bash
+python -m tgnn_solv.baselines.rf_baseline \
+    --train notebooks/data/processed/train.csv \
+    --test notebooks/data/processed/test.csv \
+    --feature-mode descriptors \
+    --output results/rf_descriptors.json
+```
+
+Morgan example:
+
+```bash
+python -m tgnn_solv.baselines.rf_baseline \
+    --train notebooks/data/processed/train.csv \
+    --test notebooks/data/processed/test.csv \
+    --feature-mode morgan \
+    --morgan-n-bits 2048 \
+    --output results/rf_morgan.json
+```
+
+The descriptor RF baseline uses the same shared RDKit descriptor helper as the
+descriptor-augmented DirectGNN path, so descriptor comparisons are aligned on
+the same feature family.
+
+## Ideal SLE
+
+`Ideal SLE` is the physics-only baseline with no learned interaction term.
+
+Run:
+
+```bash
+python -m tgnn_solv.baselines.ideal_sle \
+    --train notebooks/data/processed/train.csv \
+    --test notebooks/data/processed/test.csv \
+    --output results/ideal_sle_baseline.json
+```
+
+Behavior:
+
+- assumes `gamma = 1`
+- uses `T_m` and `dH_fus` when available
+- can include the `dCp_fus` term when present
+- falls back to simpler assumptions when fusion data are missing
+
+This is the floor for "physics alone without learned nonideality".
 
 ## FastSolv
 
-FastSolv is a descriptor-based baseline.
+FastSolv is an optional external descriptor baseline.
 
-Predict with the pretrained ensemble:
+Preferred usage is inference or comparison with pretrained weights:
 
 ```bash
 python scripts/run_fastsolv.py predict \
     --input notebooks/data/processed/test.csv \
-    --output notebooks/data/processed/fastsolv_pred.csv
-```
+    --output results/fastsolv_predictions.csv
 
-Train on your own splits:
-
-```bash
-python scripts/run_fastsolv.py train \
-    --train notebooks/data/processed/train.csv \
-    --val notebooks/data/processed/val.csv \
-    --test notebooks/data/processed/test.csv \
-    --outdir checkpoints/fastsolv_run \
-    --metrics checkpoints/fastsolv_run/metrics.json
-```
-
-Warning: custom FastSolv retraining is still vulnerable to descriptor-path NaN
-failures on some data regimes. The pretrained `predict` / `compare` flows are
-the safer default when you need a baseline rather than a debugging target.
-
-Compare FastSolv vs TGNN-Solv:
-
-```bash
 python scripts/run_fastsolv.py compare \
     --input notebooks/data/processed/test.csv \
     --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
-    --metrics checkpoints/fastsolv_compare.json
+    --metrics results/fastsolv_compare.json
 ```
 
-This is the preferred FastSolv comparison path. The older
-`scripts/compare_fastsolv_tgnn.py` script remains available as a lighter
-utility, but `run_fastsolv.py compare` is the main wrapper.
-
-## DirectGNN
-
-DirectGNN is the main no-physics ablation:
-
-- same GNN backbone,
-- same cross-attention stack,
-- direct prediction of `ln_x2`,
-- no SLE solver and no NRTL physics.
-
-Current run paths:
-
-```bash
-python scripts/train_directgnn.py \
-    --config configs/paper_config.yaml \
-    --train-data notebooks/data/processed/train.csv \
-    --val-data notebooks/data/processed/val.csv \
-    --test-data notebooks/data/processed/test.csv \
-    --checkpoint checkpoints/directgnn.pt
-```
-
-For a fair multi-split comparison against TGNN-Solv:
-
-```bash
-python scripts/run_split_comparisons.py \
-    --processed-dir notebooks/data/processed \
-    --splits "solute_scaffold,solute,solvent" \
-    --models "tgnn_solv,direct_gnn" \
-    --config configs/paper_config.yaml \
-    --output results/split_comparisons.json
-```
-
-For automated hyperparameter tuning:
-
-```bash
-python scripts/run_optuna.py --models direct_gnn --n-trials 20
-```
-
-For exploratory debugging and side-by-side notebook analysis:
-
-```bash
-jupyter notebook notebooks/05_baselines.ipynb
-```
+Training FastSolv from scratch on TGNN-Solv data remains environment-sensitive
+and is not the recommended default workflow.
 
 ## SolProp
 
-SolProp is an external baseline and typically uses a separate conda
+SolProp is another optional external baseline that usually lives in its own
 environment.
 
-Inference:
+Prediction:
 
 ```bash
 conda activate solprop
-python scripts/run_solprop.py \
+python scripts/run_solprop.py predict \
     --input notebooks/data/processed/test.csv \
-    --output notebooks/data/processed/solprop_predictions.csv \
+    --output results/solprop_predictions.csv \
     --temperature_dependent
 ```
 
-Calibration and evaluation on your splits:
+Calibration on your own split:
 
 ```bash
 conda activate solprop
@@ -127,87 +188,55 @@ python scripts/run_solprop.py train \
     --export_preds
 ```
 
-## RF Baseline
+## Comparison Runners
 
-The Random Forest baseline supports three feature modes:
-
-- `descriptors` — concatenated RDKit 2D descriptors for the solute and solvent
-- `morgan` — concatenated Morgan fingerprints for the solute and solvent
-- `hybrid` — RDKit descriptors + Morgan fingerprints
-
-Run it directly:
+For fair comparison across split protocols:
 
 ```bash
-python -m tgnn_solv.baselines.rf_baseline \
-    --train notebooks/data/processed/train.csv \
-    --test notebooks/data/processed/test.csv \
-    --feature-mode descriptors \
-    --output results/rf_baseline.json
+python scripts/run_split_comparisons.py \
+    --processed-dir notebooks/data/processed \
+    --splits "solute_scaffold,solute,solvent" \
+    --models "tgnn_solv,direct_gnn,rf_baseline,rf_morgan,rf_hybrid" \
+    --config configs/paper_config.yaml \
+    --output results/split_comparisons.json
 ```
 
-You can switch to Morgan or hybrid features with:
+For the maintained full-scaffold medium-budget architecture comparison:
 
 ```bash
-python -m tgnn_solv.baselines.rf_baseline \
-    --train notebooks/data/processed/train.csv \
-    --test notebooks/data/processed/test.csv \
-    --feature-mode morgan \
-    --morgan-n-bits 2048 \
-    --output results/rf_morgan.json
+python scripts/run_medium_budget_comparison.py \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --output-dir results/medium_budget \
+    --device cuda
 ```
 
-Requirements:
+That runner evaluates:
 
-- RDKit
-- scikit-learn
+- tuned TGNN
+- TGNN + GC priors
+- TGNN + no bridge
+- TGNN + GC priors + no bridge, trained without oracle injection
+- tuned DirectGNN
+- DirectGNN + descriptors
+- RF on descriptors
 
-The RF baseline is also supported by `scripts/run_split_comparisons.py` as
-`rf_baseline`, `rf_morgan`, and `rf_hybrid`.
+## Suggested Reading Order
 
-## Ideal SLE
+If you want the most informative progression:
 
-The Ideal SLE baseline assumes `γ = 1` and predicts:
+1. `Ideal SLE`
+2. `RF(descriptors)`
+3. `DirectGNN`
+4. `DirectGNN + descriptors`
+5. `TGNN-Solv`
+6. external pretrained baselines such as FastSolv or SolProp
 
-- `ln(x₂) = -(ΔH_fus / R) * (1 / T - 1 / T_m)`
-- or the ΔCp-corrected variant when `dCp_fus` is available.
+That ordering isolates:
 
-If `dH_fus` is missing, the implementation falls back to Walden's rule.
-
-Run it directly:
-
-```bash
-python -m tgnn_solv.baselines.ideal_sle \
-    --train notebooks/data/processed/train.csv \
-    --test notebooks/data/processed/test.csv \
-    --output results/ideal_sle_baseline.json
-```
-
-The current baseline automation coverage is intentionally uneven:
-
-- FastSolv has a dedicated multi-mode CLI.
-- SolProp has a dedicated prediction/calibration CLI.
-- DirectGNN has a dedicated training CLI and can also be launched through
-  `scripts/run_seeds.py` for multi-seed comparisons.
-- `scripts/run_split_comparisons.py` is the canonical way to compare TGNN-Solv,
-  DirectGNN, and RF across `solute_scaffold`, `solute`, and `solvent` split
-  protocols.
-- Ideal SLE and RF baselines are lightweight package modules rather than
-  top-level orchestration scripts.
-
-## Suggested Comparison Order
-
-If you want a compact but informative baseline set:
-
-1. Ideal SLE
-2. Random Forest
-3. FastSolv
-4. DirectGNN
-5. TGNN-Solv
-
-This progression isolates the incremental value of:
-
-- pure thermodynamics,
-- classical descriptors,
-- external pretrained descriptor models,
-- a learned graph-only model,
-- the full physics-informed GNN.
+- pure thermodynamic structure
+- descriptor information
+- graph-learning capacity without physics
+- whether descriptor side information closes the GNN gap
+- whether the full physics bottleneck adds value

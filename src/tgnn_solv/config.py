@@ -8,7 +8,7 @@ to keep them in a numerically stable range for the network.
 
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 try:
     import yaml
@@ -30,6 +30,7 @@ class TGNNSolvConfig:
     dropout: float = 0.1
     pair_dim: int = 512
     interaction_mode: str = "cross_attn"  # "cross_attn" or "bipartite"
+    activity_model: str = "nrtl"  # "nrtl", "wilson", or "uniquac"
     nrtl_tau_mode: str = "ref_invT"  # "ref_invT", "legacy", or "abc"
     set2set_steps: int = 3
     use_solvent_moe: bool = True
@@ -43,6 +44,9 @@ class TGNNSolvConfig:
     morgan_radius: int = 2
     morgan_n_bits: int = 2048
     morgan_hidden_dim: int = 256
+    use_descriptor_augmentation: bool = False
+    descriptor_dim: int = 200
+    descriptor_hidden_dim: int = 128
     use_descriptor_priors: bool = False
     descriptor_prior_hidden_dim: int = 128
     descriptor_prior_hansen_residual_max: float = 5.0
@@ -52,8 +56,21 @@ class TGNNSolvConfig:
     group_prior_hansen_residual_max: float = 5.0
     group_prior_vm_residual_max: float = 30.0
     group_prior_reg_weight: float = 0.0
+    use_gc_priors_crystal: bool = False
+    gc_prior_Tm_residual_max: float = 50.0
+    gc_prior_dH_residual_factor: tuple[float, float] = (0.3, 3.0)
+    gc_prior_tm_scale: float = 1.0
+    gc_prior_tm_bias: float = 0.0
+    gc_prior_residual_freeze_epochs: int = 5
+    use_oracle_injection: bool = False
+    oracle_injection_prob: float = 1.0
     predict_dCp_fus: bool = False
     fixed_dCp_fus: float = 0.0
+    bridge_loss_weight: float = 0.0
+    use_walden_check: bool = False
+    walden_target: float = 56.5
+    walden_tolerance: float = 30.0
+    walden_weight: float = 0.1
 
     # --- Physics constants (NOT learnable) ---
     R: float = 8.314          # Gas constant, J/(mol·K)
@@ -91,6 +108,7 @@ class TGNNSolvConfig:
     eps: float = 1e-10
     tau_clamp: float = 30.0
     grad_clip: float = 1.0
+    direct_weight_decay: float = 1e-5
     correction_max_abs: float = 2.0
     correction_Tm_max_delta: float = 60.0
     correction_dH_fraction: float = 0.25
@@ -151,6 +169,9 @@ class TGNNSolvConfig:
         flat_dict: dict = {}
         for key, value in config_dict.items():
             if isinstance(value, dict):
+                if key in {"phase1_loss_weights", "phase2_loss_weights", "phase3_loss_weights"}:
+                    flat_dict[key] = value
+                    continue
                 for nested_key, nested_value in value.items():
                     mapped = _PHASE_MAP.get(nested_key)
                     if mapped is not None and isinstance(nested_value, dict):
@@ -161,10 +182,15 @@ class TGNNSolvConfig:
             else:
                 flat_dict[key] = value
 
-        valid_fields = {f.name for f in fields(cls)}
-        filtered_dict = {
-            k: v for k, v in flat_dict.items() if k in valid_fields
-        }
+        field_map = {field.name: field for field in fields(cls)}
+        filtered_dict = {}
+        for key, value in flat_dict.items():
+            field = field_map.get(key)
+            if field is None:
+                continue
+            if isinstance(field.default, tuple) and isinstance(value, list):
+                value = tuple(value)
+            filtered_dict[key] = value
 
         return cls(**filtered_dict)
 
@@ -176,11 +202,34 @@ class TGNNSolvConfig:
         Args:
             path: Path to output YAML file. Parent directories are created if needed.
         """
+        if yaml is None:
+            raise ImportError(
+                "PyYAML is required for to_yaml(). "
+                "Install with: pip install pyyaml"
+            )
+
+        def _make_yaml_safe(value: Any) -> Any:
+            if isinstance(value, dict):
+                return {
+                    key: _make_yaml_safe(item)
+                    for key, item in value.items()
+                }
+            if isinstance(value, tuple):
+                return [_make_yaml_safe(item) for item in value]
+            if isinstance(value, list):
+                return [_make_yaml_safe(item) for item in value]
+            return value
+
         # Create parent directories if they don't exist
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         
         # Convert dataclass to dict and save to YAML
-        config_dict = asdict(self)
+        config_dict = _make_yaml_safe(asdict(self))
         
         with open(path, 'w') as f:
-            yaml.dump(config_dict, f, default_flow_style=False, sort_keys=False)
+            yaml.safe_dump(
+                config_dict,
+                f,
+                default_flow_style=False,
+                sort_keys=False,
+            )

@@ -1,9 +1,9 @@
-# Tuned TGNN-Solv configuration for the split-late encoder comparison.
+# Tuned TGNN-Solv configuration with bridge and Walden checks disabled.
 
 model:
   hidden_dim: 256
   n_gnn_layers: 6
-  encoder_role_mode: "split_late"
+  encoder_role_mode: "shared_residual"
   encoder_role_specific_layers: 2
   n_cross_attn_layers: 3
   pair_dim: 512
@@ -47,6 +47,8 @@ training:
   warmup_epochs: 0
   patience: 30
   grad_clip: 2.0
+  bridge_loss_weight: 0.0
+  use_walden_check: false
 
 data:
   split_mode: "solute_scaffold"
@@ -74,7 +76,7 @@ loss_weights:
     gamma_inf: 0.1
     mono: 0.0
     res: 0.01
-    bridge: 0.01
+    bridge: 0.0
     phys_pref: 0.01
     direct_reg: 0.01
     direct_nll: 0.01
@@ -89,7 +91,7 @@ loss_weights:
     gamma_inf: 0.05
     mono: 0.1
     res: 0.02
-    bridge: 0.02
+    bridge: 0.0
     phys_pref: 0.01
     direct_reg: 0.02
     direct_nll: 0.02

@@ -25,6 +25,7 @@ from .features import (
     smiles_to_group_prior_features,
     smiles_to_morgan_fp,
 )
+from .group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from .model import TGNNSolv
 from .data.solvent_types import solvent_type_id_from_smiles
 
@@ -67,6 +68,9 @@ def predict_solubility(
     solvent_descriptor_prior_features = None
     solute_group_prior_features = None
     solvent_group_prior_features = None
+    T_m_gc = None
+    dH_fus_gc = None
+    dCp_fus_gc = None
     if model.cfg.use_morgan_features:
         sol_fp = smiles_to_morgan_fp(
             solute_smiles,
@@ -108,6 +112,13 @@ def predict_solubility(
             slv_group,
             device=device,
         ).unsqueeze(0)
+    if model.cfg.use_gc_priors_crystal:
+        gc_priors = compute_gc_priors(solute_smiles)
+        if any(gc_priors[key] is None for key in ("T_m_gc", "dH_fus_gc", "dCp_fus_gc")):
+            gc_priors = GC_FALLBACK_PRIORS
+        T_m_gc = torch.tensor([gc_priors["T_m_gc"]], device=device)
+        dH_fus_gc = torch.tensor([gc_priors["dH_fus_gc"]], device=device)
+        dCp_fus_gc = torch.tensor([gc_priors["dCp_fus_gc"]], device=device)
 
     solvent_type = torch.tensor(
         [solvent_type_id_from_smiles(solvent_smiles)],
@@ -125,6 +136,9 @@ def predict_solubility(
         solvent_descriptor_prior_features=solvent_descriptor_prior_features,
         solute_group_prior_features=solute_group_prior_features,
         solvent_group_prior_features=solvent_group_prior_features,
+        T_m_gc=T_m_gc,
+        dH_fus_gc=dH_fus_gc,
+        dCp_fus_gc=dCp_fus_gc,
     )
 
     direct_sigma = None
@@ -173,6 +187,21 @@ def predict_solubility(
         "T_m": output["fusion_params"]["T_m"].item(),
         "dH_fus": output["fusion_params"]["dH_fus"].item(),
         "dCp_fus": output["fusion_params"]["dCp_fus"].item(),
+        "T_m_gc": (
+            output["fusion_gc_priors"]["T_m_gc"].item()
+            if "fusion_gc_priors" in output
+            else None
+        ),
+        "dH_fus_gc": (
+            output["fusion_gc_priors"]["dH_fus_gc"].item()
+            if "fusion_gc_priors" in output
+            else None
+        ),
+        "dCp_fus_gc": (
+            output["fusion_gc_priors"]["dCp_fus_gc"].item()
+            if "fusion_gc_priors" in output
+            else None
+        ),
         "tau_12": output["physics"]["tau_12"].item(),
         "tau_21": output["physics"]["tau_21"].item(),
         "alpha_12": output["nrtl_params"]["alpha_12"].item(),

@@ -16,7 +16,8 @@ import torch
 from torch.utils.data import DataLoader
 
 from .config import TGNNSolvConfig
-from .data.dataset import TGNNSolvDataset, collate_fn
+from .data.dataset import TGNNSolvDataset, make_loader
+from .features import compute_descriptor_normalization_stats
 from .model import TGNNSolv
 from .trainer import TGNNSolvTrainer
 from .baselines.direct_gnn import DirectGNN, DirectGNNTrainer
@@ -51,11 +52,15 @@ class OptunaTuner:
         num_workers: int = 0,
         fixed_batch_size: Optional[int] = None,
         tune_arch: bool = True,
+        base_cfg: TGNNSolvConfig | None = None,
         cfg_overrides: Optional[Dict[str, Optional[float]]] = None,
         baseline_epochs: int = 200,
         baseline_patience: int = 20,
     ) -> None:
         self.train_ds, self.val_ds, self.test_ds = datasets
+        self.train_df = getattr(self.train_ds, "df", None)
+        self.val_df = getattr(self.val_ds, "df", None)
+        self.test_df = getattr(self.test_ds, "df", None)
         self.device = device
         self.seed = seed
         self.num_workers = num_workers
@@ -64,10 +69,10 @@ class OptunaTuner:
         self.baseline_epochs = baseline_epochs
         self.baseline_patience = baseline_patience
 
-        base_cfg = TGNNSolvConfig()
+        cfg = replace(base_cfg) if base_cfg is not None else TGNNSolvConfig()
         if cfg_overrides:
-            base_cfg = self._apply_overrides(base_cfg, cfg_overrides)
-        self.base_cfg = base_cfg
+            cfg = self._apply_overrides(cfg, cfg_overrides)
+        self.base_cfg = cfg
 
     @staticmethod
     def require_optuna() -> None:
@@ -108,8 +113,10 @@ class OptunaTuner:
             use_morgan_features=cfg.use_morgan_features,
             morgan_radius=cfg.morgan_radius,
             morgan_n_bits=cfg.morgan_n_bits,
+            use_descriptor_augmentation=cfg.use_descriptor_augmentation,
             use_descriptor_priors=cfg.use_descriptor_priors,
             use_group_priors=cfg.use_group_priors,
+            use_gc_priors_crystal=cfg.use_gc_priors_crystal,
         )
         val_ds = TGNNSolvDataset(
             val_df,
@@ -117,8 +124,10 @@ class OptunaTuner:
             use_morgan_features=cfg.use_morgan_features,
             morgan_radius=cfg.morgan_radius,
             morgan_n_bits=cfg.morgan_n_bits,
+            use_descriptor_augmentation=cfg.use_descriptor_augmentation,
             use_descriptor_priors=cfg.use_descriptor_priors,
             use_group_priors=cfg.use_group_priors,
+            use_gc_priors_crystal=cfg.use_gc_priors_crystal,
         )
         test_ds = TGNNSolvDataset(
             test_df,
@@ -126,42 +135,63 @@ class OptunaTuner:
             use_morgan_features=cfg.use_morgan_features,
             morgan_radius=cfg.morgan_radius,
             morgan_n_bits=cfg.morgan_n_bits,
+            use_descriptor_augmentation=cfg.use_descriptor_augmentation,
             use_descriptor_priors=cfg.use_descriptor_priors,
             use_group_priors=cfg.use_group_priors,
+            use_gc_priors_crystal=cfg.use_gc_priors_crystal,
         )
         return train_ds, val_ds, test_ds
 
     def _build_loaders(
         self,
+        cfg: TGNNSolvConfig,
         batch_size: int,
         seed: int,
         include_test: bool = False,
     ) -> Tuple[DataLoader, DataLoader, Optional[DataLoader]]:
-        pin_memory = self.device.type == "cuda"
-        generator = torch.Generator()
-        generator.manual_seed(seed)
-        kw = dict(
-            collate_fn=collate_fn,
-            num_workers=self.num_workers,
-            pin_memory=pin_memory,
-        )
+        if not isinstance(self.train_df, pd.DataFrame) or not isinstance(
+            self.val_df, pd.DataFrame
+        ):
+            raise ValueError(
+                "OptunaTuner requires dataset objects with an attached `.df` dataframe."
+            )
 
-        train_loader = DataLoader(
-            self.train_ds,
-            batch_size=batch_size,
-            shuffle=True,
-            drop_last=(len(self.train_ds) > batch_size),
-            generator=generator,
-            **kw,
-        )
-        val_loader = DataLoader(
-            self.val_ds, batch_size=batch_size, shuffle=False, **kw
-        )
+        def _make(frame: pd.DataFrame, *, shuffle: bool) -> DataLoader:
+            return make_loader(
+                frame,
+                batch_size=batch_size,
+                shuffle=shuffle,
+                num_workers=self.num_workers,
+                cache=True,
+                drop_last=shuffle and len(frame) > batch_size,
+                use_pair_temperature_batching=(
+                    shuffle and cfg.use_pair_temperature_batching
+                ),
+                pair_temperature_min_group_size=(
+                    cfg.pair_temperature_min_group_size
+                ),
+                pair_temperature_group_chunk_size=(
+                    cfg.pair_temperature_group_chunk_size
+                ),
+                use_morgan_features=cfg.use_morgan_features,
+                morgan_radius=cfg.morgan_radius,
+                morgan_n_bits=cfg.morgan_n_bits,
+                use_descriptor_augmentation=cfg.use_descriptor_augmentation,
+                use_descriptor_priors=cfg.use_descriptor_priors,
+                use_group_priors=cfg.use_group_priors,
+                use_gc_priors_crystal=cfg.use_gc_priors_crystal,
+                seed=seed,
+            )
+
+        train_loader = _make(self.train_df, shuffle=True)
+        val_loader = _make(self.val_df, shuffle=False)
         test_loader = None
         if include_test:
-            test_loader = DataLoader(
-                self.test_ds, batch_size=batch_size, shuffle=False, **kw
-            )
+            if not isinstance(self.test_df, pd.DataFrame):
+                raise ValueError(
+                    "OptunaTuner requires a test dataframe when include_test=True."
+                )
+            test_loader = _make(self.test_df, shuffle=False)
         return train_loader, val_loader, test_loader
 
     @torch.no_grad()
@@ -183,6 +213,40 @@ class OptunaTuner:
             solvent_type = tgt.get("solvent_type")
             solute_morgan_fp = tgt.get("solute_morgan_fp")
             solvent_morgan_fp = tgt.get("solvent_morgan_fp")
+            solute_descriptors = tgt.get("solute_descriptors")
+            solvent_descriptors = tgt.get("solvent_descriptors")
+            if isinstance(model, DirectGNN):
+                out = model(
+                    sol_b,
+                    slv_b,
+                    T,
+                    solvent_type=solvent_type,
+                    solute_morgan_fp=(
+                        solute_morgan_fp.to(self.device)
+                        if isinstance(solute_morgan_fp, torch.Tensor)
+                        else None
+                    ),
+                    solvent_morgan_fp=(
+                        solvent_morgan_fp.to(self.device)
+                        if isinstance(solvent_morgan_fp, torch.Tensor)
+                        else None
+                    ),
+                    solute_descriptors=(
+                        solute_descriptors.to(self.device)
+                        if isinstance(solute_descriptors, torch.Tensor)
+                        else None
+                    ),
+                    solvent_descriptors=(
+                        solvent_descriptors.to(self.device)
+                        if isinstance(solvent_descriptors, torch.Tensor)
+                        else None
+                    ),
+                )
+                pred = out["ln_x2"].detach().cpu()[mask]
+                true = tgt["ln_x2"][mask]
+                all_pred.append(pred)
+                all_true.append(true)
+                continue
             solute_descriptor_prior_features = tgt.get(
                 "solute_descriptor_prior_features"
             )
@@ -195,6 +259,9 @@ class OptunaTuner:
             solvent_group_prior_features = tgt.get(
                 "solvent_group_prior_features"
             )
+            T_m_gc = tgt.get("T_m_gc")
+            dH_fus_gc = tgt.get("dH_fus_gc")
+            dCp_fus_gc = tgt.get("dCp_fus_gc")
             out = model(
                 sol_b,
                 slv_b,
@@ -228,6 +295,21 @@ class OptunaTuner:
                 solvent_group_prior_features=(
                     solvent_group_prior_features.to(self.device)
                     if isinstance(solvent_group_prior_features, torch.Tensor)
+                    else None
+                ),
+                T_m_gc=(
+                    T_m_gc.to(self.device)
+                    if isinstance(T_m_gc, torch.Tensor)
+                    else None
+                ),
+                dH_fus_gc=(
+                    dH_fus_gc.to(self.device)
+                    if isinstance(dH_fus_gc, torch.Tensor)
+                    else None
+                ),
+                dCp_fus_gc=(
+                    dCp_fus_gc.to(self.device)
+                    if isinstance(dCp_fus_gc, torch.Tensor)
                     else None
                 ),
             )
@@ -314,11 +396,20 @@ class OptunaTuner:
             "lr_phase1_mult", [2.0, 3.0, 4.0]
         )
         lr_phase3_mult = trial.suggest_categorical(
-            "lr_phase3_mult", [0.1, 0.2, 0.5]
+            "lr_phase3_mult", [0.01, 0.02, 0.05, 0.1, 0.2]
         )
         cfg.lr_phase2 = lr_base
         cfg.lr_phase1 = lr_base * lr_phase1_mult
         cfg.lr_phase3 = lr_base * lr_phase3_mult
+        cfg.warmup_epochs = trial.suggest_categorical(
+            "warmup_epochs", [0, 3, 5, 10]
+        )
+        cfg.phase2_correction_unfreeze_epoch = trial.suggest_categorical(
+            "phase2_correction_unfreeze_epoch", [0, 10, 20, 40]
+        )
+        cfg.grad_clip = trial.suggest_categorical(
+            "grad_clip", [0.5, 1.0, 2.0]
+        )
 
         if self.fixed_batch_size is None:
             batch_size = trial.suggest_categorical(
@@ -333,24 +424,33 @@ class OptunaTuner:
         self,
         trial: "optuna.Trial",
         tune_arch: bool,
-    ) -> Tuple[TGNNSolvConfig, int, float, int]:
+    ) -> Tuple[TGNNSolvConfig, int, float]:
         cfg = replace(self.base_cfg)
-        arch = self._suggest_shared_arch(trial, tune_arch, tune_dropout=True)
-        for k, v in arch.items():
-            setattr(cfg, k, v)
+        cfg.dropout = trial.suggest_float("dropout", 0.0, 0.3)
+        if tune_arch:
+            cfg.hidden_dim = trial.suggest_categorical(
+                "hidden_dim", [128, 256]
+            )
+            cfg.n_gnn_layers = trial.suggest_categorical(
+                "n_gnn_layers", [4, 6]
+            )
 
-        lr = trial.suggest_float("lr", 1e-5, 5e-4, log=True)
-        n_temp_bins = trial.suggest_categorical(
-            "n_temp_bins", [10, 20, 30, 40]
+        lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
+        cfg.direct_weight_decay = trial.suggest_float(
+            "weight_decay",
+            1e-6,
+            1e-3,
+            log=True,
         )
+        cfg.grad_clip = trial.suggest_float("grad_clip", 1.0, 5.0)
         if self.fixed_batch_size is None:
             batch_size = trial.suggest_categorical(
-                "batch_size", [32, 64, 128]
+                "batch_size", [32, 64]
             )
         else:
             batch_size = self.fixed_batch_size
         cfg.batch_size = batch_size
-        return cfg, batch_size, lr, n_temp_bins
+        return cfg, batch_size, lr
 
     def _resolve_model_spec(
         self, name: str, cfg: TGNNSolvConfig
@@ -417,16 +517,36 @@ class OptunaTuner:
         tune_arch = self._tune_arch_for_model(model_name)
 
         if model_name == "direct_gnn":
-            cfg, batch_size, lr, n_temp_bins = self._suggest_direct_params(
+            cfg, batch_size, lr = self._suggest_direct_params(
                 trial, tune_arch
             )
             train_loader, val_loader, _ = self._build_loaders(
-                batch_size, trial_seed, include_test=False
+                cfg,
+                batch_size,
+                trial_seed,
+                include_test=False,
             )
+            if cfg.use_descriptor_augmentation:
+                if not isinstance(self.train_df, pd.DataFrame):
+                    raise ValueError(
+                        "Descriptor augmentation requires access to the training dataframe."
+                    )
+                descriptor_mean, descriptor_std = compute_descriptor_normalization_stats(
+                    pd.concat(
+                        [
+                            self.train_df["solute_smiles"].astype(str),
+                            self.train_df["solvent_smiles"].astype(str),
+                        ],
+                        axis=0,
+                        ignore_index=True,
+                    ).tolist()
+                )
+                cfg = replace(cfg, descriptor_dim=int(descriptor_mean.shape[0]))
             model = DirectGNN(
                 cfg=cfg,
-                n_temp_bins=n_temp_bins,
             ).to(self.device)
+            if cfg.use_descriptor_augmentation:
+                model.set_descriptor_normalization(descriptor_mean, descriptor_std)
             trainer = DirectGNNTrainer(model, self.device)
             t0 = time.time()
             trainer.train(
@@ -442,7 +562,10 @@ class OptunaTuner:
                 model_name, cfg
             )
             train_loader, val_loader, _ = self._build_loaders(
-                batch_size, trial_seed, include_test=False
+                cfg,
+                batch_size,
+                trial_seed,
+                include_test=False,
             )
             model = model_cls(cfg=cfg).to(self.device)
             trainer = trainer_cls(model, cfg)

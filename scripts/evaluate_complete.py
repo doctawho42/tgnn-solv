@@ -48,6 +48,36 @@ def load_test_data(csv_path: str, n_samples: int = None) -> pd.DataFrame:
     return df
 
 
+def solubility_supervision_mask(df: pd.DataFrame) -> np.ndarray:
+    """Return the rows that carry experimental solubility supervision.
+
+    Canonical training/evaluation only scores rows with `has_solubility=True`.
+    Auxiliary-only rows may still be present in the CSV and can carry placeholder
+    `ln_x2` values, so lightweight evaluation must apply the same mask.
+    """
+    if "has_solubility" not in df.columns:
+        return np.ones(len(df), dtype=bool)
+
+    series = df["has_solubility"]
+    if pd.api.types.is_bool_dtype(series):
+        return series.fillna(False).to_numpy(dtype=bool)
+
+    normalized = series.fillna(False).astype(str).str.strip().str.lower()
+    true_values = {"true", "1", "yes", "y", "t"}
+    return normalized.isin(true_values).to_numpy(dtype=bool)
+
+
+def supervised_eval_view(
+    df: pd.DataFrame,
+    y_pred: np.ndarray,
+) -> tuple[pd.DataFrame, np.ndarray]:
+    """Filter a `(df, predictions)` pair down to supervised solubility rows."""
+    if len(df) != len(y_pred):
+        raise ValueError("Prediction array length must match dataframe length.")
+    mask = solubility_supervision_mask(df)
+    return df.loc[mask].reset_index(drop=True), y_pred[mask]
+
+
 def predict_batch(
     model: object,
     df_batch: pd.DataFrame,
@@ -229,7 +259,8 @@ def main() -> None:
     # Load data
     print(f"\n[1/4] Loading test data from {args.test_data}...")
     df = load_test_data(args.test_data, args.n_samples)
-    print(f"✓ Loaded {len(df)} samples")
+    n_supervised = int(solubility_supervision_mask(df).sum())
+    print(f"✓ Loaded {len(df)} samples ({n_supervised} with solubility labels)")
     
     # Load model
     print(f"\n[2/4] Loading model from {args.tgnn_checkpoint}...")
@@ -245,12 +276,13 @@ def main() -> None:
     # Compute metrics
     print("\n[4/4] Computing metrics...")
     
-    y_true = df['ln_x2'].values
-    overall_metrics = compute_regression_metrics(y_true, y_pred)
-    temp_metrics = temperature_stratified_metrics(df, y_pred)
-    solubility_metrics = solubility_range_metrics(df, y_pred)
-    solvent_type_metrics, by_solvent = solvent_metrics(df, y_pred)
-    aux_metrics = aux_data_metrics(df, y_pred)
+    metric_df, metric_pred = supervised_eval_view(df, y_pred)
+    y_true = metric_df['ln_x2'].values
+    overall_metrics = compute_regression_metrics(y_true, metric_pred)
+    temp_metrics = temperature_stratified_metrics(metric_df, metric_pred)
+    solubility_metrics = solubility_range_metrics(metric_df, metric_pred)
+    solvent_type_metrics, by_solvent = solvent_metrics(metric_df, metric_pred)
+    aux_metrics = aux_data_metrics(metric_df, metric_pred)
     
     # Print summary
     print("\n" + "=" * 70)
@@ -290,7 +322,7 @@ def main() -> None:
             print("    Insufficient data")
     
     # Save results
-    valid_mask = ~(np.isnan(y_true) | np.isnan(y_pred))
+    valid_mask = ~(np.isnan(y_true) | np.isnan(metric_pred))
 
     results = build_report_payload(
         "evaluation",
@@ -309,6 +341,8 @@ def main() -> None:
                 "use_implicit_diff": config.use_implicit_diff,
             },
             "test_samples": int(len(df)),
+            "supervised_test_samples": int(len(metric_df)),
+            "n_model_predictions": int(n_valid),
             "n_valid_predictions": int(valid_mask.sum()),
         },
         overall=overall_metrics,
@@ -321,8 +355,8 @@ def main() -> None:
         },
         predictions={
             "true_ln_x2": y_true[valid_mask].tolist(),
-            "pred_ln_x2": y_pred[valid_mask].tolist(),
-            "row_indices": df.loc[valid_mask, "row_index"].astype(int).tolist(),
+            "pred_ln_x2": metric_pred[valid_mask].tolist(),
+            "row_indices": metric_df.loc[valid_mask, "row_index"].astype(int).tolist(),
         },
     )
     

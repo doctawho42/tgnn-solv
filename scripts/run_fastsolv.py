@@ -430,6 +430,9 @@ def _tgnn_predict_ordered(
             solvent_group_prior_features = tgt.get(
                 "solvent_group_prior_features"
             )
+            T_m_gc = tgt.get("T_m_gc")
+            dH_fus_gc = tgt.get("dH_fus_gc")
+            dCp_fus_gc = tgt.get("dCp_fus_gc")
             out = model(
                 sol_b,
                 slv_b,
@@ -463,6 +466,21 @@ def _tgnn_predict_ordered(
                 solvent_group_prior_features=(
                     solvent_group_prior_features.to(device)
                     if isinstance(solvent_group_prior_features, torch.Tensor)
+                    else None
+                ),
+                T_m_gc=(
+                    T_m_gc.to(device)
+                    if isinstance(T_m_gc, torch.Tensor)
+                    else None
+                ),
+                dH_fus_gc=(
+                    dH_fus_gc.to(device)
+                    if isinstance(dH_fus_gc, torch.Tensor)
+                    else None
+                ),
+                dCp_fus_gc=(
+                    dCp_fus_gc.to(device)
+                    if isinstance(dCp_fus_gc, torch.Tensor)
                     else None
                 ),
             )
@@ -705,6 +723,7 @@ def run_compare(args: argparse.Namespace) -> int:
         morgan_n_bits=cfg.morgan_n_bits,
         use_descriptor_priors=cfg.use_descriptor_priors,
         use_group_priors=cfg.use_group_priors,
+        use_gc_priors_crystal=cfg.use_gc_priors_crystal,
     )
     df = dataset.df.reset_index(drop=True)
 

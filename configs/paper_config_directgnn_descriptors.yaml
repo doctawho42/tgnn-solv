@@ -1,0 +1,34 @@
+# DirectGNN configuration with shared RDKit descriptor augmentation
+# and tuned proxy hyperparameters.
+
+model:
+  hidden_dim: 256
+  n_gnn_layers: 6
+  encoder_role_mode: "shared_residual"
+  encoder_role_specific_layers: 2
+  n_cross_attn_layers: 3
+  n_attn_heads: 8
+  dropout: 0.012430793241475136
+  pair_dim: 512
+  interaction_mode: "cross_attn"
+  set2set_steps: 3
+  use_solvent_moe: true
+  solvent_moe_experts: 6
+  solvent_moe_hidden: 256
+  solvent_type_emb_dim: 16
+  use_temperature_in_encoder: false
+  use_temperature_in_interaction: false
+  use_temperature_in_nrtl_head: true
+  use_descriptor_augmentation: true
+  descriptor_hidden_dim: 128
+  use_morgan_features: false
+
+training:
+  epochs_phase2: 200
+  batch_size: 64
+  use_pair_temperature_batching: true
+  pair_temperature_min_group_size: 2
+  pair_temperature_group_chunk_size: 4
+  lr_phase2: 8.528210688637237e-5
+  patience: 30
+  grad_clip: 2.0

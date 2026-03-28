@@ -173,6 +173,35 @@ class TestPairTemperatureBatchSampler:
         assert tuple(targets["solute_descriptor_prior_features"].shape) == (4, 10)
         assert tuple(targets["solvent_descriptor_prior_features"].shape) == (4, 10)
 
+    def test_make_loader_emits_full_descriptors_when_enabled(
+        self,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        """Full RDKit descriptor vectors should be present for DirectGNN augmentation."""
+        monkeypatch.setattr(
+            dataset_module,
+            "smiles_to_graph",
+            lambda _smiles: _fake_graph(),
+        )
+        monkeypatch.setattr(
+            dataset_module,
+            "compute_molecular_descriptors",
+            lambda _smiles: torch.arange(12, dtype=torch.float32).numpy(),
+        )
+
+        loader = make_loader(
+            _toy_dataframe(),
+            batch_size=4,
+            shuffle=False,
+            use_descriptor_augmentation=True,
+        )
+
+        _, _, targets = next(iter(loader))
+        assert "solute_descriptors" in targets
+        assert "solvent_descriptors" in targets
+        assert tuple(targets["solute_descriptors"].shape) == (4, 12)
+        assert tuple(targets["solvent_descriptors"].shape) == (4, 12)
+
     def test_make_loader_emits_group_priors_when_enabled(
         self,
         monkeypatch: MonkeyPatch,
@@ -201,3 +230,38 @@ class TestPairTemperatureBatchSampler:
         assert "solvent_group_prior_features" in targets
         assert tuple(targets["solute_group_prior_features"].shape) == (4, 20)
         assert tuple(targets["solvent_group_prior_features"].shape) == (4, 20)
+
+    def test_make_loader_emits_crystal_gc_priors_when_enabled(
+        self,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        """Fixed crystal GC priors should be present in the batch when requested."""
+        monkeypatch.setattr(
+            dataset_module,
+            "smiles_to_graph",
+            lambda _smiles: _fake_graph(),
+        )
+        monkeypatch.setattr(
+            dataset_module,
+            "compute_gc_priors",
+            lambda _smiles: {
+                "T_m_gc": 410.0,
+                "dH_fus_gc": 21000.0,
+                "dCp_fus_gc": 12.5,
+            },
+        )
+
+        loader = make_loader(
+            _toy_dataframe(),
+            batch_size=4,
+            shuffle=False,
+            use_gc_priors_crystal=True,
+        )
+
+        _, _, targets = next(iter(loader))
+        assert "T_m_gc" in targets
+        assert "dH_fus_gc" in targets
+        assert "dCp_fus_gc" in targets
+        assert tuple(targets["T_m_gc"].shape) == (4,)
+        assert tuple(targets["dH_fus_gc"].shape) == (4,)
+        assert tuple(targets["dCp_fus_gc"].shape) == (4,)

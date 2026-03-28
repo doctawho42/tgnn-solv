@@ -10,6 +10,7 @@ from pathlib import Path
 import _bootstrap  # noqa: F401
 import torch
 
+from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.optuna_tuner import AVAILABLE_MODELS, OptunaTuner
 
 
@@ -27,6 +28,11 @@ def _parse_models(args: argparse.Namespace) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Optuna tuning for TGNN-Solv and baselines."
+    )
+    parser.add_argument(
+        "--config",
+        default="configs/paper_config.yaml",
+        help="Base YAML config to tune around.",
     )
     parser.add_argument(
         "--train-csv",
@@ -94,12 +100,13 @@ def main() -> int:
         "patience": args.patience,
         "warmup_epochs": args.warmup_epochs,
     }
+    base_cfg = TGNNSolvConfig.from_yaml(str(_bootstrap.resolve_path(args.config)))
 
     train_df, val_df, test_df = OptunaTuner.load_csv_splits(
         args.train_csv, args.val_csv, args.test_csv
     )
     datasets = OptunaTuner.build_datasets(
-        train_df, val_df, test_df, cache=True
+        train_df, val_df, test_df, cfg=base_cfg, cache=True
     )
 
     tuner = OptunaTuner(
@@ -109,6 +116,7 @@ def main() -> int:
         num_workers=args.num_workers,
         fixed_batch_size=args.batch_size,
         tune_arch=not args.no_tune_arch,
+        base_cfg=base_cfg,
         cfg_overrides=overrides,
         baseline_epochs=args.baseline_epochs,
         baseline_patience=args.baseline_patience,

@@ -21,11 +21,13 @@ from torch.utils.data import DataLoader, Dataset, Sampler
 from torch_geometric.data import Batch, Data
 
 from ..features import (
+    compute_molecular_descriptors,
     smiles_to_descriptor_prior_features,
     smiles_to_graph,
     smiles_to_group_prior_features,
     smiles_to_morgan_fp,
 )
+from ..group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from .solvent_types import solvent_type_id_from_smiles
 
 TargetValue: TypeAlias = torch.Tensor | str
@@ -182,21 +184,31 @@ class TGNNSolvDataset(Dataset):
         use_morgan_features: bool = False,
         morgan_radius: int = 2,
         morgan_n_bits: int = 2048,
+        use_descriptor_augmentation: bool = False,
         use_descriptor_priors: bool = False,
         use_group_priors: bool = False,
+        use_gc_priors_crystal: bool = False,
     ) -> None:
         self.cache: dict[str, Data] | None = {} if cache else None
         self.use_morgan_features = use_morgan_features
         self.morgan_radius = morgan_radius
         self.morgan_n_bits = morgan_n_bits
+        self.use_descriptor_augmentation = use_descriptor_augmentation
         self.use_descriptor_priors = use_descriptor_priors
         self.use_group_priors = use_group_priors
+        self.use_gc_priors_crystal = use_gc_priors_crystal
         self.fp_cache: dict[str, torch.Tensor] | None = {} if cache and use_morgan_features else None
+        self.descriptor_aug_cache: dict[str, torch.Tensor] | None = (
+            {} if cache and use_descriptor_augmentation else None
+        )
         self.descriptor_cache: dict[str, torch.Tensor] | None = (
             {} if cache and use_descriptor_priors else None
         )
         self.group_prior_cache: dict[str, torch.Tensor] | None = (
             {} if cache and use_group_priors else None
+        )
+        self.crystal_gc_cache: dict[str, torch.Tensor] | None = (
+            {} if cache and use_gc_priors_crystal else None
         )
 
         # Validate all SMILES upfront (fast: uses cache after first pass)
@@ -255,6 +267,21 @@ class TGNNSolvDataset(Dataset):
             self.fp_cache[smi] = fp_tensor
         return fp_tensor
 
+    def _descriptor_features(self, smi: str) -> torch.Tensor | None:
+        """Get cached full RDKit descriptor features for DirectGNN augmentation."""
+        if not self.use_descriptor_augmentation:
+            return None
+        if self.descriptor_aug_cache is not None and smi in self.descriptor_aug_cache:
+            return self.descriptor_aug_cache[smi]
+
+        features = compute_molecular_descriptors(smi)
+        if features is None:
+            return None
+        tensor = torch.tensor(features, dtype=torch.float)
+        if self.descriptor_aug_cache is not None:
+            self.descriptor_aug_cache[smi] = tensor
+        return tensor
+
     def _descriptor_prior_features(self, smi: str) -> torch.Tensor | None:
         """Get cached fixed descriptor features for prior-conditioned heads."""
         if not self.use_descriptor_priors:
@@ -285,6 +312,24 @@ class TGNNSolvDataset(Dataset):
             self.group_prior_cache[smi] = tensor
         return tensor
 
+    def _crystal_gc_priors(self, smi: str) -> torch.Tensor | None:
+        """Get cached fixed crystal GC priors for the solute."""
+        if not self.use_gc_priors_crystal:
+            return None
+        if self.crystal_gc_cache is not None and smi in self.crystal_gc_cache:
+            return self.crystal_gc_cache[smi]
+
+        priors = compute_gc_priors(smi)
+        if any(priors[key] is None for key in ("T_m_gc", "dH_fus_gc", "dCp_fus_gc")):
+            priors = GC_FALLBACK_PRIORS
+        tensor = torch.tensor(
+            [priors["T_m_gc"], priors["dH_fus_gc"], priors["dCp_fus_gc"]],
+            dtype=torch.float,
+        )
+        if self.crystal_gc_cache is not None:
+            self.crystal_gc_cache[smi] = tensor
+        return tensor
+
     def __len__(self) -> int:
         return len(self.df)
 
@@ -295,10 +340,13 @@ class TGNNSolvDataset(Dataset):
         slv_g = self._graph(r["solvent_smiles"]).clone()
         sol_fp = self._morgan_fp(r["solute_smiles"])
         slv_fp = self._morgan_fp(r["solvent_smiles"])
+        sol_aug_desc = self._descriptor_features(r["solute_smiles"])
+        slv_aug_desc = self._descriptor_features(r["solvent_smiles"])
         sol_desc = self._descriptor_prior_features(r["solute_smiles"])
         slv_desc = self._descriptor_prior_features(r["solvent_smiles"])
         sol_group = self._group_prior_features(r["solute_smiles"])
         slv_group = self._group_prior_features(r["solvent_smiles"])
+        sol_gc = self._crystal_gc_priors(r["solute_smiles"])
 
         t = {
             "T": torch.tensor(float(r["temperature"]), dtype=torch.float),
@@ -319,8 +367,14 @@ class TGNNSolvDataset(Dataset):
             "T_m_mask": torch.tensor(
                 bool(r["has_T_m"]), dtype=torch.bool
             ),
+            "has_T_m": torch.tensor(
+                bool(r["has_T_m"]), dtype=torch.bool
+            ),
             "dH_fus": torch.tensor(float(r["dH_fus"]), dtype=torch.float),
             "dH_mask": torch.tensor(
+                bool(r["has_dH_fus"]), dtype=torch.bool
+            ),
+            "has_dH_fus": torch.tensor(
                 bool(r["has_dH_fus"]), dtype=torch.bool
             ),
             "hansen_sol": torch.tensor(
@@ -341,6 +395,14 @@ class TGNNSolvDataset(Dataset):
             "solute_smiles": str(r["solute_smiles"]),
             "solvent_smiles": str(r["solvent_smiles"]),
         }
+        if self.use_gc_priors_crystal:
+            if sol_gc is None:
+                raise ValueError(
+                    "Crystal GC prior computation failed for a supposedly valid sample."
+                )
+            t["T_m_gc"] = sol_gc[0]
+            t["dH_fus_gc"] = sol_gc[1]
+            t["dCp_fus_gc"] = sol_gc[2]
         if self.use_morgan_features:
             if sol_fp is None or slv_fp is None:
                 raise ValueError(
@@ -348,6 +410,13 @@ class TGNNSolvDataset(Dataset):
                 )
             t["solute_morgan_fp"] = sol_fp
             t["solvent_morgan_fp"] = slv_fp
+        if self.use_descriptor_augmentation:
+            if sol_aug_desc is None or slv_aug_desc is None:
+                raise ValueError(
+                    "Full RDKit descriptor computation failed for a supposedly valid sample."
+                )
+            t["solute_descriptors"] = sol_aug_desc
+            t["solvent_descriptors"] = slv_aug_desc
         if self.use_descriptor_priors:
             if sol_desc is None or slv_desc is None:
                 raise ValueError(
@@ -402,8 +471,10 @@ def make_loader(
     use_morgan_features: bool = False,
     morgan_radius: int = 2,
     morgan_n_bits: int = 2048,
+    use_descriptor_augmentation: bool = False,
     use_descriptor_priors: bool = False,
     use_group_priors: bool = False,
+    use_gc_priors_crystal: bool = False,
     seed: int = 42,
 ) -> DataLoader:
     """Create a single DataLoader with optional same-pair temperature batching."""
@@ -413,8 +484,10 @@ def make_loader(
         use_morgan_features=use_morgan_features,
         morgan_radius=morgan_radius,
         morgan_n_bits=morgan_n_bits,
+        use_descriptor_augmentation=use_descriptor_augmentation,
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
+        use_gc_priors_crystal=use_gc_priors_crystal,
     )
 
     if drop_last is None:
@@ -458,8 +531,10 @@ def make_loaders(
     use_morgan_features: bool = False,
     morgan_radius: int = 2,
     morgan_n_bits: int = 2048,
+    use_descriptor_augmentation: bool = False,
     use_descriptor_priors: bool = False,
     use_group_priors: bool = False,
+    use_gc_priors_crystal: bool = False,
     seed: int = 42,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
@@ -490,8 +565,10 @@ def make_loaders(
         use_morgan_features=use_morgan_features,
         morgan_radius=morgan_radius,
         morgan_n_bits=morgan_n_bits,
+        use_descriptor_augmentation=use_descriptor_augmentation,
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
+        use_gc_priors_crystal=use_gc_priors_crystal,
         seed=seed,
     )
     val_ld = make_loader(
@@ -504,8 +581,10 @@ def make_loaders(
         use_morgan_features=use_morgan_features,
         morgan_radius=morgan_radius,
         morgan_n_bits=morgan_n_bits,
+        use_descriptor_augmentation=use_descriptor_augmentation,
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
+        use_gc_priors_crystal=use_gc_priors_crystal,
     )
     test_ld = make_loader(
         test_df,
@@ -517,8 +596,10 @@ def make_loaders(
         use_morgan_features=use_morgan_features,
         morgan_radius=morgan_radius,
         morgan_n_bits=morgan_n_bits,
+        use_descriptor_augmentation=use_descriptor_augmentation,
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
+        use_gc_priors_crystal=use_gc_priors_crystal,
     )
 
     for name, frame, loader in [

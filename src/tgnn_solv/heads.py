@@ -315,33 +315,134 @@ class FusionHead(nn.Module):
     Predict melting point and fusion thermodynamics from solute vector.
 
     Outputs (all per-sample):
-      T_m     : melting temperature [K], sigmoid-bounded [T_m_min, T_m_max]
-      dH_fus  : enthalpy of fusion [J/mol], softplus-bounded > 0
-      dCp_fus : heat capacity change [J/(mol·K)], unbounded
+      T_m     : melting temperature [K]
+      dH_fus  : enthalpy of fusion [J/mol]
+      dCp_fus : heat capacity change [J/(mol·K)]
+
+    Default mode predicts absolute values from scratch. When
+    ``use_gc_priors_crystal=True``, the head predicts only a bounded residual
+    around fixed GC priors for ``T_m`` and ``dH_fus`` and passes through a
+    fixed per-molecule ``dCp_fus_gc``.
     """
 
     def __init__(self, input_dim: int, cfg: TGNNSolvConfig) -> None:
         super().__init__()
         self.cfg = cfg
-        output_dim = 3 if cfg.predict_dCp_fus else 2
-        self.mlp = nn.Sequential(
+        if cfg.use_gc_priors_crystal and cfg.predict_dCp_fus:
+            raise ValueError(
+                "use_gc_priors_crystal=True requires predict_dCp_fus=False because "
+                "dCp_fus is fixed from the GC prior path."
+            )
+        self.mlp: nn.Sequential | None = None
+        self.residual_mlp_Tm: nn.Sequential | None = None
+        self.residual_mlp_dH: nn.Sequential | None = None
+        if cfg.use_gc_priors_crystal:
+            self.residual_mlp_Tm = self._make_residual_mlp(input_dim)
+            self.residual_mlp_dH = self._make_residual_mlp(input_dim)
+            self._zero_residual_head(self.residual_mlp_Tm)
+            self._zero_residual_head(self.residual_mlp_dH)
+        else:
+            output_dim = 3 if cfg.predict_dCp_fus else 2
+            self.mlp = nn.Sequential(
+                nn.Linear(input_dim, 256),
+                nn.SiLU(),
+                nn.Linear(256, 128),
+                nn.SiLU(),
+                nn.Linear(128, output_dim),
+            )
+
+    @staticmethod
+    def _make_residual_mlp(input_dim: int) -> nn.Sequential:
+        """Build a residual head for one crystal-property prior branch."""
+        return nn.Sequential(
             nn.Linear(input_dim, 256),
             nn.SiLU(),
             nn.Linear(256, 128),
             nn.SiLU(),
-            nn.Linear(128, output_dim),
+            nn.Linear(128, 1),
         )
 
-    def forward(self, g_solute: Tensor) -> dict[str, Tensor]:
-        z = self.mlp(g_solute)
-        T_m = self.cfg.T_m_min + (
-            (self.cfg.T_m_max - self.cfg.T_m_min) * torch.sigmoid(z[:, 0])
+    @staticmethod
+    def _zero_residual_head(head: nn.Sequential) -> None:
+        """Initialize the last layer to zero so the prior passes through at init."""
+        final = head[-1]
+        if not isinstance(final, nn.Linear):
+            raise TypeError("Expected residual head to end with nn.Linear.")
+        nn.init.zeros_(final.weight)
+        nn.init.zeros_(final.bias)
+
+    def set_residual_frozen(self, frozen: bool) -> None:
+        """Freeze or unfreeze the GC residual branches."""
+        if not self.cfg.use_gc_priors_crystal:
+            return
+        if self.residual_mlp_Tm is None or self.residual_mlp_dH is None:
+            raise ValueError("GC residual heads are not initialized.")
+        for param in self.residual_mlp_Tm.parameters():
+            param.requires_grad = not frozen
+        for param in self.residual_mlp_dH.parameters():
+            param.requires_grad = not frozen
+
+    def _gc_dh_scale(self, residual_state: Tensor) -> Tensor:
+        """Map a zero-centered residual state to the configured multiplicative range."""
+        r_min, r_max = self.cfg.gc_prior_dH_residual_factor
+        if r_min <= 0.0 or r_min > 1.0 or r_max < 1.0:
+            raise ValueError(
+                "gc_prior_dH_residual_factor must satisfy 0 < min <= 1 <= max "
+                "for zero-centered residual initialization."
+            )
+        return torch.where(
+            residual_state >= 0.0,
+            1.0 + residual_state * (r_max - 1.0),
+            1.0 + residual_state * (1.0 - r_min),
         )
-        dH_fus = F.softplus(z[:, 1]) * self.cfg.S_H
-        if self.cfg.predict_dCp_fus:
-            dCp_fus = z[:, 2] * self.cfg.S_Cp
+
+    def forward(
+        self,
+        g_solute: Tensor,
+        *,
+        T_m_gc: Tensor | None = None,
+        dH_fus_gc: Tensor | None = None,
+        dCp_fus_gc: Tensor | None = None,
+    ) -> dict[str, Tensor]:
+        if self.cfg.use_gc_priors_crystal:
+            if T_m_gc is None or dH_fus_gc is None or dCp_fus_gc is None:
+                raise ValueError(
+                    "GC crystal priors are enabled, but T_m_gc/dH_fus_gc/dCp_fus_gc "
+                    "were not provided to FusionHead."
+                )
+            if self.residual_mlp_Tm is None or self.residual_mlp_dH is None:
+                raise ValueError("GC residual heads are not initialized.")
+            T_m_prior = T_m_gc.to(g_solute)
+            dH_prior = dH_fus_gc.to(g_solute).clamp_min(self.cfg.eps)
+            dCp_prior = dCp_fus_gc.to(g_solute)
+            T_m_state = self.residual_mlp_Tm(g_solute).squeeze(-1)
+            T_m_raw = (
+                T_m_prior
+                + self.cfg.gc_prior_Tm_residual_max * torch.tanh(T_m_state)
+            )
+            T_m_upper = torch.maximum(
+                torch.full_like(T_m_raw, self.cfg.T_m_max),
+                T_m_prior + self.cfg.gc_prior_Tm_residual_max,
+            )
+            T_m = torch.minimum(
+                T_m_raw.clamp_min(self.cfg.T_m_min),
+                T_m_upper,
+            )
+            dH_state = torch.tanh(self.residual_mlp_dH(g_solute).squeeze(-1))
+            dH_scale = self._gc_dh_scale(dH_state)
+            dH_fus = (dH_prior * dH_scale).clamp_min(self.cfg.eps)
+            dCp_fus = dCp_prior
         else:
+            if self.mlp is None:
+                raise ValueError("Absolute fusion MLP is not initialized.")
+            z = self.mlp(g_solute)
+            T_m = self.cfg.T_m_min + (
+                (self.cfg.T_m_max - self.cfg.T_m_min) * torch.sigmoid(z[:, 0])
+            )
+            dH_fus = F.softplus(z[:, 1]) * self.cfg.S_H
             dCp_fus = torch.full_like(T_m, self.cfg.fixed_dCp_fus)
+        if self.cfg.predict_dCp_fus and not self.cfg.use_gc_priors_crystal:
+            dCp_fus = z[:, 2] * self.cfg.S_Cp
         return {"T_m": T_m, "dH_fus": dH_fus, "dCp_fus": dCp_fus}
 
 

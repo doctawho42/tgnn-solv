@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from ..config import TGNNSolvConfig
 from ..model import TGNNSolv
 from ..evaluate import Evaluator
+from ..features import compute_descriptor_normalization_stats
 from .direct_gnn import DirectGNN, DirectGNNTrainer
 
 
@@ -37,7 +38,31 @@ def run_baseline(
 
     t0 = time.time()
 
+    descriptor_mean = None
+    descriptor_std = None
+    if cfg.use_descriptor_augmentation:
+        train_df = getattr(train_loader.dataset, "df", None)
+        if not isinstance(train_df, pd.DataFrame):
+            raise ValueError(
+                "Descriptor augmentation requires access to the training dataframe."
+            )
+        descriptor_mean, descriptor_std = compute_descriptor_normalization_stats(
+            pd.concat(
+                [
+                    train_df["solute_smiles"].astype(str),
+                    train_df["solvent_smiles"].astype(str),
+                ],
+                axis=0,
+                ignore_index=True,
+            ).tolist()
+        )
+        cfg.descriptor_dim = int(descriptor_mean.shape[0])
+
     model = DirectGNN(cfg=cfg).to(device)
+    if cfg.use_descriptor_augmentation:
+        if descriptor_mean is None or descriptor_std is None:
+            raise ValueError("Descriptor normalization statistics were not computed.")
+        model.set_descriptor_normalization(descriptor_mean, descriptor_std)
     trainer = DirectGNNTrainer(model, device)
     trainer.train(
         train_loader, val_loader,

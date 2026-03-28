@@ -29,6 +29,7 @@ from tgnn_solv.baselines.direct_gnn import DirectGNN, DirectGNNTrainer
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import TGNNSolvDataset, collate_fn
 from tgnn_solv.evaluate import Evaluator
+from tgnn_solv.features import compute_descriptor_normalization_stats
 from tgnn_solv.model import TGNNSolv
 from tgnn_solv.seed import set_seed
 from tgnn_solv.trainer import TGNNSolvTrainer
@@ -401,8 +402,10 @@ def _resolve_union_feature_flags(
             "use_morgan_features": False,
             "morgan_radius": 2,
             "morgan_n_bits": 2048,
+            "use_descriptor_augmentation": False,
             "use_descriptor_priors": False,
             "use_group_priors": False,
+            "use_gc_priors_crystal": False,
         }
 
     first_cfg = configs[0]
@@ -415,10 +418,16 @@ def _resolve_union_feature_flags(
         "use_morgan_features": any(cfg.use_morgan_features for cfg in configs),
         "morgan_radius": first_cfg.morgan_radius,
         "morgan_n_bits": first_cfg.morgan_n_bits,
+        "use_descriptor_augmentation": any(
+            cfg.use_descriptor_augmentation for cfg in configs
+        ),
         "use_descriptor_priors": any(
             cfg.use_descriptor_priors for cfg in configs
         ),
         "use_group_priors": any(cfg.use_group_priors for cfg in configs),
+        "use_gc_priors_crystal": any(
+            cfg.use_gc_priors_crystal for cfg in configs
+        ),
     }
 
 
@@ -525,7 +534,34 @@ def run_direct_gnn_variant(
     checkpoint_path: Path,
 ) -> dict[str, Any]:
     """Train and evaluate the DirectGNN baseline inside the ablation sweep."""
+    descriptor_mean = None
+    descriptor_std = None
+    if cfg.use_descriptor_augmentation:
+        train_df = getattr(train_loader.dataset, "df", None)
+        if not isinstance(train_df, pd.DataFrame):
+            raise ValueError(
+                "Descriptor augmentation requires access to the training dataframe."
+            )
+        descriptor_mean, descriptor_std = compute_descriptor_normalization_stats(
+            pd.concat(
+                [
+                    train_df["solute_smiles"].astype(str),
+                    train_df["solvent_smiles"].astype(str),
+                ],
+                axis=0,
+                ignore_index=True,
+            ).tolist()
+        )
+        cfg = dataclasses.replace(
+            cfg,
+            descriptor_dim=int(descriptor_mean.shape[0]),
+        )
+
     model = spec["model_class"](cfg=cfg).to(device)
+    if cfg.use_descriptor_augmentation:
+        if descriptor_mean is None or descriptor_std is None:
+            raise ValueError("Descriptor normalization statistics were not computed.")
+        model.set_descriptor_normalization(descriptor_mean, descriptor_std)
     trainer = spec["trainer_class"](model, device)
 
     # DirectGNN is a single-stage trainer, so use the main solubility-training
@@ -709,8 +745,10 @@ def main() -> None:
         use_morgan_features=feature_flags["use_morgan_features"],
         morgan_radius=feature_flags["morgan_radius"],
         morgan_n_bits=feature_flags["morgan_n_bits"],
+        use_descriptor_augmentation=feature_flags["use_descriptor_augmentation"],
         use_descriptor_priors=feature_flags["use_descriptor_priors"],
         use_group_priors=feature_flags["use_group_priors"],
+        use_gc_priors_crystal=feature_flags["use_gc_priors_crystal"],
     )
     val_dataset = TGNNSolvDataset(
         val_df,
@@ -718,8 +756,10 @@ def main() -> None:
         use_morgan_features=feature_flags["use_morgan_features"],
         morgan_radius=feature_flags["morgan_radius"],
         morgan_n_bits=feature_flags["morgan_n_bits"],
+        use_descriptor_augmentation=feature_flags["use_descriptor_augmentation"],
         use_descriptor_priors=feature_flags["use_descriptor_priors"],
         use_group_priors=feature_flags["use_group_priors"],
+        use_gc_priors_crystal=feature_flags["use_gc_priors_crystal"],
     )
     test_dataset = TGNNSolvDataset(
         test_df,
@@ -727,8 +767,10 @@ def main() -> None:
         use_morgan_features=feature_flags["use_morgan_features"],
         morgan_radius=feature_flags["morgan_radius"],
         morgan_n_bits=feature_flags["morgan_n_bits"],
+        use_descriptor_augmentation=feature_flags["use_descriptor_augmentation"],
         use_descriptor_priors=feature_flags["use_descriptor_priors"],
         use_group_priors=feature_flags["use_group_priors"],
+        use_gc_priors_crystal=feature_flags["use_gc_priors_crystal"],
     )
 
     train_loader = make_dataloader(train_dataset, base_cfg.batch_size, shuffle=True)

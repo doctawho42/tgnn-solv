@@ -1,0 +1,136 @@
+"""Tests for TGNN trainer resume orchestration."""
+
+from __future__ import annotations
+
+import sys
+import types
+
+import torch
+
+sys.path.insert(0, "src")
+
+from tgnn_solv.config import TGNNSolvConfig
+from tgnn_solv.model import TGNNSolv
+from tgnn_solv.trainer import TGNNSolvTrainer
+
+
+def make_small_config() -> TGNNSolvConfig:
+    """Create a lightweight config for trainer-state tests."""
+    return TGNNSolvConfig(
+        hidden_dim=32,
+        n_gnn_layers=2,
+        n_cross_attn_layers=1,
+        n_attn_heads=4,
+        pair_dim=64,
+        solvent_moe_hidden=64,
+        solvent_type_emb_dim=8,
+        n_iter_train=2,
+        n_iter_eval=2,
+        set2set_steps=2,
+        epochs_phase1=2,
+        epochs_phase2=3,
+        epochs_phase3=2,
+    )
+
+
+def test_trainer_state_dict_round_trip_preserves_resume_state() -> None:
+    cfg = make_small_config()
+    model = TGNNSolv(cfg=cfg)
+    trainer = TGNNSolvTrainer(model, cfg)
+
+    trainer.history["train_loss"] = [1.0, 0.5]
+    trainer.best_val_loss = 1.23
+    trainer.best_state = {
+        "dummy_weight": torch.tensor([1.0, 2.0]),
+    }
+    trainer.patience_counter = 4
+    trainer._last_confidence = 0.75
+    trainer.cfg.oracle_injection_prob = 0.4
+    trainer.model.cfg.oracle_injection_prob = 0.4
+
+    restored = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+    restored.load_state_dict(trainer.state_dict())
+
+    assert restored.history["train_loss"] == [1.0, 0.5]
+    assert restored.best_val_loss == 1.23
+    assert restored.patience_counter == 4
+    assert restored._last_confidence == 0.75
+    assert restored.cfg.oracle_injection_prob == 0.4
+    assert restored.model.cfg.oracle_injection_prob == 0.4
+    assert torch.equal(
+        restored.best_state["dummy_weight"],
+        torch.tensor([1.0, 2.0]),
+    )
+
+
+def test_train_full_resume_skips_completed_phases_and_reuses_phase_state() -> None:
+    cfg = make_small_config()
+    trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+    calls: list[tuple[int, int, bool, bool]] = []
+
+    def fake_train_phase(self, phase, train_loader, val_loader, n_epochs, **kwargs):
+        calls.append(
+            (
+                phase,
+                kwargs.get("start_epoch", 0),
+                kwargs.get("optimizer_state_dict") is not None,
+                kwargs.get("scheduler_state_dict") is not None,
+            )
+        )
+
+    trainer.train_phase = types.MethodType(fake_train_phase, trainer)
+    trainer.train_full(
+        None,
+        None,
+        resume_state={
+            "status": "in_progress",
+            "phase": 2,
+            "next_epoch_in_phase": 2,
+            "optimizer_state_dict": {"state": {}, "param_groups": []},
+            "scheduler_state_dict": {"base_lrs": [1e-4], "last_epoch": 1},
+        },
+    )
+
+    assert calls == [
+        (2, 2, True, True),
+        (3, 0, False, False),
+    ]
+
+
+def test_phase1_gc_residual_freeze_schedule_unfreezes_after_configured_epochs() -> None:
+    cfg = make_small_config()
+    cfg.use_gc_priors_crystal = True
+    cfg.gc_prior_residual_freeze_epochs = 1
+    trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+    frozen_states: list[tuple[bool, bool]] = []
+
+    def fake_train_epoch(self, loader, optimizer, phase, epoch, compute_mono=False):
+        frozen_states.append(
+            (
+                all(
+                    not param.requires_grad
+                    for param in self.model.fusion_head.residual_mlp_Tm.parameters()
+                ),
+                all(
+                    not param.requires_grad
+                    for param in self.model.fusion_head.residual_mlp_dH.parameters()
+                ),
+            )
+        )
+        return 0.0, {}
+
+    def fake_validate(self, loader, phase):
+        return {"val_loss": 0.0}
+
+    trainer.train_epoch = types.MethodType(fake_train_epoch, trainer)
+    trainer.validate = types.MethodType(fake_validate, trainer)
+
+    trainer.train_phase(1, None, None, n_epochs=2)
+
+    assert frozen_states == [(True, True), (False, False)]
+    assert all(
+        param.requires_grad for param in trainer.model.fusion_head.residual_mlp_Tm.parameters()
+    )
+    assert all(
+        param.requires_grad for param in trainer.model.fusion_head.residual_mlp_dH.parameters()
+    )

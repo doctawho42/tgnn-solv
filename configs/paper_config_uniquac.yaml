@@ -1,14 +1,14 @@
-# Tuned TGNN-Solv configuration for the split-late encoder comparison.
+# Tuned TGNN-Solv configuration with UNIQUAC activity-model selection.
 
 model:
   hidden_dim: 256
   n_gnn_layers: 6
-  encoder_role_mode: "split_late"
+  encoder_role_mode: "shared_residual"
   encoder_role_specific_layers: 2
   n_cross_attn_layers: 3
   pair_dim: 512
   interaction_mode: "cross_attn"
-  activity_model: "nrtl"
+  activity_model: "uniquac"
   dropout: 0.012430793241475136
   use_implicit_diff: true
   use_solvent_moe: true

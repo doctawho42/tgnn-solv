@@ -87,6 +87,7 @@ def benchmark_model(
             morgan_n_bits=cfg.morgan_n_bits,
             use_descriptor_priors=cfg.use_descriptor_priors,
             use_group_priors=cfg.use_group_priors,
+            use_gc_priors_crystal=cfg.use_gc_priors_crystal,
         )
         loader = DataLoader(
             dataset,

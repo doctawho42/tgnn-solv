@@ -2,95 +2,22 @@
 
 ## Overview
 
-TGNN-Solv uses a three-phase curriculum:
+The maintained training entry points are:
 
-1. **Phase 1: Property pretraining**
-   - Trains auxiliary physical property heads.
-   - No solubility loss is used yet.
-   - The correction gate remains frozen.
-2. **Phase 2: Full SLE training**
-   - Adds the main solubility objective.
-   - Keeps auxiliary/property losses deliberately light so `ln x₂` fitting dominates.
-   - Unfreezes the bounded residual correction at `phase2_correction_unfreeze_epoch`.
-   - Uses early stopping on validation MAE.
-3. **Phase 3: Fine-tuning**
-   - Uses a lower learning rate.
-   - Uses moderate monotonicity and correction regularization.
-   - Restores the best state at the end.
+- `scripts/train.py`
+  - TGNN-Solv with the three-phase curriculum
+- `scripts/train_directgnn.py`
+  - DirectGNN with a flat solubility-training schedule
 
-The v2 architecture keeps temperature out of the crystal-property encoder path
-by default. `T_m`, `ΔH_fus`, and other temperature-invariant properties are
-predicted from the solute graph alone, while temperature enters explicitly in
-the NRTL/state block and the bounded residual corrector.
-
-The maintained configs also keep `ΔCp_fus` fixed at `0.0` by default. The
-solver still supports the extended heat-capacity term, but per-sample `ΔCp_fus`
-prediction is now opt-in through `predict_dCp_fus=True`, because that variable
-otherwise acts like an unsupervised latent degree of freedom.
-
-The maintained configs now use the compact `ref_invT` NRTL parameterization by
-default. In that mode the network predicts `tau(T_ref)` and one inverse-
-temperature slope per direction, while older `legacy` and `abc` layouts remain
-supported for compatibility with older checkpoints and experiments.
-
-Morgan fingerprints can also be enabled as optional side information through
-`use_morgan_features=True`. In that mode the training pipeline computes
-fingerprints in the dataset/loader path and injects them into the learned
-molecular representations before the crystal-property heads and pair block.
-
-The maintained codebase also supports experimental descriptor-conditioned
-priors for the `Hansen` and `V_m` heads. When `use_descriptor_priors=True`,
-the dataset computes a compact fixed RDKit descriptor vector per molecule, a
-small descriptor-side network predicts coarse priors, and the graph heads
-learn only bounded residuals around those priors. This path is optional and
-disabled by default.
-
-The codebase also supports a stricter deterministic prior path through
-`use_group_priors=True`. In that mode the dataset computes fixed
-fragment-count features per molecule, and the `Hansen` / `V_m` heads learn
-bounded residuals around a fixed group-contribution prior. The descriptor-prior
-and group-prior modes are mutually exclusive.
-
-The implementation lives in `src/tgnn_solv/trainer.py`, and the phase-specific
-defaults are defined in `src/tgnn_solv/trainer.py::DEFAULT_PHASE_WEIGHTS` and
-then merged with any config overrides inside `TGNNSolvTrainer`.
-
-The current v3 training objective also includes two same-pair temperature
-regularizers, and the canonical `scripts/train.py` path now uses pair-aware
-train batching so these constraints are exercised whenever the dataset
-contains multiple temperatures for the same `(solute, solvent)` pair:
-
-- `pair_temp_rank`: encourages `ln x₂` to increase with temperature
-- `vant_hoff_local`: encourages local linearity in `ln x₂` vs `1/T`
-
-The relevant config controls are:
-
-- `use_pair_temperature_batching`
-- `pair_temperature_min_group_size`
-- `pair_temperature_group_chunk_size`
-- `encoder_role_mode`
-- `encoder_role_specific_layers`
-- `use_morgan_features`
-- `morgan_radius`
-- `morgan_n_bits`
-- `morgan_hidden_dim`
-- `use_descriptor_priors`
-- `descriptor_prior_*`
-- `use_group_priors`
-- `group_prior_*`
-
-The canonical processed split for both CLI and notebook training is:
+Canonical processed data lives under:
 
 - `notebooks/data/processed/train.csv`
 - `notebooks/data/processed/val.csv`
 - `notebooks/data/processed/test.csv`
 
-The additional `*_solute.csv` and `*_solvent.csv` files are comparison splits
-and are not the default training path.
+## TGNN-Solv Training
 
-## Run Training from the CLI
-
-Use the training script directly once processed CSV files are available:
+Paper-style training command:
 
 ```bash
 python scripts/train.py \
@@ -102,153 +29,280 @@ python scripts/train.py \
     --device cuda
 ```
 
-Useful optional overrides:
+Maintained tuned baseline for architecture comparison:
 
 ```bash
 python scripts/train.py \
-    --config configs/paper_config.yaml \
+    --config configs/paper_config_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
-    --checkpoint checkpoints/debug.pt \
-    --device cpu \
-    --hidden-dim 128 \
-    --n-gnn-layers 4 \
-    --batch-size 32 \
-    --lr 1e-4
+    --checkpoint checkpoints/tgnn_solv_tuned.pt \
+    --device cuda
 ```
 
-For repeated runs with different random seeds, use:
+Common CLI overrides:
+
+- `--hidden-dim`
+- `--n-gnn-layers`
+- `--batch-size`
+- `--lr` for `lr_phase2`
+- `--checkpoint-every`
+- `--resume`
+
+## Curriculum
+
+`TGNN-Solv` uses three phases.
+
+### Phase 1
+
+- property pretraining only
+- no `ln(x2)` loss
+- correction frozen
+- if `use_gc_priors_crystal=True`, the GC residual branches can be frozen for
+  the first `gc_prior_residual_freeze_epochs`
+
+### Phase 2
+
+- full SLE training
+- `ln(x2)` is active
+- correction unfreezes at `phase2_correction_unfreeze_epoch`
+- oracle injection, if enabled, anneals toward zero near the end of the phase
+
+### Phase 3
+
+- low-learning-rate fine-tuning
+- stronger correction and consistency regularization
+- oracle injection forced off
+
+The canonical paper budget is `50 / 200 / 50`.
+
+## GC-Prior Crystal Runs
+
+When `use_gc_priors_crystal=True`, `scripts/train.py` performs two extra steps:
+
+1. it computes raw per-solute GC priors through the dataset path
+2. it fits a train-only affine calibration for `T_m_gc`
+
+The learned calibration is stored back into the config as:
+
+- `gc_prior_tm_scale`
+- `gc_prior_tm_bias`
+
+The residual crystal branches are also zero-initialized so that the starting
+prediction matches the calibrated GC prior exactly.
+
+## Resume Support
+
+Both main training CLIs support resumable checkpoints:
 
 ```bash
-python scripts/run_seeds.py \
-    --config configs/paper_config.yaml \
+python scripts/train.py \
+    --config configs/paper_config_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
-    --test-data notebooks/data/processed/test.csv
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_resume.pt \
+    --checkpoint-every 5 \
+    --device cuda
 ```
 
-For split-aware comparisons against baselines or older literature, prefer the
-dedicated runner:
+Resume the same run later with:
 
 ```bash
-python scripts/run_split_comparisons.py \
-    --processed-dir notebooks/data/processed \
-    --splits "solute_scaffold,solute,solvent" \
-    --models "tgnn_solv,direct_gnn,rf_baseline" \
-    --config configs/paper_config.yaml \
-    --output results/split_comparisons.json
+python scripts/train.py \
+    --resume checkpoints/tgnn_resume.pt \
+    --checkpoint checkpoints/tgnn_resume.pt \
+    --device cuda
 ```
 
-For a matched backbone comparison against the asymmetric late-branch encoder,
-run the same sweep with the dedicated comparison config:
+DirectGNN supports the same pattern through `scripts/train_directgnn.py`.
+
+For cloud or preemptible sessions, `scripts/run_resume_safe_train.sh` wraps the
+TGNN CLI and reuses the checkpoint automatically.
+
+## Multi-Seed Runs
+
+Use `scripts/run_seeds.py` for maintained multi-seed wrappers:
 
 ```bash
 python scripts/run_seeds.py \
-    --config configs/paper_config_split_late.yaml \
+    --config configs/paper_config.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
     --n-seeds 5 \
     --base-seed 42 \
-    --output results/split_late_multi_seed_results.json \
-    --checkpoint-dir checkpoints/split_late_seeds
+    --output results/multi_seed_results.json \
+    --checkpoint-dir checkpoints/seeds \
+    --device cuda
 ```
 
-`configs/paper_config_split_late.yaml` mirrors the default paper config and
-changes only the encoder mode to `split_late`, so the comparison stays
-apples-to-apples.
+You can also point it at `scripts/train_directgnn.py`.
 
-`scripts/train.py` and `scripts/run_seeds.py` can be launched directly from a
-repository checkout and do not require a prior `pip install -e .` just to show
-their CLI help.
+## DirectGNN Training
 
-## Run Training from Notebooks
-
-Notebook workflow:
+Maintained tuned baseline:
 
 ```bash
-jupyter notebook notebooks/01_prepare_data.ipynb
-jupyter notebook notebooks/02_train.ipynb
+python scripts/train_directgnn.py \
+    --config configs/paper_config_directgnn_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/directgnn_tuned.pt \
+    --device cuda
 ```
 
-Recommended notebook sequence:
+DirectGNN uses:
 
-1. Prepare processed CSVs in `notebooks/01_prepare_data.ipynb`.
-2. Train the main model in `notebooks/02_train.ipynb`.
-3. Inspect inference examples in `notebooks/03_inference.ipynb`.
-4. Run evaluation in `notebooks/04_evaluation.ipynb`.
+- the same graph backbone
+- the same pair-aware batching controls
+- a single flat budget controlled by `epochs_phase2`
 
-## Hyperparameter Tuning with Optuna
-
-Run Optuna from the CLI:
+### DirectGNN with descriptor augmentation
 
 ```bash
-python scripts/run_optuna.py --models tgnn_solv,direct_gnn --n-trials 20
+python scripts/train_directgnn.py \
+    --config configs/paper_config_directgnn_descriptors.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/directgnn_desc.pt \
+    --device cuda
 ```
 
-Useful tuning options include baseline-specific budgets:
+This path:
+
+- computes the full RDKit descriptor vector for solute and solvent
+- sanitizes NaN/Inf descriptor values to zero
+- computes descriptor mean/std on the training split only
+- stores `descriptor_mean` and `descriptor_std` in the checkpoint
+- reuses one descriptor MLP for both molecular roles
+
+## Important Config Variants
+
+Maintained TGNN configs:
+
+- `configs/paper_config.yaml`
+  - canonical paper-style training config
+- `configs/paper_config_tuned.yaml`
+  - maintained tuned TGNN baseline
+- `configs/paper_config_split_late.yaml`
+  - late role-specific encoder blocks
+- `configs/paper_config_gc_priors.yaml`
+  - crystal GC priors with residual warm-start and freeze control
+- `configs/paper_config_oracle.yaml`
+  - training-time oracle injection
+- `configs/paper_config_no_bridge.yaml`
+  - bridge disabled, Walden enabled
+- `configs/paper_config_no_bridge_no_walden.yaml`
+  - bridge and Walden both disabled
+- `configs/paper_config_combined.yaml`
+  - GC priors + no bridge + Walden + oracle injection
+
+Maintained DirectGNN configs:
+
+- `configs/paper_config_directgnn_tuned.yaml`
+  - tuned no-physics baseline
+- `configs/paper_config_directgnn_descriptors.yaml`
+  - descriptor-augmented DirectGNN baseline
+
+## Experiment Runners
+
+### Ablations
 
 ```bash
-python scripts/run_optuna.py \
-    --models tgnn_solv,direct_gnn \
-    --n-trials 20 \
-    --baseline-epochs 200 \
-    --baseline-patience 20
-```
-
-Notebook alternative:
-
-```bash
-jupyter notebook notebooks/08_optuna_tuning.ipynb
-```
-
-## Diagnostics
-
-Quick dataset and training diagnostics:
-
-```bash
-python scripts/diagnose_training.py stats
-python scripts/diagnose_training.py overfit --sample-size 1000 --epochs 200
-```
-
-Use these checks when:
-
-- training does not converge,
-- validation MAE is unstable,
-- a new config appears to overfit or collapse,
-- you need a fast sanity check before a longer training run.
-
-`scripts/diagnose_training.py` is intentionally lightweight and is meant as a
-sanity-check tool, not a full experiment runner.
-
-## Related Script Roles
-
-- `scripts/train.py` — canonical single-run training CLI
-- `scripts/run_seeds.py` — canonical multi-seed wrapper
-- `scripts/run_optuna.py` — tuning utility
-- `scripts/diagnose_training.py` — pre-flight diagnostics
-- `notebooks/02_train.ipynb` — interactive/manual training notebook
-- `notebooks/08_optuna_tuning.ipynb` — interactive tuning notebook
-
-## Recommended Workflow
-
-```bash
-python scripts/prepare_data.py \
-    --output-dir notebooks/data/processed \
-    --split-mode solute_scaffold \
-    --seed 42
-
-python scripts/train.py \
+python scripts/run_ablation.py \
     --config configs/paper_config.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
-    --checkpoint checkpoints/tgnn_solv_trained.pt \
+    --variants full,fixed_group_priors,split_late_encoder,direct_gnn \
+    --n-seeds 3 \
+    --output results/ablation.json \
     --device cuda
-
-python scripts/evaluate_complete.py \
-    --test-data notebooks/data/processed/test.csv \
-    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
-    --output results/full_evaluation.json
 ```
+
+### Full-budget diagnostic study
+
+```bash
+python scripts/run_full_budget_experiment.py \
+    --config configs/paper_config_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --seeds 42 \
+    --output-dir results/full_budget_experiment \
+    --device cuda
+```
+
+This runner:
+
+- trains TGNN-Solv and DirectGNN on matched budgets
+- exports TGNN intermediates
+- runs forced-oracle evaluation
+- reuses resumable per-seed checkpoints
+
+### Medium-budget architecture comparison
+
+```bash
+python scripts/run_medium_budget_comparison.py \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --output-dir results/medium_budget \
+    --device cuda
+```
+
+This runner trains:
+
+- `tgnn_tuned`
+- `tgnn_gc_priors`
+- `tgnn_no_bridge`
+- `tgnn_combined_no_oracle`
+- `directgnn_tuned`
+- `directgnn_descriptors`
+- `rf_descriptors`
+
+The combined TGNN run is derived from `paper_config_combined.yaml`, but oracle
+injection is disabled during training for that specific comparison.
+
+## Pair-Aware Temperature Batching
+
+The canonical loader path uses:
+
+- `use_pair_temperature_batching=True`
+- `pair_temperature_min_group_size`
+- `pair_temperature_group_chunk_size`
+
+This matters because losses such as `pair_temp_rank` and `vant_hoff_local`
+depend on seeing multiple temperatures from the same pair together.
+
+## Bridge, Walden, and Oracle Controls
+
+Current semantics:
+
+- `bridge_loss_weight` defaults to `0.0`
+- explicit per-phase `bridge` loss weights in YAML still override that default
+- `configs/paper_config.yaml` therefore still trains with bridge loss through
+  the phase-loss tables
+- `use_walden_check=True` adds an unsupervised consistency penalty
+- `use_oracle_injection=True` affects solver inputs during training, not normal
+  inference
+
+## Checkpoint Contents
+
+TGNN checkpoints saved by `scripts/train.py` include:
+
+- model weights
+- serialized config
+- training history
+- optional evaluation metrics
+- resume state when checkpointing during training
+
+DirectGNN checkpoints include the same core items and additionally store
+descriptor normalization stats when descriptor augmentation is enabled:
+
+- `descriptor_mean`
+- `descriptor_std`

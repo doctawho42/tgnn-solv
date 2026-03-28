@@ -1,10 +1,23 @@
 # AGENTS.md
 
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
+This file provides guidance to WARP and other coding agents working in this
+repository.
 
 ## Project Overview
 
-TGNN-Solv is a **physics-informed Graph Neural Network** for predicting solid-liquid equilibrium (SLE) solubility. The GNN predicts *physical parameters* (melting point T_m, fusion enthalpy ΔH_fus, NRTL interaction energies), not solubility directly. Thermodynamic equations are hardcoded and differentiable — gradients flow through physics back to the GNN.
+TGNN-Solv is a physics-informed graph neural network for solid-liquid
+equilibrium (SLE) solubility prediction.
+
+The key maintained comparison is:
+
+- `TGNN-Solv`
+  - predicts physical parameters, solves SLE, then applies a bounded
+    parameter-space correction
+- `DirectGNN`
+  - matched backbone, direct `ln(x2)` prediction, no solver
+
+The main research question is whether the explicit physics bottleneck helps
+relative to the same graph backbone trained directly on solubility.
 
 ## Installation
 
@@ -16,11 +29,9 @@ pip install torch-geometric -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
 pip install -e ".[dev]"
 ```
 
-## Commands
+## Canonical Commands
 
-### Canonical Reproducible Path
-
-The main reproducible workflow is:
+### Reproducible workflow
 
 1. `python scripts/prepare_data.py`
 2. `python scripts/train.py`
@@ -30,291 +41,392 @@ The main reproducible workflow is:
 6. `python scripts/generate_paper_figures.py`
 7. `bash reproduce.sh`
 
-Use the notebooks for exploratory analysis, ablations, baseline research, and
-temperature studies. See `docs/script_reference.md` for the current maturity
-map.
+### Run all tests
 
-**Run all tests:**
 ```bash
 pytest tests/ -v
 ```
 
-**Run a specific test module:**
+### Specific tests
+
 ```bash
 pytest tests/test_physics.py -v
+pytest tests/test_integration.py -v
+pytest tests/test_loss.py -v
+pytest tests/test_dataset.py -v
 ```
 
-**Run a single test:**
+### Train one TGNN-Solv model
+
 ```bash
-pytest tests/test_physics.py::TestNRTL::test_dilute_limit -v
+python scripts/train.py \
+    --config configs/paper_config.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_solv_trained.pt \
+    --device cuda
 ```
 
-**Run the SolProp baseline comparison** (requires separate `solprop` conda env):
-```bash
-conda activate solprop
-python scripts/run_solprop.py \
-    --input notebooks/data/processed/test.csv \
-    --output notebooks/data/processed/solprop_predictions.csv \
-    --temperature_dependent
-```
+For the maintained tuned TGNN baseline used in current architecture
+comparisons, prefer `configs/paper_config_tuned.yaml`.
 
-**Calibrate SolProp on your splits (linear correction) and evaluate:**
-```bash
-conda activate solprop
-python scripts/run_solprop.py train \
-    --train notebooks/data/processed/train.csv \
-    --val notebooks/data/processed/val.csv \
-    --test notebooks/data/processed/test.csv \
-    --outdir checkpoints/solprop_run \
-    --temperature_dependent \
-    --include_temperature \
-    --export_preds
-```
+### Multi-seed TGNN-Solv
 
-**Run FastSolv baseline + comparison** (requires `fastsolv`):
-```bash
-# Predict with pretrained FastSolv ensemble
-python scripts/run_fastsolv.py predict \
-    --input notebooks/data/processed/test.csv \
-    --output notebooks/data/processed/fastsolv_pred.csv
-
-# Compare FastSolv vs TGNN-Solv metrics
-python scripts/run_fastsolv.py compare \
-    --input notebooks/data/processed/test.csv \
-    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
-    --metrics checkpoints/fastsolv_compare.json
-```
-
-⚠️ **NOTE on FastSolv Training**: Training FastSolv from scratch with custom data may fail with NaN predictions due to:
-- Descriptor computation producing NaN for certain molecule classes
-- Model architecture incompatibility with new data distributions
-- Use **pretrained FastSolv ensemble prediction** instead, or **use TGNN-Solv for custom training** (fully differentiable physics-based architecture)
-
-**Prepare data, train, and evaluate** (via Jupyter notebooks):
-```bash
-jupyter notebook notebooks/01_prepare_data.ipynb   # Downloads BigSolDBv2.1 (~120k records)
-jupyter notebook notebooks/02_train.ipynb
-jupyter notebook notebooks/04_evaluation.ipynb
-```
-
-**Reproduce the main paper workflow**:
-```bash
-bash reproduce.sh
-```
-
-**Run the shared-vs-split-late backbone comparison**:
 ```bash
 python scripts/run_seeds.py \
     --config configs/paper_config.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
-    --output results/multi_seed_results.json
+    --n-seeds 5 \
+    --base-seed 42 \
+    --output results/multi_seed_results.json \
+    --checkpoint-dir checkpoints/seeds \
+    --device cuda
+```
 
-python scripts/run_seeds.py \
-    --config configs/paper_config_split_late.yaml \
+### Train DirectGNN baseline
+
+```bash
+python scripts/train_directgnn.py \
+    --config configs/paper_config_directgnn_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
-    --output results/split_late_multi_seed_results.json
+    --checkpoint checkpoints/directgnn.pt \
+    --device cuda
 ```
 
-**Run the canonical split-protocol comparison**:
+### Train DirectGNN with descriptor augmentation
+
+```bash
+python scripts/train_directgnn.py \
+    --config configs/paper_config_directgnn_descriptors.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/directgnn_desc.pt \
+    --device cuda
+```
+
+### Full-budget diagnostic run
+
+```bash
+python scripts/run_full_budget_experiment.py \
+    --config configs/paper_config_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --seeds 42 \
+    --output-dir results/full_budget_experiment \
+    --device cuda
+```
+
+This exports:
+
+- TGNN metrics
+- DirectGNN metrics
+- oracle-evaluated TGNN metrics
+- `tgnn_intermediates.csv`
+- detailed diagnostics JSON
+
+The training CLIs now support resumable checkpoints via
+`--checkpoint-every` and `--resume`, and the full-budget runner reuses those
+per-seed checkpoints automatically.
+
+### Medium-budget architecture comparison
+
+```bash
+python scripts/run_medium_budget_comparison.py \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --output-dir results/medium_budget \
+    --device cuda
+```
+
+This trains tuned TGNN, GC-prior TGNN variants, tuned DirectGNN,
+DirectGNN+descriptors, and RF(descriptors) on the full scaffold split.
+
+### Split-wise comparison
+
 ```bash
 python scripts/run_split_comparisons.py \
     --processed-dir notebooks/data/processed \
     --splits "solute_scaffold,solute,solvent" \
-    --models "tgnn_solv,direct_gnn,rf_baseline" \
+    --models "tgnn_solv,direct_gnn,rf_baseline,rf_morgan,rf_hybrid" \
     --config configs/paper_config.yaml \
     --output results/split_comparisons.json
 ```
 
-**Benchmark trained model:**
-```bash
-# Single model benchmark
-python scripts/benchmark_tgnn_solv.py \
-    --checkpoint checkpoints/tgnn_solv_trained.pt \
-    --test-data notebooks/data/processed/test.csv \
-    --output benchmarks/results.json
+### Quick inference
 
-# Compare multiple models
-python scripts/compare_models.py \
-    --models checkpoints/v1.pt checkpoints/v2.pt checkpoints/v3.pt \
-    --test-data notebooks/data/processed/test.csv \
-    --output benchmarks/comparison.json
-```
-
-See [BENCHMARKING_GUIDE.md](BENCHMARKING_GUIDE.md) for detailed benchmarking instructions.
-
-**Script roles and maturity notes:**
-
-- `scripts/evaluate_complete.py` is the lightweight evaluation entry point and
-  now emits prediction arrays used by the plotting pipeline.
-- `scripts/benchmark_tgnn_solv.py` is the richer `Evaluator`-backed benchmark
-  entry point.
-- `scripts/run_fastsolv.py compare` is the preferred FastSolv comparison
-  wrapper; `scripts/compare_fastsolv_tgnn.py` is a lighter convenience script.
-- `scripts/train_directgnn.py` is the CLI entry point for the DirectGNN
-  no-physics baseline.
-- `scripts/run_ablation.py` is the CLI entry point for multi-seed ablation
-  sweeps.
-- `scripts/run_split_comparisons.py` is the CLI entry point for fair
-  split-wise comparisons across scaffold, solute, and solvent protocols.
-- `scripts/error_analysis.py`, `scripts/learning_curves.py`,
-  `scripts/temperature_extrapolation.py`, `scripts/validate_physics.py`,
-  `scripts/statistical_tests.py`, and `scripts/generate_supplementary.py`
-  provide the paper-analysis steps consumed by `reproduce.sh`.
-- `notebooks/05_baselines.ipynb` and `notebooks/06_ablations.ipynb` remain
-  useful for exploratory inspection and manual debugging, but they are no
-  longer the only automation path for DirectGNN and ablations.
-
-**Quick inference:**
 ```python
 from tgnn_solv.inference import load_model, predict_solubility, interpret_prediction
+
 model, cfg = load_model("checkpoints/tgnn_solv_trained.pt")
-result = predict_solubility(model, solute_smiles="CC(=O)Nc1ccc(O)cc1", solvent_smiles="CCO", T=298.15)
+result = predict_solubility(
+    model,
+    solute_smiles="CC(=O)Nc1ccc(O)cc1",
+    solvent_smiles="CCO",
+    T=298.15,
+)
 print(interpret_prediction(result))
 ```
 
-**Optuna hyperparameter tuning:**
+### Optuna
+
 ```bash
 python scripts/run_optuna.py --models tgnn_solv,direct_gnn --n-trials 20
 ```
 
-**Optuna notebook:**
-```bash
-jupyter notebook notebooks/08_optuna_tuning.ipynb
-```
+### Diagnostics
 
-**Diagnostics (dataset stats + overfit check):**
 ```bash
 python scripts/diagnose_training.py stats
 python scripts/diagnose_training.py overfit --sample-size 1000 --epochs 200
+python scripts/validate_physics.py \
+    --checkpoint checkpoints/tgnn_solv_trained.pt \
+    --test-data notebooks/data/processed/test.csv \
+    --output results/physics_validation.json
+```
+
+## Optional External Baselines
+
+### FastSolv
+
+```bash
+python scripts/run_fastsolv.py predict \
+    --input notebooks/data/processed/test.csv \
+    --output results/fastsolv_predictions.csv
+
+python scripts/run_fastsolv.py compare \
+    --input notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --metrics results/fastsolv_compare.json
+```
+
+### SolProp
+
+```bash
+conda activate solprop
+python scripts/run_solprop.py predict \
+    --input notebooks/data/processed/test.csv \
+    --output results/solprop_predictions.csv \
+    --temperature_dependent
 ```
 
 ## Architecture
 
-### Forward Pass Pipeline (`model.py`)
+### TGNN-Solv Forward Path
 
-The `TGNNSolv` forward pass runs in this sequence:
+The maintained `TGNNSolv` forward pass in `src/tgnn_solv/model.py` is:
 
-1. **GNNEncoder** (`layers.py`) — the default `shared_residual` backbone uses a shared 6-layer MPNN for both solute and solvent, then applies lightweight role-specific adapters at the end. An alternative `split_late` mode keeps early layers shared but gives the last few message-passing layers separate solute/solvent weights for direct shared-vs-asymmetric comparison. In the v2 architecture, encoder outputs used by crystal-property heads are temperature-invariant by default.
-2. **Auxiliary heads** (`heads.py`) — `HansenHead` and the lightweight `AuxPropsHead` run *before* interaction on the pre-interaction representations. In the maintained architecture `AuxPropsHead` predicts only molar volume `V_m`, because that is the only auxiliary quantity currently used by the loss. When `use_descriptor_priors=True`, both heads switch to `prior + bounded residual`: a small descriptor-side prior network maps fixed RDKit descriptors to coarse `Hansen` / `V_m` estimates, and the graph path only learns a bounded correction around that prior. A stricter `use_group_priors=True` path instead uses deterministic fixed fragment-count priors for the same heads; the two prior modes are mutually exclusive.
-3. **Interaction** (`layers.py`) — default `SoluteSolventCrossAttention` (stacked Transformer cross-attention with global tokens), optional `BipartiteMessagePassing` (complete bipartite message passing between solute/solvent atoms). The default paper config keeps temperature out of the encoder and interaction stack to avoid leakage into crystal-property heads. Requires padding via `pad_atom_features()`.
-4. **PhysicsAwareReadout** (`layers.py`) — concatenates attention pooling + Set2Set pooling → 3× hidden_dim vector per molecule.
-5. **Optional Morgan augmentation** (`features.py`, `heads.py`) — when `use_morgan_features=True`, solute and solvent Morgan fingerprints are projected into the molecular readout space and added to the pre-head and post-interaction graph representations. This keeps the physics path intact while letting the model reuse descriptor-like substructure information.
-6. **PairRepresentation** (`heads.py`) — combines `[g_sol, g_slv, g_sol * g_slv, |g_sol - g_slv|]` into a single pair vector.
-7. **SolventTypeMoE** (`heads.py`) — optional mixture‑of‑experts routing based on solvent type, applied to the pair vector.
-8. **Prediction heads** — `FusionHead` (T_m, ΔH_fus, and by default a fixed `ΔCp_fus = 0`; per-sample `ΔCp_fus` prediction is only used when `predict_dCp_fus=True` is explicitly enabled), `NRTLHead` (default compact `ref_invT` form with `tau(T_ref)` + inverse-temperature slopes; legacy `dg/a_T` and `abc` remain supported) receives explicit temperature features, `HansenHead`, and a `V_m`-only `AuxPropsHead`.
-9. **SLESolver** (`solver.py`) — iterative fixed-point solver (SLE + NRTL) with **zero learnable parameters**. Uses `SLESolverFunction` (custom `torch.autograd.Function`) with implicit differentiation via the implicit function theorem for stable training gradients. The v2 solver adds residual-based stopping, adaptive damping, and a temperature gradient term in the implicit backward.
-10. **AdaptivePhysicsCorrection** (`heads.py`) — per-sample gating between the physics prediction and a bounded parameter-space proposal. The module predicts bounded deltas for `T_m`, `ΔH_fus`, `tau_12(T)`, and `tau_21(T)`, re-runs the corrected parameters through the SLE solver, then blends the resulting residual: `ln(x₂)_proposal = SLE(theta + delta_theta)`, `ln(x₂) = ln(x₂)_physics + (1 - σ(w)) · clip(ln(x₂)_proposal - ln(x₂)_physics)`.
+1. `GNNEncoder`
+   - default `encoder_role_mode="shared_residual"`
+   - optional `split_late`
+2. pre-interaction auxiliary heads
+   - `HansenHead`
+   - `AuxPropsHead` for `V_m`
+3. optional pre-head priors for `Hansen` / `V_m`
+   - `use_descriptor_priors`
+   - `use_group_priors`
+4. solute-solvent interaction
+   - default cross-attention
+   - optional bipartite message passing
+5. `PhysicsAwareReadout`
+6. optional Morgan augmentation
+7. pair representation and optional solvent-type MoE
+8. `FusionHead`
+   - standard mode: predicts `T_m`, `dH_fus`, optional `dCp_fus`
+   - crystal GC mode: bounded residual around calibrated `T_m_gc`,
+     `dH_fus_gc`, fixed `dCp_fus_gc`
+9. `NRTLHead`
+   - default `nrtl_tau_mode="ref_invT"`
+10. solver-facing parameter substitution
+    - optional oracle injection for supervised `T_m` / `dH_fus`
+11. `SLESolver`
+12. `AdaptivePhysicsCorrection`
+    - bounded parameter deltas and gated residual blend
 
-### Training: Three-Phase Curriculum (`trainer.py`)
+### Important Forward Outputs
 
-- **Phase 1** (50 epochs): Property pretraining only — no solubility loss. Trains heads on T_m, ΔH_fus, Hansen, γ∞. Correction gate is frozen.
-- **Phase 2** (200 epochs): Full SLE training with solubility loss. The maintained configs now keep auxiliary/property losses deliberately light so `ln x₂` fitting dominates, and correction unfreezing is controlled by `phase2_correction_unfreeze_epoch` (paper default: 20). Early stopping still uses val MAE.
-- **Phase 3** (50 epochs): Fine-tuning — lower LR, moderate monotonicity and correction penalties. Restores best model at end.
+`model.forward(...)` now exposes:
 
-Loss components (weights vary by phase, see `src/tgnn_solv/trainer.py::DEFAULT_PHASE_WEIGHTS` and config overrides): `sol` (Huber on ln x₂), `T_m`, `dH`, `hansen`, `gamma_inf`, `mono` (dx₂/dT ≥ 0 penalty), `res` (correction magnitude), `bridge` (Hansen–NRTL consistency), `tau_reg`, `phys_pref`, `direct_reg` (keep the residual proposal local), `direct_nll` (uncertainty on the residual proposal), `pair_temp_rank` (same-pair temperature monotonicity), `vant_hoff_local` (local linearity in `ln x₂` vs `1/T`), `moe_balance`, `descriptor_prior`, `group_prior`.
+- `fusion_params`
+  - raw head outputs used by auxiliary losses
+- `solver_fusion_params`
+  - actual values passed into the solver
+- `oracle_injection_masks`
+  - present when oracle injection is active
+- `fusion_gc_priors`
+  - present when crystal GC priors are enabled
 
-The canonical `scripts/train.py` path now uses pair-aware train batching by
-default, so the same-pair temperature losses are exercised whenever the split
-contains repeated `(solute, solvent)` pairs at different temperatures.
+With `return_intermediates=True`, the model also exposes solver-facing
+diagnostic tensors such as:
 
-### Data Pipeline (`data/`)
+- `T_m_solver`
+- `dH_fus_solver`
+- `dCp_fus_solver`
+- `tau_12`
+- `tau_21`
+- `ln_gamma_2`
+- `Phi`
+- `ln_x2_physics`
+- `ln_x2_final`
 
-- `sources.py` — downloads/parses BigSolDBv2.1 (primary ~121k solubility records), Bradley melting points, curated NIST values, Hansen parameters, and IDAC (γ∞) data. LogS→x₂ uses density/3D‑volume estimates when x₂ is missing.
-- `builder.py` — `DataBuilder` merges all sources via left join on canonical SMILES. Also appends "auxiliary-only" records (compounds with T_m but no solubility) for Phase 1 pretraining.
-- `split.py` — Group-based train/val/test split using greedy bin-packing. Modes: `solute_scaffold` (default), `solute` (random by solute SMILES), `solvent` (no solvent overlap).
-- `split_registry.py` — canonical naming and metadata for split-aware CSVs and
-  experiment outputs.
-- `dataset.py` — `TGNNSolvDataset` returns `(solute_graph, solvent_graph, targets_dict)` triples. All auxiliary targets have boolean mask columns (`has_T_m`, `has_dH_fus`, etc.) since most records are missing some auxiliary labels. The same module also provides `PairTemperatureBatchSampler` and `make_loader()`, which are used by the canonical training script to keep repeated pair measurements together across temperature.
-- `solvent_types.py` — solvent type classification used for MoE routing.
+### DirectGNN
 
-### Key Design Decisions
+`DirectGNN` reuses:
 
-- **Implicit differentiation**: During training, `SLESolverFunction` runs successive substitution *without* gradient tracking in the forward pass, then computes exact gradients through the converged fixed point using the implicit function theorem. The solver also propagates the NRTL contribution to `d ln(x₂) / dT`, so monotonicity regularization no longer depends on a separate explicit-only path by default. Controlled by `TGNNSolvConfig.use_implicit_diff`.
-- **Temperature enters the state block explicitly**: The default v2 setup keeps `T` out of the crystal-property encoder path and injects it directly into the NRTL head and correction summary instead. This reduces temperature leakage into `T_m`, `ΔH_fus`, and other temperature-invariant predictions.
-- **Morgan fingerprints are optional side information, not a replacement path**: when enabled, fingerprints are injected into the molecular graph representations before the crystal-property heads and before pair construction. The solver, NRTL parameterization, and correction path remain unchanged, so the architecture stays physics-first.
-- **Descriptor priors are optional side information, not a replacement path**: when enabled, fixed RDKit descriptors are converted into coarse priors for `Hansen` and `V_m`, and the graph heads learn only bounded residuals around those priors. This is currently an experimental bridge toward stronger group-contribution priors.
-- **Switchable encoder asymmetry**: The maintained default is still the current shared backbone (`encoder_role_mode="shared_residual"`). The codebase also supports `encoder_role_mode="split_late"` for direct shared-vs-asymmetric comparisons without changing the rest of the architecture.
-- **Compact NRTL parameterization**: The default configuration uses the more identifiable `ref_invT` mode, where the network predicts `tau(T_ref)` and a single inverse-temperature slope per direction. This is converted internally to the ABC solver form, while `legacy` and `abc` remain loadable for older checkpoints and experiments.
-- **Physics layers have zero learnable parameters**: `IdealSolubilityLayer`, `NRTLLayer`, and `HansenDistanceLayer` are fully hardcoded thermodynamic equations.
-- **Constrained activations**: All physical outputs are range-constrained (T_m via sigmoid in [100, 700] K; α via sigmoid in [0.1, 0.6]; ΔH_fus via softplus > 0).
-- **Bounded correction**: The correction head cannot replace the physics solution with an arbitrary direct predictor. It can only propose a bounded additive correction within `±correction_max_abs`.
-- **Parameter-space correction**: The correction module operates on `T_m`, `ΔH_fus`, and current-temperature `tau` values, then pushes those corrected parameters back through the SLE solver. This keeps the correction path physically structured.
-- **Same-pair temperature regularization**: The canonical train loader uses pair-aware batching so minibatches systematically contain multiple temperatures for the same `(solute, solvent)` pair when the data allows it, and the loss adds ranking and local van't Hoff consistency penalties.
-- **SLE runs in float32**: The SLE solver casts to float32 for numerical stability even when training in mixed precision.
-- **Scatter without torch_scatter**: `scatter_add` and `scatter_mean` are implemented natively in `layers.py` to avoid the `torch_scatter` dependency.
+- the same encoder
+- the same interaction stack
+- the same readout
 
-### Other Modules
+It replaces the entire physics path with:
 
-- `progress.py` — Lightweight progress-bar helpers (`progress()`, `trange()`) with graceful fallback to plain iterables when tqdm is unavailable. Used throughout training/inference loops.
-- `eval_temperature.py` — Temperature-dependent evaluation: stratified metrics (T=298K vs other), extrapolation analysis (train on T≤T_cut, test on T>T_cut), van't Hoff consistency checks, per-pair temperature curves.
-- `evaluate.py` — `Evaluator` class with stratified metrics by solvent type, solubility range, temperature, and auxiliary data availability.
-- `uncertainty.py` — `MCDropoutPredictor` (N forward passes with dropout active) and `EnsemblePredictor` (K trained models).
-- `domain.py` — `ApplicabilityDomain`: Mahalanobis distance in pair-representation space + Tanimoto similarity to training set. Call `ad.fit(train_loader)` once, then `ad.score(smi_solute, smi_solvent, T)`.
-- `pretrain.py` — Optional Stage 0 GNN pretraining on ZINC250k: masked subgraph + bond prediction + contrastive + RDKit property prediction.
-- `ablation.py` — Full ablation study framework. The current CLI variants include the reference model, fixed-group-prior ablation, split-late encoder, no cross-attn, no NRTL, no curriculum, no aux losses, no correction, no implicit diff, DirectGNN, and small/large scaling variants.
-- `baselines/` — `DirectGNN`: same GNN+cross-attn backbone but with direct MLP → ln(x₂) prediction (no physics). Used as the key ablation to validate physics adds value. `ThermometerEncoder`: ordinal temperature encoding with fractional bin filling for smooth gradients.
+- thermometer temperature encoding
+- direct MLP to `ln(x2)`
 
-### Configuration (`config.py`)
+Optional DirectGNN feature paths:
 
-All hyperparameters live in `TGNNSolvConfig` (a `dataclass`). Key fields:
-- `hidden_dim=256`, `n_gnn_layers=6`, `n_cross_attn_layers=3`, `pair_dim=512`
-- `encoder_role_mode="shared_residual"` (default) or `"split_late"`
-- `encoder_role_specific_layers` — number of late role-specific GNN layers in `split_late` mode
-- `n_iter_train=5`, `n_iter_eval=20` — SLE fixed-point iterations
-- `solver_tol_train`, `solver_tol_eval`, `solver_adaptive_damping` — residual-based convergence control for the solver
-- `use_implicit_diff=True` — use implicit differentiation in backward pass
-- `interaction_mode="cross_attn"` (default) or `"bipartite"`
-- `set2set_steps=3`
-- `nrtl_tau_mode="ref_invT"` (default), `"legacy"`, or `"abc"`
-- `use_solvent_moe=True`, `solvent_moe_experts`, `solvent_moe_hidden`, `solvent_type_emb_dim`
-- `use_temperature_in_encoder=False`, `use_temperature_in_interaction=False`, `use_temperature_in_nrtl_head=True` — default v2 temperature routing
-- `use_morgan_features=False`, `morgan_radius=2`, `morgan_n_bits=2048`, `morgan_hidden_dim=256` — optional Morgan fingerprint augmentation for TGNN-Solv and DirectGNN
-- `use_descriptor_priors=False`, `descriptor_prior_hidden_dim=128`, `descriptor_prior_hansen_residual_max=5.0`, `descriptor_prior_vm_residual_max=30.0`, `descriptor_prior_reg_weight=0.0` — optional descriptor-conditioned `prior + residual` path for `Hansen` and `V_m`
-- `use_group_priors=False`, `group_prior_hansen_residual_max=5.0`, `group_prior_vm_residual_max=30.0`, `group_prior_reg_weight=0.0` — optional fixed fragment-count group priors for `Hansen` and `V_m`; mutually exclusive with `use_descriptor_priors`
-- `correction_max_abs=2.0` — trust-region width for bounded residual correction
-- `predict_dCp_fus=False`, `fixed_dCp_fus=0.0` — keep the ideal-solubility branch identifiable unless direct `ΔCp_fus` supervision is introduced
-- `phase2_correction_unfreeze_epoch=20` — epoch index inside Phase 2 where the bounded correction starts training
-- `correction_Tm_max_delta`, `correction_dH_fraction`, `correction_tau_max_delta` — bounds for parameter-space correction
-- Scale factors (`S_H`, `S_g`, `S_delta`, etc.) normalize head outputs into physically stable ranges.
+- `use_morgan_features`
+- `use_descriptor_augmentation`
 
-### Molecular Featurization (`features.py`)
+Descriptor augmentation computes full RDKit descriptors for both molecules,
+sanitizes non-finite values, normalizes them using train-set statistics, and
+augments the pair
+representation with descriptor interactions.
 
-`smiles_to_graph(smiles)` → PyG `Data`. Atom features (35-dim): atomic number (one-hot over 12 elements), hybridization, formal charge, H count, aromaticity, ring membership, electronegativity, vdW radius, polarizability. Bond features (8-dim): bond type (single/double/triple/aromatic), conjugated, in ring, stereo E/Z. The same module also exposes `smiles_to_morgan_fp(smiles)`, `compute_pair_morgan_features(...)`, and `smiles_to_descriptor_prior_features(smiles)` for optional side-information paths and baseline experiments.
+## Training and Losses
 
-## Data Layout
+### Curriculum
 
-```
-notebooks/data/
-  raw/          # Downloaded source files (BigSolDBv2.1.csv, bradley_mp.csv, etc.)
-  processed/    # Canonical merged/split CSVs (train.csv, val.csv, test.csv)
-checkpoints/    # Saved model checkpoints (.pt files)
-notebooks/      # Jupyter notebooks for data prep, training, evaluation
-docs/           # Task-oriented documentation mirrors for contributors and agents
-results/        # Evaluation JSONs and aggregate metrics
-figures/        # Generated paper figures
-```
+`src/tgnn_solv/trainer.py` implements a three-phase curriculum:
 
-## Testing
+- Phase 1: property pretraining only
+- Phase 2: full SLE training
+- Phase 3: low-LR fine-tuning
 
-Tests include:
-- `tests/test_physics.py` (physics layers + solver)
-- `tests/test_pretrain.py` (masked atom pretrain targets)
-- `tests/test_split.py` (solvent split leakage)
-- `tests/test_builder.py` (gamma merge + SLE filter)
-- `tests/test_integration.py` (forward/backward integration)
-- `tests/test_data_integrity.py` (processed split integrity; skips if data is absent)
+With `use_gc_priors_crystal=True`, the GC crystal residual branches are
+zero-initialized so the starting prediction equals the calibrated GC prior, and
+they can be frozen for the first `gc_prior_residual_freeze_epochs` of Phase 1.
+
+The canonical paper budget is `50 / 200 / 50`.
+
+### Pair-aware batching
+
+`scripts/train.py` uses pair-aware batching by default through
+`make_loader(...)` so that:
+
+- `pair_temp_rank`
+- `vant_hoff_local`
+
+can act on multiple temperatures from the same `(solute, solvent)` pair.
+
+### Bridge, Walden, and Oracle
+
+Current behavior:
+
+- `bridge_loss_weight` defaults to `0.0`
+- explicit phase-level bridge weights in YAML still override that default
+- `use_walden_check` is optional and off by default
+- `use_oracle_injection` is train-only unless a diagnostic script explicitly
+  forces it in eval mode
+
+The main maintained configs around these controls are:
+
+- `paper_config_oracle.yaml`
+- `paper_config_no_bridge.yaml`
+- `paper_config_no_bridge_no_walden.yaml`
+
+## Data Pipeline
+
+### Processed splits
+
+Canonical processed data lives under:
+
+- `notebooks/data/processed/train.csv`
+- `notebooks/data/processed/val.csv`
+- `notebooks/data/processed/test.csv`
+
+Additional split families:
+
+- `*_solute.csv`
+- `*_solvent.csv`
+
+### Dataset outputs
+
+`TGNNSolvDataset` returns `(solute_graph, solvent_graph, targets_dict)` with
+core keys:
+
+- `T`
+- `ln_x2`
+- `has_solubility`
+- `pair_key`
+- `solvent_type`
+- `T_m`, `T_m_mask`, `has_T_m`
+- `dH_fus`, `dH_mask`, `has_dH_fus`
+- `hansen_sol`, `hansen_mask`
+- `ln_gamma_inf`, `gamma_mask`
+
+Optional keys appear when enabled:
+
+- `solute_morgan_fp`, `solvent_morgan_fp`
+- `solute_descriptors`, `solvent_descriptors`
+- `solute_descriptor_prior_features`, `solvent_descriptor_prior_features`
+- `solute_group_prior_features`, `solvent_group_prior_features`
+- `T_m_gc`, `dH_fus_gc`, `dCp_fus_gc`
+
+## Configuration
+
+All hyperparameters live in `src/tgnn_solv/config.py` in `TGNNSolvConfig`.
+
+High-signal flags that are easy to miss:
+
+- `encoder_role_mode`
+- `nrtl_tau_mode`
+- `use_morgan_features`
+- `use_descriptor_augmentation`
+- `use_descriptor_priors`
+- `use_group_priors`
+- `use_gc_priors_crystal`
+- `use_oracle_injection`
+- `bridge_loss_weight`
+- `use_walden_check`
+- `use_pair_temperature_batching`
+
+Maintained config files:
+
+- `configs/paper_config.yaml`
+- `configs/paper_config_tuned.yaml`
+- `configs/paper_config_split_late.yaml`
+- `configs/paper_config_gc_priors.yaml`
+- `configs/paper_config_oracle.yaml`
+- `configs/paper_config_no_bridge.yaml`
+- `configs/paper_config_no_bridge_no_walden.yaml`
+- `configs/paper_config_combined.yaml`
+- `configs/paper_config_directgnn_tuned.yaml`
+- `configs/paper_config_directgnn_descriptors.yaml`
+- `configs/small_debug.yaml`
 
 ## Documentation Map
 
-- `docs/architecture.md` — expanded architecture notes
-- `docs/data_preparation.md` — source datasets, CSV schema, and split modes
-- `docs/training.md` — canonical training paths
-- `docs/evaluation.md` — evaluation scripts and comparison entry points
-- `docs/baselines.md` — baseline scripts and notebooks
-- `docs/reproducing_paper.md` — paper reproduction workflow
-- `docs/script_reference.md` — script and notebook inventory
-- `docs/repository_audit.md` — current redundancy and insufficiency audit
+- `docs/architecture.md`
+- `docs/data_preparation.md`
+- `docs/training.md`
+- `docs/evaluation.md`
+- `docs/baselines.md`
+- `docs/reproducing_paper.md`
+- `docs/script_reference.md`
+- `docs/repository_audit.md`
+- `docs/free_gpu_training.md`
+
+## Current Caveats
+
+- the full-budget experiment runner is present and maintained, but expensive
+- the main single-run training CLIs support resume, but not every wrapper adds
+  its own orchestration around partial-progress recovery
+- FastSolv and SolProp remain optional external stacks
+- not every research script is as hardened as the canonical train/eval path

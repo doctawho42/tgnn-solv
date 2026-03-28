@@ -1,120 +1,48 @@
 # Evaluation Guide
 
-## evaluate_complete.py
+## Overview
 
-Lightweight checkpoint evaluation for reporting and figure generation:
+Different evaluation scripts answer different questions:
+
+- `scripts/evaluate_complete.py`
+  - quick checkpoint evaluation with figure-ready arrays
+- `scripts/benchmark_tgnn_solv.py`
+  - richer `Evaluator`-backed benchmark report
+- `scripts/validate_physics.py`
+  - TGNN physical-parameter diagnostics
+- `scripts/run_split_comparisons.py`
+  - fair comparison across scaffold, solute, and solvent splits
+- `scripts/run_full_budget_experiment.py`
+  - full-budget TGNN-vs-DirectGNN diagnostic export
+- `scripts/run_medium_budget_comparison.py`
+  - full-split medium-budget architecture comparison
+
+## `scripts/evaluate_complete.py`
+
+Use this for lightweight checkpoint evaluation:
 
 ```bash
 python scripts/evaluate_complete.py \
-    --test-data FILE           # Path to test CSV (default: notebooks/data/processed/test.csv)
-    --tgnn-checkpoint FILE     # Path to model checkpoint (default: checkpoints/tgnn_solv_trained.pt)
-    --output FILE              # Output JSON path (default: benchmarks/complete_evaluation.json)
-    --n-samples N              # Evaluate on N random samples (optional, default: all)
-    --verbose                  # Verbose logging
+    --test-data notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --output results/full_evaluation.json \
+    --verbose
 ```
 
-Output includes:
+Outputs include:
 
-- overall metrics: MAE, RMSE, R², Pearson correlation, median error,
-  max error, Q95 error,
-- stratified metrics by temperature,
-- stratified metrics by solubility range,
-- `true_ln_x2` and `pred_ln_x2` arrays for plotting,
-- JSON output for downstream analysis.
+- overall regression metrics
+- temperature-stratified metrics
+- solubility-range metrics
+- solvent-type metrics
+- auxiliary-label-availability metrics
+- `true_ln_x2` / `pred_ln_x2` arrays for plotting
 
-Recommended use:
+Use this as the default quick report.
 
-- use `scripts/evaluate_complete.py` for quick reports, `results/full_evaluation.json`,
-  and plotting inputs;
-- use `scripts/benchmark_tgnn_solv.py` when you want richer `Evaluator`-backed
-  stratification.
-- use `scripts/run_split_comparisons.py` when you need fair split-wise
-  comparison across scaffold, solute, and solvent protocols.
+## `scripts/benchmark_tgnn_solv.py`
 
-## Canonical Report Schema
-
-`scripts/evaluate_complete.py` and `scripts/benchmark_tgnn_solv.py` now emit a
-shared report layout:
-
-```json
-{
-  "schema_version": "1.0",
-  "report_type": "evaluation",
-  "metadata": {...},
-  "overall": {...},
-  "stratified": {
-    "temperature": {...},
-    "solubility": {...},
-    "solvent_type": {...},
-    "solvent": {...},
-    "aux_data": {...}
-  },
-  "predictions": {
-    "true_ln_x2": [...],
-    "pred_ln_x2": [...]
-  }
-}
-```
-
-Backward-compatible aliases such as `by_temperature`,
-`by_solubility_range`, `by_solvent_type`, `true_ln_x2`, and `pred_ln_x2`
-are still written for downstream scripts and older notebooks.
-
-Example output (illustrative schema only; the numeric values below are not a
-guaranteed benchmark for the current repository state):
-
-```json
-{
-  "overall": {
-    "n_samples": 7500,
-    "mae": 0.58,
-    "rmse": 0.95,
-    "r2": 0.87,
-    "pearson_r": 0.93
-  },
-  "by_temperature": {
-    "T_298_to_323K": {
-      "n_samples": 3000,
-      "mae": 0.51,
-      "r2": 0.89
-    }
-  },
-  "by_solubility": {
-    "low_solubility": {
-      "n_samples": 2500,
-      "mae": 0.62,
-      "r2": 0.85
-    }
-  }
-}
-```
-
-## compare_fastsolv_tgnn.py
-
-Comparison with the FastSolv baseline:
-
-```bash
-python scripts/compare_fastsolv_tgnn.py \
-    --test-data FILE            # Path to test CSV
-    --tgnn-checkpoint FILE      # Path to TGNN model
-    --fastsolv-checkpoint FILE  # Path to FastSolv ONNX (optional)
-    --output FILE               # Output JSON path
-    --n-samples N               # Number of samples (optional)
-    --no-fastsolv               # Skip FastSolv (if unavailable)
-```
-
-FastSolv note:
-
-- The repository uses pretrained FastSolv for inference.
-- Training FastSolv from scratch is currently unreliable because of
-  descriptor-path NaN failures.
-- TGNN-Solv is the recommended path for custom training and comparison.
-- `scripts/run_fastsolv.py compare` is the preferred FastSolv comparison
-  wrapper when the FastSolv stack is installed.
-
-## benchmark_tgnn_solv.py
-
-Detailed benchmark script using `tgnn_solv.evaluate.Evaluator`:
+Use this when you want the richer `Evaluator` path:
 
 ```bash
 python scripts/benchmark_tgnn_solv.py \
@@ -123,123 +51,165 @@ python scripts/benchmark_tgnn_solv.py \
     --output benchmarks/results.json
 ```
 
-Use `scripts/analyze_benchmark.py` to turn the resulting JSON into a compact
-text report:
+It shares the same broad report schema as `evaluate_complete.py`, but is more
+convenient for deeper benchmark summaries.
+
+## `scripts/validate_physics.py`
+
+Use this when you care about TGNN intermediates rather than only final
+solubility error:
 
 ```bash
-python scripts/analyze_benchmark.py \
-    --results benchmarks/results.json \
-    --output benchmarks/analysis.txt
+python scripts/validate_physics.py \
+    --checkpoint checkpoints/tgnn_solv_trained.pt \
+    --test-data notebooks/data/processed/test.csv \
+    --output results/physics_validation.json \
+    --device cuda
 ```
 
-## run_split_comparisons.py
+This script understands the current optional feature paths, including:
 
-Fair split-wise comparison runner:
+- Morgan augmentation
+- descriptor priors
+- fixed group priors
+- crystal GC priors
+
+## `scripts/run_split_comparisons.py`
+
+Use this for fair comparison across split protocols:
 
 ```bash
 python scripts/run_split_comparisons.py \
     --processed-dir notebooks/data/processed \
     --splits "solute_scaffold,solute,solvent" \
-    --models "tgnn_solv,direct_gnn,rf_baseline" \
+    --models "tgnn_solv,direct_gnn,rf_baseline,rf_morgan,rf_hybrid" \
     --config configs/paper_config.yaml \
+    --n-seeds 3 \
     --output results/split_comparisons.json
 ```
 
-This script:
+It:
 
-- resolves the canonical CSV triplets for each split mode,
-- runs multi-seed experiments for the requested models,
-- stores per-split JSON artifacts under `results/split_comparisons/`,
-- emits an aggregate summary at `results/split_comparisons.json`,
-- runs per-split significance tests when at least two models are available.
+- resolves canonical train/val/test triplets for each split family
+- runs the requested models on matched data
+- stores per-split artifacts under `results/split_comparisons/`
+- aggregates metrics across seeds
 
-The aggregate JSON is consumed by:
+## `scripts/run_full_budget_experiment.py`
 
-- `scripts/generate_paper_figures.py` for `Figure S2`,
-- `scripts/generate_supplementary.py` for `Table S9`.
-
-## Examples
-
-### Example 1: Quick diagnostic (2 minutes)
+This is the most detailed single diagnostic runner in the repo:
 
 ```bash
-python scripts/evaluate_complete.py \
+python scripts/run_full_budget_experiment.py \
+    --config configs/paper_config_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
-    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
-    --n-samples 100 \
-    --output bench_quick.json
+    --seeds 42 \
+    --output-dir results/full_budget_experiment \
+    --device cuda
 ```
 
-### Example 2: Full evaluation for paper (15 minutes)
+It does all of the following in one command:
+
+- trains TGNN-Solv on the full paper budget
+- trains DirectGNN on an equivalent total epoch budget
+- evaluates both on the same test split
+- exports TGNN intermediate physical parameters for every test sample
+- reruns TGNN inference in forced-oracle mode
+- writes an interpretation guide alongside the metrics
+
+Per-seed and aggregate artifacts include:
+
+- `metrics.json`
+- `diagnostics.json`
+- `tgnn_intermediates.csv`
+- `README.md`
+
+The intermediate CSV includes, when available:
+
+- `T_m_pred`, `dH_fus_pred`, `dCp_fus_pred`
+- `T_m_solver`, `dH_fus_solver`, `dCp_fus_solver`
+- `T_m_gc` for GC-prior crystal runs
+- `tau_12_pred`, `tau_21_pred`, `alpha_pred`
+- `ln_gamma2_pred`
+- `Phi_pred`
+- `ln_x2_physics`
+- `ln_x2_final`
+- correction magnitude and gate outputs
+- true `T_m` / `dH_fus`
+- oracle usage masks
+
+The runner reuses resumable per-seed checkpoints created by the main training
+CLIs.
+
+## `scripts/run_medium_budget_comparison.py`
+
+Use this for the full-scaffold medium-budget architecture comparison:
 
 ```bash
-python scripts/evaluate_complete.py \
+python scripts/run_medium_budget_comparison.py \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
-    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
-    --output paper_results.json
+    --output-dir results/medium_budget \
+    --device cuda
 ```
 
-Then parse results:
+It trains and evaluates:
 
-```python
-import json
+- `tgnn_tuned`
+- `tgnn_gc_priors`
+- `tgnn_no_bridge`
+- `tgnn_combined_no_oracle`
+- `directgnn_tuned`
+- `directgnn_descriptors`
+- `rf_descriptors`
 
-with open("paper_results.json") as f:
-    data = json.load(f)
+Top-level outputs:
 
-print(f"Overall MAE: {data['overall']['mae']:.4f}")
-print(f"Overall R²:  {data['overall']['r2']:.4f}")
-print(f"Test samples: {data['overall']['n_samples']}")
+- `results/medium_budget/summary.json`
+- `results/medium_budget/comparison_table.md`
+- `results/medium_budget/per_model/<model>/...`
 
-for temp_range, metrics in data["by_temperature"].items():
-    if metrics["n_samples"] > 0:
-        print(f"{temp_range}: MAE={metrics['mae']:.4f}, R²={metrics['r2']:.4f}")
-```
+For TGNN models, per-model outputs include:
 
-### Example 3: Compare model versions
+- `metrics.json`
+- `standard_intermediates.csv`
+- `oracle_intermediates.csv`
+- `config.yaml`
+- `resolved_config.json`
+- training logs and checkpoints
+
+The combined TGNN comparison derives a no-oracle training config from
+`paper_config_combined.yaml` and still evaluates oracle mode afterward.
+
+## FastSolv and Other External Comparisons
+
+Preferred FastSolv wrapper:
 
 ```bash
-# Train two models
-jupyter notebook notebooks/02_train.ipynb  # Save as best_v1.pt
-# Modify hyperparameters and retrain, then save as best_v2.pt
-
-# Evaluate both
-python scripts/evaluate_complete.py \
-    --test-data notebooks/data/processed/test.csv \
-    --tgnn-checkpoint checkpoints/best_v1.pt \
-    --output eval_v1.json
-
-python scripts/evaluate_complete.py \
-    --test-data notebooks/data/processed/test.csv \
-    --tgnn-checkpoint checkpoints/best_v2.pt \
-    --output eval_v2.json
-```
-
-### Example 4: Evaluate on custom data
-
-```bash
-# Prepare your CSV with the required columns
-python scripts/evaluate_complete.py \
-    --test-data your_custom_data.csv \
+python scripts/run_fastsolv.py compare \
+    --input notebooks/data/processed/test.csv \
     --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
-    --output custom_results.json
+    --metrics results/fastsolv_compare.json
 ```
 
-### Example 5: Filter and evaluate on subset
+SolProp remains an optional separate-environment workflow.
 
-```python
-import pandas as pd
+## Practical Guidance
 
-df = pd.read_csv("notebooks/data/processed/test.csv")
-ethanol_only = df[df["solvent_smiles"] == "CCO"].copy()
-ethanol_only.to_csv("test_ethanol.csv", index=False)
+Use:
 
-print(f"Created test set with {len(ethanol_only)} ethanol samples")
-```
-
-```bash
-python scripts/evaluate_complete.py \
-    --test-data test_ethanol.csv \
-    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
-    --output ethanol_eval.json
-```
+- `evaluate_complete.py`
+  - for quick checkpoint reports
+- `benchmark_tgnn_solv.py`
+  - for richer benchmark summaries
+- `validate_physics.py`
+  - for TGNN-only physical diagnostics
+- `run_split_comparisons.py`
+  - for fair split-protocol comparisons
+- `run_full_budget_experiment.py`
+  - for full-budget TGNN-vs-DirectGNN diagnosis
+- `run_medium_budget_comparison.py`
+  - for the full-split medium-budget architecture study

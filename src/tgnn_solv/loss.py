@@ -17,6 +17,7 @@ Components:
   pair_temp_rank : Same-pair temperature ranking consistency
   vant_hoff_local : Local linearity in ln(x₂) vs 1/T for same-pair batches
   moe_balance: Encourage balanced MoE expert usage
+  walden    : Walden-rule entropy-of-fusion consistency for unsupervised samples
 """
 
 from __future__ import annotations
@@ -53,7 +54,7 @@ class TGNNSolvLoss(nn.Module):
             "gamma_inf": 0.5,
             "mono": 0.1,
             "res": 0.01,
-            "bridge": 0.05,
+            "bridge": cfg.bridge_loss_weight,
             "tau_reg": 0.01,
             "phys_pref": 0.1,
             "direct_reg": 0.05,
@@ -129,6 +130,9 @@ class TGNNSolvLoss(nn.Module):
         solvent_descriptor_prior_features: Tensor | None = None,
         solute_group_prior_features: Tensor | None = None,
         solvent_group_prior_features: Tensor | None = None,
+        T_m_gc: Tensor | None = None,
+        dH_fus_gc: Tensor | None = None,
+        dCp_fus_gc: Tensor | None = None,
     ) -> tuple[Tensor, dict[str, float]]:
         w = weights if weights is not None else self.default_weights
         losses = {}
@@ -225,13 +229,17 @@ class TGNNSolvLoss(nn.Module):
                     solute_data,
                     solvent_data,
                     T,
-                    solvent_type,
-                    solute_morgan_fp,
-                    solvent_morgan_fp,
-                    solute_descriptor_prior_features,
-                    solvent_descriptor_prior_features,
-                    solute_group_prior_features,
-                    solvent_group_prior_features,
+                    targets=targets,
+                    solvent_type=solvent_type,
+                    solute_morgan_fp=solute_morgan_fp,
+                    solvent_morgan_fp=solvent_morgan_fp,
+                    solute_descriptor_prior_features=solute_descriptor_prior_features,
+                    solvent_descriptor_prior_features=solvent_descriptor_prior_features,
+                    solute_group_prior_features=solute_group_prior_features,
+                    solvent_group_prior_features=solvent_group_prior_features,
+                    T_m_gc=T_m_gc,
+                    dH_fus_gc=dH_fus_gc,
+                    dCp_fus_gc=dCp_fus_gc,
                 )
 
         # ============================================================
@@ -318,6 +326,9 @@ class TGNNSolvLoss(nn.Module):
         ):
             losses["group_prior"] = group_prior_reg
 
+        if self.cfg.use_walden_check and self.cfg.walden_weight > 0:
+            losses["walden"] = self._walden_loss(output, targets, dev)
+
         # ============================================================
         # Weighted sum
         # ============================================================
@@ -330,6 +341,8 @@ class TGNNSolvLoss(nn.Module):
             wt = w.get(key, 0.0)
             if wt > 0:
                 total = total + wt * val
+        if self.cfg.use_walden_check and self.cfg.walden_weight > 0:
+            total = total + self.cfg.walden_weight * losses["walden"]
 
         return total, {k: v.item() for k, v in losses.items()}
 
@@ -346,6 +359,42 @@ class TGNNSolvLoss(nn.Module):
         lng_nrtl = output["physics"]["ln_gamma_inf"]
 
         return ((lng_nrtl - lng_hansen) / self.S_bridge).pow(2).mean()
+
+    def _walden_loss(
+        self,
+        output: dict[str, object],
+        targets: dict[str, object],
+        dev: torch.device,
+    ) -> Tensor:
+        """Penalize implausible fusion entropy only on unsupervised samples."""
+        fusion_params = output.get("fusion_params", {})
+        T_m_pred = fusion_params.get("T_m")
+        dH_fus_pred = fusion_params.get("dH_fus")
+        if not isinstance(T_m_pred, Tensor) or not isinstance(dH_fus_pred, Tensor):
+            return torch.zeros((), device=dev)
+
+        T_m_mask = targets.get("T_m_mask")
+        if T_m_mask is None:
+            T_m_mask = targets.get("has_T_m")
+        dH_mask = targets.get("dH_mask")
+        if dH_mask is None:
+            dH_mask = targets.get("has_dH_fus")
+
+        if isinstance(T_m_mask, Tensor) and isinstance(dH_mask, Tensor):
+            mask_unsup = ~(T_m_mask.to(dev).bool() & dH_mask.to(dev).bool())
+        else:
+            mask_unsup = torch.ones_like(T_m_pred, dtype=torch.bool, device=dev)
+
+        if not mask_unsup.any():
+            return torch.zeros((), device=dev)
+
+        dS_fus = dH_fus_pred / T_m_pred.clamp_min(self.cfg.eps)
+        deviation = (dS_fus - self.cfg.walden_target).abs()
+        walden_penalty = (
+            torch.clamp(deviation - self.cfg.walden_tolerance, min=0.0) ** 2
+        )
+        mask_unsup_f = mask_unsup.float()
+        return (walden_penalty * mask_unsup_f).sum() / mask_unsup_f.sum().clamp_min(1.0)
 
     def _pair_temperature_losses(
         self,
@@ -401,6 +450,7 @@ class TGNNSolvLoss(nn.Module):
         solute_data: object,
         solvent_data: object,
         T: Tensor,
+        targets: dict[str, object] | None = None,
         solvent_type: Tensor | None = None,
         solute_morgan_fp: Tensor | None = None,
         solvent_morgan_fp: Tensor | None = None,
@@ -408,6 +458,9 @@ class TGNNSolvLoss(nn.Module):
         solvent_descriptor_prior_features: Tensor | None = None,
         solute_group_prior_features: Tensor | None = None,
         solvent_group_prior_features: Tensor | None = None,
+        T_m_gc: Tensor | None = None,
+        dH_fus_gc: Tensor | None = None,
+        dCp_fus_gc: Tensor | None = None,
     ) -> Tensor:
         """Penalize dx₂/dT < 0 using the configured solver path."""
         T_var = T.detach().requires_grad_(True)
@@ -428,6 +481,10 @@ class TGNNSolvLoss(nn.Module):
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,
                     solvent_group_prior_features=solvent_group_prior_features,
+                    T_m_gc=T_m_gc,
+                    dH_fus_gc=dH_fus_gc,
+                    dCp_fus_gc=dCp_fus_gc,
+                    targets=targets,
                 )
                 d_lnx2_dT = torch.autograd.grad(
                     out["ln_x2"].sum(),

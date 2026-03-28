@@ -1,9 +1,9 @@
-# Tuned TGNN-Solv configuration for the split-late encoder comparison.
+# Tuned TGNN-Solv configuration with crystal GC priors.
 
 model:
   hidden_dim: 256
   n_gnn_layers: 6
-  encoder_role_mode: "split_late"
+  encoder_role_mode: "shared_residual"
   encoder_role_specific_layers: 2
   n_cross_attn_layers: 3
   pair_dim: 512
@@ -16,6 +16,9 @@ model:
   use_temperature_in_encoder: false
   use_temperature_in_interaction: false
   use_temperature_in_nrtl_head: true
+  use_gc_priors_crystal: true
+  gc_prior_Tm_residual_max: 50.0
+  gc_prior_dH_residual_factor: [0.3, 3.0]
   predict_dCp_fus: false
   fixed_dCp_fus: 0.0
   set2set_steps: 3
@@ -36,6 +39,7 @@ training:
   epochs_phase1: 50
   epochs_phase2: 200
   epochs_phase3: 50
+  gc_prior_residual_freeze_epochs: 5
   phase2_correction_unfreeze_epoch: 20
   batch_size: 64
   use_pair_temperature_batching: true

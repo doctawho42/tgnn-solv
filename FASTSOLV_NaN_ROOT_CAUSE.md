@@ -1,97 +1,68 @@
-# FastSolv Training NaN Issue - ROOT CAUSE ANALYSIS
+# FastSolv Training NaN Issue
 
-## Problem Statement
+## Summary
 
-When attempting to train FastSolv from scratch with TGNN-Solv datasets, the model produces NaN predictions from epoch 0, resulting in NaN metrics regardless of learning rate, batch size, or gradient clipping adjustments.
+Training FastSolv from scratch on TGNN-Solv data can produce NaN predictions
+from the first epoch. The failure mode is tied to the external FastSolv
+descriptor pipeline, not to the maintained TGNN-Solv or DirectGNN descriptor
+paths.
 
-## Root Cause Investigation
+## Observed Failure Mode
 
-### What We Tried
+During the original debugging pass, FastSolv descriptor generation returned
+non-finite values before training even started. Once those NaNs entered the
+model, all downstream metrics became NaN as well.
 
-✗ **Learning Rate Scaling** (1e-4 → 1e-6): No improvement, NaN persists  
-✗ **Gradient Clipping** (norm = 1.0): No improvement, still NaN  
-✗ **Batch Size Adjustment** (64 → 256): No improvement  
-✗ **Sanity Check Disabling** (num_sanity_val_steps=0): Model runs but predictions still NaN  
-✗ **NaN-tolerant Wrapper** (catch errors): Training completes but all metrics are NaN  
+That led to a simple practical conclusion:
 
-### Actual Root Cause
+- FastSolv works best in this repo as a pretrained external baseline
+- training FastSolv from scratch on these splits is not a maintained workflow
 
-After deep investigation, we discovered **descriptors contain NaN values** when computed via fastprop's `get_descriptors()` function:
+## Scope Boundary
 
-```
-Solute descriptor shape: (1, 1613), range: [nan, nan]
-Solvent descriptor shape: (1, 1613), range: [nan, nan]
-```
+This issue is specific to the FastSolv stack.
 
-**Why this happens:**
-1. FastSolv was trained on specific descriptor sets (ALL_2D from mordred-community)
-2. The pretrained FastSolv model expects descriptors in a specific range/distribution
-3. When training from scratch, the descriptor computation or normalization is incompatible
-4. NaN descriptors → NaN model outputs → NaN loss → NaN weights → Unable to converge
+It does not imply the same problem for the maintained descriptor baselines in
+this repository:
 
-## Diagnosis
+- DirectGNN descriptor augmentation computes RDKit descriptors through the
+  shared TGNN-Solv feature helper
+- those descriptors are sanitized to finite values before model use
+- descriptor normalization is computed on the training split only and stored in
+  the checkpoint
+- the RF descriptor baseline uses the same shared descriptor helper
 
-**FastSolv is designed as:**
-- ✓ A **pretrained baseline predictor** for inference
-- ✗ NOT suitable for training from scratch on custom datasets
-- ✗ Descriptor computation has undocumented incompatibilities
+## Recommended Usage
 
-**The fundamental issue:** FastSolv's descriptor pipeline (mordred-community → fastprop normalization) appears broken or incompatible when used standalone for training.
+Use FastSolv in one of these two modes:
 
-## Solution
-
-**DO NOT attempt to train FastSolv from scratch.**
-
-Instead:
-
-### ✓ For Inference (Pretrained Models)
 ```bash
 python scripts/run_fastsolv.py predict \
-    --input data/processed/test.csv \
-    --output fastsolv_predictions.csv
-```
-This works perfectly - FastSolv ensemble predictions are reliable.
+    --input notebooks/data/processed/test.csv \
+    --output results/fastsolv_predictions.csv
 
-### ✓ For Custom Training
-Use **TGNN-Solv** instead:
-- Fully differentiable physics-informed architecture
-- No descriptor pipeline issues
-- Directly learns from SMILES via GNN
-- Can be trained end-to-end with custom data
-```bash
-python notebooks/02_train.ipynb  # Train TGNN-Solv
+python scripts/run_fastsolv.py compare \
+    --input notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --metrics results/fastsolv_compare.json
 ```
 
-### Why TGNN-Solv is Better for Custom Training
-1. **End-to-end differentiable**: SMILES → Graph → Embeddings → Physics → Predictions
-2. **No descriptor dependency**: Learns features directly from molecular graphs
-3. **Physics-informed**: Gradients flow through thermodynamic equations
-4. **Proven to converge**: Three-phase curriculum training with real metrics
+If you need a trainable in-repo baseline on the same data, use one of:
 
-## Recommendations
+- `DirectGNN`
+- `DirectGNN + descriptors`
+- `RF(descriptors)`
+- `TGNN-Solv`
 
-### For Your Use Case
+## If Custom FastSolv Training Is Necessary
 
-**Recommendation: Use TGNN-Solv, not FastSolv.**
+Treat it as external-stack debugging, not a standard repo workflow. You will
+need to validate:
 
-- FastSolv: Pretrained ensemble for quick baseline predictions
-- TGNN-Solv: Customizable, trainable, physics-informed model
+- descriptor generation
+- descriptor normalization
+- expected FastSolv feature schema
+- environment compatibility with the upstream FastSolv stack
 
-### If FastSolv Training is Critical
-
-Contact the FastSolv developers/maintainers for:
-- Documented descriptor pipeline setup
-- Proper initialization procedures for custom data
-- Known incompatibilities with certain molecule types
-
-## Files Updated
-
-- `/scripts/run_fastsolv.py` - Added `--lr-scale` parameter, gradient clipping, NaN-tolerant wrapper
-- `/AGENTS.md` - Added warning about FastSolv training limitations
-
-## Lesson Learned
-
-**Don't force-fit pretrained models designed for inference into training pipelines without understanding their architecture deeply.**
-
-TGNN-Solv's physics-informed design makes it much more suitable for custom dataset training.
-
+The repo documents FastSolv honestly as optional and environment-sensitive for
+that reason.

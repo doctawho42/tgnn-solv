@@ -19,7 +19,7 @@ the physics-informed approach adds no value.
 
 from __future__ import annotations
 
-from typing import Optional, TypeAlias
+from typing import Any, Callable, Optional, TypeAlias
 
 import torch
 import torch.nn as nn
@@ -39,11 +39,14 @@ from ..layers import (
     make_temperature_features,
     build_batch_from_lists,
 )
-from ..progress import progress, trange
+from ..progress import progress
 from .temperature import ThermometerEncoder
 
 TensorList: TypeAlias = list[Tensor]
 MetricDict: TypeAlias = dict[str, float]
+DirectTrainerStateDict: TypeAlias = dict[str, Any]
+DirectResumeStateDict: TypeAlias = dict[str, Any]
+DESCRIPTOR_Z_CLIP = 10.0
 
 
 class DirectGNN(nn.Module):
@@ -136,10 +139,28 @@ class DirectGNN(nn.Module):
             self.fp_pre_scale = nn.Parameter(torch.tensor(0.5))
             self.fp_post_scale = nn.Parameter(torch.tensor(0.5))
 
+        self.descriptor_adapter = None
+        self.register_buffer("descriptor_mean", torch.empty(0))
+        self.register_buffer("descriptor_std", torch.empty(0))
+        if cfg.use_descriptor_augmentation:
+            if cfg.descriptor_dim <= 0:
+                raise ValueError("descriptor_dim must be positive when descriptor augmentation is enabled.")
+            self.descriptor_adapter = nn.Sequential(
+                nn.Linear(cfg.descriptor_dim, cfg.descriptor_hidden_dim),
+                nn.SiLU(),
+                nn.Dropout(cfg.dropout),
+                nn.Linear(cfg.descriptor_hidden_dim, cfg.descriptor_hidden_dim),
+                nn.SiLU(),
+            )
+            self.descriptor_mean = torch.zeros(cfg.descriptor_dim)
+            self.descriptor_std = torch.ones(cfg.descriptor_dim)
+
         # --- Pair + temperature → prediction ---
         # Input: g_sol(D_r) + g_slv(D_r) + g_sol*g_slv(D_r) +
         #        |g_sol-g_slv|(D_r) + t_enc(n_temp_bins)
         pair_input_dim = D_r * 4 + n_temp_bins
+        if cfg.use_descriptor_augmentation:
+            pair_input_dim += cfg.descriptor_hidden_dim * 4
 
         self.prediction_head = nn.Sequential(
             nn.Linear(pair_input_dim, 1024),
@@ -155,6 +176,51 @@ class DirectGNN(nn.Module):
             nn.SiLU(),
             nn.Linear(64, 1),
         )
+
+    def set_descriptor_normalization(
+        self,
+        mean: Tensor | list[float],
+        std: Tensor | list[float],
+    ) -> None:
+        """Attach precomputed descriptor normalization statistics to the model."""
+        mean_tensor = torch.as_tensor(mean, dtype=torch.float32)
+        std_tensor = torch.as_tensor(std, dtype=torch.float32)
+        if mean_tensor.ndim != 1 or std_tensor.ndim != 1:
+            raise ValueError("Descriptor normalization tensors must be 1D.")
+        if mean_tensor.shape != std_tensor.shape:
+            raise ValueError("Descriptor normalization mean/std must have the same shape.")
+        if self.cfg.use_descriptor_augmentation and mean_tensor.numel() != self.cfg.descriptor_dim:
+            raise ValueError(
+                f"Descriptor normalization size mismatch: got {mean_tensor.numel()}, "
+                f"expected {self.cfg.descriptor_dim}."
+            )
+        buffer_device = self.descriptor_mean.device
+        buffer_dtype = self.descriptor_mean.dtype
+        self.descriptor_mean = mean_tensor.to(
+            device=buffer_device,
+            dtype=buffer_dtype,
+        ).clone()
+        self.descriptor_std = std_tensor.clamp_min(1e-8).to(
+            device=buffer_device,
+            dtype=buffer_dtype,
+        ).clone()
+
+    def _encode_descriptors(self, descriptors: Tensor) -> Tensor:
+        """Normalize and project raw RDKit descriptors into the pair space."""
+        if self.descriptor_adapter is None:
+            raise ValueError("Descriptor augmentation is disabled for this DirectGNN instance.")
+        if descriptors.size(-1) != self.cfg.descriptor_dim:
+            raise ValueError(
+                f"Descriptor tensor has dim {descriptors.size(-1)}, "
+                f"expected {self.cfg.descriptor_dim}."
+            )
+        descriptors = descriptors.to(
+            device=self.descriptor_mean.device,
+            dtype=self.descriptor_mean.dtype,
+        )
+        normalized = (descriptors - self.descriptor_mean) / self.descriptor_std.clamp_min(1e-8)
+        normalized = normalized.clamp(min=-DESCRIPTOR_Z_CLIP, max=DESCRIPTOR_Z_CLIP)
+        return self.descriptor_adapter(normalized)
 
     def _encode_and_readout(
         self,
@@ -208,6 +274,8 @@ class DirectGNN(nn.Module):
         solvent_type: Optional[Tensor] = None,
         solute_morgan_fp: Tensor | None = None,
         solvent_morgan_fp: Tensor | None = None,
+        solute_descriptors: Tensor | None = None,
+        solvent_descriptors: Tensor | None = None,
     ) -> dict[str, Tensor]:
         """
         Forward pass.
@@ -297,6 +365,24 @@ class DirectGNN(nn.Module):
             (g_sol_post - g_slv_post).abs(),
             t_enc,
         ], dim=-1)
+        if self.cfg.use_descriptor_augmentation:
+            if solute_descriptors is None or solvent_descriptors is None:
+                raise ValueError(
+                    "Descriptor augmentation is enabled in the config, "
+                    "but solute_descriptors/solvent_descriptors were not provided."
+                )
+            sol_desc = self._encode_descriptors(solute_descriptors).to(g_sol_post)
+            slv_desc = self._encode_descriptors(solvent_descriptors).to(g_slv_post)
+            pair_input = torch.cat(
+                [
+                    pair_input,
+                    sol_desc,
+                    slv_desc,
+                    sol_desc * slv_desc,
+                    (sol_desc - slv_desc).abs(),
+                ],
+                dim=-1,
+            )
 
         # --- Direct prediction ---
         ln_x2 = self.prediction_head(pair_input).squeeze(-1)  # (B,)
@@ -327,6 +413,58 @@ class DirectGNNTrainer:
             self.device = next(model.parameters()).device
         else:
             self.device = device
+        self.best_val_mae = float("inf")
+        self.best_state: dict[str, Tensor] | None = None
+        self.patience_counter = 0
+        self.history: dict[str, list[float]] = {
+            "train_loss": [],
+            "val_mae": [],
+            "val_r2": [],
+        }
+
+    def state_dict(self) -> DirectTrainerStateDict:
+        """Serialize trainer state required for checkpointed resume."""
+        best_state = None
+        if self.best_state is not None:
+            best_state = {
+                key: value.detach().cpu().clone()
+                for key, value in self.best_state.items()
+            }
+        return {
+            "best_val_mae": self.best_val_mae,
+            "best_state": best_state,
+            "patience_counter": self.patience_counter,
+            "history": {
+                key: list(values)
+                for key, values in self.history.items()
+            },
+        }
+
+    def load_state_dict(self, state: DirectTrainerStateDict | None) -> None:
+        """Restore trainer state from a saved checkpoint payload."""
+        if not state:
+            return
+        self.best_val_mae = float(state.get("best_val_mae", float("inf")))
+        raw_best_state = state.get("best_state")
+        if isinstance(raw_best_state, dict):
+            self.best_state = {
+                key: value.detach().cpu().clone()
+                for key, value in raw_best_state.items()
+                if isinstance(value, Tensor)
+            }
+        else:
+            self.best_state = None
+        self.patience_counter = int(state.get("patience_counter", 0))
+        raw_history = state.get("history")
+        if isinstance(raw_history, dict):
+            self.history = {
+                key: [float(v) for v in values]
+                for key, values in raw_history.items()
+                if isinstance(values, list)
+            }
+            self.history.setdefault("train_loss", [])
+            self.history.setdefault("val_mae", [])
+            self.history.setdefault("val_r2", [])
 
     def train(
         self,
@@ -335,6 +473,10 @@ class DirectGNNTrainer:
         n_epochs: int = 200,
         lr: float = 1e-4,
         patience: int = 20,
+        start_epoch: int = 0,
+        optimizer_state_dict: dict[str, Any] | None = None,
+        scheduler_state_dict: dict[str, Any] | None = None,
+        on_epoch_end: Callable[[DirectResumeStateDict], None] | None = None,
     ) -> MetricDict:
         """
         Train the model. Returns dict with best_val_mae.
@@ -344,17 +486,24 @@ class DirectGNNTrainer:
         print(f"  Parameters: {n_params:,}")
 
         optimizer = torch.optim.AdamW(
-            self.model.parameters(), lr=lr, weight_decay=1e-5
+            self.model.parameters(),
+            lr=lr,
+            weight_decay=float(self.model.cfg.direct_weight_decay),
         )
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, T_max=n_epochs
         )
+        if optimizer_state_dict is not None:
+            optimizer.load_state_dict(optimizer_state_dict)
+        if scheduler_state_dict is not None:
+            scheduler.load_state_dict(scheduler_state_dict)
 
-        best_val_mae = float("inf")
-        best_state = None
-        patience_counter = 0
+        epoch_iterable = progress(
+            range(start_epoch, n_epochs),
+            desc="DirectGNN epochs",
+        )
 
-        for epoch in trange(n_epochs, desc="DirectGNN epochs"):
+        for epoch in epoch_iterable:
             # --- Train ---
             self.model.train()
             train_loss = 0.0
@@ -371,6 +520,8 @@ class DirectGNNTrainer:
                 solvent_type = tgt.get("solvent_type")
                 solute_morgan_fp = tgt.get("solute_morgan_fp")
                 solvent_morgan_fp = tgt.get("solvent_morgan_fp")
+                solute_descriptors = tgt.get("solute_descriptors")
+                solvent_descriptors = tgt.get("solvent_descriptors")
                 mask = tgt["has_solubility"].to(self.device)
 
                 if not mask.any():
@@ -392,6 +543,16 @@ class DirectGNNTrainer:
                         if isinstance(solvent_morgan_fp, Tensor)
                         else None
                     ),
+                    solute_descriptors=(
+                        solute_descriptors.to(self.device)
+                        if isinstance(solute_descriptors, Tensor)
+                        else None
+                    ),
+                    solvent_descriptors=(
+                        solvent_descriptors.to(self.device)
+                        if isinstance(solvent_descriptors, Tensor)
+                        else None
+                    ),
                 )
 
                 pred = out["ln_x2"][mask]
@@ -399,7 +560,10 @@ class DirectGNNTrainer:
                 loss = nn.functional.huber_loss(pred, true, delta=1.0)
 
                 loss.backward()
-                nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                nn.utils.clip_grad_norm_(
+                    self.model.parameters(),
+                    float(self.model.cfg.grad_clip),
+                )
                 optimizer.step()
 
                 train_loss += loss.item()
@@ -407,9 +571,12 @@ class DirectGNNTrainer:
 
             scheduler.step()
             avg_train = train_loss / max(n_batches, 1)
+            self.history["train_loss"].append(float(avg_train))
 
             # --- Validate ---
             val_metrics = self._evaluate_loader(val_loader)
+            self.history["val_mae"].append(float(val_metrics["mae"]))
+            self.history["val_r2"].append(float(val_metrics["r2"]))
 
             if epoch % 20 == 0 or epoch == n_epochs - 1:
                 print(
@@ -420,24 +587,36 @@ class DirectGNNTrainer:
                 )
 
             # --- Early stopping ---
-            if val_metrics["mae"] < best_val_mae:
-                best_val_mae = val_metrics["mae"]
-                patience_counter = 0
-                best_state = {
+            if val_metrics["mae"] < self.best_val_mae:
+                self.best_val_mae = val_metrics["mae"]
+                self.patience_counter = 0
+                self.best_state = {
                     k: v.cpu().clone()
                     for k, v in self.model.state_dict().items()
                 }
             else:
-                patience_counter += 1
-                if patience_counter >= patience:
+                self.patience_counter += 1
+                if self.patience_counter >= patience:
                     print(f"    Early stopping at epoch {epoch}")
                     break
 
-        if best_state is not None:
-            self.model.load_state_dict(best_state)
-            print(f"  Restored best model (val MAE = {best_val_mae:.4f})")
+            if on_epoch_end is not None:
+                on_epoch_end(
+                    {
+                        "status": "in_progress",
+                        "next_epoch": epoch + 1,
+                        "total_epochs": n_epochs,
+                        "optimizer_state_dict": optimizer.state_dict(),
+                        "scheduler_state_dict": scheduler.state_dict(),
+                        "trainer_state_dict": self.state_dict(),
+                    }
+                )
 
-        return {"best_val_mae": best_val_mae}
+        if self.best_state is not None:
+            self.model.load_state_dict(self.best_state)
+            print(f"  Restored best model (val MAE = {self.best_val_mae:.4f})")
+
+        return {"best_val_mae": self.best_val_mae}
 
     @torch.no_grad()
     def _evaluate_loader(self, loader: DataLoader) -> MetricDict:
@@ -456,6 +635,8 @@ class DirectGNNTrainer:
             solvent_type = tgt.get("solvent_type")
             solute_morgan_fp = tgt.get("solute_morgan_fp")
             solvent_morgan_fp = tgt.get("solvent_morgan_fp")
+            solute_descriptors = tgt.get("solute_descriptors")
+            solvent_descriptors = tgt.get("solvent_descriptors")
             mask = tgt["has_solubility"]  # keep on CPU
 
             if not mask.any():
@@ -474,6 +655,16 @@ class DirectGNNTrainer:
                 solvent_morgan_fp=(
                     solvent_morgan_fp.to(self.device)
                     if isinstance(solvent_morgan_fp, Tensor)
+                    else None
+                ),
+                solute_descriptors=(
+                    solute_descriptors.to(self.device)
+                    if isinstance(solute_descriptors, Tensor)
+                    else None
+                ),
+                solvent_descriptors=(
+                    solvent_descriptors.to(self.device)
+                    if isinstance(solvent_descriptors, Tensor)
                     else None
                 ),
             )
