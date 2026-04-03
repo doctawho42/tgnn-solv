@@ -14,6 +14,53 @@ The repository maintains two closely related model families:
 The central comparison is whether the explicit physics bottleneck helps
 relative to the same backbone trained directly on solubility.
 
+## Internal Package Map
+
+The implementation still lives in the legacy flat modules such as:
+
+- `src/tgnn_solv/model.py`
+- `src/tgnn_solv/trainer.py`
+- `src/tgnn_solv/inference.py`
+
+For contributor navigation, the package now also exposes grouped namespaces:
+
+- `tgnn_solv.models`
+- `tgnn_solv.physics`
+- `tgnn_solv.training`
+- `tgnn_solv.evaluation`
+- `tgnn_solv.chemistry`
+- `tgnn_solv.core`
+
+Those grouped imports are thin compatibility re-exports over the legacy flat
+modules. They do not change runtime behavior.
+
+## Optional Stage 0 Pretraining
+
+Outside the main paper curriculum, the repository also implements a standalone
+encoder/readout pretraining stage in `src/tgnn_solv/pretrain.py`.
+
+This is distinct from `Phase 1` in `trainer.py`:
+
+- `Stage 0`
+  - optional pre-curriculum molecular pretraining on large SMILES sets
+- `Phase 1`
+  - supervised auxiliary warmup on the processed solubility training split
+
+The maintained `Pretrainer` updates:
+
+- `model.gnn`
+- `model.readout`
+
+in place, using four tasks:
+
+- masked subgraph atom reconstruction
+- bond-type prediction
+- RDKit property prediction
+- graph contrastive learning
+
+The temporary Stage 0 heads are discarded after pretraining, so the downstream
+model remains the normal TGNN-Solv architecture.
+
 ## TGNN-Solv Forward Pass
 
 The maintained `TGNNSolv` path in `src/tgnn_solv/model.py` runs in this order.
@@ -101,7 +148,7 @@ Crystal GC-prior mode:
 - raw GC priors come from SMARTS-based Joback-style fragmentation
 - partial fragmentation is allowed; the hard `400 K` fallback is used only when
   no usable counts exist or a required increment is missing
-- `scripts/train.py` fits a train-only affine calibration for the melting prior:
+- `scripts/training/train.py` fits a train-only affine calibration for the melting prior:
   - `T_m_gc_calibrated = gc_prior_tm_scale * T_m_gc + gc_prior_tm_bias`
 - `FusionHead` then predicts only bounded residuals around the calibrated GC
   priors:
@@ -229,7 +276,7 @@ The maintained descriptor path now does the following:
 `src/tgnn_solv/trainer.py` implements a three-phase curriculum:
 
 - Phase 1
-  - property pretraining only
+  - supervised property warmup only
   - no solubility loss
   - correction frozen
   - GC crystal residual branches can be frozen for the first
@@ -238,6 +285,36 @@ The maintained descriptor path now does the following:
   - full SLE training
   - correction unfreezes at `phase2_correction_unfreeze_epoch`
   - oracle injection, if enabled, anneals over the last part of the phase
+
+## Inference-Time Utilities
+
+The repository also ships post-training utilities that sit outside
+`model.forward(...)` but are part of the maintained surface:
+
+- `src/tgnn_solv/inference.py`
+  - checkpoint loading/saving
+  - single-system prediction
+  - temperature scans
+  - human-readable interpretation
+- `src/tgnn_solv/uncertainty.py`
+  - MC-dropout and deep-ensemble uncertainty estimation
+- `src/tgnn_solv/domain.py`
+  - applicability-domain / OOD screening
+
+These are deployment and diagnostics layers, not extra learnable blocks inside
+TGNN-Solv itself.
+
+### Applicability domain
+
+The current OOD helper fits on the training loader and combines:
+
+- Mahalanobis distance in pair latent space
+- nearest-neighbor Morgan Tanimoto similarity for solute and solvent
+
+It also reports exact seen/unseen flags for the queried solute and solvent.
+
+Despite some older high-level references, leverage is not part of the current
+implementation’s decision path.
 - Phase 3
   - low-learning-rate fine-tuning
   - oracle injection forced off
@@ -305,10 +382,10 @@ Optional keys appear when their feature paths are enabled:
 
 The main training CLIs now support resumable checkpoints:
 
-- `scripts/train.py --checkpoint-every ... --resume ...`
-- `scripts/train_directgnn.py --checkpoint-every ... --resume ...`
+- `scripts/training/train.py --checkpoint-every ... --resume ...`
+- `scripts/training/train_directgnn.py --checkpoint-every ... --resume ...`
 
 The heavy experiment runners reuse those checkpoints automatically:
 
-- `scripts/run_full_budget_experiment.py`
-- `scripts/run_medium_budget_comparison.py`
+- `scripts/experiments/run_full_budget_experiment.py`
+- `scripts/experiments/run_medium_budget_comparison.py`

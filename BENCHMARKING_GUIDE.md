@@ -4,14 +4,17 @@
 
 There are now four maintained benchmark layers in the repo:
 
-- `scripts/evaluate_complete.py`
+- `scripts/evaluation/evaluate_complete.py`
   - quickest checkpoint report with plot-ready arrays
-- `scripts/benchmark_tgnn_solv.py`
+- `scripts/evaluation/benchmark_tgnn_solv.py`
   - richer `Evaluator`-backed benchmark JSON
-- `scripts/run_full_budget_experiment.py`
+- `scripts/experiments/run_full_budget_experiment.py`
   - full-budget TGNN-vs-DirectGNN diagnostic study
-- `scripts/run_medium_budget_comparison.py`
+- `scripts/experiments/run_medium_budget_comparison.py`
   - full-scaffold medium-budget architecture comparison
+
+These grouped paths are the preferred human-facing CLI layout. The old
+top-level script paths remain available as compatibility wrappers.
 
 Use the lightest tool that answers the question you actually have.
 
@@ -20,7 +23,7 @@ Use the lightest tool that answers the question you actually have.
 For the default quick report:
 
 ```bash
-python scripts/evaluate_complete.py \
+python scripts/evaluation/evaluate_complete.py \
     --test-data notebooks/data/processed/test.csv \
     --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
     --output results/full_evaluation.json \
@@ -39,7 +42,7 @@ This gives you:
 If you want the `Evaluator`-backed path:
 
 ```bash
-python scripts/benchmark_tgnn_solv.py \
+python scripts/evaluation/benchmark_tgnn_solv.py \
     --checkpoint checkpoints/tgnn_solv_trained.pt \
     --test-data notebooks/data/processed/test.csv \
     --output benchmarks/results.json
@@ -53,7 +56,7 @@ post-processed later.
 If top-line solubility metrics are not enough, inspect the TGNN intermediates:
 
 ```bash
-python scripts/validate_physics.py \
+python scripts/evaluation/validate_physics.py \
     --checkpoint checkpoints/tgnn_solv_trained.pt \
     --test-data notebooks/data/processed/test.csv \
     --output results/physics_validation.json \
@@ -72,7 +75,7 @@ Use this when you need:
 For the most detailed TGNN-vs-DirectGNN comparison:
 
 ```bash
-python scripts/run_full_budget_experiment.py \
+python scripts/experiments/run_full_budget_experiment.py \
     --config configs/paper_config_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -97,7 +100,7 @@ It also reuses resumable per-seed checkpoints.
 For the full-scaffold medium-budget comparison:
 
 ```bash
-python scripts/run_medium_budget_comparison.py \
+python scripts/experiments/run_medium_budget_comparison.py \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
@@ -120,12 +123,12 @@ For lightweight checkpoint-to-checkpoint comparison, benchmark each model
 separately and diff the resulting JSON:
 
 ```bash
-python scripts/benchmark_tgnn_solv.py \
+python scripts/evaluation/benchmark_tgnn_solv.py \
     --checkpoint checkpoints/model_a.pt \
     --test-data notebooks/data/processed/test.csv \
     --output benchmarks/model_a.json
 
-python scripts/benchmark_tgnn_solv.py \
+python scripts/evaluation/benchmark_tgnn_solv.py \
     --checkpoint checkpoints/model_b.pt \
     --test-data notebooks/data/processed/test.csv \
     --output benchmarks/model_b.json

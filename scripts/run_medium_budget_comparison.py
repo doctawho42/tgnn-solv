@@ -6,9 +6,10 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
+import shutil
 import subprocess
 import sys
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ from tgnn_solv.inference import load_model
 from tgnn_solv.reporting import json_safe
 
 from run_full_budget_experiment import (
+    _invoke_tgnn,
     build_loader,
     collect_direct_metrics,
     collect_tgnn_intermediates,
@@ -175,6 +177,7 @@ def _run_training_subprocess(
     log_path: Path,
     seed: int,
     device: str,
+    batch_size_override: int | None,
     force_retrain: bool,
     checkpoint_every: int,
 ) -> None:
@@ -207,8 +210,18 @@ def _run_training_subprocess(
         "--experiment-name",
         checkpoint_path.stem,
     ]
+    if batch_size_override is not None:
+        cmd.extend(["--batch-size", str(batch_size_override)])
     if checkpoint_path.is_file() and not force_retrain:
         cmd.extend(["--resume", str(checkpoint_path)])
+
+    run_env = os.environ.copy()
+    if device.strip().lower() == "mps":
+        run_env.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
+        # Keep MPS below the hard cap so failures become recoverable OOMs
+        # instead of late SIGKILL from system memory pressure.
+        run_env.setdefault("PYTORCH_MPS_HIGH_WATERMARK_RATIO", "0.9")
+        run_env.setdefault("PYTORCH_MPS_LOW_WATERMARK_RATIO", "0.8")
 
     with log_path.open("a", encoding="utf-8") as handle:
         handle.write(f"\n=== Running {' '.join(cmd)} ===\n")
@@ -218,6 +231,7 @@ def _run_training_subprocess(
             stdout=handle,
             stderr=subprocess.STDOUT,
             text=True,
+            env=run_env,
         )
     if result.returncode != 0:
         raise subprocess.CalledProcessError(result.returncode, cmd)
@@ -242,11 +256,10 @@ def _evaluate_tgnn_model(
         device,
         force_oracle_injection=False,
     )
-    oracle_df = collect_tgnn_intermediates(
-        model,
-        loader,
-        device,
-        force_oracle_injection=True,
+    oracle_df = _collect_tgnn_tm_only_oracle_intermediates(
+        model=model,
+        loader=loader,
+        device=device,
     )
 
     sol_mask = standard_df["has_solubility"].astype(bool).to_numpy()
@@ -266,6 +279,7 @@ def _evaluate_tgnn_model(
         "config": dataclasses_asdict_safe(cfg),
         "test_metrics": standard_metrics,
         "oracle_metrics": oracle_metrics,
+        "oracle_definition": "T_m_true substituted where available; dH_fus remains predicted.",
         "T_m_metrics": tm_metrics,
         "nrtl_stats": _nrtl_stats(standard_df),
     }
@@ -275,9 +289,109 @@ def _evaluate_tgnn_model(
     model_dir = output_dir / name
     model_dir.mkdir(parents=True, exist_ok=True)
     standard_df.to_csv(model_dir / "standard_intermediates.csv", index=False)
-    oracle_df.to_csv(model_dir / "oracle_intermediates.csv", index=False)
+    oracle_df.to_csv(model_dir / "oracle_tm_intermediates.csv", index=False)
     _write_json(model_dir / "metrics.json", payload)
     return payload
+
+
+def _collect_tgnn_tm_only_oracle_intermediates(
+    *,
+    model: torch.nn.Module,
+    loader: torch.utils.data.DataLoader,
+    device: torch.device,
+) -> pd.DataFrame:
+    """Collect TGNN intermediates with T_m-only oracle substitution."""
+    model.eval()
+    dataset_df = loader.dataset.df.reset_index(drop=True)
+    rows: list[pd.DataFrame] = []
+    cursor = 0
+
+    with torch.no_grad():
+        for sol_batch, slv_batch, targets in loader:
+            sol_batch = sol_batch.to(device)
+            slv_batch = slv_batch.to(device)
+            targets_dev = {
+                key: value.to(device) if isinstance(value, torch.Tensor) else value
+                for key, value in targets.items()
+            }
+
+            # Force oracle substitution through the existing solver path, but
+            # disable dH_fus oracle availability so the oracle stays T_m-only.
+            for mask_key in ("has_dH_fus", "dH_mask"):
+                mask_value = targets_dev.get(mask_key)
+                if isinstance(mask_value, torch.Tensor):
+                    targets_dev[mask_key] = torch.zeros_like(mask_value, dtype=torch.bool)
+
+            output, intermediates = _invoke_tgnn(
+                model,
+                sol_batch=sol_batch,
+                slv_batch=slv_batch,
+                targets=targets_dev,
+                force_oracle_injection=True,
+            )
+
+            batch_size = int(targets_dev["T"].shape[0])
+            batch_df = dataset_df.iloc[cursor:cursor + batch_size].copy().reset_index(drop=True)
+            cursor += batch_size
+
+            batch_df["ln_x2_true"] = batch_df["ln_x2"].astype(float)
+            batch_df["T_m_true"] = batch_df["T_m"].where(batch_df["has_T_m"].astype(bool), np.nan)
+            batch_df["dH_fus_true"] = batch_df["dH_fus"].where(batch_df["has_dH_fus"].astype(bool), np.nan)
+            batch_df["T_m_gc"] = intermediates["T_m_gc"].detach().cpu().numpy()
+            batch_df["dH_fus_gc"] = intermediates["dH_fus_gc"].detach().cpu().numpy()
+            batch_df["T_m_pred"] = output["fusion_params"]["T_m"].detach().cpu().numpy()
+            batch_df["dH_fus_pred"] = output["fusion_params"]["dH_fus"].detach().cpu().numpy()
+            batch_df["T_m_solver"] = output["solver_fusion_params"]["T_m"].detach().cpu().numpy()
+            batch_df["dH_fus_solver"] = output["solver_fusion_params"]["dH_fus"].detach().cpu().numpy()
+            batch_df["tau_12_pred"] = intermediates["tau_12"].detach().cpu().numpy()
+            batch_df["tau_21_pred"] = intermediates["tau_21"].detach().cpu().numpy()
+            batch_df["alpha_pred"] = intermediates["alpha_12"].detach().cpu().numpy()
+            batch_df["ln_gamma2_pred"] = intermediates["ln_gamma_2"].detach().cpu().numpy()
+            batch_df["Phi_pred"] = intermediates["Phi"].detach().cpu().numpy()
+            batch_df["ln_x2_physics"] = intermediates["ln_x2_physics"].detach().cpu().numpy()
+            batch_df["ln_x2_final"] = intermediates["ln_x2_final"].detach().cpu().numpy()
+            batch_df["correction_magnitude"] = np.abs(
+                batch_df["ln_x2_final"].to_numpy(dtype=float)
+                - batch_df["ln_x2_physics"].to_numpy(dtype=float)
+            )
+            batch_df["gate_value"] = intermediates["correction_gate"].detach().cpu().numpy()
+
+            oracle_masks = output.get("oracle_injection_masks", {})
+            if isinstance(oracle_masks, dict):
+                mask_Tm = oracle_masks.get("T_m")
+                mask_dH = oracle_masks.get("dH_fus")
+                batch_df["oracle_used_T_m"] = (
+                    mask_Tm.detach().cpu().numpy().astype(bool)
+                    if isinstance(mask_Tm, torch.Tensor)
+                    else False
+                )
+                batch_df["oracle_used_dH_fus"] = (
+                    mask_dH.detach().cpu().numpy().astype(bool)
+                    if isinstance(mask_dH, torch.Tensor)
+                    else False
+                )
+            else:
+                batch_df["oracle_used_T_m"] = False
+                batch_df["oracle_used_dH_fus"] = False
+
+            sol_mask = batch_df["has_solubility"].astype(bool)
+            batch_df["error"] = np.where(
+                sol_mask,
+                batch_df["ln_x2_final"].to_numpy(dtype=float) - batch_df["ln_x2_true"].to_numpy(dtype=float),
+                np.nan,
+            )
+            batch_df["abs_error"] = np.where(
+                sol_mask,
+                np.abs(batch_df["error"].to_numpy(dtype=float)),
+                np.nan,
+            )
+            rows.append(batch_df)
+
+    if cursor != len(dataset_df):
+        raise ValueError(
+            f"Collected {cursor} rows from loader, expected {len(dataset_df)}."
+        )
+    return pd.concat(rows, axis=0, ignore_index=True)
 
 
 def _evaluate_direct_model(
@@ -372,6 +486,10 @@ def _build_summary(
                 "tgnn": {"phase1": 10, "phase2": 40, "phase3": 10},
                 "direct_gnn_epochs": 50,
             },
+            "budget_enforcement": {
+                "patience_override": 100,
+                "oracle_definition": "T_m_true substituted where available; dH_fus remains predicted.",
+            },
         },
         "models": by_name,
     }
@@ -452,8 +570,8 @@ def _build_markdown(summary: dict[str, Any]) -> str:
         f"- Seed: `{summary['setup']['seed']}`",
         f"- Full scaffold rows: train `{summary['setup']['row_counts']['train']}`, val `{summary['setup']['row_counts']['val']}`, test `{summary['setup']['row_counts']['test']}`",
         "",
-        "| Model | Test MAE | RMSE | R² | Oracle MAE | T_m MAE (K) | T_m_gc MAE (K) | tau_12 mean±std | tau_21 mean±std |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
+        "| Model | Test MAE | RMSE | R² | Oracle MAE (T_m-only) | T_m MAE (K) | T_m Pearson r | T_m_gc MAE (K) | tau_12 mean±std | tau_21 mean±std |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
     ]
     for _name, label, test_metrics, oracle_metrics, tm_metrics, tm_gc_metrics, nrtl_stats in rows:
         test_mae = _fmt_metric(test_metrics.get("mae"))
@@ -461,11 +579,12 @@ def _build_markdown(summary: dict[str, Any]) -> str:
         r2 = _fmt_metric(test_metrics.get("r2"))
         oracle_mae = _fmt_metric(oracle_metrics.get("mae")) if oracle_metrics else "NA"
         tm_mae = _fmt_metric(tm_metrics.get("mae_K")) if tm_metrics else "NA"
+        tm_r = _fmt_metric(tm_metrics.get("pearson_r")) if tm_metrics else "NA"
         tm_gc_mae = _fmt_metric(tm_gc_metrics.get("mae_K")) if tm_gc_metrics else "NA"
         tau12 = _fmt_mean_std(nrtl_stats.get("tau_12")) if nrtl_stats else "NA"
         tau21 = _fmt_mean_std(nrtl_stats.get("tau_21")) if nrtl_stats else "NA"
         lines.append(
-            f"| {label} | {test_mae} | {rmse} | {r2} | {oracle_mae} | {tm_mae} | {tm_gc_mae} | {tau12} | {tau21} |"
+            f"| {label} | {test_mae} | {rmse} | {r2} | {oracle_mae} | {tm_mae} | {tm_r} | {tm_gc_mae} | {tau12} | {tau21} |"
         )
 
     lines.extend(["", "## Per-Model Outputs", ""])
@@ -506,6 +625,14 @@ def main() -> int:
     per_model_dir = output_dir / "per_model"
     generated_dir = output_dir / "_generated_configs"
     output_dir.mkdir(parents=True, exist_ok=True)
+    if args.force_retrain:
+        shutil.rmtree(per_model_dir, ignore_errors=True)
+        shutil.rmtree(generated_dir, ignore_errors=True)
+        for artifact in (
+            output_dir / "summary.json",
+            output_dir / "comparison_table.md",
+        ):
+            artifact.unlink(missing_ok=True)
     per_model_dir.mkdir(parents=True, exist_ok=True)
     generated_dir.mkdir(parents=True, exist_ok=True)
 
@@ -519,11 +646,21 @@ def main() -> int:
     test_df = pd.read_csv(test_path, low_memory=False)
     rf_train_df = train_df.loc[train_df["has_solubility"].astype(bool)].copy()
     rf_test_df = test_df.loc[test_df["has_solubility"].astype(bool)].copy()
+    mps_safe_overrides: dict[str, Any] = {}
+    runtime_batch_size_override: int | None = None
+    if device.type == "mps":
+        mps_safe_overrides = {
+            "batch_size": 16,
+            "pair_temperature_group_chunk_size": 2,
+        }
+        runtime_batch_size_override = 16
 
     common_tgnn_overrides = {
         "epochs_phase1": 10,
         "epochs_phase2": 40,
         "epochs_phase3": 10,
+        "patience": 100,
+        **mps_safe_overrides,
     }
     model_specs: list[dict[str, Any]] = [
         {
@@ -560,6 +697,8 @@ def main() -> int:
             "base_config": _bootstrap.resolve_path("configs/paper_config_directgnn_tuned.yaml"),
             "overrides": {
                 "epochs_phase2": 50,
+                "patience": 100,
+                **mps_safe_overrides,
             },
         },
         {
@@ -568,7 +707,9 @@ def main() -> int:
             "base_config": _bootstrap.resolve_path("configs/paper_config_directgnn_tuned.yaml"),
             "overrides": {
                 "epochs_phase2": 50,
+                "patience": 100,
                 "use_descriptor_augmentation": True,
+                **mps_safe_overrides,
             },
         },
     ]
@@ -581,6 +722,8 @@ def main() -> int:
     print(f"Val data:   {val_path}")
     print(f"Test data:  {test_path}")
     print(f"Output dir: {output_dir}")
+    if mps_safe_overrides:
+        print(f"MPS-safe overrides: {mps_safe_overrides}")
     print("=" * 80)
 
     model_results: list[dict[str, Any]] = []
@@ -618,6 +761,7 @@ def main() -> int:
             log_path=log_path,
             seed=args.seed,
             device=args.device,
+            batch_size_override=runtime_batch_size_override,
             force_retrain=args.force_retrain,
             checkpoint_every=args.checkpoint_every,
         )
@@ -660,6 +804,7 @@ def main() -> int:
         test_df=test_df,
         model_results=model_results,
     )
+    summary["setup"]["device_adjustments"] = mps_safe_overrides
     _write_json(output_dir / "summary.json", summary)
     (output_dir / "comparison_table.md").write_text(
         _build_markdown(summary),

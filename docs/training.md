@@ -4,10 +4,12 @@
 
 The maintained training entry points are:
 
-- `scripts/train.py`
+- `scripts/training/train.py`
   - TGNN-Solv with the three-phase curriculum
-- `scripts/train_directgnn.py`
+- `scripts/training/train_directgnn.py`
   - DirectGNN with a flat solubility-training schedule
+- `tgnn_solv.pretrain.Pretrainer`
+  - optional standalone Stage 0 encoder/readout pretraining API
 
 Canonical processed data lives under:
 
@@ -15,12 +17,16 @@ Canonical processed data lives under:
 - `notebooks/data/processed/val.csv`
 - `notebooks/data/processed/test.csv`
 
+The grouped `scripts/training/` entry points are the preferred navigation
+surface. Legacy top-level `scripts/train.py` and
+`scripts/train_directgnn.py` remain supported as compatibility wrappers.
+
 ## TGNN-Solv Training
 
 Paper-style training command:
 
 ```bash
-python scripts/train.py \
+python scripts/training/train.py \
     --config configs/paper_config.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -32,7 +38,7 @@ python scripts/train.py \
 Maintained tuned baseline for architecture comparison:
 
 ```bash
-python scripts/train.py \
+python scripts/training/train.py \
     --config configs/paper_config_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -52,11 +58,11 @@ Common CLI overrides:
 
 ## Curriculum
 
-`TGNN-Solv` uses three phases.
+`TGNN-Solv` uses three training phases after model construction.
 
 ### Phase 1
 
-- property pretraining only
+- supervised property-only warmup on the processed training split
 - no `ln(x2)` loss
 - correction frozen
 - if `use_gc_priors_crystal=True`, the GC residual branches can be frozen for
@@ -77,9 +83,67 @@ Common CLI overrides:
 
 The canonical paper budget is `50 / 200 / 50`.
 
+## Optional Standalone Stage 0 Pretraining
+
+This repository also implements an optional encoder/readout pretraining stage
+that happens before the three-phase curriculum above.
+
+Important distinction:
+
+- `Phase 1` in `trainer.py`
+  - supervised warmup on the solubility dataset’s auxiliary labels
+- `Stage 0` in `pretrain.py`
+  - separate self-supervised / weakly supervised molecular pretraining on a
+    large SMILES collection
+
+`scripts/training/train.py` does not run Stage 0 automatically. The maintained
+surface for Stage 0 today is the Python API and the interactive
+`notebooks/02_train.ipynb` walkthrough.
+
+### What `Pretrainer` does
+
+`src/tgnn_solv/pretrain.py` provides:
+
+- `download_zinc250k(max_molecules=250000)`
+  - downloads ZINC250k when available
+  - falls back to unique BigSolDB SMILES if the download is unavailable
+- `Pretrainer(model.gnn, model.readout, cfg, device)`
+  - updates the encoder and readout in place
+  - attaches temporary pretraining heads that are discarded afterward
+
+The pretraining tasks are:
+
+- masked 2-hop subgraph atom-feature reconstruction
+- masked bond-type prediction
+- RDKit property prediction
+- graph contrastive learning on augmented molecular views
+
+### Minimal Stage 0 example
+
+```python
+from tgnn_solv.pretrain import Pretrainer, download_zinc250k
+
+smiles_list = download_zinc250k()
+pretrainer = Pretrainer(model.gnn, model.readout, cfg, device=device)
+history = pretrainer.pretrain(
+    smiles_list,
+    n_epochs=30,
+    batch_size=128,
+    lr=3e-4,
+)
+```
+
+Practical behavior:
+
+- `model.gnn` and `model.readout` are modified in place
+- temporary atom/property/bond/contrastive heads are deleted after pretraining
+- you continue with normal TGNN training using the same model instance
+- there is no dedicated checkpoint schema just for Stage 0 today
+
 ## GC-Prior Crystal Runs
 
-When `use_gc_priors_crystal=True`, `scripts/train.py` performs two extra steps:
+When `use_gc_priors_crystal=True`, `scripts/training/train.py` performs two
+extra steps:
 
 1. it computes raw per-solute GC priors through the dataset path
 2. it fits a train-only affine calibration for `T_m_gc`
@@ -92,12 +156,40 @@ The learned calibration is stored back into the config as:
 The residual crystal branches are also zero-initialized so that the starting
 prediction matches the calibrated GC prior exactly.
 
+If `gc_prior_residual_freeze_epochs > 0`, those residual branches stay frozen
+for the early part of Phase 1. This is the maintained way to let a GC-prior
+model start from the pure calibrated prior before learning residual
+corrections.
+
+## Pair-Aware Temperature Batching
+
+The canonical loader path uses:
+
+- `use_pair_temperature_batching=True`
+- `pair_temperature_min_group_size`
+- `pair_temperature_group_chunk_size`
+
+This matters because losses such as `pair_temp_rank` and `vant_hoff_local`
+depend on seeing multiple temperatures from the same pair together.
+
+## Bridge, Walden, and Oracle Controls
+
+Current semantics:
+
+- `bridge_loss_weight` defaults to `0.0`
+- explicit per-phase `bridge` loss weights in YAML still override that default
+- `configs/paper_config.yaml` therefore still trains with bridge loss through
+  the phase-loss tables
+- `use_walden_check=True` adds an unsupervised consistency penalty
+- `use_oracle_injection=True` affects solver inputs during training, not normal
+  inference
+
 ## Resume Support
 
 Both main training CLIs support resumable checkpoints:
 
 ```bash
-python scripts/train.py \
+python scripts/training/train.py \
     --config configs/paper_config_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -110,23 +202,40 @@ python scripts/train.py \
 Resume the same run later with:
 
 ```bash
-python scripts/train.py \
+python scripts/training/train.py \
     --resume checkpoints/tgnn_resume.pt \
     --checkpoint checkpoints/tgnn_resume.pt \
     --device cuda
 ```
 
-DirectGNN supports the same pattern through `scripts/train_directgnn.py`.
+DirectGNN supports the same pattern through
+`scripts/training/train_directgnn.py`.
 
-For cloud or preemptible sessions, `scripts/run_resume_safe_train.sh` wraps the
-TGNN CLI and reuses the checkpoint automatically.
+For cloud or preemptible sessions, `scripts/training/run_resume_safe_train.sh`
+wraps the TGNN CLI and reuses the checkpoint automatically.
+
+## Checkpoint Contents
+
+TGNN checkpoints saved by `scripts/training/train.py` include:
+
+- model weights
+- serialized config
+- training history
+- optional evaluation metrics
+- resume state when checkpointing during training
+
+DirectGNN checkpoints include the same core items and additionally store
+descriptor normalization stats when descriptor augmentation is enabled:
+
+- `descriptor_mean`
+- `descriptor_std`
 
 ## Multi-Seed Runs
 
-Use `scripts/run_seeds.py` for maintained multi-seed wrappers:
+Use `scripts/experiments/run_seeds.py` for maintained multi-seed wrappers:
 
 ```bash
-python scripts/run_seeds.py \
+python scripts/experiments/run_seeds.py \
     --config configs/paper_config.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -138,14 +247,14 @@ python scripts/run_seeds.py \
     --device cuda
 ```
 
-You can also point it at `scripts/train_directgnn.py`.
+You can also point it at `scripts/training/train_directgnn.py`.
 
 ## DirectGNN Training
 
 Maintained tuned baseline:
 
 ```bash
-python scripts/train_directgnn.py \
+python scripts/training/train_directgnn.py \
     --config configs/paper_config_directgnn_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -163,7 +272,7 @@ DirectGNN uses:
 ### DirectGNN with descriptor augmentation
 
 ```bash
-python scripts/train_directgnn.py \
+python scripts/training/train_directgnn.py \
     --config configs/paper_config_directgnn_descriptors.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -213,7 +322,7 @@ Maintained DirectGNN configs:
 ### Ablations
 
 ```bash
-python scripts/run_ablation.py \
+python scripts/experiments/run_ablation.py \
     --config configs/paper_config.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -227,7 +336,7 @@ python scripts/run_ablation.py \
 ### Full-budget diagnostic study
 
 ```bash
-python scripts/run_full_budget_experiment.py \
+python scripts/experiments/run_full_budget_experiment.py \
     --config configs/paper_config_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -247,7 +356,7 @@ This runner:
 ### Medium-budget architecture comparison
 
 ```bash
-python scripts/run_medium_budget_comparison.py \
+python scripts/experiments/run_medium_budget_comparison.py \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
@@ -268,41 +377,12 @@ This runner trains:
 The combined TGNN run is derived from `paper_config_combined.yaml`, but oracle
 injection is disabled during training for that specific comparison.
 
-## Pair-Aware Temperature Batching
+## Practical Distinctions
 
-The canonical loader path uses:
-
-- `use_pair_temperature_batching=True`
-- `pair_temperature_min_group_size`
-- `pair_temperature_group_chunk_size`
-
-This matters because losses such as `pair_temp_rank` and `vant_hoff_local`
-depend on seeing multiple temperatures from the same pair together.
-
-## Bridge, Walden, and Oracle Controls
-
-Current semantics:
-
-- `bridge_loss_weight` defaults to `0.0`
-- explicit per-phase `bridge` loss weights in YAML still override that default
-- `configs/paper_config.yaml` therefore still trains with bridge loss through
-  the phase-loss tables
-- `use_walden_check=True` adds an unsupervised consistency penalty
-- `use_oracle_injection=True` affects solver inputs during training, not normal
-  inference
-
-## Checkpoint Contents
-
-TGNN checkpoints saved by `scripts/train.py` include:
-
-- model weights
-- serialized config
-- training history
-- optional evaluation metrics
-- resume state when checkpointing during training
-
-DirectGNN checkpoints include the same core items and additionally store
-descriptor normalization stats when descriptor augmentation is enabled:
-
-- `descriptor_mean`
-- `descriptor_std`
+- Stage 0 pretraining is optional and library-driven today.
+- The main paper-style CLI starts directly from the three-phase curriculum.
+- Oracle injection is training-only unless a diagnostic script explicitly
+  forces it during evaluation.
+- Pair-temperature batching is important if you want temperature-consistency
+  losses such as `pair_temp_rank` and `vant_hoff_local` to have enough same-pair
+  temperature structure inside a batch.

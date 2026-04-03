@@ -37,15 +37,18 @@ this repository:
 Use FastSolv in one of these two modes:
 
 ```bash
-python scripts/run_fastsolv.py predict \
+python scripts/external/run_fastsolv.py predict \
     --input notebooks/data/processed/test.csv \
     --output results/fastsolv_predictions.csv
 
-python scripts/run_fastsolv.py compare \
+python scripts/external/run_fastsolv.py compare \
     --input notebooks/data/processed/test.csv \
     --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
     --metrics results/fastsolv_compare.json
 ```
+
+The grouped `scripts/external/` path is the preferred navigation surface.
+Legacy top-level wrappers remain available for compatibility.
 
 If you need a trainable in-repo baseline on the same data, use one of:
 

@@ -96,6 +96,12 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Experiment name (auto-generated from timestamp if not provided).",
     )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=None,
+        help="Optional batch-size override for data loading.",
+    )
     return parser.parse_args()
 
 
@@ -244,6 +250,9 @@ def main() -> None:
             print(f"\n1. Loading configuration from {config_path}...")
             config = TGNNSolvConfig.from_yaml(str(config_path))
         device = resolve_device(args.device)
+        if args.batch_size is not None:
+            config.batch_size = int(args.batch_size)
+            print(f"   Applying batch_size override: {config.batch_size}")
 
         print(f"   Device: {device}")
         print(f"   Seed: {args.seed}")

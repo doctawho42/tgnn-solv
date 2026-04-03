@@ -29,12 +29,41 @@ pip install torch-geometric -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
 pip install -e ".[dev]"
 ```
 
+## Project Layout
+
+The preferred human-facing CLI layout is now grouped by purpose:
+
+- `scripts/data/`
+- `scripts/training/`
+- `scripts/evaluation/`
+- `scripts/experiments/`
+- `scripts/external/`
+
+The old top-level `scripts/*.py` entry points are still present as a
+compatibility layer for tests, imports, and existing automation such as
+`reproduce.sh`.
+
+The internal Python package now follows the same principle:
+
+- preferred grouped namespaces for navigation:
+  - `tgnn_solv.core`
+  - `tgnn_solv.chemistry`
+  - `tgnn_solv.data`
+  - `tgnn_solv.models`
+  - `tgnn_solv.physics`
+  - `tgnn_solv.training`
+  - `tgnn_solv.evaluation`
+  - `tgnn_solv.baselines`
+  - `tgnn_solv.research`
+- legacy flat modules such as `tgnn_solv.model` and `tgnn_solv.trainer`
+  remain supported as the compatibility layer
+
 ## Canonical Workflow
 
 Prepare the processed splits:
 
 ```bash
-python scripts/prepare_data.py \
+python scripts/data/prepare_data.py \
     --output-dir notebooks/data/processed \
     --split-mode solute_scaffold \
     --seed 42
@@ -43,7 +72,7 @@ python scripts/prepare_data.py \
 Train one TGNN-Solv model with the paper curriculum:
 
 ```bash
-python scripts/train.py \
+python scripts/training/train.py \
     --config configs/paper_config.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -56,7 +85,7 @@ For the maintained tuned TGNN baseline used in current architecture
 comparisons, prefer:
 
 ```bash
-python scripts/train.py \
+python scripts/training/train.py \
     --config configs/paper_config_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -68,7 +97,7 @@ python scripts/train.py \
 Run the canonical multi-seed comparison:
 
 ```bash
-python scripts/run_seeds.py \
+python scripts/experiments/run_seeds.py \
     --config configs/paper_config.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -83,7 +112,7 @@ python scripts/run_seeds.py \
 Evaluate a checkpoint:
 
 ```bash
-python scripts/evaluate_complete.py \
+python scripts/evaluation/evaluate_complete.py \
     --test-data notebooks/data/processed/test.csv \
     --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
     --output results/full_evaluation.json \
@@ -101,7 +130,7 @@ bash reproduce.sh
 DirectGNN tuned baseline:
 
 ```bash
-python scripts/train_directgnn.py \
+python scripts/training/train_directgnn.py \
     --config configs/paper_config_directgnn_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -113,7 +142,7 @@ python scripts/train_directgnn.py \
 DirectGNN with shared RDKit descriptor augmentation:
 
 ```bash
-python scripts/train_directgnn.py \
+python scripts/training/train_directgnn.py \
     --config configs/paper_config_directgnn_descriptors.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -125,7 +154,7 @@ python scripts/train_directgnn.py \
 Split-wise comparison across scaffold, solute, and solvent protocols:
 
 ```bash
-python scripts/run_split_comparisons.py \
+python scripts/experiments/run_split_comparisons.py \
     --processed-dir notebooks/data/processed \
     --splits "solute_scaffold,solute,solvent" \
     --models "tgnn_solv,direct_gnn,rf_baseline,rf_morgan,rf_hybrid" \
@@ -136,7 +165,7 @@ python scripts/run_split_comparisons.py \
 Full-budget TGNN-vs-DirectGNN diagnostic run with intermediate physics export:
 
 ```bash
-python scripts/run_full_budget_experiment.py \
+python scripts/experiments/run_full_budget_experiment.py \
     --config configs/paper_config_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -149,7 +178,7 @@ python scripts/run_full_budget_experiment.py \
 Medium-budget architecture comparison on the full scaffold split:
 
 ```bash
-python scripts/run_medium_budget_comparison.py \
+python scripts/experiments/run_medium_budget_comparison.py \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
@@ -169,6 +198,71 @@ The medium-budget runner writes:
 - `results/medium_budget/summary.json`
 - `results/medium_budget/comparison_table.md`
 - `results/medium_budget/per_model/<model>/...`
+
+## Inference, Uncertainty, and OOD
+
+The maintained inference helpers are library APIs:
+
+- `tgnn_solv.inference.load_model`
+- `tgnn_solv.inference.predict_solubility`
+- `tgnn_solv.inference.temperature_scan`
+- `tgnn_solv.inference.interpret_prediction`
+
+Example:
+
+```python
+from tgnn_solv.inference import load_model, predict_solubility
+
+model, cfg = load_model("checkpoints/tgnn_solv_trained.pt")
+result = predict_solubility(
+    model,
+    solute_smiles="CC(=O)Nc1ccc(O)cc1",
+    solvent_smiles="CCO",
+    T=298.15,
+)
+print(result["ln_x2"], result["T_m"], result["tau_12"])
+```
+
+Post-hoc uncertainty and OOD helpers are also maintained:
+
+- `tgnn_solv.uncertainty.MCDropoutPredictor`
+- `tgnn_solv.uncertainty.EnsemblePredictor`
+- `tgnn_solv.uncertainty.calibration_report`
+- `tgnn_solv.domain.ApplicabilityDomain`
+
+Current OOD screening uses:
+
+- Mahalanobis distance in pair latent space
+- nearest-neighbor Morgan Tanimoto similarity for solute and solvent
+
+It is not applied automatically inside `predict_solubility`; call
+`ApplicabilityDomain` alongside inference when you want an explicit in-domain /
+OOD check.
+
+## Optional Stage 0 Pretraining
+
+Beyond the main three-phase curriculum, the repo also supports standalone
+encoder/readout pretraining through `tgnn_solv.pretrain.Pretrainer`.
+
+This is separate from `Phase 1` in `trainer.py`:
+
+- Stage 0
+  - optional pre-curriculum molecular pretraining
+- Phase 1
+  - supervised auxiliary warmup on the processed training split
+
+Minimal example:
+
+```python
+from tgnn_solv.pretrain import Pretrainer, download_zinc250k
+
+smiles = download_zinc250k()
+pretrainer = Pretrainer(model.gnn, model.readout, cfg)
+history = pretrainer.pretrain(smiles, n_epochs=30)
+```
+
+The pretrainer modifies `model.gnn` and `model.readout` in place and discards
+its temporary auxiliary heads after pretraining.
 
 ## Key Architecture Features
 
@@ -219,30 +313,39 @@ The medium-budget runner writes:
 - `docs/architecture.md`: forward paths, loss structure, and current design
   choices
 - `docs/data_preparation.md`: raw sources, processed CSV layout, split modes
-- `docs/training.md`: training CLIs, config variants, and experiment runners
-- `docs/evaluation.md`: evaluation entry points, report schemas, and diagnostic
-  outputs
+- `docs/training.md`: training CLIs, standalone pretraining, config variants,
+  and experiment runners
+- `docs/evaluation.md`: inference API, uncertainty, OOD/applicability-domain,
+  evaluation entry points, and diagnostic outputs
 - `docs/baselines.md`: DirectGNN, RF, FastSolv, SolProp, and Ideal-SLE
   workflows
 - `docs/reproducing_paper.md`: what `reproduce.sh` does and how to validate it
 - `docs/script_reference.md`: maturity map for scripts and notebooks
 - `docs/repository_audit.md`: current repo strengths, gaps, and known
   limitations
+- `scripts/README.md`: grouped CLI layout and legacy-wrapper policy
+- `src/tgnn_solv/README.md`: grouped internal package layout and preferred
+  import surface
 - `AGENTS.md`: concise architecture and workflow notes for coding agents
 - `CONTRIBUTING.md`: contribution expectations and validation checklist
 
 ## Practical Notes
 
 - The canonical processed data lives under `notebooks/data/processed/`.
-- `scripts/train.py` uses pair-aware train batching by default.
-- `scripts/train.py` and `scripts/train_directgnn.py` support
+- `scripts/training/train.py` uses pair-aware train batching by default.
+- `scripts/training/train.py` and `scripts/training/train_directgnn.py` support
   `--checkpoint-every` and `--resume` for mid-run recovery.
+- The repo includes an optional standalone Stage 0 pretraining path via
+  `tgnn_solv.pretrain.Pretrainer`; it is not automatically invoked by the main
+  training CLI.
 - `TGNNSolvConfig.bridge_loss_weight` defaults to `0.0`, but
   `configs/paper_config.yaml` still enables bridge loss explicitly through the
   phase loss-weight overrides.
 - Walden checking is optional and off by default.
 - Oracle injection is never used in normal inference; it is training-only
   unless a diagnostic script explicitly forces it.
+- Inference-time OOD checking is available via
+  `tgnn_solv.domain.ApplicabilityDomain`.
 - `paper_config_combined.yaml` enables oracle injection by default; the
   medium-budget architecture comparison derives a no-oracle training config
   from it and still runs oracle evaluation afterward.

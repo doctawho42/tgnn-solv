@@ -5,13 +5,13 @@ DirectGNN in environments like Google Colab and SageMaker Studio Lab.
 
 ## What Changed
 
-Both `scripts/train.py` and `scripts/train_directgnn.py` support:
+Both `scripts/training/train.py` and `scripts/training/train_directgnn.py` support:
 
 - `--checkpoint-every N` to save a resumable training checkpoint every `N`
   epochs within each phase
 - `--resume PATH` to continue from the latest saved training state
 
-The helper wrapper `scripts/run_resume_safe_train.sh` targets the TGNN CLI. It
+The helper wrapper `scripts/training/run_resume_safe_train.sh` targets the TGNN CLI. It
 starts a fresh run when the checkpoint does not exist and automatically
 resumes when it does.
 
@@ -25,7 +25,7 @@ export PYTHON_BIN="$CONDA_PREFIX/bin/python"
 export CHECKPOINT="checkpoints/cloud_tgnn_solv.pt"
 export CHECKPOINT_EVERY=5
 
-bash scripts/run_resume_safe_train.sh \
+bash scripts/training/run_resume_safe_train.sh \
   --config configs/paper_config_tuned.yaml \
   --train-data notebooks/data/processed/train.csv \
   --val-data notebooks/data/processed/val.csv \
@@ -44,6 +44,6 @@ will reuse the existing checkpoint and continue from the saved phase/epoch.
   `model_state_dict` and `config`.
 - If a checkpoint already marks training as completed, `--resume` skips fitting
   and only reruns the final evaluation path.
-- `scripts/run_full_budget_experiment.py` and
-  `scripts/run_medium_budget_comparison.py` also pass through
+- `scripts/experiments/run_full_budget_experiment.py` and
+  `scripts/experiments/run_medium_budget_comparison.py` also pass through
   `--checkpoint-every` and resume from existing per-model checkpoints.

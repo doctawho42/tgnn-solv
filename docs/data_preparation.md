@@ -24,7 +24,7 @@ in `split.py` and `split_registry.py`.
 ## Canonical CLI
 
 ```bash
-python scripts/prepare_data.py \
+python scripts/data/prepare_data.py \
     --output-dir notebooks/data/processed \
     --split-mode solute_scaffold \
     --seed 42
@@ -33,7 +33,7 @@ python scripts/prepare_data.py \
 Useful flags:
 
 ```bash
-python scripts/prepare_data.py \
+python scripts/data/prepare_data.py \
     --output-dir notebooks/data/processed \
     --split-mode solute_scaffold \
     --seed 42 \
@@ -48,7 +48,7 @@ python scripts/prepare_data.py \
 
 ## What the Script Does
 
-`scripts/prepare_data.py` performs the same high-level workflow as
+`scripts/data/prepare_data.py` performs the same high-level workflow as
 `notebooks/01_prepare_data.ipynb`:
 
 1. load the primary solubility source
@@ -114,10 +114,10 @@ The dataset layer will derive additional non-CSV fields at load time, such as:
 Two important transformations do not happen in the CSV layer:
 
 - GC-prior `T_m_gc` calibration
-  - `scripts/train.py` fits `gc_prior_tm_scale` and `gc_prior_tm_bias` on the
+  - `scripts/training/train.py` fits `gc_prior_tm_scale` and `gc_prior_tm_bias` on the
     training split only when `use_gc_priors_crystal=True`
 - DirectGNN descriptor normalization
-  - `scripts/train_directgnn.py` computes descriptor mean/std on the training
+  - `scripts/training/train_directgnn.py` computes descriptor mean/std on the training
     split only and stores them in the checkpoint
 
 ## Split Modes
@@ -153,7 +153,7 @@ When comparing against older literature or simpler baselines:
 
 - report `solute_scaffold` as the strict result
 - report `solute` only when matching a less strict protocol
-- use `scripts/run_split_comparisons.py` to avoid accidental split drift
+- use `scripts/experiments/run_split_comparisons.py` to avoid accidental split drift
 
 ## Data-Loader Feature Paths
 

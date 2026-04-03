@@ -92,7 +92,7 @@ loss_weights:
     direct_reg: 0.01  # Keep the residual proposal local
     direct_nll: 0.01  # Calibrate proposal uncertainty lightly
     pair_temp_rank: 0.005  # Gentle same-pair temperature ranking consistency
-    vant_hoff_local: 0.002  # Gentle local linearity in ln(x₂) vs 1/T
+    vant_hoff_local: 0.001  # Gentle local linearity in ln(x₂) vs 1/T
   
   # Phase 3: Fine-tuning
   phase3:
@@ -108,4 +108,4 @@ loss_weights:
     direct_reg: 0.02  # Keep the proposal local
     direct_nll: 0.02  # Calibrate proposal uncertainty
     pair_temp_rank: 0.01  # Moderate same-pair temperature ranking
-    vant_hoff_local: 0.005  # Moderate local van't Hoff regularization
+    vant_hoff_local: 0.001  # Keep local van't Hoff regularization gentle

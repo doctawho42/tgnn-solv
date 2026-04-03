@@ -2,13 +2,12 @@
 Applicability Domain (AD) for TGNN-Solv.
 
 Detects when a query system is outside the training distribution
-(OOD = out-of-domain).  Three complementary methods:
+(OOD = out-of-domain). The current implementation combines:
 
 1. **Latent distance** — Mahalanobis distance in the pair
    representation space to the training set centroid.
 2. **Fingerprint similarity** — Tanimoto similarity to the
    nearest training molecule (solute and solvent separately).
-3. **Leverage** — Hat matrix diagonal from pair vectors.
 
 Usage::
 

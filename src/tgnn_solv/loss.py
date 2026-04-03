@@ -34,6 +34,9 @@ from .config import TGNNSolvConfig
 if TYPE_CHECKING:
     from .model import TGNNSolv
 
+MIN_VANT_HOFF_INV_T_DIFF = 1.0e-4
+MAX_VANT_HOFF_PAIR_LOSS = 100.0
+
 
 class TGNNSolvLoss(nn.Module):
     """Multi-component loss with adaptive physics correction support."""
@@ -426,15 +429,25 @@ class TGNNSolvLoss(nn.Module):
 
             if len(indices) >= 3:
                 inv_T = 1.0 / T_sorted.clamp(min=self.cfg.eps)
-                dx = inv_T[1:] - inv_T[:-1]
-                dy = pred_sorted[1:] - pred_sorted[:-1]
-                dx_safe = torch.where(
-                    dx.abs() < self.cfg.eps,
-                    torch.sign(dx).masked_fill(dx == 0, 1.0) * self.cfg.eps,
-                    dx,
+                inv_T_diff = inv_T[1:] - inv_T[:-1]
+                inv_T_sign = torch.where(
+                    inv_T_diff < 0,
+                    -torch.ones_like(inv_T_diff),
+                    torch.ones_like(inv_T_diff),
                 )
-                slopes = dy / dx_safe
-                vant_hoff_losses.append((slopes[1:] - slopes[:-1]).pow(2).mean())
+                inv_T_diff_safe = inv_T_sign * torch.clamp(
+                    inv_T_diff.abs(),
+                    min=MIN_VANT_HOFF_INV_T_DIFF,
+                )
+                local_slopes = (
+                    pred_sorted[1:] - pred_sorted[:-1]
+                ) / inv_T_diff_safe
+                per_pair_vh = (local_slopes[1:] - local_slopes[:-1]).pow(2)
+                per_pair_vh = torch.clamp(
+                    per_pair_vh,
+                    max=MAX_VANT_HOFF_PAIR_LOSS,
+                )
+                vant_hoff_losses.append(per_pair_vh.mean())
 
         zero = pred_ln_x2.new_zeros(())
         return {

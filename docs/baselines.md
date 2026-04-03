@@ -13,6 +13,10 @@ The repository contains or wraps five main baseline families:
 These baselines answer different failure-mode questions. They should not be
 treated as interchangeable.
 
+The grouped CLI layout under `scripts/training/`, `scripts/experiments/`, and
+`scripts/external/` is now the preferred navigation surface. Legacy top-level
+script paths remain available as wrappers.
+
 ## DirectGNN
 
 `DirectGNN` is the main matched no-physics ablation:
@@ -26,7 +30,7 @@ treated as interchangeable.
 Train the maintained tuned baseline with:
 
 ```bash
-python scripts/train_directgnn.py \
+python scripts/training/train_directgnn.py \
     --config configs/paper_config_directgnn_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -38,8 +42,8 @@ python scripts/train_directgnn.py \
 Multi-seed runs:
 
 ```bash
-python scripts/run_seeds.py \
-    --train-script scripts/train_directgnn.py \
+python scripts/experiments/run_seeds.py \
+    --train-script scripts/training/train_directgnn.py \
     --config configs/paper_config_directgnn_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -66,7 +70,7 @@ Enabled config:
 Run:
 
 ```bash
-python scripts/train_directgnn.py \
+python scripts/training/train_directgnn.py \
     --config configs/paper_config_directgnn_descriptors.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -146,11 +150,11 @@ FastSolv is an optional external descriptor baseline.
 Preferred usage is inference or comparison with pretrained weights:
 
 ```bash
-python scripts/run_fastsolv.py predict \
+python scripts/external/run_fastsolv.py predict \
     --input notebooks/data/processed/test.csv \
     --output results/fastsolv_predictions.csv
 
-python scripts/run_fastsolv.py compare \
+python scripts/external/run_fastsolv.py compare \
     --input notebooks/data/processed/test.csv \
     --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
     --metrics results/fastsolv_compare.json
@@ -168,7 +172,7 @@ Prediction:
 
 ```bash
 conda activate solprop
-python scripts/run_solprop.py predict \
+python scripts/external/run_solprop.py predict \
     --input notebooks/data/processed/test.csv \
     --output results/solprop_predictions.csv \
     --temperature_dependent
@@ -178,7 +182,7 @@ Calibration on your own split:
 
 ```bash
 conda activate solprop
-python scripts/run_solprop.py train \
+python scripts/external/run_solprop.py train \
     --train notebooks/data/processed/train.csv \
     --val notebooks/data/processed/val.csv \
     --test notebooks/data/processed/test.csv \
@@ -193,7 +197,7 @@ python scripts/run_solprop.py train \
 For fair comparison across split protocols:
 
 ```bash
-python scripts/run_split_comparisons.py \
+python scripts/experiments/run_split_comparisons.py \
     --processed-dir notebooks/data/processed \
     --splits "solute_scaffold,solute,solvent" \
     --models "tgnn_solv,direct_gnn,rf_baseline,rf_morgan,rf_hybrid" \
@@ -204,7 +208,7 @@ python scripts/run_split_comparisons.py \
 For the maintained full-scaffold medium-budget architecture comparison:
 
 ```bash
-python scripts/run_medium_budget_comparison.py \
+python scripts/experiments/run_medium_budget_comparison.py \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \

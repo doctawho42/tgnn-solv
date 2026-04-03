@@ -19,6 +19,7 @@ the physics-informed approach adds no value.
 
 from __future__ import annotations
 
+import gc
 from typing import Any, Callable, Optional, TypeAlias
 
 import torch
@@ -421,6 +422,18 @@ class DirectGNNTrainer:
             "val_mae": [],
             "val_r2": [],
         }
+        self._cache_release_counter = 0
+
+    def _maybe_release_device_cache(self, *, force: bool = False) -> None:
+        """Periodically release MPS cached memory to reduce fragmentation."""
+        if self.device.type != "mps":
+            return
+        self._cache_release_counter += 1
+        if not force and self._cache_release_counter % 50 != 0:
+            return
+        gc.collect()
+        if hasattr(torch, "mps") and hasattr(torch.mps, "empty_cache"):
+            torch.mps.empty_cache()
 
     def state_dict(self) -> DirectTrainerStateDict:
         """Serialize trainer state required for checkpointed resume."""
@@ -565,6 +578,7 @@ class DirectGNNTrainer:
                     float(self.model.cfg.grad_clip),
                 )
                 optimizer.step()
+                self._maybe_release_device_cache()
 
                 train_loss += loss.item()
                 n_batches += 1
@@ -616,6 +630,7 @@ class DirectGNNTrainer:
             self.model.load_state_dict(self.best_state)
             print(f"  Restored best model (val MAE = {self.best_val_mae:.4f})")
 
+        self._maybe_release_device_cache(force=True)
         return {"best_val_mae": self.best_val_mae}
 
     @torch.no_grad()
@@ -685,13 +700,15 @@ class DirectGNNTrainer:
         ss_res = (errors ** 2).sum()
         ss_tot = ((true - true.mean()) ** 2).sum()
 
-        return {
+        metrics = {
             "n": len(pred),
             "mae": float(np.abs(errors).mean()),
             "rmse": float(np.sqrt((errors ** 2).mean())),
             "r2": float(1.0 - ss_res / (ss_tot + 1e-10)),
             "bias": float(errors.mean()),
         }
+        self._maybe_release_device_cache(force=True)
+        return metrics
 
     def evaluate(self, test_loader: DataLoader) -> dict[str, float | str]:
         """Final evaluation on test set."""

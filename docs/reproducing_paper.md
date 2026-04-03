@@ -90,6 +90,14 @@ python scripts/evaluate_complete.py \
 `reproduce.sh` is the paper-style automation path, but it does not cover every
 research mode now present in the codebase.
 
+Note on script layout:
+
+- the repo now exposes grouped human-facing entry points under `scripts/data/`,
+  `scripts/training/`, `scripts/evaluation/`, `scripts/experiments/`, and
+  `scripts/external/`
+- `reproduce.sh` intentionally keeps using the legacy top-level
+  `scripts/*.py` paths because those wrappers remain the compatibility surface
+
 The following maintained configs and experiment paths are available but are not
 part of the default reproduction script:
 

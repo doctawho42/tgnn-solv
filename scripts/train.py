@@ -325,8 +325,9 @@ def main() -> None:
             config = TGNNSolvConfig.from_yaml(args.config)
         device = resolve_device(args.device)
 
-        # Apply CLI overrides for fresh runs only. Resumed runs must keep the
-        # exact model/training config stored in the checkpoint.
+        # Apply CLI overrides. Resumed runs keep model-shape/training-schedule
+        # settings from the checkpoint, but data-loader knobs like batch size
+        # are safe to override to fit the available device.
         if resume_checkpoint is None:
             if args.hidden_dim is not None:
                 config.hidden_dim = args.hidden_dim
@@ -341,13 +342,18 @@ def main() -> None:
             for override in (
                 args.hidden_dim,
                 args.n_gnn_layers,
-                args.batch_size,
                 args.lr,
             )
         ):
             print(
                 "   Ignoring CLI config overrides for resumed training; "
                 "using the checkpoint's saved config."
+            )
+        if resume_checkpoint is not None and args.batch_size is not None:
+            config.batch_size = args.batch_size
+            print(
+                "   Applying resume-time batch_size override for data loading: "
+                f"{config.batch_size}"
             )
 
         if resume_checkpoint is None:

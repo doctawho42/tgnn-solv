@@ -48,6 +48,18 @@ class TestPairTemperatureLosses:
         assert losses["pair_temp_rank"].item() > 0.0
         assert losses["vant_hoff_local"].item() > 0.0
 
+    def test_close_temperature_pairs_stay_finite_and_capped(self) -> None:
+        """Very small ΔT should not explode the local van't Hoff penalty."""
+        loss_fn = TGNNSolvLoss(TGNNSolvConfig())
+        T = torch.tensor([298.0, 303.0, 308.0], dtype=torch.float32)
+        pred = torch.tensor([-12.0, 5.0, -14.0], dtype=torch.float32)
+        pair_keys = ["pair_a", "pair_a", "pair_a"]
+
+        losses = loss_fn._pair_temperature_losses(pred, T, pair_keys)
+
+        assert torch.isfinite(losses["vant_hoff_local"])
+        assert losses["vant_hoff_local"].item() <= 100.0 + 1e-6
+
 
 class TestEmptySupervisionBatches:
     """Regression tests for batches without active supervision targets."""

@@ -79,7 +79,7 @@ loss_weights:
     direct_reg: 0.01
     direct_nll: 0.01
     pair_temp_rank: 0.005
-    vant_hoff_local: 0.002
+    vant_hoff_local: 0.001
 
   phase3:
     sol: 1.0
@@ -94,4 +94,4 @@ loss_weights:
     direct_reg: 0.02
     direct_nll: 0.02
     pair_temp_rank: 0.01
-    vant_hoff_local: 0.005
+    vant_hoff_local: 0.001

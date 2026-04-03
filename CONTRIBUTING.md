@@ -75,6 +75,17 @@ ruff check src/ scripts/
   - `README.md`
   - `AGENTS.md`
   - the relevant file in `docs/`
+- For new internal imports, prefer the grouped namespace surface where it keeps
+  call sites clearer:
+  - `tgnn_solv.core.*`
+  - `tgnn_solv.chemistry.*`
+  - `tgnn_solv.models.*`
+  - `tgnn_solv.physics.*`
+  - `tgnn_solv.training.*`
+  - `tgnn_solv.evaluation.*`
+  - `tgnn_solv.research.*`
+- Keep the legacy flat modules in place unless you are explicitly removing a
+  compatibility layer and have audited downstream imports.
 - If you change resume behavior, also update:
   - `docs/training.md`
   - `docs/free_gpu_training.md`
@@ -111,13 +122,24 @@ If you add a new baseline or experiment runner:
 
 1. Put the core implementation in `src/tgnn_solv/baselines/` or the relevant
    package module.
-2. Add a CLI entry point under `scripts/` if the workflow is meant to be
-   reproducible.
-3. Document whether it is:
+2. If you are adding a new non-baseline library module, place the real
+   implementation where it fits best and expose it through the grouped
+   namespace surface in `src/tgnn_solv/`.
+3. Add the human-facing CLI entry point under the grouped `scripts/`
+   layout:
+   - `scripts/data/`
+   - `scripts/training/`
+   - `scripts/evaluation/`
+   - `scripts/experiments/`
+   - `scripts/external/`
+4. Only keep or add a top-level `scripts/*.py` wrapper when you need backward
+   compatibility with existing imports, tests, or automation.
+5. Document whether it is:
    - canonical
    - stable utility
    - research / experimental
-4. Update `docs/script_reference.md` and any affected guide in `docs/`.
+6. Update `docs/script_reference.md`, `scripts/README.md`, `src/tgnn_solv/README.md`, and any affected
+   guide in `docs/`.
 
 ## Pull Requests
 

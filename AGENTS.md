@@ -29,16 +29,44 @@ pip install torch-geometric -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
 pip install -e ".[dev]"
 ```
 
+Preferred CLI navigation is now grouped by purpose under:
+
+- `scripts/data/`
+- `scripts/training/`
+- `scripts/evaluation/`
+- `scripts/experiments/`
+- `scripts/external/`
+
+Legacy top-level `scripts/*.py` entry points are intentionally retained for
+backward compatibility with imports, tests, and automation such as
+`reproduce.sh`.
+
+The internal package surface now also has grouped namespaces for navigation:
+
+- `tgnn_solv.core`
+- `tgnn_solv.chemistry`
+- `tgnn_solv.data`
+- `tgnn_solv.models`
+- `tgnn_solv.physics`
+- `tgnn_solv.training`
+- `tgnn_solv.evaluation`
+- `tgnn_solv.baselines`
+- `tgnn_solv.research`
+
+Legacy flat imports such as `tgnn_solv.model`, `tgnn_solv.trainer`, and
+`tgnn_solv.inference` remain supported and are still the implementation source
+of truth.
+
 ## Canonical Commands
 
 ### Reproducible workflow
 
-1. `python scripts/prepare_data.py`
-2. `python scripts/train.py`
-3. `python scripts/run_seeds.py`
-4. `python scripts/evaluate_complete.py`
-5. `python scripts/run_split_comparisons.py`
-6. `python scripts/generate_paper_figures.py`
+1. `python scripts/data/prepare_data.py`
+2. `python scripts/training/train.py`
+3. `python scripts/experiments/run_seeds.py`
+4. `python scripts/evaluation/evaluate_complete.py`
+5. `python scripts/experiments/run_split_comparisons.py`
+6. `python scripts/experiments/generate_paper_figures.py`
 7. `bash reproduce.sh`
 
 ### Run all tests
@@ -59,7 +87,7 @@ pytest tests/test_dataset.py -v
 ### Train one TGNN-Solv model
 
 ```bash
-python scripts/train.py \
+python scripts/training/train.py \
     --config configs/paper_config.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -74,7 +102,7 @@ comparisons, prefer `configs/paper_config_tuned.yaml`.
 ### Multi-seed TGNN-Solv
 
 ```bash
-python scripts/run_seeds.py \
+python scripts/experiments/run_seeds.py \
     --config configs/paper_config.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -89,7 +117,7 @@ python scripts/run_seeds.py \
 ### Train DirectGNN baseline
 
 ```bash
-python scripts/train_directgnn.py \
+python scripts/training/train_directgnn.py \
     --config configs/paper_config_directgnn_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -101,7 +129,7 @@ python scripts/train_directgnn.py \
 ### Train DirectGNN with descriptor augmentation
 
 ```bash
-python scripts/train_directgnn.py \
+python scripts/training/train_directgnn.py \
     --config configs/paper_config_directgnn_descriptors.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -113,7 +141,7 @@ python scripts/train_directgnn.py \
 ### Full-budget diagnostic run
 
 ```bash
-python scripts/run_full_budget_experiment.py \
+python scripts/experiments/run_full_budget_experiment.py \
     --config configs/paper_config_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
@@ -138,7 +166,7 @@ per-seed checkpoints automatically.
 ### Medium-budget architecture comparison
 
 ```bash
-python scripts/run_medium_budget_comparison.py \
+python scripts/experiments/run_medium_budget_comparison.py \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
@@ -152,7 +180,7 @@ DirectGNN+descriptors, and RF(descriptors) on the full scaffold split.
 ### Split-wise comparison
 
 ```bash
-python scripts/run_split_comparisons.py \
+python scripts/experiments/run_split_comparisons.py \
     --processed-dir notebooks/data/processed \
     --splits "solute_scaffold,solute,solvent" \
     --models "tgnn_solv,direct_gnn,rf_baseline,rf_morgan,rf_hybrid" \
@@ -178,15 +206,15 @@ print(interpret_prediction(result))
 ### Optuna
 
 ```bash
-python scripts/run_optuna.py --models tgnn_solv,direct_gnn --n-trials 20
+python scripts/experiments/run_optuna.py --models tgnn_solv,direct_gnn --n-trials 20
 ```
 
 ### Diagnostics
 
 ```bash
-python scripts/diagnose_training.py stats
-python scripts/diagnose_training.py overfit --sample-size 1000 --epochs 200
-python scripts/validate_physics.py \
+python scripts/training/diagnose_training.py stats
+python scripts/training/diagnose_training.py overfit --sample-size 1000 --epochs 200
+python scripts/evaluation/validate_physics.py \
     --checkpoint checkpoints/tgnn_solv_trained.pt \
     --test-data notebooks/data/processed/test.csv \
     --output results/physics_validation.json
@@ -197,11 +225,11 @@ python scripts/validate_physics.py \
 ### FastSolv
 
 ```bash
-python scripts/run_fastsolv.py predict \
+python scripts/external/run_fastsolv.py predict \
     --input notebooks/data/processed/test.csv \
     --output results/fastsolv_predictions.csv
 
-python scripts/run_fastsolv.py compare \
+python scripts/external/run_fastsolv.py compare \
     --input notebooks/data/processed/test.csv \
     --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
     --metrics results/fastsolv_compare.json
@@ -211,7 +239,7 @@ python scripts/run_fastsolv.py compare \
 
 ```bash
 conda activate solprop
-python scripts/run_solprop.py predict \
+python scripts/external/run_solprop.py predict \
     --input notebooks/data/processed/test.csv \
     --output results/solprop_predictions.csv \
     --temperature_dependent
@@ -317,7 +345,7 @@ The canonical paper budget is `50 / 200 / 50`.
 
 ### Pair-aware batching
 
-`scripts/train.py` uses pair-aware batching by default through
+`scripts/training/train.py` uses pair-aware batching by default through
 `make_loader(...)` so that:
 
 - `pair_temp_rank`
@@ -422,6 +450,8 @@ Maintained config files:
 - `docs/script_reference.md`
 - `docs/repository_audit.md`
 - `docs/free_gpu_training.md`
+- `scripts/README.md`
+- `src/tgnn_solv/README.md`
 
 ## Current Caveats
 

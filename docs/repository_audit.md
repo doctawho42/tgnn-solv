@@ -7,12 +7,12 @@ documented workflows actually match the code.
 
 The repository is now coherent around a reproducible CLI path:
 
-1. `scripts/prepare_data.py`
-2. `scripts/train.py`
-3. `scripts/run_seeds.py`
-4. `scripts/evaluate_complete.py`
-5. `scripts/run_split_comparisons.py`
-6. `scripts/generate_paper_figures.py`
+1. `scripts/data/prepare_data.py`
+2. `scripts/training/train.py`
+3. `scripts/experiments/run_seeds.py`
+4. `scripts/evaluation/evaluate_complete.py`
+5. `scripts/experiments/run_split_comparisons.py`
+6. `scripts/experiments/generate_paper_figures.py`
 7. `reproduce.sh`
 
 The main improvements relative to earlier states are:
@@ -21,6 +21,12 @@ The main improvements relative to earlier states are:
 - DirectGNN has a documented standalone CLI and descriptor-augmentation mode
 - crystal GC priors, Walden/oracle modes, and the full-budget experiment runner
   are documented as explicit research features
+- the script surface is now grouped by purpose under `scripts/data`,
+  `scripts/training`, `scripts/evaluation`, `scripts/experiments`, and
+  `scripts/external`
+- the internal package surface is now grouped by purpose under
+  `tgnn_solv.core`, `chemistry`, `models`, `physics`, `training`,
+  `evaluation`, and `research`
 - the main training CLIs now support resumable checkpoints
 - the medium-budget full-split architecture runner is documented alongside the
   full-budget diagnostic path
@@ -101,28 +107,28 @@ Some overlap is useful and should remain:
 
 Use:
 
-1. `scripts/prepare_data.py`
-2. `scripts/train.py`
-3. `scripts/run_seeds.py`
-4. `scripts/evaluate_complete.py`
-5. `scripts/run_split_comparisons.py`
+1. `scripts/data/prepare_data.py`
+2. `scripts/training/train.py`
+3. `scripts/experiments/run_seeds.py`
+4. `scripts/evaluation/evaluate_complete.py`
+5. `scripts/experiments/run_split_comparisons.py`
 6. `reproduce.sh`
 
 ### Best baseline-comparison path
 
 Use:
 
-1. `scripts/train_directgnn.py`
+1. `scripts/training/train_directgnn.py`
 2. `configs/paper_config_directgnn_descriptors.yaml`
 3. `python -m tgnn_solv.baselines.rf_baseline`
-4. `scripts/run_split_comparisons.py`
+4. `scripts/experiments/run_split_comparisons.py`
 
 ### Best bottleneck-diagnosis path
 
 Use:
 
-1. `scripts/run_full_budget_experiment.py`
-2. `scripts/validate_physics.py`
+1. `scripts/experiments/run_full_budget_experiment.py`
+2. `scripts/evaluation/validate_physics.py`
 
 ## Open Follow-Up Opportunities
 

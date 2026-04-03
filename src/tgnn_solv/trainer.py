@@ -17,6 +17,8 @@ Phase 3 — Fine-tuning with monotonicity:
 
 from __future__ import annotations
 
+import gc
+import logging
 import math
 from typing import Callable, TypeAlias
 
@@ -39,6 +41,9 @@ MetricDict: TypeAlias = dict[str, float]
 ModelOutput: TypeAlias = dict[str, object]
 TrainerStateDict: TypeAlias = dict[str, object]
 ResumeStateDict: TypeAlias = dict[str, object]
+TrainEpochStats: TypeAlias = dict[str, object]
+
+LOGGER = logging.getLogger(__name__)
 
 DEFAULT_PHASE_WEIGHTS = {
     1: {
@@ -58,7 +63,7 @@ DEFAULT_PHASE_WEIGHTS = {
         "direct_reg": 0.01,
         "direct_nll": 0.01,
         "pair_temp_rank": 0.005,
-        "vant_hoff_local": 0.002,
+        "vant_hoff_local": 0.001,
         "moe_balance": 0.005,
         "descriptor_prior": 0.0,
         "group_prior": 0.0,
@@ -72,7 +77,7 @@ DEFAULT_PHASE_WEIGHTS = {
         "direct_reg": 0.02,
         "direct_nll": 0.02,
         "pair_temp_rank": 0.01,
-        "vant_hoff_local": 0.005,
+        "vant_hoff_local": 0.001,
         "moe_balance": 0.01,
         "descriptor_prior": 0.0,
         "group_prior": 0.0,
@@ -107,6 +112,30 @@ class TGNNSolvTrainer:
         self.best_state = None
         self.patience_counter = 0
         self._last_confidence = 0.0
+        self._cache_release_counter = 0
+
+    def _maybe_release_device_cache(self, *, force: bool = False) -> None:
+        """Periodically release MPS cached memory to reduce fragmentation."""
+        if self.device.type != "mps":
+            return
+        self._cache_release_counter += 1
+        if not force and self._cache_release_counter % 50 != 0:
+            return
+        gc.collect()
+        if hasattr(torch, "mps") and hasattr(torch.mps, "empty_cache"):
+            torch.mps.empty_cache()
+
+    def _effective_loss_weight(
+        self,
+        loss_name: str,
+        weights: dict[str, float],
+    ) -> float:
+        """Resolve the effective scalar weight for a loss component."""
+        if loss_name == "walden":
+            if self.cfg.use_walden_check and self.cfg.walden_weight > 0:
+                return float(self.cfg.walden_weight)
+            return 0.0
+        return float(weights.get(loss_name, 0.0))
 
     def _get_phase_weights(self, phase: int) -> dict:
         """Return loss weights for a phase, merging config overrides
@@ -422,12 +451,18 @@ class TGNNSolvTrainer:
         phase: int,
         epoch: int,
         compute_mono: bool = False,
-    ) -> tuple[float, MetricDict]:
-        """Train for one epoch. Returns avg loss and component dict."""
+    ) -> tuple[float, TrainEpochStats]:
+        """Train for one epoch and summarize raw/weighted loss components."""
         self.model.train()
         total_loss = 0.0
         n_batches = 0
-        loss_accum = {}
+        loss_accum: dict[str, float] = {}
+        weighted_loss_accum: dict[str, float] = {}
+        sol_fraction_accum = 0.0
+        sol_fraction_count = 0
+        sol_fraction_min: float | None = None
+        regularizer_domination_count = 0
+        max_regularizer_ratio: float | None = None
 
         weights = self.phase_weights[phase].copy()
 
@@ -435,10 +470,13 @@ class TGNNSolvTrainer:
         if phase == 2 and epoch >= self.cfg.phase2_correction_unfreeze_epoch:
             self._freeze_correction(False)
 
-        for sol_batch, slv_batch, targets in progress(
-            loader,
-            desc=f"Phase {phase} train",
-            leave=False,
+        for batch_idx, (sol_batch, slv_batch, targets) in enumerate(
+            progress(
+                loader,
+                desc=f"Phase {phase} train",
+                leave=False,
+            ),
+            start=1,
         ):
             sol_batch = sol_batch.to(self.device)
             slv_batch = slv_batch.to(self.device)
@@ -529,11 +567,49 @@ class TGNNSolvTrainer:
                 self.model.parameters(), self.cfg.grad_clip,
             )
             optimizer.step()
+            self._maybe_release_device_cache()
 
             total_loss += loss.item()
             n_batches += 1
             for k, v in loss_dict.items():
-                loss_accum[k] = loss_accum.get(k, 0.0) + v
+                raw_value = float(v)
+                loss_accum[k] = loss_accum.get(k, 0.0) + raw_value
+                weighted_loss_accum[k] = (
+                    weighted_loss_accum.get(k, 0.0)
+                    + self._effective_loss_weight(k, weights) * raw_value
+                )
+
+            total_loss_value = float(loss.item())
+            sol_weight = self._effective_loss_weight("sol", weights)
+            sol_weighted = sol_weight * float(loss_dict.get("sol", 0.0))
+            if total_loss_value > 0.0 and sol_weight > 0.0 and "sol" in loss_dict:
+                sol_fraction = sol_weighted / total_loss_value
+                sol_fraction_accum += sol_fraction
+                sol_fraction_count += 1
+                if sol_fraction_min is None:
+                    sol_fraction_min = sol_fraction
+                else:
+                    sol_fraction_min = min(sol_fraction_min, sol_fraction)
+
+            if sol_weighted > 0.0:
+                regularizer_ratio = total_loss_value / max(sol_weighted, 1.0e-12)
+                if max_regularizer_ratio is None:
+                    max_regularizer_ratio = regularizer_ratio
+                else:
+                    max_regularizer_ratio = max(max_regularizer_ratio, regularizer_ratio)
+                if total_loss_value > 10.0 * sol_weighted:
+                    regularizer_domination_count += 1
+                    if regularizer_domination_count <= 3:
+                        LOGGER.warning(
+                            "Regularizer domination detected: total=%.1f, sol=%.1f. "
+                            "Consider reducing regularizer weights. "
+                            "phase=%d epoch=%d batch=%d",
+                            total_loss_value,
+                            sol_weighted,
+                            phase,
+                            epoch,
+                            batch_idx,
+                        )
             # Track confidence for logging
             if "confidence" in output:
                 self._last_confidence = output["confidence"].mean().item()
@@ -541,10 +617,29 @@ class TGNNSolvTrainer:
                 self._last_confidence = self.model.correction.w0.item()
 
         avg_loss = total_loss / max(n_batches, 1)
-        avg_components = {
+        avg_raw_components = {
             k: v / max(n_batches, 1) for k, v in loss_accum.items()
         }
-        return avg_loss, avg_components
+        avg_weighted_components = {
+            k: v / max(n_batches, 1) for k, v in weighted_loss_accum.items()
+        }
+        self._maybe_release_device_cache(force=True)
+        return avg_loss, {
+            "raw": avg_raw_components,
+            "weighted": avg_weighted_components,
+            "weights": {
+                key: self._effective_loss_weight(key, weights)
+                for key in avg_raw_components
+            },
+            "sol_fraction": (
+                sol_fraction_accum / sol_fraction_count
+                if sol_fraction_count > 0
+                else None
+            ),
+            "sol_fraction_min": sol_fraction_min,
+            "regularizer_domination_count": regularizer_domination_count,
+            "max_regularizer_ratio": max_regularizer_ratio,
+        }
 
     # -------------------------------------------------------------- #
     #  Validation                                                     #
@@ -653,6 +748,7 @@ class TGNNSolvTrainer:
             r2_den = (true - true.mean()).pow(2).sum()
             metrics["r2"] = 1.0 - (r2_num / (r2_den + 1e-8)).item()
 
+        self._maybe_release_device_cache(force=True)
         return metrics
 
     # -------------------------------------------------------------- #
@@ -712,7 +808,7 @@ class TGNNSolvTrainer:
             self._set_gc_prior_residual_freeze(phase, epoch)
             compute_mono = phase >= 2 and epoch % 5 == 0
 
-            train_loss, train_comp = self.train_epoch(
+            train_loss, train_stats = self.train_epoch(
                 train_loader, optimizer, phase, epoch, compute_mono,
             )
             val_metrics = self.validate(val_loader, phase)
@@ -728,24 +824,74 @@ class TGNNSolvTrainer:
             self.history["gate"].append(gate_val)
 
             # Logging
-            if epoch % 10 == 0 or epoch == n_epochs - 1:
-                log = (
-                    f"  Epoch {epoch:3d}/{n_epochs}: "
-                    f"train={train_loss:.4f}, "
-                    f"val={val_metrics['val_loss']:.4f}"
+            log = (
+                f"  Epoch {epoch:3d}/{n_epochs}: "
+                f"train={train_loss:.4f}, "
+                f"val={val_metrics['val_loss']:.4f}"
+            )
+            if "mae" in val_metrics:
+                log += f", MAE={val_metrics['mae']:.3f}"
+                log += f", R²={val_metrics.get('r2', 0):.3f}"
+            log += (
+                f", gate={torch.tanh(torch.tensor(gate_val)).item():.3f}"
+            )
+            print(log)
+            raw_components = train_stats.get("raw", {})
+            weighted_components = train_stats.get("weighted", {})
+            component_weights = train_stats.get("weights", {})
+            for name in sorted(raw_components):
+                print(
+                    "    "
+                    f"loss/{name}_raw={raw_components[name]:.4f} "
+                    f"loss/{name}_weighted={weighted_components.get(name, 0.0):.4f} "
+                    f"weight={component_weights.get(name, 0.0):.4g}"
                 )
-                if "mae" in val_metrics:
-                    log += f", MAE={val_metrics['mae']:.3f}"
-                    log += f", R²={val_metrics.get('r2', 0):.3f}"
-                log += (
-                    f", gate={torch.tanh(torch.tensor(gate_val)).item():.3f}"
+            sol_fraction = train_stats.get("sol_fraction")
+            sol_fraction_min = train_stats.get("sol_fraction_min")
+            max_regularizer_ratio = train_stats.get("max_regularizer_ratio")
+            sol_fraction_str = (
+                f"{float(sol_fraction):.3f}"
+                if sol_fraction is not None
+                else "NA"
+            )
+            sol_fraction_min_str = (
+                f"{float(sol_fraction_min):.3f}"
+                if sol_fraction_min is not None
+                else "NA"
+            )
+            max_regularizer_ratio_str = (
+                f"{float(max_regularizer_ratio):.2f}"
+                if max_regularizer_ratio is not None
+                else "NA"
+            )
+            print(
+                "    "
+                f"loss/total={train_loss:.4f} "
+                f"loss/sol_fraction={sol_fraction_str} "
+                f"loss/sol_fraction_min={sol_fraction_min_str} "
+                f"loss/max_regularizer_ratio={max_regularizer_ratio_str} "
+                f"loss/regularizer_domination_count="
+                f"{int(train_stats.get('regularizer_domination_count', 0))}"
+            )
+            if sol_fraction is not None and float(sol_fraction) < 0.1:
+                LOGGER.warning(
+                    "Solubility loss fraction dropped below 0.1: "
+                    "phase=%d epoch=%d sol_fraction=%.3f",
+                    phase,
+                    epoch,
+                    float(sol_fraction),
                 )
-                # Top 3 loss components
-                top = sorted(
-                    train_comp.items(), key=lambda x: x[1], reverse=True
-                )[:3]
-                log += " [" + ", ".join(f"{k}={v:.3f}" for k, v in top) + "]"
-                print(log)
+            if (
+                sol_fraction_min is not None
+                and float(sol_fraction_min) < 0.1
+            ):
+                LOGGER.warning(
+                    "Minimum solubility loss fraction dropped below 0.1: "
+                    "phase=%d epoch=%d sol_fraction_min=%.3f",
+                    phase,
+                    epoch,
+                    float(sol_fraction_min),
+                )
 
             # Early stopping (Phase 2+)
             if phase >= 2:
