@@ -1,106 +1,133 @@
-# Installation
+# Quick Start Workflow
 
-## System Requirements
+This is the shortest maintained path from a fresh clone to a trained model and
+one evaluated checkpoint.
 
-- Python ≥ 3.10 (tested with 3.11)
-- CUDA 12.1 (optional, for GPU acceleration)
-- 8GB+ RAM recommended
+If the environment is not ready yet, start with the
+[installation guide](installation.md).
 
-## Step-by-Step Setup
+## 1. Prepare the processed split
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/doctawho42/tgnn-solv.git
-cd tgnn-solv
-```
-
-### 2. Create Conda Environment
+Build the canonical full scaffold split under `notebooks/data/processed/`:
 
 ```bash
-conda create -n tgnn-solv python=3.11
-conda activate tgnn-solv
+python scripts/data/prepare_data.py \
+    --output-dir notebooks/data/processed \
+    --split-mode solute_scaffold \
+    --seed 42
 ```
 
-### 3. Install PyTorch
+This writes:
 
-Choose based on your system:
+- `train.csv`
+- `val.csv`
+- `test.csv`
+- additional `_solute` and `_solvent` split variants
+- `split_manifest.json`
 
-**With GPU (CUDA 12.1):**
-```bash
-pip install torch --index-url https://download.pytorch.org/whl/cu121
-```
+## 2. Train the maintained tuned TGNN baseline
 
-**CPU only:**
-```bash
-pip install torch
-```
-
-### 4. Install PyTorch Geometric
+Use the tuned TGNN config for the current architecture-comparison baseline:
 
 ```bash
-pip install torch-geometric -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
+python scripts/training/train.py \
+    --config configs/paper_config_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_solv_tuned.pt \
+    --device cuda
 ```
 
-### 5. Install TGNN-Solv
+If CUDA is unavailable, replace `--device cuda` with `--device mps` or
+`--device cpu`.
+
+### Resume-safe variant
+
+For long or preemptible runs:
 
 ```bash
-pip install -e ".[dev]"
+python scripts/training/train.py \
+    --config configs/paper_config_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_solv_tuned.pt \
+    --checkpoint-every 5 \
+    --device cuda
 ```
 
-This installs:
-- Core dependencies: `torch-geometric`, `rdkit`, `numpy`, `pandas`, `requests`, `tqdm`
-- Development tools: `jupyter`, `matplotlib`, `scikit-learn`, `pytest`, `optuna`
+Resume later with:
 
-### 6. (Optional) Install External Baselines
-
-For FastSolv baseline:
 ```bash
-pip install -e ".[baselines]"
+python scripts/training/train.py \
+    --resume checkpoints/tgnn_solv_tuned.pt \
+    --checkpoint checkpoints/tgnn_solv_tuned.pt \
+    --device cuda
 ```
 
-## Verification
-
-Verify installation:
+## 3. Run one inference query
 
 ```python
-import torch
-import torch_geometric
-from tgnn_solv import __version__
+from tgnn_solv.inference import load_model, predict_solubility
 
-print(f"PyTorch: {torch.__version__}")
-print(f"PyG: {torch_geometric.__version__}")
-print(f"TGNN-Solv: {__version__}")
+model, cfg = load_model("checkpoints/tgnn_solv_tuned.pt")
+result = predict_solubility(
+    model,
+    solute_smiles="CC(=O)Nc1ccc(O)cc1",
+    solvent_smiles="CCO",
+    T=298.15,
+)
+print(result["ln_x2"], result["T_m"], result["tau_12"])
 ```
 
-## Docker Setup (Alternative)
+See the full maintained inference surface in
+[Evaluation & Inference](../evaluation.md).
 
-If you prefer containerization:
+## 4. Evaluate the checkpoint
+
+Use the lightweight maintained evaluation CLI:
 
 ```bash
-docker build -t tgnn-solv .
-docker run --gpus all -it tgnn-solv bash
+python scripts/evaluation/evaluate_complete.py \
+    --test-data notebooks/data/processed/test.csv \
+    --tgnn-checkpoint checkpoints/tgnn_solv_tuned.pt \
+    --output results/full_evaluation.json \
+    --verbose
 ```
 
-## Troubleshooting
+This gives you:
 
-### CUDA/GPU Issues
+- test-set regression metrics
+- figure-ready arrays
+- error slices such as aqueous and top-solvent subsets
+
+## 5. Run a matched no-physics baseline
+
+To compare TGNN-Solv against the maintained matched backbone:
 
 ```bash
-# Check CUDA availability
-python -c "import torch; print(torch.cuda.is_available())"
-
-# Reinstall with specific CUDA version
-pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu121
+python scripts/training/train_directgnn.py \
+    --config configs/paper_config_directgnn_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/directgnn_tuned.pt \
+    --device cuda
 ```
 
-### RDKit Import Errors
+That is the main ablation used to test whether the explicit physics bottleneck
+is helping.
 
-```bash
-# RDKit sometimes needs conda installation
-conda install -c conda-forge rdkit
-```
+## 6. Go deeper
 
-### Out of Memory
+After the first end-to-end run, the most useful next pages are:
 
-Reduce batch size in config files or use CPU-only mode for testing.
+- [Architecture](../architecture.md)
+  - understand TGNN-Solv, DirectGNN, GC priors, and Stage 0 pretraining
+- [Training](../training.md)
+  - curriculum phases, pair-aware batching, oracle injection, and resume
+- [Experiments & Benchmarks](../experiments.md)
+  - medium-budget comparison, full-budget diagnostic run, split studies
+- [Notebooks & Tutorials](../notebooks.md)
+  - interactive walk-throughs that mirror the maintained code paths

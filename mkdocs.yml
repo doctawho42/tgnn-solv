@@ -7,6 +7,9 @@ repo_name: doctawho42/tgnn-solv
 
 theme:
   name: material
+  language: en
+  icon:
+    repo: fontawesome/brands/github
   palette:
     - scheme: slate
       primary: blue
@@ -25,17 +28,18 @@ theme:
     - navigation.sections
     - navigation.top
     - navigation.expand
+    - content.code.copy
     - search.suggest
     - search.highlight
     - content.tabs.link
 
 plugins:
   - search
-  - git-revision-date-localized:
-      enable_creation_date: true
-      type: date
 
 markdown_extensions:
+  - attr_list
+  - md_in_html
+  - tables
   - pymdownx.highlight:
       use_pygments: true
   - pymdownx.superfences
@@ -54,20 +58,29 @@ extra_javascript:
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/doctawho42/tgnn-solv
+
 nav:
   - Home: index.md
-  - Installation & Quick Start:
+  - Start Here:
     - Installation: getting_started/installation.md
     - Quick Start Workflow: getting_started/quick_start.md
-  - Core Guides:
+    - Notebooks & Tutorials: notebooks.md
+  - Guides:
     - Architecture: architecture.md
     - Data Preparation: data_preparation.md
     - Training: training.md
-    - Evaluation: evaluation.md
+    - Evaluation & Inference: evaluation.md
     - Baselines: baselines.md
-  - Advanced Topics:
-    - Reproducing Paper: reproducing_paper.md
+  - Workflows:
+    - Experiments & Benchmarks: experiments.md
+    - Reproducing the Paper: reproducing_paper.md
+    - Free GPU / Preemptible Training: free_gpu_training.md
+  - Reference:
     - Script Reference: script_reference.md
-    - Free GPU Training: free_gpu_training.md
     - Repository Audit: repository_audit.md
-  - Contributing: ../CONTRIBUTING.md
+  - Project:
+    - Contributing: contributing.md

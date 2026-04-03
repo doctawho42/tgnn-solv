@@ -15,6 +15,10 @@ to judge whether that bottleneck helps:
 - `RF` baselines on RDKit descriptors, Morgan fingerprints, or both
 - optional external baselines: FastSolv and SolProp
 
+Documentation site:
+
+- https://doctawho42.github.io/tgnn-solv/
+
 ## Installation
 
 ```bash
@@ -309,7 +313,8 @@ its temporary auxiliary heads after pretraining.
 
 ## Documentation Map
 
-- `docs/README.md`: documentation index
+- `docs/index.md`: published documentation-site landing page
+- `DOCS_INDEX.md`: repo-internal documentation index
 - `docs/architecture.md`: forward paths, loss structure, and current design
   choices
 - `docs/data_preparation.md`: raw sources, processed CSV layout, split modes

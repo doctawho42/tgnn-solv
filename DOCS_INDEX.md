@@ -1,53 +1,75 @@
 # Documentation Index
 
-Use this page as the entry point for the maintained project documentation.
+For the published documentation site, start from `docs/index.md`.
 
-## Core Guides
+This file is the repo-internal map of the same maintained documentation set.
 
-- `architecture.md`
+## Site Pages
+
+- `docs/index.md`
+  - public site landing page, project overview, and reading paths
+- `docs/getting_started/installation.md`
+  - environment setup and dependency notes
+- `docs/getting_started/quick_start.md`
+  - shortest maintained end-to-end workflow
+- `docs/notebooks.md`
+  - notebook inventory and mapping to the docs
+- `docs/architecture.md`
   - TGNN-Solv forward path, DirectGNN baseline, Stage 0 pretraining, and key
     design choices
-- `data_preparation.md`
+- `docs/data_preparation.md`
   - raw sources, processed CSV layout, split modes, and dataset expectations
-- `training.md`
+- `docs/training.md`
   - canonical CLIs, standalone pretraining, tuned configs, resume support,
     ablations, and experiment runners
-- `evaluation.md`
+- `docs/evaluation.md`
   - inference API, uncertainty, OOD/applicability-domain, checkpoint
     evaluation, physics diagnostics, and maintained experiment runners
-- `baselines.md`
+- `docs/baselines.md`
   - DirectGNN, DirectGNN+descriptors, RF, Ideal-SLE, FastSolv, and SolProp
-- `reproducing_paper.md`
+- `docs/experiments.md`
+  - maintained benchmark and comparison runners, output layouts, and runner
+    selection guidance
+- `docs/reproducing_paper.md`
   - what `reproduce.sh` runs, what it skips, and how to validate outputs
-- `script_reference.md`
+- `docs/script_reference.md`
   - maturity map for scripts and notebooks
-- `repository_audit.md`
+- `docs/repository_audit.md`
   - current strengths, known gaps, and structural caveats
+- `docs/contributing.md`
+  - public-site contributor summary with a link to the full root guide
 
 ## Top-Level Companion Docs
 
-- `../README.md`
+- `README.md`
   - high-level project overview and quick-start commands
-- `../AGENTS.md`
+- `AGENTS.md`
   - compact repo notes for coding agents and terminal-driven contributors
-- `../CONTRIBUTING.md`
+- `CONTRIBUTING.md`
   - contribution workflow and validation checklist
-- `../scripts/README.md`
+- `scripts/README.md`
   - grouped CLI layout and compatibility-wrapper policy
-- `../src/tgnn_solv/README.md`
+- `src/tgnn_solv/README.md`
   - grouped internal package layout and preferred import surface
 
 ## Recommended Reading Order
 
-For new contributors:
+For site readers:
 
-1. `architecture.md`
-2. `data_preparation.md`
-3. `training.md`
-4. `evaluation.md`
-5. `baselines.md`
-6. `script_reference.md`
-7. `free_gpu_training.md` if you need resumable cloud runs
+1. `docs/index.md`
+2. `docs/getting_started/installation.md`
+3. `docs/getting_started/quick_start.md`
+4. `docs/architecture.md`
+5. `docs/training.md`
+6. `docs/evaluation.md`
+7. `docs/experiments.md`
+
+For contributors after that:
+
+1. `docs/script_reference.md`
+2. `docs/free_gpu_training.md` if you need resumable cloud runs
+3. `docs/repository_audit.md`
+4. `CONTRIBUTING.md`
 
 ## Project Conventions
 
