@@ -47,3 +47,14 @@ will reuse the existing checkpoint and continue from the saved phase/epoch.
 - `scripts/experiments/run_full_budget_experiment.py` and
   `scripts/experiments/run_medium_budget_comparison.py` also pass through
   `--checkpoint-every` and resume from existing per-model checkpoints.
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Training](training.md)
+- [Troubleshooting](troubleshooting.md)
+- [Experiments & Benchmarks](experiments.md)
+- [Quick Start Workflow](getting_started/quick_start.md)
+
+</div>

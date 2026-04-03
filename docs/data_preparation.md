@@ -174,3 +174,14 @@ Notes on the two higher-variance feature paths:
 - GC crystal priors are raw per-molecule estimates. The training script may
   later calibrate `T_m_gc`, but the dataset intentionally exposes the raw
   prior values.
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Quick Start Workflow](getting_started/quick_start.md)
+- [Training](training.md)
+- [Evaluation & Inference](evaluation.md)
+- [Experiments & Benchmarks](experiments.md)
+
+</div>

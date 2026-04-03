@@ -433,3 +433,14 @@ Use:
   - for full-budget TGNN-vs-DirectGNN diagnosis
 - `run_medium_budget_comparison.py`
   - for the full-split medium-budget architecture study
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Results](results.md)
+- [Model Zoo](model_zoo.md)
+- [FAQ](faq.md)
+- [Troubleshooting](troubleshooting.md)
+
+</div>

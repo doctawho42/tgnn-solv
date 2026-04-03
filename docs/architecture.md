@@ -389,3 +389,14 @@ The heavy experiment runners reuse those checkpoints automatically:
 
 - `scripts/experiments/run_full_budget_experiment.py`
 - `scripts/experiments/run_medium_budget_comparison.py`
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Training](training.md)
+- [Baselines](baselines.md)
+- [Config Cookbook](config_cookbook.md)
+- [Evaluation & Inference](evaluation.md)
+
+</div>

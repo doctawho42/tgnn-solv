@@ -222,3 +222,14 @@ Capture:
 
 That is usually enough to reduce the issue from "training failed" to a specific
 subsystem.
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Installation](getting_started/installation.md)
+- [Training](training.md)
+- [FAQ](faq.md)
+- [Free GPU / Preemptible Training](free_gpu_training.md)
+
+</div>

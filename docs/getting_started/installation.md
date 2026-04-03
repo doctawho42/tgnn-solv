@@ -104,3 +104,13 @@ conda install -c conda-forge rdkit
 ### Out of Memory
 
 Reduce batch size in config files or use CPU-only mode for testing.
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Next Step
+
+- [Quick Start Workflow](quick_start.md)
+- [Troubleshooting](../troubleshooting.md)
+- [Notebooks & Tutorials](../notebooks.md)
+
+</div>

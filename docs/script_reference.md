@@ -153,3 +153,14 @@ They are available through the Python API and are demonstrated in notebooks.
 | `notebooks/06_ablations.ipynb` | Ablation experiments | Exploratory ablations including maintained split-late comparison |
 | `notebooks/07_temperature.ipynb` | Temperature analysis | Research notebook for van't Hoff and multi-temperature behavior |
 | `notebooks/08_optuna_tuning.ipynb` | Optuna tuning | Interactive tuning |
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Experiments & Benchmarks](experiments.md)
+- [Notebooks & Tutorials](notebooks.md)
+- [Contributing](contributing.md)
+- [Repository Audit](repository_audit.md)
+
+</div>

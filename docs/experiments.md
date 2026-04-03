@@ -174,3 +174,14 @@ The common pattern is:
 
 That convention is intentional so downstream reporting and figure-generation
 scripts can consume the outputs consistently.
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Results](results.md)
+- [Reproducing the Paper](reproducing_paper.md)
+- [Script Reference](script_reference.md)
+- [Troubleshooting](troubleshooting.md)
+
+</div>

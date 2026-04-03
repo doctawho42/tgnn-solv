@@ -386,3 +386,14 @@ injection is disabled during training for that specific comparison.
 - Pair-temperature batching is important if you want temperature-consistency
   losses such as `pair_temp_rank` and `vant_hoff_local` to have enough same-pair
   temperature structure inside a batch.
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Config Cookbook](config_cookbook.md)
+- [Experiments & Benchmarks](experiments.md)
+- [Free GPU / Preemptible Training](free_gpu_training.md)
+- [Troubleshooting](troubleshooting.md)
+
+</div>

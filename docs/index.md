@@ -1,20 +1,42 @@
+<div class="tgnn-hero" markdown="1">
+
+<div class="tgnn-hero__eyebrow">Physics-Informed Solubility Modeling</div>
+
 # TGNN-Solv
 
-Physics-informed graph learning for solid-liquid equilibrium solubility prediction.
-
-Quick links:
-
-- [Install TGNN-Solv](getting_started/installation.md)
-- [Run the quick start](getting_started/quick_start.md)
-- [Browse the notebooks](notebooks.md)
+Physics-informed graph learning for solid-liquid equilibrium solubility
+prediction.
 
 TGNN-Solv does not predict solubility directly by default. It predicts crystal
 and interaction parameters, solves the SLE equation with an NRTL activity
-model, and only then applies a bounded correction. The central comparison in
-this repository is whether that explicit physics bottleneck helps relative to
-the same backbone trained directly on `ln(x2)`.
+model, and only then applies a bounded correction. The central question across
+this repository is whether that explicit thermodynamic bottleneck helps
+relative to the same graph backbone trained directly on `ln(x2)`.
 
-## What This Site Covers
+<div class="tgnn-button-row" markdown="1">
+
+[Install TGNN-Solv](getting_started/installation.md){ .md-button .md-button--primary }
+[Run the quick start](getting_started/quick_start.md){ .md-button }
+[Browse the notebooks](notebooks.md){ .md-button }
+[See benchmark workflows](experiments.md){ .md-button }
+
+</div>
+
+<div class="tgnn-chip-list">
+  <span class="tgnn-chip">Default strict split: <code>solute_scaffold</code></span>
+  <span class="tgnn-chip">Maintained TGNN baseline: <code>paper_config_tuned.yaml</code></span>
+  <span class="tgnn-chip">Matched no-physics baseline: <code>DirectGNN</code></span>
+  <span class="tgnn-chip">Optional Stage 0 pretraining supported</span>
+  <span class="tgnn-chip">Resume-safe training supported</span>
+</div>
+
+</div>
+
+## Site Overview
+
+<div class="tgnn-grid tgnn-grid--3" markdown="1">
+
+<div class="tgnn-card tgnn-card--accent" markdown="1">
 
 ### Core models
 
@@ -25,6 +47,10 @@ The maintained comparison is:
 - `DirectGNN + descriptors`
 - descriptor and Morgan RF baselines
 
+</div>
+
+<div class="tgnn-card" markdown="1">
+
 ### Practical workflows
 
 This site documents the maintained paths for:
@@ -33,6 +59,10 @@ This site documents the maintained paths for:
 - training and resume support
 - inference, uncertainty, and OOD checks
 - benchmark and experiment runners
+
+</div>
+
+<div class="tgnn-card" markdown="1">
 
 ### Interactive tutorials
 
@@ -44,9 +74,13 @@ The repository includes notebook walkthroughs for:
 - evaluation
 - baselines, ablations, temperature analysis, and tuning
 
+</div>
+
+</div>
+
 ## Research Question
 
-The project is organized around one high-level question:
+The repository is organized around one high-level question:
 
 > Does an explicit thermodynamic bottleneck help out-of-split solubility
 > prediction relative to a matched graph backbone trained directly on
@@ -59,72 +93,216 @@ That is why the site consistently presents TGNN-Solv together with:
 - RF descriptor baselines
 - optional external baselines such as FastSolv and SolProp
 
-## Start Here
+## Choose a Path
 
-### Install
+=== "First Run"
 
-Set up the environment, PyTorch, and PyG.
+    Start here if you want a working environment and one end-to-end example.
 
-- [Open installation guide](getting_started/installation.md)
+    - [Installation](getting_started/installation.md)
+      - environment setup, dependencies, sanity checks
+    - [Quick Start Workflow](getting_started/quick_start.md)
+      - prepare data, train one tuned TGNN model, evaluate a checkpoint
+    - [Notebooks & Tutorials](notebooks.md)
+      - interactive walkthroughs aligned with the maintained code paths
+    - [Troubleshooting](troubleshooting.md)
+      - the fastest way to debug setup, device, or resume issues
 
-### Quick start
+=== "Benchmarking"
 
-Prepare the processed split, train one tuned TGNN model, run inference, and
-evaluate a checkpoint.
+    Start here if you want fair comparisons and reproducible result bundles.
 
-- [Open quick start](getting_started/quick_start.md)
+    - [Config Cookbook](config_cookbook.md)
+      - pick the right config for TGNN, DirectGNN, or ablation work
+    - [Results](results.md)
+      - understand what is committed now and which artifacts are provisional
+    - [Experiments & Benchmarks](experiments.md)
+      - medium-budget, full-budget, split-comparison, and tuning workflows
+    - [Model Zoo](model_zoo.md)
+      - checkpoint conventions and current public-model status
 
-### Understand the model
+=== "Deep Dive"
 
-Read how TGNN-Solv factorizes crystal and interaction terms, how GC priors are
-injected, and where the solver sits in the forward pass.
+    Start here if you want to understand the architecture and its failure modes.
 
-- [Open architecture guide](architecture.md)
+    - [Architecture](architecture.md)
+      - the TGNN forward path, DirectGNN, GC priors, and Stage 0 pretraining
+    - [Training](training.md)
+      - curriculum phases, pair-aware batching, oracle injection, resume
+    - [Evaluation & Inference](evaluation.md)
+      - prediction APIs, uncertainty, calibration, and applicability domain
+    - [Baselines](baselines.md)
+      - what each baseline tests and how to run it
+    - [FAQ](faq.md)
+      - common conceptual and practical questions
 
-### Run experiments
+=== "Contributing"
 
-Use the maintained experiment pages for medium-budget comparisons,
-full-budget diagnostics, split studies, and paper-style reproduction.
+    Start here if you want to change code, docs, or experiment scripts.
 
-- [Open experiments guide](experiments.md)
+    - [Script Reference](script_reference.md)
+      - maturity map for scripts and notebooks
+    - [Contributing](contributing.md)
+      - contributor workflow and doc/update policy
+    - [Repository Audit](repository_audit.md)
+      - current strengths, caveats, and structural risks
+    - [Free GPU / Preemptible Training](free_gpu_training.md)
+      - resume-safe execution in cloud notebook environments
+
+## Documentation Hub
+
+<div class="tgnn-grid tgnn-grid--2" markdown="1">
+
+<div class="tgnn-card tgnn-card--accent" markdown="1">
+
+### Start Here
+
+Use these pages to get from clone to first result:
+
+- [Installation](getting_started/installation.md)
+- [Quick Start Workflow](getting_started/quick_start.md)
+- [Notebooks & Tutorials](notebooks.md)
+
+</div>
+
+<div class="tgnn-card" markdown="1">
+
+### Guides
+
+Use these pages to understand the maintained implementation:
+
+- [Architecture](architecture.md)
+- [Data Preparation](data_preparation.md)
+- [Training](training.md)
+- [Evaluation & Inference](evaluation.md)
+- [Baselines](baselines.md)
+- [Config Cookbook](config_cookbook.md)
+
+</div>
+
+<div class="tgnn-card" markdown="1">
+
+### Workflows
+
+Use these pages to run benchmark and reproduction paths:
+
+- [Results](results.md)
+- [Experiments & Benchmarks](experiments.md)
+- [Model Zoo](model_zoo.md)
+- [Reproducing the Paper](reproducing_paper.md)
+- [Free GPU / Preemptible Training](free_gpu_training.md)
+
+</div>
+
+<div class="tgnn-card" markdown="1">
+
+### Reference and Project Notes
+
+Use these pages when you need targeted answers:
+
+- [Script Reference](script_reference.md)
+- [FAQ](faq.md)
+- [Troubleshooting](troubleshooting.md)
+- [Repository Audit](repository_audit.md)
+- [Contributing](contributing.md)
+
+</div>
+
+</div>
 
 ## Model Families
 
-| Model | What it predicts | Why it exists |
-| --- | --- | --- |
-| `TGNN-Solv` | `T_m`, `dH_fus`, `dCp_fus`, NRTL state, then `ln(x2)` through the solver | Main physics-informed model |
-| `DirectGNN` | `ln(x2)` directly from the same graph backbone | Matched no-physics control |
-| `DirectGNN + descriptors` | `ln(x2)` from graph features plus RDKit descriptors | Tests whether missing hand-crafted chemistry explains the gap |
-| `RF` baselines | `ln(x2)` from descriptors, Morgan fingerprints, or both | Cheap descriptor-centric baselines |
+<div class="tgnn-grid tgnn-grid--2" markdown="1">
 
-## Documentation Map
+<div class="tgnn-card" markdown="1">
 
-- [Installation](getting_started/installation.md)
-  - environment setup and dependency notes
-- [Quick Start Workflow](getting_started/quick_start.md)
-  - the shortest maintained path from raw repo to first trained model
-- [Notebooks & Tutorials](notebooks.md)
-  - interactive walkthroughs and how they map to the codebase
-- [Architecture](architecture.md)
-  - forward path, GC priors, Stage 0 pretraining, and DirectGNN
-- [Training](training.md)
-  - curriculum, resume support, pretraining, and training controls
-- [Evaluation & Inference](evaluation.md)
-  - prediction APIs, uncertainty, calibration, and applicability-domain checks
-- [Config Cookbook](config_cookbook.md)
-  - which maintained config to use for each common task
-- [Results](results.md)
-  - how to interpret the committed result bundles and benchmark hierarchy
-- [Experiments & Benchmarks](experiments.md)
-  - maintained comparison runners and expected outputs
-- [Model Zoo](model_zoo.md)
-  - checkpoint conventions and current public-model status
-- [Script Reference](script_reference.md)
-  - maturity map for scripts and notebooks
-- [FAQ](faq.md)
-  - short answers to recurring project questions
-- [Troubleshooting](troubleshooting.md)
-  - common training, environment, and deployment issues
+### `TGNN-Solv`
+
+- predicts `T_m`, `dH_fus`, `dCp_fus`, and NRTL state
+- solves the SLE equation explicitly
+- applies a bounded correction only after the solver
+- supports GC crystal priors and oracle-diagnostic paths
+
+</div>
+
+<div class="tgnn-card" markdown="1">
+
+### `DirectGNN`
+
+- reuses the same backbone and interaction stack
+- predicts `ln(x2)` directly
+- acts as the matched no-physics control
+- has a stronger descriptor-augmented variant for baseline pressure testing
+
+</div>
+
+<div class="tgnn-card" markdown="1">
+
+### Descriptor-augmented baselines
+
+- `DirectGNN + descriptors`
+- RF on descriptors
+- RF on Morgan fingerprints
+- RF hybrid features
+
+Use these to test whether hand-crafted chemistry closes the gap without the
+TGNN physics bottleneck.
+
+</div>
+
+<div class="tgnn-card" markdown="1">
+
+### External baselines
+
+- FastSolv
+- SolProp
+
+These remain optional and environment-sensitive, so they are documented
+honestly as external comparison surfaces rather than core repo dependencies.
+
+</div>
+
+</div>
+
+## Recommended Reading Sequences
+
+<div class="tgnn-grid tgnn-grid--3" markdown="1">
+
+<div class="tgnn-card" markdown="1">
+
+### Learn the project
+
+1. [Quick Start Workflow](getting_started/quick_start.md)
+2. [Architecture](architecture.md)
+3. [Training](training.md)
+4. [Evaluation & Inference](evaluation.md)
+
+</div>
+
+<div class="tgnn-card" markdown="1">
+
+### Run serious comparisons
+
+1. [Config Cookbook](config_cookbook.md)
+2. [Results](results.md)
+3. [Experiments & Benchmarks](experiments.md)
+4. [Reproducing the Paper](reproducing_paper.md)
+
+</div>
+
+<div class="tgnn-card" markdown="1">
+
+### Work interactively
+
+1. [Notebooks & Tutorials](notebooks.md)
+2. `01_prepare_data.ipynb`
+3. `02_train.ipynb`
+4. `03_inference.ipynb`
+5. `04_evaluation.ipynb`
+
+</div>
+
+</div>
 
 ## Notebook-First Readers
 
@@ -138,3 +316,19 @@ with:
 
 The site pages and notebooks are intentionally aligned, so the conceptual
 documentation and the runnable examples describe the same maintained surfaces.
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Continue With
+
+- New to the repo:
+  [Installation](getting_started/installation.md) →
+  [Quick Start Workflow](getting_started/quick_start.md)
+- Choosing configs or runs:
+  [Config Cookbook](config_cookbook.md) →
+  [Experiments & Benchmarks](experiments.md)
+- Need metrics and artifacts:
+  [Results](results.md) →
+  [Model Zoo](model_zoo.md)
+
+</div>

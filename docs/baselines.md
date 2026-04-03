@@ -244,3 +244,14 @@ That ordering isolates:
 - graph-learning capacity without physics
 - whether descriptor side information closes the GNN gap
 - whether the full physics bottleneck adds value
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Results](results.md)
+- [Experiments & Benchmarks](experiments.md)
+- [Config Cookbook](config_cookbook.md)
+- [Architecture](architecture.md)
+
+</div>

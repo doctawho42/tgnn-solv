@@ -86,3 +86,14 @@ When you change any of the following, update the corresponding documentation:
 
 The site is intended to stay synchronized with the maintained implementation.
 If behavior changes in code, the docs should change in the same PR.
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Script Reference](script_reference.md)
+- [Architecture](architecture.md)
+- [Training](training.md)
+- [Repository Audit](repository_audit.md)
+
+</div>

@@ -66,3 +66,14 @@ reproducible default remains the grouped CLI surface under:
 
 Use notebooks for inspection and explanation, and the CLIs for reproducible
 batch runs.
+
+<div class="tgnn-page-nav" markdown="1">
+
+## Related Pages
+
+- [Quick Start Workflow](getting_started/quick_start.md)
+- [Training](training.md)
+- [Evaluation & Inference](evaluation.md)
+- [Experiments & Benchmarks](experiments.md)
+
+</div>
