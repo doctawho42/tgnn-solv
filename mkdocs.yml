@@ -1,0 +1,73 @@
+site_name: TGNN-Solv Documentation
+site_description: Physics-informed Graph Neural Network for Solubility Prediction
+site_author: doctawho42
+site_url: https://doctawho42.github.io/tgnn-solv/
+repo_url: https://github.com/doctawho42/tgnn-solv
+repo_name: doctawho42/tgnn-solv
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: date
+
+markdown_extensions:
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:pymdownx.emoji.twemoji
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+  - admonition
+  - toc:
+      permalink: true
+
+extra_javascript:
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - Home: index.md
+  - Installation & Quick Start:
+    - Installation: getting_started/installation.md
+    - Quick Start Workflow: getting_started/quick_start.md
+  - Core Guides:
+    - Architecture: architecture.md
+    - Data Preparation: data_preparation.md
+    - Training: training.md
+    - Evaluation: evaluation.md
+    - Baselines: baselines.md
+  - Advanced Topics:
+    - Reproducing Paper: reproducing_paper.md
+    - Script Reference: script_reference.md
+    - Free GPU Training: free_gpu_training.md
+    - Repository Audit: repository_audit.md
+  - Contributing: ../CONTRIBUTING.md
