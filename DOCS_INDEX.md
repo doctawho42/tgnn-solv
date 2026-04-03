@@ -24,16 +24,26 @@ This file is the repo-internal map of the same maintained documentation set.
     ablations, and experiment runners
 - `docs/evaluation.md`
   - inference API, uncertainty, OOD/applicability-domain, checkpoint
-    evaluation, physics diagnostics, and maintained experiment runners
+  evaluation, physics diagnostics, and maintained experiment runners
 - `docs/baselines.md`
   - DirectGNN, DirectGNN+descriptors, RF, Ideal-SLE, FastSolv, and SolProp
+- `docs/config_cookbook.md`
+  - recommended config selection by use case
+- `docs/results.md`
+  - benchmark hierarchy and interpretation of committed result bundles
 - `docs/experiments.md`
   - maintained benchmark and comparison runners, output layouts, and runner
     selection guidance
+- `docs/model_zoo.md`
+  - checkpoint conventions and local artifact layouts
 - `docs/reproducing_paper.md`
   - what `reproduce.sh` runs, what it skips, and how to validate outputs
 - `docs/script_reference.md`
   - maturity map for scripts and notebooks
+- `docs/faq.md`
+  - short answers to recurring questions
+- `docs/troubleshooting.md`
+  - common environment and training failures
 - `docs/repository_audit.md`
   - current strengths, known gaps, and structural caveats
 - `docs/contributing.md`

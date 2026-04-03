@@ -111,10 +111,20 @@ full-budget diagnostics, split studies, and paper-style reproduction.
   - curriculum, resume support, pretraining, and training controls
 - [Evaluation & Inference](evaluation.md)
   - prediction APIs, uncertainty, calibration, and applicability-domain checks
+- [Config Cookbook](config_cookbook.md)
+  - which maintained config to use for each common task
+- [Results](results.md)
+  - how to interpret the committed result bundles and benchmark hierarchy
 - [Experiments & Benchmarks](experiments.md)
   - maintained comparison runners and expected outputs
+- [Model Zoo](model_zoo.md)
+  - checkpoint conventions and current public-model status
 - [Script Reference](script_reference.md)
   - maturity map for scripts and notebooks
+- [FAQ](faq.md)
+  - short answers to recurring project questions
+- [Troubleshooting](troubleshooting.md)
+  - common training, environment, and deployment issues
 
 ## Notebook-First Readers
 

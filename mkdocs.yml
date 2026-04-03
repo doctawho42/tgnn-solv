@@ -75,12 +75,17 @@ nav:
     - Training: training.md
     - Evaluation & Inference: evaluation.md
     - Baselines: baselines.md
+    - Config Cookbook: config_cookbook.md
   - Workflows:
+    - Results: results.md
     - Experiments & Benchmarks: experiments.md
+    - Model Zoo: model_zoo.md
     - Reproducing the Paper: reproducing_paper.md
     - Free GPU / Preemptible Training: free_gpu_training.md
   - Reference:
     - Script Reference: script_reference.md
+    - FAQ: faq.md
+    - Troubleshooting: troubleshooting.md
     - Repository Audit: repository_audit.md
   - Project:
     - Contributing: contributing.md
