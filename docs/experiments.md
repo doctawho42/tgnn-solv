@@ -5,39 +5,27 @@ for architecture decisions and reproducible comparisons.
 
 ## At a Glance
 
-<div class="grid cards" markdown>
+### Reproduce the paper-style workflow
 
-- :material-play-circle-outline: __Reproduce the paper-style workflow__
+Use `reproduce.sh` plus the canonical CLI stack when you want the full
+end-to-end baseline workflow.
 
-  ---
+- [Open reproduction guide](reproducing_paper.md)
 
-  Use `reproduce.sh` plus the canonical CLI stack when you want the full
-  end-to-end baseline workflow.
+### Run the medium-budget comparison
 
-  [Open reproduction guide](reproducing_paper.md)
+Use the full-scaffold medium-budget runner for architecture triage across TGNN
+variants, DirectGNN variants, and RF.
 
-- :material-scale-balance: __Run the medium-budget comparison__
+### Run the full-budget diagnostic study
 
-  ---
+Use the matched-budget TGNN-vs-DirectGNN study when you need physical
+intermediates and oracle diagnostics.
 
-  Use the full-scaffold medium-budget runner for architecture triage across
-  TGNN variants, DirectGNN variants, and RF.
+### Compare split protocols
 
-- :material-chart-timeline-variant: __Run the full-budget diagnostic study__
-
-  ---
-
-  Use the matched-budget TGNN-vs-DirectGNN study when you need physical
-  intermediates and oracle diagnostics.
-
-- :material-source-branch: __Compare split protocols__
-
-  ---
-
-  Use the split-comparison runner when you need scaffold, solute, and solvent
-  generalization results from one consistent code path.
-
-</div>
+Use the split-comparison runner when you need scaffold, solute, and solvent
+generalization results from one consistent code path.
 
 ## Canonical Reproduction
 

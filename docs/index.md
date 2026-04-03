@@ -2,56 +2,47 @@
 
 Physics-informed graph learning for solid-liquid equilibrium solubility prediction.
 
-[Install TGNN-Solv](getting_started/installation.md){ .md-button .md-button--primary }
-[Run the quick start](getting_started/quick_start.md){ .md-button }
-[Browse the notebooks](notebooks.md){ .md-button }
+Quick links:
 
-!!! abstract
-    TGNN-Solv does not predict solubility directly by default. It predicts
-    crystal and interaction parameters, solves the SLE equation with an NRTL
-    activity model, and only then applies a bounded correction. The central
-    comparison in this repository is whether that explicit physics bottleneck
-    helps relative to the same backbone trained directly on `ln(x2)`.
+- [Install TGNN-Solv](getting_started/installation.md)
+- [Run the quick start](getting_started/quick_start.md)
+- [Browse the notebooks](notebooks.md)
+
+TGNN-Solv does not predict solubility directly by default. It predicts crystal
+and interaction parameters, solves the SLE equation with an NRTL activity
+model, and only then applies a bounded correction. The central comparison in
+this repository is whether that explicit physics bottleneck helps relative to
+the same backbone trained directly on `ln(x2)`.
 
 ## What This Site Covers
 
-<div class="grid cards" markdown>
+### Core models
 
-- :material-flask-outline: __Core models__
+The maintained comparison is:
 
-  ---
+- `TGNN-Solv`
+- `DirectGNN`
+- `DirectGNN + descriptors`
+- descriptor and Morgan RF baselines
 
-  The maintained comparison is:
+### Practical workflows
 
-  - `TGNN-Solv`
-  - `DirectGNN`
-  - `DirectGNN + descriptors`
-  - descriptor and Morgan RF baselines
+This site documents the maintained paths for:
 
-- :material-cog-outline: __Practical workflows__
+- data preparation
+- training and resume support
+- inference, uncertainty, and OOD checks
+- benchmark and experiment runners
 
-  ---
+### Interactive tutorials
 
-  This site documents the maintained paths for:
+The repository includes notebook walkthroughs for:
 
-  - data preparation
-  - training and resume support
-  - inference, uncertainty, and OOD checks
-  - benchmark and experiment runners
-
-- :material-notebook-outline: __Interactive tutorials__
-
-  ---
-
-  The repository includes notebook walkthroughs for:
-
-  - data preparation
-  - training
-  - inference
-  - evaluation
-  - baselines, ablations, temperature analysis, and tuning
-
-</div>
+- data preparation
+- training
+- inference
+- evaluation
+- baselines, ablations, temperature analysis, and tuning
 
 ## Research Question
 
@@ -70,44 +61,32 @@ That is why the site consistently presents TGNN-Solv together with:
 
 ## Start Here
 
-<div class="grid cards" markdown>
+### Install
 
-- :material-download-outline: __Install__
+Set up the environment, PyTorch, and PyG.
 
-  ---
+- [Open installation guide](getting_started/installation.md)
 
-  Set up the environment, PyTorch, and PyG.
+### Quick start
 
-  [Open installation guide](getting_started/installation.md)
+Prepare the processed split, train one tuned TGNN model, run inference, and
+evaluate a checkpoint.
 
-- :material-rocket-launch-outline: __Quick start__
+- [Open quick start](getting_started/quick_start.md)
 
-  ---
+### Understand the model
 
-  Prepare the processed split, train one tuned TGNN model, run inference, and
-  evaluate a checkpoint.
+Read how TGNN-Solv factorizes crystal and interaction terms, how GC priors are
+injected, and where the solver sits in the forward pass.
 
-  [Open quick start](getting_started/quick_start.md)
+- [Open architecture guide](architecture.md)
 
-- :material-graph-outline: __Understand the model__
+### Run experiments
 
-  ---
+Use the maintained experiment pages for medium-budget comparisons,
+full-budget diagnostics, split studies, and paper-style reproduction.
 
-  Read how TGNN-Solv factorizes crystal and interaction terms, how GC priors
-  are injected, and where the solver sits in the forward pass.
-
-  [Open architecture guide](architecture.md)
-
-- :material-chart-box-outline: __Run experiments__
-
-  ---
-
-  Use the maintained experiment pages for medium-budget comparisons,
-  full-budget diagnostics, split studies, and paper-style reproduction.
-
-  [Open experiments guide](experiments.md)
-
-</div>
+- [Open experiments guide](experiments.md)
 
 ## Model Families
 
