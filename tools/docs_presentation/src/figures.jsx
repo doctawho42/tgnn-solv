@@ -24,6 +24,26 @@ const COLORS = {
   redSoft: "#FEE2E2",
 };
 
+const PAPER_FILL = "var(--deck-paper)";
+const PAPER_BORDER = "var(--deck-paper-border)";
+const PAPER_TEXT = "var(--deck-paper-text)";
+const PAPER_SOFT_TEXT = "var(--deck-paper-soft)";
+const DECK_TEXT = "var(--deck-text)";
+const DECK_SOFT_TEXT = "var(--deck-text-faint)";
+
+const EXAMPLE_PAIR = {
+  solute: {
+    name: "Paracetamol",
+    role: "solute",
+    smiles: "CC(=O)Nc1ccc(O)cc1",
+  },
+  solvent: {
+    name: "Ethanol",
+    role: "solvent",
+    smiles: "CCO",
+  },
+};
+
 function linePath(points) {
   return points.map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
 }
@@ -100,6 +120,43 @@ function MoleculeStructure({ smiles, className = "" }) {
   }, [smiles]);
 
   return <svg ref={svgRef} className={`molecule-svg ${className}`.trim()} viewBox="0 0 360 240" aria-hidden="true" />;
+}
+
+function MoleculeMiniCard({ role, name, smiles, compact = false }) {
+  return (
+    <div className={`molecule-mini-card${compact ? " molecule-mini-card--compact" : ""}`}>
+      <div className="molecule-mini-card__meta">
+        <span>{role}</span>
+        <strong>{name}</strong>
+        <small>{smiles}</small>
+      </div>
+      <div className="molecule-mini-card__art">
+        <MoleculeStructure smiles={smiles} className="molecule-mini-card__svg" />
+      </div>
+    </div>
+  );
+}
+
+function ExamplePairStrip({ compact = false }) {
+  return (
+    <div className={`example-pair-strip${compact ? " example-pair-strip--compact" : ""}`}>
+      <MoleculeMiniCard
+        role={EXAMPLE_PAIR.solute.role}
+        name={EXAMPLE_PAIR.solute.name}
+        smiles={EXAMPLE_PAIR.solute.smiles}
+        compact={compact}
+      />
+      <div className="example-pair-strip__divider">
+        <span>shared input pair</span>
+      </div>
+      <MoleculeMiniCard
+        role={EXAMPLE_PAIR.solvent.role}
+        name={EXAMPLE_PAIR.solvent.name}
+        smiles={EXAMPLE_PAIR.solvent.smiles}
+        compact={compact}
+      />
+    </div>
+  );
 }
 
 function SimpleArrowDefs({ id }) {
@@ -1769,6 +1826,200 @@ function Figure3Architecture() {
   );
 }
 
+function Figure3ABaseline() {
+  return (
+    <FigureCard
+      kicker="Figure 3A"
+      title="Matched Baseline"
+      subtitle="TGNN-Solv and DirectGNN share the same upstream chemistry stack; the maintained comparison isolates the physics bottleneck itself."
+      footer={
+        <StatStrip
+          items={[
+            { label: "Shared encoder", value: "same GNN" },
+            { label: "Shared interaction", value: "same cross-attn" },
+            { label: "Different head", value: "physics vs direct" },
+          ]}
+        />
+      }
+    >
+      <div className="baseline-slide">
+        <ExamplePairStrip compact />
+
+        <section className="baseline-shared">
+          <div className="baseline-shared__header">
+            <div>
+              <span className="pipeline-builder__eyebrow">Controlled comparison</span>
+              <h3>Everything upstream is matched</h3>
+            </div>
+            <small>Fair ablation of the physics path, not a completely different backbone.</small>
+          </div>
+          <div className="baseline-shared__flow">
+            <div className="baseline-chip baseline-chip--shared">Shared GNN encoder</div>
+            <div className="baseline-arrow">→</div>
+            <div className="baseline-chip baseline-chip--shared">Cross-attention / interaction</div>
+            <div className="baseline-arrow">→</div>
+            <div className="baseline-chip baseline-chip--shared">PhysicsAwareReadout</div>
+            <div className="baseline-arrow">→</div>
+            <div className="baseline-chip baseline-chip--shared">pair representation</div>
+          </div>
+        </section>
+
+        <div className="baseline-branches">
+          <section className="baseline-lane baseline-lane--physics">
+            <div className="baseline-lane__header">
+              <strong>TGNN-Solv</strong>
+              <span className="baseline-lane__badge baseline-lane__badge--physics">physics bottleneck</span>
+            </div>
+            <div className="baseline-lane__stack">
+              <div className="baseline-chip">FusionHead → <TexInline>{"T_m,\\ \\Delta H_{fus},\\ \\Delta C_p"}</TexInline></div>
+              <div className="baseline-chip">NRTLHead → <TexInline>{"\\tau_{12}(T),\\ \\tau_{21}(T),\\ \\alpha"}</TexInline></div>
+              <div className="baseline-chip">Hardcoded SLE solver + bounded correction</div>
+            </div>
+            <TexBlock>{"\\ln x_{2,final} = \\mathrm{SLE}(\\theta_{pred}) + (1-gate)\\,\\mathrm{clip}(\\Delta)"}</TexBlock>
+            <div className="baseline-lane__notes">
+              <div>Pros: extrapolation, interpretable intermediates, thermodynamic structure.</div>
+              <div>Constraint: representation errors are filtered through the solver-facing parameterization.</div>
+            </div>
+          </section>
+
+          <section className="baseline-lane baseline-lane--direct">
+            <div className="baseline-lane__header">
+              <strong>DirectGNN</strong>
+              <span className="baseline-lane__badge baseline-lane__badge--direct">no explicit physics</span>
+            </div>
+            <div className="baseline-lane__stack">
+              <div className="baseline-chip">thermometer temperature encoding</div>
+              <div className="baseline-chip">direct MLP → <TexInline>{"\\ln x_2"}</TexInline></div>
+              <div className="baseline-chip">optional Morgan / descriptor augmentation</div>
+            </div>
+            <TexBlock>{"\\ln x_2 = \\mathrm{MLP}\\big([g_{pair} \\parallel \\mathrm{temp}(T)]\\big)"}</TexBlock>
+            <div className="baseline-lane__notes">
+              <div>Pros: simpler head, fewer structured constraints, easy descriptor fusion.</div>
+              <div>Removes <code>FusionHead</code>, <code>NRTLHead</code>, <code>SLESolver</code>, and <code>AdaptivePhysicsCorrection</code>.</div>
+            </div>
+          </section>
+        </div>
+
+        <div className="baseline-summary-grid">
+          <div className="baseline-summary-card">
+            <strong>Same chemistry frontend</strong>
+            <span>The experiment holds graph encoding, interaction, and readout fixed.</span>
+          </div>
+          <div className="baseline-summary-card">
+            <strong>One modeling question</strong>
+            <span>Does routing prediction through explicit thermodynamics help beyond the same backbone trained directly?</span>
+          </div>
+          <div className="baseline-summary-card">
+            <strong>Descriptor path stays fair</strong>
+            <span>DirectGNN+descriptors augments the pair representation rather than changing the upstream graph stack.</span>
+          </div>
+        </div>
+      </div>
+    </FigureCard>
+  );
+}
+
+function Figure3BDiagnostics() {
+  return (
+    <FigureCard
+      kicker="Figure 3B"
+      title="Solver-Facing Diagnostics"
+      subtitle="`model.forward(...)` exposes both raw head outputs and the values that actually enter the solver, which makes oracle/GC diagnostics auditable."
+      footer={
+        <FigureLegend
+          items={[
+            { label: "raw predictions", color: "rgba(37, 99, 235, 0.70)" },
+            { label: "solver-facing substitution", color: "rgba(245, 158, 11, 0.70)" },
+            { label: "diagnostic exports", color: "rgba(16, 185, 129, 0.70)" },
+          ]}
+        />
+      }
+    >
+      <div className="solver-diag-slide">
+        <div className="solver-diag-header">
+          <ExamplePairStrip compact />
+          <div className="solver-diag-formula-card">
+            <span className="pipeline-builder__eyebrow">solver substitution</span>
+            <TexBlock>{"\\theta_{solver} = (1-m)\\odot\\theta_{pred} + m\\odot\\theta_{oracle}"}</TexBlock>
+            <p className="figure-subnote">
+              During normal inference <TexInline>{"m=0"}</TexInline>. In oracle diagnostics, supervised
+              <TexInline>{"T_m"}</TexInline> and <TexInline>{"\\Delta H_{fus}"}</TexInline> can replace only the
+              solver-facing branch while the raw head outputs remain intact for losses and analysis.
+            </p>
+          </div>
+        </div>
+
+        <div className="solver-diag-grid">
+          <section className="solver-diag-column">
+            <div className="solver-diag-column__title">1. Raw network outputs</div>
+            <div className="solver-diag-card">
+              <strong><code>fusion_params</code></strong>
+              <span><TexInline>{"T_m,\\ \\Delta H_{fus},\\ \\Delta C_p"}</TexInline> directly from <code>FusionHead</code>.</span>
+            </div>
+            <div className="solver-diag-card">
+              <strong><code>nrtl_params</code></strong>
+              <span><TexInline>{"\\tau_{12}(T),\\ \\tau_{21}(T),\\ \\alpha"}</TexInline> from the pair embedding plus temperature.</span>
+            </div>
+            <div className="solver-diag-card">
+              <strong>auxiliary outputs</strong>
+              <span><code>hansen_sol</code>, <code>hansen_slv</code>, <code>aux_sol</code>, <code>aux_slv</code>, <code>Ra</code>.</span>
+            </div>
+          </section>
+
+          <section className="solver-diag-column">
+            <div className="solver-diag-column__title">2. Values sent into the solver</div>
+            <div className="solver-diag-card solver-diag-card--accent">
+              <strong><code>fusion_gc_priors</code></strong>
+              <span>When crystal GC priors are enabled, the residual branch starts from calibrated <TexInline>{"T_m^{GC}"}</TexInline>.</span>
+            </div>
+            <div className="solver-diag-arrow">↓</div>
+            <div className="solver-diag-card solver-diag-card--accent">
+              <strong><code>solver_fusion_params</code></strong>
+              <span>Actual crystal parameters entering <code>SLESolver</code> after GC/oracle substitution.</span>
+            </div>
+            <div className="solver-diag-arrow">↓</div>
+            <div className="solver-diag-card solver-diag-card--accent">
+              <strong><code>corrected_fusion_params</code></strong>
+              <span>Bounded parameter deltas rerun the solver without bypassing physics.</span>
+            </div>
+          </section>
+
+          <section className="solver-diag-column">
+            <div className="solver-diag-column__title">3. Exported intermediates</div>
+            <div className="solver-diag-card">
+              <strong><code>oracle_injection_masks</code></strong>
+              <span>Records which samples actually received train-time oracle substitution.</span>
+            </div>
+            <div className="solver-diag-card">
+              <strong><code>return_intermediates=True</code></strong>
+              <span><TexInline>{"\\Phi,\\ \\ln\\gamma_2,\\ \\ln x_{2,physics},\\ \\ln x_{2,final}"}</TexInline> and solver-facing tensors become flat exports.</span>
+            </div>
+            <div className="solver-diag-card">
+              <strong>experiment surface</strong>
+              <span><code>run_full_budget_experiment.py</code> writes diagnostics such as <code>tgnn_intermediates.csv</code> for downstream analysis.</span>
+            </div>
+          </section>
+        </div>
+
+        <div className="solver-diag-summary">
+          <div className="solver-diag-summary__item">
+            <strong>raw path</strong>
+            <span><code>fusion_params</code> stay available for supervised auxiliary losses.</span>
+          </div>
+          <div className="solver-diag-summary__item">
+            <strong>solver path</strong>
+            <span><code>solver_fusion_params</code> make train-time substitution explicit instead of implicit.</span>
+          </div>
+          <div className="solver-diag-summary__item">
+            <strong>analysis path</strong>
+            <span>Intermediates expose whether the bottleneck sits in representation, crystal terms, interaction terms, or correction.</span>
+          </div>
+        </div>
+      </div>
+    </FigureCard>
+  );
+}
+
 function Figure4Solver() {
   const xMin = 0.001;
   const xMax = 0.08;
@@ -1855,7 +2106,7 @@ function Figure4Solver() {
                 <path d="M 0 0 L 10 5 L 0 10 z" fill={COLORS.orange} />
               </marker>
             </defs>
-            <rect x={left} y={top} width={plotWidth} height={plotHeight} fill="#fff" rx="18" />
+            <rect x={left} y={top} width={plotWidth} height={plotHeight} fill={PAPER_FILL} rx="18" />
             <line x1={left} y1={top + plotHeight} x2={left + plotWidth} y2={top + plotHeight} stroke={COLORS.line} strokeWidth="2" />
             <line x1={left} y1={top} x2={left} y2={top + plotHeight} stroke={COLORS.line} strokeWidth="2" />
             {[0.002, 0.01, 0.02, 0.04, 0.06, 0.08].map((tick) => (
@@ -1867,7 +2118,7 @@ function Figure4Solver() {
                   y2={top + plotHeight + 6}
                   stroke={COLORS.line}
                 />
-                <text x={xScale(tick)} y={top + plotHeight + 22} textAnchor="middle" fontSize="13" fill={COLORS.slate}>
+                <text x={xScale(tick)} y={top + plotHeight + 22} textAnchor="middle" fontSize="13" fill={PAPER_SOFT_TEXT}>
                   {tick < 0.01 ? tick.toFixed(3) : tick.toFixed(2)}
                 </text>
               </g>
@@ -1875,7 +2126,7 @@ function Figure4Solver() {
             {[-4, -3, -2, -1, 0].map((tick) => (
               <g key={tick}>
                 <line x1={left - 6} y1={yScale(tick)} x2={left} y2={yScale(tick)} stroke={COLORS.line} />
-                <text x={left - 12} y={yScale(tick) + 4} textAnchor="end" fontSize="13" fill={COLORS.slate}>
+                <text x={left - 12} y={yScale(tick) + 4} textAnchor="end" fontSize="13" fill={PAPER_SOFT_TEXT}>
                   {tick}
                 </text>
               </g>
@@ -1897,7 +2148,7 @@ function Figure4Solver() {
               ))}
             </g>
             <circle cx={xScale(0.00335)} cy={yScale(demand(0.00335))} r="7" fill={COLORS.green} />
-            <text x={left + plotWidth / 2} y={height - 10} textAnchor="middle" fontSize="14" fill={COLORS.slate}>
+            <text x={left + plotWidth / 2} y={height - 10} textAnchor="middle" fontSize="14" fill={PAPER_SOFT_TEXT}>
               x₂
             </text>
             <text
@@ -1905,7 +2156,7 @@ function Figure4Solver() {
               y={top + plotHeight / 2}
               transform={`rotate(-90 16 ${top + plotHeight / 2})`}
               fontSize="14"
-              fill={COLORS.slate}
+              fill={PAPER_SOFT_TEXT}
               textAnchor="middle"
             >
               y
@@ -1923,7 +2174,7 @@ function Figure4Solver() {
         <div className="solver-panel">
           <div className="solver-panel__title">B. Convergence trace</div>
           <svg viewBox={`0 0 ${convergenceWidth} ${convergenceHeight}`} role="img" aria-label="SLE solver convergence">
-            <rect x={convLeft} y={convTop} width="280" height="170" fill="#fff" rx="18" />
+            <rect x={convLeft} y={convTop} width="280" height="170" fill={PAPER_FILL} rx="18" />
             <line x1={convLeft} y1={convTop + 170} x2={convLeft + 280} y2={convTop + 170} stroke={COLORS.line} strokeWidth="2" />
             <line x1={convLeft} y1={convTop} x2={convLeft} y2={convTop + 170} stroke={COLORS.line} strokeWidth="2" />
             <line
@@ -1945,7 +2196,7 @@ function Figure4Solver() {
                 fill={index <= visibleSteps ? COLORS.orange : COLORS.line}
               />
             ))}
-            <text x={convLeft + 140} y={convergenceHeight - 16} textAnchor="middle" fontSize="14" fill={COLORS.slate}>
+            <text x={convLeft + 140} y={convergenceHeight - 16} textAnchor="middle" fontSize="14" fill={PAPER_SOFT_TEXT}>
               iteration k
             </text>
             <text
@@ -1953,7 +2204,7 @@ function Figure4Solver() {
               y={convTop + 85}
               transform={`rotate(-90 16 ${convTop + 85})`}
               fontSize="14"
-              fill={COLORS.slate}
+              fill={PAPER_SOFT_TEXT}
               textAnchor="middle"
             >
               x₂⁽ᵏ⁾
@@ -2070,7 +2321,7 @@ function StackedAreaChart({ title, rows, colors, activeKey, annotation }) {
     <div className="loss-chart">
       <div className="loss-chart__title">{title}</div>
       <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label={title}>
-        <rect x={chart.left} y={chart.top} width={chart.plotWidth} height={chart.plotHeight} fill="#fff" rx="18" />
+        <rect x={chart.left} y={chart.top} width={chart.plotWidth} height={chart.plotHeight} fill={PAPER_FILL} rx="18" />
         <line
           x1={chart.left}
           y1={chart.top + chart.plotHeight}
@@ -2083,7 +2334,7 @@ function StackedAreaChart({ title, rows, colors, activeKey, annotation }) {
         {[0, 50, 100].map((tick) => (
           <g key={tick}>
             <line x1={chart.left - 6} y1={chart.yScale(tick)} x2={chart.left} y2={chart.yScale(tick)} stroke={COLORS.line} />
-            <text x={chart.left - 12} y={chart.yScale(tick) + 4} textAnchor="end" fontSize="12" fill={COLORS.slate}>
+            <text x={chart.left - 12} y={chart.yScale(tick) + 4} textAnchor="end" fontSize="12" fill={PAPER_SOFT_TEXT}>
               {tick}%
             </text>
           </g>
@@ -2096,7 +2347,7 @@ function StackedAreaChart({ title, rows, colors, activeKey, annotation }) {
             opacity={activeKey === layer.key || activeKey === "all" ? 0.88 : 0.22}
           />
         ))}
-        <text x={chart.left + chart.plotWidth / 2} y={chart.height - 10} textAnchor="middle" fontSize="13" fill={COLORS.slate}>
+        <text x={chart.left + chart.plotWidth / 2} y={chart.height - 10} textAnchor="middle" fontSize="13" fill={PAPER_SOFT_TEXT}>
           Phase 2 epoch
         </text>
         <text
@@ -2104,7 +2355,7 @@ function StackedAreaChart({ title, rows, colors, activeKey, annotation }) {
           y={chart.top + chart.plotHeight / 2}
           transform={`rotate(-90 18 ${chart.top + chart.plotHeight / 2})`}
           fontSize="13"
-          fill={COLORS.slate}
+          fill={PAPER_SOFT_TEXT}
           textAnchor="middle"
         >
           share of total loss
@@ -2280,7 +2531,7 @@ function Figure7LinearProbe() {
 
           <div className="probe-donut">
             <svg viewBox="0 0 180 180" role="img" aria-label="Descriptor recovery donut">
-              <circle cx="90" cy="90" r="54" fill="none" stroke="#E2E8F0" strokeWidth="22" />
+              <circle cx="90" cy="90" r="54" fill="none" stroke={PAPER_BORDER} strokeWidth="22" />
               {donutSegments.map((segment, index) => {
                 const previousFraction = donutSegments
                   .slice(0, index)
@@ -2300,13 +2551,13 @@ function Figure7LinearProbe() {
                   />
                 );
               })}
-              <text x="90" y="82" textAnchor="middle" fontSize="24" fontWeight="800" fill={COLORS.ink}>
+              <text x="90" y="82" textAnchor="middle" fontSize="24" fontWeight="800" fill={PAPER_TEXT}>
                 {Math.round((probeData.counts?.between_0_5_and_0_8 ?? 104) / (probeData.total_descriptors ?? 208) * 100)}%
               </text>
-              <text x="90" y="104" textAnchor="middle" fontSize="10" fill={COLORS.slate}>
+              <text x="90" y="104" textAnchor="middle" fontSize="10" fill={PAPER_SOFT_TEXT}>
                 captured
               </text>
-              <text x="90" y="118" textAnchor="middle" fontSize="10" fill={COLORS.slate}>
+              <text x="90" y="118" textAnchor="middle" fontSize="10" fill={PAPER_SOFT_TEXT}>
                 descriptor info
               </text>
             </svg>
@@ -2404,11 +2655,11 @@ function Figure9TemperatureExtrapolation() {
         <div className="temperature-panel__title">{title}</div>
         <p className="figure-subnote">{subtitle}</p>
         <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={title}>
-          <rect x={left} y={top} width={plotWidth} height={plotHeight} fill="#fff" rx="18" />
+          <rect x={left} y={top} width={plotWidth} height={plotHeight} fill={PAPER_FILL} rx="18" />
           <rect x={xScale(280)} y={top} width={xScale(340) - xScale(280)} height={plotHeight} fill="rgba(148, 163, 184, 0.10)" />
           <line x1={left} y1={top + plotHeight} x2={left + plotWidth} y2={top + plotHeight} stroke={COLORS.line} strokeWidth="2" />
           <line x1={left} y1={top} x2={left} y2={top + plotHeight} stroke={COLORS.line} strokeWidth="2" />
-          <path d={chartPathFromTemps(allTemps, trueCurve, xScale, yScale)} fill="none" stroke={COLORS.ink} strokeDasharray="7 7" strokeWidth="2.5" />
+          <path d={chartPathFromTemps(allTemps, trueCurve, xScale, yScale)} fill="none" stroke={PAPER_TEXT} strokeDasharray="7 7" strokeWidth="2.5" />
           <path d={chartPathFromTemps(allTemps, prediction, xScale, yScale)} fill="none" stroke={color} strokeWidth="4" />
           {trainTemps.map((temp) => (
             <circle key={`train-${temp}`} cx={xScale(temp)} cy={yScale(trueCurve(temp))} r="5.2" fill={COLORS.blue} />
@@ -2419,7 +2670,7 @@ function Figure9TemperatureExtrapolation() {
           <text x={left + 8} y={top + 18} fill={COLORS.gray} fontSize="12">
             train range
           </text>
-          <text x={left + plotWidth / 2} y={height - 10} textAnchor="middle" fontSize="14" fill={COLORS.slate}>
+          <text x={left + plotWidth / 2} y={height - 10} textAnchor="middle" fontSize="14" fill={PAPER_SOFT_TEXT}>
             Temperature T (K)
           </text>
           <text
@@ -2427,7 +2678,7 @@ function Figure9TemperatureExtrapolation() {
             y={top + plotHeight / 2}
             transform={`rotate(-90 16 ${top + plotHeight / 2})`}
             fontSize="14"
-            fill={COLORS.slate}
+            fill={PAPER_SOFT_TEXT}
             textAnchor="middle"
           >
             ln x₂
@@ -2774,7 +3025,7 @@ function MiniLineChart({
       <div className="mini-chart__title">{title}</div>
       <p className="figure-subnote">{note}</p>
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={title}>
-        <rect x={left} y={top} width={plotWidth} height={plotHeight} fill="#fff" rx="18" />
+        <rect x={left} y={top} width={plotWidth} height={plotHeight} fill={PAPER_FILL} rx="18" />
         <rect x={xScale(5)} y={top} width={xScale(10) - xScale(5)} height={plotHeight} fill="rgba(148, 163, 184, 0.10)" />
         <line x1={left} y1={top + plotHeight} x2={left + plotWidth} y2={top + plotHeight} stroke={COLORS.line} strokeWidth="2" />
         <line x1={left} y1={top} x2={left} y2={top + plotHeight} stroke={COLORS.line} strokeWidth="2" />
@@ -2945,7 +3196,7 @@ function Figure13Comparison() {
                     textAnchor={anchor}
                     dominantBaseline="middle"
                     fontSize="12"
-                    fill={COLORS.ink}
+                    fill={DECK_TEXT}
                     fontWeight="700"
                   >
                     {metric}
@@ -3054,12 +3305,12 @@ function Figure14MasterEquation() {
                   <path d="M 0 0 L 10 5 L 0 10 z" fill={COLORS.red} />
                 </marker>
               </defs>
-              <rect x="54" y="28" width="630" height="176" rx="18" fill="#fff" />
-              <line x1="80" y1="148" x2="660" y2="148" stroke={COLORS.ink} strokeWidth="4" strokeLinecap="round" />
+              <rect x="54" y="28" width="630" height="176" rx="18" fill={PAPER_FILL} />
+              <line x1="80" y1="148" x2="660" y2="148" stroke={PAPER_TEXT} strokeWidth="4" strokeLinecap="round" />
               {[-15, -12, -9, -6, -3, 0].map((tick) => (
                 <g key={tick}>
-                  <line x1={xScale(tick)} y1="137" x2={xScale(tick)} y2="159" stroke={COLORS.ink} strokeWidth="2" />
-                  <text x={xScale(tick)} y="180" textAnchor="middle" fontSize="14" fill={COLORS.slate}>
+                  <line x1={xScale(tick)} y1="137" x2={xScale(tick)} y2="159" stroke={PAPER_TEXT} strokeWidth="2" />
+                  <text x={xScale(tick)} y="180" textAnchor="middle" fontSize="14" fill={PAPER_SOFT_TEXT}>
                     {tick}
                   </text>
                 </g>
@@ -3084,10 +3335,10 @@ function Figure14MasterEquation() {
               <line x1={xScale(total)} y1="122" x2={xScale(total)} y2="148" stroke={COLORS.green} strokeWidth="2.5" strokeDasharray="5 4" />
               <circle cx={xScale(total)} cy="148" r="9" fill={COLORS.green} />
 
-              <text x="86" y="198" fontSize="12" fill={COLORS.slate}>
+              <text x="86" y="198" fontSize="12" fill={PAPER_SOFT_TEXT}>
                 very low solubility
               </text>
-              <text x="560" y="198" fontSize="12" fill={COLORS.slate}>
+              <text x="560" y="198" fontSize="12" fill={PAPER_SOFT_TEXT}>
                 fully miscible
               </text>
             </svg>
@@ -3178,6 +3429,22 @@ export const PRESENTATION_FIGURES = [
     blurb: "The core figure shows where learning ends and where hardcoded thermodynamics begin.",
     tags: ["architecture", "physics", "solver"],
     component: Figure3Architecture,
+  },
+  {
+    slug: "matched-baseline",
+    title: "Matched Baseline",
+    subtitle: "Same backbone, different prediction head",
+    blurb: "This slide isolates the main research comparison: TGNN-Solv versus DirectGNN on a shared upstream chemistry stack.",
+    tags: ["baseline", "directgnn", "fairness"],
+    component: Figure3ABaseline,
+  },
+  {
+    slug: "solver-diagnostics",
+    title: "Solver-Facing Diagnostics",
+    subtitle: "Raw outputs, substituted outputs, exported intermediates",
+    blurb: "The maintained forward API makes GC priors, oracle injection, and solver-facing tensors inspectable instead of hidden.",
+    tags: ["diagnostics", "oracle", "intermediates"],
+    component: Figure3BDiagnostics,
   },
   {
     slug: "sle-solver",

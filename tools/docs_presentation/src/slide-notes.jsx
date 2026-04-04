@@ -104,6 +104,54 @@ const NOTES_BY_SLUG = {
       </p>
     ),
   },
+  "matched-baseline": {
+    summary: "Why this comparison is considered fair",
+    content: (
+      <>
+        <p>
+          The repository’s maintained comparison is explicitly controlled. Both models use the same upstream chemistry stack,
+          so the ablation is not <TexInline>{"f_{TGNN} \\text{ vs } g_{other}"}</TexInline> in the abstract, but rather the
+          same encoder and interaction layers with two different output heads.
+        </p>
+        <p>
+          In shorthand, TGNN-Solv predicts solver-facing thermodynamic parameters and returns
+          <TexInline>{"\\ln x_2 = \\mathrm{SLE}(\\theta) + \\text{bounded correction}"}</TexInline>, while DirectGNN predicts
+          <TexInline>{"\\ln x_2"}</TexInline> directly from the same pair representation plus temperature encoding.
+        </p>
+      </>
+    ),
+    report: (
+      <p>
+        This distinction matters for interpretation of every downstream benchmark. If TGNN underperforms or overperforms
+        relative to DirectGNN, the result can be attributed mainly to the physics bottleneck and its constraints, rather than
+        to a hidden difference in graph capacity, interaction depth, or readout family.
+      </p>
+    ),
+  },
+  "solver-diagnostics": {
+    summary: "What `model.forward(...)` exposes for analysis",
+    content: (
+      <>
+        <p>
+          The forward path does not collapse everything into one opaque prediction. It keeps raw head outputs such as
+          <code>fusion_params</code> separate from <code>solver_fusion_params</code>, the actual values passed into the solver after
+          GC-prior substitution or optional oracle replacement.
+        </p>
+        <p>
+          With <code>return_intermediates=True</code>, the model also exports solver-facing tensors like
+          <TexInline>{"\\Phi,\\ \\ln\\gamma_2,\\ \\ln x_{2,physics},\\ \\ln x_{2,final}"}</TexInline>. That makes it possible to
+          diagnose whether an error came from crystal inputs, interaction parameters, solver geometry, or the correction branch.
+        </p>
+      </>
+    ),
+    report: (
+      <p>
+        From a project-maintenance perspective, this is one of the most important documented surfaces in the repository.
+        It turns train-time mechanisms such as oracle injection from implicit behavior into explicit exported state, which is
+        why the evaluation and full-budget experiment scripts can produce defensible diagnostic artifacts instead of only final MAE numbers.
+      </p>
+    ),
+  },
   "sle-solver": {
     summary: "Why the iteration converges quickly",
     content: (
@@ -410,6 +458,35 @@ const EXTRA_NOTES_BY_SLUG = {
         The more important architectural choice is where the model is not flexible. Once the learned modules emit solver-facing
         quantities, the prediction path becomes structured, which means later analysis can ask whether an error came from the encoder,
         from crystal-property estimation, from interaction parameters, or from the correction branch.
+      </p>
+    </>
+  ),
+  "matched-baseline": (
+    <>
+      <p>
+        The baseline should therefore be read as a matched ablation rather than as an external competitor from a different design
+        family. DirectGNN removes <code>FusionHead</code>, <code>NRTLHead</code>, <code>SLESolver</code>, and
+        <code>AdaptivePhysicsCorrection</code>, but it keeps the same upstream representation machinery that converts molecules into
+        a pair state.
+      </p>
+      <p>
+        This is also why descriptor augmentation on the DirectGNN side remains informative rather than unfair. The descriptor branch
+        augments the pair representation after the shared graph backbone, so it probes whether missing chemistry signal is better
+        supplied by richer features or by the explicit thermodynamic bottleneck.
+      </p>
+    </>
+  ),
+  "solver-diagnostics": (
+    <>
+      <p>
+        This slide connects the code surface to the experimental surface. Because the forward pass preserves raw predictions,
+        solver-facing substitutions, correction outputs, and oracle masks explicitly, the repository can export intermediate CSV/JSON
+        artifacts that are interpretable after training instead of only reporting scalar aggregate metrics.
+      </p>
+      <p>
+        It also clarifies why GC priors and oracle injection are not the same thing. GC priors change how crystal predictions are
+        parameterized, whereas oracle injection conditionally replaces selected supervised solver inputs during training or diagnostics;
+        keeping these paths separate in the returned tensors avoids conceptual and implementation ambiguity.
       </p>
     </>
   ),

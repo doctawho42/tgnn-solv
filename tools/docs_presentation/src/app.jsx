@@ -108,7 +108,8 @@ function PresentationDeck() {
           <h1>TGNN-Solv Presentation</h1>
           <p>
             A slide-like React application embedded directly into the MkDocs site. The deck covers the data
-            pipeline, architecture, solver mechanics, optimization behavior, and the current accuracy gap.
+            pipeline, baselines, architecture, solver mechanics, diagnostics, optimization behavior, and the
+            current accuracy gap.
           </p>
         </div>
         <div className="presentation-hero__stats">

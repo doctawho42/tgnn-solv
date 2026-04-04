@@ -20316,6 +20316,23 @@
     purpleSoft: "#EDE9FE",
     redSoft: "#FEE2E2"
   };
+  var PAPER_FILL = "var(--deck-paper)";
+  var PAPER_BORDER = "var(--deck-paper-border)";
+  var PAPER_TEXT = "var(--deck-paper-text)";
+  var PAPER_SOFT_TEXT = "var(--deck-paper-soft)";
+  var DECK_TEXT = "var(--deck-text)";
+  var EXAMPLE_PAIR = {
+    solute: {
+      name: "Paracetamol",
+      role: "solute",
+      smiles: "CC(=O)Nc1ccc(O)cc1"
+    },
+    solvent: {
+      name: "Ethanol",
+      role: "solvent",
+      smiles: "CCO"
+    }
+  };
   function linePath(points) {
     return points.map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
   }
@@ -20334,6 +20351,74 @@
   }
   function TexBlock({ children }) {
     return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "tex-block", children: `\\[${children}\\]` });
+  }
+  function MoleculeStructure({ smiles, className = "" }) {
+    const svgRef = (0, import_react3.useRef)(null);
+    (0, import_react3.useEffect)(() => {
+      if (!svgRef.current) {
+        return;
+      }
+      const drawer = new app_default.SvgDrawer({
+        width: 360,
+        height: 240,
+        padding: 24,
+        bondLength: 22,
+        bondThickness: 1.2,
+        atomVisualization: "default",
+        isometric: false,
+        compactDrawing: true,
+        explicitHydrogens: false,
+        terminalCarbons: false,
+        fontSizeLarge: 10,
+        fontSizeSmall: 6
+      });
+      svgRef.current.innerHTML = "";
+      app_default.parse(
+        smiles,
+        (tree) => {
+          drawer.draw(tree, svgRef.current, "light");
+        },
+        () => {
+          if (svgRef.current) {
+            svgRef.current.innerHTML = '<text x="20" y="32" fill="#64748b" font-size="16">Structure rendering failed.</text>';
+          }
+        }
+      );
+    }, [smiles]);
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("svg", { ref: svgRef, className: `molecule-svg ${className}`.trim(), viewBox: "0 0 360 240", "aria-hidden": "true" });
+  }
+  function MoleculeMiniCard({ role, name, smiles, compact = false }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: `molecule-mini-card${compact ? " molecule-mini-card--compact" : ""}`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "molecule-mini-card__meta", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: role }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: name }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: smiles })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "molecule-mini-card__art", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(MoleculeStructure, { smiles, className: "molecule-mini-card__svg" }) })
+    ] });
+  }
+  function ExamplePairStrip({ compact = false }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: `example-pair-strip${compact ? " example-pair-strip--compact" : ""}`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        MoleculeMiniCard,
+        {
+          role: EXAMPLE_PAIR.solute.role,
+          name: EXAMPLE_PAIR.solute.name,
+          smiles: EXAMPLE_PAIR.solute.smiles,
+          compact
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "example-pair-strip__divider", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "shared input pair" }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        MoleculeMiniCard,
+        {
+          role: EXAMPLE_PAIR.solvent.role,
+          name: EXAMPLE_PAIR.solvent.name,
+          smiles: EXAMPLE_PAIR.solvent.smiles,
+          compact
+        }
+      )
+    ] });
   }
   function SourceIcon({ kind, color }) {
     const glyphs = {
@@ -21937,6 +22022,256 @@
       }
     );
   }
+  function Figure3ABaseline() {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      FigureCard,
+      {
+        kicker: "Figure 3A",
+        title: "Matched Baseline",
+        subtitle: "TGNN-Solv and DirectGNN share the same upstream chemistry stack; the maintained comparison isolates the physics bottleneck itself.",
+        footer: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          StatStrip,
+          {
+            items: [
+              { label: "Shared encoder", value: "same GNN" },
+              { label: "Shared interaction", value: "same cross-attn" },
+              { label: "Different head", value: "physics vs direct" }
+            ]
+          }
+        ),
+        children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-slide", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ExamplePairStrip, { compact: true }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "baseline-shared", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-shared__header", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "pipeline-builder__eyebrow", children: "Controlled comparison" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { children: "Everything upstream is matched" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "Fair ablation of the physics path, not a completely different backbone." })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-shared__flow", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip baseline-chip--shared", children: "Shared GNN encoder" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-arrow", children: "\u2192" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip baseline-chip--shared", children: "Cross-attention / interaction" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-arrow", children: "\u2192" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip baseline-chip--shared", children: "PhysicsAwareReadout" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-arrow", children: "\u2192" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip baseline-chip--shared", children: "pair representation" })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-branches", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "baseline-lane baseline-lane--physics", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__header", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "TGNN-Solv" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "baseline-lane__badge baseline-lane__badge--physics", children: "physics bottleneck" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__stack", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-chip", children: [
+                  "FusionHead \u2192 ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "T_m,\\ \\Delta H_{fus},\\ \\Delta C_p" })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-chip", children: [
+                  "NRTLHead \u2192 ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "\\tau_{12}(T),\\ \\tau_{21}(T),\\ \\alpha" })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip", children: "Hardcoded SLE solver + bounded correction" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexBlock, { children: "\\ln x_{2,final} = \\mathrm{SLE}(\\theta_{pred}) + (1-gate)\\,\\mathrm{clip}(\\Delta)" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__notes", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { children: "Pros: extrapolation, interpretable intermediates, thermodynamic structure." }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { children: "Constraint: representation errors are filtered through the solver-facing parameterization." })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "baseline-lane baseline-lane--direct", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__header", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "DirectGNN" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "baseline-lane__badge baseline-lane__badge--direct", children: "no explicit physics" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__stack", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip", children: "thermometer temperature encoding" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-chip", children: [
+                  "direct MLP \u2192 ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "\\ln x_2" })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip", children: "optional Morgan / descriptor augmentation" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexBlock, { children: "\\ln x_2 = \\mathrm{MLP}\\big([g_{pair} \\parallel \\mathrm{temp}(T)]\\big)" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__notes", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { children: "Pros: simpler head, fewer structured constraints, easy descriptor fusion." }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+                  "Removes ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "FusionHead" }),
+                  ", ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "NRTLHead" }),
+                  ", ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "SLESolver" }),
+                  ", and ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "AdaptivePhysicsCorrection" }),
+                  "."
+                ] })
+              ] })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-grid", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Same chemistry frontend" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "The experiment holds graph encoding, interaction, and readout fixed." })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "One modeling question" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Does routing prediction through explicit thermodynamics help beyond the same backbone trained directly?" })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Descriptor path stays fair" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "DirectGNN+descriptors augments the pair representation rather than changing the upstream graph stack." })
+            ] })
+          ] })
+        ] })
+      }
+    );
+  }
+  function Figure3BDiagnostics() {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      FigureCard,
+      {
+        kicker: "Figure 3B",
+        title: "Solver-Facing Diagnostics",
+        subtitle: "`model.forward(...)` exposes both raw head outputs and the values that actually enter the solver, which makes oracle/GC diagnostics auditable.",
+        footer: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          FigureLegend,
+          {
+            items: [
+              { label: "raw predictions", color: "rgba(37, 99, 235, 0.70)" },
+              { label: "solver-facing substitution", color: "rgba(245, 158, 11, 0.70)" },
+              { label: "diagnostic exports", color: "rgba(16, 185, 129, 0.70)" }
+            ]
+          }
+        ),
+        children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-slide", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-header", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(ExamplePairStrip, { compact: true }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-formula-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "pipeline-builder__eyebrow", children: "solver substitution" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexBlock, { children: "\\theta_{solver} = (1-m)\\odot\\theta_{pred} + m\\odot\\theta_{oracle}" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("p", { className: "figure-subnote", children: [
+                "During normal inference ",
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "m=0" }),
+                ". In oracle diagnostics, supervised",
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "T_m" }),
+                " and ",
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "\\Delta H_{fus}" }),
+                " can replace only the solver-facing branch while the raw head outputs remain intact for losses and analysis."
+              ] })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-grid", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "solver-diag-column", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "solver-diag-column__title", children: "1. Raw network outputs" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-card", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "fusion_params" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "T_m,\\ \\Delta H_{fus},\\ \\Delta C_p" }),
+                  " directly from ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "FusionHead" }),
+                  "."
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-card", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "nrtl_params" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "\\tau_{12}(T),\\ \\tau_{21}(T),\\ \\alpha" }),
+                  " from the pair embedding plus temperature."
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-card", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "auxiliary outputs" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "hansen_sol" }),
+                  ", ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "hansen_slv" }),
+                  ", ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "aux_sol" }),
+                  ", ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "aux_slv" }),
+                  ", ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "Ra" }),
+                  "."
+                ] })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "solver-diag-column", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "solver-diag-column__title", children: "2. Values sent into the solver" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-card solver-diag-card--accent", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "fusion_gc_priors" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                  "When crystal GC priors are enabled, the residual branch starts from calibrated ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "T_m^{GC}" }),
+                  "."
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "solver-diag-arrow", children: "\u2193" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-card solver-diag-card--accent", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "solver_fusion_params" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                  "Actual crystal parameters entering ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "SLESolver" }),
+                  " after GC/oracle substitution."
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "solver-diag-arrow", children: "\u2193" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-card solver-diag-card--accent", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "corrected_fusion_params" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Bounded parameter deltas rerun the solver without bypassing physics." })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "solver-diag-column", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "solver-diag-column__title", children: "3. Exported intermediates" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-card", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "oracle_injection_masks" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Records which samples actually received train-time oracle substitution." })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-card", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "return_intermediates=True" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "\\Phi,\\ \\ln\\gamma_2,\\ \\ln x_{2,physics},\\ \\ln x_{2,final}" }),
+                  " and solver-facing tensors become flat exports."
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-card", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "experiment surface" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "run_full_budget_experiment.py" }),
+                  " writes diagnostics such as ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "tgnn_intermediates.csv" }),
+                  " for downstream analysis."
+                ] })
+              ] })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-summary", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-summary__item", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "raw path" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "fusion_params" }),
+                " stay available for supervised auxiliary losses."
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-summary__item", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "solver path" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "solver_fusion_params" }),
+                " make train-time substitution explicit instead of implicit."
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-diag-summary__item", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "analysis path" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Intermediates expose whether the bottleneck sits in representation, crystal terms, interaction terms, or correction." })
+            ] })
+          ] })
+        ] })
+      }
+    );
+  }
   function Figure4Solver() {
     const xMin = 1e-3;
     const xMax = 0.08;
@@ -22021,7 +22356,7 @@
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("clipPath", { id: "solver-clip-a", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: left, y: top, width: plotWidth, height: plotHeight, rx: "18" }) }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("marker", { id: "solver-step-arrow", viewBox: "0 0 10 10", refX: "8", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: COLORS.orange }) })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: left, y: top, width: plotWidth, height: plotHeight, fill: "#fff", rx: "18" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: left, y: top, width: plotWidth, height: plotHeight, fill: PAPER_FILL, rx: "18" }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: left, y1: top + plotHeight, x2: left + plotWidth, y2: top + plotHeight, stroke: COLORS.line, strokeWidth: "2" }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: left, y1: top, x2: left, y2: top + plotHeight, stroke: COLORS.line, strokeWidth: "2" }),
               [2e-3, 0.01, 0.02, 0.04, 0.06, 0.08].map((tick) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { children: [
@@ -22035,11 +22370,11 @@
                     stroke: COLORS.line
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: xScale(tick), y: top + plotHeight + 22, textAnchor: "middle", fontSize: "13", fill: COLORS.slate, children: tick < 0.01 ? tick.toFixed(3) : tick.toFixed(2) })
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: xScale(tick), y: top + plotHeight + 22, textAnchor: "middle", fontSize: "13", fill: PAPER_SOFT_TEXT, children: tick < 0.01 ? tick.toFixed(3) : tick.toFixed(2) })
               ] }, tick)),
               [-4, -3, -2, -1, 0].map((tick) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { children: [
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: left - 6, y1: yScale(tick), x2: left, y2: yScale(tick), stroke: COLORS.line }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: left - 12, y: yScale(tick) + 4, textAnchor: "end", fontSize: "13", fill: COLORS.slate, children: tick })
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: left - 12, y: yScale(tick) + 4, textAnchor: "end", fontSize: "13", fill: PAPER_SOFT_TEXT, children: tick })
               ] }, tick)),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { clipPath: "url(#solver-clip-a)", children: [
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: demandPath, fill: "none", stroke: COLORS.blue, strokeWidth: "4" }),
@@ -22059,7 +22394,7 @@
                 ))
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: xScale(335e-5), cy: yScale(demand(335e-5)), r: "7", fill: COLORS.green }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: left + plotWidth / 2, y: height - 10, textAnchor: "middle", fontSize: "14", fill: COLORS.slate, children: "x\u2082" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: left + plotWidth / 2, y: height - 10, textAnchor: "middle", fontSize: "14", fill: PAPER_SOFT_TEXT, children: "x\u2082" }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
                 "text",
                 {
@@ -22067,7 +22402,7 @@
                   y: top + plotHeight / 2,
                   transform: `rotate(-90 16 ${top + plotHeight / 2})`,
                   fontSize: "14",
-                  fill: COLORS.slate,
+                  fill: PAPER_SOFT_TEXT,
                   textAnchor: "middle",
                   children: "y"
                 }
@@ -22106,7 +22441,7 @@
           /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "solver-panel", children: [
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "solver-panel__title", children: "B. Convergence trace" }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { viewBox: `0 0 ${convergenceWidth} ${convergenceHeight}`, role: "img", "aria-label": "SLE solver convergence", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: convLeft, y: convTop, width: "280", height: "170", fill: "#fff", rx: "18" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: convLeft, y: convTop, width: "280", height: "170", fill: PAPER_FILL, rx: "18" }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: convLeft, y1: convTop + 170, x2: convLeft + 280, y2: convTop + 170, stroke: COLORS.line, strokeWidth: "2" }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: convLeft, y1: convTop, x2: convLeft, y2: convTop + 170, stroke: COLORS.line, strokeWidth: "2" }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
@@ -22132,7 +22467,7 @@
                 },
                 `conv-${index}`
               )),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: convLeft + 140, y: convergenceHeight - 16, textAnchor: "middle", fontSize: "14", fill: COLORS.slate, children: "iteration k" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: convLeft + 140, y: convergenceHeight - 16, textAnchor: "middle", fontSize: "14", fill: PAPER_SOFT_TEXT, children: "iteration k" }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
                 "text",
                 {
@@ -22140,7 +22475,7 @@
                   y: convTop + 85,
                   transform: `rotate(-90 16 ${convTop + 85})`,
                   fontSize: "14",
-                  fill: COLORS.slate,
+                  fill: PAPER_SOFT_TEXT,
                   textAnchor: "middle",
                   children: "x\u2082\u207D\u1D4F\u207E"
                 }
@@ -22256,7 +22591,7 @@
     return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "loss-chart", children: [
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "loss-chart__title", children: title }),
       /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { viewBox: `0 0 ${chart.width} ${chart.height}`, role: "img", "aria-label": title, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: chart.left, y: chart.top, width: chart.plotWidth, height: chart.plotHeight, fill: "#fff", rx: "18" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: chart.left, y: chart.top, width: chart.plotWidth, height: chart.plotHeight, fill: PAPER_FILL, rx: "18" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "line",
           {
@@ -22271,7 +22606,7 @@
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: chart.left, y1: chart.top, x2: chart.left, y2: chart.top + chart.plotHeight, stroke: COLORS.line, strokeWidth: "2" }),
         [0, 50, 100].map((tick) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { children: [
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: chart.left - 6, y1: chart.yScale(tick), x2: chart.left, y2: chart.yScale(tick), stroke: COLORS.line }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("text", { x: chart.left - 12, y: chart.yScale(tick) + 4, textAnchor: "end", fontSize: "12", fill: COLORS.slate, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("text", { x: chart.left - 12, y: chart.yScale(tick) + 4, textAnchor: "end", fontSize: "12", fill: PAPER_SOFT_TEXT, children: [
             tick,
             "%"
           ] })
@@ -22285,7 +22620,7 @@
           },
           layer.key
         )),
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: chart.left + chart.plotWidth / 2, y: chart.height - 10, textAnchor: "middle", fontSize: "13", fill: COLORS.slate, children: "Phase 2 epoch" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: chart.left + chart.plotWidth / 2, y: chart.height - 10, textAnchor: "middle", fontSize: "13", fill: PAPER_SOFT_TEXT, children: "Phase 2 epoch" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           "text",
           {
@@ -22293,7 +22628,7 @@
             y: chart.top + chart.plotHeight / 2,
             transform: `rotate(-90 18 ${chart.top + chart.plotHeight / 2})`,
             fontSize: "13",
-            fill: COLORS.slate,
+            fill: PAPER_SOFT_TEXT,
             textAnchor: "middle",
             children: "share of total loss"
           }
@@ -22479,7 +22814,7 @@
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "probe-donut", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { viewBox: "0 0 180 180", role: "img", "aria-label": "Descriptor recovery donut", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: "90", cy: "90", r: "54", fill: "none", stroke: "#E2E8F0", strokeWidth: "22" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: "90", cy: "90", r: "54", fill: "none", stroke: PAPER_BORDER, strokeWidth: "22" }),
                 donutSegments.map((segment, index) => {
                   const previousFraction = donutSegments.slice(0, index).reduce((sum, item) => sum + item.fraction, 0);
                   return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
@@ -22498,12 +22833,12 @@
                     segment.label
                   );
                 }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("text", { x: "90", y: "82", textAnchor: "middle", fontSize: "24", fontWeight: "800", fill: COLORS.ink, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("text", { x: "90", y: "82", textAnchor: "middle", fontSize: "24", fontWeight: "800", fill: PAPER_TEXT, children: [
                   Math.round((probeData.counts?.between_0_5_and_0_8 ?? 104) / (probeData.total_descriptors ?? 208) * 100),
                   "%"
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: "90", y: "104", textAnchor: "middle", fontSize: "10", fill: COLORS.slate, children: "captured" }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: "90", y: "118", textAnchor: "middle", fontSize: "10", fill: COLORS.slate, children: "descriptor info" })
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: "90", y: "104", textAnchor: "middle", fontSize: "10", fill: PAPER_SOFT_TEXT, children: "captured" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: "90", y: "118", textAnchor: "middle", fontSize: "10", fill: PAPER_SOFT_TEXT, children: "descriptor info" })
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "probe-donut__legend", children: [
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
@@ -22614,16 +22949,16 @@
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "temperature-panel__title", children: title }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: subtitle }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": title, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: left, y: top, width: plotWidth, height: plotHeight, fill: "#fff", rx: "18" }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: left, y: top, width: plotWidth, height: plotHeight, fill: PAPER_FILL, rx: "18" }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: xScale(280), y: top, width: xScale(340) - xScale(280), height: plotHeight, fill: "rgba(148, 163, 184, 0.10)" }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: left, y1: top + plotHeight, x2: left + plotWidth, y2: top + plotHeight, stroke: COLORS.line, strokeWidth: "2" }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: left, y1: top, x2: left, y2: top + plotHeight, stroke: COLORS.line, strokeWidth: "2" }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: chartPathFromTemps(allTemps, trueCurve, xScale, yScale), fill: "none", stroke: COLORS.ink, strokeDasharray: "7 7", strokeWidth: "2.5" }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: chartPathFromTemps(allTemps, trueCurve, xScale, yScale), fill: "none", stroke: PAPER_TEXT, strokeDasharray: "7 7", strokeWidth: "2.5" }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: chartPathFromTemps(allTemps, prediction, xScale, yScale), fill: "none", stroke: color, strokeWidth: "4" }),
           trainTemps.map((temp) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: xScale(temp), cy: yScale(trueCurve(temp)), r: "5.2", fill: COLORS.blue }, `train-${temp}`)),
           testTemps.map((temp) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: xScale(temp), cy: yScale(trueCurve(temp)), r: "5.2", fill: COLORS.red }, `test-${temp}`)),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: left + 8, y: top + 18, fill: COLORS.gray, fontSize: "12", children: "train range" }),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: left + plotWidth / 2, y: height - 10, textAnchor: "middle", fontSize: "14", fill: COLORS.slate, children: "Temperature T (K)" }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: left + plotWidth / 2, y: height - 10, textAnchor: "middle", fontSize: "14", fill: PAPER_SOFT_TEXT, children: "Temperature T (K)" }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
             "text",
             {
@@ -22631,7 +22966,7 @@
               y: top + plotHeight / 2,
               transform: `rotate(-90 16 ${top + plotHeight / 2})`,
               fontSize: "14",
-              fill: COLORS.slate,
+              fill: PAPER_SOFT_TEXT,
               textAnchor: "middle",
               children: "ln x\u2082"
             }
@@ -23017,7 +23352,7 @@
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "mini-chart__title", children: title }),
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: note }),
       /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": title, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: left, y: top, width: plotWidth, height: plotHeight, fill: "#fff", rx: "18" }),
+        /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: left, y: top, width: plotWidth, height: plotHeight, fill: PAPER_FILL, rx: "18" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: xScale(5), y: top, width: xScale(10) - xScale(5), height: plotHeight, fill: "rgba(148, 163, 184, 0.10)" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: left, y1: top + plotHeight, x2: left + plotWidth, y2: top + plotHeight, stroke: COLORS.line, strokeWidth: "2" }),
         /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: left, y1: top, x2: left, y2: top + plotHeight, stroke: COLORS.line, strokeWidth: "2" }),
@@ -23208,7 +23543,7 @@
                     textAnchor: anchor,
                     dominantBaseline: "middle",
                     fontSize: "12",
-                    fill: COLORS.ink,
+                    fill: DECK_TEXT,
                     fontWeight: "700",
                     children: metric
                   }
@@ -23297,11 +23632,11 @@
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("marker", { id: "equation-blue-arrow", viewBox: "0 0 10 10", refX: "7", refY: "5", markerWidth: "5", markerHeight: "5", orient: "auto", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: COLORS.blue }) }),
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("marker", { id: "equation-red-arrow", viewBox: "0 0 10 10", refX: "7", refY: "5", markerWidth: "5", markerHeight: "5", orient: "auto", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: COLORS.red }) })
                 ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "54", y: "28", width: "630", height: "176", rx: "18", fill: "#fff" }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: "80", y1: "148", x2: "660", y2: "148", stroke: COLORS.ink, strokeWidth: "4", strokeLinecap: "round" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "54", y: "28", width: "630", height: "176", rx: "18", fill: PAPER_FILL }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: "80", y1: "148", x2: "660", y2: "148", stroke: PAPER_TEXT, strokeWidth: "4", strokeLinecap: "round" }),
                 [-15, -12, -9, -6, -3, 0].map((tick) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: xScale(tick), y1: "137", x2: xScale(tick), y2: "159", stroke: COLORS.ink, strokeWidth: "2" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: xScale(tick), y: "180", textAnchor: "middle", fontSize: "14", fill: COLORS.slate, children: tick })
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: xScale(tick), y1: "137", x2: xScale(tick), y2: "159", stroke: PAPER_TEXT, strokeWidth: "2" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: xScale(tick), y: "180", textAnchor: "middle", fontSize: "14", fill: PAPER_SOFT_TEXT, children: tick })
                 ] }, tick)),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
                   "path",
@@ -23327,8 +23662,8 @@
                 ),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: xScale(total), y1: "122", x2: xScale(total), y2: "148", stroke: COLORS.green, strokeWidth: "2.5", strokeDasharray: "5 4" }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: xScale(total), cy: "148", r: "9", fill: COLORS.green }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: "86", y: "198", fontSize: "12", fill: COLORS.slate, children: "very low solubility" }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: "560", y: "198", fontSize: "12", fill: COLORS.slate, children: "fully miscible" })
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: "86", y: "198", fontSize: "12", fill: PAPER_SOFT_TEXT, children: "very low solubility" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: "560", y: "198", fontSize: "12", fill: PAPER_SOFT_TEXT, children: "fully miscible" })
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "equation-summary-strip", children: [
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "equation-summary-item", children: [
@@ -23413,6 +23748,22 @@
       blurb: "The core figure shows where learning ends and where hardcoded thermodynamics begin.",
       tags: ["architecture", "physics", "solver"],
       component: Figure3Architecture
+    },
+    {
+      slug: "matched-baseline",
+      title: "Matched Baseline",
+      subtitle: "Same backbone, different prediction head",
+      blurb: "This slide isolates the main research comparison: TGNN-Solv versus DirectGNN on a shared upstream chemistry stack.",
+      tags: ["baseline", "directgnn", "fairness"],
+      component: Figure3ABaseline
+    },
+    {
+      slug: "solver-diagnostics",
+      title: "Solver-Facing Diagnostics",
+      subtitle: "Raw outputs, substituted outputs, exported intermediates",
+      blurb: "The maintained forward API makes GC priors, oracle injection, and solver-facing tensors inspectable instead of hidden.",
+      tags: ["diagnostics", "oracle", "intermediates"],
+      component: Figure3BDiagnostics
     },
     {
       slug: "sle-solver",
@@ -23581,6 +23932,44 @@
         ] })
       ] }),
       report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "That separation is the core modeling claim of the project. The network is allowed to learn latent chemistry, but it is not allowed to invent an unconstrained mapping from embeddings to solubility; instead it must explain the prediction through physically interpretable intermediate quantities." })
+    },
+    "matched-baseline": {
+      summary: "Why this comparison is considered fair",
+      content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+          "The repository\u2019s maintained comparison is explicitly controlled. Both models use the same upstream chemistry stack, so the ablation is not ",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "f_{TGNN} \\text{ vs } g_{other}" }),
+          " in the abstract, but rather the same encoder and interaction layers with two different output heads."
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+          "In shorthand, TGNN-Solv predicts solver-facing thermodynamic parameters and returns",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "\\ln x_2 = \\mathrm{SLE}(\\theta) + \\text{bounded correction}" }),
+          ", while DirectGNN predicts",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "\\ln x_2" }),
+          " directly from the same pair representation plus temperature encoding."
+        ] })
+      ] }),
+      report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "This distinction matters for interpretation of every downstream benchmark. If TGNN underperforms or overperforms relative to DirectGNN, the result can be attributed mainly to the physics bottleneck and its constraints, rather than to a hidden difference in graph capacity, interaction depth, or readout family." })
+    },
+    "solver-diagnostics": {
+      summary: "What `model.forward(...)` exposes for analysis",
+      content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+          "The forward path does not collapse everything into one opaque prediction. It keeps raw head outputs such as",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("code", { children: "fusion_params" }),
+          " separate from ",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("code", { children: "solver_fusion_params" }),
+          ", the actual values passed into the solver after GC-prior substitution or optional oracle replacement."
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+          "With ",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("code", { children: "return_intermediates=True" }),
+          ", the model also exports solver-facing tensors like",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "\\Phi,\\ \\ln\\gamma_2,\\ \\ln x_{2,physics},\\ \\ln x_{2,final}" }),
+          ". That makes it possible to diagnose whether an error came from crystal inputs, interaction parameters, solver geometry, or the correction branch."
+        ] })
+      ] }),
+      report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "From a project-maintenance perspective, this is one of the most important documented surfaces in the repository. It turns train-time mechanisms such as oracle injection from implicit behavior into explicit exported state, which is why the evaluation and full-budget experiment scripts can produce defensible diagnostic artifacts instead of only final MAE numbers." })
     },
     "sle-solver": {
       summary: "Why the iteration converges quickly",
@@ -23758,6 +24147,24 @@
     architecture: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "Weight sharing in the encoder is a deliberate constraint. Solute and solvent play different thermodynamic roles downstream, but the model still benefits from a common molecular representation language at the graph level, which keeps parameter count controlled and reduces the chance that each branch learns incompatible latent conventions." }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The more important architectural choice is where the model is not flexible. Once the learned modules emit solver-facing quantities, the prediction path becomes structured, which means later analysis can ask whether an error came from the encoder, from crystal-property estimation, from interaction parameters, or from the correction branch." })
+    ] }),
+    "matched-baseline": /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+        "The baseline should therefore be read as a matched ablation rather than as an external competitor from a different design family. DirectGNN removes ",
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("code", { children: "FusionHead" }),
+        ", ",
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("code", { children: "NRTLHead" }),
+        ", ",
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("code", { children: "SLESolver" }),
+        ", and",
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("code", { children: "AdaptivePhysicsCorrection" }),
+        ", but it keeps the same upstream representation machinery that converts molecules into a pair state."
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "This is also why descriptor augmentation on the DirectGNN side remains informative rather than unfair. The descriptor branch augments the pair representation after the shared graph backbone, so it probes whether missing chemistry signal is better supplied by richer features or by the explicit thermodynamic bottleneck." })
+    ] }),
+    "solver-diagnostics": /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "This slide connects the code surface to the experimental surface. Because the forward pass preserves raw predictions, solver-facing substitutions, correction outputs, and oracle masks explicitly, the repository can export intermediate CSV/JSON artifacts that are interpretable after training instead of only reporting scalar aggregate metrics." }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "It also clarifies why GC priors and oracle injection are not the same thing. GC priors change how crystal predictions are parameterized, whereas oracle injection conditionally replaces selected supervised solver inputs during training or diagnostics; keeping these paths separate in the returned tensors avoids conceptual and implementation ambiguity." })
     ] }),
     "sle-solver": /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "In implementation terms, the fixed-point loop is the bridge between learned parameters and thermodynamic consistency. The network does not directly output solubility; instead it outputs quantities that define the map whose root corresponds to the physically admissible solution." }),
@@ -23950,7 +24357,7 @@
         /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: "presentation-hero__eyebrow", children: "Interactive research deck" }),
         /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "presentation-hero__copy", children: [
           /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h1", { children: "TGNN-Solv Presentation" }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { children: "A slide-like React application embedded directly into the MkDocs site. The deck covers the data pipeline, architecture, solver mechanics, optimization behavior, and the current accuracy gap." })
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { children: "A slide-like React application embedded directly into the MkDocs site. The deck covers the data pipeline, baselines, architecture, solver mechanics, diagnostics, optimization behavior, and the current accuracy gap." })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "presentation-hero__stats", children: [
           /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { children: [
