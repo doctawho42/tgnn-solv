@@ -57,9 +57,11 @@ markdown_extensions:
 extra_javascript:
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - assets/javascripts/tgnn-presentation.bundle.js
 
 extra_css:
   - assets/stylesheets/extra.css
+  - assets/stylesheets/tgnn-presentation.css
 
 extra:
   social:
@@ -68,6 +70,7 @@ extra:
 
 nav:
   - Home: index.md
+  - Presentation: presentation.md
   - Start Here:
     - Installation: getting_started/installation.md
     - Quick Start Workflow: getting_started/quick_start.md
