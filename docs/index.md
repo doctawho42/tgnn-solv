@@ -138,6 +138,8 @@ That is why the site consistently presents TGNN-Solv together with:
       - curriculum phases, pair-aware batching, oracle injection, resume
     - [Evaluation & Inference](evaluation.md)
       - prediction APIs, uncertainty, calibration, and applicability domain
+    - [Applications](applications.md)
+      - synthesis-route solvent screening, formulation proxies, and solvent-swap use cases
     - [Experiment Lab](experiment_lab.md)
       - visual orchestration, DAGs, model editing, planner, lineage, docs, and Benchmark Studio
     - [Baselines](baselines.md)
@@ -184,6 +186,7 @@ Use these pages to understand the maintained implementation:
 - [Data Preparation](data_preparation.md)
 - [Training](training.md)
 - [Evaluation & Inference](evaluation.md)
+- [Applications](applications.md)
 - [Experiment Lab](experiment_lab.md)
 - [Baselines](baselines.md)
 - [Config Cookbook](config_cookbook.md)

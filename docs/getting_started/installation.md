@@ -107,6 +107,31 @@ docker build -t tgnn-solv .
 docker run --gpus all -it tgnn-solv bash
 ```
 
+The repository also ships a maintained compose layout for the current GUI and
+docs surfaces:
+
+```bash
+docker compose up lab
+docker compose up docs
+```
+
+Available services include:
+
+- `lab`
+  - Streamlit Experiment Lab on `http://localhost:8501`
+- `docs`
+  - MkDocs site on `http://localhost:8000`
+- `train`
+  - one tuned TGNN-Solv training run on the canonical split
+- `evaluate`
+  - checkpoint evaluation
+- `external-benchmarks`
+  - optional FastSolv / native SolProp benchmark runner
+
+The Docker image now installs the grouped CLI layout, GUI extras, and docs
+toolchain by default. Optional external baselines stay behind a separate build
+switch because they are heavier and more environment-sensitive.
+
 ## Troubleshooting
 
 ### CUDA/GPU Issues

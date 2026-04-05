@@ -105,6 +105,57 @@ RUNTIME_SOURCE_FILES = (
     SRC_ROOT / "tgnn_solv" / "model.py",
 )
 
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
+
+try:
+    from tgnn_solv.applications import (
+        PHARMA_MEDIA_LIBRARY,
+        SYNTHESIS_SOLVENT_LIBRARY,
+    )
+except Exception:  # pragma: no cover - fallback only
+    SYNTHESIS_SOLVENT_LIBRARY = {
+        "Water": "O",
+        "Methanol": "CO",
+        "Ethanol": "CCO",
+        "Isopropanol": "CC(C)O",
+        "Acetone": "CC(=O)C",
+        "Acetonitrile": "CC#N",
+        "Ethyl acetate": "CCOC(=O)C",
+        "THF": "C1CCOC1",
+        "2-MeTHF": "CC1CCCO1",
+        "Toluene": "Cc1ccccc1",
+        "DMSO": "CS(C)=O",
+        "DMF": "CN(C)C=O",
+    }
+    PHARMA_MEDIA_LIBRARY = {
+        "Water": "O",
+        "Ethanol": "CCO",
+        "Propylene glycol": "CC(O)CO",
+        "Glycerol": "C(C(CO)O)O",
+        "PEG surrogate": "OCCOCCOCCO",
+        "DMSO": "CS(C)=O",
+    }
+
+APPLICATION_ROUTE_TEMPLATE: list[dict[str, Any]] = [
+    {
+        "step_id": "S1",
+        "compound_smiles": "CC(=O)Nc1ccc(O)cc1",
+        "reaction_temp_k": 338.15,
+        "isolation_temp_k": 278.15,
+        "candidate_solvents": "Ethanol, Isopropanol, Acetonitrile, Ethyl acetate, Water",
+        "goal": "temperature-swing crystallization",
+    },
+    {
+        "step_id": "S2",
+        "compound_smiles": "O=C(Nc1ncccn1)c1ccccc1",
+        "reaction_temp_k": 323.15,
+        "isolation_temp_k": 283.15,
+        "candidate_solvents": "THF, 2-MeTHF, Toluene, Ethyl acetate, Water",
+        "goal": "workup and isolation",
+    },
+]
+
 WORKSPACE_GROUPS: list[list[dict[str, str]]] = [
     [
         {"name": "Overview", "button": "Overview", "kicker": "Start", "desc": "Status and quick launches"},
@@ -118,6 +169,7 @@ WORKSPACE_GROUPS: list[list[dict[str, str]]] = [
     [
         {"name": "Results & Plots", "button": "Results", "kicker": "Results", "desc": "Artifacts and dashboards"},
         {"name": "Inference", "button": "Inference", "kicker": "Infer", "desc": "Detailed single-system workbench"},
+        {"name": "Applications", "button": "Applications", "kicker": "Apply", "desc": "Synthesis and developability"},
         {"name": "Planner", "button": "Planner", "kicker": "Plan", "desc": "Kanban, todos, and schedule"},
         {"name": "Documentation", "button": "Docs", "kicker": "Docs", "desc": "Local docs and published site"},
         {"name": "Reproduce", "button": "Reproduce", "kicker": "Paper", "desc": "Article reproduction workflow"},
@@ -4133,6 +4185,32 @@ def canonicalize_smiles(smiles: str) -> tuple[str | None, str | None]:
     return Chem.MolToSmiles(mol, canonical=True), None
 
 
+def parse_smiles_tokens(raw_text: str, library: dict[str, str] | None = None) -> list[tuple[str, str]]:
+    if not raw_text:
+        return []
+    library = library or {}
+    resolved: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for token in re.split(r"[,\n;]+", str(raw_text)):
+        label = token.strip()
+        if not label:
+            continue
+        smiles = library.get(label, label)
+        canonical, error = canonicalize_smiles(smiles)
+        if canonical is None or error:
+            continue
+        pair = (label, canonical)
+        if pair in seen:
+            continue
+        seen.add(pair)
+        resolved.append(pair)
+    return resolved
+
+
+def default_route_editor_frame() -> pd.DataFrame:
+    return pd.DataFrame(APPLICATION_ROUTE_TEMPLATE)
+
+
 def normalized_structure_summary(smiles: str, raw_smiles: str | None = None) -> dict[str, Any] | None:
     if Chem is None:
         return None
@@ -4890,6 +4968,387 @@ print(json.dumps(payload))
             "1" if include_ensemble else "0",
         ],
         timeout=2400,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
+def run_synthesis_route_screen(
+    python_command: str,
+    checkpoint_path: str,
+    route_payload_json: str,
+    scan_points: int,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import numpy as np
+import sys
+from pathlib import Path
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.applications import synthesis_window_metrics
+from tgnn_solv.inference import (
+    load_directgnn_model,
+    load_model,
+    predict_direct_solubility,
+    predict_solubility,
+)
+
+checkpoint_path = sys.argv[1]
+route_payload = json.loads(sys.argv[2])
+scan_points = int(sys.argv[3])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, _ = load_directgnn_model(checkpoint_path)
+    predict_one = predict_direct_solubility
+else:
+    family = "tgnn_solv"
+    model, _ = load_model(checkpoint_path)
+    predict_one = predict_solubility
+
+rows = []
+steps = []
+for step in route_payload.get("steps", []):
+    step_id = str(step.get("step_id", "step"))
+    compound = str(step.get("compound_smiles", ""))
+    reaction_temp = float(step.get("reaction_temp_k", 333.15))
+    isolation_temp = float(step.get("isolation_temp_k", 278.15))
+    goal = str(step.get("goal", "temperature-swing crystallization"))
+    candidates = step.get("candidates", [])
+    ranked = []
+    scan_rows = []
+    for candidate in candidates:
+        solvent_label = str(candidate.get("label", candidate.get("smiles", "solvent")))
+        solvent_smiles = str(candidate.get("smiles", ""))
+        hot_pred = predict_one(model, compound, solvent_smiles, T=reaction_temp)
+        cold_pred = predict_one(model, compound, solvent_smiles, T=isolation_temp)
+        metrics = synthesis_window_metrics(hot_pred["ln_x2"], cold_pred["ln_x2"])
+        row = {{
+            "step_id": step_id,
+            "goal": goal,
+            "compound_smiles": compound,
+            "reaction_temp_k": reaction_temp,
+            "isolation_temp_k": isolation_temp,
+            "solvent_label": solvent_label,
+            "solvent_smiles": solvent_smiles,
+            "hot_ln_x2": hot_pred["ln_x2"],
+            "cold_ln_x2": cold_pred["ln_x2"],
+            "delta_ln_x2": metrics["delta_ln_x2"],
+            "swing_ratio": metrics["swing_ratio"],
+            "route_score": metrics["route_score"],
+            "regime": metrics["regime"],
+        }}
+        ranked.append(row)
+        temps = np.linspace(min(reaction_temp, isolation_temp), max(reaction_temp, isolation_temp), max(scan_points, 4))
+        for temp in temps:
+            pred = predict_one(model, compound, solvent_smiles, T=float(temp))
+            scan_rows.append({{
+                "step_id": step_id,
+                "solvent_label": solvent_label,
+                "solvent_smiles": solvent_smiles,
+                "T": float(temp),
+                "ln_x2": float(pred["ln_x2"]),
+            }})
+    ranked.sort(key=lambda item: float(item["route_score"]), reverse=True)
+    rows.extend(ranked)
+    steps.append({{
+        "step_id": step_id,
+        "goal": goal,
+        "compound_smiles": compound,
+        "reaction_temp_k": reaction_temp,
+        "isolation_temp_k": isolation_temp,
+        "top_solvent": ranked[0]["solvent_label"] if ranked else None,
+        "top_score": ranked[0]["route_score"] if ranked else None,
+        "ranked": ranked,
+        "scan": scan_rows,
+    }})
+
+top_choice_counts = {{}}
+for step in steps:
+    top_name = step.get("top_solvent")
+    if top_name:
+        top_choice_counts[top_name] = top_choice_counts.get(top_name, 0) + 1
+
+payload = {{
+    "model_family": family,
+    "steps": steps,
+    "rows": rows,
+    "summary": {{
+        "n_steps": len(steps),
+        "n_candidates": len(rows),
+        "top_choice_counts": top_choice_counts,
+        "mean_top_score": float(np.mean([step["top_score"] for step in steps if step.get("top_score") is not None])) if steps else None,
+    }},
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [checkpoint_path, route_payload_json, str(int(scan_points))],
+        timeout=2400,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
+def run_developability_screen(
+    python_command: str,
+    checkpoint_path: str,
+    solute_smiles: str,
+    temperature: float,
+    dose_mg: float,
+    media_payload_json: str,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import sys
+from pathlib import Path
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from rdkit import Chem
+from rdkit.Chem import Descriptors
+
+from tgnn_solv.applications import (
+    aqueous_max_supported_dose_mg,
+    dose_margin,
+    mole_fraction_to_molarity_in_water,
+    pharma_capability_matrix,
+)
+from tgnn_solv.inference import (
+    load_directgnn_model,
+    load_model,
+    predict_direct_solubility,
+    predict_solubility,
+)
+
+checkpoint_path = sys.argv[1]
+solute_smiles = sys.argv[2]
+temperature = float(sys.argv[3])
+dose_mg = float(sys.argv[4])
+media_payload = json.loads(sys.argv[5])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, _ = load_directgnn_model(checkpoint_path)
+    predict_one = predict_direct_solubility
+else:
+    family = "tgnn_solv"
+    model, _ = load_model(checkpoint_path)
+    predict_one = predict_solubility
+
+mol = Chem.MolFromSmiles(solute_smiles)
+mol_weight = float(Descriptors.MolWt(mol)) if mol is not None else None
+rows = []
+water_x2 = None
+for medium in media_payload:
+    label = str(medium.get("label", "medium"))
+    smiles = str(medium.get("smiles", ""))
+    pred = predict_one(model, solute_smiles, smiles, T=temperature)
+    row = {{
+        "medium": label,
+        "smiles": smiles,
+        "ln_x2": float(pred["ln_x2"]),
+        "x2": float(pred["x2"]),
+    }}
+    rows.append(row)
+    if label.lower() == "water" or smiles == "O":
+        water_x2 = float(pred["x2"])
+
+rows.sort(key=lambda item: float(item["ln_x2"]), reverse=True)
+for row in rows:
+    row["fold_vs_water"] = (float(row["x2"]) / water_x2) if (water_x2 is not None and water_x2 > 0) else None
+    if row["medium"].lower() == "water" or row["smiles"] == "O":
+        row["molarity_proxy_mol_l"] = mole_fraction_to_molarity_in_water(float(row["x2"]))
+        row["max_supported_dose_mg_250ml"] = aqueous_max_supported_dose_mg(float(row["x2"]), mol_weight)
+        row["dose_margin"] = dose_margin(row["max_supported_dose_mg_250ml"], dose_mg if dose_mg > 0 else None)
+    else:
+        row["molarity_proxy_mol_l"] = None
+        row["max_supported_dose_mg_250ml"] = None
+        row["dose_margin"] = None
+
+best_cosolvent_uplift = None
+for row in rows:
+    if row["medium"].lower() == "water" or row["smiles"] == "O":
+        continue
+    fold = row.get("fold_vs_water")
+    if fold is None:
+        continue
+    if best_cosolvent_uplift is None or float(fold) > float(best_cosolvent_uplift):
+        best_cosolvent_uplift = float(fold)
+
+water_row = next((row for row in rows if row["medium"].lower() == "water" or row["smiles"] == "O"), None)
+payload = {{
+    "model_family": family,
+    "solute_smiles": solute_smiles,
+    "temperature": temperature,
+    "dose_mg": dose_mg,
+    "mol_weight": mol_weight,
+    "rows": rows,
+    "water_row": water_row,
+    "best_cosolvent_uplift": best_cosolvent_uplift,
+    "capability_matrix": pharma_capability_matrix(
+        water_margin=water_row.get("dose_margin") if water_row else None,
+        has_water_prediction=bool(water_row),
+        best_cosolvent_uplift=best_cosolvent_uplift,
+    ),
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [
+            checkpoint_path,
+            solute_smiles,
+            str(float(temperature)),
+            str(float(dose_mg)),
+            media_payload_json,
+        ],
+        timeout=1800,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
+def run_solvent_swap_screen(
+    python_command: str,
+    checkpoint_path: str,
+    solute_smiles: str,
+    donor_smiles: str,
+    donor_label: str,
+    acceptor_payload_json: str,
+    transfer_temp: float,
+    isolation_temp: float,
+    scan_points: int,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import numpy as np
+import sys
+from pathlib import Path
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.applications import solvent_swap_metrics, synthesis_window_metrics
+from tgnn_solv.inference import (
+    load_directgnn_model,
+    load_model,
+    predict_direct_solubility,
+    predict_solubility,
+)
+
+checkpoint_path = sys.argv[1]
+solute_smiles = sys.argv[2]
+donor_smiles = sys.argv[3]
+donor_label = sys.argv[4]
+acceptor_payload = json.loads(sys.argv[5])
+transfer_temp = float(sys.argv[6])
+isolation_temp = float(sys.argv[7])
+scan_points = int(sys.argv[8])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, _ = load_directgnn_model(checkpoint_path)
+    predict_one = predict_direct_solubility
+else:
+    family = "tgnn_solv"
+    model, _ = load_model(checkpoint_path)
+    predict_one = predict_solubility
+
+donor_hot = predict_one(model, solute_smiles, donor_smiles, T=transfer_temp)
+rows = []
+scan = []
+for acceptor in acceptor_payload:
+    label = str(acceptor.get("label", "acceptor"))
+    smiles = str(acceptor.get("smiles", ""))
+    target_hot = predict_one(model, solute_smiles, smiles, T=transfer_temp)
+    target_cold = predict_one(model, solute_smiles, smiles, T=isolation_temp)
+    swap = solvent_swap_metrics(donor_hot["ln_x2"], target_hot["ln_x2"])
+    cold_window = synthesis_window_metrics(target_hot["ln_x2"], target_cold["ln_x2"])
+    rows.append({{
+        "acceptor_label": label,
+        "acceptor_smiles": smiles,
+        "donor_label": donor_label,
+        "donor_smiles": donor_smiles,
+        "transfer_temp_k": transfer_temp,
+        "isolation_temp_k": isolation_temp,
+        "donor_hot_ln_x2": float(donor_hot["ln_x2"]),
+        "acceptor_hot_ln_x2": float(target_hot["ln_x2"]),
+        "acceptor_cold_ln_x2": float(target_cold["ln_x2"]),
+        "delta_ln_x2": float(swap["delta_ln_x2"]),
+        "crash_ratio": float(swap["crash_ratio"]),
+        "transfer_score": float(swap["transfer_score"]),
+        "regime": str(swap["regime"]),
+        "cold_capture_score": float(cold_window["route_score"]),
+    }})
+    temps = np.linspace(min(transfer_temp, isolation_temp), max(transfer_temp, isolation_temp), max(scan_points, 4))
+    for temp in temps:
+        pred = predict_one(model, solute_smiles, smiles, T=float(temp))
+        scan.append({{
+            "acceptor_label": label,
+            "T": float(temp),
+            "ln_x2": float(pred["ln_x2"]),
+        }})
+
+rows.sort(key=lambda item: float(item["transfer_score"]), reverse=True)
+payload = {{
+    "model_family": family,
+    "solute_smiles": solute_smiles,
+    "donor_label": donor_label,
+    "donor_smiles": donor_smiles,
+    "rows": rows,
+    "scan": scan,
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [
+            checkpoint_path,
+            solute_smiles,
+            donor_smiles,
+            donor_label,
+            acceptor_payload_json,
+            str(float(transfer_temp)),
+            str(float(isolation_temp)),
+            str(int(scan_points)),
+        ],
+        timeout=1800,
     )
     if error:
         return {"error": error}
@@ -5773,6 +6232,24 @@ def render_overview(python_command: str, probe: dict[str, Any]) -> None:
         info_card(
             "Inference Workbench",
             "Single-pair chemistry dashboard with solver decomposition, temperature scans, checkpoint inspection, and nearest-neighbor context.",
+        )
+
+    st.subheader("Applied use cases")
+    app_cols = st.columns(3, gap="large")
+    with app_cols[0]:
+        info_card(
+            "Applications",
+            "Route-facing solvent screening for synthesis planning: evaluate hot-vs-cold crystallization windows per intermediate and rank explicit solvents instead of comparing single-point predictions in isolation.",
+        )
+    with app_cols[1]:
+        info_card(
+            "Developability",
+            "Water and cosolvent screens that turn equilibrium solubility into a cautious preformulation readout: dose-pressure proxies, water margin, and honest limits on what the model can say about PK.",
+        )
+    with app_cols[2]:
+        info_card(
+            "Solvent Swap",
+            "Crash-out and solvent-exchange stress testing for workup design, antisolvent ideas, and temperature-assisted isolation screens.",
         )
 
     families = split_family_options()
@@ -10144,6 +10621,444 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
             st.json(raw_payload)
 
 
+def render_applications_page(python_command: str, probe: dict[str, Any]) -> None:
+    checkpoints = available_checkpoints()
+    page_header(
+        "Applications & Translation",
+        "Route-level solvent screening, solvent-swap stress tests, and honest developability readouts built on the maintained inference stack. This workspace translates TGNN-Solv from model benchmarking into process and formulation decisions without pretending that solubility alone is full PK/PD.",
+        eyebrow="Applications",
+        chips=[
+            ("Checkpoints", str(len(checkpoints))),
+            ("Synthesis library", str(len(SYNTHESIS_SOLVENT_LIBRARY))),
+            ("Pharma media", str(len(PHARMA_MEDIA_LIBRARY))),
+            ("Runtime", probe.get("python", python_command)),
+        ],
+    )
+    if not checkpoints:
+        st.warning("No checkpoints were found under checkpoints/.")
+        return
+    if not module_ok(probe, "tgnn_solv.inference"):
+        st.error("The selected interpreter cannot import `tgnn_solv.inference`. Fix the runtime on the Environment page first.")
+        return
+
+    supported_checkpoints, rejected_checkpoints = workbench_compatible_checkpoints(python_command, checkpoints)
+    if not supported_checkpoints:
+        st.error("No supported TGNN-Solv or DirectGNN checkpoints are available for the applications workspace.")
+        if rejected_checkpoints:
+            render_dataframe(
+                pd.DataFrame([{"checkpoint": relative_label(path), "reason": reason} for path, reason in rejected_checkpoints]),
+                use_container_width=True,
+                hide_index=True,
+            )
+        return
+
+    workspace = segmented_choice(
+        "Applications workspace",
+        ["Synthesis route screening", "Developability & PK proxy", "Solvent swap"],
+        key="applications_workspace",
+        default="Synthesis route screening",
+    )
+    default_checkpoint = CHECKPOINTS_DIR / "tgnn_solv_trained.pt"
+    if default_checkpoint not in supported_checkpoints:
+        default_checkpoint = supported_checkpoints[0]
+
+    if workspace == "Synthesis route screening":
+        route_version = int(st.session_state.get("applications_route_editor_version", 0))
+        route_seed_key = f"applications_route_seed_{route_version}"
+        route_editor_key = f"applications_route_editor_{route_version}"
+        if route_seed_key not in st.session_state:
+            st.session_state[route_seed_key] = default_route_editor_frame()
+
+        left, right = st.columns([1.25, 0.75], gap="large")
+        with left:
+            checkpoint_path = render_path_select("Checkpoint", supported_checkpoints, default_checkpoint, "applications_route_checkpoint")
+            route_df = st.data_editor(
+                st.session_state[route_seed_key],
+                key=route_editor_key,
+                num_rows="dynamic",
+                hide_index=True,
+                use_container_width=True,
+                column_config={
+                    "step_id": st.column_config.TextColumn("Step"),
+                    "compound_smiles": st.column_config.TextColumn("Compound SMILES"),
+                    "reaction_temp_k": st.column_config.NumberColumn("Reaction T (K)", format="%.2f"),
+                    "isolation_temp_k": st.column_config.NumberColumn("Isolation T (K)", format="%.2f"),
+                    "candidate_solvents": st.column_config.TextColumn("Candidate solvents"),
+                    "goal": st.column_config.TextColumn("Goal"),
+                },
+            )
+            action_cols = st.columns([0.9, 0.9, 1.1], gap="small")
+            with action_cols[0]:
+                if st.button("Load example route", key="applications_route_load_example", use_container_width=True):
+                    new_version = route_version + 1
+                    st.session_state["applications_route_editor_version"] = new_version
+                    st.session_state[f"applications_route_seed_{new_version}"] = default_route_editor_frame()
+                    st.rerun()
+            with action_cols[1]:
+                if st.button("Start empty route", key="applications_route_clear", use_container_width=True):
+                    new_version = route_version + 1
+                    st.session_state["applications_route_editor_version"] = new_version
+                    st.session_state[f"applications_route_seed_{new_version}"] = pd.DataFrame(
+                        [
+                            {
+                                "step_id": "S1",
+                                "compound_smiles": DEFAULT_SOLUTE_SMILES,
+                                "reaction_temp_k": 333.15,
+                                "isolation_temp_k": 278.15,
+                                "candidate_solvents": "",
+                                "goal": "temperature-swing crystallization",
+                            }
+                        ]
+                    )
+                    st.rerun()
+            with action_cols[2]:
+                scan_points = int(
+                    st.number_input(
+                        "Scan points",
+                        min_value=4,
+                        max_value=30,
+                        value=8,
+                        step=1,
+                        key="applications_route_scan_points",
+                    )
+                )
+
+            parsed_steps: list[dict[str, Any]] = []
+            route_issues: list[str] = []
+            for row_index, (_, row) in enumerate(route_df.iterrows(), start=1):
+                compound_smiles, compound_error = canonicalize_smiles(str(row.get("compound_smiles", "")))
+                if not compound_smiles:
+                    continue
+                candidates = parse_smiles_tokens(str(row.get("candidate_solvents", "")), SYNTHESIS_SOLVENT_LIBRARY)
+                if not candidates:
+                    route_issues.append(f"Row {row_index}: no valid candidate solvents.")
+                    continue
+                parsed_steps.append(
+                    {
+                        "step_id": str(row.get("step_id", f"S{row_index}")).strip() or f"S{row_index}",
+                        "compound_smiles": compound_smiles,
+                        "reaction_temp_k": float(row.get("reaction_temp_k", 333.15)),
+                        "isolation_temp_k": float(row.get("isolation_temp_k", 278.15)),
+                        "goal": str(row.get("goal", "temperature-swing crystallization")).strip() or "temperature-swing crystallization",
+                        "candidates": [{"label": label, "smiles": smiles} for label, smiles in candidates],
+                    }
+                )
+                if compound_error:
+                    route_issues.append(f"Row {row_index}: {compound_error}")
+
+            with action_cols[0]:
+                if st.button("Run route screen", key="applications_route_run", use_container_width=True):
+                    st.session_state["applications_route_result"] = (
+                        {"error": "No valid route steps to evaluate."}
+                        if not parsed_steps
+                        else run_synthesis_route_screen(
+                            python_command,
+                            checkpoint_path,
+                            json.dumps({"steps": parsed_steps}),
+                            scan_points,
+                        )
+                    )
+
+        with right:
+            st.markdown("### Route screening notes")
+            st.caption(
+                "This is a route-facing solvent utility layer, not a retrosynthesis engine. It scores explicit solvents for each intermediate based on the predicted hot-to-cold isolation window."
+            )
+            info_card(
+                "How to read the score",
+                "High route score means the compound looks loadable at the reaction temperature, drops materially on cooling, and stays comparatively insoluble at the isolation endpoint.",
+            )
+            info_card(
+                "Candidate solvents",
+                ", ".join(list(SYNTHESIS_SOLVENT_LIBRARY.keys())[:8]) + ", ... or enter exact solvent SMILES directly.",
+            )
+            if route_issues:
+                render_dataframe(pd.DataFrame({"issue": route_issues}), use_container_width=True, hide_index=True)
+
+        route_payload = st.session_state.get("applications_route_result")
+        if route_payload:
+            if route_payload.get("error"):
+                st.error(route_payload["error"])
+            else:
+                summary = route_payload.get("summary", {})
+                render_stat_tiles(
+                    [
+                        ("Steps", str(int(summary.get("n_steps", 0))), "intermediates evaluated"),
+                        ("Candidates", str(int(summary.get("n_candidates", 0))), "solvent systems scored"),
+                        ("Mean top score", f"{float(summary.get('mean_top_score', 0.0)):.1f}" if summary.get("mean_top_score") is not None else "—", "top solvent per step"),
+                        ("Model family", str(route_payload.get("model_family", "unknown")), "active inference backend"),
+                    ]
+                )
+                rows_df = pd.DataFrame(route_payload.get("rows", []))
+                if not rows_df.empty:
+                    top_df = rows_df.sort_values(["step_id", "route_score"], ascending=[True, False]).groupby("step_id", as_index=False).head(1)
+                    fig_left, fig_right = st.columns(2, gap="large")
+                    with fig_left:
+                        scatter = px.scatter(
+                            rows_df,
+                            x="hot_ln_x2",
+                            y="cold_ln_x2",
+                            color="step_id",
+                            size="route_score",
+                            hover_name="solvent_label",
+                            hover_data=["goal", "delta_ln_x2", "swing_ratio", "regime"],
+                            title="Hot vs cold solubility map",
+                        )
+                        scatter.update_layout(height=460, xaxis_title="ln x2 at reaction temperature", yaxis_title="ln x2 at isolation temperature")
+                        st.plotly_chart(style_plot(scatter), use_container_width=True)
+                    with fig_right:
+                        score_fig = px.bar(
+                            top_df.sort_values("route_score", ascending=False),
+                            x="step_id",
+                            y="route_score",
+                            color="solvent_label",
+                            text="solvent_label",
+                            title="Best solvent per route step",
+                        )
+                        score_fig.update_layout(height=460, xaxis_title="Route step", yaxis_title="Route score")
+                        st.plotly_chart(style_plot(score_fig), use_container_width=True)
+                    render_dataframe(
+                        rows_df[["step_id", "solvent_label", "hot_ln_x2", "cold_ln_x2", "delta_ln_x2", "swing_ratio", "route_score", "regime"]],
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+                    step_ids = [str(step.get("step_id", "")) for step in route_payload.get("steps", []) if step.get("step_id")]
+                    if step_ids:
+                        selected_step = st.selectbox("Route step detail", step_ids, key="applications_route_selected_step")
+                        step_payload = next((step for step in route_payload.get("steps", []) if step.get("step_id") == selected_step), None)
+                        if step_payload:
+                            detail_left, detail_right = st.columns([0.8, 1.2], gap="large")
+                            with detail_left:
+                                render_molecule_panel(
+                                    str(step_payload.get("compound_smiles", "")),
+                                    f"Step {selected_step} compound",
+                                    str(step_payload.get("goal", "")),
+                                    width=520,
+                                    height=360,
+                                )
+                            with detail_right:
+                                ranked = pd.DataFrame(step_payload.get("ranked", []))
+                                if not ranked.empty:
+                                    score_bar = px.bar(
+                                        ranked.head(6),
+                                        x="solvent_label",
+                                        y="route_score",
+                                        color="delta_ln_x2",
+                                        title=f"Step {selected_step} solvent ranking",
+                                    )
+                                    score_bar.update_layout(height=320, xaxis_title="Solvent", yaxis_title="Route score")
+                                    st.plotly_chart(style_plot(score_bar), use_container_width=True)
+                                    best = ranked.iloc[0]
+                                    render_molecule_panel(
+                                        str(best["solvent_smiles"]),
+                                        f"Top solvent: {best['solvent_label']}",
+                                        str(best["regime"]),
+                                        width=360,
+                                        height=240,
+                                    )
+                                scan_df = pd.DataFrame(step_payload.get("scan", []))
+                                if not scan_df.empty and not ranked.empty:
+                                    top_labels = ranked.head(3)["solvent_label"].tolist()
+                                    overlay = px.line(
+                                        scan_df[scan_df["solvent_label"].isin(top_labels)],
+                                        x="T",
+                                        y="ln_x2",
+                                        color="solvent_label",
+                                        title=f"Temperature scan for top step-{selected_step} solvents",
+                                    )
+                                    overlay.update_layout(height=360, xaxis_title="Temperature (K)", yaxis_title="Predicted ln x2")
+                                    st.plotly_chart(style_plot(overlay), use_container_width=True)
+
+    elif workspace == "Developability & PK proxy":
+        left, right = st.columns([1.0, 1.0], gap="large")
+        with left:
+            checkpoint_path = render_path_select("Checkpoint", supported_checkpoints, default_checkpoint, "applications_dev_checkpoint")
+            solute_smiles = st.text_input("Compound SMILES", value=st.session_state.get("applications_dev_solute", DEFAULT_SOLUTE_SMILES), key="applications_dev_solute")
+            temperature = st.number_input("Screen temperature (K)", min_value=250.0, max_value=400.0, value=310.15, step=1.0, key="applications_dev_temperature")
+            dose_mg = st.number_input("Dose for aqueous proxy (mg)", min_value=0.0, max_value=5000.0, value=100.0, step=25.0, key="applications_dev_dose")
+            selected_media_labels = st.multiselect(
+                "Media / solvent surrogates",
+                options=list(PHARMA_MEDIA_LIBRARY.keys()),
+                default=["Water", "Ethanol", "Propylene glycol", "DMSO"],
+                key="applications_dev_media",
+            )
+            if st.button("Run developability screen", key="applications_dev_run", use_container_width=True):
+                media_payload = [{"label": label, "smiles": PHARMA_MEDIA_LIBRARY[label]} for label in selected_media_labels]
+                st.session_state["applications_dev_result"] = run_developability_screen(
+                    python_command,
+                    checkpoint_path,
+                    solute_smiles,
+                    float(temperature),
+                    float(dose_mg),
+                    json.dumps(media_payload),
+                )
+        with right:
+            render_molecule_showcase(
+                st.session_state.get("applications_dev_solute", DEFAULT_SOLUTE_SMILES),
+                title="Developability target",
+                subtitle="Use water plus a few formulation-relevant pure-solvent surrogates to measure how much room there is before the problem stops being a solubility question and starts being a full ADME problem.",
+                svg_size=(520, 320),
+                graph_height=360,
+                compact=True,
+            )
+
+        dev_payload = st.session_state.get("applications_dev_result")
+        if dev_payload:
+            if dev_payload.get("error"):
+                st.error(dev_payload["error"])
+            else:
+                water_row = dev_payload.get("water_row") or {}
+                render_stat_tiles(
+                    [
+                        ("MolWt", f"{float(dev_payload.get('mol_weight', 0.0)):.1f}" if dev_payload.get("mol_weight") else "—", "g/mol"),
+                        ("Water ln x2", f"{float(water_row.get('ln_x2', 0.0)):.2f}" if water_row else "—", "selected T"),
+                        ("Water dose margin", f"{float(water_row.get('dose_margin', 0.0)):.2f}x" if water_row.get("dose_margin") is not None else "—", "max soluble dose / requested dose"),
+                        ("Best cosolvent uplift", f"{float(dev_payload.get('best_cosolvent_uplift', 0.0)):.1f}x" if dev_payload.get("best_cosolvent_uplift") else "—", "relative to water"),
+                    ]
+                )
+                rows_df = pd.DataFrame(dev_payload.get("rows", []))
+                if not rows_df.empty:
+                    plot_left, plot_right = st.columns(2, gap="large")
+                    with plot_left:
+                        media_fig = px.bar(
+                            rows_df.sort_values("ln_x2", ascending=False),
+                            x="medium",
+                            y="ln_x2",
+                            color="medium",
+                            title="Predicted equilibrium solubility across media",
+                        )
+                        media_fig.update_layout(height=420, xaxis_title="Medium", yaxis_title="Predicted ln x2")
+                        st.plotly_chart(style_plot(media_fig), use_container_width=True)
+                    with plot_right:
+                        uplift_df = rows_df.dropna(subset=["fold_vs_water"]).copy()
+                        if not uplift_df.empty:
+                            uplift_fig = px.bar(
+                                uplift_df.sort_values("fold_vs_water", ascending=False),
+                                x="medium",
+                                y="fold_vs_water",
+                                color="medium",
+                                title="Fold uplift vs water",
+                            )
+                            uplift_fig.update_layout(height=420, xaxis_title="Medium", yaxis_title="x2 / water x2")
+                            st.plotly_chart(style_plot(uplift_fig), use_container_width=True)
+                        else:
+                            st.info("Select Water to unlock water-relative formulation uplift.")
+                    render_dataframe(
+                        rows_df[["medium", "ln_x2", "x2", "fold_vs_water", "molarity_proxy_mol_l", "max_supported_dose_mg_250ml", "dose_margin"]],
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                capability_df = pd.DataFrame(dev_payload.get("capability_matrix", []))
+                if not capability_df.empty:
+                    st.markdown("### What this says about PK / PD")
+                    st.caption("This workspace draws a hard line: TGNN-Solv can support solubility-aware preformulation and oral dose-pressure proxies, but it does not replace permeability, clearance, or pharmacodynamic models.")
+                    render_dataframe(capability_df, use_container_width=True, hide_index=True)
+
+    else:
+        left, right = st.columns([1.0, 1.0], gap="large")
+        with left:
+            checkpoint_path = render_path_select("Checkpoint", supported_checkpoints, default_checkpoint, "applications_swap_checkpoint")
+            solute_smiles = st.text_input("Compound SMILES", value=st.session_state.get("applications_swap_solute", DEFAULT_SOLUTE_SMILES), key="applications_swap_solute")
+            donor_names = list(SYNTHESIS_SOLVENT_LIBRARY.keys())
+            donor_default_index = donor_names.index("DMSO") if "DMSO" in SYNTHESIS_SOLVENT_LIBRARY else 0
+            donor_label = st.selectbox("Donor solvent", donor_names, index=donor_default_index, key="applications_swap_donor")
+            donor_smiles = SYNTHESIS_SOLVENT_LIBRARY[donor_label]
+            acceptor_labels = st.multiselect(
+                "Target solvents",
+                options=donor_names,
+                default=[label for label in ["Water", "Isopropanol", "Ethyl acetate"] if label in donor_names],
+                key="applications_swap_acceptors",
+            )
+            transfer_temp = st.number_input("Transfer temperature (K)", min_value=250.0, max_value=420.0, value=298.15, step=1.0, key="applications_swap_transfer")
+            isolation_temp = st.number_input("Isolation temperature (K)", min_value=230.0, max_value=400.0, value=278.15, step=1.0, key="applications_swap_isolation")
+            scan_points = int(st.number_input("Scan points", min_value=4, max_value=24, value=8, step=1, key="applications_swap_scan_points"))
+            if st.button("Run solvent-swap screen", key="applications_swap_run", use_container_width=True):
+                acceptor_payload = [{"label": label, "smiles": SYNTHESIS_SOLVENT_LIBRARY[label]} for label in acceptor_labels if label != donor_label]
+                st.session_state["applications_swap_result"] = run_solvent_swap_screen(
+                    python_command,
+                    checkpoint_path,
+                    solute_smiles,
+                    donor_smiles,
+                    donor_label,
+                    json.dumps(acceptor_payload),
+                    float(transfer_temp),
+                    float(isolation_temp),
+                    scan_points,
+                )
+        with right:
+            render_molecule_panel(
+                st.session_state.get("applications_swap_solute", DEFAULT_SOLUTE_SMILES),
+                "Solvent-swap target",
+                "Estimate how aggressively the compound should crash out when moved from a donor solvent into a poorer target medium.",
+                width=520,
+                height=340,
+            )
+            render_molecule_panel(
+                donor_smiles,
+                f"Donor solvent: {donor_label}",
+                "The donor is the starting medium before precipitation or solvent exchange.",
+                width=360,
+                height=240,
+            )
+
+        swap_payload = st.session_state.get("applications_swap_result")
+        if swap_payload:
+            if swap_payload.get("error"):
+                st.error(swap_payload["error"])
+            else:
+                rows_df = pd.DataFrame(swap_payload.get("rows", []))
+                if not rows_df.empty:
+                    render_stat_tiles(
+                        [
+                            ("Targets", str(len(rows_df)), "acceptor solvents scored"),
+                            ("Best transfer score", f"{float(rows_df['transfer_score'].max()):.1f}", "higher means stronger crash-out pressure"),
+                            ("Donor", str(swap_payload.get("donor_label", "—")), "reference solvent"),
+                            ("Model family", str(swap_payload.get("model_family", "unknown")), "active inference backend"),
+                        ]
+                    )
+                    plot_left, plot_right = st.columns(2, gap="large")
+                    with plot_left:
+                        transfer_fig = px.bar(
+                            rows_df.sort_values("transfer_score", ascending=False),
+                            x="acceptor_label",
+                            y="transfer_score",
+                            color="delta_ln_x2",
+                            title="Solvent-swap transfer score",
+                        )
+                        transfer_fig.update_layout(height=420, xaxis_title="Target solvent", yaxis_title="Transfer score")
+                        st.plotly_chart(style_plot(transfer_fig), use_container_width=True)
+                    with plot_right:
+                        scatter = px.scatter(
+                            rows_df,
+                            x="acceptor_hot_ln_x2",
+                            y="acceptor_cold_ln_x2",
+                            color="acceptor_label",
+                            size="transfer_score",
+                            hover_data=["delta_ln_x2", "crash_ratio", "regime"],
+                            title="Target-solvent hot/cold map",
+                        )
+                        scatter.update_layout(height=420, xaxis_title="ln x2 at transfer T", yaxis_title="ln x2 at isolation T")
+                        st.plotly_chart(style_plot(scatter), use_container_width=True)
+                    render_dataframe(
+                        rows_df[["acceptor_label", "donor_hot_ln_x2", "acceptor_hot_ln_x2", "acceptor_cold_ln_x2", "delta_ln_x2", "crash_ratio", "transfer_score", "regime"]],
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                    scan_df = pd.DataFrame(swap_payload.get("scan", []))
+                    if not scan_df.empty:
+                        top_labels = rows_df.sort_values("transfer_score", ascending=False).head(3)["acceptor_label"].tolist()
+                        scan_fig = px.line(
+                            scan_df[scan_df["acceptor_label"].isin(top_labels)],
+                            x="T",
+                            y="ln_x2",
+                            color="acceptor_label",
+                            title="Top solvent-swap candidates across temperature",
+                        )
+                        scan_fig.update_layout(height=360, xaxis_title="Temperature (K)", yaxis_title="Predicted ln x2")
+                        st.plotly_chart(style_plot(scan_fig), use_container_width=True)
+
+
 def render_planner_page() -> None:
     palette = theme_palette()
     payload = load_planner_state()
@@ -10858,6 +11773,8 @@ def main() -> None:
         render_results_page(python_command)
     elif page == "Inference":
         render_inference_page(python_command, probe)
+    elif page == "Applications":
+        render_applications_page(python_command, probe)
     elif page == "Planner":
         render_planner_page()
     elif page == "Documentation":

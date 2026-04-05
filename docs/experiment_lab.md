@@ -9,6 +9,7 @@ Use it when you want:
 - one place to launch training, evaluation, experiments, and reproduction jobs
 - interactive single-system inference with RDKit structures and atom graphs
 - post-hoc uncertainty inspection, calibration review, and OOD checks
+- application-facing solvent screening for synthesis and formulation work
 - artifact browsing, lineage tracing, and side-by-side result comparison
 - visual DAG planning and model-architecture editing
 - a repo-backed kanban board and experiment schedule
@@ -125,6 +126,21 @@ Current scope note:
 - solver decomposition, GC priors, and OOD / applicability-domain scoring
   remain `TGNN-Solv`-specific because they rely on the physics-facing model
   path
+
+### Applications
+
+- synthesis-route solvent screening
+  - ranks explicit solvents for hot-to-cold isolation windows per intermediate
+- developability / oral dose-pressure proxies
+  - uses water plus a small explicit-solvent panel
+- solvent-swap screening
+  - estimates crash-out pressure during workup or antisolvent transfer
+
+Important scope note:
+
+- this is a translation layer on top of solubility prediction
+- it is not a full retrosynthesis planner
+- it is not a mechanistic PK/PD simulator
 
 ### Planner
 

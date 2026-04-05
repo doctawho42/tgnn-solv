@@ -29,6 +29,8 @@ Interactive Streamlit control panel for the maintained TGNN-Solv workflow.
 - `Uncertainty lab` with ensemble vs MC-dropout review and saved uncertainty sessions for both maintained model families
 - `Calibration dashboard` with saved batch calibration runs and compare views for both maintained model families
 - OOD / applicability-domain scoring through `tgnn_solv.domain`
+- `Applications` for route-facing solvent screening, developability proxies,
+  and solvent-swap analysis
 - lineage-aware results registry that connects checkpoints, configs, saved lab histories, and planner follow-ups
 - `Planner` workspace with kanban board, experiment todo list, time-based schedule, and intake from saved lab histories
 - `Documentation` workspace with local markdown rendering and embedded published docs
@@ -103,3 +105,18 @@ This command is used for:
 
 That makes the lab usable even when the GUI environment itself does not carry
 the full PyTorch/PyG stack.
+
+## Application Layer
+
+The `Applications` page is intentionally conservative:
+
+- synthesis route screening
+  - ranks explicit solvents by hot-vs-cold isolation window per intermediate
+- developability and oral dose proxies
+  - uses water plus explicit solvent surrogates
+- solvent swap
+  - estimates crash-out pressure during workup or antisolvent transfer
+
+It does **not** claim to be a full retrosynthesis planner or a PK/PD model.
+Instead it exposes the places where equilibrium solubility is genuinely useful
+and clearly marks where additional models are required.

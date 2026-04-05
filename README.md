@@ -67,6 +67,8 @@ The lab covers:
 - `Pipeline Studio` for repo-backed DAG editing and shell export
 - `Model Architect` for visual TGNN-Solv / DirectGNN editing
 - `Inference` with persistent history, uncertainty, calibration, and OOD
+- `Applications` for synthesis-route solvent screening, developability /
+  oral-dose proxies, and solvent-swap analysis
 - `Results & Plots` with `Benchmark Studio`, artifact registry, lineage graph, and diff
 - `Planner` with a kanban board, schedule, and follow-up tasks from lab history
 - in-app documentation browsing
@@ -74,6 +76,29 @@ The lab covers:
 The UI process can run in a lighter environment than the model runtime. The
 sidebar `Python command` field decides which interpreter is used for training,
 evaluation, checkpoint inspection, and inference subprocesses.
+
+## Docker
+
+The repository ships a current Docker image and compose file for the
+maintained surfaces:
+
+```bash
+docker compose up lab
+docker compose up docs
+```
+
+Available services include:
+
+- `lab`
+  - Streamlit Experiment Lab on `localhost:8501`
+- `docs`
+  - MkDocs site on `localhost:8000`
+- `train`
+  - one tuned TGNN training run on the canonical split
+- `evaluate`
+  - checkpoint evaluation
+- `external-benchmarks`
+  - FastSolv / native SolProp benchmark wrapper with optional baseline deps
 
 ## Project Layout
 
@@ -444,6 +469,8 @@ its temporary auxiliary heads after pretraining.
   and experiment runners
 - `docs/evaluation.md`: inference API, uncertainty, OOD/applicability-domain,
   evaluation entry points, and diagnostic outputs
+- `docs/applications.md`: synthesis-route screening, developability proxies,
+  solvent-swap analysis, and PK/PD scope boundaries
 - `docs/experiment_lab.md`: interactive GUI for orchestration, inference,
   lineage, planning, and documentation browsing
 - `docs/baselines.md`: DirectGNN, RF, FastSolv, SolProp, and Ideal-SLE

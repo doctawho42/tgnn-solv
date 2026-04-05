@@ -80,6 +80,7 @@ nav:
     - Data Preparation: data_preparation.md
     - Training: training.md
     - Evaluation & Inference: evaluation.md
+    - Applications: applications.md
     - Experiment Lab: experiment_lab.md
     - Baselines: baselines.md
     - Config Cookbook: config_cookbook.md

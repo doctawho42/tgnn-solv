@@ -1,6 +1,45 @@
 services:
+  lab:
+    build:
+      context: .
+      args:
+        TGNN_EXTRAS: gui,dev
+    ports:
+      - "8501:8501"
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      TGNN_SOLV_LAB_PYTHON: /opt/venv/bin/python
+    command:
+      - scripts/launch_lab.py
+      - --server.address
+      - 0.0.0.0
+      - --server.port
+      - "8501"
+
+  docs:
+    build:
+      context: .
+      args:
+        TGNN_EXTRAS: gui,dev
+    ports:
+      - "8000:8000"
+    working_dir: /app
+    volumes:
+      - .:/app
+    command:
+      - -m
+      - mkdocs
+      - serve
+      - -a
+      - 0.0.0.0:8000
+
   train:
-    build: .
+    build:
+      context: .
+      args:
+        TGNN_EXTRAS: dev
     deploy:
       resources:
         reservations:
@@ -8,17 +47,13 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    working_dir: /app
     volumes:
-      - ./data:/app/data
-      - ./notebooks/data:/app/notebooks/data
-      - ./checkpoints:/app/checkpoints
-      - ./logs:/app/logs
-      - ./results:/app/results
-      - ./configs:/app/configs
+      - .:/app
     command:
-      - scripts/train.py
+      - scripts/training/train.py
       - --config
-      - configs/paper_config.yaml
+      - configs/paper_config_tuned.yaml
       - --train-data
       - notebooks/data/processed/train.csv
       - --val-data
@@ -31,7 +66,10 @@ services:
       - cuda
 
   evaluate:
-    build: .
+    build:
+      context: .
+      args:
+        TGNN_EXTRAS: dev
     deploy:
       resources:
         reservations:
@@ -39,16 +77,40 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    working_dir: /app
     volumes:
-      - ./data:/app/data
-      - ./notebooks/data:/app/notebooks/data
-      - ./checkpoints:/app/checkpoints
-      - ./results:/app/results
+      - .:/app
     command:
-      - scripts/evaluate_complete.py
+      - scripts/evaluation/evaluate_complete.py
       - --test-data
       - notebooks/data/processed/test.csv
       - --tgnn-checkpoint
       - checkpoints/model.pt
       - --output
       - results/evaluation.json
+
+  external-benchmarks:
+    build:
+      context: .
+      args:
+        TGNN_EXTRAS: gui,dev
+        INSTALL_BASELINES: 1
+    working_dir: /app
+    volumes:
+      - .:/app
+    command:
+      - scripts/experiments/run_external_baseline_benchmark.py
+      - --train-data
+      - notebooks/data/processed/train.csv
+      - --val-data
+      - notebooks/data/processed/val.csv
+      - --test-data
+      - notebooks/data/processed/test.csv
+      - --out-dir
+      - results/external_baselines/docker_run
+      - --split-mode
+      - solute_scaffold
+      - --fastsolv-mode
+      - both
+      - --solprop-mode
+      - native

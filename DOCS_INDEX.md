@@ -25,6 +25,9 @@ This file is the repo-internal map of the same maintained documentation set.
 - `docs/evaluation.md`
   - inference API, uncertainty, OOD/applicability-domain, checkpoint
   evaluation, physics diagnostics, and maintained experiment runners
+- `docs/applications.md`
+  - synthesis-route solvent screening, developability proxies, solvent-swap
+    analysis, and PK/PD scope boundaries
 - `docs/baselines.md`
   - DirectGNN, DirectGNN+descriptors, RF, Ideal-SLE, FastSolv, and SolProp
 - `docs/config_cookbook.md`
