@@ -138,6 +138,21 @@ python scripts/experiments/run_optuna.py \
 For interactive tuning and analysis, use
 [08_optuna_tuning.ipynb](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/08_optuna_tuning.ipynb).
 
+## Visual Orchestration
+
+For the same workflows in an interactive control surface, use
+[Experiment Lab](experiment_lab.md):
+
+- `Pipeline Studio`
+  - Airflow-style DAG editing, repo-backed presets, and shell export
+- `Planner`
+  - kanban board, experiment schedule, and follow-up tasks derived from saved lab history
+- `HPO Lab`
+  - Optuna launcher and study dashboard
+
+The visual surfaces are not separate research code paths. They wrap the same
+maintained CLI entry points documented on this page.
+
 ## Ablations and Targeted Studies
 
 Several maintained but more research-oriented entry points live under
@@ -180,6 +195,7 @@ scripts can consume the outputs consistently.
 ## Related Pages
 
 - [Results](results.md)
+- [Experiment Lab](experiment_lab.md)
 - [Reproducing the Paper](reproducing_paper.md)
 - [Script Reference](script_reference.md)
 - [Troubleshooting](troubleshooting.md)

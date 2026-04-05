@@ -21,6 +21,11 @@ The grouped `scripts/training/` entry points are the preferred navigation
 surface. Legacy top-level `scripts/train.py` and
 `scripts/train_directgnn.py` remain supported as compatibility wrappers.
 
+If you prefer a visual orchestration layer on top of the same training CLIs,
+use [Experiment Lab](experiment_lab.md). Its `Training`, `Pipeline Studio`,
+`Model Architect`, and `HPO Lab` workspaces all delegate to the maintained
+training and experiment entry points described on this page.
+
 ## TGNN-Solv Training
 
 Paper-style training command:
@@ -214,6 +219,25 @@ DirectGNN supports the same pattern through
 For cloud or preemptible sessions, `scripts/training/run_resume_safe_train.sh`
 wraps the TGNN CLI and reuses the checkpoint automatically.
 
+## Interactive Training Surfaces
+
+The repository also ships a maintained GUI for the same workflow:
+
+- `Training`
+  - launch tuned TGNN-Solv and DirectGNN runs
+- `Pipeline Studio`
+  - wire multi-step DAGs and save them as repo-local presets
+- `Model Architect`
+  - edit TGNN-Solv / DirectGNN configs and inspect active branches visually
+- `HPO Lab`
+  - launch Optuna and inspect study artifacts
+
+Launch it with:
+
+```bash
+python scripts/launch_lab.py
+```
+
 ## Checkpoint Contents
 
 TGNN checkpoints saved by `scripts/training/train.py` include:
@@ -393,6 +417,7 @@ injection is disabled during training for that specific comparison.
 
 - [Config Cookbook](config_cookbook.md)
 - [Experiments & Benchmarks](experiments.md)
+- [Experiment Lab](experiment_lab.md)
 - [Free GPU / Preemptible Training](free_gpu_training.md)
 - [Troubleshooting](troubleshooting.md)
 

@@ -109,6 +109,24 @@ The runner is designed to produce:
 That is the benchmark bundle the site should treat as the main architecture
 comparison once complete.
 
+## Experiment Lab Histories
+
+The interactive `Experiment Lab` writes additional repo-local analysis history
+under:
+
+- `results/lab_runs/inference_history/`
+- `results/lab_runs/uncertainty_history/`
+- `results/lab_runs/calibration_history/`
+
+These JSON artifacts are not benchmark claims by themselves. They are review
+artifacts used for:
+
+- saved single-system case studies
+- ensemble vs MC-dropout uncertainty comparison
+- batch calibration sessions
+- lineage tracing back to checkpoints and datasets
+- planner and pipeline follow-up intake inside the GUI
+
 ## Descriptor-Recovery Probe
 
 One recent diagnostic probe asks whether the solute graph embedding already
@@ -166,6 +184,7 @@ is:
 ## Related Pages
 
 - [Experiments & Benchmarks](experiments.md)
+- [Experiment Lab](experiment_lab.md)
 - [Baselines](baselines.md)
 - [Model Zoo](model_zoo.md)
 - [Config Cookbook](config_cookbook.md)

@@ -9,6 +9,9 @@ The repository now exposes two parallel CLI layouts:
   - `scripts/evaluation/`
   - `scripts/experiments/`
   - `scripts/external/`
+- GUI launchers under:
+  - `scripts/launch_lab.py`
+  - `scripts/gui/launch_lab.py`
 
 ## Why Both Exist
 
@@ -73,6 +76,7 @@ python scripts/training/train.py --help
 python scripts/evaluation/evaluate_complete.py --help
 python scripts/experiments/run_medium_budget_comparison.py --help
 python scripts/external/run_fastsolv.py --help
+python scripts/launch_lab.py
 ```
 
 Legacy top-level paths remain supported and unchanged.

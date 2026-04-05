@@ -52,6 +52,18 @@ This installs:
 - Core dependencies: `torch-geometric`, `rdkit`, `numpy`, `pandas`, `requests`, `tqdm`
 - Development tools: `jupyter`, `matplotlib`, `scikit-learn`, `pytest`, `optuna`
 
+If you want the maintained Streamlit GUI as well:
+
+```bash
+pip install -e ".[gui,dev]"
+```
+
+This adds the dependencies used by:
+
+- `scripts/launch_lab.py`
+- `scripts/gui/launch_lab.py`
+- `tools/experiment_lab/app.py`
+
 ### 6. (Optional) Install External Baselines
 
 For FastSolv baseline:
@@ -110,6 +122,7 @@ Reduce batch size in config files or use CPU-only mode for testing.
 ## Next Step
 
 - [Quick Start Workflow](quick_start.md)
+- [Experiment Lab](../experiment_lab.md)
 - [Troubleshooting](../troubleshooting.md)
 - [Notebooks & Tutorials](../notebooks.md)
 

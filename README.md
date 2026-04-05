@@ -33,6 +33,41 @@ pip install torch-geometric -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
 pip install -e ".[dev]"
 ```
 
+For the interactive GUI as well:
+
+```bash
+pip install -e ".[gui,dev]"
+```
+
+## Experiment Lab
+
+The repository includes a maintained Streamlit control surface for the full
+workflow:
+
+```bash
+python scripts/launch_lab.py
+```
+
+or:
+
+```bash
+python scripts/gui/launch_lab.py
+```
+
+The lab covers:
+
+- training, experiment, evaluation, and reproduction launchers
+- `Pipeline Studio` for repo-backed DAG editing and shell export
+- `Model Architect` for visual TGNN-Solv / DirectGNN editing
+- `Inference` with persistent history, uncertainty, calibration, and OOD
+- `Results & Plots` with artifact registry, lineage graph, and diff
+- `Planner` with a kanban board, schedule, and follow-up tasks from lab history
+- in-app documentation browsing
+
+The UI process can run in a lighter environment than the model runtime. The
+sidebar `Python command` field decides which interpreter is used for training,
+evaluation, checkpoint inspection, and inference subprocesses.
+
 ## Project Layout
 
 The preferred human-facing CLI layout is now grouped by purpose:
@@ -243,6 +278,14 @@ It is not applied automatically inside `predict_solubility`; call
 `ApplicabilityDomain` alongside inference when you want an explicit in-domain /
 OOD check.
 
+The same maintained surfaces are also exposed interactively in `Experiment Lab`
+through:
+
+- `Inference -> Run & inspect`
+- `Inference -> History & compare`
+- `Inference -> Uncertainty lab`
+- `Inference -> Calibration dashboard`
+
 ## Optional Stage 0 Pretraining
 
 Beyond the main three-phase curriculum, the repo also supports standalone
@@ -322,6 +365,8 @@ its temporary auxiliary heads after pretraining.
   and experiment runners
 - `docs/evaluation.md`: inference API, uncertainty, OOD/applicability-domain,
   evaluation entry points, and diagnostic outputs
+- `docs/experiment_lab.md`: interactive GUI for orchestration, inference,
+  lineage, planning, and documentation browsing
 - `docs/baselines.md`: DirectGNN, RF, FastSolv, SolProp, and Ideal-SLE
   workflows
 - `docs/reproducing_paper.md`: what `reproduce.sh` does and how to validate it
@@ -329,6 +374,9 @@ its temporary auxiliary heads after pretraining.
 - `docs/repository_audit.md`: current repo strengths, gaps, and known
   limitations
 - `scripts/README.md`: grouped CLI layout and legacy-wrapper policy
+- `tools/experiment_lab/README.md`: implementation notes for the Streamlit lab
+- `scripts/launch_lab.py`: preferred CLI launcher for the lab
+- `scripts/gui/launch_lab.py`: alternate namespaced launcher for the lab
 - `src/tgnn_solv/README.md`: grouped internal package layout and preferred
   import surface
 - `AGENTS.md`: concise architecture and workflow notes for coding agents

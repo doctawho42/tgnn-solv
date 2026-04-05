@@ -123,6 +123,8 @@ is helping.
 
 After the first end-to-end run, the most useful next pages are:
 
+- [Experiment Lab](../experiment_lab.md)
+  - launch the maintained GUI for visual training, inference, uncertainty, and lineage workflows
 - [Architecture](../architecture.md)
   - understand TGNN-Solv, DirectGNN, GC priors, and Stage 0 pretraining
 - [Training](../training.md)
@@ -131,3 +133,9 @@ After the first end-to-end run, the most useful next pages are:
   - medium-budget comparison, full-budget diagnostic run, split studies
 - [Notebooks & Tutorials](../notebooks.md)
   - interactive walk-throughs that mirror the maintained code paths
+
+Optional GUI launch:
+
+```bash
+python scripts/launch_lab.py
+```

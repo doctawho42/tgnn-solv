@@ -28,6 +28,9 @@ The grouped `scripts/evaluation/` and `scripts/experiments/` paths are the
 preferred navigation surface. Legacy top-level script paths still work for
 backward compatibility.
 
+The same maintained inference, uncertainty, calibration, and OOD surfaces are
+also exposed interactively in [Experiment Lab](experiment_lab.md).
+
 ## Inference API
 
 The core inference helpers live in `src/tgnn_solv/inference.py`.
@@ -230,6 +233,29 @@ Current scoring behavior:
 
 This is not wired automatically into `predict_solubility`. If you want OOD
 screening at inference time, call `ApplicabilityDomain` alongside prediction.
+
+## Experiment Lab Evaluation Workbench
+
+`Experiment Lab` exposes the maintained evaluation stack through four
+interactive inference modes:
+
+- `Run & inspect`
+  - single-system prediction, decomposition, RDKit structure view, and temperature scan
+- `History & compare`
+  - persistent saved runs under `results/lab_runs/inference_history/`
+- `Uncertainty lab`
+  - ensemble vs MC-dropout review with saved comparison sessions
+- `Calibration dashboard`
+  - batch `PICP_90`, `MPIW`, `MAE`, `RMSE`, and parity analysis with saved history
+
+These GUI views still delegate to the same underlying APIs:
+
+- `predict_solubility`
+- `temperature_scan`
+- `MCDropoutPredictor`
+- `EnsemblePredictor`
+- `calibration_report`
+- `ApplicabilityDomain`
 
 ## `scripts/evaluation/evaluate_complete.py`
 
@@ -439,6 +465,7 @@ Use:
 ## Related Pages
 
 - [Results](results.md)
+- [Experiment Lab](experiment_lab.md)
 - [Model Zoo](model_zoo.md)
 - [FAQ](faq.md)
 - [Troubleshooting](troubleshooting.md)

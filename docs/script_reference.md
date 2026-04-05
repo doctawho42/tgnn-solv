@@ -53,6 +53,8 @@ on them.
 | `scripts/evaluation/compare_models.py` | Compare multiple TGNN checkpoints | Stable utility | Wraps benchmark logic |
 | `scripts/training/diagnose_training.py` | Dataset stats and overfit sanity check | Stable utility | Good pre-flight tool |
 | `scripts/experiments/run_optuna.py` | Hyperparameter tuning | Stable utility | Supports TGNN and DirectGNN |
+| `scripts/launch_lab.py` | Launch the maintained Streamlit control surface | Stable utility | Preferred GUI entry point |
+| `scripts/gui/launch_lab.py` | Namespaced launcher for the same lab | Stable utility | Same behavior, alternate path |
 
 ## Research Experiment Runners
 
@@ -99,6 +101,10 @@ They are available through the Python API and are demonstrated in notebooks.
 | `tgnn_solv.uncertainty.EnsemblePredictor` | Multi-checkpoint uncertainty | Requires multiple trained models |
 | `tgnn_solv.uncertainty.calibration_report` | Interval calibration summary | Accepts MC-dropout or ensemble outputs |
 | `tgnn_solv.domain.ApplicabilityDomain` | Inference-time OOD / AD scoring | Covered in `notebooks/03_inference.ipynb` and `notebooks/04_evaluation.ipynb` |
+
+The same maintained surfaces are also exposed together through
+`tools/experiment_lab/app.py`, but the GUI is an orchestration layer rather
+than a separate model implementation.
 
 ## High-Signal Usage Notes
 
@@ -159,6 +165,7 @@ They are available through the Python API and are demonstrated in notebooks.
 ## Related Pages
 
 - [Experiments & Benchmarks](experiments.md)
+- [Experiment Lab](experiment_lab.md)
 - [Notebooks & Tutorials](notebooks.md)
 - [Contributing](contributing.md)
 - [Repository Audit](repository_audit.md)

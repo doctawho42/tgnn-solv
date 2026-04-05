@@ -17,6 +17,7 @@ relative to the same graph backbone trained directly on `ln(x2)`.
 
 [Install TGNN-Solv](getting_started/installation.md){ .md-button .md-button--primary }
 [Run the quick start](getting_started/quick_start.md){ .md-button }
+[Open Experiment Lab](experiment_lab.md){ .md-button }
 [Browse the notebooks](notebooks.md){ .md-button }
 [See benchmark workflows](experiments.md){ .md-button }
 
@@ -28,6 +29,7 @@ relative to the same graph backbone trained directly on `ln(x2)`.
   <span class="tgnn-chip">Matched no-physics baseline: <code>DirectGNN</code></span>
   <span class="tgnn-chip">Optional Stage 0 pretraining supported</span>
   <span class="tgnn-chip">Resume-safe training supported</span>
+  <span class="tgnn-chip">Interactive Experiment Lab available</span>
 </div>
 
 </div>
@@ -131,6 +133,8 @@ That is why the site consistently presents TGNN-Solv together with:
       - curriculum phases, pair-aware batching, oracle injection, resume
     - [Evaluation & Inference](evaluation.md)
       - prediction APIs, uncertainty, calibration, and applicability domain
+    - [Experiment Lab](experiment_lab.md)
+      - visual orchestration, DAGs, model editing, planner, lineage, and docs
     - [Baselines](baselines.md)
       - what each baseline tests and how to run it
     - [FAQ](faq.md)
@@ -175,6 +179,7 @@ Use these pages to understand the maintained implementation:
 - [Data Preparation](data_preparation.md)
 - [Training](training.md)
 - [Evaluation & Inference](evaluation.md)
+- [Experiment Lab](experiment_lab.md)
 - [Baselines](baselines.md)
 - [Config Cookbook](config_cookbook.md)
 

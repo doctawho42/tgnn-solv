@@ -72,6 +72,8 @@ from tgnn_solv.inference import load_model
 ### `tgnn_solv.evaluation`
 
 - inference, evaluator/reporting, plotting, and analysis helpers
+- uncertainty calibration and applicability-domain helpers consumed by the
+  interactive `Experiment Lab`
 
 ### `tgnn_solv.research`
 
