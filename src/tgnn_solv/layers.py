@@ -18,7 +18,7 @@ equations are implemented as fixed differentiable functions.
 
 from __future__ import annotations
 
-from typing import Optional, TypeAlias
+from typing import Optional, TYPE_CHECKING, TypeAlias
 
 import torch
 import torch.nn as nn
@@ -27,6 +27,12 @@ from torch_geometric.nn import (
     MessagePassing,
     Set2Set,
 )
+from torch_geometric.utils import to_dense_batch
+
+from .positional_encoding import PositionalEncoding
+
+if TYPE_CHECKING:
+    from .config import TGNNSolvConfig
 
 TensorList: TypeAlias = list[Tensor]
 NRTLState: TypeAlias = dict[str, Tensor]
@@ -273,6 +279,284 @@ class GNNEncoder(nn.Module):
             h = self._apply_temp_film(h, batch, temp_feat)
 
         return h
+
+
+class GPSLayer(nn.Module):
+    """GPS block: local message passing plus per-graph global attention."""
+
+    def __init__(
+        self,
+        hidden_dim: int,
+        num_heads: int,
+        dropout: float,
+        use_edge_attr: bool,
+    ) -> None:
+        super().__init__()
+        if hidden_dim % num_heads != 0:
+            raise ValueError(
+                f"hidden_dim ({hidden_dim}) must be divisible by num_heads ({num_heads})"
+            )
+        self.use_edge_attr = use_edge_attr
+        self.local_mpnn = MPNNLayer(hidden_dim, hidden_dim)
+        self.global_attn = nn.MultiheadAttention(
+            hidden_dim,
+            num_heads,
+            dropout=dropout,
+            batch_first=True,
+        )
+        self.ffn = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim * 4),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim * 4, hidden_dim),
+            nn.Dropout(dropout),
+        )
+        self.local_dropout = nn.Dropout(dropout)
+        self.global_dropout = nn.Dropout(dropout)
+        self.norm1 = nn.LayerNorm(hidden_dim)
+        self.norm2 = nn.LayerNorm(hidden_dim)
+        self.norm3 = nn.LayerNorm(hidden_dim)
+
+    def _batched_attention(
+        self,
+        h: Tensor,
+        batch: Tensor,
+    ) -> Tensor:
+        """Apply dense self-attention independently to each graph in the batch."""
+        h_dense, mask = to_dense_batch(h, batch)
+        h_attn, _ = self.global_attn(
+            h_dense,
+            h_dense,
+            h_dense,
+            key_padding_mask=~mask,
+            need_weights=False,
+        )
+        return h_attn[mask]
+
+    def forward(
+        self,
+        h: Tensor,
+        edge_index: Tensor,
+        edge_attr: Tensor,
+        batch: Optional[Tensor] = None,
+    ) -> Tensor:
+        base_h = h
+        if batch is None:
+            batch = torch.zeros(
+                h.size(0),
+                dtype=torch.long,
+                device=h.device,
+            )
+
+        local_edge_attr = edge_attr
+        if not self.use_edge_attr:
+            local_edge_attr = torch.zeros_like(edge_attr)
+
+        local_out = self.local_mpnn(base_h, edge_index, local_edge_attr)
+        local_delta = local_out - base_h
+        global_out = self._batched_attention(base_h, batch)
+
+        h = self.norm1(base_h + self.local_dropout(local_delta))
+        h = self.norm2(h + self.global_dropout(global_out))
+        h = self.norm3(h + self.ffn(h))
+        return h
+
+
+class GPSEncoder(nn.Module):
+    """Role-aware encoder that augments local MPNN updates with global attention."""
+
+    def __init__(
+        self,
+        node_feat_dim: int,
+        edge_feat_dim: int,
+        hidden_dim: int = 256,
+        n_layers: int = 6,
+        role_mode: str = "shared_residual",
+        role_specific_layers: int = 2,
+        *,
+        gps_num_heads: int = 8,
+        gps_use_edge_attr: bool = True,
+        gps_positional_encoding: str = "laplacian",
+        gps_pe_dim: int = 16,
+        dropout: float = 0.1,
+    ) -> None:
+        super().__init__()
+        if n_layers <= 0:
+            raise ValueError("n_layers must be positive")
+        if role_mode not in {"shared_residual", "split_late"}:
+            raise ValueError(f"Unsupported role_mode: {role_mode}")
+
+        self.role_mode = role_mode
+        if role_mode == "split_late":
+            self.role_specific_layers = min(
+                max(int(role_specific_layers), 0),
+                max(n_layers - 1, 0),
+            )
+        else:
+            self.role_specific_layers = 0
+        self.shared_layer_count = n_layers - self.role_specific_layers
+
+        self.positional_encoder = PositionalEncoding(
+            gps_pe_dim,
+            gps_positional_encoding,
+        )
+        self.node_embed = nn.Linear(node_feat_dim + gps_pe_dim, hidden_dim)
+        self.edge_embed = nn.Linear(edge_feat_dim, hidden_dim)
+
+        self.shared_layers = nn.ModuleList(
+            [
+                GPSLayer(
+                    hidden_dim,
+                    gps_num_heads,
+                    dropout,
+                    gps_use_edge_attr,
+                )
+                for _ in range(self.shared_layer_count)
+            ]
+        )
+        self.solute_layers = nn.ModuleList(
+            [
+                GPSLayer(
+                    hidden_dim,
+                    gps_num_heads,
+                    dropout,
+                    gps_use_edge_attr,
+                )
+                for _ in range(self.role_specific_layers)
+            ]
+        )
+        self.solvent_layers = nn.ModuleList(
+            [
+                GPSLayer(
+                    hidden_dim,
+                    gps_num_heads,
+                    dropout,
+                    gps_use_edge_attr,
+                )
+                for _ in range(self.role_specific_layers)
+            ]
+        )
+
+        self.solute_adapter = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim), nn.SiLU()
+        )
+        self.solvent_adapter = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim), nn.SiLU()
+        )
+
+        self.temp_mlp = nn.Sequential(
+            nn.Linear(3, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim * 2),
+        )
+
+    def _run_layer_stack(
+        self,
+        h: Tensor,
+        e: Tensor,
+        edge_index: Tensor,
+        layers: nn.ModuleList,
+        batch: Optional[Tensor],
+        temp_feat: Optional[Tensor],
+    ) -> Tensor:
+        for layer in layers:
+            h = layer(h, edge_index, e, batch=batch)
+            if temp_feat is not None and batch is not None:
+                h = self._apply_temp_film(h, batch, temp_feat)
+        return h
+
+    def _apply_temp_film(
+        self,
+        h: Tensor,
+        batch: Tensor,
+        temp_feat: Tensor,
+    ) -> Tensor:
+        gamma_beta = self.temp_mlp(temp_feat)
+        gamma, beta = gamma_beta.chunk(2, dim=-1)
+        gamma = gamma[batch]
+        beta = beta[batch]
+        return h * (1.0 + gamma) + beta
+
+    def forward(
+        self,
+        x: Tensor,
+        edge_index: Tensor,
+        edge_attr: Tensor,
+        role: str = "solute",
+        batch: Optional[Tensor] = None,
+        temp_feat: Optional[Tensor] = None,
+    ) -> Tensor:
+        if batch is None:
+            batch = torch.zeros(
+                x.size(0),
+                dtype=torch.long,
+                device=x.device,
+            )
+
+        pe = self.positional_encoder(edge_index, x.size(0), batch=batch).to(x.dtype)
+        h = self.node_embed(torch.cat([x, pe], dim=-1))
+        e = self.edge_embed(edge_attr)
+
+        h = self._run_layer_stack(
+            h,
+            e,
+            edge_index,
+            self.shared_layers,
+            batch,
+            temp_feat,
+        )
+
+        if self.role_mode == "split_late":
+            role_layers = (
+                self.solute_layers if role == "solute" else self.solvent_layers
+            )
+            h = self._run_layer_stack(
+                h,
+                e,
+                edge_index,
+                role_layers,
+                batch,
+                temp_feat,
+            )
+        elif role == "solute":
+            h = h + self.solute_adapter(h)
+        else:
+            h = h + self.solvent_adapter(h)
+
+        if temp_feat is not None and batch is not None:
+            h = self._apply_temp_film(h, batch, temp_feat)
+
+        return h
+
+
+def build_graph_encoder(
+    node_feat_dim: int,
+    edge_feat_dim: int,
+    cfg: "TGNNSolvConfig",
+) -> nn.Module:
+    """Construct the configured graph encoder while keeping the downstream API stable."""
+    if getattr(cfg, "encoder_type", "mpnn") == "gps":
+        return GPSEncoder(
+            node_feat_dim,
+            edge_feat_dim,
+            hidden_dim=cfg.hidden_dim,
+            n_layers=cfg.n_gnn_layers,
+            role_mode=cfg.encoder_role_mode,
+            role_specific_layers=cfg.encoder_role_specific_layers,
+            gps_num_heads=cfg.gps_num_heads,
+            gps_use_edge_attr=cfg.gps_use_edge_attr,
+            gps_positional_encoding=cfg.gps_positional_encoding,
+            gps_pe_dim=cfg.gps_pe_dim,
+            dropout=cfg.dropout,
+        )
+    return GNNEncoder(
+        node_feat_dim,
+        edge_feat_dim,
+        hidden_dim=cfg.hidden_dim,
+        n_layers=cfg.n_gnn_layers,
+        role_mode=cfg.encoder_role_mode,
+        role_specific_layers=cfg.encoder_role_specific_layers,
+    )
 
 
 # ================================================================== #

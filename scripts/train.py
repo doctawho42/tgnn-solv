@@ -15,8 +15,10 @@ import json
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import _bootstrap  # noqa: F401
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
@@ -24,13 +26,23 @@ from tgnn_solv.artifacts import build_model_card, build_run_manifest, write_json
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import make_loader
 from tgnn_solv.experiment_logger import ExperimentLogger
-from tgnn_solv.features import NODE_FEAT_DIM, EDGE_FEAT_DIM
+from tgnn_solv.features import (
+    EDGE_FEAT_DIM,
+    NODE_FEAT_DIM,
+    DescriptorNormalizer,
+)
 from tgnn_solv.group_contribution import (
     GC_FALLBACK_PRIORS,
     compute_gc_priors,
     fit_tm_gc_calibration,
 )
 from tgnn_solv.model import TGNNSolv
+from tgnn_solv.pretrain_pipeline import (
+    apply_pretrained_encoder_checkpoint,
+    derive_pretrain_checkpoint_path,
+    load_pretrained_encoder_checkpoint,
+    run_stage0_pretraining,
+)
 from tgnn_solv.seed import set_seed
 from tgnn_solv.trainer import TGNNSolvTrainer
 
@@ -155,6 +167,70 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Override learning rate (lr_phase2) from config",
     )
+    parser.add_argument(
+        "--pretrain",
+        action="store_true",
+        help="Run Stage 0 pretraining on an external SMILES corpus before standard TGNN training.",
+    )
+    parser.add_argument(
+        "--pretrain-epochs",
+        type=int,
+        default=30,
+        help="Number of Stage 0 pretraining epochs.",
+    )
+    parser.add_argument(
+        "--pretrain-batch-size",
+        type=int,
+        default=128,
+        help="Stage 0 pretraining batch size.",
+    )
+    parser.add_argument(
+        "--pretrain-lr",
+        type=float,
+        default=3.0e-4,
+        help="Learning rate for Stage 0 pretraining.",
+    )
+    parser.add_argument(
+        "--pretrain-data",
+        type=str,
+        default="zinc250k",
+        help="Stage 0 pretraining source (`zinc250k` or a local CSV/text file with SMILES).",
+    )
+    parser.add_argument(
+        "--pretrain-max-molecules",
+        type=int,
+        default=None,
+        help="Optional cap on the number of Stage 0 molecules to load.",
+    )
+    parser.add_argument(
+        "--pretrain-checkpoint",
+        type=str,
+        default=None,
+        help="Load a previously saved Stage 0 encoder/readout checkpoint instead of rerunning pretraining.",
+    )
+    parser.add_argument(
+        "--pretrain-output",
+        type=str,
+        default=None,
+        help="Where to save the Stage 0 encoder/readout checkpoint when `--pretrain` is used.",
+    )
+    parser.add_argument(
+        "--run-descriptor-probe",
+        action="store_true",
+        help="After training, run the existing Ridge linear probe from `g_sol` to RDKit descriptors.",
+    )
+    parser.add_argument(
+        "--descriptor-probe-output-dir",
+        type=str,
+        default=None,
+        help="Output directory for descriptor probe artifacts. Defaults to `<checkpoint_stem>_descriptor_probe`.",
+    )
+    parser.add_argument(
+        "--descriptor-probe-device",
+        type=str,
+        default="cpu",
+        help="Device for the descriptor probe. Defaults to CPU to avoid contending with training.",
+    )
     
     return parser.parse_args()
 
@@ -185,9 +261,10 @@ def build_checkpoint_payload(
     experiment_name: str,
     trainer: TGNNSolvTrainer,
     resume_state: dict | None,
+    pretrain_info: dict[str, Any] | None = None,
 ) -> dict:
     """Build a training checkpoint that supports both inference and resume."""
-    return {
+    checkpoint = {
         "model_state": model.state_dict(),
         "model_state_dict": model.state_dict(),
         "config": dataclasses.asdict(config),
@@ -197,7 +274,156 @@ def build_checkpoint_payload(
         "experiment_name": experiment_name,
         "trainer_state_dict": trainer.state_dict(),
         "resume_state": resume_state,
+        "pretrain_info": pretrain_info,
     }
+    if config.use_descriptor_augmentation:
+        checkpoint["descriptor_mean"] = model.descriptor_mean.detach().cpu()
+        checkpoint["descriptor_std"] = model.descriptor_std.detach().cpu()
+    return checkpoint
+
+
+def maybe_run_descriptor_probe(
+    *,
+    checkpoint_path: Path,
+    train_data: str,
+    test_data: str | None,
+    output_dir: str | None,
+    device: str,
+    logger: ExperimentLogger,
+) -> None:
+    """Run the existing `g_sol -> descriptors` Ridge probe and log its summary."""
+    if test_data is None:
+        print("   Skipping descriptor probe because no --test-data path was provided.")
+        return
+
+    from probe_gsol_descriptor_recovery import (
+        CORE_DESCRIPTOR_NAMES,
+        build_descriptor_matrix,
+        build_markdown_report,
+        extract_solute_embeddings,
+        fit_descriptor_probes,
+        load_unique_solutes,
+        resolve_device as resolve_probe_device,
+    )
+    from tgnn_solv.inference import load_model
+    from tgnn_solv.reporting import json_safe
+
+    probe_output_dir = (
+        Path(output_dir).expanduser().resolve()
+        if output_dir is not None
+        else checkpoint_path.with_name(f"{checkpoint_path.stem}_descriptor_probe")
+    )
+    probe_output_dir.mkdir(parents=True, exist_ok=True)
+
+    probe_device = resolve_probe_device(device)
+    model, cfg = load_model(str(checkpoint_path), device=probe_device)
+    model.eval()
+
+    train_path = Path(train_data).resolve()
+    test_path = Path(test_data).resolve()
+    train_solutes = load_unique_solutes(train_path)
+    test_solutes = load_unique_solutes(test_path)
+
+    train_smiles, X_train = extract_solute_embeddings(
+        model=model,
+        smiles_list=train_solutes,
+        device=probe_device,
+        batch_size=512,
+        temperature_K=298.15,
+    )
+    test_smiles, X_test = extract_solute_embeddings(
+        model=model,
+        smiles_list=test_solutes,
+        device=probe_device,
+        batch_size=512,
+        temperature_K=298.15,
+    )
+    Y_train = build_descriptor_matrix(train_smiles)
+    Y_test = build_descriptor_matrix(test_smiles)
+    results_df, probe_summary = fit_descriptor_probes(
+        X_train=X_train,
+        X_test=X_test,
+        Y_train=Y_train,
+        Y_test=Y_test,
+        alpha=1.0,
+    )
+
+    core_df = (
+        results_df[results_df["descriptor"].isin(CORE_DESCRIPTOR_NAMES)]
+        .set_index("descriptor")
+        .reindex(CORE_DESCRIPTOR_NAMES)
+        .reset_index()
+    )
+
+    import math
+    import numpy as np
+
+    np.savez_compressed(
+        probe_output_dir / "train_solute_embeddings.npz",
+        smiles=np.asarray(train_smiles, dtype=object),
+        embeddings=X_train.astype(np.float32, copy=False),
+    )
+    np.savez_compressed(
+        probe_output_dir / "test_solute_embeddings.npz",
+        smiles=np.asarray(test_smiles, dtype=object),
+        embeddings=X_test.astype(np.float32, copy=False),
+    )
+    results_df.to_csv(probe_output_dir / "descriptor_r2.csv", index=False)
+
+    summary_payload = {
+        "checkpoint": str(checkpoint_path),
+        "config": {
+            "hidden_dim": int(cfg.hidden_dim),
+            "encoder_type": str(getattr(cfg, "encoder_type", "mpnn")),
+            "use_temperature_in_encoder": bool(cfg.use_temperature_in_encoder),
+            "use_morgan_features": bool(cfg.use_morgan_features),
+            "use_descriptor_augmentation": bool(cfg.use_descriptor_augmentation),
+            "encoder_role_mode": str(cfg.encoder_role_mode),
+        },
+        "probe": {
+            "embedding_name": "g_sol_pre",
+            "embedding_temperature_K": 298.15,
+            "ridge_alpha": 1.0,
+            "device": str(probe_device),
+        },
+        "dataset": {
+            "train_data": str(train_path),
+            "test_data": str(test_path),
+            "n_train_unique_solutes": int(len(train_smiles)),
+            "n_test_unique_solutes": int(len(test_smiles)),
+        },
+        "summary": probe_summary,
+        "core_descriptors": {
+            row["descriptor"]: {
+                "r2_test": (
+                    None if not math.isfinite(float(row["r2_test"])) else float(row["r2_test"])
+                ),
+                "r2_train": (
+                    None if not math.isfinite(float(row["r2_train"])) else float(row["r2_train"])
+                ),
+                "status": str(row["status"]),
+            }
+            for _, row in core_df.iterrows()
+        },
+    }
+    (probe_output_dir / "summary.json").write_text(
+        json.dumps(json_safe(summary_payload), indent=2),
+        encoding="utf-8",
+    )
+    (probe_output_dir / "report.md").write_text(
+        build_markdown_report(
+            summary=probe_summary,
+            results_df=results_df,
+            core_df=core_df,
+            checkpoint_path=checkpoint_path,
+            device=str(probe_device),
+            train_count=len(train_smiles),
+            test_count=len(test_smiles),
+        ),
+        encoding="utf-8",
+    )
+    logger.log_artifact("descriptor_probe_summary", summary_payload)
+    print(f"   Descriptor probe written to {probe_output_dir}")
 
 
 def load_data(
@@ -230,6 +456,7 @@ def load_data(
         use_morgan_features=config.use_morgan_features,
         morgan_radius=config.morgan_radius,
         morgan_n_bits=config.morgan_n_bits,
+        use_descriptor_augmentation=config.use_descriptor_augmentation,
         use_descriptor_priors=config.use_descriptor_priors,
         use_group_priors=config.use_group_priors,
         use_gc_priors_crystal=config.use_gc_priors_crystal,
@@ -309,6 +536,10 @@ def main() -> None:
     try:
         # Parse arguments
         args = parse_args()
+        if args.pretrain and args.pretrain_checkpoint is not None:
+            raise ValueError(
+                "Use either --pretrain or --pretrain-checkpoint, not both."
+            )
         
         print("=" * 70)
         print("TGNN-Solv Training Pipeline")
@@ -316,15 +547,34 @@ def main() -> None:
         
         # Load configuration from YAML
         resume_checkpoint = None
+        pretrain_info: dict[str, Any] | None = None
         if args.resume is not None:
             print(f"\n1. Loading resume checkpoint from {args.resume}...")
             resume_checkpoint = torch.load(args.resume, map_location="cpu")
             config = TGNNSolvConfig(**resume_checkpoint["config"])
             args.seed = int(resume_checkpoint.get("seed", args.seed))
+            pretrain_info = resume_checkpoint.get("pretrain_info")
         else:
             print(f"\n1. Loading configuration from {args.config}...")
             config = TGNNSolvConfig.from_yaml(args.config)
         device = resolve_device(args.device)
+        descriptor_mean = None
+        descriptor_std = None
+        if config.use_descriptor_augmentation:
+            if resume_checkpoint is not None:
+                descriptor_mean = resume_checkpoint.get("descriptor_mean")
+                descriptor_std = resume_checkpoint.get("descriptor_std")
+            if descriptor_mean is None or descriptor_std is None:
+                normalizer = DescriptorNormalizer().fit(
+                    pd.read_csv(args.train_data, low_memory=False)
+                )
+                descriptor_mean = normalizer.mean
+                descriptor_std = normalizer.std
+            config.descriptor_dim = int(torch.as_tensor(descriptor_mean).shape[0])
+            print(
+                "   Descriptor augmentation enabled: "
+                f"{config.descriptor_dim} RDKit descriptors."
+            )
 
         # Apply CLI overrides. Resumed runs keep model-shape/training-schedule
         # settings from the checkpoint, but data-loader knobs like batch size
@@ -398,18 +648,85 @@ def main() -> None:
         print("\n5. Initializing model...")
         model = TGNNSolv(cfg=config).to(device)
         if resume_checkpoint is not None:
+            if args.pretrain or args.pretrain_checkpoint is not None:
+                print(
+                    "   Ignoring Stage 0 options because --resume loads a full model checkpoint."
+                )
             model.load_state_dict(
                 resume_checkpoint.get(
                     "model_state_dict",
                     resume_checkpoint["model_state"],
                 )
             )
+        if config.use_descriptor_augmentation:
+            if descriptor_mean is None or descriptor_std is None:
+                raise ValueError(
+                    "Descriptor normalization statistics were not computed."
+                )
+            model.set_descriptor_normalization(descriptor_mean, descriptor_std)
         logger.log_model_summary(model)
         total_params = sum(p.numel() for p in model.parameters())
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         print(f"   Total parameters: {total_params:,}")
         print(f"   Trainable parameters: {trainable_params:,}")
-        
+
+        if resume_checkpoint is None:
+            if args.pretrain_checkpoint is not None:
+                print("\n5a. Loading Stage 0 encoder/readout checkpoint...")
+                loaded_pretrain = load_pretrained_encoder_checkpoint(
+                    args.pretrain_checkpoint,
+                    map_location="cpu",
+                )
+                pretrain_info = apply_pretrained_encoder_checkpoint(
+                    model,
+                    loaded_pretrain,
+                    strict=True,
+                )
+                pretrain_info["checkpoint_path"] = str(
+                    Path(args.pretrain_checkpoint).expanduser().resolve()
+                )
+                print(
+                    "   Loaded pretrained encoder from "
+                    f"{pretrain_info['checkpoint_path']}"
+                )
+            elif args.pretrain:
+                print("\n5a. Running Stage 0 pretraining...")
+                pretrain_output = (
+                    Path(args.pretrain_output).expanduser().resolve()
+                    if args.pretrain_output is not None
+                    else derive_pretrain_checkpoint_path(args.checkpoint)
+                )
+                pretrain_info = run_stage0_pretraining(
+                    model,
+                    config,
+                    device=device,
+                    pretrain_source=args.pretrain_data,
+                    pretrain_epochs=args.pretrain_epochs,
+                    pretrain_batch_size=args.pretrain_batch_size,
+                    pretrain_lr=args.pretrain_lr,
+                    pretrain_max_molecules=args.pretrain_max_molecules,
+                    save_path=pretrain_output,
+                )
+                print(
+                    "   Stage 0 complete: "
+                    f"{pretrain_info['smiles_count']:,} molecules, "
+                    f"{pretrain_info['epochs']} epochs."
+                )
+                if pretrain_info.get("checkpoint_path") is not None:
+                    print(
+                        "   Saved pretrained encoder to "
+                        f"{pretrain_info['checkpoint_path']}"
+                    )
+            if pretrain_info is not None:
+                logger.log_artifact(
+                    "pretrain_summary",
+                    {
+                        key: value
+                        for key, value in pretrain_info.items()
+                        if key != "history"
+                    },
+                )
+
         # Initialize trainer
         print("\n6. Initializing trainer...")
         trainer = TGNNSolvTrainer(model, config)
@@ -436,6 +753,7 @@ def main() -> None:
                 experiment_name=logger.experiment_name,
                 trainer=trainer,
                 resume_state=state,
+                pretrain_info=pretrain_info,
             )
             atomic_torch_save(payload, checkpoint_path)
             print(
@@ -473,6 +791,7 @@ def main() -> None:
                 "next_epoch_in_phase": 0,
                 "trainer_state_dict": trainer.state_dict(),
             },
+            pretrain_info=pretrain_info,
         )
         atomic_torch_save(checkpoint, checkpoint_path)
         print(f"   Model saved to {checkpoint_path}")
@@ -494,6 +813,17 @@ def main() -> None:
             print(json.dumps(test_metrics, indent=2))
             logger.log_artifact("test_metrics", test_metrics)
 
+        if args.run_descriptor_probe:
+            print("\n9a. Running descriptor linear probe...")
+            maybe_run_descriptor_probe(
+                checkpoint_path=checkpoint_path,
+                train_data=args.train_data,
+                test_data=args.test_data,
+                output_dir=args.descriptor_probe_output_dir,
+                device=args.descriptor_probe_device,
+                logger=logger,
+            )
+
         manifest = build_run_manifest(
             "training_run",
             model_name=checkpoint_path.name,
@@ -504,6 +834,8 @@ def main() -> None:
                 "val_data": args.val_data,
                 "test_data": args.test_data,
                 "resume_checkpoint": args.resume,
+                "pretrain_enabled": bool(args.pretrain),
+                "pretrain_checkpoint": args.pretrain_checkpoint,
             },
             outputs={
                 "checkpoint": checkpoint_path,
@@ -513,6 +845,7 @@ def main() -> None:
                 "log_dir": str(logger.exp_dir),
                 "seed": int(args.seed),
                 "device": str(device),
+                "pretrain_info": pretrain_info,
             },
         )
         model_card = build_model_card(
@@ -524,6 +857,7 @@ def main() -> None:
                 "experiment_name": logger.experiment_name,
                 "log_dir": str(logger.exp_dir),
                 "seed": int(args.seed),
+                "pretrain_info": pretrain_info,
             },
         )
         write_json(checkpoint_path.with_suffix(".manifest.json"), manifest)

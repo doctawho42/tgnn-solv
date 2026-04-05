@@ -53,13 +53,31 @@ The maintained `Pretrainer` updates:
 
 in place, using four tasks:
 
-- masked subgraph atom reconstruction
+- masked 2-hop subgraph atom reconstruction
 - bond-type prediction
-- RDKit property prediction
+- RDKit property regression over a 12-descriptor target vector
 - graph contrastive learning
 
 The temporary Stage 0 heads are discarded after pretraining, so the downstream
 model remains the normal TGNN-Solv architecture.
+
+The maintained Stage 0 surface is no longer only a raw Python class:
+
+- `src/tgnn_solv/pretrain_pipeline.py`
+  - loads SMILES sources
+  - runs Stage 0
+  - saves/restores encoder checkpoints
+  - applies warm-start weights back into a fresh TGNN model
+
+The saved Stage 0 checkpoint format intentionally contains:
+
+- `gnn_state_dict`
+- `readout_state_dict`
+- `pretrain_history`
+- `pretrain_metadata`
+
+That makes Stage 0 a reusable warm-start artifact rather than a one-off
+notebook trick.
 
 ## TGNN-Solv Forward Pass
 
@@ -67,7 +85,26 @@ The maintained `TGNNSolv` path in `src/tgnn_solv/model.py` runs in this order.
 
 ### 1. Dual-graph encoder
 
-`GNNEncoder` encodes solute and solvent graphs with:
+The encoder is selected by `encoder_type`:
+
+- `encoder_type="mpnn"`
+  - the maintained local MPNN path via `GNNEncoder`
+- `encoder_type="gps"`
+  - `GPSEncoder`, which combines the local message-passing block with
+    graph-global multi-head attention and per-graph positional encodings
+
+When `encoder_type="gps"`, positional encodings are computed on the fly from
+the current batch graph:
+
+- `gps_positional_encoding="laplacian"`
+  - absolute non-trivial Laplacian eigenvectors
+- `gps_positional_encoding="rwse"`
+  - random-walk structural encodings
+
+`gps_pe_dim`, `gps_num_heads`, and `gps_use_edge_attr` control the size and
+behavior of that encoder path.
+
+Both encoder families support:
 
 - `encoder_role_mode="shared_residual"` by default
 - optional `encoder_role_mode="split_late"` for late role-specific blocks
@@ -121,6 +158,20 @@ An alternative bipartite message-passing block is also supported:
 constructed as:
 
 `[g_sol, g_slv, g_sol * g_slv, |g_sol - g_slv|]`
+
+If `use_descriptor_augmentation=True`, the model also computes normalized
+RDKit descriptor embeddings for solute and solvent, forms the analogous
+descriptor interaction block
+
+`[d_sol, d_slv, d_sol * d_slv, |d_sol - d_slv|]`
+
+and projects the concatenated graph-plus-descriptor pair state back to
+`pair_dim` before `FusionHead` and `NRTLHead`.
+
+This is a true TGNN branch, not a DirectGNN-only feature. The descriptor path
+augments the TGNN pair state without removing the solver bottleneck, so it is
+useful when you want to test whether missing chemistry signal is upstream of
+the thermodynamic head rather than inside it.
 
 Optional solvent-type routing is handled by `SolventTypeMoE`.
 

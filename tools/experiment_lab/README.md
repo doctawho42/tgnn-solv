@@ -6,6 +6,10 @@ Interactive Streamlit control panel for the maintained TGNN-Solv workflow.
 
 - processed split inspection and label coverage
 - TGNN-Solv and DirectGNN training launchers
+- Stage 0 controls in the TGNN training surface, including fresh pretraining,
+  warm-start checkpoint loading, and descriptor-probe export
+- GPS-aware TGNN/DirectGNN config inspection with encoder-family visibility in
+  the Training and Architect workspaces
 - experiment runners for seeds, split comparisons, Optuna, and full-budget studies
 - external baseline benchmarking for FastSolv and SolProp on the repo's own
   train/val/test splits
@@ -18,7 +22,7 @@ Interactive Streamlit control panel for the maintained TGNN-Solv workflow.
 - `Pipeline Studio` for Airflow-style DAG planning, node editing, shell export, and one-click pipeline launch
 - repo-local DAG preset saving so custom workflow plans can be versioned with the project
 - `Pipeline Studio` and `Model Architect` now also expose drag/drop flow canvases with clickable nodes and editable connections
-- `Model Architect` for visual TGNN-Solv / DirectGNN config editing, live forward-path diagrams, active-branch diff views, and structure-derived graph previews
+- `Model Architect` for visual TGNN-Solv / DirectGNN config editing, live forward-path diagrams, active-branch diff views, structure-derived graph previews, GPS encoder controls, TGNN descriptor-augmentation branches, and Stage 0 launch-time planning
 - evaluation and physics-validation launchers
 - artifact browser for JSON, CSV, and image outputs
 - `Benchmark Studio` inside `Results & Plots` for leaderboard, parity/residual plots, stratified metrics, and comparison across FastSolv, SolProp, TGNN bundles, and custom-model benchmark outputs

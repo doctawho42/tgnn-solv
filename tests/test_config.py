@@ -56,7 +56,18 @@ def test_tuned_config_loads_expected_overrides() -> None:
     assert cfg.lr_phase2 == 8.528210688637237e-5
     assert cfg.warmup_epochs == 0
     assert cfg.grad_clip == 2.0
+    assert cfg.weight_decay == 5.0e-4
     assert cfg.gc_prior_residual_freeze_epochs == 5
+
+
+def test_descriptor_hidden_dim_alias_prefers_new_config_field() -> None:
+    """The new descriptor augmentation alias should resolve without breaking old configs."""
+    cfg = TGNNSolvConfig(
+        descriptor_hidden_dim=64,
+        descriptor_augmentation_hidden_dim=96,
+    )
+
+    assert cfg.resolved_descriptor_hidden_dim == 96
 
 
 @pytest.mark.parametrize(
@@ -92,6 +103,48 @@ def test_tuned_config_loads_expected_overrides() -> None:
             "use_walden_check": True,
             "use_oracle_injection": True,
         }),
+        ("configs/paper_config_tuned_tgnn_descriptors.yaml", {
+            "use_gc_priors_crystal": False,
+            "bridge_loss_weight": 0.0,
+            "use_walden_check": False,
+            "use_oracle_injection": False,
+        }),
+        ("configs/paper_config_tuned_regularized.yaml", {
+            "use_gc_priors_crystal": False,
+            "bridge_loss_weight": 0.0,
+            "use_walden_check": False,
+            "use_oracle_injection": False,
+        }),
+        ("configs/paper_config_tuned_regularized_gc.yaml", {
+            "use_gc_priors_crystal": True,
+            "bridge_loss_weight": 0.0,
+            "use_walden_check": False,
+            "use_oracle_injection": False,
+        }),
+        ("configs/paper_config_tuned_regularized_descriptors.yaml", {
+            "use_gc_priors_crystal": False,
+            "bridge_loss_weight": 0.0,
+            "use_walden_check": False,
+            "use_oracle_injection": False,
+        }),
+        ("configs/paper_config_tuned_pretrained.yaml", {
+            "use_gc_priors_crystal": False,
+            "bridge_loss_weight": 0.0,
+            "use_walden_check": False,
+            "use_oracle_injection": False,
+        }),
+        ("configs/paper_config_tuned_pretrained_descriptors.yaml", {
+            "use_gc_priors_crystal": False,
+            "bridge_loss_weight": 0.0,
+            "use_walden_check": False,
+            "use_oracle_injection": False,
+        }),
+        ("configs/paper_config_tuned_gps.yaml", {
+            "use_gc_priors_crystal": False,
+            "bridge_loss_weight": 0.0,
+            "use_walden_check": False,
+            "use_oracle_injection": False,
+        }),
     ],
 )
 def test_variant_configs_preserve_tuned_schedule(
@@ -101,12 +154,47 @@ def test_variant_configs_preserve_tuned_schedule(
     """Every maintained variant should keep the tuned dropout/LR schedule."""
     cfg = TGNNSolvConfig.from_yaml(path)
 
-    assert cfg.dropout == 0.012430793241475136
+    expected_dropout = (
+        0.15
+        if path in {
+            "configs/paper_config_tuned_tgnn_descriptors.yaml",
+            "configs/paper_config_tuned_pretrained_descriptors.yaml",
+            "configs/paper_config_tuned_regularized.yaml",
+            "configs/paper_config_tuned_regularized_gc.yaml",
+            "configs/paper_config_tuned_regularized_descriptors.yaml",
+            "configs/paper_config_tuned_gps.yaml",
+        }
+        else 0.012430793241475136
+    )
+    assert cfg.dropout == expected_dropout
     assert cfg.lr_phase1 == 2.558463206591171e-4
     assert cfg.lr_phase2 == 8.528210688637237e-5
     assert cfg.lr_phase3 == 8.528210688637239e-6
     assert cfg.warmup_epochs == 0
     assert cfg.grad_clip == 2.0
     assert cfg.gc_prior_residual_freeze_epochs == 5
+    if path in {
+        "configs/paper_config_tuned_tgnn_descriptors.yaml",
+        "configs/paper_config_tuned_pretrained_descriptors.yaml",
+        "configs/paper_config_tuned_regularized_descriptors.yaml",
+    }:
+        assert cfg.use_descriptor_augmentation is True
+        assert cfg.resolved_descriptor_hidden_dim == 128
+    if path in {
+        "configs/paper_config_tuned_regularized.yaml",
+        "configs/paper_config_tuned_regularized_gc.yaml",
+        "configs/paper_config_tuned_regularized_descriptors.yaml",
+    }:
+        assert cfg.weight_decay == pytest.approx(1.0e-4)
+        assert cfg.early_stopping_patience == 15
+        assert cfg.early_stopping_phase3_patience == 5
+        assert cfg.phase2_loss_weights is not None
+        assert cfg.phase2_loss_weights["tau_reg"] == pytest.approx(0.01)
+    if path == "configs/paper_config_tuned_gps.yaml":
+        assert cfg.encoder_type == "gps"
+        assert cfg.gps_num_heads == 8
+        assert cfg.gps_use_edge_attr is True
+        assert cfg.gps_positional_encoding == "laplacian"
+        assert cfg.gps_pe_dim == 16
     for key, expected in expected_flags.items():
         assert getattr(cfg, key) == expected

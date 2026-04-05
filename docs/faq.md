@@ -30,7 +30,12 @@ They are not the same thing.
   - the first supervised stage of normal TGNN training on the processed
     solubility split
 
-Stage 0 is optional and not run automatically by `scripts/training/train.py`.
+Stage 0 is optional and not run automatically by default.
+You can now enable it directly with:
+
+- `scripts/training/train.py --pretrain ...`
+- `scripts/training/train.py --pretrain-checkpoint ...`
+- `scripts/training/train_with_pretrain.py`
 
 ## When should I use `paper_config_tuned.yaml`?
 

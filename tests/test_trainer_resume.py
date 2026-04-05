@@ -43,6 +43,8 @@ def test_trainer_state_dict_round_trip_preserves_resume_state() -> None:
     trainer.best_state = {
         "dummy_weight": torch.tensor([1.0, 2.0]),
     }
+    trainer.best_epoch = 7
+    trainer.best_phase = 2
     trainer.patience_counter = 4
     trainer._last_confidence = 0.75
     trainer.cfg.oracle_injection_prob = 0.4
@@ -53,6 +55,8 @@ def test_trainer_state_dict_round_trip_preserves_resume_state() -> None:
 
     assert restored.history["train_loss"] == [1.0, 0.5]
     assert restored.best_val_loss == 1.23
+    assert restored.best_epoch == 7
+    assert restored.best_phase == 2
     assert restored.patience_counter == 4
     assert restored._last_confidence == 0.75
     assert restored.cfg.oracle_injection_prob == 0.4
@@ -134,3 +138,44 @@ def test_phase1_gc_residual_freeze_schedule_unfreezes_after_configured_epochs() 
     assert all(
         param.requires_grad for param in trainer.model.fusion_head.residual_mlp_dH.parameters()
     )
+
+
+def test_phase2_early_stopping_restores_best_state() -> None:
+    cfg = make_small_config()
+    cfg.early_stopping_patience = 1
+    cfg.early_stopping_min_epochs = 1
+    trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+
+    validation_sequence = iter(
+        [
+            {"val_loss": 1.0, "mae": 0.50, "r2": 0.0},  # phase-start baseline
+            {"val_loss": 0.9, "mae": 0.40, "r2": 0.0},   # epoch 0 improves
+            {"val_loss": 1.1, "mae": 0.60, "r2": 0.0},  # epoch 1 triggers stop
+        ]
+    )
+    snapshot_sequence = iter([100.0, 200.0])
+    restored_markers: list[float] = []
+
+    def fake_validate(self, loader, phase):
+        return next(validation_sequence)
+
+    def fake_train_epoch(self, loader, optimizer, phase, epoch, compute_mono=False):
+        return 0.0, {"raw": {}, "weighted": {}, "weights": {}}
+
+    def fake_clone_model_state(self):
+        return {"marker": torch.tensor([next(snapshot_sequence)])}
+
+    def fake_load_state_dict(state_dict, strict=True):
+        restored_markers.append(float(state_dict["marker"].item()))
+        return None
+
+    trainer.validate = types.MethodType(fake_validate, trainer)
+    trainer.train_epoch = types.MethodType(fake_train_epoch, trainer)
+    trainer._clone_model_state = types.MethodType(fake_clone_model_state, trainer)
+    trainer.model.load_state_dict = fake_load_state_dict
+
+    trainer.train_phase(2, None, None, n_epochs=3)
+
+    assert trainer.best_val_loss == 0.40
+    assert trainer.best_epoch == 0
+    assert restored_markers[-1] == 200.0

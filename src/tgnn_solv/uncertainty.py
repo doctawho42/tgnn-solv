@@ -139,6 +139,20 @@ def _prepare_forward_kwargs(
         kwargs["solute_morgan_fp"] = torch.tensor(sol_fp, device=device).unsqueeze(0)
         kwargs["solvent_morgan_fp"] = torch.tensor(slv_fp, device=device).unsqueeze(0)
 
+    if model.cfg.use_descriptor_augmentation:
+        sol_desc = compute_molecular_descriptors(solute_smiles)
+        slv_desc = compute_molecular_descriptors(solvent_smiles)
+        if sol_desc is None or slv_desc is None:
+            raise ValueError("Failed to compute RDKit descriptors for uncertainty inference.")
+        kwargs["solute_descriptors"] = torch.tensor(
+            sol_desc,
+            device=device,
+        ).unsqueeze(0)
+        kwargs["solvent_descriptors"] = torch.tensor(
+            slv_desc,
+            device=device,
+        ).unsqueeze(0)
+
     if model.cfg.use_descriptor_priors:
         sol_desc = smiles_to_descriptor_prior_features(solute_smiles)
         slv_desc = smiles_to_descriptor_prior_features(solvent_smiles)

@@ -26,6 +26,8 @@ relative to the same graph backbone trained directly on `ln(x2)`.
 <div class="tgnn-chip-list">
   <span class="tgnn-chip">Default strict split: <code>solute_scaffold</code></span>
   <span class="tgnn-chip">Maintained TGNN baseline: <code>paper_config_tuned.yaml</code></span>
+  <span class="tgnn-chip">Encoder options: <code>mpnn</code> or <code>gps</code></span>
+  <span class="tgnn-chip">Optional TGNN descriptor augmentation available</span>
   <span class="tgnn-chip">Matched no-physics baseline: <code>DirectGNN</code></span>
   <span class="tgnn-chip">Structured reproduction: <code>core</code> / <code>article</code> / <code>full</code></span>
   <span class="tgnn-chip">Optional Stage 0 pretraining supported</span>
@@ -46,6 +48,9 @@ relative to the same graph backbone trained directly on `ln(x2)`.
 The maintained comparison is:
 
 - `TGNN-Solv`
+- `TGNN-Solv + descriptors`
+- `TGNN-Solv + GPS encoder`
+- `TGNN-Solv + Stage 0 pretraining`
 - `DirectGNN`
 - `DirectGNN + descriptors`
 - descriptor and Morgan RF baselines
@@ -60,6 +65,7 @@ This site documents the maintained paths for:
 
 - data preparation
 - training and resume support
+- Stage 0 encoder warm starts and GPS / descriptor-augmented TGNN variants
 - inference, uncertainty, and OOD checks
 - benchmark and experiment runners
 - external FastSolv / SolProp comparison
@@ -234,7 +240,8 @@ Use these pages when you need targeted answers:
 - predicts `T_m`, `dH_fus`, `dCp_fus`, and NRTL state
 - solves the SLE equation explicitly
 - applies a bounded correction only after the solver
-- supports GC crystal priors and oracle-diagnostic paths
+- supports GC crystal priors, descriptor augmentation, GPS encoder variants,
+  and Stage 0 warm starts
 
 </div>
 

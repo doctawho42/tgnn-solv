@@ -99,6 +99,33 @@ python scripts/training/train.py \
 For the maintained tuned TGNN baseline used in current architecture
 comparisons, prefer `configs/paper_config_tuned.yaml`.
 
+Useful maintained follow-up configs:
+
+- `configs/paper_config_tuned_tgnn_descriptors.yaml`
+- `configs/paper_config_tuned_regularized.yaml`
+- `configs/paper_config_tuned_regularized_gc.yaml`
+- `configs/paper_config_tuned_regularized_descriptors.yaml`
+- `configs/paper_config_tuned_gps.yaml`
+- `configs/paper_config_tuned_pretrained.yaml`
+- `configs/paper_config_tuned_pretrained_descriptors.yaml`
+
+### Train TGNN-Solv with Stage 0 pretraining
+
+```bash
+python scripts/training/train_with_pretrain.py \
+    --config configs/paper_config_tuned_pretrained.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_pretrained.pt \
+    --pretrain-data zinc250k \
+    --pretrain-epochs 30 \
+    --device cuda
+```
+
+This is a thin wrapper over `scripts/training/train.py --pretrain` and also
+enables the maintained post-train descriptor probe path by default.
+
 ### Multi-seed TGNN-Solv
 
 ```bash
@@ -206,8 +233,16 @@ print(interpret_prediction(result))
 ### Optuna
 
 ```bash
-python scripts/experiments/run_optuna.py --models tgnn_solv,direct_gnn --n-trials 20
+python scripts/experiments/run_optuna.py \
+    --models tgnn_solv,tgnn_solv_gps,tgnn_solv_descriptors,direct_gnn,direct_gnn_descriptors \
+    --n-trials 20
 ```
+
+Current scope note:
+
+- `Stage 0` pretraining is intentionally outside the default Optuna loop
+  because rerunning ZINC-scale pretraining inside each trial would dominate
+  the actual TGNN search cost
 
 ### Diagnostics
 
@@ -259,7 +294,9 @@ python scripts/external/run_solprop.py predict \
 
 The maintained `TGNNSolv` forward pass in `src/tgnn_solv/model.py` is:
 
-1. `GNNEncoder`
+1. graph encoder
+   - default `encoder_type="mpnn"` via `GNNEncoder`
+   - optional `encoder_type="gps"` via `GPSEncoder`
    - default `encoder_role_mode="shared_residual"`
    - optional `split_late`
 2. pre-interaction auxiliary heads
@@ -274,6 +311,8 @@ The maintained `TGNNSolv` forward pass in `src/tgnn_solv/model.py` is:
 5. `PhysicsAwareReadout`
 6. optional Morgan augmentation
 7. pair representation and optional solvent-type MoE
+   - optional shared RDKit descriptor augmentation enriches the pair state and
+     projects it back to `pair_dim` before the physics heads
 8. `FusionHead`
    - standard mode: predicts `T_m`, `dH_fus`, optional `dCp_fus`
    - crystal GC mode: bounded residual around calibrated `T_m_gc`,
@@ -329,6 +368,7 @@ Optional DirectGNN feature paths:
 
 - `use_morgan_features`
 - `use_descriptor_augmentation`
+- `encoder_type="gps"` for the GPS backbone option
 
 Descriptor augmentation computes full RDKit descriptors for both molecules,
 sanitizes non-finite values, normalizes them using train-set statistics, and
@@ -344,6 +384,15 @@ representation with descriptor interactions.
 - Phase 1: property pretraining only
 - Phase 2: full SLE training
 - Phase 3: low-LR fine-tuning
+
+`scripts/training/train.py` can also prepend optional Stage 0 encoder/readout
+pretraining with:
+
+- `--pretrain`
+- `--pretrain-checkpoint`
+- `--pretrain-epochs`
+- `--pretrain-data`
+- `--pretrain-output`
 
 With `use_gc_priors_crystal=True`, the GC crystal residual branches are
 zero-initialized so the starting prediction equals the calibrated GC prior, and
@@ -428,6 +477,10 @@ High-signal flags that are easy to miss:
 - `use_descriptor_priors`
 - `use_group_priors`
 - `use_gc_priors_crystal`
+- `encoder_type`
+- `gps_num_heads`
+- `gps_positional_encoding`
+- `gps_pe_dim`
 - `use_oracle_injection`
 - `bridge_loss_weight`
 - `use_walden_check`
@@ -443,6 +496,13 @@ Maintained config files:
 - `configs/paper_config_no_bridge.yaml`
 - `configs/paper_config_no_bridge_no_walden.yaml`
 - `configs/paper_config_combined.yaml`
+- `configs/paper_config_tuned_tgnn_descriptors.yaml`
+- `configs/paper_config_tuned_regularized.yaml`
+- `configs/paper_config_tuned_regularized_gc.yaml`
+- `configs/paper_config_tuned_regularized_descriptors.yaml`
+- `configs/paper_config_tuned_gps.yaml`
+- `configs/paper_config_tuned_pretrained.yaml`
+- `configs/paper_config_tuned_pretrained_descriptors.yaml`
 - `configs/paper_config_directgnn_tuned.yaml`
 - `configs/paper_config_directgnn_descriptors.yaml`
 - `configs/small_debug.yaml`

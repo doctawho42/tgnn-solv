@@ -110,6 +110,8 @@ class TGNNSolvTrainer:
         }
         self.best_val_loss = float("inf")
         self.best_state = None
+        self.best_epoch: int | None = None
+        self.best_phase: int | None = None
         self.patience_counter = 0
         self._last_confidence = 0.0
         self._cache_release_counter = 0
@@ -170,6 +172,8 @@ class TGNNSolvTrainer:
             "history": self.history,
             "best_val_loss": self.best_val_loss,
             "best_state": self.best_state,
+            "best_epoch": self.best_epoch,
+            "best_phase": self.best_phase,
             "patience_counter": self.patience_counter,
             "last_confidence": self._last_confidence,
             "base_oracle_injection_prob": self._base_oracle_injection_prob,
@@ -189,6 +193,10 @@ class TGNNSolvTrainer:
             }
         self.best_val_loss = float(state.get("best_val_loss", self.best_val_loss))
         self.best_state = state.get("best_state")
+        raw_best_epoch = state.get("best_epoch")
+        self.best_epoch = int(raw_best_epoch) if raw_best_epoch is not None else None
+        raw_best_phase = state.get("best_phase")
+        self.best_phase = int(raw_best_phase) if raw_best_phase is not None else None
         self.patience_counter = int(state.get("patience_counter", 0))
         self._last_confidence = float(state.get("last_confidence", 0.0))
         self._base_oracle_injection_prob = float(
@@ -219,7 +227,7 @@ class TGNNSolvTrainer:
         return AdamW(
             self.model.parameters(),
             lr=lr,
-            weight_decay=5e-4,  # Slightly stronger regularization for stability.
+            weight_decay=float(self.cfg.weight_decay),
             betas=(0.9, 0.999),
         )
 
@@ -258,6 +266,63 @@ class TGNNSolvTrainer:
             if isinstance(mask, Tensor) and bool(mask.any().item()):
                 return True
         return False
+
+    def _clone_model_state(self) -> dict[str, Tensor]:
+        """Clone the current model weights onto CPU for best-state restore."""
+        return {
+            key: value.detach().cpu().clone()
+            for key, value in self.model.state_dict().items()
+        }
+
+    def _phase_early_stopping_patience(self, phase: int) -> int | None:
+        """Resolve phase-aware early stopping patience with backward compatibility."""
+        if phase == 2:
+            if self.cfg.early_stopping_patience is not None:
+                return int(self.cfg.early_stopping_patience)
+            return int(self.cfg.patience)
+        if phase == 3:
+            if self.cfg.early_stopping_phase3_patience is not None:
+                return int(self.cfg.early_stopping_phase3_patience)
+            if self.cfg.early_stopping_patience is not None:
+                return int(self.cfg.early_stopping_patience)
+            return int(self.cfg.patience)
+        return None
+
+    def _phase_early_stopping_min_epochs(self, phase: int) -> int:
+        """Resolve minimum epochs before early stopping can trigger."""
+        if phase == 2:
+            return max(int(self.cfg.early_stopping_min_epochs), 0)
+        if phase == 3:
+            return max(min(int(self.cfg.early_stopping_min_epochs), 5), 0)
+        return 0
+
+    def _initialize_phase_early_stopping(
+        self,
+        phase: int,
+        val_loader: DataLoader,
+    ) -> None:
+        """Initialize best-state tracking at the start of a new validation phase."""
+        if phase < 2:
+            return
+        baseline_metrics = self.validate(val_loader, phase)
+        baseline_criterion = float(
+            baseline_metrics.get("mae", baseline_metrics["val_loss"])
+        )
+        self.best_val_loss = baseline_criterion
+        self.best_state = self._clone_model_state()
+        self.best_epoch = -1
+        self.best_phase = phase
+        self.patience_counter = 0
+        baseline_msg = (
+            f"  Initial Phase {phase} validation: "
+            f"val={baseline_metrics['val_loss']:.4f}"
+        )
+        if "mae" in baseline_metrics:
+            baseline_msg += (
+                f", MAE={baseline_metrics['mae']:.3f}, "
+                f"R²={baseline_metrics.get('r2', 0.0):.3f}"
+            )
+        print(baseline_msg)
 
     def _set_oracle_injection_prob(self, phase: int, epoch: int, n_epochs: int) -> None:
         """Update oracle-injection probability according to the training schedule."""
@@ -298,6 +363,8 @@ class TGNNSolvTrainer:
         solvent_type: Tensor | None = None,
         solute_morgan_fp: Tensor | None = None,
         solvent_morgan_fp: Tensor | None = None,
+        solute_descriptors: Tensor | None = None,
+        solvent_descriptors: Tensor | None = None,
         solute_descriptor_prior_features: Tensor | None = None,
         solvent_descriptor_prior_features: Tensor | None = None,
         solute_group_prior_features: Tensor | None = None,
@@ -361,6 +428,11 @@ class TGNNSolvTrainer:
             dH_fus_gc = dH_fus_gc.to(g_sol)
             dCp_fus_gc = dCp_fus_gc.to(g_sol)
         g_pair = model.pair_repr(g_sol, g_slv)
+        g_pair = model._augment_pair_representation(
+            g_pair,
+            solute_descriptors=solute_descriptors,
+            solvent_descriptors=solvent_descriptors,
+        )
         if model.solvent_moe is not None:
             if solvent_type is None:
                 solvent_type = torch.full(
@@ -488,6 +560,8 @@ class TGNNSolvTrainer:
             solvent_type = targets.get("solvent_type")
             solute_morgan_fp = targets.get("solute_morgan_fp")
             solvent_morgan_fp = targets.get("solvent_morgan_fp")
+            solute_descriptors = targets.get("solute_descriptors")
+            solvent_descriptors = targets.get("solvent_descriptors")
             solute_descriptor_prior_features = targets.get(
                 "solute_descriptor_prior_features"
             )
@@ -517,6 +591,8 @@ class TGNNSolvTrainer:
                     solvent_type,
                     solute_morgan_fp=solute_morgan_fp,
                     solvent_morgan_fp=solvent_morgan_fp,
+                    solute_descriptors=solute_descriptors,
+                    solvent_descriptors=solvent_descriptors,
                     solute_descriptor_prior_features=solute_descriptor_prior_features,
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,
@@ -533,6 +609,8 @@ class TGNNSolvTrainer:
                     solvent_type=solvent_type,
                     solute_morgan_fp=solute_morgan_fp,
                     solvent_morgan_fp=solvent_morgan_fp,
+                    solute_descriptors=solute_descriptors,
+                    solvent_descriptors=solvent_descriptors,
                     solute_descriptor_prior_features=solute_descriptor_prior_features,
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,
@@ -553,6 +631,8 @@ class TGNNSolvTrainer:
                 solvent_type=solvent_type,
                 solute_morgan_fp=solute_morgan_fp,
                 solvent_morgan_fp=solvent_morgan_fp,
+                solute_descriptors=solute_descriptors,
+                solvent_descriptors=solvent_descriptors,
                 solute_descriptor_prior_features=solute_descriptor_prior_features,
                 solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                 solute_group_prior_features=solute_group_prior_features,
@@ -672,6 +752,8 @@ class TGNNSolvTrainer:
             solvent_type = targets.get("solvent_type")
             solute_morgan_fp = targets.get("solute_morgan_fp")
             solvent_morgan_fp = targets.get("solvent_morgan_fp")
+            solute_descriptors = targets.get("solute_descriptors")
+            solvent_descriptors = targets.get("solvent_descriptors")
             solute_descriptor_prior_features = targets.get(
                 "solute_descriptor_prior_features"
             )
@@ -699,6 +781,8 @@ class TGNNSolvTrainer:
                     solvent_type,
                     solute_morgan_fp=solute_morgan_fp,
                     solvent_morgan_fp=solvent_morgan_fp,
+                    solute_descriptors=solute_descriptors,
+                    solvent_descriptors=solvent_descriptors,
                     solute_descriptor_prior_features=solute_descriptor_prior_features,
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,
@@ -715,6 +799,8 @@ class TGNNSolvTrainer:
                     solvent_type=solvent_type,
                     solute_morgan_fp=solute_morgan_fp,
                     solvent_morgan_fp=solvent_morgan_fp,
+                    solute_descriptors=solute_descriptors,
+                    solvent_descriptors=solvent_descriptors,
                     solute_descriptor_prior_features=solute_descriptor_prior_features,
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,
@@ -776,12 +862,6 @@ class TGNNSolvTrainer:
             print(f"Resuming from epoch {start_epoch}/{n_epochs}")
         print(f"{'=' * 60}")
 
-        # Reset early stopping between phases only when starting a phase fresh.
-        if start_epoch == 0:
-            self.patience_counter = 0
-            if phase >= 2:
-                self.best_val_loss = float("inf")
-
         # Freeze correction in Phase 1 and early Phase 2.
         if phase == 1:
             self._freeze_correction(True)
@@ -799,6 +879,19 @@ class TGNNSolvTrainer:
             optimizer.load_state_dict(optimizer_state_dict)
         if scheduler_state_dict is not None:
             scheduler.load_state_dict(scheduler_state_dict)
+
+        # Reset early stopping between phases only when starting a phase fresh.
+        if start_epoch == 0:
+            self.patience_counter = 0
+            if phase >= 2:
+                self._initialize_phase_early_stopping(phase, val_loader)
+        elif phase >= 2 and self.best_state is None:
+            self.best_state = self._clone_model_state()
+            self.best_epoch = start_epoch - 1
+            self.best_phase = phase
+
+        phase_patience = self._phase_early_stopping_patience(phase)
+        phase_min_epochs = self._phase_early_stopping_min_epochs(phase)
 
         for epoch in progress(
             range(start_epoch, n_epochs),
@@ -899,10 +992,9 @@ class TGNNSolvTrainer:
                 if criterion < self.best_val_loss:
                     self.best_val_loss = criterion
                     self.patience_counter = 0
-                    self.best_state = {
-                        k: v.cpu().clone()
-                        for k, v in self.model.state_dict().items()
-                    }
+                    self.best_state = self._clone_model_state()
+                    self.best_epoch = epoch
+                    self.best_phase = phase
                 else:
                     self.patience_counter += 1
             if on_epoch_end is not None:
@@ -919,9 +1011,44 @@ class TGNNSolvTrainer:
                     }
                 )
 
-            if phase >= 2 and self.patience_counter >= self.cfg.patience:
-                print(f"  Early stopping at epoch {epoch}")
+            if (
+                phase >= 2
+                and phase_patience is not None
+                and phase_patience >= 0
+                and (epoch - start_epoch + 1) >= phase_min_epochs
+                and self.patience_counter >= phase_patience
+            ):
+                best_epoch_str = (
+                    f"{self.best_epoch + 1}"
+                    if self.best_epoch is not None and self.best_epoch >= 0
+                    else "start"
+                )
+                LOGGER.info(
+                    "Early stopping in phase %d at epoch %d. Best %.4f at epoch %s",
+                    phase,
+                    epoch + 1,
+                    self.best_val_loss,
+                    best_epoch_str,
+                )
+                print(
+                    f"  Early stopping at epoch {epoch + 1}. "
+                    f"Best: {self.best_val_loss:.4f} at epoch {best_epoch_str}"
+                )
+                if self.best_state is not None:
+                    self.model.load_state_dict(self.best_state)
                 break
+
+        if phase >= 2 and self.best_state is not None:
+            self.model.load_state_dict(self.best_state)
+            best_epoch_str = (
+                f"{self.best_epoch + 1}"
+                if self.best_epoch is not None and self.best_epoch >= 0
+                else "start"
+            )
+            print(
+                f"  Restored best Phase {phase} model "
+                f"(val MAE = {self.best_val_loss:.4f} at epoch {best_epoch_str})"
+            )
 
     # -------------------------------------------------------------- #
     #  Full training pipeline                                         #

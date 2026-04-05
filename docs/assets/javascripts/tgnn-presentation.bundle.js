@@ -21653,14 +21653,15 @@
       {
         kicker: "Stage 0",
         title: "Pretraining",
-        subtitle: "The repository includes a standalone encoder/readout pretraining stage in `src/tgnn_solv/pretrain.py`.",
+        subtitle: "The repository now treats Stage 0 as a maintained warm-start pipeline spanning `pretrain.py`, `pretrain_pipeline.py`, and the training CLI.",
         footer: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           StatStrip,
           {
             items: [
               { label: "Source", value: "ZINC250k" },
+              { label: "Targets", value: "12 RDKit props" },
               { label: "Batch / LR", value: "128 / 3e-4" },
-              { label: "Contrastive \u03C4", value: "0.1" }
+              { label: "Encoder", value: "MPNN or GPS" }
             ]
           }
         ),
@@ -21683,8 +21684,8 @@
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pretrain-meta-card", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "pipeline-builder__eyebrow", children: "Repo behavior" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Optional, API-driven" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "`scripts/training/train.py` does not launch Stage 0 automatically; the maintained entry point is the Python API / notebook walkthrough." })
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Optional, checkpointable" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "`scripts/training/train.py --pretrain`, `--pretrain-checkpoint`, and `scripts/training/train_with_pretrain.py` all drive the same Stage 0 pipeline and can reuse saved encoder/readout warm starts." })
             ] })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pretrain-overview", children: [
@@ -21698,7 +21699,7 @@
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "The same parsed SMILES drives both the 2D depiction and the graph below; the slide no longer uses hand-drawn toy nodes." })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "pretrain-overview__graph", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "pretrain-task-card__eyebrow", children: "Structure \u2192 graph \u2192 shared encoder" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "pretrain-task-card__eyebrow", children: "Structure \u2192 graph \u2192 shared MPNN / GPS encoder" }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "pretrain-graph-frame pretrain-graph-frame--large", children: graphData ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
                 PretrainGraphView,
                 {
@@ -21718,7 +21719,8 @@
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "GNN encoder" }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "\u2192" }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "`h_atoms`, `g_mol`, `z`" })
-              ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "`test_pretrain_pipeline.py` explicitly checks that Stage 0 passes the graph `batch` vector through the encoder, which is why GPS remains pretraining-safe rather than a special-case branch." })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "pretrain-overview__vectors", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pretrain-signal-card", children: [
@@ -21807,9 +21809,9 @@
                     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: row.note })
                   ] }, row.name)) }),
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("p", { className: "figure-subnote", children: [
-                    "These are actual RDKit targets computed on the aspirin graph. The property head regresses the whole descriptor vector from the pooled representation ",
+                    "These are actual RDKit targets computed on the aspirin graph. The maintained property head regresses a 12-dimensional descriptor vector from the pooled representation ",
                     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "g_{mol}" }),
-                    ", so Stage 0 teaches the encoder to preserve global molecular semantics that matter for solubility."
+                    ", so Stage 0 teaches the encoder to preserve global molecular semantics that matter for solubility before the sparse thermodynamic labels appear."
                   ] }),
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexBlock, { children: "L_{prop} = \\|\\hat p - p\\|_2^2" })
                 ] })
@@ -21858,7 +21860,7 @@
           /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pretrain-loss-card", children: [
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pretrain-loss-card__main", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexBlock, { children: "L = 1.0\\,L_{atom} + 0.5\\,L_{bond} + 1.0\\,L_{prop} + 0.5\\,L_{ctr}" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "Default optimizer path in the repo: AdamW, cosine LR schedule, gradient clipping at 1.0, and Stage 0 heads removed after pretraining completes." })
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "Default optimizer path in the repo: AdamW, cosine LR schedule, gradient clipping at 1.0, Stage 0 heads removed after pretraining completes, and an optional reusable checkpoint payload with `gnn_state_dict`, `readout_state_dict`, history, and metadata." })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pretrain-loss-card__chips", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "`n_epochs=30`" }),
@@ -21902,13 +21904,13 @@
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "architecture-card__row", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
                     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Shared GNN encoder" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "6-layer MPNN with tied weights" })
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "`encoder_type = mpnn | gps` with tied weights" })
                   ] }),
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "architecture-badge", children: "weight sharing" })
                 ] }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "architecture-encoding-grid", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "architecture-card architecture-card--ghost", children: "h_sol atoms" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "architecture-card architecture-card--ghost", children: "same parameters" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "architecture-card architecture-card--ghost", children: "GPS adds Laplacian / RWSE PE + global attention" }),
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "architecture-card architecture-card--ghost", children: "h_slv atoms" })
                 ] })
               ] })
@@ -21969,9 +21971,9 @@
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexBlock, { children: "g_{pair} = [g_{sol} \\parallel g_{slv} \\parallel g_{sol}\\odot g_{slv} \\parallel |g_{sol}-g_{slv}|]" })
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "architecture-card architecture-card--optional architecture-card--span-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Optional descriptor augmentation" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Optional TGNN descriptor augmentation" }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
-                  "Descriptors \u2192 normalize \u2192 MLP \u2192 concatenate to ",
+                  "RDKit descriptors \u2192 normalize \u2192 MLP \u2192 pair-level fusion \u2192 project back to ",
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "g_{pair}" })
                 ] })
               ] })
@@ -22033,7 +22035,7 @@
           StatStrip,
           {
             items: [
-              { label: "Shared encoder", value: "same GNN" },
+              { label: "Shared encoder", value: "same MPNN / GPS" },
               { label: "Shared interaction", value: "same cross-attn" },
               { label: "Different head", value: "physics vs direct" }
             ]
@@ -22115,7 +22117,7 @@
           /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-grid", children: [
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Same chemistry frontend" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "The experiment holds graph encoding, interaction, and readout fixed." })
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "The experiment holds graph encoding, interaction, and readout fixed, even when the shared encoder family is switched from MPNN to GPS." })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "One modeling question" }),
@@ -22123,7 +22125,7 @@
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Descriptor path stays fair" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "DirectGNN+descriptors augments the pair representation rather than changing the upstream graph stack." })
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Descriptor augmentation can now be matched on both families; fair comparisons keep the upstream extras aligned and only change the final prediction head." })
             ] })
           ] })
         ] })
@@ -23737,7 +23739,7 @@
       slug: "pretraining",
       title: "Pretraining",
       subtitle: "Optional Stage 0 before the curriculum",
-      blurb: "The repository includes a standalone Stage 0 that pretrains the encoder and readout with four molecular objectives.",
+      blurb: "Stage 0 is now a maintained warm-start pipeline that pretrains the encoder and readout with four molecular objectives.",
       tags: ["stage0", "contrastive", "pretrain"],
       component: FigurePretraining
     },
@@ -23745,7 +23747,7 @@
       slug: "architecture",
       title: "TGNN-Solv Architecture",
       subtitle: "Five swim lanes from graphs to `ln x\u2082_final`",
-      blurb: "The core figure shows where learning ends and where hardcoded thermodynamics begin.",
+      blurb: "The core figure shows where shared MPNN/GPS representation learning ends and where hardcoded thermodynamics begin.",
       tags: ["architecture", "physics", "solver"],
       component: Figure3Architecture
     },
@@ -23905,12 +23907,18 @@
       summary: "How Stage 0 works in this repository",
       content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "`src/tgnn_solv/pretrain.py` implements a standalone pre-curriculum Stage 0. It is explicitly separate from Phase 1 in `trainer.py`: Stage 0 uses large SMILES collections, updates `model.gnn` and `model.readout` in place, and then discards its temporary heads before normal TGNN training begins." }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "In the maintained workflow this is no longer Python-API-only. The same Stage 0 path is available through `scripts/training/train.py --pretrain`, `--pretrain-checkpoint`, and the convenience wrapper `scripts/training/train_with_pretrain.py`." }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
-          "The code trains four objectives together: masked 2-hop subgraph reconstruction, masked bond-type prediction, RDKit descriptor regression, and graph-level contrastive learning. The combined objective is",
+          "The code trains four objectives together: masked 2-hop subgraph reconstruction, masked bond-type prediction, 12-target RDKit descriptor regression, and graph-level contrastive learning. The combined objective is",
           /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "L = L_{atom} + 0.5L_{bond} + L_{prop} + 0.5L_{ctr}" }),
           " with default temperature",
           /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "\\tau = 0.1" }),
           "."
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+          "The newer point to emphasize is that Stage 0 is now a maintained pipeline rather than only a class. The helper layer in",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("code", { children: "tgnn_solv.pretrain_pipeline" }),
+          " loads SMILES corpora, writes reusable encoder/readout checkpoints, and restores them later into fresh TGNN training runs."
         ] })
       ] }),
       report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The intended payoff is not a separate benchmark, but a chemically sharper initialization for the main curriculum. Stage 0 teaches local topology, graph-level invariances, and descriptor-aligned global semantics before the architecture has to solve the much harder supervised SLE problem on sparse thermodynamic labels." })
@@ -23929,6 +23937,11 @@
           "are predicted, the hardcoded SLE solver determines ",
           /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "\\ln x_2" }),
           ". That is the physics bottleneck."
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+          "The newer architectural change is upstream. The shared encoder can now be either the original local MPNN or",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("code", { children: "GPSEncoder" }),
+          ", where graph-global attention is combined with on-the-fly Laplacian or RWSE positional encodings without changing the downstream TGNN head contract."
         ] })
       ] }),
       report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "That separation is the core modeling claim of the project. The network is allowed to learn latent chemistry, but it is not allowed to invent an unconstrained mapping from embeddings to solubility; instead it must explain the prediction through physically interpretable intermediate quantities." })
@@ -23947,7 +23960,8 @@
           ", while DirectGNN predicts",
           /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "\\ln x_2" }),
           " directly from the same pair representation plus temperature encoding."
-        ] })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "This remains true under the newer extensions as well. If GPS, Stage 0 warm starts, or descriptor augmentation are enabled, they should be matched across families when the goal is a fair architectural comparison rather than a best-effort leaderboard." })
       ] }),
       report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "This distinction matters for interpretation of every downstream benchmark. If TGNN underperforms or overperforms relative to DirectGNN, the result can be attributed mainly to the physics bottleneck and its constraints, rather than to a hidden difference in graph capacity, interaction depth, or readout family." })
     },
@@ -24142,11 +24156,13 @@
     ] }),
     pretraining: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "Stage 0 should be read as representation shaping, not as a replacement for the three-phase curriculum. It is designed to teach the encoder invariances and chemically meaningful summary signals before the supervised TGNN objectives begin competing for capacity on a much smaller and much sparser thermodynamic dataset." }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The four tasks are complementary in that they stress different scales of information. Masked subgraphs and bond prediction enforce local chemistry, descriptor regression enforces molecule-level semantics, and contrastive learning encourages stable graph summaries under mild perturbations of the same underlying molecule." })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The four tasks are complementary in that they stress different scales of information. Masked subgraphs and bond prediction enforce local chemistry, descriptor regression enforces molecule-level semantics, and contrastive learning encourages stable graph summaries under mild perturbations of the same underlying molecule." }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The engineering implication of the new pipeline layer is important: Stage 0 is now something that can be checkpointed, reused, and fanned out into multiple downstream configs rather than rerun from scratch every time. That makes pretraining a practical comparison lane for tuned TGNN, GPS TGNN, and descriptor-augmented TGNN instead of a one-off notebook experiment." })
     ] }),
     architecture: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "Weight sharing in the encoder is a deliberate constraint. Solute and solvent play different thermodynamic roles downstream, but the model still benefits from a common molecular representation language at the graph level, which keeps parameter count controlled and reduces the chance that each branch learns incompatible latent conventions." }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The more important architectural choice is where the model is not flexible. Once the learned modules emit solver-facing quantities, the prediction path becomes structured, which means later analysis can ask whether an error came from the encoder, from crystal-property estimation, from interaction parameters, or from the correction branch." })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The more important architectural choice is where the model is not flexible. Once the learned modules emit solver-facing quantities, the prediction path becomes structured, which means later analysis can ask whether an error came from the encoder, from crystal-property estimation, from interaction parameters, or from the correction branch." }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The newer GPS and descriptor-augmentation additions should be read in that same frame. They are upstream representation enrichments: they change what information reaches the thermodynamic head, but they do not remove the requirement that TGNN-Solv still explain its prediction through solver-facing physical quantities." })
     ] }),
     "matched-baseline": /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
@@ -24160,7 +24176,8 @@
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("code", { children: "AdaptivePhysicsCorrection" }),
         ", but it keeps the same upstream representation machinery that converts molecules into a pair state."
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "This is also why descriptor augmentation on the DirectGNN side remains informative rather than unfair. The descriptor branch augments the pair representation after the shared graph backbone, so it probes whether missing chemistry signal is better supplied by richer features or by the explicit thermodynamic bottleneck." })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "This is also why descriptor augmentation on the DirectGNN side remains informative rather than unfair. The descriptor branch augments the pair representation after the shared graph backbone, so it probes whether missing chemistry signal is better supplied by richer features or by the explicit thermodynamic bottleneck." }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "With the current codebase, the fair-comparison rule is stricter than before: GPS and descriptor augmentation now exist on the TGNN side as well, and Stage 0 can warm-start the shared encoder. So when a result is meant to answer the bottleneck question, those upstream additions should be matched rather than silently enabled only for one family." })
     ] }),
     "solver-diagnostics": /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "This slide connects the code surface to the experimental surface. Because the forward pass preserves raw predictions, solver-facing substitutions, correction outputs, and oracle masks explicitly, the repository can export intermediate CSV/JSON artifacts that are interpretable after training instead of only reporting scalar aggregate metrics." }),

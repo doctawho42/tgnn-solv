@@ -27,7 +27,10 @@ def _parse_models(args: argparse.Namespace) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Optuna tuning for TGNN-Solv and baselines."
+        description=(
+            "Optuna tuning for TGNN-Solv, GPS TGNN, descriptor-augmented TGNN, "
+            "and DirectGNN baselines."
+        )
     )
     parser.add_argument(
         "--config",
@@ -52,12 +55,16 @@ def main() -> int:
     parser.add_argument(
         "--models",
         action="append",
-        help="Comma-separated model list (repeatable).",
+        help=(
+            "Comma-separated model list (repeatable). Examples: "
+            "`tgnn_solv`, `tgnn_solv_gps`, `tgnn_solv_descriptors`, "
+            "`direct_gnn`, `direct_gnn_descriptors`."
+        ),
     )
     parser.add_argument(
         "--all-models",
         action="store_true",
-        help="Tune all available models.",
+        help="Tune all available model aliases exposed by `AVAILABLE_MODELS`.",
     )
     parser.add_argument("--n-trials", type=int, default=20)
     parser.add_argument("--timeout", type=int, default=None)

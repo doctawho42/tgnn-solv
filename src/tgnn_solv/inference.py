@@ -66,6 +66,8 @@ def predict_solubility(
     T_tensor = torch.tensor([T], device=device)
     solute_morgan_fp = None
     solvent_morgan_fp = None
+    solute_descriptors = None
+    solvent_descriptors = None
     solute_descriptor_prior_features = None
     solvent_descriptor_prior_features = None
     solute_group_prior_features = None
@@ -88,6 +90,13 @@ def predict_solubility(
             raise ValueError("Failed to compute Morgan fingerprints for inference.")
         solute_morgan_fp = torch.tensor(sol_fp, device=device).unsqueeze(0)
         solvent_morgan_fp = torch.tensor(slv_fp, device=device).unsqueeze(0)
+    if model.cfg.use_descriptor_augmentation:
+        sol_desc = compute_molecular_descriptors(solute_smiles)
+        slv_desc = compute_molecular_descriptors(solvent_smiles)
+        if sol_desc is None or slv_desc is None:
+            raise ValueError("Failed to compute RDKit descriptors for inference.")
+        solute_descriptors = torch.tensor(sol_desc, device=device).unsqueeze(0)
+        solvent_descriptors = torch.tensor(slv_desc, device=device).unsqueeze(0)
     if model.cfg.use_descriptor_priors:
         sol_desc = smiles_to_descriptor_prior_features(solute_smiles)
         slv_desc = smiles_to_descriptor_prior_features(solvent_smiles)
@@ -134,6 +143,8 @@ def predict_solubility(
         solvent_type=solvent_type,
         solute_morgan_fp=solute_morgan_fp,
         solvent_morgan_fp=solvent_morgan_fp,
+        solute_descriptors=solute_descriptors,
+        solvent_descriptors=solvent_descriptors,
         solute_descriptor_prior_features=solute_descriptor_prior_features,
         solvent_descriptor_prior_features=solvent_descriptor_prior_features,
         solute_group_prior_features=solute_group_prior_features,
@@ -527,6 +538,9 @@ def save_model(
         "edge_feat_dim": EDGE_FEAT_DIM,
         "metadata": metadata or {},
     }
+    if cfg.use_descriptor_augmentation:
+        checkpoint["descriptor_mean"] = model.descriptor_mean.detach().cpu()
+        checkpoint["descriptor_std"] = model.descriptor_std.detach().cpu()
     torch.save(checkpoint, path)
     print(f"Model saved to {path}")
 
@@ -561,7 +575,13 @@ def load_model(
             "not the TGNN-Solv physics model. The current inference helpers in "
             "`tgnn_solv.inference` only support TGNN-Solv checkpoints."
         )
-    cfg = TGNNSolvConfig(**checkpoint["config"])
+    if checkpoint.get("descriptor_mean") is not None:
+        descriptor_mean = checkpoint["descriptor_mean"]
+        cfg_dict = dict(checkpoint["config"])
+        cfg_dict["descriptor_dim"] = int(torch.as_tensor(descriptor_mean).numel())
+        cfg = TGNNSolvConfig(**cfg_dict)
+    else:
+        cfg = TGNNSolvConfig(**checkpoint["config"])
     node_feat_dim = int(checkpoint.get("node_feat_dim", NODE_FEAT_DIM))
     edge_feat_dim = int(checkpoint.get("edge_feat_dim", EDGE_FEAT_DIM))
     model = TGNNSolv(
@@ -583,6 +603,11 @@ def load_model(
         if key in model_state and tuple(model_state[key].shape) == tuple(value.shape)
     }
     model.load_state_dict(compatible_state, strict=False)
+    if cfg.use_descriptor_augmentation:
+        descriptor_mean = checkpoint.get("descriptor_mean")
+        descriptor_std = checkpoint.get("descriptor_std")
+        if descriptor_mean is not None and descriptor_std is not None:
+            model.set_descriptor_normalization(descriptor_mean, descriptor_std)
 
     print(f"Model loaded from {path}")
     if checkpoint.get("metadata"):

@@ -1438,13 +1438,14 @@ function FigurePretraining() {
     <FigureCard
       kicker="Stage 0"
       title="Pretraining"
-      subtitle="The repository includes a standalone encoder/readout pretraining stage in `src/tgnn_solv/pretrain.py`."
+      subtitle="The repository now treats Stage 0 as a maintained warm-start pipeline spanning `pretrain.py`, `pretrain_pipeline.py`, and the training CLI."
       footer={
         <StatStrip
           items={[
             { label: "Source", value: "ZINC250k" },
+            { label: "Targets", value: "12 RDKit props" },
             { label: "Batch / LR", value: "128 / 3e-4" },
-            { label: "Contrastive τ", value: "0.1" },
+            { label: "Encoder", value: "MPNN or GPS" },
           ]}
         />
       }
@@ -1470,8 +1471,8 @@ function FigurePretraining() {
           </div>
           <div className="pretrain-meta-card">
             <div className="pipeline-builder__eyebrow">Repo behavior</div>
-            <strong>Optional, API-driven</strong>
-            <span>`scripts/training/train.py` does not launch Stage 0 automatically; the maintained entry point is the Python API / notebook walkthrough.</span>
+            <strong>Optional, checkpointable</strong>
+            <span>`scripts/training/train.py --pretrain`, `--pretrain-checkpoint`, and `scripts/training/train_with_pretrain.py` all drive the same Stage 0 pipeline and can reuse saved encoder/readout warm starts.</span>
           </div>
         </div>
 
@@ -1488,7 +1489,7 @@ function FigurePretraining() {
           </section>
 
           <section className="pretrain-overview__graph">
-            <div className="pretrain-task-card__eyebrow">Structure → graph → shared encoder</div>
+            <div className="pretrain-task-card__eyebrow">Structure → graph → shared MPNN / GPS encoder</div>
             <div className="pretrain-graph-frame pretrain-graph-frame--large">
               {graphData ? (
                 <PretrainGraphView
@@ -1512,6 +1513,7 @@ function FigurePretraining() {
               <span>→</span>
               <span>`h_atoms`, `g_mol`, `z`</span>
             </div>
+            <p className="figure-subnote">`test_pretrain_pipeline.py` explicitly checks that Stage 0 passes the graph `batch` vector through the encoder, which is why GPS remains pretraining-safe rather than a special-case branch.</p>
           </section>
 
           <section className="pretrain-overview__vectors">
@@ -1612,9 +1614,10 @@ function FigurePretraining() {
                   ))}
                 </div>
                 <p className="figure-subnote">
-                  These are actual RDKit targets computed on the aspirin graph. The property head regresses the whole
-                  descriptor vector from the pooled representation <TexInline>{"g_{mol}"}</TexInline>, so Stage 0
-                  teaches the encoder to preserve global molecular semantics that matter for solubility.
+                  These are actual RDKit targets computed on the aspirin graph. The maintained property head regresses a
+                  12-dimensional descriptor vector from the pooled representation <TexInline>{"g_{mol}"}</TexInline>, so
+                  Stage 0 teaches the encoder to preserve global molecular semantics that matter for solubility before
+                  the sparse thermodynamic labels appear.
                 </p>
                 <TexBlock>{"L_{prop} = \\|\\hat p - p\\|_2^2"}</TexBlock>
               </div>
@@ -1667,7 +1670,7 @@ function FigurePretraining() {
         <div className="pretrain-loss-card">
           <div className="pretrain-loss-card__main">
             <TexBlock>{"L = 1.0\\,L_{atom} + 0.5\\,L_{bond} + 1.0\\,L_{prop} + 0.5\\,L_{ctr}"}</TexBlock>
-            <p className="figure-subnote">Default optimizer path in the repo: AdamW, cosine LR schedule, gradient clipping at 1.0, and Stage 0 heads removed after pretraining completes.</p>
+            <p className="figure-subnote">Default optimizer path in the repo: AdamW, cosine LR schedule, gradient clipping at 1.0, Stage 0 heads removed after pretraining completes, and an optional reusable checkpoint payload with `gnn_state_dict`, `readout_state_dict`, history, and metadata.</p>
           </div>
           <div className="pretrain-loss-card__chips">
             <span>`n_epochs=30`</span>
@@ -1711,13 +1714,13 @@ function Figure3Architecture() {
               <div className="architecture-card__row">
                 <div>
                   <strong>Shared GNN encoder</strong>
-                  <span>6-layer MPNN with tied weights</span>
+                  <span>`encoder_type = mpnn | gps` with tied weights</span>
                 </div>
                 <div className="architecture-badge">weight sharing</div>
               </div>
               <div className="architecture-encoding-grid">
                 <div className="architecture-card architecture-card--ghost">h_sol atoms</div>
-                <div className="architecture-card architecture-card--ghost">same parameters</div>
+                <div className="architecture-card architecture-card--ghost">GPS adds Laplacian / RWSE PE + global attention</div>
                 <div className="architecture-card architecture-card--ghost">h_slv atoms</div>
               </div>
             </div>
@@ -1771,8 +1774,8 @@ function Figure3Architecture() {
               <TexBlock>{"g_{pair} = [g_{sol} \\parallel g_{slv} \\parallel g_{sol}\\odot g_{slv} \\parallel |g_{sol}-g_{slv}|]"}</TexBlock>
             </div>
             <div className="architecture-card architecture-card--optional architecture-card--span-2">
-              <strong>Optional descriptor augmentation</strong>
-              <span>Descriptors → normalize → MLP → concatenate to <TexInline>{"g_{pair}"}</TexInline></span>
+              <strong>Optional TGNN descriptor augmentation</strong>
+              <span>RDKit descriptors → normalize → MLP → pair-level fusion → project back to <TexInline>{"g_{pair}"}</TexInline></span>
             </div>
           </div>
         </section>
@@ -1835,7 +1838,7 @@ function Figure3ABaseline() {
       footer={
         <StatStrip
           items={[
-            { label: "Shared encoder", value: "same GNN" },
+            { label: "Shared encoder", value: "same MPNN / GPS" },
             { label: "Shared interaction", value: "same cross-attn" },
             { label: "Different head", value: "physics vs direct" },
           ]}
@@ -1903,7 +1906,7 @@ function Figure3ABaseline() {
         <div className="baseline-summary-grid">
           <div className="baseline-summary-card">
             <strong>Same chemistry frontend</strong>
-            <span>The experiment holds graph encoding, interaction, and readout fixed.</span>
+            <span>The experiment holds graph encoding, interaction, and readout fixed, even when the shared encoder family is switched from MPNN to GPS.</span>
           </div>
           <div className="baseline-summary-card">
             <strong>One modeling question</strong>
@@ -1911,7 +1914,7 @@ function Figure3ABaseline() {
           </div>
           <div className="baseline-summary-card">
             <strong>Descriptor path stays fair</strong>
-            <span>DirectGNN+descriptors augments the pair representation rather than changing the upstream graph stack.</span>
+            <span>Descriptor augmentation can now be matched on both families; fair comparisons keep the upstream extras aligned and only change the final prediction head.</span>
           </div>
         </div>
       </div>
@@ -3418,7 +3421,7 @@ export const PRESENTATION_FIGURES = [
     slug: "pretraining",
     title: "Pretraining",
     subtitle: "Optional Stage 0 before the curriculum",
-    blurb: "The repository includes a standalone Stage 0 that pretrains the encoder and readout with four molecular objectives.",
+    blurb: "Stage 0 is now a maintained warm-start pipeline that pretrains the encoder and readout with four molecular objectives.",
     tags: ["stage0", "contrastive", "pretrain"],
     component: FigurePretraining,
   },
@@ -3426,7 +3429,7 @@ export const PRESENTATION_FIGURES = [
     slug: "architecture",
     title: "TGNN-Solv Architecture",
     subtitle: "Five swim lanes from graphs to `ln x₂_final`",
-    blurb: "The core figure shows where learning ends and where hardcoded thermodynamics begin.",
+    blurb: "The core figure shows where shared MPNN/GPS representation learning ends and where hardcoded thermodynamics begin.",
     tags: ["architecture", "physics", "solver"],
     component: Figure3Architecture,
   },

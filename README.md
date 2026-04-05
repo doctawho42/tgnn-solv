@@ -10,6 +10,9 @@ The repository also contains the key no-physics and descriptor baselines used
 to judge whether that bottleneck helps:
 
 - `TGNN-Solv`: physics-first GNN with SLE + NRTL
+- `TGNN-Solv + descriptors`: same solver path with pair-level RDKit descriptor fusion
+- `TGNN-Solv + GPS`: same downstream physics path with a GPS encoder
+- `TGNN-Solv + Stage 0`: warm-started encoder/readout before the main curriculum
 - `DirectGNN`: matched GNN backbone with direct `ln(x2)` prediction
 - `DirectGNN + descriptors`: DirectGNN plus shared RDKit descriptor side-channel
 - `RF` baselines on RDKit descriptors, Morgan fingerprints, or both
@@ -228,6 +231,44 @@ python scripts/training/train_directgnn.py \
     --device cuda
 ```
 
+TGNN with Stage 0 pretraining:
+
+```bash
+python scripts/training/train_with_pretrain.py \
+    --config configs/paper_config_tuned_pretrained.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_pretrained.pt \
+    --pretrain-data zinc250k \
+    --pretrain-epochs 30 \
+    --device cuda
+```
+
+TGNN with the GPS encoder:
+
+```bash
+python scripts/training/train.py \
+    --config configs/paper_config_tuned_gps.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_gps.pt \
+    --device cuda
+```
+
+TGNN with pair-level descriptor augmentation:
+
+```bash
+python scripts/training/train.py \
+    --config configs/paper_config_tuned_tgnn_descriptors.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_desc.pt \
+    --device cuda
+```
+
 Split-wise comparison across scaffold, solute, and solvent protocols:
 
 ```bash
@@ -412,6 +453,12 @@ history = pretrainer.pretrain(smiles, n_epochs=30)
 The pretrainer modifies `model.gnn` and `model.readout` in place and discards
 its temporary auxiliary heads after pretraining.
 
+The maintained CLI surfaces are now:
+
+- `python scripts/training/train.py --pretrain ...`
+- `python scripts/training/train.py --pretrain-checkpoint ...`
+- `python scripts/training/train_with_pretrain.py ...`
+
 ## Key Architecture Features
 
 - shared or split-late dual-graph GNN encoder
@@ -438,6 +485,20 @@ its temporary auxiliary heads after pretraining.
   - canonical TGNN-Solv training config
 - `configs/paper_config_tuned.yaml`
   - maintained tuned TGNN baseline for architecture comparisons
+- `configs/paper_config_tuned_tgnn_descriptors.yaml`
+  - tuned TGNN with descriptor augmentation
+- `configs/paper_config_tuned_regularized.yaml`
+  - tuned TGNN with stronger regularization and early stopping
+- `configs/paper_config_tuned_regularized_gc.yaml`
+  - regularized TGNN with GC priors
+- `configs/paper_config_tuned_regularized_descriptors.yaml`
+  - regularized TGNN with descriptor augmentation
+- `configs/paper_config_tuned_gps.yaml`
+  - tuned TGNN with the GPS encoder
+- `configs/paper_config_tuned_pretrained.yaml`
+  - tuned TGNN intended for Stage 0 + curriculum runs
+- `configs/paper_config_tuned_pretrained_descriptors.yaml`
+  - Stage 0 + descriptor-augmented TGNN
 - `configs/paper_config_split_late.yaml`
   - same budget, `split_late` encoder
 - `configs/paper_config_gc_priors.yaml`
@@ -497,9 +558,11 @@ its temporary auxiliary heads after pretraining.
 - `scripts/training/train.py` uses pair-aware train batching by default.
 - `scripts/training/train.py` and `scripts/training/train_directgnn.py` support
   `--checkpoint-every` and `--resume` for mid-run recovery.
-- The repo includes an optional standalone Stage 0 pretraining path via
-  `tgnn_solv.pretrain.Pretrainer`; it is not automatically invoked by the main
-  training CLI.
+- The repo includes an optional Stage 0 pretraining path via
+  `tgnn_solv.pretrain.Pretrainer`, `scripts/training/train.py --pretrain`, and
+  `scripts/training/train_with_pretrain.py`.
+- `scripts/training/train.py` can also reuse `--pretrain-checkpoint` and run
+  the built-in `g_sol -> descriptors` probe with `--run-descriptor-probe`.
 - `TGNNSolvConfig.bridge_loss_weight` defaults to `0.0`, but
   `configs/paper_config.yaml` still enables bridge loss explicitly through the
   phase loss-weight overrides.

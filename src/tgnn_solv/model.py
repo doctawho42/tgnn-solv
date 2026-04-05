@@ -15,7 +15,12 @@ from torch_geometric.data import Batch
 
 from .config import TGNNSolvConfig
 from .data.solvent_types import SOLVENT_TYPE_COUNT, SOLVENT_TYPE_OTHER_ID
-from .features import EDGE_FEAT_DIM, NODE_FEAT_DIM
+from .features import (
+    DESCRIPTOR_Z_CLIP,
+    EDGE_FEAT_DIM,
+    NODE_FEAT_DIM,
+    validate_descriptor_normalization_stats,
+)
 from .heads import (
     AuxPropsHead,
     FusionHead,
@@ -28,9 +33,9 @@ from .heads import (
 from .heads import AdaptivePhysicsCorrection
 from .layers import (
     BipartiteMessagePassing,
-    GNNEncoder,
     PhysicsAwareReadout,
     SoluteSolventCrossAttention,
+    build_graph_encoder,
     build_batch_from_lists,
     make_temperature_features,
     pad_atom_features,
@@ -70,13 +75,7 @@ class TGNNSolv(nn.Module):
         F = cfg.hidden_dim
 
         # --- Encoder ---
-        self.gnn = GNNEncoder(
-            node_feat_dim, edge_feat_dim,
-            hidden_dim=F,
-            n_layers=cfg.n_gnn_layers,
-            role_mode=cfg.encoder_role_mode,
-            role_specific_layers=cfg.encoder_role_specific_layers,
-        )
+        self.gnn = build_graph_encoder(node_feat_dim, edge_feat_dim, cfg)
 
         # --- Interaction stack ---
         self.interaction_mode = cfg.interaction_mode
@@ -141,6 +140,29 @@ class TGNNSolv(nn.Module):
             )
             self.fp_pre_scale = nn.Parameter(torch.tensor(0.5))
             self.fp_post_scale = nn.Parameter(torch.tensor(0.5))
+        self.descriptor_mlp = None
+        self.pair_desc_proj = None
+        self.register_buffer("descriptor_mean", torch.empty(0))
+        self.register_buffer("descriptor_std", torch.empty(0))
+        if cfg.use_descriptor_augmentation:
+            if cfg.descriptor_dim <= 0:
+                raise ValueError(
+                    "descriptor_dim must be positive when descriptor augmentation is enabled."
+                )
+            descriptor_hidden_dim = cfg.resolved_descriptor_hidden_dim
+            self.descriptor_mlp = nn.Sequential(
+                nn.Linear(cfg.descriptor_dim, descriptor_hidden_dim),
+                nn.SiLU(),
+                nn.Dropout(cfg.dropout),
+                nn.Linear(descriptor_hidden_dim, descriptor_hidden_dim),
+                nn.SiLU(),
+            )
+            self.pair_desc_proj = nn.Linear(
+                cfg.pair_dim + 4 * descriptor_hidden_dim,
+                cfg.pair_dim,
+            )
+            self.descriptor_mean = torch.zeros(cfg.descriptor_dim)
+            self.descriptor_std = torch.ones(cfg.descriptor_dim)
 
         # --- Physics solver (0 learnable params) ---
         self.sle_solver = SLESolver(cfg)
@@ -353,6 +375,85 @@ class TGNNSolv(nn.Module):
             )
         return solute_descriptor_prior_features, solvent_descriptor_prior_features
 
+    def set_descriptor_normalization(
+        self,
+        mean: torch.Tensor | list[float],
+        std: torch.Tensor | list[float],
+    ) -> None:
+        """Attach train-set descriptor normalization statistics to the model."""
+        mean_arr, std_arr = validate_descriptor_normalization_stats(
+            mean,
+            std,
+            descriptor_dim=self.cfg.descriptor_dim if self.cfg.use_descriptor_augmentation else None,
+        )
+        mean_tensor = torch.as_tensor(mean_arr, dtype=torch.float32)
+        std_tensor = torch.as_tensor(std_arr, dtype=torch.float32)
+        buffer_device = self.descriptor_mean.device
+        buffer_dtype = self.descriptor_mean.dtype
+        self.descriptor_mean = mean_tensor.to(
+            device=buffer_device,
+            dtype=buffer_dtype,
+        ).clone()
+        self.descriptor_std = std_tensor.clamp_min(1.0e-8).to(
+            device=buffer_device,
+            dtype=buffer_dtype,
+        ).clone()
+
+    def _encode_descriptors(self, descriptors: torch.Tensor) -> torch.Tensor:
+        """Normalize and project raw RDKit descriptors into the pair space."""
+        if self.descriptor_mlp is None:
+            raise ValueError(
+                "Descriptor augmentation is disabled for this TGNNSolv instance."
+            )
+        if descriptors.size(-1) != self.cfg.descriptor_dim:
+            raise ValueError(
+                f"Descriptor tensor has dim {descriptors.size(-1)}, "
+                f"expected {self.cfg.descriptor_dim}."
+            )
+        descriptors = descriptors.to(
+            device=self.descriptor_mean.device,
+            dtype=self.descriptor_mean.dtype,
+        )
+        normalized = (descriptors - self.descriptor_mean) / self.descriptor_std.clamp_min(
+            1.0e-8
+        )
+        normalized = normalized.clamp(
+            min=-DESCRIPTOR_Z_CLIP,
+            max=DESCRIPTOR_Z_CLIP,
+        )
+        return self.descriptor_mlp(normalized)
+
+    def _augment_pair_representation(
+        self,
+        g_pair_gnn: torch.Tensor,
+        *,
+        solute_descriptors: Optional[torch.Tensor] = None,
+        solvent_descriptors: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """Merge normalized descriptor pair features into the learned pair state."""
+        if not self.cfg.use_descriptor_augmentation:
+            return g_pair_gnn
+        if (
+            solute_descriptors is None
+            or solvent_descriptors is None
+            or self.descriptor_mlp is None
+            or self.pair_desc_proj is None
+        ):
+            return g_pair_gnn
+
+        d_sol = self._encode_descriptors(solute_descriptors).to(g_pair_gnn)
+        d_slv = self._encode_descriptors(solvent_descriptors).to(g_pair_gnn)
+        d_pair = torch.cat(
+            [
+                d_sol,
+                d_slv,
+                d_sol * d_slv,
+                (d_sol - d_slv).abs(),
+            ],
+            dim=-1,
+        )
+        return self.pair_desc_proj(torch.cat([g_pair_gnn, d_pair], dim=-1))
+
     def _require_group_prior_features(
         self,
         solute_group_prior_features: Optional[torch.Tensor],
@@ -486,6 +587,8 @@ class TGNNSolv(nn.Module):
             solvent_type: Optional[torch.Tensor] = None,
             solute_morgan_fp: Optional[torch.Tensor] = None,
             solvent_morgan_fp: Optional[torch.Tensor] = None,
+            solute_descriptors: Optional[torch.Tensor] = None,
+            solvent_descriptors: Optional[torch.Tensor] = None,
             solute_descriptor_prior_features: Optional[torch.Tensor] = None,
             solvent_descriptor_prior_features: Optional[torch.Tensor] = None,
             solute_group_prior_features: Optional[torch.Tensor] = None,
@@ -689,6 +792,11 @@ class TGNNSolv(nn.Module):
 
         # ---- 5. Pair representation ----
         g_pair = self.pair_repr(g_sol_post, g_slv_post)
+        g_pair = self._augment_pair_representation(
+            g_pair,
+            solute_descriptors=solute_descriptors,
+            solvent_descriptors=solvent_descriptors,
+        )
         moe_gate = None
         if self.solvent_moe is not None:
             if solvent_type is None:

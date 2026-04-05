@@ -15,6 +15,7 @@ from tgnn_solv.features import (  # noqa: E402
     RDKIT_DESCRIPTOR_DIM,
     compute_descriptor_normalization_stats,
     compute_molecular_descriptors,
+    validate_descriptor_normalization_stats,
 )
 
 
@@ -64,3 +65,27 @@ def test_compute_molecular_descriptors_clips_extreme_values(
 
     assert descriptors is not None
     assert descriptors[0] == pytest.approx(DESCRIPTOR_RAW_ABS_CLIP)
+
+
+def test_validate_descriptor_normalization_stats_accepts_clipped_pipeline() -> None:
+    """Shared descriptor normalization stats should validate after clipping."""
+    mean, std = compute_descriptor_normalization_stats(["CCO", "O", "c1ccccc1"])
+
+    validated_mean, validated_std = validate_descriptor_normalization_stats(
+        mean,
+        std,
+        descriptor_dim=RDKIT_DESCRIPTOR_DIM,
+    )
+
+    assert validated_mean.shape == (RDKIT_DESCRIPTOR_DIM,)
+    assert validated_std.shape == (RDKIT_DESCRIPTOR_DIM,)
+
+
+def test_validate_descriptor_normalization_stats_rejects_unclipped_scale() -> None:
+    """Impossible descriptor stats should be rejected before model load/train."""
+    mean = np.zeros(RDKIT_DESCRIPTOR_DIM, dtype=np.float32)
+    std = np.ones(RDKIT_DESCRIPTOR_DIM, dtype=np.float32)
+    std[0] = DESCRIPTOR_RAW_ABS_CLIP * 100.0
+
+    with pytest.raises(ValueError, match="raw descriptor clip"):
+        validate_descriptor_normalization_stats(mean, std)

@@ -8,7 +8,7 @@ All configs live under `configs/`. The maintained ones fall into three groups:
 
 - TGNN-Solv baselines and ablations
 - DirectGNN baselines
-- research extensions
+- research extensions and workflow helpers
 
 ## Default Recommendation
 
@@ -44,6 +44,101 @@ Key properties:
 - no GC crystal priors
 - no oracle injection
 - bridge active only through the explicit phase-loss tables
+
+### `paper_config_tuned_tgnn_descriptors.yaml`
+
+Use this when:
+
+- you want to enrich TGNN pair representations with shared RDKit descriptors
+- you want the descriptor-augmented TGNN path without changing the solver
+
+Key properties:
+
+- `use_descriptor_augmentation=true`
+- descriptor normalization is fit on the training split and stored in the checkpoint
+- `descriptor_augmentation_hidden_dim=128`
+- higher dropout than the pure tuned baseline
+
+Trade-off:
+
+- stronger chemical side information
+- less pure as a graph-only encoder comparison
+
+### `paper_config_tuned_regularized.yaml`
+
+Use this when:
+
+- the tuned baseline is overfitting at the intended budget
+- you want a safer medium-budget TGNN baseline
+
+Key properties:
+
+- `dropout=0.15`
+- `weight_decay=1e-4`
+- stronger Phase 2 `tau_reg`
+- phase-local early stopping
+
+### `paper_config_tuned_regularized_gc.yaml`
+
+Use this when:
+
+- you want the regularized schedule plus crystal GC priors
+
+Key properties:
+
+- everything from `paper_config_tuned_regularized.yaml`
+- `use_gc_priors_crystal=true`
+
+### `paper_config_tuned_regularized_descriptors.yaml`
+
+Use this when:
+
+- you want the regularized schedule plus TGNN descriptor augmentation
+
+Key properties:
+
+- everything from `paper_config_tuned_regularized.yaml`
+- `use_descriptor_augmentation=true`
+
+### `paper_config_tuned_gps.yaml`
+
+Use this when:
+
+- you want to replace the local-only MPNN encoder with GPS
+- you want a graph-transformer-style encoder while keeping the rest of TGNN unchanged
+
+Key properties:
+
+- `encoder_type="gps"`
+- `gps_positional_encoding="laplacian"` by default
+- can be switched to `rwse` without changing the rest of TGNN
+- shared GPS encoder output shape matches the standard MPNN path
+
+### `paper_config_tuned_pretrained.yaml`
+
+Use this when:
+
+- you want the tuned TGNN baseline together with Stage 0 pretraining
+- you plan to launch training via `--pretrain` or `train_with_pretrain.py`
+
+Important note:
+
+- Stage 0 is activated by the CLI, not by the YAML alone
+- the maintained runtime surfaces are `scripts/training/train.py --pretrain`,
+  `--pretrain-checkpoint`, and `scripts/training/train_with_pretrain.py`
+
+### `paper_config_tuned_pretrained_descriptors.yaml`
+
+Use this when:
+
+- you want Stage 0 plus TGNN descriptor augmentation
+
+Key properties:
+
+- `use_descriptor_augmentation=true`
+- intended for `--pretrain` / `--pretrain-checkpoint` workflows
+- useful when Stage 0 and pair-level descriptor fusion are being tested
+  together against the same downstream scaffold split
 
 ### `paper_config_gc_priors.yaml`
 
@@ -229,6 +324,10 @@ Do not use it for architectural conclusions.
 | Goal | Recommended config |
 | --- | --- |
 | current maintained TGNN baseline | `paper_config_tuned.yaml` |
+| tuned TGNN + descriptors | `paper_config_tuned_tgnn_descriptors.yaml` |
+| tuned TGNN + stronger regularization | `paper_config_tuned_regularized.yaml` |
+| tuned TGNN + GPS encoder | `paper_config_tuned_gps.yaml` |
+| tuned TGNN + Stage 0 pretraining | `paper_config_tuned_pretrained.yaml` |
 | TGNN with crystal priors | `paper_config_gc_priors.yaml` |
 | TGNN without bridge | `paper_config_no_bridge.yaml` |
 | strongest structured TGNN variant | `paper_config_combined.yaml` |

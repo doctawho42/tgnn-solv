@@ -97,9 +97,11 @@ For contributors after that:
 - Train-only calibration and normalization steps still happen later in the
   training scripts:
   - `T_m_gc` affine calibration for GC-prior crystal runs
-  - RDKit descriptor mean/std normalization for DirectGNN augmentation
+  - RDKit descriptor mean/std normalization for DirectGNN and TGNN descriptor
+    augmentation
 - Some maintained capabilities are library-first rather than CLI-first:
   - standalone encoder pretraining via `tgnn_solv.pretrain`
+  - Stage 0 checkpoint orchestration via `tgnn_solv.pretrain_pipeline`
   - uncertainty via `tgnn_solv.uncertainty`
   - inference-time OOD screening via `tgnn_solv.domain`
 - Generated metrics and experiment artifacts live under `results/`.

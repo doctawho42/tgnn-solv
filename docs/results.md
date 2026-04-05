@@ -157,6 +157,16 @@ The runner is designed to produce:
 That is the benchmark bundle the site should treat as the main in-repo
 architecture comparison once complete.
 
+Recent follow-up lanes derived from the same scaffold split and budget include:
+
+- regularized TGNN variants
+- TGNN with descriptor augmentation
+- TGNN with the GPS encoder
+- Stage 0 pretrained TGNN variants
+
+Those runs should be treated as queued / follow-up comparison tracks until
+their own summaries land under `results/`.
+
 ### External article-comparison bundle
 
 The maintained external competitor bundle now lives under:

@@ -34,6 +34,7 @@ They delegate to the legacy entry points, so behavior stays identical.
 ### `scripts/training/`
 
 - `train.py`
+- `train_with_pretrain.py`
 - `train_directgnn.py`
 - `diagnose_training.py`
 - `run_resume_safe_train.sh`
@@ -87,12 +88,20 @@ The newer infrastructure scripts worth knowing about are:
   - frozen release manifest with checksums for processed splits and benchmark
     bundles
 
+The main TGNN training entrypoint now also covers the newer maintained model
+surfaces:
+
+- GPS encoder configs through `encoder_type="gps"`
+- TGNN descriptor augmentation with stored descriptor normalization stats
+- Stage 0 warm starts through `--pretrain` / `--pretrain-checkpoint`
+
 ## Usage Guidance
 
 Preferred examples:
 
 ```bash
 python scripts/training/train.py --help
+python scripts/training/train_with_pretrain.py --help
 python scripts/evaluation/evaluate_complete.py --help
 python scripts/evaluation/benchmark_adapter_model.py --help
 python scripts/experiments/run_medium_budget_comparison.py --help

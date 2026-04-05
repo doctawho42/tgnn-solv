@@ -67,6 +67,8 @@ should execute in the real `tgnn-solv` environment.
 ### Training
 
 - tuned TGNN-Solv and DirectGNN launchers
+- Stage 0 launch controls, warm-start checkpoint loading, and descriptor-probe export for TGNN
+- GPS-aware config inspection and TGNN descriptor-augmentation visibility in the config summary
 - curriculum-aware training setup
 - the same grouped training entry points documented in [Training](training.md)
 
@@ -92,6 +94,9 @@ should execute in the real `tgnn-solv` environment.
 ### Model Architect
 
 - TGNN-Solv and DirectGNN config editing
+- explicit `encoder_type` switching between `mpnn` and `gps`
+- GPS positional-encoding controls and TGNN descriptor-augmentation branches
+- Stage 0 warm-start planning and launch-time export through the same maintained training CLI
 - visual branch diff for the maintained architecture comparison
 - real RDKit structure and graph previews derived from the current SMILES
 

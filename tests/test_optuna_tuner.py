@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 
 from tgnn_solv.config import TGNNSolvConfig
-from tgnn_solv.optuna_tuner import OptunaTuner
+from tgnn_solv.optuna_tuner import AVAILABLE_MODELS, OptunaTuner
 
 
 def _make_df() -> pd.DataFrame:
@@ -187,4 +187,95 @@ def test_optuna_tuner_direct_search_space_matches_proxy_request() -> None:
     assert batch_size == 32
     assert cfg.batch_size == 32
     assert lr == pytest.approx(2.0e-4)
+
+
+def test_optuna_tuner_supports_gps_and_descriptor_aliases() -> None:
+    datasets = tuple(SimpleNamespace(df=_make_df()) for _ in range(3))
+    tuner = OptunaTuner(
+        datasets=datasets,
+        device=torch.device("cpu"),
+        base_cfg=TGNNSolvConfig(),
+    )
+
+    assert "tgnn_solv_gps" in AVAILABLE_MODELS
+    assert "tgnn_solv_descriptors" in AVAILABLE_MODELS
+    assert "direct_gnn_descriptors" in AVAILABLE_MODELS
+
+    gps_cfg, model_cls, trainer_cls = tuner._resolve_model_spec(
+        "tgnn_solv_gps",
+        TGNNSolvConfig(),
+    )
+    descriptor_cfg, _, _ = tuner._resolve_model_spec(
+        "tgnn_solv_descriptors",
+        TGNNSolvConfig(),
+    )
+
+    assert gps_cfg.encoder_type == "gps"
+    assert descriptor_cfg.use_descriptor_augmentation is True
+    assert model_cls.__name__ == "TGNNSolv"
+    assert trainer_cls.__name__ == "TGNNSolvTrainer"
+
+
+def test_optuna_tuner_gps_and_descriptor_search_spaces_expose_new_knobs() -> None:
+    datasets = tuple(SimpleNamespace(df=_make_df()) for _ in range(3))
+
+    class FakeTrial:
+        def suggest_categorical(self, name, choices):
+            mapping = {
+                "nrtl_tau_mode": "ref_invT",
+                "lr_phase1_mult": 3.0,
+                "lr_phase3_mult": 0.01,
+                "warmup_epochs": 0,
+                "phase2_correction_unfreeze_epoch": 20,
+                "grad_clip": 1.0,
+                "gps_num_heads": 8,
+                "gps_positional_encoding": "rwse",
+                "gps_pe_dim": 16,
+                "descriptor_augmentation_hidden_dim": 256,
+            }
+            value = mapping[name]
+            assert value in choices
+            return value
+
+        def suggest_float(self, name, low, high, log=False):
+            mapping = {
+                "dropout": 0.1,
+                "lr_base": 1.0e-4,
+                "lr": 2.0e-4,
+                "weight_decay": 3.0e-5,
+                "grad_clip": 4.0,
+            }
+            value = mapping[name]
+            assert low <= value <= high
+            return value
+
+    gps_tuner = OptunaTuner(
+        datasets=datasets,
+        device=torch.device("cpu"),
+        base_cfg=TGNNSolvConfig(encoder_type="gps"),
+        tune_arch=False,
+        fixed_batch_size=64,
+    )
+    gps_cfg, gps_batch_size = gps_tuner._suggest_tgnn_params(
+        FakeTrial(),
+        tune_arch=False,
+    )
+    assert gps_batch_size == 64
+    assert gps_cfg.gps_num_heads == 8
+    assert gps_cfg.gps_positional_encoding == "rwse"
+    assert gps_cfg.gps_pe_dim == 16
+
+    direct_desc_tuner = OptunaTuner(
+        datasets=datasets,
+        device=torch.device("cpu"),
+        base_cfg=TGNNSolvConfig(use_descriptor_augmentation=True),
+        tune_arch=False,
+        fixed_batch_size=32,
+    )
+    direct_cfg, direct_batch_size, _ = direct_desc_tuner._suggest_direct_params(
+        FakeTrial(),
+        tune_arch=False,
+    )
+    assert direct_batch_size == 32
+    assert direct_cfg.descriptor_augmentation_hidden_dim == 256
 import pytest

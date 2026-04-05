@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PY_WRAPPERS = {
     "scripts/data/prepare_data.py": "scripts/prepare_data.py",
     "scripts/training/train.py": "scripts/train.py",
+    "scripts/training/train_with_pretrain.py": "scripts/train_with_pretrain.py",
     "scripts/training/train_directgnn.py": "scripts/train_directgnn.py",
     "scripts/training/diagnose_training.py": "scripts/diagnose_training.py",
     "scripts/evaluation/evaluate_complete.py": "scripts/evaluate_complete.py",

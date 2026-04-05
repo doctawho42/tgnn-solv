@@ -50,7 +50,7 @@ from .features import (
     smiles_to_graph,
     NODE_FEAT_DIM,
 )
-from .layers import GNNEncoder, PhysicsAwareReadout
+from .layers import PhysicsAwareReadout
 from .data.utils import download_file, RAW_DIR, canonicalize
 from .progress import progress, trange
 
@@ -512,7 +512,9 @@ class Pretrainer:
 
     Parameters
     ----------
-    gnn : GNNEncoder to pretrain (modified in-place)
+    gnn : nn.Module
+        Graph encoder to pretrain in-place. Must follow the maintained
+        `forward(x, edge_index, edge_attr, role=..., batch=...)` contract.
     readout : PhysicsAwareReadout to pretrain (modified in-place)
     cfg : model config
     device : torch device
@@ -520,7 +522,7 @@ class Pretrainer:
 
     def __init__(
         self,
-        gnn: GNNEncoder,
+        gnn: nn.Module,
         readout: PhysicsAwareReadout,
         cfg: TGNNSolvConfig,
         device: torch.device | None = None,
@@ -690,6 +692,7 @@ class Pretrainer:
                     batch_graph.edge_index,
                     batch_graph.edge_attr,
                     role="solute",
+                    batch=batch_graph.batch,
                 )
 
                 # Task 1: Masked atom prediction (subgraph)
@@ -719,12 +722,14 @@ class Pretrainer:
                     aug1_batch.edge_index,
                     aug1_batch.edge_attr,
                     role="solute",
+                    batch=aug1_batch.batch,
                 )
                 h_aug2 = self.gnn(
                     aug2_batch.x,
                     aug2_batch.edge_index,
                     aug2_batch.edge_attr,
                     role="solute",
+                    batch=aug2_batch.batch,
                 )
                 g_aug1 = self.readout(h_aug1, aug1_batch.batch)
                 g_aug2 = self.readout(h_aug2, aug2_batch.batch)

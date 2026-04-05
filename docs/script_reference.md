@@ -48,14 +48,16 @@ on them.
 | Entry point | Role | Status | Notes |
 |-------------|------|--------|-------|
 | `scripts/training/train_directgnn.py` | Train DirectGNN baseline | Stable utility | Supports descriptor augmentation |
+| `scripts/training/train_with_pretrain.py` | Train TGNN-Solv with Stage 0 enabled by default | Stable utility | Thin wrapper over `train.py --pretrain --run-descriptor-probe`; useful for GPS and descriptor-augmented TGNN warm starts too |
 | `scripts/training/run_resume_safe_train.sh` | Resume-safe TGNN wrapper for cloud sessions | Stable utility | Wraps `train.py --resume` |
 | `scripts/evaluation/benchmark_tgnn_solv.py` | Rich benchmark via `Evaluator` | Stable utility | Use when you want more than quick eval |
 | `scripts/evaluation/benchmark_adapter_model.py` | Benchmark a formal Python adapter | Stable utility | Preferred custom-model path when you want fit/predict/report in one contract |
 | `scripts/evaluation/analyze_benchmark.py` | Text summary of benchmark JSON | Stable utility | Lightweight reporting helper |
 | `scripts/evaluation/compare_models.py` | Compare multiple TGNN checkpoints | Stable utility | Wraps benchmark logic |
 | `scripts/training/diagnose_training.py` | Dataset stats and overfit sanity check | Stable utility | Good pre-flight tool |
+| `scripts/evaluation/probe_gsol_descriptor_recovery.py` | Ridge linear probe from `g_sol` to RDKit descriptors | Stable utility | Useful for encoder-capacity diagnostics |
 | `scripts/evaluation/run_thermo_stress_suite.py` | Stress slices on canonical prediction bundles | Stable utility | Reads `predictions.csv`, writes slice metrics JSON |
-| `scripts/experiments/run_optuna.py` | Hyperparameter tuning | Stable utility | Supports TGNN and DirectGNN |
+| `scripts/experiments/run_optuna.py` | Hyperparameter tuning | Stable utility | Supports TGNN, GPS TGNN, descriptor-augmented TGNN, and DirectGNN families |
 | `scripts/launch_lab.py` | Launch the maintained Streamlit control surface | Stable utility | Preferred GUI entry point |
 | `scripts/gui/launch_lab.py` | Namespaced launcher for the same lab | Stable utility | Same behavior, alternate path |
 
@@ -95,7 +97,8 @@ They are available through the Python API and are demonstrated in notebooks.
 
 | Module / API | Role | Notes |
 |--------------|------|-------|
-| `tgnn_solv.pretrain.Pretrainer` | Optional standalone Stage 0 encoder/readout pretraining | Covered in `notebooks/02_train.ipynb` |
+| `tgnn_solv.pretrain.Pretrainer` | Stage 0 encoder/readout pretraining core | Used by `train.py --pretrain`, `train_with_pretrain.py`, and `notebooks/02_train.ipynb` |
+| `tgnn_solv.pretrain_pipeline` | Stage 0 checkpoint save/load helpers | Used by the maintained TGNN training CLI |
 | `tgnn_solv.pretrain.download_zinc250k` | Pretraining SMILES acquisition with fallback | Falls back to BigSolDB SMILES if needed |
 | `tgnn_solv.inference.load_model` | Checkpoint loading | Reconstructs config and compatible weights |
 | `tgnn_solv.inference.predict_solubility` | Single-system inference | Returns intermediates, not only final `ln(x2)` |
@@ -131,6 +134,13 @@ than a separate model implementation.
 ### `scripts/training/train.py`
 
 - supports `--checkpoint-every` and `--resume`
+- optionally runs Stage 0 with `--pretrain`
+- can warm-start from `--pretrain-checkpoint`
+- can launch the existing descriptor-recovery probe with `--run-descriptor-probe`
+- saves reusable Stage 0 encoder/readout checkpoints through
+  `tgnn_solv.pretrain_pipeline`
+- stores TGNN descriptor normalization stats in the checkpoint when
+  `use_descriptor_augmentation=True`
 - fits `gc_prior_tm_scale` / `gc_prior_tm_bias` on the training split when
   `use_gc_priors_crystal=True`
 - preserves those calibrated GC settings inside the saved config

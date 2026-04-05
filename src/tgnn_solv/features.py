@@ -75,6 +75,7 @@ RDKitDescriptorArray: TypeAlias = np.ndarray
 RDKitDescriptorStats: TypeAlias = tuple[np.ndarray, np.ndarray]
 RDKitDescriptorNames: TypeAlias = tuple[str, ...]
 DESCRIPTOR_RAW_ABS_CLIP = 1.0e6
+DESCRIPTOR_Z_CLIP = 10.0
 
 RDKIT_DESCRIPTOR_NAMES: RDKitDescriptorNames = tuple(
     name for name, _ in Descriptors.descList
@@ -311,6 +312,92 @@ def compute_descriptor_normalization_stats(
     ).astype(np.float32, copy=False)
     std = np.where(std < 1e-8, 1.0, std).astype(np.float32, copy=False)
     return mean, std
+
+
+def validate_descriptor_normalization_stats(
+    mean: np.ndarray | torch.Tensor | Iterable[float],
+    std: np.ndarray | torch.Tensor | Iterable[float],
+    *,
+    descriptor_dim: int | None = None,
+) -> RDKitDescriptorStats:
+    """Validate shared descriptor normalization stats against the clipped pipeline."""
+    mean_arr = np.asarray(mean, dtype=np.float32).reshape(-1)
+    std_arr = np.asarray(std, dtype=np.float32).reshape(-1)
+
+    if mean_arr.shape != std_arr.shape:
+        raise ValueError(
+            "Descriptor normalization mean/std must have the same shape."
+        )
+    if descriptor_dim is not None and mean_arr.shape[0] != int(descriptor_dim):
+        raise ValueError(
+            "Descriptor normalization size mismatch: "
+            f"got {mean_arr.shape[0]}, expected {int(descriptor_dim)}."
+        )
+    if not np.isfinite(mean_arr).all() or not np.isfinite(std_arr).all():
+        raise ValueError("Descriptor normalization stats must be finite.")
+    if np.any(std_arr <= 0.0):
+        raise ValueError("Descriptor normalization std must be strictly positive.")
+
+    raw_clip_limit = DESCRIPTOR_RAW_ABS_CLIP * 1.01
+    max_abs_mean = float(np.abs(mean_arr).max(initial=0.0))
+    max_std = float(std_arr.max(initial=0.0))
+    if max_abs_mean > raw_clip_limit:
+        raise ValueError(
+            "Descriptor normalization mean exceeds the shared raw descriptor clip. "
+            "This checkpoint or cache likely came from an older unclipped "
+            "descriptor pipeline."
+        )
+    if max_std > raw_clip_limit:
+        raise ValueError(
+            "Descriptor normalization std exceeds the shared raw descriptor clip. "
+            "This checkpoint or cache likely came from an older unclipped "
+            "descriptor pipeline."
+        )
+
+    return mean_arr, std_arr
+
+
+class DescriptorNormalizer:
+    """Fit and apply train-set normalization for RDKit descriptor augmentation."""
+
+    def __init__(
+        self,
+        mean: np.ndarray | None = None,
+        std: np.ndarray | None = None,
+    ) -> None:
+        self.mean = mean
+        self.std = std
+
+    def fit(self, source: object) -> "DescriptorNormalizer":
+        """Fit descriptor statistics from a dataset, dataframe, or SMILES iterable."""
+        source_obj = getattr(source, "df", source)
+        if hasattr(source_obj, "columns"):
+            columns = {str(column) for column in source_obj.columns}
+            if {"solute_smiles", "solvent_smiles"}.issubset(columns):
+                smiles_iterable = list(source_obj["solute_smiles"].astype(str)) + list(
+                    source_obj["solvent_smiles"].astype(str)
+                )
+            elif "smiles" in columns:
+                smiles_iterable = list(source_obj["smiles"].astype(str))
+            else:
+                raise ValueError(
+                    "DescriptorNormalizer.fit() expected a dataframe with "
+                    "`solute_smiles`/`solvent_smiles` or `smiles` columns."
+                )
+        else:
+            smiles_iterable = [str(item) for item in source_obj]
+        self.mean, self.std = compute_descriptor_normalization_stats(smiles_iterable)
+        return self
+
+    def transform(self, descriptors: np.ndarray) -> np.ndarray:
+        """Apply z-score normalization with clipping for numerical stability."""
+        if self.mean is None or self.std is None:
+            raise ValueError("DescriptorNormalizer must be fit before transform().")
+        normalized = (descriptors - self.mean) / np.clip(self.std, 1.0e-8, None)
+        return np.clip(normalized, -DESCRIPTOR_Z_CLIP, DESCRIPTOR_Z_CLIP).astype(
+            np.float32,
+            copy=False,
+        )
 
 
 def smiles_to_descriptor_prior_features(smiles: str) -> np.ndarray | None:

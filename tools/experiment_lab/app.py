@@ -201,11 +201,14 @@ ARCHITECTURE_VISUAL_NODES: dict[str, list[dict[str, Any]]] = {
     "TGNN-Solv": [
         {"id": "solute_graph", "label": "Solute graph", "track": "input", "kind": "core", "x": 20, "y": 40, "note": "Parsed RDKit solute graph"},
         {"id": "solvent_graph", "label": "Solvent graph", "track": "input", "kind": "core", "x": 20, "y": 220, "note": "Parsed RDKit solvent graph"},
-        {"id": "shared_encoder", "label": "Shared GNN encoder", "track": "shared", "kind": "core", "x": 250, "y": 130, "note": "Shared residual or split-late encoder"},
+        {"id": "stage0_warmstart", "label": "Stage 0 warm start", "track": "shared", "kind": "toggle", "x": 250, "y": 20, "note": "Optional pretraining of `model.gnn` and `model.readout` before the main curriculum"},
+        {"id": "shared_encoder", "label": "Shared MPNN / GPS encoder", "track": "shared", "kind": "core", "x": 250, "y": 130, "note": "Shared residual or split-late encoder selected by `encoder_type`"},
+        {"id": "gps_pe", "label": "GPS positional encoding", "track": "shared", "kind": "toggle", "x": 250, "y": 360, "note": "Laplacian or RWSE node positional features when `encoder_type=gps`"},
         {"id": "pre_head_priors", "label": "Pre-head priors", "track": "tgnn", "kind": "toggle", "flag": "use_descriptor_priors", "x": 500, "y": 30, "note": "Descriptor/group/GC prior lane"},
         {"id": "interaction", "label": "Interaction stack", "track": "shared", "kind": "core", "x": 500, "y": 170, "note": "Cross-attention or bipartite interaction"},
         {"id": "readout_pair", "label": "Readout + pair", "track": "shared", "kind": "core", "x": 500, "y": 320, "note": "Set2Set plus pair construction"},
         {"id": "morgan_adapter", "label": "Morgan adapter", "track": "shared", "kind": "toggle", "flag": "use_morgan_features", "x": 260, "y": 370, "note": "Optional fingerprint side path"},
+        {"id": "descriptor_aug", "label": "Descriptor augmentation", "track": "shared", "kind": "toggle", "flag": "use_descriptor_augmentation", "x": 500, "y": 420, "note": "Normalized RDKit descriptors fused back into the TGNN pair representation"},
         {"id": "solvent_moe", "label": "Solvent-type MoE", "track": "tgnn", "kind": "toggle", "flag": "use_solvent_moe", "x": 500, "y": 470, "note": "Optional mixture-of-experts routing"},
         {"id": "fusion_head", "label": "FusionHead", "track": "tgnn", "kind": "core", "x": 760, "y": 30, "note": "Predicts Tm / dHfus / dCpfus"},
         {"id": "nrtl_head", "label": "NRTLHead", "track": "tgnn", "kind": "core", "x": 760, "y": 170, "note": "Predicts solver interaction parameters"},
@@ -217,7 +220,8 @@ ARCHITECTURE_VISUAL_NODES: dict[str, list[dict[str, Any]]] = {
     "DirectGNN": [
         {"id": "solute_graph", "label": "Solute graph", "track": "input", "kind": "core", "x": 20, "y": 70, "note": "Parsed RDKit solute graph"},
         {"id": "solvent_graph", "label": "Solvent graph", "track": "input", "kind": "core", "x": 20, "y": 260, "note": "Parsed RDKit solvent graph"},
-        {"id": "shared_encoder", "label": "Shared GNN encoder", "track": "shared", "kind": "core", "x": 250, "y": 155, "note": "Same maintained encoder stack"},
+        {"id": "shared_encoder", "label": "Shared MPNN / GPS encoder", "track": "shared", "kind": "core", "x": 250, "y": 155, "note": "Same maintained encoder stack as TGNN-Solv"},
+        {"id": "gps_pe", "label": "GPS positional encoding", "track": "shared", "kind": "toggle", "x": 250, "y": 360, "note": "Optional Laplacian or RWSE node positional features"},
         {"id": "interaction_readout", "label": "Interaction + readout", "track": "shared", "kind": "core", "x": 520, "y": 155, "note": "Shared interaction and readout stack"},
         {"id": "temperature", "label": "Thermometer encoder", "track": "direct", "kind": "core", "x": 800, "y": 35, "note": "Direct temperature encoding"},
         {"id": "descriptor_aug", "label": "Descriptor augmentation", "track": "direct", "kind": "toggle", "flag": "use_descriptor_augmentation", "x": 800, "y": 175, "note": "Full RDKit descriptor path"},
@@ -230,16 +234,20 @@ ARCHITECTURE_VISUAL_EDGES: dict[str, list[tuple[str, str, str]]] = {
     "TGNN-Solv": [
         ("e_solute_encoder", "solute_graph", "shared_encoder"),
         ("e_solvent_encoder", "solvent_graph", "shared_encoder"),
+        ("e_stage0_encoder", "stage0_warmstart", "shared_encoder"),
+        ("e_gps_encoder", "gps_pe", "shared_encoder"),
         ("e_encoder_priors", "shared_encoder", "pre_head_priors"),
         ("e_encoder_interaction", "shared_encoder", "interaction"),
         ("e_interaction_readout", "interaction", "readout_pair"),
         ("e_readout_fusion", "readout_pair", "fusion_head"),
         ("e_readout_nrtl", "readout_pair", "nrtl_head"),
         ("e_readout_correction", "readout_pair", "correction"),
+        ("e_readout_descriptor", "readout_pair", "descriptor_aug"),
         ("e_fusion_solver", "fusion_head", "solver"),
         ("e_nrtl_solver", "nrtl_head", "solver"),
         ("e_solver_correction", "solver", "correction"),
         ("e_morgan_readout", "morgan_adapter", "readout_pair"),
+        ("e_descriptor_fusion", "descriptor_aug", "fusion_head"),
         ("e_oracle_solver", "oracle_injection", "solver"),
         ("e_correction_implicit", "correction", "implicit_diff"),
         ("e_encoder_morgan", "shared_encoder", "morgan_adapter"),
@@ -249,6 +257,7 @@ ARCHITECTURE_VISUAL_EDGES: dict[str, list[tuple[str, str, str]]] = {
     "DirectGNN": [
         ("e_solute_encoder", "solute_graph", "shared_encoder"),
         ("e_solvent_encoder", "solvent_graph", "shared_encoder"),
+        ("e_gps_encoder", "gps_pe", "shared_encoder"),
         ("e_encoder_readout", "shared_encoder", "interaction_readout"),
         ("e_temperature_head", "temperature", "mlp_head"),
         ("e_descriptor_head", "descriptor_aug", "mlp_head"),
@@ -874,6 +883,11 @@ def load_architecture_doc(family: str, config_path: str | Path) -> dict[str, Any
     model = doc.setdefault("model", {})
     training = doc.setdefault("training", {})
     if family == "TGNN-Solv":
+        model.setdefault("encoder_type", "mpnn")
+        model.setdefault("gps_num_heads", 4)
+        model.setdefault("gps_use_edge_attr", True)
+        model.setdefault("gps_positional_encoding", "laplacian")
+        model.setdefault("gps_pe_dim", 8)
         model.setdefault("hidden_dim", 256)
         model.setdefault("pair_dim", 512)
         model.setdefault("n_gnn_layers", 6)
@@ -894,6 +908,11 @@ def load_architecture_doc(family: str, config_path: str | Path) -> dict[str, Any
         model.setdefault("use_implicit_diff", True)
         model.setdefault("use_temperature_in_nrtl_head", True)
     else:
+        model.setdefault("encoder_type", "mpnn")
+        model.setdefault("gps_num_heads", 4)
+        model.setdefault("gps_use_edge_attr", True)
+        model.setdefault("gps_positional_encoding", "laplacian")
+        model.setdefault("gps_pe_dim", 8)
         model.setdefault("hidden_dim", 256)
         model.setdefault("pair_dim", 512)
         model.setdefault("n_gnn_layers", 6)
@@ -911,6 +930,19 @@ def load_architecture_doc(family: str, config_path: str | Path) -> dict[str, Any
     training.setdefault("epochs_phase2", 200)
     training.setdefault("epochs_phase3", 50)
     training.setdefault("use_pair_temperature_batching", True)
+    stage0 = doc.setdefault("stage0", {})
+    stage0.setdefault("enabled", False)
+    stage0.setdefault("mode", "fresh")
+    stage0.setdefault("pretrain_data", "zinc250k")
+    stage0.setdefault("pretrain_epochs", 30)
+    stage0.setdefault("pretrain_batch_size", 128)
+    stage0.setdefault("pretrain_lr", 3.0e-4)
+    stage0.setdefault("pretrain_max_molecules", None)
+    stage0.setdefault("pretrain_checkpoint", "")
+    stage0.setdefault("pretrain_output", "")
+    stage0.setdefault("run_descriptor_probe", True)
+    stage0.setdefault("descriptor_probe_output_dir", "")
+    stage0.setdefault("descriptor_probe_device", "cpu")
     return doc
 
 
@@ -1771,6 +1803,20 @@ def architecture_branch_rows(tgnn_doc: dict[str, Any], direct_doc: dict[str, Any
     direct_model = direct_doc.get("model", {})
     rows = [
         {
+            "module": "Encoder family",
+            "track": "shared backbone",
+            "tgnn": "active" if tgnn_model.get("encoder_type", "mpnn") == "gps" else "core",
+            "direct": "active" if direct_model.get("encoder_type", "mpnn") == "gps" else "core",
+            "explanation": "Both model families can keep the same downstream contract while swapping the local MPNN encoder for GPSEncoder.",
+        },
+        {
+            "module": "Positional encoding",
+            "track": "shared backbone",
+            "tgnn": "active" if tgnn_model.get("encoder_type", "mpnn") == "gps" else "off",
+            "direct": "active" if direct_model.get("encoder_type", "mpnn") == "gps" else "off",
+            "explanation": "GPS mode appends Laplacian or RWSE structural positional features before graph-global attention.",
+        },
+        {
             "module": "Shared GNN encoder",
             "track": "shared backbone",
             "tgnn": "core",
@@ -1797,6 +1843,13 @@ def architecture_branch_rows(tgnn_doc: dict[str, Any], direct_doc: dict[str, Any
             "tgnn": "active" if tgnn_model.get("use_morgan_features") else "off",
             "direct": "active" if direct_model.get("use_morgan_features") else "off",
             "explanation": "Fingerprint side-channel projected into the learned graph representation.",
+        },
+        {
+            "module": "Descriptor augmentation",
+            "track": "optional shared branch",
+            "tgnn": "active" if tgnn_model.get("use_descriptor_augmentation") else "off",
+            "direct": "active" if direct_model.get("use_descriptor_augmentation") else "off",
+            "explanation": "Normalized RDKit descriptors are fused into the pair state after graph interaction and readout.",
         },
         {
             "module": "Solvent-type MoE",
@@ -1874,13 +1927,6 @@ def architecture_branch_rows(tgnn_doc: dict[str, Any], direct_doc: dict[str, Any
             "tgnn": "removed",
             "direct": "core",
             "explanation": "Temperature enters DirectGNN as learned bins before the prediction MLP.",
-        },
-        {
-            "module": "Descriptor augmentation",
-            "track": "direct-only",
-            "tgnn": "removed",
-            "direct": "active" if direct_model.get("use_descriptor_augmentation") else "off",
-            "explanation": "Full RDKit descriptor branch appended to the pair vector.",
         },
         {
             "module": "Direct ln(x₂) head",
@@ -2247,7 +2293,10 @@ def pipeline_shell_script(nodes: list[dict[str, Any]], python_command: str) -> s
 def architecture_summary(family: str, doc: dict[str, Any]) -> dict[str, Any]:
     model = doc.get("model", {})
     training = doc.get("training", {})
+    stage0 = doc.get("stage0", {})
     active_modules = 4
+    if model.get("encoder_type", "mpnn") == "gps":
+        active_modules += 1
     if model.get("use_morgan_features"):
         active_modules += 1
     if model.get("use_descriptor_augmentation"):
@@ -2261,13 +2310,21 @@ def architecture_summary(family: str, doc: dict[str, Any]) -> dict[str, Any]:
     readout_dim = int(model.get("hidden_dim", 256)) * 3
     pair_dim = int(model.get("pair_dim", 512))
     total_epochs = int(training.get("epochs_phase1", 0) or 0) + int(training.get("epochs_phase2", 0) or 0) + int(training.get("epochs_phase3", 0) or 0)
+    encoder_type = str(model.get("encoder_type", "mpnn"))
+    encoder_label = (
+        f"GPS · {model.get('gps_positional_encoding', 'laplacian')}"
+        if encoder_type == "gps"
+        else "MPNN"
+    )
     return {
+        "encoder": encoder_label,
         "hidden_dim": int(model.get("hidden_dim", 256)),
         "layers": int(model.get("n_gnn_layers", 6)),
         "readout_dim": readout_dim,
         "pair_dim": pair_dim,
         "total_epochs": total_epochs,
         "active_modules": active_modules,
+        "stage0": "warm start" if bool(stage0.get("enabled")) and family == "TGNN-Solv" else "off",
         "physics": "solver bottleneck" if family == "TGNN-Solv" else "direct ln(x₂) head",
     }
 
@@ -2313,8 +2370,24 @@ def architecture_svg(family: str, doc: dict[str, Any]) -> str:
     if family == "TGNN-Solv":
         box(30, 92, 170, 116, "Solute graph", "real RDKit graph input", palette["card"], palette["border"])
         box(30, 280, 170, 116, "Solvent graph", "real RDKit graph input", palette["card"], palette["border"])
-        box(248, 140, 210, 202, "Shared GNN encoder", f"{summary['layers']} layers · {summary['hidden_dim']}d", "rgba(37,99,235,0.12)", palette["blue"])
+        box(248, 140, 210, 202, "Shared encoder", f"{summary['encoder']} · {summary['layers']} layers · {summary['hidden_dim']}d", "rgba(37,99,235,0.12)", palette["blue"])
         texts.append(svg_text_block(353, 220, ["role adapters", model.get("encoder_role_mode", "shared_residual")], fill=palette["blue"], size=13, weight=700))
+        if model.get("encoder_type", "mpnn") == "gps":
+            texts.append(
+                svg_text_block(
+                    353,
+                    270,
+                    [
+                        f"PE: {model.get('gps_positional_encoding', 'laplacian')}",
+                        f"{model.get('gps_num_heads', 4)} heads · {model.get('gps_pe_dim', 8)}-d",
+                    ],
+                    fill=palette["blue"],
+                    size=12,
+                    weight=700,
+                )
+            )
+        else:
+            texts.append(svg_text_block(353, 270, ["local message passing", "no GPS positional branch"], fill=palette["muted"], size=12, weight=600))
         box(502, 72, 200, 104, "Pre-head priors", "descriptor / group / GC bounds", "rgba(124,58,237,0.12)", palette["purple"], dashed=not any(model.get(flag) for flag in ("use_descriptor_priors", "use_group_priors", "use_gc_priors_crystal")))
         box(502, 214, 200, 104, "Interaction", f"{model.get('interaction_mode', 'cross_attn')} × {model.get('n_cross_attn_layers', 3)}", "rgba(5,150,105,0.12)", palette["green"])
         box(502, 356, 200, 104, "Readout + pair", f"Set2Set {model.get('set2set_steps', 3)} · pair {summary['pair_dim']}d", "rgba(148,163,184,0.16)", palette["slate"])
@@ -2340,15 +2413,27 @@ def architecture_svg(family: str, doc: dict[str, Any]) -> str:
         else:
             box(228, 464, 210, 74, "Morgan adapter", "disabled", "rgba(148,163,184,0.10)", palette["slate"], dashed=True)
 
+        if model.get("use_descriptor_augmentation"):
+            box(20, 486, 190, 74, "Descriptor aug", "normalized RDKit fusion into pair state", "rgba(124,58,237,0.08)", palette["purple"], dashed=False)
+            arrow(210, 522, 748, 124, palette["purple"], dashed=True)
+        else:
+            box(20, 486, 190, 74, "Descriptor aug", "disabled", "rgba(148,163,184,0.10)", palette["slate"], dashed=True)
+
         if model.get("use_solvent_moe"):
             box(502, 498, 200, 42, "Solvent-type MoE", "routing active", "rgba(16,185,129,0.08)", palette["green"], dashed=False)
         else:
             box(502, 498, 200, 42, "Solvent-type MoE", "disabled", "rgba(148,163,184,0.10)", palette["slate"], dashed=True)
 
+        if bool(doc.get("stage0", {}).get("enabled")):
+            box(248, 24, 210, 78, "Stage 0 warm start", "pretrain.py / pretrain_pipeline.py", "rgba(16,185,129,0.08)", palette["green"], dashed=False)
+            arrow(353, 102, 353, 140, palette["green"], dashed=True)
+        else:
+            box(248, 24, 210, 78, "Stage 0 warm start", "off", "rgba(148,163,184,0.10)", palette["slate"], dashed=True)
+
     else:
         box(38, 122, 180, 116, "Solute graph", "real RDKit graph input", palette["card"], palette["border"])
         box(38, 286, 180, 116, "Solvent graph", "real RDKit graph input", palette["card"], palette["border"])
-        box(268, 158, 212, 196, "Shared GNN encoder", f"{summary['layers']} layers · {summary['hidden_dim']}d", "rgba(37,99,235,0.12)", palette["blue"])
+        box(268, 158, 212, 196, "Shared encoder", f"{summary['encoder']} · {summary['layers']} layers · {summary['hidden_dim']}d", "rgba(37,99,235,0.12)", palette["blue"])
         box(532, 158, 208, 196, "Interaction + readout", f"{model.get('interaction_mode', 'cross_attn')} · Set2Set {model.get('set2set_steps', 3)}", "rgba(16,185,129,0.12)", palette["green"])
         box(792, 80, 160, 102, "Temperature", "thermometer encoder", "rgba(251,191,36,0.12)", palette["orange"])
         box(792, 206, 160, 102, "Descriptor aug", "RDKit descriptors", "rgba(124,58,237,0.12)", palette["purple"], dashed=not bool(model.get("use_descriptor_augmentation")))
@@ -2405,12 +2490,14 @@ def build_architecture_training_command(
     config_path: str,
     python_command: str,
     *,
+    doc: dict[str, Any],
     train_data: str,
     val_data: str,
     test_data: str,
     checkpoint: str,
     device: str,
 ) -> list[str]:
+    stage0 = doc.get("stage0", {})
     if family == "DirectGNN":
         return build_python_command(
             "scripts/training/train_directgnn.py",
@@ -2428,7 +2515,7 @@ def build_architecture_training_command(
             device,
             python_command_text=python_command,
         )
-    return build_python_command(
+    command = build_python_command(
         "scripts/training/train.py",
         "--config",
         config_path,
@@ -2444,6 +2531,41 @@ def build_architecture_training_command(
         device,
         python_command_text=python_command,
     )
+    if bool(stage0.get("enabled")):
+        mode = str(stage0.get("mode", "fresh"))
+        if mode == "checkpoint" and str(stage0.get("pretrain_checkpoint", "")).strip():
+            command.extend(
+                [
+                    "--pretrain-checkpoint",
+                    str(stage0.get("pretrain_checkpoint", "")).strip(),
+                ]
+            )
+        else:
+            command.append("--pretrain")
+            command.extend(["--pretrain-data", str(stage0.get("pretrain_data", "zinc250k"))])
+            command.extend(["--pretrain-epochs", str(int(stage0.get("pretrain_epochs", 30) or 30))])
+            command.extend(
+                [
+                    "--pretrain-batch-size",
+                    str(int(stage0.get("pretrain_batch_size", 128) or 128)),
+                ]
+            )
+            command.extend(["--pretrain-lr", str(float(stage0.get("pretrain_lr", 3.0e-4) or 3.0e-4))])
+            if stage0.get("pretrain_max_molecules") not in {None, "", 0}:
+                command.extend(["--pretrain-max-molecules", str(int(stage0.get("pretrain_max_molecules")))])
+        if str(stage0.get("pretrain_output", "")).strip():
+            command.extend(["--pretrain-output", str(stage0.get("pretrain_output", "")).strip()])
+        if bool(stage0.get("run_descriptor_probe")):
+            command.append("--run-descriptor-probe")
+            if str(stage0.get("descriptor_probe_output_dir", "")).strip():
+                command.extend(
+                    [
+                        "--descriptor-probe-output-dir",
+                        str(stage0.get("descriptor_probe_output_dir", "")).strip(),
+                    ]
+                )
+            command.extend(["--descriptor-probe-device", str(stage0.get("descriptor_probe_device", "cpu"))])
+    return command
 
 
 def utc_now() -> str:
@@ -3270,8 +3392,13 @@ def cached_text(path_str: str) -> str:
 
 def module_flag_state(family: str, doc: dict[str, Any], node_id: str, flag: str | None) -> bool:
     model = doc.get("model", {})
+    stage0 = doc.get("stage0", {})
     if family == "TGNN-Solv" and node_id == "pre_head_priors":
         return any(bool(model.get(key)) for key in ("use_descriptor_priors", "use_group_priors", "use_gc_priors_crystal"))
+    if node_id == "gps_pe":
+        return str(model.get("encoder_type", "mpnn")) == "gps"
+    if family == "TGNN-Solv" and node_id == "stage0_warmstart":
+        return bool(stage0.get("enabled"))
     if flag is None:
         return True
     return bool(model.get(flag))
@@ -3444,7 +3571,26 @@ def architecture_visual_state(family: str, doc: dict[str, Any]) -> tuple[list[di
 def architecture_visual_signature(family: str, doc: dict[str, Any]) -> str:
     nodes, edges = architecture_visual_state(family, doc)
     model = doc.get("model", {})
-    flags = {key: model.get(key) for key in sorted(model.keys()) if key.startswith("use_") or key in {"hidden_dim", "n_gnn_layers", "pair_dim", "interaction_mode", "n_cross_attn_layers", "n_attn_heads", "set2set_steps"}}
+    flags = {
+        key: model.get(key)
+        for key in sorted(model.keys())
+        if key.startswith("use_")
+        or key
+        in {
+            "hidden_dim",
+            "n_gnn_layers",
+            "pair_dim",
+            "interaction_mode",
+            "n_cross_attn_layers",
+            "n_attn_heads",
+            "set2set_steps",
+            "encoder_type",
+            "gps_num_heads",
+            "gps_use_edge_attr",
+            "gps_positional_encoding",
+            "gps_pe_dim",
+        }
+    }
     payload = {
         "family": family,
         "nodes": [
@@ -3459,6 +3605,7 @@ def architecture_visual_signature(family: str, doc: dict[str, Any]) -> str:
         ],
         "edges": edges,
         "flags": flags,
+        "stage0": doc.get("stage0", {}),
         "selected_id": st.session_state.get(f"architect_visual_{family}", {}).get("selected_id"),
     }
     return json.dumps(payload, sort_keys=True, ensure_ascii=True)
@@ -5453,8 +5600,28 @@ def config_feature_rows(config_path: str) -> pd.DataFrame:
     model = cfg.get("model", {})
     training = cfg.get("training", {})
     rows = [
+        {"feature": "Encoder type", "value": model.get("encoder_type", "mpnn")},
+        {
+            "feature": "GPS PE",
+            "value": model.get("gps_positional_encoding", "—")
+            if model.get("encoder_type", "mpnn") == "gps"
+            else "off",
+        },
+        {
+            "feature": "GPS heads / PE dim",
+            "value": (
+                f"{model.get('gps_num_heads', '—')} / {model.get('gps_pe_dim', '—')}"
+                if model.get("encoder_type", "mpnn") == "gps"
+                else "—"
+            ),
+        },
         {"feature": "Shared encoder", "value": model.get("encoder_role_mode", "—")},
         {"feature": "Cross-attention layers", "value": model.get("n_cross_attn_layers", "—")},
+        {"feature": "Descriptor augmentation", "value": model.get("use_descriptor_augmentation", "—")},
+        {"feature": "Morgan features", "value": model.get("use_morgan_features", "—")},
+        {"feature": "Descriptor priors", "value": model.get("use_descriptor_priors", "—")},
+        {"feature": "Group priors", "value": model.get("use_group_priors", "—")},
+        {"feature": "GC crystal priors", "value": model.get("use_gc_priors_crystal", "—")},
         {"feature": "Implicit differentiation", "value": model.get("use_implicit_diff", "—")},
         {"feature": "Solvent MoE", "value": model.get("use_solvent_moe", "—")},
         {"feature": "Pair-temp batching", "value": training.get("use_pair_temperature_batching", "—")},
@@ -6003,9 +6170,14 @@ def config_training_snapshot(config_path: str) -> tuple[pd.DataFrame, pd.DataFra
         "pair_temp_batching": training.get("use_pair_temperature_batching"),
         "hidden_dim": model.get("hidden_dim"),
         "layers": model.get("n_gnn_layers"),
+        "encoder_type": model.get("encoder_type", "mpnn"),
+        "gps_positional_encoding": model.get("gps_positional_encoding"),
+        "gps_num_heads": model.get("gps_num_heads"),
+        "gps_pe_dim": model.get("gps_pe_dim"),
         "cross_attn_layers": model.get("n_cross_attn_layers"),
         "dropout": model.get("dropout"),
         "encoder_role_mode": model.get("encoder_role_mode"),
+        "use_descriptor_augmentation": model.get("use_descriptor_augmentation", False),
         "nrtl_tau_mode": model.get("nrtl_tau_mode"),
     }
     return phase_df, loss_df, meta
@@ -6405,7 +6577,7 @@ def render_training_page(python_command: str, probe: dict[str, Any]) -> None:
     default_test = PROCESSED_DIR / "test.csv"
     page_header(
         "Training Console",
-        "Launch the maintained TGNN-Solv and DirectGNN training flows with explicit commands, config snapshots, and curriculum context.",
+        "Launch the maintained TGNN-Solv and DirectGNN training flows with explicit commands, config snapshots, curriculum context, and first-class access to Stage 0 warm starts, GPS configs, and descriptor-augmented TGNN variants.",
         eyebrow="Training",
         chips=[
             ("Configs", str(len(configs))),
@@ -6423,7 +6595,7 @@ def render_training_page(python_command: str, probe: dict[str, Any]) -> None:
 
     if mode == "TGNN-Solv":
         with st.form("train_tgnn_form", border=False):
-            c1, c2 = st.columns(2)
+            c1, c2, c3 = st.columns(3)
             with c1:
                 config_path = render_path_select("Config", configs, CONFIG_DIR / "paper_config_tuned.yaml", "tgnn_config")
                 train_path = st.text_input("Train CSV", value=str(default_train))
@@ -6434,6 +6606,28 @@ def render_training_page(python_command: str, probe: dict[str, Any]) -> None:
                 checkpoint_path = st.text_input("Checkpoint output", value=str(CHECKPOINTS_DIR / "lab_tgnn.pt"))
                 device = st.selectbox("Device", devices, index=0)
                 log_dir = st.text_input("Log directory", value=str(REPO_ROOT / "logs" / "tgnn_lab"))
+            with c3:
+                stage0_mode = st.selectbox(
+                    "Stage 0 pretraining",
+                    ["off", "run now", "load checkpoint"],
+                    index=0,
+                    help="`run now` calls `train.py --pretrain`; `load checkpoint` warms the encoder from a saved Stage 0 bundle.",
+                )
+                pretrain_data = st.text_input("Stage 0 source", value="zinc250k")
+                pretrain_epochs = st.number_input("Stage 0 epochs", value=30, min_value=1, step=1)
+                pretrain_batch_size = st.number_input("Stage 0 batch size", value=128, min_value=1, step=1)
+                pretrain_lr = st.number_input("Stage 0 LR", value=3.0e-4, min_value=1.0e-6, step=1.0e-4, format="%.6f")
+                pretrain_checkpoint = st.text_input("Stage 0 checkpoint", value=str(CHECKPOINTS_DIR / "pretrained_encoder.pt"))
+                run_descriptor_probe = st.checkbox(
+                    "Run descriptor probe after training",
+                    value=True,
+                    help="Launch the existing Ridge `g_sol -> descriptor` probe after the TGNN checkpoint is written.",
+                )
+                descriptor_probe_output_dir = st.text_input(
+                    "Descriptor probe output",
+                    value=str(RESULTS_DIR / "descriptor_probe"),
+                )
+                descriptor_probe_device = st.selectbox("Probe device", ["cpu", *devices], index=0)
             extra_args = st.text_area("Extra CLI args", value="--checkpoint-every 10")
             command = build_python_command(
                 "scripts/training/train.py",
@@ -6456,6 +6650,34 @@ def render_training_page(python_command: str, probe: dict[str, Any]) -> None:
                 *parse_extra_args(extra_args),
                 python_command_text=python_command,
             )
+            if stage0_mode == "run now":
+                command.extend(
+                    [
+                        "--pretrain",
+                        "--pretrain-data",
+                        pretrain_data,
+                        "--pretrain-epochs",
+                        str(int(pretrain_epochs)),
+                        "--pretrain-batch-size",
+                        str(int(pretrain_batch_size)),
+                        "--pretrain-lr",
+                        str(float(pretrain_lr)),
+                    ]
+                )
+            elif stage0_mode == "load checkpoint":
+                command.extend(["--pretrain-checkpoint", pretrain_checkpoint])
+            if stage0_mode != "off":
+                command.extend(["--pretrain-output", str(Path(checkpoint_path).with_name(f"{Path(checkpoint_path).stem}_pretrained_encoder.pt"))])
+            if run_descriptor_probe:
+                command.extend(
+                    [
+                        "--run-descriptor-probe",
+                        "--descriptor-probe-output-dir",
+                        descriptor_probe_output_dir,
+                        "--descriptor-probe-device",
+                        descriptor_probe_device,
+                    ]
+                )
             st.code(quote_command(command), language="bash")
             submitted = st.form_submit_button("Launch TGNN-Solv training", use_container_width=True)
             if submitted:
@@ -6466,15 +6688,33 @@ def render_training_page(python_command: str, probe: dict[str, Any]) -> None:
             phase_df, loss_df, meta = config_training_snapshot(config_path)
             feature_df = config_feature_rows(config_path)
             total_epochs = int(phase_df["epochs"].fillna(0).sum())
-            cards = st.columns(4)
+            cards = st.columns(5)
             with cards[0]:
                 st.metric("Total epochs", str(total_epochs))
             with cards[1]:
                 st.metric("Batch size", str(meta.get("batch_size", "—")))
             with cards[2]:
-                st.metric("Encoder", f"{meta.get('hidden_dim', '—')}d / {meta.get('layers', '—')} layers")
+                encoder_type = meta.get("encoder_type", "mpnn")
+                if encoder_type == "gps":
+                    encoder_label = f"GPS / {meta.get('gps_positional_encoding', 'laplacian')}"
+                else:
+                    encoder_label = f"MPNN / {meta.get('hidden_dim', '—')}d"
+                st.metric("Encoder", encoder_label)
             with cards[3]:
                 st.metric("Pair-temp batching", "on" if meta.get("pair_temp_batching") else "off")
+            with cards[4]:
+                descriptor_flag = meta.get("use_descriptor_augmentation", False)
+                st.metric("TGNN descriptors", "on" if descriptor_flag else "off")
+
+            if stage0_mode != "off":
+                st.markdown(
+                    """
+                    <div class="lab-callout">
+                      Stage 0 is enabled for this launch. The command above is using the maintained `train.py` pretraining surface rather than a GUI-only wrapper, so the same behavior is reproducible from the CLI.
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
             left, right = st.columns([0.9, 1.1], gap="large")
             with left:
@@ -7852,7 +8092,7 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
 
     page_header(
         "Model Architect",
-        "Visual editor for the maintained model families. Tweak real config flags, inspect the live forward path, compare TGNN-Solv against DirectGNN by active branches, preview real structure-derived graphs, and launch training from the edited design.",
+        "Visual editor for the maintained model families. Tweak real config flags, inspect the live forward path, compare TGNN-Solv against DirectGNN by active branches, preview real structure-derived graphs, and launch training from the edited design, including GPS encoder switches, TGNN descriptor augmentation, and optional Stage 0 warm starts.",
         eyebrow="Architecture",
         chips=[
             ("Family", family),
@@ -7895,6 +8135,7 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
     model = doc.setdefault("model", {})
     training = doc.setdefault("training", {})
     loss_weights = doc.setdefault("loss_weights", {})
+    stage0 = doc.setdefault("stage0", {})
     base_doc = load_architecture_doc(family, st.session_state[source_key])
 
     with st.expander("Editable controls", expanded=architect_view == "Export & launch"):
@@ -7902,6 +8143,12 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
             control_cols = st.columns(3, gap="large")
             with control_cols[0]:
                 st.markdown("#### Backbone")
+                encoder_type = st.selectbox(
+                    "Encoder type",
+                    ["mpnn", "gps"],
+                    index=["mpnn", "gps"].index(str(model.get("encoder_type", "mpnn"))),
+                    key=f"{family}_encoder_type",
+                )
                 hidden_dim = st.slider("Hidden dim", 64, 512, int(model.get("hidden_dim", 256)), step=32, key=f"{family}_hidden_dim")
                 n_gnn_layers = st.slider("GNN layers", 2, 10, int(model.get("n_gnn_layers", 6)), step=1, key=f"{family}_n_gnn_layers")
                 encoder_role_mode = st.selectbox(
@@ -7920,6 +8167,25 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
                 n_attn_heads = st.slider("Attention heads", 1, 8, int(model.get("n_attn_heads", 8)), step=1, key=f"{family}_n_heads")
                 pair_dim = st.slider("Pair dim", 128, 1024, int(model.get("pair_dim", 512)), step=64, key=f"{family}_pair_dim")
                 dropout = st.slider("Dropout", 0.0, 0.4, float(model.get("dropout", 0.1)), step=0.02, key=f"{family}_dropout")
+                if encoder_type == "gps":
+                    gps_num_heads = st.slider("GPS heads", 1, 8, int(model.get("gps_num_heads", 4)), step=1, key=f"{family}_gps_heads")
+                    gps_positional_encoding = st.selectbox(
+                        "GPS positional encoding",
+                        ["laplacian", "rwse"],
+                        index=["laplacian", "rwse"].index(str(model.get("gps_positional_encoding", "laplacian"))),
+                        key=f"{family}_gps_pe_kind",
+                    )
+                    gps_pe_dim = st.slider("GPS PE dim", 4, 32, int(model.get("gps_pe_dim", 8)), step=4, key=f"{family}_gps_pe_dim")
+                    gps_use_edge_attr = st.toggle(
+                        "GPS uses edge features",
+                        value=bool(model.get("gps_use_edge_attr", True)),
+                        key=f"{family}_gps_edge_attr",
+                    )
+                else:
+                    gps_num_heads = int(model.get("gps_num_heads", 4))
+                    gps_positional_encoding = str(model.get("gps_positional_encoding", "laplacian"))
+                    gps_pe_dim = int(model.get("gps_pe_dim", 8))
+                    gps_use_edge_attr = bool(model.get("gps_use_edge_attr", True))
 
             with control_cols[1]:
                 st.markdown("#### Side information")
@@ -7931,6 +8197,26 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
                     key=f"{family}_descriptor_aug",
                 )
                 if family == "TGNN-Solv":
+                    if use_descriptor_augmentation:
+                        descriptor_hidden_dim = st.slider(
+                            "Descriptor hidden dim",
+                            64,
+                            512,
+                            int(model.get("descriptor_hidden_dim", 128)),
+                            step=32,
+                            key=f"{family}_descriptor_hidden",
+                        )
+                        descriptor_augmentation_hidden_dim = st.slider(
+                            "Descriptor fusion hidden dim",
+                            64,
+                            512,
+                            int(model.get("descriptor_augmentation_hidden_dim", 128)),
+                            step=32,
+                            key=f"{family}_descriptor_aug_hidden",
+                        )
+                    else:
+                        descriptor_hidden_dim = int(model.get("descriptor_hidden_dim", 128))
+                        descriptor_augmentation_hidden_dim = int(model.get("descriptor_augmentation_hidden_dim", 128))
                     use_solvent_moe = st.toggle("Solvent-type MoE", value=bool(model.get("use_solvent_moe", True)), key=f"{family}_moe")
                     use_descriptor_priors = st.toggle("Descriptor priors", value=bool(model.get("use_descriptor_priors", False)), key=f"{family}_descriptor_priors")
                     use_group_priors = st.toggle("Group priors", value=bool(model.get("use_group_priors", False)), key=f"{family}_group_priors")
@@ -7985,13 +8271,114 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
                         value=bool(model.get("use_implicit_diff", True)),
                         key=f"{family}_implicit",
                     )
+                    stage0_enabled = st.toggle(
+                        "Stage 0 warm start",
+                        value=bool(stage0.get("enabled", False)),
+                        key=f"{family}_stage0_enabled",
+                    )
+                    if stage0_enabled:
+                        stage0_mode = st.selectbox(
+                            "Stage 0 mode",
+                            ["fresh", "checkpoint"],
+                            index=["fresh", "checkpoint"].index(str(stage0.get("mode", "fresh"))),
+                            key=f"{family}_stage0_mode",
+                        )
+                        pretrain_data = st.text_input(
+                            "Stage 0 source",
+                            value=str(stage0.get("pretrain_data", "zinc250k")),
+                            key=f"{family}_stage0_source",
+                        )
+                        pretrain_checkpoint = st.text_input(
+                            "Stage 0 checkpoint",
+                            value=str(stage0.get("pretrain_checkpoint", "")),
+                            key=f"{family}_stage0_checkpoint",
+                        )
+                        pretrain_epochs = st.number_input(
+                            "Stage 0 epochs",
+                            value=int(stage0.get("pretrain_epochs", 30)),
+                            min_value=1,
+                            step=1,
+                            key=f"{family}_stage0_epochs",
+                        )
+                        pretrain_batch_size = st.number_input(
+                            "Stage 0 batch size",
+                            value=int(stage0.get("pretrain_batch_size", 128)),
+                            min_value=1,
+                            step=1,
+                            key=f"{family}_stage0_batch",
+                        )
+                        pretrain_lr = st.number_input(
+                            "Stage 0 LR",
+                            value=float(stage0.get("pretrain_lr", 3.0e-4)),
+                            min_value=1.0e-6,
+                            step=1.0e-4,
+                            format="%.6f",
+                            key=f"{family}_stage0_lr",
+                        )
+                        pretrain_max_molecules = st.number_input(
+                            "Stage 0 max molecules",
+                            value=int(stage0.get("pretrain_max_molecules") or 0),
+                            min_value=0,
+                            step=1000,
+                            key=f"{family}_stage0_max_mols",
+                        )
+                        pretrain_output = st.text_input(
+                            "Stage 0 output",
+                            value=str(stage0.get("pretrain_output", "")),
+                            key=f"{family}_stage0_output",
+                        )
+                        run_descriptor_probe = st.toggle(
+                            "Run descriptor probe",
+                            value=bool(stage0.get("run_descriptor_probe", True)),
+                            key=f"{family}_stage0_probe",
+                        )
+                        descriptor_probe_output_dir = st.text_input(
+                            "Probe output",
+                            value=str(stage0.get("descriptor_probe_output_dir", "")),
+                            key=f"{family}_stage0_probe_output",
+                        )
+                        descriptor_probe_device = st.selectbox(
+                            "Probe device",
+                            ["cpu", *device_options_from_probe(probe)],
+                            index=0 if str(stage0.get("descriptor_probe_device", "cpu")) == "cpu" else 1,
+                            key=f"{family}_stage0_probe_device",
+                        )
+                    else:
+                        stage0_mode = "fresh"
+                        pretrain_data = str(stage0.get("pretrain_data", "zinc250k"))
+                        pretrain_checkpoint = str(stage0.get("pretrain_checkpoint", ""))
+                        pretrain_epochs = int(stage0.get("pretrain_epochs", 30))
+                        pretrain_batch_size = int(stage0.get("pretrain_batch_size", 128))
+                        pretrain_lr = float(stage0.get("pretrain_lr", 3.0e-4))
+                        pretrain_max_molecules = int(stage0.get("pretrain_max_molecules") or 0)
+                        pretrain_output = str(stage0.get("pretrain_output", ""))
+                        run_descriptor_probe = bool(stage0.get("run_descriptor_probe", True))
+                        descriptor_probe_output_dir = str(stage0.get("descriptor_probe_output_dir", ""))
+                        descriptor_probe_device = str(stage0.get("descriptor_probe_device", "cpu"))
                 else:
                     nrtl_tau_mode = "ref_invT"
                     use_temperature_in_nrtl_head = False
                     use_oracle_injection = False
                     use_implicit_diff = False
+                    stage0_enabled = False
+                    stage0_mode = "fresh"
+                    pretrain_data = "zinc250k"
+                    pretrain_checkpoint = ""
+                    pretrain_epochs = 30
+                    pretrain_batch_size = 128
+                    pretrain_lr = 3.0e-4
+                    pretrain_max_molecules = 0
+                    pretrain_output = ""
+                    run_descriptor_probe = False
+                    descriptor_probe_output_dir = ""
+                    descriptor_probe_device = "cpu"
                     st.info("DirectGNN keeps the shared encoder / interaction stack but removes the physics path in favor of a thermometer-plus-MLP head.")
 
+    model["encoder_type"] = encoder_type
+    model["gps_num_heads"] = gps_num_heads
+    model["gps_use_edge_attr"] = gps_use_edge_attr
+    model["gps_positional_encoding"] = gps_positional_encoding
+    model["gps_pe_dim"] = gps_pe_dim
     model["hidden_dim"] = hidden_dim
     model["n_gnn_layers"] = n_gnn_layers
     model["encoder_role_mode"] = encoder_role_mode
@@ -8009,6 +8396,8 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
     training["epochs_phase3"] = epochs_phase3
     training["use_pair_temperature_batching"] = pair_temp_batching
     if family == "TGNN-Solv":
+        model["descriptor_hidden_dim"] = descriptor_hidden_dim
+        model["descriptor_augmentation_hidden_dim"] = descriptor_augmentation_hidden_dim
         model["use_solvent_moe"] = use_solvent_moe
         model["use_descriptor_priors"] = use_descriptor_priors
         model["use_group_priors"] = use_group_priors
@@ -8017,24 +8406,39 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
         model["use_temperature_in_nrtl_head"] = use_temperature_in_nrtl_head
         model["use_oracle_injection"] = use_oracle_injection
         model["use_implicit_diff"] = use_implicit_diff
+        stage0["enabled"] = stage0_enabled
+        stage0["mode"] = stage0_mode
+        stage0["pretrain_data"] = pretrain_data
+        stage0["pretrain_checkpoint"] = pretrain_checkpoint
+        stage0["pretrain_epochs"] = int(pretrain_epochs)
+        stage0["pretrain_batch_size"] = int(pretrain_batch_size)
+        stage0["pretrain_lr"] = float(pretrain_lr)
+        stage0["pretrain_max_molecules"] = int(pretrain_max_molecules) if int(pretrain_max_molecules) > 0 else None
+        stage0["pretrain_output"] = pretrain_output
+        stage0["run_descriptor_probe"] = bool(run_descriptor_probe)
+        stage0["descriptor_probe_output_dir"] = descriptor_probe_output_dir
+        stage0["descriptor_probe_device"] = descriptor_probe_device
     else:
         model["descriptor_hidden_dim"] = descriptor_hidden_dim
 
     doc["model"] = model
     doc["training"] = training
     doc["loss_weights"] = loss_weights
+    doc["stage0"] = stage0
     st.session_state[state_key] = doc
 
     solute = st.text_input("Sample solute SMILES", value=st.session_state.get(f"{family}_sample_solute", DEFAULT_SOLUTE_SMILES), key=f"{family}_sample_solute")
     solvent = st.text_input("Sample solvent SMILES", value=st.session_state.get(f"{family}_sample_solvent", DEFAULT_SOLVENT_SMILES), key=f"{family}_sample_solvent")
     summary = architecture_summary(family, doc)
-    summary_cols = st.columns(6)
+    summary_cols = st.columns(8)
     summary_metrics = [
+        ("Encoder", summary["encoder"]),
         ("Hidden dim", str(summary["hidden_dim"])),
         ("Readout dim", str(summary["readout_dim"])),
         ("Pair dim", str(summary["pair_dim"])),
         ("Active modules", str(summary["active_modules"])),
         ("Total epochs", str(summary["total_epochs"])),
+        ("Stage 0", summary["stage0"]),
         ("Head type", summary["physics"]),
     ]
     for col, (label, value) in zip(summary_cols, summary_metrics):
@@ -8278,6 +8682,7 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
                     family,
                     save_path,
                     python_command,
+                    doc=doc,
                     train_data=launch_train,
                     val_data=launch_val,
                     test_data=launch_test,
@@ -8302,11 +8707,11 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
             with st.expander("Architecture notes", expanded=False):
                 if family == "TGNN-Solv":
                     st.markdown(
-                        "The editor drives the real TGNN path: shared encoder, optional priors, interaction stack, `FusionHead`, `NRTLHead`, `SLESolver`, and bounded correction. Temperature should normally enter the NRTL and solver side rather than the crystal-property heads."
+                        "The editor drives the real TGNN path: shared MPNN/GPS encoder, optional descriptor augmentation and priors, interaction stack, `FusionHead`, `NRTLHead`, `SLESolver`, bounded correction, and optional Stage 0 warm-start flags that are exported back into the maintained training CLI."
                     )
                 else:
                     st.markdown(
-                        "The editor drives the maintained DirectGNN ablation: same encoder and interaction backbone, thermometer temperature encoding, optional descriptor augmentation, and a direct MLP to `ln(x₂)` with no solver bottleneck."
+                        "The editor drives the maintained DirectGNN ablation: same shared MPNN/GPS encoder and interaction backbone, thermometer temperature encoding, optional descriptor augmentation, and a direct MLP to `ln(x₂)` with no solver bottleneck."
                     )
 
 

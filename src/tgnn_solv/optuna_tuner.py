@@ -29,6 +29,8 @@ except ImportError:  # pragma: no cover - optuna is optional
 
 AVAILABLE_MODELS = (
     "tgnn_solv",
+    "tgnn_solv_gps",
+    "tgnn_solv_descriptors",
     "no_cross_attn",
     "no_nrtl",
     "no_curriculum",
@@ -38,6 +40,7 @@ AVAILABLE_MODELS = (
     "small_128",
     "large_512",
     "direct_gnn",
+    "direct_gnn_descriptors",
 )
 
 
@@ -277,6 +280,16 @@ class OptunaTuner:
                     if isinstance(solvent_morgan_fp, torch.Tensor)
                     else None
                 ),
+                solute_descriptors=(
+                    solute_descriptors.to(self.device)
+                    if isinstance(solute_descriptors, torch.Tensor)
+                    else None
+                ),
+                solvent_descriptors=(
+                    solvent_descriptors.to(self.device)
+                    if isinstance(solvent_descriptors, torch.Tensor)
+                    else None
+                ),
                 solute_descriptor_prior_features=(
                     solute_descriptor_prior_features.to(self.device)
                     if isinstance(solute_descriptor_prior_features, torch.Tensor)
@@ -410,6 +423,24 @@ class OptunaTuner:
         cfg.grad_clip = trial.suggest_categorical(
             "grad_clip", [0.5, 1.0, 2.0]
         )
+        if cfg.encoder_type == "gps":
+            cfg.gps_num_heads = trial.suggest_categorical(
+                "gps_num_heads",
+                [4, 8],
+            )
+            cfg.gps_positional_encoding = trial.suggest_categorical(
+                "gps_positional_encoding",
+                ["laplacian", "rwse"],
+            )
+            cfg.gps_pe_dim = trial.suggest_categorical(
+                "gps_pe_dim",
+                [8, 16, 24],
+            )
+        if cfg.use_descriptor_augmentation:
+            cfg.descriptor_augmentation_hidden_dim = trial.suggest_categorical(
+                "descriptor_augmentation_hidden_dim",
+                [64, 128, 256],
+            )
 
         if self.fixed_batch_size is None:
             batch_size = trial.suggest_categorical(
@@ -443,6 +474,11 @@ class OptunaTuner:
             log=True,
         )
         cfg.grad_clip = trial.suggest_float("grad_clip", 1.0, 5.0)
+        if cfg.use_descriptor_augmentation:
+            cfg.descriptor_augmentation_hidden_dim = trial.suggest_categorical(
+                "descriptor_augmentation_hidden_dim",
+                [64, 128, 256],
+            )
         if self.fixed_batch_size is None:
             batch_size = trial.suggest_categorical(
                 "batch_size", [32, 64]
@@ -456,6 +492,12 @@ class OptunaTuner:
         self, name: str, cfg: TGNNSolvConfig
     ) -> Tuple[TGNNSolvConfig, type, type]:
         if name == "tgnn_solv":
+            return cfg, TGNNSolv, TGNNSolvTrainer
+        if name == "tgnn_solv_gps":
+            cfg = replace(cfg, encoder_type="gps")
+            return cfg, TGNNSolv, TGNNSolvTrainer
+        if name == "tgnn_solv_descriptors":
+            cfg = replace(cfg, use_descriptor_augmentation=True)
             return cfg, TGNNSolv, TGNNSolvTrainer
 
         from .ablation import (
@@ -516,10 +558,12 @@ class OptunaTuner:
         self.set_seed(trial_seed)
         tune_arch = self._tune_arch_for_model(model_name)
 
-        if model_name == "direct_gnn":
+        if model_name in {"direct_gnn", "direct_gnn_descriptors"}:
             cfg, batch_size, lr = self._suggest_direct_params(
                 trial, tune_arch
             )
+            if model_name == "direct_gnn_descriptors":
+                cfg = replace(cfg, use_descriptor_augmentation=True)
             train_loader, val_loader, _ = self._build_loaders(
                 cfg,
                 batch_size,
@@ -567,7 +611,31 @@ class OptunaTuner:
                 trial_seed,
                 include_test=False,
             )
+            descriptor_mean = None
+            descriptor_std = None
+            if cfg.use_descriptor_augmentation:
+                if not isinstance(self.train_df, pd.DataFrame):
+                    raise ValueError(
+                        "Descriptor augmentation requires access to the training dataframe."
+                    )
+                descriptor_mean, descriptor_std = compute_descriptor_normalization_stats(
+                    pd.concat(
+                        [
+                            self.train_df["solute_smiles"].astype(str),
+                            self.train_df["solvent_smiles"].astype(str),
+                        ],
+                        axis=0,
+                        ignore_index=True,
+                    ).tolist()
+                )
+                cfg = replace(cfg, descriptor_dim=int(descriptor_mean.shape[0]))
             model = model_cls(cfg=cfg).to(self.device)
+            if cfg.use_descriptor_augmentation:
+                if descriptor_mean is None or descriptor_std is None:
+                    raise ValueError(
+                        "Descriptor normalization statistics were not computed."
+                    )
+                model.set_descriptor_normalization(descriptor_mean, descriptor_std)
             trainer = trainer_cls(model, cfg)
             t0 = time.time()
             trainer.train_full(train_loader, val_loader)

@@ -6,10 +6,12 @@ The maintained training entry points are:
 
 - `scripts/training/train.py`
   - TGNN-Solv with the three-phase curriculum
+- `scripts/training/train_with_pretrain.py`
+  - TGNN-Solv with Stage 0 enabled by default
 - `scripts/training/train_directgnn.py`
   - DirectGNN with a flat solubility-training schedule
 - `tgnn_solv.pretrain.Pretrainer`
-  - optional standalone Stage 0 encoder/readout pretraining API
+  - Stage 0 encoder/readout pretraining API used by the CLI and notebooks
 
 Canonical processed data lives under:
 
@@ -88,7 +90,7 @@ Common CLI overrides:
 
 The canonical paper budget is `50 / 200 / 50`.
 
-## Optional Standalone Stage 0 Pretraining
+## Optional Stage 0 Pretraining
 
 This repository also implements an optional encoder/readout pretraining stage
 that happens before the three-phase curriculum above.
@@ -101,9 +103,13 @@ Important distinction:
   - separate self-supervised / weakly supervised molecular pretraining on a
     large SMILES collection
 
-`scripts/training/train.py` does not run Stage 0 automatically. The maintained
-surface for Stage 0 today is the Python API and the interactive
-`notebooks/02_train.ipynb` walkthrough.
+The maintained Stage 0 surfaces are now:
+
+- `scripts/training/train.py --pretrain ...`
+- `scripts/training/train.py --pretrain-checkpoint ...`
+- `scripts/training/train_with_pretrain.py`
+- the Python API in `tgnn_solv.pretrain` / `tgnn_solv.pretrain_pipeline`
+- `notebooks/02_train.ipynb`
 
 ### What `Pretrainer` does
 
@@ -120,7 +126,7 @@ The pretraining tasks are:
 
 - masked 2-hop subgraph atom-feature reconstruction
 - masked bond-type prediction
-- RDKit property prediction
+- RDKit property regression over the maintained 12-descriptor target vector
 - graph contrastive learning on augmented molecular views
 
 ### Minimal Stage 0 example
@@ -143,7 +149,74 @@ Practical behavior:
 - `model.gnn` and `model.readout` are modified in place
 - temporary atom/property/bond/contrastive heads are deleted after pretraining
 - you continue with normal TGNN training using the same model instance
-- there is no dedicated checkpoint schema just for Stage 0 today
+- the CLI can also save a dedicated Stage 0 checkpoint containing:
+  - `gnn_state_dict`
+  - `readout_state_dict`
+  - `pretrain_history`
+  - `pretrain_metadata`
+
+Important implementation notes:
+
+- Stage 0 is compatible with both `encoder_type="mpnn"` and
+  `encoder_type="gps"`
+- `Pretrainer` passes the PyG `batch` vector into the encoder, so GPS
+  positional encodings remain valid during Stage 0
+- `tgnn_solv.pretrain_pipeline` is the maintained helper layer for loading
+  SMILES sources, saving warm-start checkpoints, and restoring those weights
+  later through `--pretrain-checkpoint`
+
+### Stage 0 through the maintained CLI
+
+Run Stage 0 and then the normal TGNN curriculum:
+
+```bash
+python scripts/training/train.py \
+    --config configs/paper_config_tuned_pretrained.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_pretrained.pt \
+    --pretrain \
+    --pretrain-data zinc250k \
+    --pretrain-epochs 30 \
+    --device cuda
+```
+
+Or use the convenience wrapper:
+
+```bash
+python scripts/training/train_with_pretrain.py \
+    --config configs/paper_config_tuned_pretrained.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_pretrained.pt \
+    --pretrain-data zinc250k \
+    --pretrain-epochs 30 \
+    --device cuda
+```
+
+Reuse a previously saved Stage 0 checkpoint instead of rerunning ZINC:
+
+```bash
+python scripts/training/train.py \
+    --config configs/paper_config_tuned_pretrained_descriptors.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_pretrained_descriptors.pt \
+    --pretrain-checkpoint checkpoints/pretrained_encoder.pt \
+    --run-descriptor-probe \
+    --device cuda
+```
+
+This is the maintained warm-start path when you want one Stage 0 artifact to be
+reused across several downstream TGNN variants such as:
+
+- tuned TGNN
+- GPS TGNN
+- TGNN + descriptor augmentation
+- TGNN + GC crystal priors
 
 ## GC-Prior Crystal Runs
 
@@ -219,6 +292,17 @@ DirectGNN supports the same pattern through
 For cloud or preemptible sessions, `scripts/training/run_resume_safe_train.sh`
 wraps the TGNN CLI and reuses the checkpoint automatically.
 
+Additional TGNN-only switches worth knowing:
+
+- `--pretrain`
+- `--pretrain-checkpoint`
+- `--pretrain-epochs`
+- `--pretrain-batch-size`
+- `--pretrain-lr`
+- `--pretrain-data`
+- `--pretrain-output`
+- `--run-descriptor-probe`
+
 ## Interactive Training Surfaces
 
 The repository also ships a maintained GUI for the same workflow:
@@ -250,6 +334,11 @@ TGNN checkpoints saved by `scripts/training/train.py` include:
 - sidecars written next to the checkpoint:
   - `<checkpoint>.manifest.json`
   - `<checkpoint>.model_card.json`
+
+When TGNN descriptor augmentation is enabled, the checkpoint also stores:
+
+- `descriptor_mean`
+- `descriptor_std`
 
 DirectGNN checkpoints include the same core items and additionally store
 descriptor normalization stats when descriptor augmentation is enabled:
@@ -324,6 +413,20 @@ Maintained TGNN configs:
   - canonical paper-style training config
 - `configs/paper_config_tuned.yaml`
   - maintained tuned TGNN baseline
+- `configs/paper_config_tuned_tgnn_descriptors.yaml`
+  - tuned TGNN with shared RDKit descriptor augmentation
+- `configs/paper_config_tuned_regularized.yaml`
+  - tuned TGNN with higher dropout, weight decay, stronger `tau_reg`, and early stopping
+- `configs/paper_config_tuned_regularized_gc.yaml`
+  - the same regularized schedule plus GC crystal priors
+- `configs/paper_config_tuned_regularized_descriptors.yaml`
+  - regularized tuned TGNN plus descriptor augmentation
+- `configs/paper_config_tuned_gps.yaml`
+  - tuned TGNN with the GPS encoder replacing the local-only MPNN
+- `configs/paper_config_tuned_pretrained.yaml`
+  - tuned TGNN intended for Stage 0 + curriculum experiments
+- `configs/paper_config_tuned_pretrained_descriptors.yaml`
+  - Stage 0 + descriptor-augmented TGNN
 - `configs/paper_config_split_late.yaml`
   - late role-specific encoder blocks
 - `configs/paper_config_gc_priors.yaml`
@@ -406,8 +509,8 @@ injection is disabled during training for that specific comparison.
 
 ## Practical Distinctions
 
-- Stage 0 pretraining is optional and library-driven today.
-- The main paper-style CLI starts directly from the three-phase curriculum.
+- Stage 0 pretraining is optional but now supported directly by the main TGNN CLI.
+- The main paper-style CLI still starts directly from the three-phase curriculum unless you pass `--pretrain` or `--pretrain-checkpoint`.
 - Oracle injection is training-only unless a diagnostic script explicitly
   forces it during evaluation.
 - Pair-temperature batching is important if you want temperature-consistency

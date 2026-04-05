@@ -21,7 +21,11 @@ from tgnn_solv.baselines.direct_gnn import DirectGNN, DirectGNNTrainer
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import make_loader
 from tgnn_solv.experiment_logger import ExperimentLogger
-from tgnn_solv.features import compute_descriptor_normalization_stats
+from tgnn_solv.features import (
+    DESCRIPTOR_RAW_ABS_CLIP,
+    DescriptorNormalizer,
+    validate_descriptor_normalization_stats,
+)
 from tgnn_solv.seed import set_seed
 
 
@@ -103,6 +107,17 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional batch-size override for data loading.",
     )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=None,
+        help="Optional epoch override for DirectGNN stage-2 training.",
+    )
+    parser.add_argument(
+        "--debug-descriptor-batch",
+        action="store_true",
+        help="Print a one-batch descriptor trace before training.",
+    )
     return parser.parse_args()
 
 
@@ -145,6 +160,94 @@ def load_data(
         use_gc_priors_crystal=config.use_gc_priors_crystal,
         seed=seed,
     )
+
+
+def summarize_tensor(tensor: torch.Tensor | None) -> dict[str, object] | None:
+    """Return simple min/max diagnostics for a tensor."""
+    if tensor is None:
+        return None
+    detached = tensor.detach().cpu()
+    finite = torch.isfinite(detached)
+    if not finite.any():
+        return {
+            "shape": list(detached.shape),
+            "min": None,
+            "max": None,
+            "nan": int(torch.isnan(detached).sum().item()),
+            "inf": int(torch.isinf(detached).sum().item()),
+        }
+    finite_values = detached[finite]
+    return {
+        "shape": list(detached.shape),
+        "min": float(finite_values.min().item()),
+        "max": float(finite_values.max().item()),
+        "nan": int(torch.isnan(detached).sum().item()),
+        "inf": int(torch.isinf(detached).sum().item()),
+    }
+
+
+def print_descriptor_trace(
+    model: DirectGNN,
+    loader: DataLoader,
+    device: torch.device,
+) -> None:
+    """Print a one-batch descriptor trace from dataset tensors to predictions."""
+    first_batch = next(iter(loader), None)
+    if first_batch is None:
+        print("   Descriptor trace skipped: loader is empty.")
+        return
+
+    sol_b, slv_b, targets = first_batch
+    sol_b = sol_b.to(device)
+    slv_b = slv_b.to(device)
+    solute_descriptors = targets.get("solute_descriptors")
+    solvent_descriptors = targets.get("solvent_descriptors")
+    if not isinstance(solute_descriptors, torch.Tensor) or not isinstance(
+        solvent_descriptors, torch.Tensor
+    ):
+        print("   Descriptor trace skipped: batch does not include descriptor tensors.")
+        return
+
+    with torch.no_grad():
+        output = model(
+            sol_b,
+            slv_b,
+            targets["T"].to(device),
+            solvent_type=targets.get("solvent_type"),
+            solute_morgan_fp=targets.get("solute_morgan_fp"),
+            solvent_morgan_fp=targets.get("solvent_morgan_fp"),
+            solute_descriptors=solute_descriptors.to(device),
+            solvent_descriptors=solvent_descriptors.to(device),
+            return_debug_tensors=True,
+        )
+
+    debug_tensors = output.get("debug_tensors", {})
+    trace_payload = {
+        "raw_solute_descriptors": summarize_tensor(
+            debug_tensors.get("raw_solute_descriptors")
+        ),
+        "raw_solvent_descriptors": summarize_tensor(
+            debug_tensors.get("raw_solvent_descriptors")
+        ),
+        "normalized_solute_descriptors": summarize_tensor(
+            debug_tensors.get("normalized_solute_descriptors")
+        ),
+        "normalized_solvent_descriptors": summarize_tensor(
+            debug_tensors.get("normalized_solvent_descriptors")
+        ),
+        "solute_descriptor_embedding": summarize_tensor(
+            debug_tensors.get("descriptor_embedding_solute")
+        ),
+        "solvent_descriptor_embedding": summarize_tensor(
+            debug_tensors.get("descriptor_embedding_solvent")
+        ),
+        "pair_representation": summarize_tensor(
+            debug_tensors.get("pair_representation")
+        ),
+        "ln_x2_prediction": summarize_tensor(output.get("ln_x2")),
+    }
+    print("\nDescriptor batch trace:")
+    print(json.dumps(trace_payload, indent=2))
 
 
 def atomic_torch_save(payload: dict, path: Path) -> None:
@@ -254,6 +357,9 @@ def main() -> None:
         if args.batch_size is not None:
             config.batch_size = int(args.batch_size)
             print(f"   Applying batch_size override: {config.batch_size}")
+        if args.epochs is not None:
+            config.epochs_phase2 = int(args.epochs)
+            print(f"   Applying epochs override: {config.epochs_phase2}")
 
         print(f"   Device: {device}")
         print(f"   Seed: {args.seed}")
@@ -272,22 +378,27 @@ def main() -> None:
             if resume_checkpoint is not None:
                 descriptor_mean = resume_checkpoint.get("descriptor_mean")
                 descriptor_std = resume_checkpoint.get("descriptor_std")
-            if descriptor_mean is None or descriptor_std is None:
-                smiles_series = pd.concat(
-                    [
-                        train_df["solute_smiles"].astype(str),
-                        train_df["solvent_smiles"].astype(str),
-                    ],
-                    axis=0,
-                    ignore_index=True,
+            if descriptor_mean is not None and descriptor_std is not None:
+                descriptor_mean, descriptor_std = validate_descriptor_normalization_stats(
+                    descriptor_mean,
+                    descriptor_std,
                 )
-                descriptor_mean, descriptor_std = compute_descriptor_normalization_stats(
-                    smiles_series.tolist()
+            else:
+                normalizer = DescriptorNormalizer().fit(train_df)
+                descriptor_mean, descriptor_std = validate_descriptor_normalization_stats(
+                    normalizer.mean,
+                    normalizer.std,
                 )
             config.descriptor_dim = int(torch.as_tensor(descriptor_mean).shape[0])
             print(
                 "   Descriptor augmentation enabled: "
                 f"{config.descriptor_dim} RDKit descriptors."
+            )
+            print(
+                "   Descriptor normalization stats: "
+                f"max|mean|={float(abs(torch.as_tensor(descriptor_mean)).max()):.2f}, "
+                f"max(std)={float(torch.as_tensor(descriptor_std).max()):.2f}, "
+                f"raw_clip={DESCRIPTOR_RAW_ABS_CLIP:.0f}"
             )
 
         print("\n4. Initializing experiment logger...")
@@ -332,6 +443,8 @@ def main() -> None:
         )
         print(f"   Total parameters: {total_params:,}")
         print(f"   Trainable parameters: {trainable_params:,}")
+        if args.debug_descriptor_batch and config.use_descriptor_augmentation:
+            print_descriptor_trace(model, train_loader, device)
 
         print("\n7. Training model...")
         trainer = DirectGNNTrainer(model, device=device)

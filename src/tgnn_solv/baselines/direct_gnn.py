@@ -30,12 +30,17 @@ from torch_geometric.data import Batch
 
 from ..config import TGNNSolvConfig
 from ..heads import MorganFeatureAdapter
-from ..features import NODE_FEAT_DIM, EDGE_FEAT_DIM
+from ..features import (
+    DESCRIPTOR_Z_CLIP,
+    EDGE_FEAT_DIM,
+    NODE_FEAT_DIM,
+    validate_descriptor_normalization_stats,
+)
 from ..layers import (
-    GNNEncoder,
     SoluteSolventCrossAttention,
     BipartiteMessagePassing,
     PhysicsAwareReadout,
+    build_graph_encoder,
     pad_atom_features,
     make_temperature_features,
     build_batch_from_lists,
@@ -47,7 +52,6 @@ TensorList: TypeAlias = list[Tensor]
 MetricDict: TypeAlias = dict[str, float]
 DirectTrainerStateDict: TypeAlias = dict[str, Any]
 DirectResumeStateDict: TypeAlias = dict[str, Any]
-DESCRIPTOR_Z_CLIP = 10.0
 
 
 class DirectGNN(nn.Module):
@@ -76,13 +80,7 @@ class DirectGNN(nn.Module):
         F = cfg.hidden_dim
 
         # --- Same GNN encoder (shared backbone with role adapters) ---
-        self.gnn = GNNEncoder(
-            node_feat_dim, edge_feat_dim,
-            hidden_dim=F,
-            n_layers=cfg.n_gnn_layers,
-            role_mode=cfg.encoder_role_mode,
-            role_specific_layers=cfg.encoder_role_specific_layers,
-        )
+        self.gnn = build_graph_encoder(node_feat_dim, edge_feat_dim, cfg)
 
         # --- Same interaction stack ---
         self.interaction_mode = cfg.interaction_mode
@@ -146,11 +144,12 @@ class DirectGNN(nn.Module):
         if cfg.use_descriptor_augmentation:
             if cfg.descriptor_dim <= 0:
                 raise ValueError("descriptor_dim must be positive when descriptor augmentation is enabled.")
+            descriptor_hidden_dim = cfg.resolved_descriptor_hidden_dim
             self.descriptor_adapter = nn.Sequential(
-                nn.Linear(cfg.descriptor_dim, cfg.descriptor_hidden_dim),
+                nn.Linear(cfg.descriptor_dim, descriptor_hidden_dim),
                 nn.SiLU(),
                 nn.Dropout(cfg.dropout),
-                nn.Linear(cfg.descriptor_hidden_dim, cfg.descriptor_hidden_dim),
+                nn.Linear(descriptor_hidden_dim, descriptor_hidden_dim),
                 nn.SiLU(),
             )
             self.descriptor_mean = torch.zeros(cfg.descriptor_dim)
@@ -161,7 +160,7 @@ class DirectGNN(nn.Module):
         #        |g_sol-g_slv|(D_r) + t_enc(n_temp_bins)
         pair_input_dim = D_r * 4 + n_temp_bins
         if cfg.use_descriptor_augmentation:
-            pair_input_dim += cfg.descriptor_hidden_dim * 4
+            pair_input_dim += cfg.resolved_descriptor_hidden_dim * 4
 
         self.prediction_head = nn.Sequential(
             nn.Linear(pair_input_dim, 1024),
@@ -184,17 +183,13 @@ class DirectGNN(nn.Module):
         std: Tensor | list[float],
     ) -> None:
         """Attach precomputed descriptor normalization statistics to the model."""
-        mean_tensor = torch.as_tensor(mean, dtype=torch.float32)
-        std_tensor = torch.as_tensor(std, dtype=torch.float32)
-        if mean_tensor.ndim != 1 or std_tensor.ndim != 1:
-            raise ValueError("Descriptor normalization tensors must be 1D.")
-        if mean_tensor.shape != std_tensor.shape:
-            raise ValueError("Descriptor normalization mean/std must have the same shape.")
-        if self.cfg.use_descriptor_augmentation and mean_tensor.numel() != self.cfg.descriptor_dim:
-            raise ValueError(
-                f"Descriptor normalization size mismatch: got {mean_tensor.numel()}, "
-                f"expected {self.cfg.descriptor_dim}."
-            )
+        mean_arr, std_arr = validate_descriptor_normalization_stats(
+            mean,
+            std,
+            descriptor_dim=self.cfg.descriptor_dim if self.cfg.use_descriptor_augmentation else None,
+        )
+        mean_tensor = torch.as_tensor(mean_arr, dtype=torch.float32)
+        std_tensor = torch.as_tensor(std_arr, dtype=torch.float32)
         buffer_device = self.descriptor_mean.device
         buffer_dtype = self.descriptor_mean.dtype
         self.descriptor_mean = mean_tensor.to(
@@ -206,8 +201,8 @@ class DirectGNN(nn.Module):
             dtype=buffer_dtype,
         ).clone()
 
-    def _encode_descriptors(self, descriptors: Tensor) -> Tensor:
-        """Normalize and project raw RDKit descriptors into the pair space."""
+    def _normalize_descriptors(self, descriptors: Tensor) -> Tensor:
+        """Normalize raw RDKit descriptors with the fitted train-set statistics."""
         if self.descriptor_adapter is None:
             raise ValueError("Descriptor augmentation is disabled for this DirectGNN instance.")
         if descriptors.size(-1) != self.cfg.descriptor_dim:
@@ -219,8 +214,14 @@ class DirectGNN(nn.Module):
             device=self.descriptor_mean.device,
             dtype=self.descriptor_mean.dtype,
         )
-        normalized = (descriptors - self.descriptor_mean) / self.descriptor_std.clamp_min(1e-8)
-        normalized = normalized.clamp(min=-DESCRIPTOR_Z_CLIP, max=DESCRIPTOR_Z_CLIP)
+        return ((descriptors - self.descriptor_mean) / self.descriptor_std.clamp_min(1e-8)).clamp(
+            min=-DESCRIPTOR_Z_CLIP,
+            max=DESCRIPTOR_Z_CLIP,
+        )
+
+    def _encode_descriptors(self, descriptors: Tensor) -> Tensor:
+        """Normalize and project raw RDKit descriptors into the pair space."""
+        normalized = self._normalize_descriptors(descriptors)
         return self.descriptor_adapter(normalized)
 
     def _encode_and_readout(
@@ -277,11 +278,12 @@ class DirectGNN(nn.Module):
         solvent_morgan_fp: Tensor | None = None,
         solute_descriptors: Tensor | None = None,
         solvent_descriptors: Tensor | None = None,
-    ) -> dict[str, Tensor]:
+        return_debug_tensors: bool = False,
+    ) -> dict[str, Tensor | dict[str, Tensor]]:
         """
         Forward pass.
 
-        Returns dict with ln_x2, x2 (for compatibility with eval code).
+        Returns dict with ln_x2, x2, and optional debug tensors.
         """
         t_feat = make_temperature_features(T)
         # --- Encode both molecules ---
@@ -366,14 +368,20 @@ class DirectGNN(nn.Module):
             (g_sol_post - g_slv_post).abs(),
             t_enc,
         ], dim=-1)
+        normalized_solute_descriptors = None
+        normalized_solvent_descriptors = None
+        sol_desc = None
+        slv_desc = None
         if self.cfg.use_descriptor_augmentation:
             if solute_descriptors is None or solvent_descriptors is None:
                 raise ValueError(
                     "Descriptor augmentation is enabled in the config, "
                     "but solute_descriptors/solvent_descriptors were not provided."
                 )
-            sol_desc = self._encode_descriptors(solute_descriptors).to(g_sol_post)
-            slv_desc = self._encode_descriptors(solvent_descriptors).to(g_slv_post)
+            normalized_solute_descriptors = self._normalize_descriptors(solute_descriptors)
+            normalized_solvent_descriptors = self._normalize_descriptors(solvent_descriptors)
+            sol_desc = self.descriptor_adapter(normalized_solute_descriptors).to(g_sol_post)
+            slv_desc = self.descriptor_adapter(normalized_solvent_descriptors).to(g_slv_post)
             pair_input = torch.cat(
                 [
                     pair_input,
@@ -391,6 +399,21 @@ class DirectGNN(nn.Module):
         return {
             "ln_x2": ln_x2,
             "x2": torch.exp(ln_x2).clamp(0, 1),
+            **(
+                {
+                    "debug_tensors": {
+                        "raw_solute_descriptors": solute_descriptors.detach(),
+                        "raw_solvent_descriptors": solvent_descriptors.detach(),
+                        "normalized_solute_descriptors": normalized_solute_descriptors.detach(),
+                        "normalized_solvent_descriptors": normalized_solvent_descriptors.detach(),
+                        "descriptor_embedding_solute": sol_desc.detach(),
+                        "descriptor_embedding_solvent": slv_desc.detach(),
+                        "pair_representation": pair_input.detach(),
+                    }
+                }
+                if return_debug_tensors and self.cfg.use_descriptor_augmentation
+                else {}
+            ),
         }
 
 

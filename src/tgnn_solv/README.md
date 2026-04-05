@@ -59,7 +59,7 @@ from tgnn_solv.inference import load_model
 
 ### `tgnn_solv.models`
 
-- TGNN-Solv model, DirectGNN, heads, and layers
+- TGNN-Solv model, DirectGNN, heads, layers, and optional GPS encoder path
 
 ### `tgnn_solv.physics`
 
@@ -67,7 +67,7 @@ from tgnn_solv.inference import load_model
 
 ### `tgnn_solv.training`
 
-- trainer, losses, pretraining, and tuning
+- trainer, losses, Stage 0 pretraining, pretrain-pipeline helpers, and tuning
 
 ### `tgnn_solv.evaluation`
 

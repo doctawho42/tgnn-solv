@@ -21,13 +21,13 @@ jupyter lab
 | Notebook | Focus | When to use it | Link |
 | --- | --- | --- | --- |
 | `01_prepare_data.ipynb` | dataset construction and split logic | when you want to inspect the processed CSV pipeline interactively | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/01_prepare_data.ipynb) |
-| `02_train.ipynb` | TGNN-Solv training and optional Stage 0 pretraining | when you want to step through the curriculum and configuration choices | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/02_train.ipynb) |
+| `02_train.ipynb` | TGNN-Solv training, optional Stage 0 pretraining, and encoder/config variants | when you want to step through the curriculum, `--pretrain`, and tuned TGNN follow-up configs | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/02_train.ipynb) |
 | `03_inference.ipynb` | single-point inference, temperature scan, and AD/OOD checks | when you want to inspect one system manually | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/03_inference.ipynb) |
 | `04_evaluation.ipynb` | metrics, uncertainty, calibration, and error analysis | when you want richer post-hoc analysis than the quick CLI | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/04_evaluation.ipynb) |
 | `05_baselines.ipynb` | DirectGNN, descriptor baselines, RF, and external baselines | when you are comparing TGNN against non-physics alternatives | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/05_baselines.ipynb) |
 | `06_ablations.ipynb` | ablation reading and architectural comparisons | when you want to isolate which component is helping | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/06_ablations.ipynb) |
 | `07_temperature.ipynb` | temperature dependence, ideal solubility, and van't Hoff analysis | when you want to inspect thermal trends rather than aggregate metrics | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/07_temperature.ipynb) |
-| `08_optuna_tuning.ipynb` | Optuna-based hyperparameter tuning | when you want interactive tuning rather than the CLI wrapper | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/08_optuna_tuning.ipynb) |
+| `08_optuna_tuning.ipynb` | Optuna-based hyperparameter tuning | when you want interactive tuning for TGNN, GPS TGNN, descriptor-augmented TGNN, and DirectGNN families | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/08_optuna_tuning.ipynb) |
 
 ## How They Map to the Site
 
@@ -66,6 +66,14 @@ reproducible default remains the grouped CLI surface under:
 
 Use notebooks for inspection and explanation, and the CLIs for reproducible
 batch runs.
+
+Current alignment notes:
+
+- `02_train.ipynb` now covers both notebook-driven Stage 0 and the maintained
+  CLI path through `scripts/training/train.py --pretrain` /
+  `scripts/training/train_with_pretrain.py`
+- `08_optuna_tuning.ipynb` mirrors the current `OptunaTuner` model aliases,
+  including GPS and descriptor-augmented TGNN variants
 
 Current scope note:
 

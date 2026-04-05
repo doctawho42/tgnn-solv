@@ -91,6 +91,7 @@ def test_direct_gnn_descriptor_augmentation_forward_backward() -> None:
         temperature,
         solute_descriptors=solute_descriptors,
         solvent_descriptors=solvent_descriptors,
+        return_debug_tensors=True,
     )
 
     loss = output["ln_x2"].sum()
@@ -98,6 +99,7 @@ def test_direct_gnn_descriptor_augmentation_forward_backward() -> None:
 
     assert output["ln_x2"].shape == (2,)
     assert output["x2"].shape == (2,)
+    assert "debug_tensors" in output
     assert model.descriptor_mean.shape == (descriptor_dim,)
     assert model.descriptor_std.shape == (descriptor_dim,)
 
@@ -172,6 +174,31 @@ def test_direct_gnn_descriptor_encoding_clamps_extreme_z_scores() -> None:
         dtype=torch.float32,
     )
     assert torch.allclose(encoded, expected)
+
+
+def test_direct_gnn_descriptor_normalization_rejects_unclipped_stats() -> None:
+    """DirectGNN should reject impossible normalization stats from stale checkpoints."""
+    cfg = TGNNSolvConfig(
+        hidden_dim=32,
+        n_gnn_layers=2,
+        n_cross_attn_layers=1,
+        n_attn_heads=4,
+        pair_dim=64,
+        set2set_steps=2,
+        solvent_moe_hidden=64,
+        solvent_type_emb_dim=8,
+        use_descriptor_augmentation=True,
+        descriptor_dim=3,
+        descriptor_hidden_dim=3,
+        use_morgan_features=False,
+    )
+    model = DirectGNN(cfg=cfg)
+
+    with pytest.raises(ValueError, match="raw descriptor clip"):
+        model.set_descriptor_normalization(
+            torch.zeros(3, dtype=torch.float32),
+            torch.tensor([1.0, 1.0, 1.0e9], dtype=torch.float32),
+        )
 
 
 def test_direct_gnn_trainer_uses_configured_grad_clip_and_weight_decay(

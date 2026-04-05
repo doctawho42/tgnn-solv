@@ -73,6 +73,13 @@ It evaluates:
 - DirectGNN + descriptors
 - RF on descriptors
 
+Current follow-up lanes built around the same scaffold split and matched-budget
+logic include:
+
+- TGNN + descriptor augmentation
+- TGNN + GPS encoder
+- Stage 0 pretrained TGNN variants
+
 Expected outputs:
 
 - `results/medium_budget/summary.json`
@@ -139,12 +146,18 @@ For CLI-driven tuning:
 
 ```bash
 python scripts/experiments/run_optuna.py \
-    --models tgnn_solv,direct_gnn \
+    --models tgnn_solv,tgnn_solv_gps,tgnn_solv_descriptors,direct_gnn,direct_gnn_descriptors \
     --n-trials 20
 ```
 
 For interactive tuning and analysis, use
 [08_optuna_tuning.ipynb](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/08_optuna_tuning.ipynb).
+
+Current scope note:
+
+- `Stage 0` pretraining is intentionally not part of the default Optuna loop
+  because rerunning ZINC-scale pretraining inside every trial would dominate
+  the cost of the actual TGNN search
 
 ## Visual Orchestration
 

@@ -65,10 +65,20 @@ const NOTES_BY_SLUG = {
           place, and then discards its temporary heads before normal TGNN training begins.
         </p>
         <p>
+          In the maintained workflow this is no longer Python-API-only. The same Stage 0 path is available through
+          `scripts/training/train.py --pretrain`, `--pretrain-checkpoint`, and the convenience wrapper
+          `scripts/training/train_with_pretrain.py`.
+        </p>
+        <p>
           The code trains four objectives together: masked 2-hop subgraph reconstruction, masked bond-type prediction,
-          RDKit descriptor regression, and graph-level contrastive learning. The combined objective is
+          12-target RDKit descriptor regression, and graph-level contrastive learning. The combined objective is
           <TexInline>{"L = L_{atom} + 0.5L_{bond} + L_{prop} + 0.5L_{ctr}"}</TexInline> with default temperature
           <TexInline>{"\\tau = 0.1"}</TexInline>.
+        </p>
+        <p>
+          The newer point to emphasize is that Stage 0 is now a maintained pipeline rather than only a class. The helper layer in
+          <code>tgnn_solv.pretrain_pipeline</code> loads SMILES corpora, writes reusable encoder/readout checkpoints, and restores
+          them later into fresh TGNN training runs.
         </p>
       </>
     ),
@@ -94,6 +104,11 @@ const NOTES_BY_SLUG = {
           The red zone is the point of the architecture: once <TexInline>{"T_m, \\Delta H_{fus}, \\tau_{12}, \\tau_{21}, \\alpha"}</TexInline>
           are predicted, the hardcoded SLE solver determines <TexInline>{"\\ln x_2"}</TexInline>. That is the physics bottleneck.
         </p>
+        <p>
+          The newer architectural change is upstream. The shared encoder can now be either the original local MPNN or
+          <code>GPSEncoder</code>, where graph-global attention is combined with on-the-fly Laplacian or RWSE positional encodings
+          without changing the downstream TGNN head contract.
+        </p>
       </>
     ),
     report: (
@@ -117,6 +132,10 @@ const NOTES_BY_SLUG = {
           In shorthand, TGNN-Solv predicts solver-facing thermodynamic parameters and returns
           <TexInline>{"\\ln x_2 = \\mathrm{SLE}(\\theta) + \\text{bounded correction}"}</TexInline>, while DirectGNN predicts
           <TexInline>{"\\ln x_2"}</TexInline> directly from the same pair representation plus temperature encoding.
+        </p>
+        <p>
+          This remains true under the newer extensions as well. If GPS, Stage 0 warm starts, or descriptor augmentation are enabled,
+          they should be matched across families when the goal is a fair architectural comparison rather than a best-effort leaderboard.
         </p>
       </>
     ),
@@ -445,6 +464,11 @@ const EXTRA_NOTES_BY_SLUG = {
         enforce local chemistry, descriptor regression enforces molecule-level semantics, and contrastive learning encourages stable
         graph summaries under mild perturbations of the same underlying molecule.
       </p>
+      <p>
+        The engineering implication of the new pipeline layer is important: Stage 0 is now something that can be checkpointed, reused,
+        and fanned out into multiple downstream configs rather than rerun from scratch every time. That makes pretraining a practical
+        comparison lane for tuned TGNN, GPS TGNN, and descriptor-augmented TGNN instead of a one-off notebook experiment.
+      </p>
     </>
   ),
   architecture: (
@@ -458,6 +482,11 @@ const EXTRA_NOTES_BY_SLUG = {
         The more important architectural choice is where the model is not flexible. Once the learned modules emit solver-facing
         quantities, the prediction path becomes structured, which means later analysis can ask whether an error came from the encoder,
         from crystal-property estimation, from interaction parameters, or from the correction branch.
+      </p>
+      <p>
+        The newer GPS and descriptor-augmentation additions should be read in that same frame. They are upstream representation
+        enrichments: they change what information reaches the thermodynamic head, but they do not remove the requirement that TGNN-Solv
+        still explain its prediction through solver-facing physical quantities.
       </p>
     </>
   ),
@@ -473,6 +502,11 @@ const EXTRA_NOTES_BY_SLUG = {
         This is also why descriptor augmentation on the DirectGNN side remains informative rather than unfair. The descriptor branch
         augments the pair representation after the shared graph backbone, so it probes whether missing chemistry signal is better
         supplied by richer features or by the explicit thermodynamic bottleneck.
+      </p>
+      <p>
+        With the current codebase, the fair-comparison rule is stricter than before: GPS and descriptor augmentation now exist on the
+        TGNN side as well, and Stage 0 can warm-start the shared encoder. So when a result is meant to answer the bottleneck question,
+        those upstream additions should be matched rather than silently enabled only for one family.
       </p>
     </>
   ),

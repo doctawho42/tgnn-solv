@@ -23,8 +23,13 @@ class TGNNSolvConfig:
     # --- Architecture ---
     hidden_dim: int = 256
     n_gnn_layers: int = 6
+    encoder_type: str = "mpnn"  # "mpnn" or "gps"
     encoder_role_mode: str = "shared_residual"  # "shared_residual" or "split_late"
     encoder_role_specific_layers: int = 2
+    gps_num_heads: int = 8
+    gps_use_edge_attr: bool = True
+    gps_positional_encoding: str = "laplacian"  # "laplacian" or "rwse"
+    gps_pe_dim: int = 16
     n_cross_attn_layers: int = 3
     n_attn_heads: int = 8
     dropout: float = 0.1
@@ -47,6 +52,7 @@ class TGNNSolvConfig:
     use_descriptor_augmentation: bool = False
     descriptor_dim: int = 200
     descriptor_hidden_dim: int = 128
+    descriptor_augmentation_hidden_dim: Optional[int] = None
     use_descriptor_priors: bool = False
     descriptor_prior_hidden_dim: int = 128
     descriptor_prior_hansen_residual_max: float = 5.0
@@ -108,6 +114,7 @@ class TGNNSolvConfig:
     eps: float = 1e-10
     tau_clamp: float = 30.0
     grad_clip: float = 1.0
+    weight_decay: float = 5e-4
     direct_weight_decay: float = 1e-5
     correction_max_abs: float = 2.0
     correction_Tm_max_delta: float = 60.0
@@ -129,10 +136,20 @@ class TGNNSolvConfig:
     phase2_correction_unfreeze_epoch: int = 20
     warmup_epochs: int = 5
     patience: int = 20
+    early_stopping_patience: Optional[int] = None
+    early_stopping_phase3_patience: Optional[int] = None
+    early_stopping_min_epochs: int = 10
 
     phase1_loss_weights: Optional[Dict[str, float]] = None
     phase2_loss_weights: Optional[Dict[str, float]] = None
     phase3_loss_weights: Optional[Dict[str, float]] = None
+
+    @property
+    def resolved_descriptor_hidden_dim(self) -> int:
+        """Return the effective hidden dim for shared descriptor augmentation."""
+        if self.descriptor_augmentation_hidden_dim is not None:
+            return int(self.descriptor_augmentation_hidden_dim)
+        return int(self.descriptor_hidden_dim)
 
     @classmethod
     def from_yaml(cls, path: str) -> "TGNNSolvConfig":
