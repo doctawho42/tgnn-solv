@@ -19,6 +19,9 @@ MODEL_LABELS = {
     "tgnn_solv": "TGNN-Solv",
     "direct_gnn": "DirectGNN",
     "rf_baseline": "RF Baseline",
+    "fastsolv": "FastSolv",
+    "solprop": "SolProp",
+    "custom": "Custom",
 }
 
 
@@ -557,6 +560,53 @@ def build_table_s9(results_dir: Path) -> pd.DataFrame | None:
     return pd.DataFrame(rows)
 
 
+def build_table_s10(results_dir: Path) -> pd.DataFrame | None:
+    """Build Table S10 from canonical external/custom benchmark bundles."""
+    candidate_paths = list((results_dir / "external_baselines").rglob("summary.csv"))
+    candidate_paths += list((results_dir / "custom_benchmarks").rglob("summary.csv"))
+    if not candidate_paths:
+        warn("No external/custom benchmark summary.csv files were found.")
+        return None
+
+    rows: list[dict[str, object]] = []
+    for path in sorted(candidate_paths):
+        try:
+            df = pd.read_csv(path)
+        except Exception as exc:
+            warn(f"Could not read benchmark summary {path}: {exc}")
+            continue
+        if df.empty or "model" not in df.columns:
+            continue
+        for _, record in df.iterrows():
+            model_name = str(record.get("model") or path.parent.name)
+            model_guess = model_name.lower()
+            if "solprop" in model_guess:
+                display = "SolProp"
+            elif "fastsolv" in model_guess:
+                display = "FastSolv"
+            elif "custom" in model_guess:
+                display = "Custom"
+            else:
+                display = MODEL_LABELS.get(model_guess, model_name)
+            rows.append(
+                {
+                    "Benchmark bundle": path.parent.name,
+                    "Model": display,
+                    "Source": str(path.parent.relative_to(results_dir)),
+                    "Split": record.get("split", "unknown"),
+                    "MAE": record.get("mae"),
+                    "RMSE": record.get("rmse"),
+                    "R²": record.get("r2"),
+                    "Bias": record.get("bias"),
+                    "N samples": record.get("n_samples"),
+                }
+            )
+    if not rows:
+        return None
+    table = pd.DataFrame(rows)
+    return table.sort_values(["MAE", "Model"], ascending=[True, True], na_position="last").reset_index(drop=True)
+
+
 def main() -> int:
     """Generate all available supplementary tables."""
     args = parse_args()
@@ -575,6 +625,7 @@ def main() -> int:
         ("table_s7_temperature_extrapolation", "Temperature extrapolation results", build_table_s7, "Table S7"),
         ("table_s8_backbone_comparison", "Shared-versus-split-late backbone comparison", build_table_s8, "Table S8"),
         ("table_s9_split_protocols", "Model performance across split protocols", build_table_s9, "Table S9"),
+        ("table_s10_external_benchmarks", "External and custom benchmark summary", build_table_s10, "Table S10"),
     ]
 
     generated: list[Path] = []

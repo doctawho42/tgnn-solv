@@ -29,6 +29,7 @@ Usage::
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -37,8 +38,15 @@ import torch.nn as nn
 from torch_geometric.data import Batch
 
 from .model import TGNNSolv
-from .features import smiles_to_graph
+from .features import (
+    smiles_to_descriptor_prior_features,
+    smiles_to_graph,
+    smiles_to_group_prior_features,
+    smiles_to_morgan_fp,
+)
+from .group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from .progress import progress, trange
+from .data.solvent_types import solvent_type_id_from_smiles
 
 
 # ================================================================== #
@@ -70,6 +78,75 @@ def _prepare_inputs(
     slv_batch = Batch.from_data_list([slv_g]).to(device)
     T_tensor = torch.tensor([T], device=device)
     return sol_batch, slv_batch, T_tensor
+
+
+def _prepare_forward_kwargs(
+    model: TGNNSolv,
+    solute_smiles: str,
+    solvent_smiles: str,
+    device: torch.device,
+) -> dict[str, Any]:
+    """Build optional forward kwargs required by the current model config."""
+    kwargs: dict[str, Any] = {
+        "solvent_type": torch.tensor(
+            [solvent_type_id_from_smiles(solvent_smiles)],
+            device=device,
+            dtype=torch.long,
+        )
+    }
+
+    if model.cfg.use_morgan_features:
+        sol_fp = smiles_to_morgan_fp(
+            solute_smiles,
+            radius=model.cfg.morgan_radius,
+            n_bits=model.cfg.morgan_n_bits,
+        )
+        slv_fp = smiles_to_morgan_fp(
+            solvent_smiles,
+            radius=model.cfg.morgan_radius,
+            n_bits=model.cfg.morgan_n_bits,
+        )
+        if sol_fp is None or slv_fp is None:
+            raise ValueError("Failed to compute Morgan fingerprints for uncertainty inference.")
+        kwargs["solute_morgan_fp"] = torch.tensor(sol_fp, device=device).unsqueeze(0)
+        kwargs["solvent_morgan_fp"] = torch.tensor(slv_fp, device=device).unsqueeze(0)
+
+    if model.cfg.use_descriptor_priors:
+        sol_desc = smiles_to_descriptor_prior_features(solute_smiles)
+        slv_desc = smiles_to_descriptor_prior_features(solvent_smiles)
+        if sol_desc is None or slv_desc is None:
+            raise ValueError("Failed to compute descriptor priors for uncertainty inference.")
+        kwargs["solute_descriptor_prior_features"] = torch.tensor(
+            sol_desc,
+            device=device,
+        ).unsqueeze(0)
+        kwargs["solvent_descriptor_prior_features"] = torch.tensor(
+            slv_desc,
+            device=device,
+        ).unsqueeze(0)
+    elif model.cfg.use_group_priors:
+        sol_group = smiles_to_group_prior_features(solute_smiles)
+        slv_group = smiles_to_group_prior_features(solvent_smiles)
+        if sol_group is None or slv_group is None:
+            raise ValueError("Failed to compute fixed group priors for uncertainty inference.")
+        kwargs["solute_group_prior_features"] = torch.tensor(
+            sol_group,
+            device=device,
+        ).unsqueeze(0)
+        kwargs["solvent_group_prior_features"] = torch.tensor(
+            slv_group,
+            device=device,
+        ).unsqueeze(0)
+
+    if model.cfg.use_gc_priors_crystal:
+        gc_priors = compute_gc_priors(solute_smiles)
+        if any(gc_priors[key] is None for key in ("T_m_gc", "dH_fus_gc", "dCp_fus_gc")):
+            gc_priors = GC_FALLBACK_PRIORS
+        kwargs["T_m_gc"] = torch.tensor([gc_priors["T_m_gc"]], device=device)
+        kwargs["dH_fus_gc"] = torch.tensor([gc_priors["dH_fus_gc"]], device=device)
+        kwargs["dCp_fus_gc"] = torch.tensor([gc_priors["dCp_fus_gc"]], device=device)
+
+    return kwargs
 
 
 def _summarize_samples(samples: dict[str, list[float]]) -> dict[str, float]:
@@ -130,6 +207,12 @@ class MCDropoutPredictor:
         sol_b, slv_b, T_t = _prepare_inputs(
             solute_smiles, solvent_smiles, T, self.device
         )
+        forward_kwargs = _prepare_forward_kwargs(
+            self.model,
+            solute_smiles,
+            solvent_smiles,
+            self.device,
+        )
 
         # Set model to eval, then re-enable dropout
         self.model.eval()
@@ -147,7 +230,7 @@ class MCDropoutPredictor:
         }
 
         for _ in trange(self.n_samples, desc="MC-dropout samples", leave=False):
-            out = self.model(sol_b, slv_b, T_t)
+            out = self.model(sol_b, slv_b, T_t, **forward_kwargs)
             samples["ln_x2"].append(out["ln_x2"].item())
             samples["x2"].append(out["x2"].item())
             samples["gamma_2"].append(
@@ -249,7 +332,13 @@ class EnsemblePredictor:
             self.models, desc="Ensemble models", leave=False
         ):
             model.eval()
-            out = model(sol_b, slv_b, T_t)
+            forward_kwargs = _prepare_forward_kwargs(
+                model,
+                solute_smiles,
+                solvent_smiles,
+                self.device,
+            )
+            out = model(sol_b, slv_b, T_t, **forward_kwargs)
             samples["ln_x2"].append(out["ln_x2"].item())
             samples["x2"].append(out["x2"].item())
             samples["gamma_2"].append(

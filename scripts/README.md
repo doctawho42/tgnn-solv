@@ -20,7 +20,7 @@ The top-level scripts remain the compatibility surface for:
 - existing docs and copy-paste commands
 - tests that import script modules directly
 - runners that import other scripts by filename
-- external automation such as `reproduce.sh`
+- external automation and compatibility entrypoints such as `reproduce.sh`
 
 The categorized paths are the preferred navigation surface for humans.
 They delegate to the legacy entry points, so behavior stays identical.
@@ -55,6 +55,7 @@ They delegate to the legacy entry points, so behavior stays identical.
 - `run_full_budget_experiment.py`
 - `run_medium_budget_comparison.py`
 - `run_optuna.py`
+- `reproduce_paper.py`
 - `learning_curves.py`
 - `temperature_extrapolation.py`
 - `statistical_tests.py`
@@ -66,6 +67,12 @@ They delegate to the legacy entry points, so behavior stays identical.
 - `run_fastsolv.py`
 - `compare_fastsolv_tgnn.py`
 - `run_solprop.py`
+
+`run_solprop.py` now covers:
+
+- zero-shot SolProp prediction
+- train-split calibration
+- native SolProp retraining on TGNN-Solv `ln(x2)` targets
 
 ## Usage Guidance
 

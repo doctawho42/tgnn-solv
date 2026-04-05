@@ -50,5 +50,5 @@
       "command": "python scripts/training/train_directgnn.py --config configs/paper_config_directgnn_descriptors.yaml"
     }
   ],
-  "saved_at": "2026-04-05T01:36:04.213886+00:00"
+  "saved_at": "2026-04-05T07:24:33.445963+00:00"
 }

@@ -52,8 +52,16 @@ except Exception as exc:  # pragma: no cover - optional in GUI env
     SORTABLES_ERROR = f"{type(exc).__name__}: {exc}"
 
 try:
+    from streamlit_ketcher import st_ketcher
+
+    KETCHER_ERROR = None
+except Exception as exc:  # pragma: no cover - optional in GUI env
+    st_ketcher = None
+    KETCHER_ERROR = f"{type(exc).__name__}: {exc}"
+
+try:
     from rdkit import Chem, DataStructs
-    from rdkit.Chem import AllChem, Descriptors
+    from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
     from rdkit.Chem.Draw import rdMolDraw2D
 
     RDKIT_ERROR = None
@@ -62,6 +70,7 @@ except Exception as exc:  # pragma: no cover - optional in GUI env
     DataStructs = None
     AllChem = None
     Descriptors = None
+    rdMolDescriptors = None
     rdMolDraw2D = None
     RDKIT_ERROR = f"{type(exc).__name__}: {exc}"
 
@@ -77,6 +86,7 @@ CHECKPOINTS_DIR = REPO_ROOT / "checkpoints"
 FIGURES_DIR = REPO_ROOT / "figures"
 TABLES_DIR = REPO_ROOT / "tables"
 DOCS_DIR = REPO_ROOT / "docs"
+TMP_DIR = REPO_ROOT / "tmp"
 PIPELINE_PRESETS_DIR = REPO_ROOT / "tools" / "experiment_lab" / "presets" / "pipelines"
 PLANNER_DIR = REPO_ROOT / "tools" / "experiment_lab" / "presets" / "planner"
 PLANNER_STATE_PATH = PLANNER_DIR / "planner_state.json"
@@ -88,6 +98,12 @@ APP_TITLE = "TGNN-Solv Experiment Lab"
 DEFAULT_PYTHON_COMMAND = sys.executable
 PROBE_CACHE_VERSION = 2
 PUBLISHED_DOCS_URL = "https://doctawho42.github.io/tgnn-solv/"
+RUNTIME_SOURCE_FILES = (
+    Path(__file__).resolve(),
+    SRC_ROOT / "tgnn_solv" / "inference.py",
+    SRC_ROOT / "tgnn_solv" / "uncertainty.py",
+    SRC_ROOT / "tgnn_solv" / "model.py",
+)
 
 WORKSPACE_GROUPS: list[list[dict[str, str]]] = [
     [
@@ -109,6 +125,25 @@ WORKSPACE_GROUPS: list[list[dict[str, str]]] = [
         {"name": "Environment", "button": "Runtime", "kicker": "Runtime", "desc": "Interpreter health"},
     ],
 ]
+
+
+def runtime_code_token() -> tuple[int, ...]:
+    token: list[int] = []
+    for path in RUNTIME_SOURCE_FILES:
+        try:
+            token.append(path.stat().st_mtime_ns)
+        except FileNotFoundError:
+            token.append(0)
+    return tuple(token)
+
+
+def ensure_runtime_cache_consistency() -> None:
+    current_token = runtime_code_token()
+    cached_token = st.session_state.get("_lab_runtime_code_token")
+    if cached_token != current_token:
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.session_state["_lab_runtime_code_token"] = current_token
 
 ARCHITECTURE_VISUAL_NODES: dict[str, list[dict[str, Any]]] = {
     "TGNN-Solv": [
@@ -173,38 +208,38 @@ ARCHITECTURE_VISUAL_EDGES: dict[str, list[tuple[str, str, str]]] = {
 
 WORKFLOW_STEPS = [
     (
-        "Prepare data",
-        "Build scaffold-aware processed splits and auxiliary labels from raw sources.",
-        ["scripts/data/prepare_data.py"],
+        "Core article reproduction",
+        "Run the maintained core profile: canonical data, tuned TGNN seeds, evaluation, split comparison, tables, and figures.",
+        ["python", "scripts/experiments/reproduce_paper.py", "--profile", "core"],
     ),
     (
-        "Train TGNN-Solv",
-        "Run the maintained three-phase curriculum for the physics-informed model.",
-        ["scripts/training/train.py"],
+        "Article comparison bundle",
+        "Run the current article profile, including medium-budget comparisons and external baseline benchmarking.",
+        ["python", "scripts/experiments/reproduce_paper.py", "--profile", "article"],
     ),
     (
-        "Run multi-seed TGNN",
-        "Aggregate seed-to-seed variance on the canonical split.",
-        ["scripts/experiments/run_seeds.py"],
+        "Full diagnostic reproduction",
+        "Run the expanded profile with split-late, DirectGNN multi-seed, ablations, temperature extrapolation, significance, and full-budget diagnostics.",
+        ["python", "scripts/experiments/reproduce_paper.py", "--profile", "full"],
     ),
     (
-        "Evaluate complete",
-        "Export parity metrics, stratified slices, and prediction arrays.",
-        ["scripts/evaluation/evaluate_complete.py"],
+        "External baseline benchmark",
+        "Run FastSolv and native SolProp against the repo's canonical split.",
+        ["python", "scripts/experiments/run_external_baseline_benchmark.py"],
     ),
     (
-        "Split comparisons",
-        "Compare TGNN-Solv, DirectGNN, and RF baselines across split families.",
-        ["scripts/experiments/run_split_comparisons.py"],
+        "Generate supplementary tables",
+        "Collect paper-facing CSV/LaTeX tables from the currently available results.",
+        ["python", "scripts/experiments/generate_supplementary.py"],
     ),
     (
         "Generate paper figures",
         "Create publication-ready plots from result artifacts.",
-        ["scripts/experiments/generate_paper_figures.py"],
+        ["python", "scripts/experiments/generate_paper_figures.py"],
     ),
     (
-        "Full reproduce shell",
-        "Execute the end-to-end reproduction shell pipeline.",
+        "Legacy shell entrypoint",
+        "Compatibility wrapper that now delegates to the structured article profile runner.",
         ["bash", "reproduce.sh"],
     ),
 ]
@@ -290,17 +325,17 @@ PIPELINE_PRESETS: dict[str, dict[str, Any]] = {
     },
     "Paper reproduction map": {
         "description": (
-            "An expanded DAG view of the current `reproduce.sh` logic: core TGNN path, matched baselines, diagnostics, and final figure/table generation."
+            "An expanded DAG view of the maintained article-reproduction path: tuned TGNN core, medium-budget matched baselines, external FastSolv/SolProp benchmarking, diagnostics, and final figure/table generation."
         ),
         "nodes": [
             {
                 "id": "repro_prepare_data",
                 "label": "Prepare data if missing",
                 "category": "data",
-                "command": "python scripts/prepare_data.py --output-dir notebooks/data/processed --split-mode solute_scaffold --seed 42",
+                "command": "python scripts/data/prepare_data.py --output-dir notebooks/data/processed --split-mode solute_scaffold --seed 42 --skip-download",
                 "depends_on": [],
                 "expected_outputs": ["notebooks/data/processed/train.csv", "notebooks/data/processed/test.csv"],
-                "notes": "Compatibility wrapper used by `reproduce.sh` when processed CSVs are absent.",
+                "notes": "Maintained grouped data-preparation entrypoint used by the structured reproduction runner.",
                 "launchable": True,
                 "active": True,
             },
@@ -308,10 +343,32 @@ PIPELINE_PRESETS: dict[str, dict[str, Any]] = {
                 "id": "repro_run_seeds",
                 "label": "TGNN 5-seed run",
                 "category": "experiments",
-                "command": "python scripts/run_seeds.py --config configs/paper_config.yaml --train-data notebooks/data/processed/train.csv --val-data notebooks/data/processed/val.csv --test-data notebooks/data/processed/test.csv --n-seeds 5 --base-seed 42 --output results/multi_seed_results.json --checkpoint-dir checkpoints/seeds --device cuda",
+                "command": "python scripts/experiments/run_seeds.py --config configs/paper_config_tuned.yaml --train-data notebooks/data/processed/train.csv --val-data notebooks/data/processed/val.csv --test-data notebooks/data/processed/test.csv --n-seeds 5 --base-seed 42 --output results/multi_seed_results.json --checkpoint-dir checkpoints/seeds --device cuda",
                 "depends_on": ["repro_prepare_data"],
                 "expected_outputs": ["results/multi_seed_results.json", "checkpoints/seeds"],
-                "notes": "Main paper-style TGNN multi-seed run.",
+                "notes": "Maintained tuned TGNN multi-seed run used as the core article anchor.",
+                "launchable": True,
+                "active": True,
+            },
+            {
+                "id": "repro_medium_budget",
+                "label": "Medium-budget architecture sweep",
+                "category": "experiments",
+                "command": "python scripts/experiments/run_medium_budget_comparison.py --train-data notebooks/data/processed/train.csv --val-data notebooks/data/processed/val.csv --test-data notebooks/data/processed/test.csv --output-dir results/medium_budget --device cuda",
+                "depends_on": ["repro_prepare_data"],
+                "expected_outputs": ["results/medium_budget"],
+                "notes": "Current in-repo article comparison across tuned TGNN, GC-prior variants, DirectGNN baselines, and RF.",
+                "launchable": True,
+                "active": True,
+            },
+            {
+                "id": "repro_external",
+                "label": "External FastSolv / SolProp benchmark",
+                "category": "baseline",
+                "command": "python scripts/experiments/run_external_baseline_benchmark.py --train-data notebooks/data/processed/train.csv --val-data notebooks/data/processed/val.csv --test-data notebooks/data/processed/test.csv --out-dir results/external_baselines/article_benchmark --split-mode solute_scaffold --fastsolv-mode both --solprop-mode native --continue-on-error",
+                "depends_on": ["repro_prepare_data"],
+                "expected_outputs": ["results/external_baselines/article_benchmark/summary.csv"],
+                "notes": "Article-facing external benchmark path with FastSolv and native-retrained SolProp.",
                 "launchable": True,
                 "active": True,
             },
@@ -319,7 +376,7 @@ PIPELINE_PRESETS: dict[str, dict[str, Any]] = {
                 "id": "repro_split_late",
                 "label": "Split-late matched backbone",
                 "category": "experiments",
-                "command": "python scripts/run_seeds.py --config configs/paper_config_split_late.yaml --train-data notebooks/data/processed/train.csv --val-data notebooks/data/processed/val.csv --test-data notebooks/data/processed/test.csv --n-seeds 5 --base-seed 42 --output results/split_late_multi_seed_results.json --checkpoint-dir checkpoints/split_late_seeds --device cuda",
+                "command": "python scripts/experiments/run_seeds.py --config configs/paper_config_split_late.yaml --train-data notebooks/data/processed/train.csv --val-data notebooks/data/processed/val.csv --test-data notebooks/data/processed/test.csv --n-seeds 5 --base-seed 42 --output results/split_late_multi_seed_results.json --checkpoint-dir checkpoints/split_late_seeds --device cuda",
                 "depends_on": ["repro_prepare_data"],
                 "expected_outputs": ["results/split_late_multi_seed_results.json", "checkpoints/split_late_seeds"],
                 "notes": "Keeps the budget fixed while toggling the late role-specific encoder variant.",
@@ -330,10 +387,10 @@ PIPELINE_PRESETS: dict[str, dict[str, Any]] = {
                 "id": "repro_eval",
                 "label": "Best-checkpoint evaluation",
                 "category": "evaluation",
-                "command": "python scripts/evaluate_complete.py --test-data notebooks/data/processed/test.csv --tgnn-checkpoint checkpoints/seeds/seed_42.pt --output results/full_evaluation.json --verbose",
+                "command": "python scripts/experiments/reproduce_paper.py --profile article --step evaluate_best",
                 "depends_on": ["repro_run_seeds"],
                 "expected_outputs": ["results/full_evaluation.json"],
-                "notes": "Representative full evaluation export. In practice the best seed may differ.",
+                "notes": "Structured reproduction runner resolves the best TGNN seed dynamically from results/multi_seed_results.json.",
                 "launchable": True,
                 "active": True,
             },
@@ -341,7 +398,7 @@ PIPELINE_PRESETS: dict[str, dict[str, Any]] = {
                 "id": "repro_error",
                 "label": "Error analysis",
                 "category": "analysis",
-                "command": "python scripts/error_analysis.py",
+                "command": "python scripts/evaluation/error_analysis.py --predictions results/full_evaluation.json --test-data notebooks/data/processed/test.csv --output results/error_analysis.json",
                 "depends_on": ["repro_eval"],
                 "expected_outputs": ["results/error_analysis.json"],
                 "notes": "Breaks the error down by chemistry and operating regimes.",
@@ -352,7 +409,7 @@ PIPELINE_PRESETS: dict[str, dict[str, Any]] = {
                 "id": "repro_ablation",
                 "label": "Ablation suite",
                 "category": "analysis",
-                "command": "python scripts/run_ablation.py",
+                "command": "python scripts/experiments/run_ablation.py --config configs/paper_config_tuned.yaml --train-data notebooks/data/processed/train.csv --val-data notebooks/data/processed/val.csv --test-data notebooks/data/processed/test.csv --n-seeds 3 --output results/ablation.json --device cuda",
                 "depends_on": ["repro_prepare_data"],
                 "expected_outputs": ["results/ablation.json"],
                 "notes": "Bridge / Walden / oracle / architecture controls.",
@@ -363,10 +420,10 @@ PIPELINE_PRESETS: dict[str, dict[str, Any]] = {
                 "id": "repro_direct",
                 "label": "DirectGNN baseline",
                 "category": "baseline",
-                "command": "python scripts/training/train_directgnn.py --config configs/paper_config_directgnn_tuned.yaml --train-data notebooks/data/processed/train.csv --val-data notebooks/data/processed/val.csv --test-data notebooks/data/processed/test.csv --checkpoint checkpoints/directgnn.pt --device cuda",
+                "command": "python scripts/experiments/run_seeds.py --train-script scripts/training/train_directgnn.py --config configs/paper_config_directgnn_tuned.yaml --train-data notebooks/data/processed/train.csv --val-data notebooks/data/processed/val.csv --test-data notebooks/data/processed/test.csv --n-seeds 5 --base-seed 42 --output results/directgnn_multi_seed_results.json --checkpoint-dir checkpoints/directgnn_seeds --device cuda",
                 "depends_on": ["repro_prepare_data"],
-                "expected_outputs": ["checkpoints/directgnn.pt"],
-                "notes": "Matched backbone, no solver bottleneck.",
+                "expected_outputs": ["results/directgnn_multi_seed_results.json", "checkpoints/directgnn_seeds"],
+                "notes": "Matched backbone, no solver bottleneck, now tracked as a proper multi-seed comparison bundle.",
                 "launchable": True,
                 "active": True,
             },
@@ -396,7 +453,7 @@ PIPELINE_PRESETS: dict[str, dict[str, Any]] = {
                 "id": "repro_stats",
                 "label": "Statistical tests",
                 "category": "analysis",
-                "command": "python scripts/experiments/statistical_tests.py",
+                "command": "python scripts/experiments/statistical_tests.py --results results/multi_seed_results.json results/directgnn_multi_seed_results.json results/split_late_multi_seed_results.json --labels TGNN-Solv DirectGNN SplitLate --output results/significance.json",
                 "depends_on": ["repro_run_seeds", "repro_direct"],
                 "expected_outputs": ["results/significance.json"],
                 "notes": "Paper-level significance checks across model families.",
@@ -427,12 +484,12 @@ PIPELINE_PRESETS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "repro_shell",
-                "label": "Full reproduce.sh",
+                "label": "Structured article profile",
                 "category": "paper",
-                "command": "bash reproduce.sh",
+                "command": "python scripts/experiments/reproduce_paper.py --profile article",
                 "depends_on": [],
-                "expected_outputs": ["results", "figures", "tables"],
-                "notes": "Single entry point that wraps the whole paper-style workflow. Keep this node active when you want the coarse-grained path instead of the expanded per-step DAG.",
+                "expected_outputs": ["results/reproduction/article_summary.json", "results", "figures", "tables"],
+                "notes": "Single maintained entry point for the article profile. Use this when you want orchestration and dynamic best-checkpoint resolution handled automatically.",
                 "launchable": True,
                 "active": False,
             },
@@ -645,6 +702,54 @@ def theme_palette() -> dict[str, str]:
         "red": "#DC2626",
         "slate": "#64748B",
     }
+
+
+def hex_to_rgba(color: str, alpha: float) -> str:
+    value = color.strip().lstrip("#")
+    if len(value) != 6:
+        return color
+    r = int(value[0:2], 16)
+    g = int(value[2:4], 16)
+    b = int(value[4:6], 16)
+    return f"rgba({r}, {g}, {b}, {alpha:.3f})"
+
+
+def contrast_text_color(color: str) -> str:
+    value = color.strip().lstrip("#")
+    if len(value) != 6:
+        return "#FFFFFF"
+    r = int(value[0:2], 16) / 255.0
+    g = int(value[2:4], 16) / 255.0
+    b = int(value[4:6], 16) / 255.0
+
+    def channel_luminance(channel: float) -> float:
+        if channel <= 0.03928:
+            return channel / 12.92
+        return ((channel + 0.055) / 1.055) ** 2.4
+
+    luminance = (
+        0.2126 * channel_luminance(r)
+        + 0.7152 * channel_luminance(g)
+        + 0.0722 * channel_luminance(b)
+    )
+    return "#0F172A" if luminance > 0.46 else "#F8FAFC"
+
+
+def accent_scale(color: str) -> list[list[float | str]]:
+    return [
+        [0.0, hex_to_rgba(color, 0.18)],
+        [0.55, hex_to_rgba(color, 0.55)],
+        [1.0, color],
+    ]
+
+
+def accent_pill_style(color: str) -> str:
+    text_color = color
+    return (
+        f"background:{hex_to_rgba(color, 0.16)};"
+        f"border-color:{hex_to_rgba(color, 0.32)};"
+        f"color:{text_color};"
+    )
 
 
 def category_color(category: str) -> str:
@@ -946,6 +1051,73 @@ def render_molecule_showcase(
     render_stat_tiles(stat_entries)
 
 
+def render_structure_editor_preview(
+    role: str,
+    canonical_smiles: str | None,
+    *,
+    raw_smiles: str | None = None,
+    error: str | None = None,
+) -> None:
+    with st.container(border=True):
+        st.markdown(f"#### {role} sanitized preview")
+        st.caption(
+            "Normalized RDKit structure and atom graph derived from the current drawing. This is what will be sent to the model after sync."
+        )
+        if error:
+            st.warning(error)
+            return
+        if not canonical_smiles:
+            st.info("Draw a valid structure to populate this preview.")
+            return
+
+        summary = normalized_structure_summary(canonical_smiles, raw_smiles) or {}
+        normalized_smiles = str(summary.get("canonical_smiles", canonical_smiles))
+        status_labels = [
+            ("RDKit", "parsed"),
+            ("Sanitize", "ok"),
+            ("Canonical", str(summary.get("normalization", "same"))),
+            ("Formula", str(summary.get("formula", "—"))),
+        ]
+        chips = "".join(
+            f'<span class="lab-chip"><strong>{escape(label)}</strong><span>{escape(value)}</span></span>'
+            for label, value in status_labels
+        )
+        st.markdown(f'<div class="lab-chip-row">{chips}</div>', unsafe_allow_html=True)
+        if raw_smiles and str(raw_smiles).strip() and str(raw_smiles).strip() != normalized_smiles:
+            st.caption("The editor export was canonicalized before preview, so the normalized SMILES differs from the raw drawing output.")
+        st.code(normalized_smiles, language="text")
+
+        render_molecule_panel(
+            normalized_smiles,
+            "2D structure",
+            "Sanitized RDKit depiction from the editor payload.",
+            width=460,
+            height=300,
+        )
+        st.markdown("**Atom graph**")
+        st.caption("Connectivity preview from the same parsed molecule.")
+        graph_fig = molecule_graph_figure(normalized_smiles, None, height=340)
+        if graph_fig is not None:
+            st.plotly_chart(style_plot(graph_fig), use_container_width=True)
+        else:
+            st.warning("RDKit could not build an atom graph from this structure.")
+
+        stats = summary.get("stats") or {}
+        desc = summary.get("descriptors") or {}
+        render_stat_tiles(
+            [
+                ("Atoms", str(stats.get("atoms", "—")), "graph nodes"),
+                ("Bonds", str(stats.get("bonds", "—")), "graph edges"),
+                ("Heavy", str(summary.get("heavy_atoms", "—")), "non-hydrogen atoms"),
+                ("Fragments", str(summary.get("fragments", "—")), "connected components"),
+                ("Charge", str(summary.get("formal_charge", "—")), "formal charge"),
+                ("Stereo", str(summary.get("stereocenters", "—")), "assigned or unassigned centers"),
+                ("LogP", f"{float(desc.get('MolLogP', 0.0)):.2f}" if desc else "—", "RDKit"),
+                ("TPSA", f"{float(desc.get('TPSA', 0.0)):.1f}" if desc else "—", "A^2"),
+            ]
+        )
+
+
 
 def repo_pipeline_presets() -> dict[str, dict[str, Any]]:
     presets: dict[str, dict[str, Any]] = {}
@@ -1020,17 +1192,20 @@ def short_smiles_label(smiles: str, limit: int = 20) -> str:
 
 def inference_history_label(record: dict[str, Any]) -> str:
     checkpoint = Path(str(record.get("checkpoint", ""))).stem or "checkpoint"
+    family = str(record.get("model_family", "tgnn_solv"))
+    family_tag = "Direct" if family == "direct_gnn" else "TGNN"
     return (
         f"{format_timestamp(record.get('created_at'))} · "
         f"{short_smiles_label(str(record.get('solute_smiles', '')))} in "
         f"{short_smiles_label(str(record.get('solvent_smiles', '')), 14)} · "
-        f"{float(record.get('temperature', 0.0)):.1f} K · {checkpoint}"
+        f"{float(record.get('temperature', 0.0)):.1f} K · {family_tag} · {checkpoint}"
     )
 
 
 def save_inference_record(
     *,
     checkpoint_path: str,
+    model_family: str,
     solute: str,
     solvent: str,
     temperature: float,
@@ -1049,6 +1224,7 @@ def save_inference_record(
         "id": f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}",
         "created_at": utc_now(),
         "checkpoint": checkpoint_path,
+        "model_family": model_family,
         "solute_smiles": solute,
         "solvent_smiles": solvent,
         "temperature": float(temperature),
@@ -1111,6 +1287,7 @@ def inference_history_frame(records: list[dict[str, Any]]) -> pd.DataFrame:
                 "id": record.get("id"),
                 "created_at": format_timestamp(record.get("created_at")),
                 "pair": f"{short_smiles_label(str(record.get('solute_smiles', '')), 18)} in {short_smiles_label(str(record.get('solvent_smiles', '')), 14)}",
+                "family": str(record.get("model_family", "tgnn_solv")),
                 "T": round(float(record.get("temperature", 0.0)), 2),
                 "ln_x2": round(float(prediction.get("ln_x2", float("nan"))), 4),
                 "gamma_2": round(float(prediction.get("gamma_2", float("nan"))), 4),
@@ -1331,19 +1508,25 @@ def history_record_entries(limit: int = 24) -> list[dict[str, Any]]:
             if kind == "inference":
                 checkpoint = str(record.get("checkpoint", ""))
                 checkpoints = [checkpoint] if checkpoint else []
+                model_family = str(record.get("model_family", "tgnn_solv"))
                 title = f"Inference review · {short_smiles_label(str(record.get('solute_smiles', '')), 18)} in {short_smiles_label(str(record.get('solvent_smiles', '')), 14)}"
                 subtitle = f"{float(record.get('temperature', 0.0)):.1f} K · ln x₂ {float((record.get('prediction') or {}).get('ln_x2', float('nan'))):.3f}"
                 notes = (
                     f"Saved inference run at {relative_label(path)}.\n"
                     f"Pair: {record.get('solute_smiles', '')} in {record.get('solvent_smiles', '')} @ {float(record.get('temperature', 0.0)):.2f} K.\n"
                     f"Checkpoint: {checkpoint or '—'}.\n"
-                    f"Use this task to inspect decomposition, OOD status, and temperature scan drift."
+                    + (
+                        "Use this task to inspect decomposition, OOD status, and temperature scan drift."
+                        if model_family == "tgnn_solv"
+                        else "Use this task to inspect direct prediction behavior, temperature trends, and feature-side baseline context."
+                    )
                 )
                 if checkpoint:
-                    suggested_command = (
-                        f"python scripts/evaluation/evaluate_complete.py --test-data notebooks/data/processed/test.csv "
-                        f"--tgnn-checkpoint {shlex.quote(checkpoint)} --output results/followup_inference_eval.json --verbose"
-                    )
+                    if model_family == "tgnn_solv":
+                        suggested_command = (
+                            f"python scripts/evaluation/evaluate_complete.py --test-data notebooks/data/processed/test.csv "
+                            f"--tgnn-checkpoint {shlex.quote(checkpoint)} --output results/followup_inference_eval.json --verbose"
+                        )
             elif kind == "uncertainty":
                 checkpoints = [str(item) for item in record.get("checkpoints", []) if item]
                 ensemble = record.get("ensemble") or {}
@@ -1657,6 +1840,7 @@ def branch_state_value(state: str) -> int:
 
 
 def architecture_branch_heatmap(tgnn_doc: dict[str, Any], direct_doc: dict[str, Any]) -> go.Figure:
+    palette = theme_palette()
     rows = architecture_branch_rows(tgnn_doc, direct_doc)
     z = [
         [branch_state_value(value) for value in rows["tgnn"].tolist()],
@@ -1675,10 +1859,10 @@ def architecture_branch_heatmap(tgnn_doc: dict[str, Any], direct_doc: dict[str, 
             texttemplate="%{text}",
             textfont={"size": 11},
             colorscale=[
-                [0.0, "#CBD5E1"],
-                [0.33, "#94A3B8"],
-                [0.66, "#34D399"],
-                [1.0, "#2563EB"],
+                [0.0, hex_to_rgba(palette["slate"], 0.28)],
+                [0.33, palette["slate"]],
+                [0.66, palette["green"]],
+                [1.0, palette["blue"]],
             ],
             zmin=0,
             zmax=3,
@@ -1697,6 +1881,7 @@ def architecture_branch_heatmap(tgnn_doc: dict[str, Any], direct_doc: dict[str, 
 
 
 def architecture_track_balance_figure(branch_df: pd.DataFrame) -> go.Figure:
+    palette = theme_palette()
     rows: list[dict[str, Any]] = []
     for family_name, column in [("TGNN-Solv", "tgnn"), ("DirectGNN", "direct")]:
         for track, track_df in branch_df.groupby("track"):
@@ -1720,9 +1905,9 @@ def architecture_track_balance_figure(branch_df: pd.DataFrame) -> go.Figure:
         height=460,
         title="Branch activity by track",
         color_discrete_map={
-            "core/active": "#2563EB",
-            "off": "#94A3B8",
-            "removed": "#EF4444",
+            "core/active": palette["blue"],
+            "off": palette["slate"],
+            "removed": palette["red"],
         },
     )
     fig.update_layout(margin=dict(l=16, r=16, t=56, b=16), legend={"orientation": "h", "y": 1.1})
@@ -1946,6 +2131,7 @@ def pipeline_dag_figure(nodes: list[dict[str, Any]], selected_id: str | None = N
         status = statuses.get(node["id"], "planned")
         fill = status_colors.get(status, palette["slate"])
         border = palette["text"] if node["id"] == selected_id else fill
+        node_text = contrast_text_color(fill)
         fig.add_annotation(
             x=x,
             y=y,
@@ -1958,7 +2144,7 @@ def pipeline_dag_figure(nodes: list[dict[str, Any]], selected_id: str | None = N
             borderpad=13,
             bgcolor=fill,
             opacity=0.95 if node.get("active", True) else 0.5,
-            font={"size": 13, "color": "#FFFFFF"},
+            font={"size": 13, "color": node_text},
             text=(
                 f"<b>{escape(node['label'])}</b><br>"
                 f"<span style='font-size:11px'>{escape(node['category'].upper())} · {escape(status)}</span>"
@@ -2211,11 +2397,65 @@ def plotly_template() -> str:
 
 
 def style_plot(fig: go.Figure) -> go.Figure:
+    palette = theme_palette()
+    margin = fig.layout.margin.to_plotly_json() if fig.layout.margin else {}
     fig.update_layout(
         template=plotly_template(),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=52, b=20),
+        paper_bgcolor=hex_to_rgba(palette["surface_alt"], 0.96),
+        plot_bgcolor=hex_to_rgba(palette["surface"], 0.98),
+        colorway=[
+            palette["blue"],
+            palette["green"],
+            palette["orange"],
+            palette["purple"],
+            palette["red"],
+            palette["slate"],
+        ],
+        font={"color": palette["text"]},
+        title={"font": {"color": palette["text"]}},
+        legend={
+            **(fig.layout.legend.to_plotly_json() if fig.layout.legend else {}),
+            "font": {"color": palette["text"]},
+            "title": {"font": {"color": palette["text"]}},
+        },
+        polar={
+            "bgcolor": "rgba(0,0,0,0)",
+            "angularaxis": {
+                "gridcolor": hex_to_rgba(palette["border"], 0.26),
+                "linecolor": hex_to_rgba(palette["border"], 0.36),
+                "tickfont": {"color": palette["muted"]},
+            },
+            "radialaxis": {
+                "gridcolor": hex_to_rgba(palette["border"], 0.26),
+                "linecolor": hex_to_rgba(palette["border"], 0.36),
+                "tickfont": {"color": palette["muted"]},
+            },
+        },
+        hoverlabel={
+            "bgcolor": palette["surface_alt"],
+            "bordercolor": palette["border"],
+            "font": {"color": palette["text"]},
+        },
+        margin={
+            "l": margin.get("l", 20),
+            "r": margin.get("r", 20),
+            "t": margin.get("t", 52),
+            "b": margin.get("b", 20),
+        },
+    )
+    fig.update_xaxes(
+        gridcolor=hex_to_rgba(palette["border"], 0.28),
+        linecolor=hex_to_rgba(palette["border"], 0.5),
+        tickfont={"color": palette["muted"]},
+        title_font={"color": palette["text"]},
+        zerolinecolor=hex_to_rgba(palette["border"], 0.32),
+    )
+    fig.update_yaxes(
+        gridcolor=hex_to_rgba(palette["border"], 0.28),
+        linecolor=hex_to_rgba(palette["border"], 0.5),
+        tickfont={"color": palette["muted"]},
+        title_font={"color": palette["text"]},
+        zerolinecolor=hex_to_rgba(palette["border"], 0.32),
     )
     return fig
 
@@ -2315,6 +2555,14 @@ def relative_label(path: Path) -> str:
         return str(path)
 
 
+def compact_path_label(path_value: str | Path, keep_segments: int = 3) -> str:
+    rel = relative_label(Path(str(path_value)))
+    parts = Path(rel).parts
+    if len(parts) <= keep_segments:
+        return rel
+    return "…/" + "/".join(parts[-keep_segments:])
+
+
 def list_files(root: Path, patterns: tuple[str, ...], limit: int = 600) -> list[Path]:
     results: list[Path] = []
     for pattern in patterns:
@@ -2329,6 +2577,98 @@ def available_configs() -> list[Path]:
 
 def available_checkpoints() -> list[Path]:
     return list_files(CHECKPOINTS_DIR, ("*.pt", "*.pth", "*.ckpt"), limit=300)
+
+
+def checkpoint_family_from_payload(payload: dict[str, Any]) -> str:
+    if payload.get("error"):
+        return "unsupported"
+    if not payload.get("has_config"):
+        return "unsupported"
+    model_class = str(payload.get("model_class", "") or "").lower()
+    model_type = str(payload.get("model_type", "") or "").lower()
+    top_keys = set(str(key) for key in payload.get("top_level_keys", []))
+    if "directgnn" in model_class or "direct" in model_type:
+        if {"model_state", "model_state_dict"} & top_keys:
+            return "direct_gnn"
+        return "unsupported"
+    if {"model_state", "model_state_dict"} & top_keys:
+        return "tgnn_solv"
+    return "unsupported"
+
+
+def inference_workbench_reason(payload: dict[str, Any]) -> str | None:
+    if payload.get("error"):
+        return str(payload["error"])
+    if not payload.get("has_config"):
+        return "missing `config` payload"
+    family = checkpoint_family_from_payload(payload)
+    if family in {"tgnn_solv", "direct_gnn"}:
+        return None
+    top_keys = set(str(key) for key in payload.get("top_level_keys", []))
+    if not ({"model_state", "model_state_dict"} & top_keys):
+        return "missing compatible model weights"
+    return "unsupported checkpoint family for the inference workbench"
+
+
+def tgnn_inference_reason(payload: dict[str, Any]) -> str | None:
+    family = checkpoint_family_from_payload(payload)
+    if family == "tgnn_solv":
+        return None
+    if family == "direct_gnn":
+        return "DirectGNN is available in Run & inspect, but uncertainty and calibration are currently TGNN-Solv-only"
+    if payload.get("error"):
+        return str(payload["error"])
+    if not payload.get("has_config"):
+        return "missing `config` payload"
+    return None
+
+
+def workbench_compatible_checkpoints(
+    python_command: str,
+    checkpoints: list[Path],
+) -> tuple[list[Path], list[tuple[Path, str]]]:
+    supported: list[Path] = []
+    rejected: list[tuple[Path, str]] = []
+    for path in checkpoints:
+        try:
+            payload = inspect_checkpoint(
+                python_command,
+                str(path),
+                path.stat().st_mtime,
+            )
+        except Exception as exc:
+            rejected.append((path, f"{type(exc).__name__}: {exc}"))
+            continue
+        reason = inference_workbench_reason(payload)
+        if reason is None:
+            supported.append(path)
+        else:
+            rejected.append((path, reason))
+    return supported, rejected
+
+
+def tgnn_inference_checkpoints(
+    python_command: str,
+    checkpoints: list[Path],
+) -> tuple[list[Path], list[tuple[Path, str]]]:
+    supported: list[Path] = []
+    rejected: list[tuple[Path, str]] = []
+    for path in checkpoints:
+        try:
+            payload = inspect_checkpoint(
+                python_command,
+                str(path),
+                path.stat().st_mtime,
+            )
+        except Exception as exc:
+            rejected.append((path, f"{type(exc).__name__}: {exc}"))
+            continue
+        reason = tgnn_inference_reason(payload)
+        if reason is None:
+            supported.append(path)
+        else:
+            rejected.append((path, reason))
+    return supported, rejected
 
 
 def available_images() -> list[Path]:
@@ -2399,6 +2739,8 @@ def artifact_model_guess(path: Path) -> str:
         return "fastsolv"
     if "solprop" in label:
         return "solprop"
+    if "custom" in label:
+        return "custom"
     if "optuna" in label:
         return "optuna"
     if "seed" in label:
@@ -2549,6 +2891,7 @@ def lineage_graph_figure(nodes: list[dict[str, Any]], edges: list[tuple[str, str
         )
     for node in nodes:
         fill = color_map.get(node["kind"], palette["slate"])
+        node_text = contrast_text_color(fill)
         fig.add_annotation(
             x=node["x"],
             y=node["y"],
@@ -2558,7 +2901,7 @@ def lineage_graph_figure(nodes: list[dict[str, Any]], edges: list[tuple[str, str
             borderwidth=2,
             bordercolor=fill,
             bgcolor=fill,
-            font={"color": "#ffffff", "size": 13},
+            font={"color": node_text, "size": 13},
             text=f"<b>{escape(node['label'])}</b><br><span style='font-size:11px'>{escape(node.get('subtitle', ''))}</span>",
         )
     fig.update_layout(
@@ -2724,50 +3067,80 @@ def planner_timeline_frame(payload: dict[str, Any]) -> pd.DataFrame:
 def planner_sortable_style() -> str:
     palette = theme_palette()
     dark = st.get_option("theme.base") == "dark"
-    container_fill = "rgba(30, 41, 59, 0.92)" if dark else "rgba(226, 232, 240, 0.72)"
-    item_fill = "rgba(15, 23, 42, 0.94)" if dark else "rgba(255, 255, 255, 0.96)"
+    container_fill = "rgba(15, 23, 42, 0.94)" if dark else "rgba(241, 245, 249, 0.92)"
+    body_fill = "rgba(30, 41, 59, 0.74)" if dark else "rgba(226, 232, 240, 0.68)"
+    item_fill = "rgba(15, 23, 42, 0.98)" if dark else "rgba(255, 255, 255, 0.98)"
     item_text = "#F8FAFC" if dark else "#0F172A"
-    header_text = "#E2E8F0" if dark else "#0F172A"
-    border = "rgba(148, 163, 184, 0.34)" if dark else "rgba(37, 99, 235, 0.14)"
-    shadow = "0 16px 30px rgba(2, 6, 23, 0.28)" if dark else "0 10px 24px rgba(15, 23, 42, 0.05)"
+    header_text = "#F8FAFC" if dark else "#0F172A"
+    border = "rgba(96, 165, 250, 0.28)" if dark else "rgba(37, 99, 235, 0.12)"
+    shadow = "0 20px 42px rgba(2, 6, 23, 0.36)" if dark else "0 12px 28px rgba(15, 23, 42, 0.06)"
     accent = palette["blue"]
     return f"""
     .sortable-component {{
       display: flex;
-      gap: 14px;
+      gap: 16px;
       overflow-x: auto;
-      padding: 6px 0 10px;
-      align-items: stretch;
+      padding: 12px 0 14px;
+      align-items: flex-start;
     }}
     .sortable-container {{
       min-width: 270px;
       background: {container_fill};
       border: 1px solid {border};
       border-radius: 20px;
-      min-height: 340px;
-      padding-bottom: 8px;
+      min-height: 360px;
+      padding: 0;
       box-shadow: {shadow};
+      overflow: hidden;
+    }}
+    .sortable-container-header,
+    .sortable-container-header * {{
+      font-weight: 900;
+      color: {header_text} !important;
+      background: {container_fill} !important;
     }}
     .sortable-container-header {{
-      font-weight: 900;
-      color: {header_text};
-      padding: 10px 16px 4px;
-      margin-top: -2px;
+      padding: 14px 16px 10px;
+      margin: 0;
       letter-spacing: 0.02em;
       text-transform: uppercase;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
+      line-height: 1.2;
+      border-bottom: 1px solid {border};
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+    }}
+    .sortable-container-body {{
+      background: {body_fill} !important;
+      border-radius: 0 0 20px 20px;
+      margin: 0;
+      min-height: 308px;
+      padding: 8px 8px 10px;
     }}
     .sortable-item {{
       background: {item_fill};
-      color: {item_text};
+      color: {item_text} !important;
       border: 1px solid {border};
       border-left: 4px solid {accent};
       border-radius: 16px;
-      padding: 13px 13px 12px;
-      margin: 10px;
+      padding: 12px 13px 12px;
+      margin: 8px;
       box-shadow: {shadow};
       font-weight: 700;
       line-height: 1.4;
+      white-space: normal;
+      display: block;
+      min-height: 56px;
+    }}
+    .sortable-item:hover,
+    .sortable-item:focus {{
+      color: {item_text} !important;
+      transform: translateY(-1px);
+      box-shadow: 0 22px 44px rgba(2, 6, 23, 0.22);
+    }}
+    .sortable-item * {{
+      color: {item_text} !important;
     }}
     """
 
@@ -2857,16 +3230,21 @@ def flow_node_style(track: str, active: bool, *, selected: bool = False) -> dict
         "direct": palette["purple"],
     }
     fill = track_colors.get(track, palette["blue"]) if active else palette["muted"]
+    text_color = contrast_text_color(fill)
     return {
         "background": fill,
-        "color": "#ffffff",
-        "border": f"3px solid {palette['text'] if selected else fill}",
+        "color": text_color,
+        "border": f"3px solid {palette['text'] if selected else hex_to_rgba(fill, 0.72)}",
         "borderRadius": "18px",
         "padding": "14px 16px",
         "width": 190,
         "fontSize": "14px",
         "fontWeight": 700,
-        "boxShadow": "0 14px 30px rgba(15,23,42,0.14)",
+        "boxShadow": (
+            "0 18px 34px rgba(2, 6, 23, 0.26)"
+            if st.get_option("theme.base") == "dark"
+            else "0 14px 30px rgba(15, 23, 42, 0.14)"
+        ),
     }
 
 
@@ -3678,6 +4056,37 @@ def inject_css() -> None:
         """,
         unsafe_allow_html=True,
     )
+    palette = theme_palette()
+    st.markdown(
+        f"""
+        <style>
+        .js-plotly-plot .plotly .gtitle,
+        .js-plotly-plot .plotly .xtitle,
+        .js-plotly-plot .plotly .ytitle,
+        .js-plotly-plot .plotly .annotation-text,
+        .js-plotly-plot .plotly .legend text,
+        .js-plotly-plot .plotly .legendtitletext,
+        .js-plotly-plot .plotly .xtick text,
+        .js-plotly-plot .plotly .ytick text,
+        .js-plotly-plot .plotly .colorbar text,
+        .js-plotly-plot .plotly .angularaxistick text,
+        .js-plotly-plot .plotly .radialaxistick text {{
+          fill: {palette["text"]} !important;
+        }}
+        .js-plotly-plot .plotly .gridlayer path,
+        .js-plotly-plot .plotly .zerolinelayer path {{
+          stroke: {hex_to_rgba(palette["border"], 0.34)} !important;
+        }}
+        .js-plotly-plot .plotly .xlines-above,
+        .js-plotly-plot .plotly .ylines-above,
+        .js-plotly-plot .plotly .xaxislayer-above path,
+        .js-plotly-plot .plotly .yaxislayer-above path {{
+          stroke: {hex_to_rgba(palette["border"], 0.5)} !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_path_select(label: str, options: list[Path], default: Path | None = None, key: str = "") -> str:
@@ -3708,6 +4117,40 @@ def coerce_bool_series(df: pd.DataFrame, column: str) -> pd.Series:
     return normalized.isin({"true", "1", "yes", "y", "t"})
 
 
+def canonicalize_smiles(smiles: str) -> tuple[str | None, str | None]:
+    raw = str(smiles or "").strip()
+    if not raw:
+        return None, "The editor is empty."
+    if Chem is None:
+        return raw, None
+    mol = Chem.MolFromSmiles(raw)
+    if mol is None:
+        return None, "The drawn structure could not be converted to a valid SMILES string."
+    return Chem.MolToSmiles(mol, canonical=True), None
+
+
+def normalized_structure_summary(smiles: str, raw_smiles: str | None = None) -> dict[str, Any] | None:
+    if Chem is None:
+        return None
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+    raw = str(raw_smiles or "").strip()
+    descriptor_info = descriptor_summary(smiles) or {}
+    stats = model_cardinality_stats(smiles) or {}
+    return {
+        "canonical_smiles": Chem.MolToSmiles(mol, canonical=True),
+        "normalization": "changed" if raw and raw != smiles else "same",
+        "fragments": len(Chem.GetMolFrags(mol)),
+        "formal_charge": int(Chem.GetFormalCharge(mol)),
+        "heavy_atoms": int(mol.GetNumHeavyAtoms()),
+        "stereocenters": len(Chem.FindMolChiralCenters(mol, includeUnassigned=True)),
+        "formula": rdMolDescriptors.CalcMolFormula(mol) if rdMolDescriptors is not None else "—",
+        "stats": stats,
+        "descriptors": descriptor_info,
+    }
+
+
 def molecule_svg(smiles: str, width: int = 460, height: int = 320) -> str | None:
     if Chem is None or rdMolDraw2D is None:
         return None
@@ -3718,6 +4161,11 @@ def molecule_svg(smiles: str, width: int = 460, height: int = 320) -> str | None
     options = drawer.drawOptions()
     options.padding = 0.06
     options.bondLineWidth = 1.8
+    if st.get_option("theme.base") == "dark" and hasattr(rdMolDraw2D, "SetDarkMode"):
+        try:
+            rdMolDraw2D.SetDarkMode(options)
+        except Exception:
+            pass
     rdMolDraw2D.PrepareAndDrawMolecule(drawer, mol)
     drawer.FinishDrawing()
     return drawer.GetDrawingText().replace("svg:", "")
@@ -3942,6 +4390,7 @@ def run_selected_python_json(
 
 
 @st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def inspect_checkpoint(python_command: str, checkpoint_path: str, mtime: float) -> dict[str, Any]:
     script = f"""
 import json
@@ -3973,6 +4422,9 @@ payload = {{
     "edge_feat_dim": checkpoint.get("edge_feat_dim"),
     "metadata": safe_value(checkpoint.get("metadata", {{}})),
     "config": safe_value(checkpoint.get("config", {{}})),
+    "model_class": safe_value(checkpoint.get("model_class")),
+    "model_type": safe_value(checkpoint.get("model_type")),
+    "has_config": isinstance(checkpoint.get("config"), dict) and bool(checkpoint.get("config")),
 }}
 print(json.dumps(payload))
 """
@@ -4039,6 +4491,7 @@ scan_df = temperature_scan(
     n_points=scan_points,
 )
 payload = {{
+    "model_family": "tgnn_solv",
     "prediction": result,
     "scan": scan_df.to_dict(orient="records"),
     "interpretation": interpret_prediction(result),
@@ -4113,6 +4566,79 @@ print(json.dumps(payload))
 
 
 @st.cache_data(show_spinner=False)
+def run_direct_model_inference(
+    python_command: str,
+    checkpoint_path: str,
+    solute: str,
+    solvent: str,
+    temperature: float,
+    scan_tmin: float,
+    scan_tmax: float,
+    scan_points: int,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import sys
+from pathlib import Path
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.inference import (
+    interpret_direct_prediction,
+    load_directgnn_model,
+    predict_direct_solubility,
+    temperature_scan_direct,
+)
+
+checkpoint_path = sys.argv[1]
+solute = sys.argv[2]
+solvent = sys.argv[3]
+temperature = float(sys.argv[4])
+scan_tmin = float(sys.argv[5])
+scan_tmax = float(sys.argv[6])
+scan_points = int(sys.argv[7])
+
+model, cfg = load_directgnn_model(checkpoint_path)
+result = predict_direct_solubility(model, solute, solvent, T=temperature)
+scan_df = temperature_scan_direct(
+    model,
+    solute,
+    solvent,
+    T_min=scan_tmin,
+    T_max=scan_tmax,
+    n_points=scan_points,
+)
+payload = {{
+    "model_family": "direct_gnn",
+    "prediction": result,
+    "scan": scan_df.to_dict(orient="records"),
+    "interpretation": interpret_direct_prediction(result),
+    "config": cfg.__dict__,
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [
+            checkpoint_path,
+            solute,
+            solvent,
+            str(float(temperature)),
+            str(float(scan_tmin)),
+            str(float(scan_tmax)),
+            str(int(scan_points)),
+        ],
+        timeout=900,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
 def run_uncertainty_inference(
     python_command: str,
     checkpoint_paths: tuple[str, ...],
@@ -4222,7 +4748,6 @@ print(json.dumps(payload))
     return payload or {}
 
 
-@st.cache_data(show_spinner=False)
 def run_uncertainty_calibration(
     python_command: str,
     checkpoint_paths: tuple[str, ...],
@@ -4484,6 +5009,439 @@ def discover_evaluation_jsons() -> list[str]:
         if isinstance(payload, dict) and ("overall" in payload or payload.get("report_type") == "evaluation"):
             candidates.append(str(path))
     return sorted(candidates)
+
+
+def benchmark_root_candidates() -> list[Path]:
+    candidates = [
+        RESULTS_DIR / "external_baselines",
+        RESULTS_DIR / "custom_benchmarks",
+        RESULTS_DIR,
+        TMP_DIR,
+    ]
+    existing = [path for path in candidates if path.exists()]
+    return existing or [RESULTS_DIR]
+
+
+def _safe_read_json(path: Path) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+@st.cache_data(show_spinner=False)
+def discover_benchmark_runs(search_roots: tuple[str, ...]) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+    seen_summaries: set[str] = set()
+    for root_str in search_roots:
+        if not root_str:
+            continue
+        root = Path(root_str).expanduser()
+        if not root.exists():
+            continue
+        for summary_path in sorted(root.rglob("summary.csv")):
+            summary_key = str(summary_path.resolve())
+            if summary_key in seen_summaries:
+                continue
+            seen_summaries.add(summary_key)
+            bundle_dir = summary_path.parent
+            report_path = bundle_dir / "report.json"
+            predictions_path = bundle_dir / "predictions.csv"
+            metadata_path = bundle_dir / "metadata.json"
+            if not report_path.exists() and not predictions_path.exists():
+                continue
+            try:
+                summary_df = pd.read_csv(summary_path)
+            except Exception:
+                continue
+            if summary_df.empty or "model" not in summary_df.columns:
+                continue
+            report_payload = _safe_read_json(report_path) if report_path.exists() else {}
+            report_metadata = report_payload.get("metadata", {}) if isinstance(report_payload, dict) else {}
+            metadata_payload = _safe_read_json(metadata_path) if metadata_path.exists() else {}
+            metadata: dict[str, Any] = {}
+            if isinstance(report_metadata, dict):
+                metadata.update(report_metadata)
+            if isinstance(metadata_payload, dict):
+                metadata.update(metadata_payload)
+            stat = summary_path.stat()
+            split_info = metadata.get("split", {}) if isinstance(metadata.get("split"), dict) else {}
+            root_label = relative_label(root) if root.exists() else str(root)
+            for index, record in summary_df.iterrows():
+                model_name = str(record.get("model") or bundle_dir.name)
+                split_name = (
+                    record.get("split")
+                    or split_info.get("split_mode")
+                    or split_info.get("mode")
+                    or split_info.get("display_name")
+                    or "unknown"
+                )
+                overall = report_payload.get("overall", {}) if isinstance(report_payload, dict) else {}
+                model_family = (
+                    metadata.get("model_family")
+                    or artifact_model_guess(bundle_dir)
+                    or artifact_model_guess(summary_path)
+                )
+                n_samples_value = pd.to_numeric(record.get("n_samples", overall.get("n_samples")), errors="coerce")
+                n_predictions_value = pd.to_numeric(record.get("n_predictions", overall.get("n_predictions")), errors="coerce")
+                rows.append(
+                    {
+                        "run_id": f"{relative_label(bundle_dir)}::{index}::{model_name}",
+                        "bundle_dir": str(bundle_dir),
+                        "bundle_label": relative_label(bundle_dir),
+                        "root_label": root_label,
+                        "summary_path": str(summary_path),
+                        "report_path": str(report_path) if report_path.exists() else "",
+                        "predictions_path": str(predictions_path) if predictions_path.exists() else "",
+                        "metadata_path": str(metadata_path) if metadata_path.exists() else "",
+                        "model": model_name,
+                        "model_family": str(model_family),
+                        "split": str(split_name),
+                        "mae": pd.to_numeric(record.get("mae"), errors="coerce"),
+                        "rmse": pd.to_numeric(record.get("rmse"), errors="coerce"),
+                        "r2": pd.to_numeric(record.get("r2"), errors="coerce"),
+                        "bias": pd.to_numeric(record.get("bias"), errors="coerce"),
+                        "n_samples": int(n_samples_value) if pd.notna(n_samples_value) else 0,
+                        "n_predictions": int(n_predictions_value) if pd.notna(n_predictions_value) else 0,
+                        "has_report": report_path.exists(),
+                        "has_predictions": predictions_path.exists(),
+                        "predictions_source": str(metadata.get("predictions_csv") or ""),
+                        "merge_on": str(metadata.get("merge_on") or ""),
+                        "modified_at": datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds"),
+                        "modified_ts": stat.st_mtime,
+                    }
+                )
+    if not rows:
+        return pd.DataFrame()
+    frame = pd.DataFrame(rows)
+    frame = frame.sort_values(["mae", "modified_ts"], ascending=[True, False], na_position="last").reset_index(drop=True)
+    return frame
+
+
+def benchmark_stratified_frame(report_payload: Any) -> pd.DataFrame:
+    if not isinstance(report_payload, dict):
+        return pd.DataFrame()
+    stratified = report_payload.get("stratified", {})
+    if not isinstance(stratified, dict):
+        return pd.DataFrame()
+    rows: list[dict[str, Any]] = []
+    for group_name, group_payload in stratified.items():
+        if not isinstance(group_payload, dict):
+            continue
+        for bucket_name, bucket_metrics in group_payload.items():
+            if not isinstance(bucket_metrics, dict):
+                continue
+            rows.append(
+                {
+                    "group": str(group_name),
+                    "bucket": str(bucket_name),
+                    "mae": pd.to_numeric(bucket_metrics.get("mae"), errors="coerce"),
+                    "rmse": pd.to_numeric(bucket_metrics.get("rmse"), errors="coerce"),
+                    "r2": pd.to_numeric(bucket_metrics.get("r2"), errors="coerce"),
+                    "bias": pd.to_numeric(bucket_metrics.get("bias"), errors="coerce"),
+                    "n_samples": int(pd.to_numeric(bucket_metrics.get("n_samples", bucket_metrics.get("n")), errors="coerce") or 0),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def benchmark_predictions_frame(path_str: str) -> pd.DataFrame:
+    if not path_str:
+        return pd.DataFrame()
+    try:
+        return cached_dataframe(path_str)
+    except Exception:
+        return pd.DataFrame()
+
+
+def benchmark_metric_summary_rows(run_row: pd.Series) -> list[tuple[str, str]]:
+    return [
+        ("Model", str(run_row.get("model", "—"))),
+        ("Family", str(run_row.get("model_family", "—"))),
+        ("Split", str(run_row.get("split", "—"))),
+        ("MAE", f"{float(run_row.get('mae')):.4f}" if pd.notna(run_row.get("mae")) else "—"),
+        ("RMSE", f"{float(run_row.get('rmse')):.4f}" if pd.notna(run_row.get("rmse")) else "—"),
+        ("R²", f"{float(run_row.get('r2')):.4f}" if pd.notna(run_row.get("r2")) else "—"),
+        ("Rows", str(int(run_row.get("n_samples", 0) or 0))),
+        ("Predictions", str(int(run_row.get("n_predictions", 0) or 0))),
+    ]
+
+
+def render_benchmark_studio() -> None:
+    palette = theme_palette()
+    default_roots = [str(path) for path in benchmark_root_candidates()]
+    root_cols = st.columns([1.25, 1.0], gap="large")
+    with root_cols[0]:
+        selected_roots = st.multiselect(
+            "Benchmark search roots",
+            default_roots,
+            default=[str(path) for path in benchmark_root_candidates()[:2]],
+            help="Canonical benchmark bundles are discovered from directories containing `summary.csv`, `report.json`, and `predictions.csv`.",
+        )
+    with root_cols[1]:
+        extra_root = st.text_input(
+            "Additional root (optional)",
+            value="",
+            help="Use this for ad-hoc benchmark outputs outside `results/`, e.g. `tmp/external_benchmark_native_smoke2`.",
+        ).strip()
+    active_roots = tuple(dict.fromkeys([*selected_roots, extra_root] if extra_root else selected_roots))
+    run_df = discover_benchmark_runs(active_roots)
+    if run_df.empty:
+        st.info("No canonical benchmark bundles were found under the selected roots.")
+        return
+
+    summary_cols = st.columns(4)
+    with summary_cols[0]:
+        st.metric("Benchmark runs", str(len(run_df)))
+    with summary_cols[1]:
+        st.metric("Families", str(run_df["model_family"].nunique()))
+    with summary_cols[2]:
+        st.metric("Custom runs", str(int((run_df["model_family"] == "custom").sum())))
+    with summary_cols[3]:
+        st.metric("Roots", str(len(active_roots)))
+
+    filter_cols = st.columns([0.95, 0.95, 0.9, 1.2], gap="small")
+    with filter_cols[0]:
+        family_options = sorted(run_df["model_family"].dropna().astype(str).unique().tolist())
+        family_filter = st.multiselect("Model family", family_options, default=family_options)
+    with filter_cols[1]:
+        split_options = sorted(run_df["split"].dropna().astype(str).unique().tolist())
+        split_filter = st.multiselect("Split", split_options, default=split_options)
+    with filter_cols[2]:
+        metric_name = st.selectbox("Ranking metric", ["mae", "rmse", "r2", "bias"], index=0, key="benchmark_metric_name")
+    with filter_cols[3]:
+        query = st.text_input("Search", value="", help="Filter by model name, bundle path, or source predictions file.")
+
+    filtered = run_df.copy()
+    if family_filter:
+        filtered = filtered[filtered["model_family"].isin(family_filter)]
+    if split_filter:
+        filtered = filtered[filtered["split"].isin(split_filter)]
+    if query.strip():
+        q = query.strip().lower()
+        filtered = filtered[
+            filtered["model"].astype(str).str.lower().str.contains(q, regex=False)
+            | filtered["bundle_label"].astype(str).str.lower().str.contains(q, regex=False)
+            | filtered["predictions_source"].astype(str).str.lower().str.contains(q, regex=False)
+        ]
+    if filtered.empty:
+        st.info("No benchmark runs match the current filters.")
+        return
+
+    ascending = metric_name != "r2"
+    filtered = filtered.sort_values(metric_name, ascending=ascending, na_position="last").reset_index(drop=True)
+    leaderboard = filtered[
+        [
+            "model",
+            "model_family",
+            "split",
+            "mae",
+            "rmse",
+            "r2",
+            "bias",
+            "n_samples",
+            "bundle_label",
+        ]
+    ].copy()
+    leaderboard["bundle_label"] = leaderboard["bundle_label"].map(lambda value: compact_path_label(value, keep_segments=4))
+    st.markdown("### Benchmark leaderboard")
+    render_dataframe(leaderboard.head(120), use_container_width=True, hide_index=True)
+
+    chart_df = filtered.dropna(subset=[metric_name]).copy().head(24)
+    if not chart_df.empty:
+        title = f"{metric_name.upper()} across benchmark bundles"
+        fig = px.bar(
+            chart_df,
+            x="model",
+            y=metric_name,
+            color="model_family",
+            hover_data=["split", "bundle_label"],
+            text_auto=".3f" if metric_name != "r2" else ".2f",
+            title=title,
+            height=430,
+        )
+        fig.update_xaxes(tickangle=28)
+        st.plotly_chart(style_plot(fig), use_container_width=True)
+
+    labels = filtered["run_id"].tolist()
+    label_to_row = {str(row["run_id"]): row for _, row in filtered.iterrows()}
+    focused_run_id = st.selectbox(
+        "Focused benchmark run",
+        labels,
+        format_func=lambda value: f"{label_to_row[value]['model']} · {label_to_row[value]['split']} · {compact_path_label(label_to_row[value]['bundle_label'], keep_segments=4)}",
+        key="focused_benchmark_run",
+    )
+    focused_row = filtered.loc[filtered["run_id"] == focused_run_id].iloc[0]
+    compare_default = labels[: min(4, len(labels))]
+    compare_run_ids = st.multiselect(
+        "Compare runs",
+        labels,
+        default=[focused_run_id, *[item for item in compare_default if item != focused_run_id][:2]],
+        format_func=lambda value: f"{label_to_row[value]['model']} · {compact_path_label(label_to_row[value]['bundle_label'], keep_segments=3)}",
+        key="benchmark_compare_runs",
+    )
+    compare_df = filtered[filtered["run_id"].isin(compare_run_ids)].copy()
+
+    info_left, info_right = st.columns([0.95, 1.05], gap="large")
+    with info_left:
+        st.markdown("### Focused run")
+        stat_grid = "".join(
+            f'<div class="lab-stat-tile"><span>{escape(key)}</span><strong>{escape(value)}</strong></div>'
+            for key, value in benchmark_metric_summary_rows(focused_row)
+        )
+        st.markdown(f'<div class="lab-stat-grid">{stat_grid}</div>', unsafe_allow_html=True)
+        meta_rows = [
+            {"field": "bundle", "value": focused_row["bundle_label"]},
+            {"field": "report", "value": compact_path_label(focused_row["report_path"], keep_segments=4) if focused_row["report_path"] else "—"},
+            {"field": "predictions", "value": compact_path_label(focused_row["predictions_path"], keep_segments=4) if focused_row["predictions_path"] else "—"},
+            {"field": "predictions source", "value": focused_row["predictions_source"] or "—"},
+            {"field": "merge mode", "value": focused_row["merge_on"] or "—"},
+            {"field": "modified", "value": focused_row["modified_at"]},
+        ]
+        render_dataframe(pd.DataFrame(meta_rows), use_container_width=True, hide_index=True)
+        if compare_df.shape[0] > 1:
+            compare_table = compare_df[["model", "model_family", "split", "mae", "rmse", "r2", "bias"]].copy()
+            compare_table = compare_table.sort_values(metric_name, ascending=ascending, na_position="last")
+            with st.expander("Selected-run metric table", expanded=True):
+                render_dataframe(compare_table, use_container_width=True, hide_index=True)
+    with info_right:
+        compare_plot_df = compare_df.melt(
+            id_vars=["model", "model_family", "split"],
+            value_vars=["mae", "rmse", "r2"],
+            var_name="metric",
+            value_name="value",
+        ).dropna(subset=["value"])
+        if not compare_plot_df.empty:
+            fig = px.bar(
+                compare_plot_df,
+                x="metric",
+                y="value",
+                color="model",
+                barmode="group",
+                hover_data=["model_family", "split"],
+                title="Selected-run metric comparison",
+                height=360,
+            )
+            st.plotly_chart(style_plot(fig), use_container_width=True)
+
+    report_payload = cached_json(str(focused_row["report_path"])) if focused_row["report_path"] else {}
+    predictions_df = benchmark_predictions_frame(str(focused_row["predictions_path"]))
+    detail_left, detail_right = st.columns([1.15, 0.85], gap="large")
+    with detail_left:
+        st.markdown("### Prediction diagnostics")
+        if {"ln_x2", "ln_x2_pred"} <= set(predictions_df.columns):
+            plot_df = predictions_df.dropna(subset=["ln_x2", "ln_x2_pred"]).copy()
+            if not plot_df.empty:
+                lo = float(np.nanmin([plot_df["ln_x2"].min(), plot_df["ln_x2_pred"].min()]))
+                hi = float(np.nanmax([plot_df["ln_x2"].max(), plot_df["ln_x2_pred"].max()]))
+                parity = px.scatter(
+                    plot_df,
+                    x="ln_x2",
+                    y="ln_x2_pred",
+                    color="temperature" if "temperature" in plot_df.columns else None,
+                    hover_data=["solute_smiles", "solvent_smiles"] if {"solute_smiles", "solvent_smiles"} <= set(plot_df.columns) else None,
+                    title="Parity: predicted vs true ln(x2)",
+                    height=420,
+                )
+                parity.add_trace(
+                    go.Scatter(
+                        x=[lo, hi],
+                        y=[lo, hi],
+                        mode="lines",
+                        name="ideal",
+                        line={"color": palette["border"], "dash": "dash"},
+                    )
+                )
+                st.plotly_chart(style_plot(parity), use_container_width=True)
+
+                diag_cols = st.columns(2, gap="large")
+                with diag_cols[0]:
+                    resid = go.Figure()
+                    resid.add_trace(
+                        go.Histogram(
+                            x=plot_df["error"] if "error" in plot_df.columns else (plot_df["ln_x2_pred"] - plot_df["ln_x2"]),
+                            marker_color=palette["blue"],
+                            opacity=0.9,
+                            nbinsx=32,
+                            name="residual",
+                        )
+                    )
+                    resid.update_layout(title="Residual distribution", height=330, xaxis_title="prediction error", yaxis_title="count")
+                    st.plotly_chart(style_plot(resid), use_container_width=True)
+                with diag_cols[1]:
+                    if "temperature" in plot_df.columns:
+                        temp_df = plot_df.copy()
+                        temp_df["abs_error_plot"] = (
+                            temp_df["abs_error"] if "abs_error" in temp_df.columns else (temp_df["ln_x2_pred"] - temp_df["ln_x2"]).abs()
+                        )
+                        temp_fig = px.scatter(
+                            temp_df,
+                            x="temperature",
+                            y="abs_error_plot",
+                            color="solvent_smiles" if "solvent_smiles" in temp_df.columns else None,
+                            title="Absolute error vs temperature",
+                            height=330,
+                        )
+                        st.plotly_chart(style_plot(temp_fig), use_container_width=True)
+                    else:
+                        st.info("No temperature column available for temperature diagnostics.")
+                if "prediction_std" in plot_df.columns:
+                    unc_fig = px.scatter(
+                        plot_df.assign(
+                            abs_error_plot=plot_df["abs_error"] if "abs_error" in plot_df.columns else (plot_df["ln_x2_pred"] - plot_df["ln_x2"]).abs()
+                        ),
+                        x="prediction_std",
+                        y="abs_error_plot",
+                        color="temperature" if "temperature" in plot_df.columns else None,
+                        title="Uncertainty proxy vs absolute error",
+                        height=320,
+                    )
+                    st.plotly_chart(style_plot(unc_fig), use_container_width=True)
+            else:
+                st.info("Predictions file exists, but it does not contain finite `ln_x2` / `ln_x2_pred` pairs.")
+        else:
+            st.info("No canonical predictions file is available for the focused bundle.")
+    with detail_right:
+        st.markdown("### Stratified metrics")
+        stratified_df = benchmark_stratified_frame(report_payload)
+        if stratified_df.empty:
+            st.info("No stratified metrics were found in the report.")
+        else:
+            render_dataframe(stratified_df, use_container_width=True, hide_index=True)
+            strat_metric = st.selectbox("Stratified metric", ["mae", "rmse", "r2", "bias"], key="stratified_metric")
+            strat_fig = px.bar(
+                stratified_df.dropna(subset=[strat_metric]),
+                x="bucket",
+                y=strat_metric,
+                color="group",
+                hover_data=["n_samples"],
+                title=f"{strat_metric.upper()} by stratified bucket",
+                height=360,
+            )
+            strat_fig.update_xaxes(tickangle=28)
+            st.plotly_chart(style_plot(strat_fig), use_container_width=True)
+
+    with st.expander("Predictions preview", expanded=False):
+        if predictions_df.empty:
+            st.info("No predictions preview is available.")
+        else:
+            preview_cols = [
+                column
+                for column in [
+                    "row_index",
+                    "solute_smiles",
+                    "solvent_smiles",
+                    "temperature",
+                    "ln_x2",
+                    "ln_x2_pred",
+                    "prediction_std",
+                    "error",
+                    "abs_error",
+                    "model",
+                ]
+                if column in predictions_df.columns
+            ]
+            render_dataframe(predictions_df[preview_cols].head(200), use_container_width=True, hide_index=True)
 
 
 def config_training_snapshot(config_path: str) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
@@ -4992,7 +5950,7 @@ def render_training_page(python_command: str, probe: dict[str, Any]) -> None:
                 with loss_right:
                     timeline = go.Figure()
                     starts = [0, int(phase_df.iloc[0]["epochs"]), int(phase_df.iloc[0]["epochs"] + phase_df.iloc[1]["epochs"])]
-                    colors = ["#2563EB", "#10B981", "#F59E0B"]
+                    colors = [theme_palette()["blue"], theme_palette()["green"], theme_palette()["orange"]]
                     for idx, row in phase_df.iterrows():
                         timeline.add_trace(
                             go.Bar(
@@ -5149,6 +6107,8 @@ def render_launcher_page(python_command: str, probe: dict[str, Any]) -> None:
                 "Medium budget comparison",
                 "Full budget diagnostic study",
                 "Split comparisons",
+                "External baselines",
+                "Custom benchmark",
                 "Optuna",
             ],
             key="experiment_preset",
@@ -5286,6 +6246,178 @@ def render_launcher_page(python_command: str, probe: dict[str, Any]) -> None:
                 if st.form_submit_button("Launch split comparison", use_container_width=True):
                     launch_job("Split comparisons", "experiment", command, REPO_ROOT, [output_path, results_dir, checkpoint_root])
                     st.success("Split-comparison experiment launched.")
+        elif exp_tab == "External baselines":
+            cards = st.columns(3)
+            with cards[0]:
+                info_card("FastSolv", "Run either the pretrained ensemble, scratch training on repo splits, or both in one pass.")
+            with cards[1]:
+                info_card("SolProp", "Run zero-shot, calibrated, or native-retrained SolProp architectures under the same processed split.")
+            with cards[2]:
+                info_card("Artifacts", "Writes canonical report/predictions/summary bundles so the Results workspace can compare them immediately.")
+            st.caption("If SolProp is not installed in the selected interpreter, extract the repo-local runtime once with `python scripts/external/install_solprop_runtime.py` and pass that folder via `SolProp runtime dir`.")
+            st.caption("Recommended article-comparison mode: use `SolProp mode = native`. The maintained wrapper also still exposes stable room-temperature zero-shot and train-split calibration baselines. The upstream temperature-dependent SolProp branch remains available, but it is treated as experimental and may fall back row-wise.")
+            with st.form("external_baselines_form", border=False):
+                out_dir = st.text_input("Output dir", value=str(RESULTS_DIR / "external_baselines"))
+                train_data = st.text_input("Train CSV", value=str(PROCESSED_DIR / "train.csv"))
+                val_data = st.text_input("Val CSV", value=str(PROCESSED_DIR / "val.csv"))
+                test_data = st.text_input("Test CSV", value=str(PROCESSED_DIR / "test.csv"))
+                interp_left, interp_right = st.columns(2)
+                with interp_left:
+                    fastsolv_python = st.text_input("FastSolv Python (optional)", value="")
+                with interp_right:
+                    solprop_python = st.text_input("SolProp Python (optional)", value="")
+                solprop_runtime_dir = st.text_input("SolProp runtime dir (optional)", value="")
+                split_mode = st.selectbox("Split mode", ["solute_scaffold", "solute", "solvent", "custom"], index=0)
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    fastsolv_mode = st.selectbox("FastSolv mode", ["both", "pretrained", "scratch", "skip"], index=0)
+                    fastsolv_batch = st.number_input("FastSolv batch size", value=256, min_value=1, step=32)
+                    fastsolv_epochs = st.number_input("FastSolv scratch epochs", value=40, min_value=1, step=5)
+                    fastsolv_patience = st.number_input("FastSolv patience", value=10, min_value=1, step=1)
+                    fastsolv_nproc = st.number_input("FastSolv descriptor nproc", value=1, min_value=1, step=1)
+                with col_b:
+                    solprop_mode = st.selectbox("SolProp mode", ["native", "both", "all", "zero_shot", "calibrated", "skip"], index=0)
+                    solprop_batch = st.number_input("SolProp batch size", value=256, min_value=1, step=32)
+                    solprop_temperature_dependent = st.checkbox("Temperature-dependent SolProp", value=False)
+                    solprop_include_temperature = st.checkbox("Use temperature in SolProp calibrator", value=True)
+                    solprop_reduced_number = st.checkbox("Reduced-number SolProp ensemble", value=False)
+                native_left, native_right = st.columns(2)
+                with native_left:
+                    solprop_native_epochs = st.number_input("SolProp native epochs", value=40, min_value=1, step=5)
+                    solprop_native_patience = st.number_input("SolProp native patience", value=10, min_value=1, step=1)
+                with native_right:
+                    solprop_native_models = st.number_input("SolProp native ensemble", value=5, min_value=1, step=1)
+                    solprop_native_device = st.selectbox("SolProp native device", ["auto", "cpu", "cuda"], index=0)
+                continue_on_error = st.checkbox("Continue if one baseline fails", value=False)
+                extra = st.text_area("Extra CLI args", value="")
+                command = build_python_command(
+                    "scripts/experiments/run_external_baseline_benchmark.py",
+                    "--train-data",
+                    train_data,
+                    "--val-data",
+                    val_data,
+                    "--test-data",
+                    test_data,
+                    "--out-dir",
+                    out_dir,
+                    "--split-mode",
+                    split_mode,
+                    "--fastsolv-mode",
+                    fastsolv_mode,
+                    "--fastsolv-batch-size",
+                    str(int(fastsolv_batch)),
+                    "--fastsolv-epochs",
+                    str(int(fastsolv_epochs)),
+                    "--fastsolv-patience",
+                    str(int(fastsolv_patience)),
+                    "--fastsolv-descriptor-nproc",
+                    str(int(fastsolv_nproc)),
+                    "--solprop-mode",
+                    solprop_mode,
+                    "--solprop-batch-size",
+                    str(int(solprop_batch)),
+                    "--solprop-native-epochs",
+                    str(int(solprop_native_epochs)),
+                    "--solprop-native-patience",
+                    str(int(solprop_native_patience)),
+                    "--solprop-native-num-models",
+                    str(int(solprop_native_models)),
+                    "--solprop-native-device",
+                    solprop_native_device,
+                    *parse_extra_args(extra),
+                    python_command_text=python_command,
+                )
+                if solprop_temperature_dependent:
+                    command.append("--solprop-temperature-dependent")
+                if solprop_include_temperature:
+                    command.append("--solprop-include-temperature")
+                if solprop_reduced_number:
+                    command.append("--solprop-reduced-number")
+                if fastsolv_python.strip():
+                    command += ["--fastsolv-python", fastsolv_python.strip()]
+                if solprop_python.strip():
+                    command += ["--solprop-python", solprop_python.strip()]
+                if solprop_runtime_dir.strip():
+                    command += ["--solprop-runtime-dir", solprop_runtime_dir.strip()]
+                if continue_on_error:
+                    command.append("--continue-on-error")
+                st.code(quote_command(command), language="bash")
+                if st.form_submit_button("Launch external baseline benchmark", use_container_width=True):
+                    launch_job("External baselines benchmark", "experiment", command, REPO_ROOT, [out_dir])
+                    st.success("External baseline benchmark launched.")
+        elif exp_tab == "Custom benchmark":
+            cards = st.columns(3)
+            with cards[0]:
+                info_card("Bring your own model", "Evaluate an arbitrary predictions CSV against the canonical TGNN-Solv test split.")
+            with cards[1]:
+                info_card("Command mode", "Optionally let the lab run a custom command that writes predictions before benchmarking them.")
+            with cards[2]:
+                info_card("Visualization", "Outputs the same summary/report bundle as maintained models, so all existing tables and plots keep working.")
+            st.caption("Custom benchmark outputs use the same canonical artifact format as maintained models, so they automatically show up in `Results & Plots`, the artifact registry, and compare views.")
+            with st.form("custom_benchmark_form", border=False):
+                model_name = st.text_input("Model name", value="custom_model")
+                test_data = st.text_input("Test CSV", value=str(PROCESSED_DIR / "test.csv"), key="custom_benchmark_test")
+                out_dir = st.text_input("Output dir", value=str(RESULTS_DIR / "custom_benchmarks" / "custom_model"))
+                source_mode = st.selectbox("Prediction source", ["Existing predictions CSV", "Command generates predictions"])
+                predictions_csv = st.text_input(
+                    "Predictions CSV",
+                    value=str(RESULTS_DIR / "custom_benchmarks" / "custom_model" / "predictions_input.csv"),
+                    help="If `row_index` is present it will be used as the primary merge key. Otherwise the benchmark falls back to the pair identity.",
+                )
+                command_template = ""
+                generated_predictions = predictions_csv
+                if source_mode == "Command generates predictions":
+                    generated_predictions = st.text_input(
+                        "Generated predictions path",
+                        value=str(RESULTS_DIR / "custom_benchmarks" / "custom_model" / "generated_predictions.csv"),
+                    )
+                    command_template = st.text_area(
+                        "Command template",
+                        value="python your_model.py --input {test_data} --output {predictions_output}",
+                        height=120,
+                        help="`{test_data}` and `{predictions_output}` will be substituted before execution.",
+                    )
+                cols_left, cols_right = st.columns(2)
+                with cols_left:
+                    pred_lnx2_col = st.text_input("Predicted ln(x2) column", value="ln_x2_pred")
+                    uncertainty_col = st.text_input("Uncertainty column (optional)", value="")
+                with cols_right:
+                    pred_logs_col = st.text_input("Predicted logS column (optional)", value="")
+                    merge_on = st.selectbox("Merge mode", ["auto", "row_index", "pair"], index=0)
+                metadata_json = st.text_input("Metadata JSON (optional)", value="")
+                command = build_python_command(
+                    "scripts/evaluation/benchmark_custom_model.py",
+                    "--model-name",
+                    model_name,
+                    "--test-data",
+                    test_data,
+                    "--out-dir",
+                    out_dir,
+                    "--merge-on",
+                    merge_on,
+                    python_command_text=python_command,
+                )
+                if source_mode == "Existing predictions CSV":
+                    command += ["--predictions-csv", predictions_csv]
+                else:
+                    command += [
+                        "--command",
+                        command_template,
+                        "--generated-predictions",
+                        generated_predictions,
+                    ]
+                if pred_lnx2_col.strip():
+                    command += ["--pred-lnx2-col", pred_lnx2_col.strip()]
+                if pred_logs_col.strip():
+                    command += ["--pred-logs-col", pred_logs_col.strip()]
+                if uncertainty_col.strip():
+                    command += ["--uncertainty-col", uncertainty_col.strip()]
+                if metadata_json.strip():
+                    command += ["--metadata-json", metadata_json.strip()]
+                st.code(quote_command(command), language="bash")
+                if st.form_submit_button("Benchmark custom model", use_container_width=True):
+                    launch_job("Custom model benchmark", "evaluation", command, REPO_ROOT, [out_dir])
+                    st.success("Custom benchmark launched.")
         else:
             with st.form("optuna_form", border=False):
                 models = st.text_input("Models", value="tgnn_solv,direct_gnn")
@@ -5388,10 +6520,31 @@ def render_launcher_page(python_command: str, probe: dict[str, Any]) -> None:
 
     elif outer_mode == "Paper & Figures":
         with st.form("paper_form", border=False):
-            mode = st.selectbox("Workflow", ["Full reproduce.sh", "Generate paper figures", "Generate supplementary"])
+            mode = st.selectbox(
+                "Workflow",
+                [
+                    "Article reproduction",
+                    "Generate paper figures",
+                    "Generate supplementary",
+                    "Legacy reproduce.sh",
+                ],
+            )
+            repro_profile = st.selectbox("Reproduction profile", ["core", "article", "full"], index=1)
+            repro_device = st.selectbox("Reproduction device", devices, index=0, key="paper_repro_device")
             extra = st.text_area("Extra CLI args", value="")
-            if mode == "Full reproduce.sh":
-                command = ["bash", "reproduce.sh"]
+            if mode == "Article reproduction":
+                command = build_python_command(
+                    "scripts/experiments/reproduce_paper.py",
+                    "--profile",
+                    repro_profile,
+                    "--device",
+                    repro_device,
+                    *parse_extra_args(extra),
+                    python_command_text=python_command,
+                )
+                outputs = [str(RESULTS_DIR / "reproduction"), str(FIGURES_DIR), str(TABLES_DIR)]
+            elif mode == "Legacy reproduce.sh":
+                command = ["bash", "reproduce.sh", *parse_extra_args(extra)]
                 outputs = [str(RESULTS_DIR), str(FIGURES_DIR), str(TABLES_DIR)]
             elif mode == "Generate paper figures":
                 command = build_python_command(
@@ -6563,6 +7716,7 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
 
 
 def render_results_page(python_command: str) -> None:
+    palette = theme_palette()
     page_header(
         "Results & Plots",
         "Browse structured outputs, inspect experiment lineage, compare artifacts side by side, and drill into checkpoints, tables, and figures without leaving the repo.",
@@ -6578,7 +7732,7 @@ def render_results_page(python_command: str) -> None:
     )
     view_mode = segmented_choice(
         "Results view",
-        ["Dashboard", "Artifact explorer", "Experiment registry", "Lineage graph", "Artifact diff", "Image gallery"],
+        ["Dashboard", "Benchmark studio", "Artifact explorer", "Experiment registry", "Lineage graph", "Artifact diff", "Image gallery"],
         key="results_view",
         default="Dashboard",
     )
@@ -6636,6 +7790,9 @@ def render_results_page(python_command: str) -> None:
                     height=420,
                 )
                 st.plotly_chart(style_plot(fig), use_container_width=True)
+
+    elif view_mode == "Benchmark studio":
+        render_benchmark_studio()
 
     elif view_mode == "Artifact explorer":
         artifacts = available_artifacts()
@@ -7154,8 +8311,8 @@ def render_results_page(python_command: str) -> None:
                 )
                 render_dataframe(stats_df, use_container_width=True, hide_index=True)
                 hist = go.Figure()
-                hist.add_trace(go.Histogram(x=left_df[metric], name="left", opacity=0.7, marker_color="#2563EB"))
-                hist.add_trace(go.Histogram(x=right_df[metric], name="right", opacity=0.7, marker_color="#EF4444"))
+                hist.add_trace(go.Histogram(x=left_df[metric], name="left", opacity=0.7, marker_color=palette["blue"]))
+                hist.add_trace(go.Histogram(x=right_df[metric], name="right", opacity=0.7, marker_color=palette["red"]))
                 hist.update_layout(
                     barmode="overlay",
                     title=f"{metric} distribution",
@@ -7179,6 +8336,7 @@ def render_results_page(python_command: str) -> None:
 
 
 def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
+    palette = theme_palette()
     checkpoints = available_checkpoints()
     history_records = load_inference_history()
     uncertainty_history_records = load_uncertainty_history()
@@ -7207,6 +8365,30 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
         )
         return
 
+    workbench_checkpoints, rejected_checkpoints = workbench_compatible_checkpoints(python_command, checkpoints)
+    tgnn_supported_checkpoints, _ = tgnn_inference_checkpoints(python_command, checkpoints)
+    if not workbench_checkpoints:
+        st.error("No supported checkpoints are available for the inference workbench.")
+        if rejected_checkpoints:
+            reject_df = pd.DataFrame(
+                [
+                    {"checkpoint": relative_label(path), "reason": reason}
+                    for path, reason in rejected_checkpoints
+                ]
+            )
+            render_dataframe(reject_df, use_container_width=True, hide_index=True)
+        return
+
+    if rejected_checkpoints:
+        with st.expander("Skipped unsupported checkpoints", expanded=False):
+            reject_df = pd.DataFrame(
+                [
+                    {"checkpoint": relative_label(path), "reason": reason}
+                    for path, reason in rejected_checkpoints
+                ]
+            )
+            render_dataframe(reject_df, use_container_width=True, hide_index=True)
+
     workspace = segmented_choice(
         "Inference workspace",
         ["Run & inspect", "History & compare", "Uncertainty lab", "Calibration dashboard"],
@@ -7214,48 +8396,226 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
         default="Run & inspect",
     )
 
+    editor_seed_solute = st.session_state.get("inference_solute", DEFAULT_SOLUTE_SMILES)
+    editor_seed_solvent = st.session_state.get("inference_solvent", DEFAULT_SOLVENT_SMILES)
+    editor_version = int(st.session_state.get("inference_editor_version", 0))
+
+    with st.expander("Structure editor", expanded=False):
+        st.caption(
+            "Draw or edit the solute and solvent directly. The editor now shows the sanitized RDKit structure and atom graph before anything is pushed into live inference."
+        )
+        if st_ketcher is None:
+            st.info(
+                "The Ketcher editor is not available in this environment. "
+                "Restart the lab from a Python environment with the GUI extras, for example "
+                "`python scripts/launch_lab.py` after installing `pip install -e \".[gui,dev]\"`."
+            )
+            st.caption(f"Current Streamlit interpreter: `{sys.executable}`")
+            if KETCHER_ERROR:
+                st.caption(f"Editor import error: {KETCHER_ERROR}")
+        else:
+            editor_cols = st.columns(2, gap="large")
+            solute_editor_key = f"inference_solute_editor_{editor_version}"
+            solvent_editor_key = f"inference_solvent_editor_{editor_version}"
+            with editor_cols[0]:
+                st.markdown("#### Solute editor")
+                drawn_solute = st_ketcher(
+                    editor_seed_solute,
+                    height=420,
+                    molecule_format="SMILES",
+                    key=solute_editor_key,
+                )
+                solute_editor_smiles, solute_editor_error = canonicalize_smiles(drawn_solute)
+                if solute_editor_error:
+                    st.warning(solute_editor_error)
+                else:
+                    st.caption("Canonical solute SMILES from the editor")
+                    st.code(solute_editor_smiles or "", language="text")
+                if st.button("Use as solute", key="apply_drawn_solute", use_container_width=True):
+                    if solute_editor_smiles:
+                        st.session_state["inference_solute"] = solute_editor_smiles
+                        st.session_state["infer_solute_input"] = solute_editor_smiles
+                        st.session_state["inference_editor_version"] = editor_version + 1
+                        st.rerun()
+                    st.error(solute_editor_error or "The solute editor did not produce a valid structure.")
+            with editor_cols[1]:
+                st.markdown("#### Solvent editor")
+                drawn_solvent = st_ketcher(
+                    editor_seed_solvent,
+                    height=420,
+                    molecule_format="SMILES",
+                    key=solvent_editor_key,
+                )
+                solvent_editor_smiles, solvent_editor_error = canonicalize_smiles(drawn_solvent)
+                if solvent_editor_error:
+                    st.warning(solvent_editor_error)
+                else:
+                    st.caption("Canonical solvent SMILES from the editor")
+                    st.code(solvent_editor_smiles or "", language="text")
+                if st.button("Use as solvent", key="apply_drawn_solvent", use_container_width=True):
+                    if solvent_editor_smiles:
+                        st.session_state["inference_solvent"] = solvent_editor_smiles
+                        st.session_state["infer_solvent_input"] = solvent_editor_smiles
+                        st.session_state["inference_editor_version"] = editor_version + 1
+                        st.rerun()
+                    st.error(solvent_editor_error or "The solvent editor did not produce a valid structure.")
+
+            st.markdown("### Editor-derived chemistry preview")
+            st.caption(
+                "The preview below is generated from the sanitized canonical SMILES exported by the editor, so it reflects the exact structure that would be sent into the model."
+            )
+            preview_cols = st.columns(2, gap="large")
+            with preview_cols[0]:
+                render_structure_editor_preview(
+                    "Solute",
+                    solute_editor_smiles,
+                    raw_smiles=drawn_solute,
+                    error=solute_editor_error,
+                )
+            with preview_cols[1]:
+                render_structure_editor_preview(
+                    "Solvent",
+                    solvent_editor_smiles,
+                    raw_smiles=drawn_solvent,
+                    error=solvent_editor_error,
+                )
+
+            action_cols = st.columns([0.92, 0.96, 0.78, 1.24], gap="small")
+            with action_cols[0]:
+                if st.button("Use sanitized preview in inference", key="apply_both_drawings", use_container_width=True):
+                    errors: list[str] = []
+                    if not solute_editor_smiles:
+                        errors.append("solute")
+                    if not solvent_editor_smiles:
+                        errors.append("solvent")
+                    if errors:
+                        st.error("The editor could not export a valid " + " and ".join(errors) + " structure.")
+                    else:
+                        st.session_state["inference_solute"] = solute_editor_smiles
+                        st.session_state["inference_solvent"] = solvent_editor_smiles
+                        st.session_state["infer_solute_input"] = solute_editor_smiles
+                        st.session_state["infer_solvent_input"] = solvent_editor_smiles
+                        st.session_state["inference_editor_version"] = editor_version + 1
+                        st.rerun()
+            with action_cols[1]:
+                if st.button("Apply drawing + run inference", key="apply_and_run_drawings", use_container_width=True):
+                    errors: list[str] = []
+                    if not solute_editor_smiles:
+                        errors.append("solute")
+                    if not solvent_editor_smiles:
+                        errors.append("solvent")
+                    if errors:
+                        st.error("The editor could not export a valid " + " and ".join(errors) + " structure.")
+                    else:
+                        st.session_state["inference_solute"] = solute_editor_smiles
+                        st.session_state["inference_solvent"] = solvent_editor_smiles
+                        st.session_state["infer_solute_input"] = solute_editor_smiles
+                        st.session_state["infer_solvent_input"] = solvent_editor_smiles
+                        st.session_state["inference_workspace"] = "Run & inspect"
+                        st.session_state["inference_autorun"] = True
+                        st.session_state["inference_editor_version"] = editor_version + 1
+                        st.rerun()
+            with action_cols[2]:
+                if st.button("Reload from live fields", key="reset_structure_editors", use_container_width=True):
+                    st.session_state["inference_editor_version"] = editor_version + 1
+                    st.rerun()
+            with action_cols[3]:
+                st.markdown(
+                    """
+                    <div class="lab-workspace-panel">
+                      <h4>Editor workflow</h4>
+                      <p>
+                        Use the sketcher to draw, inspect the sanitized preview, and only then sync it into the live inference inputs.
+                        This keeps the workbench stable while still making the structure-editing loop immediate and visual.
+                      </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
     with st.form("inference_form", border=False):
-        checkpoint_path = render_path_select("Checkpoint", checkpoints, CHECKPOINTS_DIR / "tgnn_solv_trained.pt", "infer_checkpoint")
+        default_checkpoint = CHECKPOINTS_DIR / "tgnn_solv_trained.pt"
+        if default_checkpoint not in workbench_checkpoints:
+            default_checkpoint = workbench_checkpoints[0]
+        checkpoint_path = render_path_select("Checkpoint", workbench_checkpoints, default_checkpoint, "infer_checkpoint")
         c1, c2, c3 = st.columns([1.1, 1.1, 0.7])
         with c1:
-            solute = st.text_input("Solute SMILES", value=st.session_state.get("inference_solute", DEFAULT_SOLUTE_SMILES))
+            solute = st.text_input(
+                "Solute SMILES",
+                value=st.session_state.get("inference_solute", DEFAULT_SOLUTE_SMILES),
+                key="infer_solute_input",
+            )
         with c2:
-            solvent = st.text_input("Solvent SMILES", value=st.session_state.get("inference_solvent", DEFAULT_SOLVENT_SMILES))
+            solvent = st.text_input(
+                "Solvent SMILES",
+                value=st.session_state.get("inference_solvent", DEFAULT_SOLVENT_SMILES),
+                key="infer_solvent_input",
+            )
         with c3:
-            temperature = st.number_input("Temperature (K)", value=float(st.session_state.get("inference_temperature", 298.15)), min_value=150.0, max_value=800.0, step=1.0)
+            temperature = st.number_input(
+                "Temperature (K)",
+                value=float(st.session_state.get("inference_temperature", 298.15)),
+                min_value=150.0,
+                max_value=800.0,
+                step=1.0,
+                key="infer_temperature_input",
+            )
         with st.expander("Advanced scan and uncertainty settings", expanded=False):
             d1, d2, d3, d4 = st.columns(4)
             with d1:
-                scan_tmin = st.number_input("Scan Tmin", value=270.0, min_value=150.0, max_value=780.0, step=5.0)
+                scan_tmin = st.number_input("Scan Tmin", value=270.0, min_value=150.0, max_value=780.0, step=5.0, key="infer_scan_tmin")
             with d2:
-                scan_tmax = st.number_input("Scan Tmax", value=360.0, min_value=160.0, max_value=800.0, step=5.0)
+                scan_tmax = st.number_input("Scan Tmax", value=360.0, min_value=160.0, max_value=800.0, step=5.0, key="infer_scan_tmax")
             with d3:
-                scan_points = st.number_input("Scan points", value=15, min_value=5, max_value=60, step=1)
+                scan_points = st.number_input("Scan points", value=15, min_value=5, max_value=60, step=1, key="infer_scan_points")
             with d4:
-                mc_samples = st.number_input("MC samples", value=30, min_value=10, max_value=80, step=5)
-            run_mc = st.checkbox("Run MC-dropout summary", value=False)
-            reference_csv = st.text_input("Reference train CSV for nearest-neighbor similarity", value=str(PROCESSED_DIR / "train.csv"))
+                mc_samples = st.number_input("MC samples", value=30, min_value=10, max_value=80, step=5, key="infer_mc_samples")
+            run_mc = st.checkbox("Run MC-dropout summary", value=False, key="infer_run_mc")
+            reference_csv = st.text_input(
+                "Reference train CSV for nearest-neighbor similarity",
+                value=str(PROCESSED_DIR / "train.csv"),
+                key="infer_reference_csv",
+            )
             ood_cols = st.columns(4)
             with ood_cols[0]:
-                run_domain = st.checkbox("Run OOD / applicability-domain score", value=False)
+                run_domain = st.checkbox("Run OOD / applicability-domain score", value=False, key="infer_run_domain")
             with ood_cols[1]:
-                domain_fit_rows = st.number_input("AD fit rows", value=4096, min_value=512, max_value=50000, step=512)
+                domain_fit_rows = st.number_input("AD fit rows", value=4096, min_value=512, max_value=50000, step=512, key="infer_domain_fit_rows")
             with ood_cols[2]:
-                domain_mahal_pct = st.slider("Mahalanobis cutoff percentile", min_value=0.80, max_value=0.99, value=0.95, step=0.01)
+                domain_mahal_pct = st.slider("Mahalanobis cutoff percentile", min_value=0.80, max_value=0.99, value=0.95, step=0.01, key="infer_domain_mahal_pct")
             with ood_cols[3]:
-                domain_tani_threshold = st.slider("Tanimoto threshold", min_value=0.10, max_value=0.80, value=0.30, step=0.05)
-            domain_csv = st.text_input("Applicability-domain train CSV", value=str(PROCESSED_DIR / "train.csv"))
+                domain_tani_threshold = st.slider("Tanimoto threshold", min_value=0.10, max_value=0.80, value=0.30, step=0.05, key="infer_domain_tani_threshold")
+            domain_csv = st.text_input("Applicability-domain train CSV", value=str(PROCESSED_DIR / "train.csv"), key="infer_domain_csv")
         submitted = st.form_submit_button("Run inference", use_container_width=True)
+    auto_run_inference = bool(st.session_state.pop("inference_autorun", False))
+    submitted = bool(submitted or auto_run_inference)
 
     st.session_state["inference_solute"] = solute
     st.session_state["inference_solvent"] = solvent
     st.session_state["inference_temperature"] = float(temperature)
 
     checkpoint_file = Path(checkpoint_path)
+    selected_checkpoint_info = (
+        inspect_checkpoint(python_command, str(checkpoint_file), checkpoint_file.stat().st_mtime)
+        if checkpoint_file.exists()
+        else {}
+    )
+    selected_family = checkpoint_family_from_payload(selected_checkpoint_info)
     latest_uncertainty = st.session_state.get("uncertainty_last_payload")
     latest_uncertainty_meta = st.session_state.get("uncertainty_last_meta", {})
     latest_calibration = st.session_state.get("uncertainty_calibration_payload")
     latest_calibration_meta = st.session_state.get("uncertainty_calibration_meta", {})
+
+    if workspace == "Run & inspect":
+        family_label = "DirectGNN" if selected_family == "direct_gnn" else "TGNN-Solv"
+        st.caption(
+            f"Selected checkpoint family: {family_label}."
+            + (
+                " This path supports direct ln(x₂) inference and temperature scans, but not solver decomposition or OOD / MC-dropout diagnostics."
+                if selected_family == "direct_gnn"
+                else " Full physics decomposition, OOD screening, and MC-dropout are available."
+            )
+        )
 
     if workspace == "Uncertainty lab":
         uncertainty_mode = segmented_choice(
@@ -7264,11 +8624,14 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
             key="uncertainty_lab_mode",
             default="Run & inspect",
         )
-        checkpoint_labels = [relative_label(path) for path in checkpoints]
-        label_to_path = {relative_label(path): str(path) for path in checkpoints}
+        checkpoint_labels = [relative_label(path) for path in tgnn_supported_checkpoints]
+        label_to_path = {relative_label(path): str(path) for path in tgnn_supported_checkpoints}
         default_uncertainty = checkpoint_labels[: min(3, len(checkpoint_labels))]
         st.markdown("### Uncertainty lab")
         st.caption("Use multiple trained checkpoints as a deep ensemble, optionally add MC-dropout on the first checkpoint, and inspect interval bands across temperature rather than only point estimates.")
+        if not tgnn_supported_checkpoints:
+            st.info("Uncertainty analysis currently supports TGNN-Solv checkpoints only.")
+            return
         if uncertainty_mode == "Run & inspect":
             with st.form("uncertainty_lab_form", border=False):
                 selected_labels = st.multiselect(
@@ -7364,23 +8727,50 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
 
             upper_left, upper_right = st.columns([1.05, 0.95], gap="large")
             with upper_left:
+                st.markdown("#### Uncertainty Bands Across Temperature")
+                st.caption("Mean curve and 90% interval are shown outside the title area so the plot region stays clear.")
                 uncertainty_fig = go.Figure()
                 ensemble_scan_df = pd.DataFrame(latest_uncertainty.get("ensemble_scan", []))
                 if not ensemble_scan_df.empty:
                     uncertainty_fig.add_trace(go.Scatter(x=ensemble_scan_df["T"], y=ensemble_scan_df["ln_x2_q95"], mode="lines", line={"width": 0}, hoverinfo="skip", showlegend=False))
-                    uncertainty_fig.add_trace(go.Scatter(x=ensemble_scan_df["T"], y=ensemble_scan_df["ln_x2_q05"], mode="lines", line={"width": 0}, fill="tonexty", fillcolor="rgba(37,99,235,0.16)", name="Ensemble 90% interval"))
-                    uncertainty_fig.add_trace(go.Scatter(x=ensemble_scan_df["T"], y=ensemble_scan_df["ln_x2_mean"], mode="lines+markers", name="Ensemble mean", line={"color": "#2563EB", "width": 3}))
+                    uncertainty_fig.add_trace(go.Scatter(x=ensemble_scan_df["T"], y=ensemble_scan_df["ln_x2_q05"], mode="lines", line={"width": 0}, fill="tonexty", fillcolor=hex_to_rgba(palette["blue"], 0.16), name="Ensemble 90% interval"))
+                    uncertainty_fig.add_trace(go.Scatter(x=ensemble_scan_df["T"], y=ensemble_scan_df["ln_x2_mean"], mode="lines+markers", name="Ensemble mean", line={"color": palette["blue"], "width": 3}))
                 mc_scan_df = pd.DataFrame(latest_uncertainty.get("mc_scan", []))
                 if not mc_scan_df.empty:
-                    uncertainty_fig.add_trace(go.Scatter(x=mc_scan_df["T"], y=mc_scan_df["ln_x2_mean"], mode="lines", name="MC-dropout mean", line={"color": "#F59E0B", "width": 2, "dash": "dash"}))
+                    uncertainty_fig.add_trace(go.Scatter(x=mc_scan_df["T"], y=mc_scan_df["ln_x2_mean"], mode="lines", name="MC-dropout mean", line={"color": palette["orange"], "width": 2, "dash": "dash"}))
                 if not member_df.empty:
-                    uncertainty_fig.add_trace(go.Scatter(x=[latest_uncertainty_meta.get("temperature", float(temperature))] * len(member_df), y=member_df["ln_x2"], mode="markers", name="Member predictions", marker={"color": "#10B981", "size": 10, "line": {"color": "#ffffff", "width": 0.8}}))
-                uncertainty_fig.update_layout(title="Uncertainty bands across temperature", height=560, xaxis_title="Temperature (K)", yaxis_title="ln x₂", legend={"orientation": "h", "y": 1.08})
+                    uncertainty_fig.add_trace(go.Scatter(x=[latest_uncertainty_meta.get("temperature", float(temperature))] * len(member_df), y=member_df["ln_x2"], mode="markers", name="Member predictions", marker={"color": palette["green"], "size": 10, "line": {"color": palette["surface"], "width": 0.8}}))
+                uncertainty_fig.update_layout(
+                    height=540,
+                    xaxis_title="Temperature (K)",
+                    yaxis_title="ln x₂",
+                    legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "x": 0.0, "xanchor": "left"},
+                    margin={"l": 18, "r": 12, "t": 18, "b": 12},
+                )
                 st.plotly_chart(style_plot(uncertainty_fig), use_container_width=True)
             with upper_right:
                 if not member_df.empty:
-                    spread_fig = px.bar(member_df, x="checkpoint", y="ln_x2", color="checkpoint", title="Per-checkpoint ln x₂ at selected temperature", height=560)
-                    spread_fig.update_xaxes(tickangle=28)
+                    st.markdown("#### Per-Checkpoint Prediction Spread")
+                    st.caption("Checkpoint labels are shortened in the plot; full paths remain in hover.")
+                    member_plot_df = member_df.copy()
+                    member_plot_df["checkpoint_label"] = member_plot_df["checkpoint"].map(compact_path_label)
+                    spread_fig = px.bar(
+                        member_plot_df,
+                        x="checkpoint_label",
+                        y="ln_x2",
+                        color="checkpoint_label",
+                        custom_data=["checkpoint"],
+                        height=540,
+                    )
+                    spread_fig.update_traces(
+                        hovertemplate="checkpoint=%{customdata[0]}<br>ln x₂=%{y:.3f}<extra></extra>"
+                    )
+                    spread_fig.update_xaxes(tickangle=-20, title_text="Checkpoint")
+                    spread_fig.update_yaxes(title_text="ln x₂")
+                    spread_fig.update_layout(
+                        showlegend=False,
+                        margin={"l": 18, "r": 12, "t": 18, "b": 12},
+                    )
                     st.plotly_chart(style_plot(spread_fig), use_container_width=True)
                 else:
                     st.info("No member predictions available.")
@@ -7393,11 +8783,19 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                 if latest_uncertainty.get("mc_dropout"):
                     comparison_rows.append({"method": "MC-dropout", "ln_x2_mean": latest_uncertainty["mc_dropout"]["ln_x2_mean"], "ln_x2_std": latest_uncertainty["mc_dropout"]["ln_x2_std"]})
                 if comparison_rows:
+                    st.markdown("#### MC vs Ensemble Summary")
+                    st.caption("Mean prediction and spread are separated on dual axes without an in-plot title.")
                     compare_methods = pd.DataFrame(comparison_rows)
                     compare_fig = go.Figure()
-                    compare_fig.add_trace(go.Bar(x=compare_methods["method"], y=compare_methods["ln_x2_mean"], name="mean", marker_color="#2563EB"))
-                    compare_fig.add_trace(go.Scatter(x=compare_methods["method"], y=compare_methods["ln_x2_std"], mode="markers+lines", name="std", yaxis="y2", marker={"color": "#EF4444", "size": 11}))
-                    compare_fig.update_layout(title="MC vs ensemble at selected temperature", height=420, yaxis={"title": "ln x₂ mean"}, yaxis2={"title": "std", "overlaying": "y", "side": "right"})
+                    compare_fig.add_trace(go.Bar(x=compare_methods["method"], y=compare_methods["ln_x2_mean"], name="mean", marker_color=palette["blue"]))
+                    compare_fig.add_trace(go.Scatter(x=compare_methods["method"], y=compare_methods["ln_x2_std"], mode="markers+lines", name="std", yaxis="y2", marker={"color": palette["red"], "size": 11}))
+                    compare_fig.update_layout(
+                        height=400,
+                        yaxis={"title": "ln x₂ mean"},
+                        yaxis2={"title": "std", "overlaying": "y", "side": "right"},
+                        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "x": 0.0, "xanchor": "left"},
+                        margin={"l": 18, "r": 18, "t": 18, "b": 12},
+                    )
                     st.plotly_chart(style_plot(compare_fig), use_container_width=True)
             with lower_right:
                 st.markdown(
@@ -7464,15 +8862,25 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
         render_dataframe(pd.DataFrame(compare_rows), use_container_width=True, hide_index=True)
         compare_left, compare_right = st.columns([1.02, 0.98], gap="large")
         with compare_left:
+            st.markdown("#### Ensemble Mean Overlay")
+            st.caption("Saved uncertainty runs are overlaid directly, with the heading kept outside the plotting canvas.")
             fig = go.Figure()
             for record in selected_records:
                 scan_df = pd.DataFrame(record.get("ensemble_scan", []))
                 if scan_df.empty:
                     continue
                 fig.add_trace(go.Scatter(x=scan_df["T"], y=scan_df["ln_x2_mean"], mode="lines+markers", name=uncertainty_history_label(record)))
-            fig.update_layout(title="Ensemble mean overlay", height=520, xaxis_title="Temperature (K)", yaxis_title="ln x₂")
+            fig.update_layout(
+                height=500,
+                xaxis_title="Temperature (K)",
+                yaxis_title="ln x₂",
+                legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "x": 0.0, "xanchor": "left"},
+                margin={"l": 18, "r": 12, "t": 18, "b": 12},
+            )
             st.plotly_chart(style_plot(fig), use_container_width=True)
         with compare_right:
+            st.markdown("#### Ensemble Spread By Run")
+            st.caption("Single-value spread bars are kept clean by moving the title outside the figure.")
             band_fig = go.Figure()
             for record in selected_records:
                 ensemble = record.get("ensemble") or {}
@@ -7483,10 +8891,15 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                         x=[uncertainty_history_label(record)],
                         y=[ensemble.get("ln_x2_std")],
                         name="ensemble std",
-                        marker_color="#2563EB",
+                        marker_color=palette["blue"],
                     )
                 )
-            band_fig.update_layout(title="Ensemble spread by run", height=520, yaxis_title="std")
+            band_fig.update_layout(
+                height=500,
+                yaxis_title="std",
+                showlegend=False,
+                margin={"l": 18, "r": 12, "t": 18, "b": 12},
+            )
             st.plotly_chart(style_plot(band_fig), use_container_width=True)
         return
 
@@ -7497,11 +8910,14 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
             key="uncertainty_calibration_mode",
             default="Run & inspect",
         )
-        checkpoint_labels = [relative_label(path) for path in checkpoints]
-        label_to_path = {relative_label(path): str(path) for path in checkpoints}
+        checkpoint_labels = [relative_label(path) for path in tgnn_supported_checkpoints]
+        label_to_path = {relative_label(path): str(path) for path in tgnn_supported_checkpoints}
         default_labels = checkpoint_labels[: min(3, len(checkpoint_labels))]
         st.markdown("### Batch calibration dashboard")
         st.caption("Evaluate whether uncertainty intervals are actually calibrated on a real held-out CSV using the maintained `calibration_report(...)` helper.")
+        if not tgnn_supported_checkpoints:
+            st.info("Calibration analysis currently supports TGNN-Solv checkpoints only.")
+            return
         if calibration_mode == "Run & inspect":
             with st.form("uncertainty_calibration_form", border=False):
                 calibration_labels = st.multiselect(
@@ -7597,8 +9013,8 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
             render_dataframe(report_df, use_container_width=True, hide_index=True)
 
             coverage_fig = go.Figure()
-            coverage_fig.add_trace(go.Bar(x=report_df["method"], y=report_df["PICP_90"], name="PICP_90", marker_color="#2563EB"))
-            coverage_fig.add_trace(go.Scatter(x=report_df["method"], y=[0.9] * len(report_df), mode="lines+markers", name="target 0.90", marker={"color": "#EF4444", "size": 10}))
+            coverage_fig.add_trace(go.Bar(x=report_df["method"], y=report_df["PICP_90"], name="PICP_90", marker_color=palette["blue"]))
+            coverage_fig.add_trace(go.Scatter(x=report_df["method"], y=[0.9] * len(report_df), mode="lines+markers", name="target 0.90", marker={"color": palette["red"], "size": 10}))
             coverage_fig.update_layout(title="Coverage vs target", height=420, yaxis_title="coverage")
             st.plotly_chart(style_plot(coverage_fig), use_container_width=True)
 
@@ -7628,7 +9044,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                             "array": method_df["q95"] - method_df["pred_ln_x2_mean"],
                             "arrayminus": method_df["pred_ln_x2_mean"] - method_df["q05"],
                         },
-                        marker={"color": np.where(method_df["covered"], "#10B981", "#EF4444"), "size": 10},
+                        marker={"color": np.where(method_df["covered"], palette["green"], palette["red"]), "size": 10},
                         text=method_df["solute_smiles"].astype(str).str.slice(0, 24) + " in " + method_df["solvent_smiles"].astype(str).str.slice(0, 18),
                         hovertemplate="%{text}<br>true=%{x:.3f}<br>pred=%{y:.3f}<extra></extra>",
                         name="sample",
@@ -7636,7 +9052,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                 )
                 axis_min = float(min(method_df["true_ln_x2"].min(), method_df["pred_ln_x2_mean"].min()))
                 axis_max = float(max(method_df["true_ln_x2"].max(), method_df["pred_ln_x2_mean"].max()))
-                parity.add_shape(type="line", x0=axis_min, y0=axis_min, x1=axis_max, y1=axis_max, line={"dash": "dash", "color": "#64748B"})
+                parity.add_shape(type="line", x0=axis_min, y0=axis_min, x1=axis_max, y1=axis_max, line={"dash": "dash", "color": palette["slate"]})
                 parity.update_layout(title=f"{method_choice} parity with uncertainty intervals", height=520, xaxis_title="true ln x₂", yaxis_title="predicted mean ln x₂")
                 st.plotly_chart(style_plot(parity), use_container_width=True)
             with pair_right:
@@ -7749,7 +9165,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                 title="Coverage across saved calibration runs",
                 height=480,
             )
-            picp_fig.add_hline(y=0.9, line_dash="dash", line_color="#EF4444")
+            picp_fig.add_hline(y=0.9, line_dash="dash", line_color=palette["red"])
             picp_fig.update_xaxes(tickangle=28)
             st.plotly_chart(style_plot(picp_fig), use_container_width=True)
         with summary_right:
@@ -7786,7 +9202,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                     )
                 axis_min = float(min(method_df["true_ln_x2"].min(), method_df["pred_ln_x2_mean"].min()))
                 axis_max = float(max(method_df["true_ln_x2"].max(), method_df["pred_ln_x2_mean"].max()))
-                parity.add_shape(type="line", x0=axis_min, y0=axis_min, x1=axis_max, y1=axis_max, line={"dash": "dash", "color": "#64748B"})
+                parity.add_shape(type="line", x0=axis_min, y0=axis_min, x1=axis_max, y1=axis_max, line={"dash": "dash", "color": palette["slate"]})
                 parity.update_layout(title=f"{compare_method} parity overlay", height=520, xaxis_title="true ln x₂", yaxis_title="predicted mean ln x₂")
                 st.plotly_chart(style_plot(parity), use_container_width=True)
             with detail_right:
@@ -7850,30 +9266,45 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
     if submitted:
         if not checkpoint_file.exists():
             st.error(f"Checkpoint not found: {checkpoint_file}")
+        elif selected_family not in {"tgnn_solv", "direct_gnn"}:
+            st.error("The selected checkpoint is not supported by the inference workbench.")
         else:
             with st.spinner("Running model inference in the selected Python environment..."):
-                payload = run_model_inference(
-                    python_command,
-                    str(checkpoint_file),
-                    solute,
-                    solvent,
-                    float(temperature),
-                    float(scan_tmin),
-                    float(scan_tmax),
-                    int(scan_points),
-                    bool(run_mc),
-                    int(mc_samples),
-                    bool(run_domain),
-                    domain_csv,
-                    int(domain_fit_rows),
-                    float(domain_mahal_pct),
-                    float(domain_tani_threshold),
-                )
+                if selected_family == "direct_gnn":
+                    payload = run_direct_model_inference(
+                        python_command,
+                        str(checkpoint_file),
+                        solute,
+                        solvent,
+                        float(temperature),
+                        float(scan_tmin),
+                        float(scan_tmax),
+                        int(scan_points),
+                    )
+                else:
+                    payload = run_model_inference(
+                        python_command,
+                        str(checkpoint_file),
+                        solute,
+                        solvent,
+                        float(temperature),
+                        float(scan_tmin),
+                        float(scan_tmax),
+                        int(scan_points),
+                        bool(run_mc),
+                        int(mc_samples),
+                        bool(run_domain),
+                        domain_csv,
+                        int(domain_fit_rows),
+                        float(domain_mahal_pct),
+                        float(domain_tani_threshold),
+                    )
             if payload.get("error"):
                 st.error(payload["error"])
             else:
                 record_path = save_inference_record(
                     checkpoint_path=str(checkpoint_file),
+                    model_family=selected_family,
                     solute=solute,
                     solvent=solvent,
                     temperature=float(temperature),
@@ -7890,6 +9321,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                 st.session_state["inference_last_payload"] = payload
                 st.session_state["inference_last_meta"] = {
                     "checkpoint": str(checkpoint_file),
+                    "model_family": selected_family,
                     "solute": solute,
                     "solvent": solvent,
                     "temperature": float(temperature),
@@ -7953,6 +9385,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
             compare_rows.append(
                 {
                     "run": inference_history_label(record),
+                    "family": record.get("model_family", "tgnn_solv"),
                     "ln_x2": prediction.get("ln_x2"),
                     "x2": prediction.get("x2"),
                     "gamma_2": prediction.get("gamma_2"),
@@ -7985,24 +9418,27 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
             decomp_rows = []
             for record in selected_records:
                 prediction = record.get("prediction", {})
-                decomp_rows.extend(
-                    [
-                        {"run": inference_history_label(record), "term": "-Φ", "value": -float(prediction.get("Phi", 0.0))},
-                        {"run": inference_history_label(record), "term": "-ln γ₂", "value": -float(prediction.get("ln_gamma_2", 0.0))},
-                        {"run": inference_history_label(record), "term": "correction", "value": float(prediction.get("correction", 0.0))},
-                        {"run": inference_history_label(record), "term": "ln x₂", "value": float(prediction.get("ln_x2", 0.0))},
-                    ]
+                if prediction.get("Phi") is not None:
+                    decomp_rows.append({"run": inference_history_label(record), "term": "-Φ", "value": -float(prediction["Phi"])})
+                if prediction.get("ln_gamma_2") is not None:
+                    decomp_rows.append({"run": inference_history_label(record), "term": "-ln γ₂", "value": -float(prediction["ln_gamma_2"])})
+                if prediction.get("correction") is not None:
+                    decomp_rows.append({"run": inference_history_label(record), "term": "correction", "value": float(prediction["correction"])})
+                if prediction.get("ln_x2") is not None:
+                    decomp_rows.append({"run": inference_history_label(record), "term": "ln x₂", "value": float(prediction["ln_x2"])})
+            if decomp_rows:
+                decomp_fig = px.bar(
+                    pd.DataFrame(decomp_rows),
+                    x="term",
+                    y="value",
+                    color="run",
+                    barmode="group",
+                    title="Prediction term comparison across saved runs",
+                    height=460,
                 )
-            decomp_fig = px.bar(
-                pd.DataFrame(decomp_rows),
-                x="term",
-                y="value",
-                color="run",
-                barmode="group",
-                title="Decomposition across saved runs",
-                height=460,
-            )
-            st.plotly_chart(style_plot(decomp_fig), use_container_width=True)
+                st.plotly_chart(style_plot(decomp_fig), use_container_width=True)
+            else:
+                st.info("No comparable prediction-term decomposition is available for the selected runs.")
 
         overlay_left, overlay_right = st.columns([1.05, 0.95], gap="large")
         with overlay_left:
@@ -8029,9 +9465,10 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
             st.plotly_chart(style_plot(scan_overlay), use_container_width=True)
         with overlay_right:
             solver_overlay = go.Figure()
+            solver_added = False
             for record in selected_records:
                 scan_df = pd.DataFrame(record.get("scan", []))
-                if scan_df.empty:
+                if scan_df.empty or "x_ideal" not in scan_df.columns:
                     continue
                 minus_phi = np.log(np.clip(scan_df["x_ideal"], 1e-12, None))
                 solver_overlay.add_trace(
@@ -8042,14 +9479,18 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                         name=f"-Φ · {short_smiles_label(str(record.get('solute_smiles', '')), 12)}",
                     )
                 )
-            solver_overlay.update_layout(
-                title="Crystal-demand overlay",
-                height=520,
-                xaxis_title="Temperature (K)",
-                yaxis_title="-Φ",
-                legend={"orientation": "h", "y": 1.1},
-            )
-            st.plotly_chart(style_plot(solver_overlay), use_container_width=True)
+                solver_added = True
+            if solver_added:
+                solver_overlay.update_layout(
+                    title="Crystal-demand overlay",
+                    height=520,
+                    xaxis_title="Temperature (K)",
+                    yaxis_title="-Φ",
+                    legend={"orientation": "h", "y": 1.1},
+                )
+                st.plotly_chart(style_plot(solver_overlay), use_container_width=True)
+            else:
+                st.info("Crystal-demand overlays are only available for TGNN-Solv runs with solver terms.")
 
         focus_labels = [inference_history_label(record) for record in selected_records]
         focus_label = st.selectbox(
@@ -8082,12 +9523,162 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
     payload = latest_payload
     result = payload["prediction"]
     scan_df = pd.DataFrame(payload["scan"])
-    scan_terms = scan_df.copy()
-    scan_terms["minus_phi"] = np.log(np.clip(scan_terms["x_ideal"], 1e-12, None))
-    scan_terms["minus_ln_gamma"] = -np.log(np.clip(scan_terms["gamma_2"], 1e-12, None))
+    model_family = str(
+        payload.get("model_family")
+        or result.get("model_family")
+        or latest_meta.get("model_family")
+        or "tgnn_solv"
+    )
 
     if latest_record_path:
         st.caption(f"Latest saved run: {relative_label(Path(str(latest_record_path)))}")
+
+    if model_family == "direct_gnn":
+        metric_cols = st.columns(5)
+        metric_values = [
+            ("x₂", f"{result['x2']:.5f}", "mole fraction"),
+            ("ln x₂", f"{result['ln_x2']:.3f}", "direct prediction"),
+            ("Morgan path", "on" if result.get("uses_morgan") else "off", "feature side path"),
+            ("Descriptors", "on" if result.get("uses_descriptors") else "off", "RDKit augmentation"),
+            ("Family", "DirectGNN", "matched no-physics baseline"),
+        ]
+        for col, (label, value, caption) in zip(metric_cols, metric_values):
+            with col:
+                st.metric(label, value, help=caption)
+
+        explainer_left, explainer_right = st.columns([1.0, 1.0], gap="large")
+        with explainer_left:
+            st.markdown(
+                """
+                <div class="lab-workspace-panel">
+                  <h4>Direct baseline reading</h4>
+                  <p>
+                    This checkpoint uses the matched graph backbone, but predicts <code>ln(x₂)</code> directly.
+                    There is no NRTL head, no SLE fixed-point solve, and no bounded correction branch, so this
+                    view focuses on final predictions, temperature trends, and chemical context rather than
+                    physics-term decomposition.
+                  </p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with explainer_right:
+            st.markdown("### Descriptor context")
+            desc_cols = st.columns(2)
+            with desc_cols[0]:
+                st.json(descriptor_summary(latest_meta.get("solute", solute)) or {})
+            with desc_cols[1]:
+                st.json(descriptor_summary(latest_meta.get("solvent", solvent)) or {})
+
+        panel = segmented_choice(
+            "Inference panel",
+            ["Prediction", "Temperature scan", "Chemical context", "Report & raw payload"],
+            key="direct_inference_panel",
+            default="Prediction",
+        )
+        if panel == "Prediction":
+            pred_left, pred_right = st.columns([1.05, 0.95], gap="large")
+            with pred_left:
+                bar_df = pd.DataFrame(
+                    [
+                        {"metric": "ln x₂", "value": float(result["ln_x2"])},
+                        {"metric": "x₂", "value": float(result["x2"])},
+                    ]
+                )
+                fig = px.bar(bar_df, x="metric", y="value", color="metric", title="Direct prediction summary", height=460)
+                st.plotly_chart(style_plot(fig), use_container_width=True)
+            with pred_right:
+                render_dataframe(
+                    pd.DataFrame(
+                        [
+                            {"field": "family", "value": "DirectGNN"},
+                            {"field": "solute", "value": result["solute"]},
+                            {"field": "solvent", "value": result["solvent"]},
+                            {"field": "temperature", "value": f"{float(result['T']):.2f} K"},
+                            {"field": "uses_morgan", "value": bool(result.get("uses_morgan"))},
+                            {"field": "uses_descriptors", "value": bool(result.get("uses_descriptors"))},
+                        ]
+                    ),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+        elif panel == "Temperature scan":
+            scan_left, scan_right = st.columns([1.05, 0.95], gap="large")
+            with scan_left:
+                scan_fig = go.Figure()
+                scan_fig.add_trace(go.Scatter(x=scan_df["T"], y=scan_df["ln_x2"], mode="lines+markers", name="ln x₂"))
+                scan_fig.add_trace(go.Scatter(x=scan_df["T"], y=scan_df["x2"], mode="lines", name="x₂", yaxis="y2"))
+                scan_fig.update_layout(
+                    title="DirectGNN temperature scan",
+                    height=560,
+                    yaxis={"title": "ln x₂"},
+                    yaxis2={"title": "x₂", "overlaying": "y", "side": "right"},
+                    xaxis={"title": "Temperature (K)"},
+                    legend={"orientation": "h", "y": 1.08},
+                )
+                st.plotly_chart(style_plot(scan_fig), use_container_width=True)
+            with scan_right:
+                slope_df = scan_df.copy()
+                slope_df["d_ln_x2"] = slope_df["ln_x2"].diff().fillna(0.0)
+                slope_fig = px.bar(slope_df, x="T", y="d_ln_x2", title="Stepwise change across temperature scan", height=560)
+                st.plotly_chart(style_plot(slope_fig), use_container_width=True)
+                dl_left, dl_right = st.columns(2)
+                with dl_left:
+                    st.download_button(
+                        "Download scan CSV",
+                        data=scan_df.to_csv(index=False),
+                        file_name="directgnn_temperature_scan.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                    )
+                with dl_right:
+                    st.download_button(
+                        "Download inference JSON",
+                        data=json.dumps(payload, indent=2),
+                        file_name="directgnn_inference.json",
+                        mime="application/json",
+                        use_container_width=True,
+                    )
+        elif panel == "Chemical context":
+            ref_path = Path(latest_meta.get("reference_csv", reference_csv))
+            if ref_path.exists() and Chem is not None and AllChem is not None:
+                fp_index = cached_fp_index(str(ref_path))
+                sol_sim, sol_match = nearest_similarity(latest_meta.get("solute", solute), fp_index["solute_fps"], fp_index["solute_smiles"])
+                slv_sim, slv_match = nearest_similarity(latest_meta.get("solvent", solvent), fp_index["solvent_fps"], fp_index["solvent_smiles"])
+                context_left, context_right = st.columns([0.9, 1.1], gap="large")
+                with context_left:
+                    sim_df = pd.DataFrame(
+                        [
+                            {"role": "solute", "nearest_tanimoto": sol_sim},
+                            {"role": "solvent", "nearest_tanimoto": slv_sim},
+                        ]
+                    )
+                    fig = px.bar(sim_df, x="role", y="nearest_tanimoto", range_y=[0, 1], color="role", title="Nearest training similarity", height=420)
+                    st.plotly_chart(style_plot(fig), use_container_width=True)
+                with context_right:
+                    render_dataframe(
+                        pd.DataFrame(
+                            [
+                                {"role": "solute", "nearest_tanimoto": sol_sim, "nearest_smiles": sol_match},
+                                {"role": "solvent", "nearest_tanimoto": slv_sim, "nearest_smiles": slv_match},
+                            ]
+                        ),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+            else:
+                st.info("Nearest-neighbor similarity is unavailable because RDKit or the reference CSV is missing.")
+        else:
+            report_left, report_right = st.columns([1.0, 1.0], gap="large")
+            with report_left:
+                st.code(str(payload.get("interpretation", "")))
+            with report_right:
+                st.json(payload)
+        return
+
+    scan_terms = scan_df.copy()
+    scan_terms["minus_phi"] = np.log(np.clip(scan_terms["x_ideal"], 1e-12, None))
+    scan_terms["minus_ln_gamma"] = -np.log(np.clip(scan_terms["gamma_2"], 1e-12, None))
 
     metric_cols = st.columns(6)
     metric_values = [
@@ -8143,7 +9734,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                     x=["-Φ", "-ln γ₂", "correction", "ln x₂"],
                     measure=["relative", "relative", "relative", "total"],
                     y=[-result["Phi"], -result["ln_gamma_2"], result["correction"], 0],
-                    connector={"line": {"color": "#64748b"}},
+                    connector={"line": {"color": palette["slate"]}},
                 )
             )
             waterfall.update_layout(title="Log-solubility decomposition", height=520)
@@ -8281,7 +9872,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
             st.info("OOD scoring was not run for this inference. Enable applicability-domain scoring in Advanced settings and run again.")
         else:
             verdict = "In domain" if domain_payload.get("in_domain") else "Potentially OOD"
-            verdict_color = "#059669" if domain_payload.get("in_domain") else "#dc2626"
+            verdict_color = palette["green"] if domain_payload.get("in_domain") else palette["red"]
             st.markdown(
                 f"""
                 <div class="lab-workspace-panel">
@@ -8291,7 +9882,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                     That keeps the GUI responsive while preserving the same Mahalanobis-plus-Tanimoto decision path as the library helper.
                   </p>
                   <div class="lab-kicker-row">
-                    <span class="lab-kicker" style="background:{verdict_color}1f;border-color:{verdict_color}44;color:{verdict_color};">{verdict}</span>
+                    <span class="lab-kicker" style="{accent_pill_style(verdict_color)}">{verdict}</span>
                     <span class="lab-kicker">fit rows: {int(domain_payload.get("fit_rows", 0)):,}</span>
                     <span class="lab-kicker">sampled: {"yes" if domain_payload.get("sampled") else "no"}</span>
                     <span class="lab-kicker">CSV: {escape(relative_label(Path(str(domain_payload.get("train_csv", latest_meta.get("domain_csv", domain_csv))))))}</span>
@@ -8322,11 +9913,11 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                         title={"text": "OOD confidence"},
                         gauge={
                             "axis": {"range": [0, 1]},
-                            "bar": {"color": "#2563EB"},
+                            "bar": {"color": palette["blue"]},
                             "steps": [
-                                {"range": [0, 0.35], "color": "#FECACA"},
-                                {"range": [0.35, 0.65], "color": "#FDE68A"},
-                                {"range": [0.65, 1.0], "color": "#BBF7D0"},
+                                {"range": [0, 0.35], "color": hex_to_rgba(palette["red"], 0.24)},
+                                {"range": [0.35, 0.65], "color": hex_to_rgba(palette["orange"], 0.24)},
+                                {"range": [0.65, 1.0], "color": hex_to_rgba(palette["green"], 0.24)},
                             ],
                         },
                     )
@@ -8342,8 +9933,8 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                     ]
                 )
                 domain_fig = go.Figure()
-                domain_fig.add_trace(go.Bar(x=comparison["metric"], y=comparison["value"], name="value", marker_color="#2563EB"))
-                domain_fig.add_trace(go.Scatter(x=comparison["metric"], y=comparison["threshold"], mode="markers+lines", name="threshold", marker=dict(color="#EF4444", size=10)))
+                domain_fig.add_trace(go.Bar(x=comparison["metric"], y=comparison["value"], name="value", marker_color=palette["blue"]))
+                domain_fig.add_trace(go.Scatter(x=comparison["metric"], y=comparison["threshold"], mode="markers+lines", name="threshold", marker=dict(color=palette["red"], size=10)))
                 domain_fig.update_layout(title="Domain criteria vs thresholds", height=420, yaxis_title="score")
                 st.plotly_chart(style_plot(domain_fig), use_container_width=True)
 
@@ -8370,6 +9961,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
 
 
 def render_planner_page() -> None:
+    palette = theme_palette()
     payload = load_planner_state()
     page_header(
         "Experiment Planner",
@@ -8509,7 +10101,7 @@ def render_planner_page() -> None:
             <div class="lab-workspace-panel">
               <h4 style="margin-bottom:0.35rem;">{escape(selected_task.get('title', selected_id))}</h4>
               <div class="lab-kicker-row">
-                <span class="lab-kicker" style="background:{task_priority_color(str(selected_task.get('priority', 'P2')))}1f;border-color:{task_priority_color(str(selected_task.get('priority', 'P2')))}44;color:{task_priority_color(str(selected_task.get('priority', 'P2')))};">{escape(str(selected_task.get('priority', 'P2')))}</span>
+                <span class="lab-kicker" style="{accent_pill_style(task_priority_color(str(selected_task.get('priority', 'P2'))))}">{escape(str(selected_task.get('priority', 'P2')))}</span>
                 <span class="lab-kicker">{escape(str(selected_task.get('status', 'Backlog')))}</span>
                 <span class="lab-kicker">{escape(str(selected_task.get('owner', 'research')))}</span>
               </div>
@@ -8599,11 +10191,11 @@ def render_planner_page() -> None:
                 hover_data=["Owner", "Priority", "Hours", "id"],
                 height=max(420, 80 + 48 * len(timeline_df)),
                 color_discrete_map={
-                    "Backlog": "#94A3B8",
-                    "Ready": "#2563EB",
-                    "Running": "#10B981",
-                    "Blocked": "#EF4444",
-                    "Done": "#6366F1",
+                    "Backlog": palette["slate"],
+                    "Ready": palette["blue"],
+                    "Running": palette["green"],
+                    "Blocked": palette["red"],
+                    "Done": palette["purple"],
                 },
             )
             timeline.update_yaxes(autorange="reversed")
@@ -8682,57 +10274,141 @@ def render_documentation_page() -> None:
         st.code(doc_text, language="markdown")
 
 
-def parse_reproduce_steps() -> list[str]:
-    path = REPO_ROOT / "reproduce.sh"
-    if not path.exists():
-        return []
-    steps = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if 'log "Step' in line:
-            steps.append(line.split('log "', 1)[1].rsplit('"', 1)[0])
-    return steps
+@st.cache_data(show_spinner=False)
+def reproduction_profile_descriptions() -> dict[str, str]:
+    from tgnn_solv.reproduction import reproduction_profiles
+
+    return reproduction_profiles()
+
+
+def reproduction_steps_for_ui(
+    profile: str,
+    *,
+    python_command: str,
+    device: str,
+) -> list[dict[str, Any]]:
+    from tgnn_solv.reproduction import ReproductionSettings, build_reproduction_steps
+
+    settings = ReproductionSettings(
+        profile=profile,
+        python_command=python_command,
+        device=device,
+        processed_dir=str(PROCESSED_DIR),
+        results_dir=str(RESULTS_DIR),
+        checkpoints_dir=str(CHECKPOINTS_DIR),
+        figures_dir=str(FIGURES_DIR),
+        tables_dir=str(TABLES_DIR),
+    )
+    rows: list[dict[str, Any]] = []
+    for step in build_reproduction_steps(settings):
+        rows.append(
+            {
+                "step_id": step.step_id,
+                "name": step.name,
+                "description": step.description,
+                "category": step.category,
+                "command_preview": quote_command(step.command_preview),
+                "expected_outputs": list(step.expected_outputs),
+                "optional": bool(step.optional),
+            }
+        )
+    return rows
 
 
 def render_reproduce_page(python_command: str) -> None:
+    profile_docs = reproduction_profile_descriptions()
+    profile = segmented_choice(
+        "Reproduction profile",
+        ["core", "article", "full"],
+        key="reproduce_profile",
+        default="article",
+    )
+    device = st.selectbox("Runtime device", ["auto", "cpu", "cuda"], index=0, key="reproduce_device")
+    steps = reproduction_steps_for_ui(profile, python_command=python_command, device=device)
+    selected_step_ids = [row["step_id"] for row in steps]
+    default_summary = RESULTS_DIR / "reproduction" / f"{profile}_summary.json"
+
     page_header(
         "Paper Reproduction",
-        "Run the complete shell pipeline or step through the major experiment stages from the UI.",
+        "Structured article-reproduction workspace: pick a maintained profile, inspect the exact step graph, launch the whole run or selected steps, and track the resulting outputs under one summary artifact.",
         eyebrow="Reproduce",
         chips=[
-            ("Workflow steps", str(len(WORKFLOW_STEPS))),
+            ("Profile", profile),
+            ("Workflow steps", str(len(steps))),
             ("Results dir", relative_label(RESULTS_DIR)),
             ("Figures dir", relative_label(FIGURES_DIR)),
+            ("Summary", relative_label(default_summary)),
         ],
     )
 
     left, right = st.columns([1.05, 0.95], gap="large")
     with left:
-        st.markdown("### Full pipeline")
-        st.code("bash reproduce.sh", language="bash")
-        st.caption("Runs data prep, training sweeps, evaluation, baselines, ablations, statistical tests, supplementary tables, and figure generation.")
-        if st.button("Launch full reproduce.sh", use_container_width=True):
-            launch_job("Full paper reproduction", "paper", ["bash", "reproduce.sh"], REPO_ROOT, [str(RESULTS_DIR), str(FIGURES_DIR), str(TABLES_DIR)])
-            st.success("Full paper reproduction launched.")
+        st.markdown("### Profile summary")
+        st.caption(profile_docs.get(profile, ""))
+        launch_cols = st.columns([1.0, 1.0], gap="small")
+        selected_for_step_launch = st.multiselect(
+            "Selected steps",
+            selected_step_ids,
+            default=selected_step_ids,
+            help="The full-profile launcher ignores this selection; use it with the targeted step launcher below.",
+        )
+        full_command = build_python_command(
+            "scripts/experiments/reproduce_paper.py",
+            "--profile",
+            profile,
+            "--device",
+            device,
+            "--summary-json",
+            str(default_summary),
+            python_command_text=python_command,
+        )
+        with launch_cols[0]:
+            st.code(quote_command(full_command), language="bash")
+            if st.button("Launch full profile", use_container_width=True):
+                launch_job(
+                    f"Reproduce paper ({profile})",
+                    "paper",
+                    full_command,
+                    REPO_ROOT,
+                    [str(default_summary), str(RESULTS_DIR), str(FIGURES_DIR), str(TABLES_DIR)],
+                )
+                st.success("Structured reproduction profile launched.")
+        with launch_cols[1]:
+            step_command = build_python_command(
+                "scripts/experiments/reproduce_paper.py",
+                "--profile",
+                profile,
+                "--device",
+                device,
+                "--summary-json",
+                str(default_summary),
+                *sum([["--step", step_id] for step_id in selected_for_step_launch], []),
+                python_command_text=python_command,
+            )
+            st.code(quote_command(step_command), language="bash")
+            if st.button("Launch selected steps", use_container_width=True, disabled=not selected_for_step_launch):
+                launch_job(
+                    f"Reproduce steps ({profile})",
+                    "paper",
+                    step_command,
+                    REPO_ROOT,
+                    [str(default_summary)],
+                )
+                st.success("Selected reproduction steps launched.")
 
-        st.markdown("### Step map")
-        steps = parse_reproduce_steps()
-        if steps:
-            for step in steps:
-                with st.container(border=True):
-                    st.markdown(f"**{step}**")
-        else:
-            st.info("No step markers were parsed from reproduce.sh.")
-
-        st.markdown("### High-level launches")
-        for index, (name, description, command) in enumerate(WORKFLOW_STEPS, start=1):
+        st.markdown("### Step graph")
+        for index, step in enumerate(steps, start=1):
             with st.container(border=True):
-                st.markdown(f"**{index}. {name}**")
-                st.caption(description)
-                st.code(quote_command(command), language="bash")
-                if st.button(f"Launch: {name}", key=f"workflow_{index}", use_container_width=True):
-                    launch_job(name, "paper", command, REPO_ROOT)
-                    st.success(f"Launched {name}.")
+                tag = f"{step['category']}"
+                if step["optional"]:
+                    tag = f"{tag} · optional"
+                st.markdown(f"**{index}. {step['name']}**")
+                st.caption(f"`{step['step_id']}` · {tag}")
+                st.markdown(step["description"])
+                st.code(step["command_preview"], language="bash")
+                if step["expected_outputs"]:
+                    output_rows = pd.DataFrame({"expected_output": [compact_path_label(item, keep_segments=4) for item in step["expected_outputs"]]})
+                    render_dataframe(output_rows, use_container_width=True, hide_index=True)
 
     with right:
         st.markdown("### Output status")
@@ -8740,16 +10416,25 @@ def render_reproduce_page(python_command: str) -> None:
             {"path": "results/", "exists": RESULTS_DIR.exists()},
             {"path": "figures/", "exists": FIGURES_DIR.exists()},
             {"path": "tables/", "exists": TABLES_DIR.exists()},
+            {"path": relative_label(default_summary), "exists": default_summary.exists()},
             {"path": "reproduce.sh", "exists": (REPO_ROOT / "reproduce.sh").exists()},
+            {"path": "scripts/experiments/reproduce_paper.py", "exists": (REPO_ROOT / "scripts" / "experiments" / "reproduce_paper.py").exists()},
             {"path": "python command", "exists": bool(python_command.strip())},
         ]
         render_dataframe(pd.DataFrame(status_rows), use_container_width=True, hide_index=True)
-        st.markdown("### `reproduce.sh` preview")
-        path = REPO_ROOT / "reproduce.sh"
-        if path.exists():
-            st.code(path.read_text(encoding="utf-8"), language="bash")
+        st.markdown("### Legacy shell entrypoint")
+        shell_path = REPO_ROOT / "reproduce.sh"
+        if shell_path.exists():
+            st.code(shell_path.read_text(encoding="utf-8"), language="bash")
+            st.caption("`reproduce.sh` is now a compatibility shim that delegates to the structured Python runner with `--profile article` by default.")
         else:
             st.warning("reproduce.sh is missing.")
+        st.markdown("### Workflow presets")
+        for index, (name, description, command) in enumerate(WORKFLOW_STEPS, start=1):
+            with st.container(border=True):
+                st.markdown(f"**{index}. {name}**")
+                st.caption(description)
+                st.code(quote_command(command), language="bash")
 
 
 def render_job_center() -> None:
@@ -8900,6 +10585,10 @@ def render_sidebar() -> tuple[str, dict[str, Any]]:
     if st.session_state.get("_lab_probe_cache_version") != PROBE_CACHE_VERSION:
         probe_selected_python.clear()
         st.session_state["_lab_probe_cache_version"] = PROBE_CACHE_VERSION
+    if st.sidebar.button("Clear UI caches", use_container_width=True):
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.sidebar.success("Cleared Streamlit caches for this app session.")
     python_command = st.sidebar.text_input(
         "Python command",
         value=st.session_state.get("lab_python_command", suggested_python_command()),
@@ -8955,6 +10644,7 @@ def main() -> None:
         layout="wide",
         initial_sidebar_state="expanded",
     )
+    ensure_runtime_cache_consistency()
     inject_css()
     ensure_layout()
 

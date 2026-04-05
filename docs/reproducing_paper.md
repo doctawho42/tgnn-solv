@@ -1,225 +1,209 @@
-# Reproducing the Main Workflow
+# Reproducing the Paper
 
-## Entry Point
+## Entry Points
 
-The repository-level reproduction driver is:
+The maintained reproduction runner is now:
+
+- `scripts/experiments/reproduce_paper.py`
+
+The repository-level shell entrypoint remains:
 
 - `reproduce.sh`
 
-Run it from the repo root:
+`reproduce.sh` is now a thin compatibility wrapper that delegates to:
+
+```bash
+python scripts/experiments/reproduce_paper.py --profile article
+```
+
+So both of the following are valid:
 
 ```bash
 bash reproduce.sh
 ```
 
-## What `reproduce.sh` Actually Runs
-
-As of the current codebase, `reproduce.sh` performs this sequence:
-
-1. validate Python, PyTorch, PyG, and package importability
-2. prepare data with `scripts/prepare_data.py` if processed CSVs are missing
-3. run 5-seed TGNN-Solv training with `scripts/run_seeds.py`
-4. run a matched 5-seed `split_late` backbone comparison
-5. evaluate the best TGNN checkpoint with `scripts/evaluate_complete.py`
-6. run `scripts/error_analysis.py`
-7. run `scripts/run_ablation.py`
-8. run baseline and analysis steps:
-   - DirectGNN multi-seed baseline
-   - FastSolv prediction if available
-   - learning curves
-   - temperature extrapolation
-   - physics validation
-   - split-wise comparison
-   - statistical tests
-   - supplementary tables
-   - figure generation
-
-## Canonical Commands Behind the Script
-
-### Data preparation
-
 ```bash
-python scripts/prepare_data.py \
-    --output-dir notebooks/data/processed \
-    --split-mode solute_scaffold \
-    --seed 42
+python scripts/experiments/reproduce_paper.py --profile article
 ```
 
-### 5-seed TGNN-Solv run
+## Profiles
+
+The structured runner exposes three maintained profiles.
+
+### `core`
+
+Minimal maintained paper path:
+
+1. prepare scaffold-aware processed data
+2. run tuned TGNN-Solv multi-seed training
+3. resolve and evaluate the best TGNN checkpoint
+4. run split-wise comparisons
+5. generate supplementary tables
+6. generate paper figures
+
+Use it when you want the smallest reproducible path that still regenerates the
+main TGNN-facing artifacts.
+
+### `article`
+
+Current article-comparison path:
+
+1. prepare scaffold-aware processed data
+2. run tuned TGNN-Solv multi-seed training
+3. run the medium-budget architecture comparison
+4. run external baseline benchmarking:
+   - FastSolv
+   - native-retrained SolProp
+5. resolve and evaluate the best TGNN checkpoint
+6. run split-wise comparisons
+7. generate supplementary tables
+8. generate paper figures
+
+This is the recommended profile for current paper reproduction because it
+includes both the maintained in-repo baselines and the external competitors.
+
+### `full`
+
+Expanded diagnostic path:
+
+- everything in `article`
+- split-late multi-seed comparison
+- DirectGNN multi-seed baseline
+- error analysis
+- ablation suite
+- learning curves
+- temperature extrapolation
+- physics validation
+- statistical tests
+- full-budget diagnostic export
+
+Use it when you want the article artifacts plus the heavier diagnostic bundle.
+
+## Canonical Commands
+
+### Recommended article reproduction
 
 ```bash
-python scripts/run_seeds.py \
-    --config configs/paper_config.yaml \
-    --train-data notebooks/data/processed/train.csv \
-    --val-data notebooks/data/processed/val.csv \
-    --test-data notebooks/data/processed/test.csv \
-    --n-seeds 5 \
-    --base-seed 42 \
-    --output results/multi_seed_results.json \
-    --checkpoint-dir checkpoints/seeds \
-    --device cuda
+python scripts/experiments/reproduce_paper.py --profile article
 ```
 
-### 5-seed split-late comparison
+### Minimal core reproduction
 
 ```bash
-python scripts/run_seeds.py \
-    --config configs/paper_config_split_late.yaml \
-    --train-data notebooks/data/processed/train.csv \
-    --val-data notebooks/data/processed/val.csv \
-    --test-data notebooks/data/processed/test.csv \
-    --n-seeds 5 \
-    --base-seed 42 \
-    --output results/split_late_multi_seed_results.json \
-    --checkpoint-dir checkpoints/split_late_seeds \
-    --device cuda
+python scripts/experiments/reproduce_paper.py --profile core
 ```
 
-### Best-checkpoint evaluation
+### Full diagnostic reproduction
 
 ```bash
-python scripts/evaluate_complete.py \
-    --test-data notebooks/data/processed/test.csv \
-    --tgnn-checkpoint checkpoints/seeds/seed_<best>.pt \
-    --output results/full_evaluation.json \
-    --verbose
+python scripts/experiments/reproduce_paper.py --profile full
 ```
 
-## Important Scope Boundary
+### Inspect the planned step graph without running anything
 
-`reproduce.sh` is the paper-style automation path, but it does not cover every
-research mode now present in the codebase.
+```bash
+python scripts/experiments/reproduce_paper.py --profile article --list-steps
+```
 
-Note on script layout:
+### Run only selected steps
 
-- the repo now exposes grouped human-facing entry points under `scripts/data/`,
-  `scripts/training/`, `scripts/evaluation/`, `scripts/experiments/`, and
-  `scripts/external/`
-- `reproduce.sh` intentionally keeps using the legacy top-level
-  `scripts/*.py` paths because those wrappers remain the compatibility surface
+```bash
+python scripts/experiments/reproduce_paper.py \
+    --profile article \
+    --step medium_budget \
+    --step external_benchmarks
+```
 
-The following maintained configs and experiment paths are available but are not
-part of the default reproduction script:
+## Important Defaults
 
-- `paper_config_tuned.yaml`
-- `paper_config_gc_priors.yaml`
-- `paper_config_oracle.yaml`
-- `paper_config_no_bridge.yaml`
-- `paper_config_no_bridge_no_walden.yaml`
-- `paper_config_combined.yaml`
-- `paper_config_directgnn_tuned.yaml`
-- `paper_config_directgnn_descriptors.yaml`
-- `scripts/run_full_budget_experiment.py`
-- `scripts/run_medium_budget_comparison.py`
+The structured runner now uses the maintained modern defaults:
 
-Those are research or diagnostic extensions, not default reproduction targets.
+- tuned TGNN config: `configs/paper_config_tuned.yaml`
+- canonical split mode: `solute_scaffold`
+- multi-seed count: `5`
+- medium-budget comparison on the full scaffold split
+- external baselines:
+  - `FastSolv mode = both`
+  - `SolProp mode = native`
+
+That is different from the older shell script, which hardcoded a broader legacy
+TGNN config and did not treat the external article baselines as part of the
+default reproduction path.
 
 ## Expected Artifacts
 
-After a successful run, the most important outputs are:
+### Core profile
 
 - `results/multi_seed_results.json`
+- `results/full_evaluation.json`
+- `results/split_comparisons.json`
+- `tables/`
+- `figures/`
+- `results/reproduction/core_summary.json`
+
+### Article profile
+
+- everything from `core`
+- `results/medium_budget/`
+- `results/external_baselines/article_benchmark/summary.csv`
+- `results/external_baselines/article_benchmark/comparison.json`
+- `results/reproduction/article_summary.json`
+
+### Full profile
+
+- everything from `article`
 - `results/split_late_multi_seed_results.json`
 - `results/directgnn_multi_seed_results.json`
-- `results/full_evaluation.json`
 - `results/error_analysis.json`
 - `results/ablation.json`
 - `results/learning_curves.json`
 - `results/temperature_extrapolation.json`
 - `results/physics_validation.json`
-- `results/split_comparisons.json`
 - `results/significance.json`
-- `figures/`
-- `tables/`
+- `results/full_budget_experiment/`
+- `results/reproduction/full_summary.json`
 
-Optional artifacts appear when optional dependency stacks are installed, for
-example FastSolv outputs.
+## Supplementary Outputs
 
-## Validating a Reproduction Run
+`scripts/experiments/generate_supplementary.py` now also looks for canonical
+external/custom benchmark bundles and emits an additional table summarizing
+those baselines when available.
 
-The repo does not ship one fixed benchmark JSON that should be treated as the
-only acceptable numeric outcome. Exact metrics depend on:
+That means the article profile can feed both:
+
+- the `Benchmark Studio` inside the lab
+- the supplementary-table generator
+
+from the same canonical `summary.csv + report.json + predictions.csv` bundles.
+
+## Validation Guidance
+
+A successful reproduction run means:
+
+- the structured runner completes or skips optional external steps with clear
+  status in `results/reproduction/<profile>_summary.json`
+- the best TGNN checkpoint resolves cleanly into `results/full_evaluation.json`
+- figures and supplementary tables are regenerated from the produced artifacts
+- benchmark bundles are present when the article or full profile is used
+
+Exact numeric values still depend on:
 
 - hardware
-- optional dependency availability
-- the chosen split files
-- random seeds
-- checkpoint reuse vs retraining
+- optional dependency stacks
+- runtime availability for FastSolv and SolProp
+- seed reuse versus fresh retraining
 
-Treat your generated artifacts as the authoritative outputs of your run.
+Treat the generated artifacts from your run as the authoritative output.
 
-A successful reproduction means:
+## Scope Boundary
 
-- all expected JSON and CSV artifacts are created
-- the best-seed checkpoint resolves cleanly into `full_evaluation.json`
-- the plotting and supplementary scripts can consume the generated files
-- optional steps are either completed or skipped with clear warnings
+The structured runner is now the maintained paper-reproduction surface.
+Standalone scripts such as:
 
-## Separate Full-Budget Diagnostic Study
+- `scripts/experiments/run_full_budget_experiment.py`
+- `scripts/experiments/run_medium_budget_comparison.py`
+- `scripts/experiments/run_external_baseline_benchmark.py`
 
-If you want the stricter TGNN-vs-DirectGNN budget-matched diagnostic run with
-intermediate physical export, use:
-
-```bash
-python scripts/run_full_budget_experiment.py \
-    --config configs/paper_config.yaml \
-    --train-data notebooks/data/processed/train.csv \
-    --val-data notebooks/data/processed/val.csv \
-    --test-data notebooks/data/processed/test.csv \
-    --seeds 42 \
-    --output-dir results/full_budget_experiment \
-    --device cuda
-```
-
-That experiment is intentionally separate from `reproduce.sh` because it is
-slower and diagnostic-heavy.
-
-## Separate Medium-Budget Architecture Study
-
-For the full-split medium-budget comparison used for architecture triage, run:
-
-```bash
-python scripts/run_medium_budget_comparison.py \
-    --train-data notebooks/data/processed/train.csv \
-    --val-data notebooks/data/processed/val.csv \
-    --test-data notebooks/data/processed/test.csv \
-    --output-dir results/medium_budget \
-    --device cuda
-```
-
-This runner trains:
-
-- `tgnn_tuned`
-- `tgnn_gc_priors`
-- `tgnn_no_bridge`
-- `tgnn_combined_no_oracle`
-- `directgnn_tuned`
-- `directgnn_descriptors`
-- `rf_descriptors`
-
-The combined TGNN run is derived from `paper_config_combined.yaml`, but oracle
-injection is disabled during training in that specific comparison so the study
-isolates GC priors and no-bridge behavior.
-
-## Expected Runtime
-
-Wall-clock time varies significantly. On a single modern GPU, rough guidance:
-
-| Stage | Expected Time |
-|------|---------------|
-| Data preparation | 5-20 minutes |
-| 5-seed TGNN-Solv training | several hours to half a day |
-| Best-checkpoint evaluation | 10-20 minutes |
-| Ablations and learning curves | many additional hours |
-| Full end-to-end workflow | half a day to more than a day |
-
-## Practical Caveats
-
-- `reproduce.sh` can skip optional steps when dependencies such as FastSolv are
-  not installed.
-- `scripts/train.py` and `scripts/train_directgnn.py` support
-  `--checkpoint-every` and `--resume`.
-- `run_full_budget_experiment.py` and `run_medium_budget_comparison.py` reuse
-  those resumable checkpoints automatically.
-- Notebooks remain useful for exploratory inspection, but CLI paths are the
-  reproducible default.
+remain useful individually, but they are now also integrated into the
+maintained reproduction profiles instead of living completely outside the
+default paper path.

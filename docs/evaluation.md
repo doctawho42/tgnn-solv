@@ -31,6 +31,42 @@ backward compatibility.
 The same maintained inference, uncertainty, calibration, and OOD surfaces are
 also exposed interactively in [Experiment Lab](experiment_lab.md).
 
+## External and Custom Benchmarks
+
+The repository now maintains the competitor and custom-model benchmark surfaces
+in the same canonical artifact format used elsewhere in the project.
+
+Main entry points:
+
+- `scripts/run_fastsolv.py`
+  - FastSolv pretrained inference and scratch training/evaluation on repo splits
+- `scripts/run_solprop.py`
+  - SolProp zero-shot prediction and train-split calibration on repo splits
+- `scripts/experiments/run_external_baseline_benchmark.py`
+  - orchestrates FastSolv and SolProp together and writes one comparison bundle
+- `scripts/evaluation/benchmark_custom_model.py`
+  - benchmarks an arbitrary prediction CSV or a custom command-generated CSV
+    against the canonical split
+
+Artifact contract:
+
+- `report.json`
+- `predictions.csv`
+- `summary.csv`
+
+That shared contract is what lets `Results & Plots`, the artifact registry, and
+the lab compare maintained baselines and custom models without special-case UI.
+
+Current SolProp benchmark policy:
+
+- the maintained stable mode is room-temperature SolProp inference at `298.15 K`
+- `train` mode then fits a lightweight calibrator on the repo train split, with
+  optional true-temperature input
+- `train-native` retrains the native SolProp architecture directly on TGNN-Solv
+  `ln(x2)` targets and is the maintained architecture-level comparison mode
+- `--temperature-dependent` remains available, but upstream SolProp is unstable
+  on part of our chemistry, so the wrapper may fall back row-wise
+
 ## Inference API
 
 The core inference helpers live in `src/tgnn_solv/inference.py`.
@@ -240,7 +276,7 @@ screening at inference time, call `ApplicabilityDomain` alongside prediction.
 interactive inference modes:
 
 - `Run & inspect`
-  - single-system prediction, decomposition, RDKit structure view, and temperature scan
+  - single-system prediction, RDKit structure view, and temperature scan for both `TGNN-Solv` and `DirectGNN`
 - `History & compare`
   - persistent saved runs under `results/lab_runs/inference_history/`
 - `Uncertainty lab`
@@ -251,7 +287,9 @@ interactive inference modes:
 These GUI views still delegate to the same underlying APIs:
 
 - `predict_solubility`
+- `predict_direct_solubility`
 - `temperature_scan`
+- `temperature_scan_direct`
 - `MCDropoutPredictor`
 - `EnsemblePredictor`
 - `calibration_report`

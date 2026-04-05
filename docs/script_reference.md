@@ -8,7 +8,7 @@ stability.
 - `Canonical`
   - expected reproducible workflow entry point
 - `Stable utility`
-  - maintained and useful, but not necessarily part of `reproduce.sh`
+  - maintained and useful, but not necessarily part of the default article profile
 - `Research`
   - useful experiment runner or analysis tool, but more likely to evolve
 - `Optional`
@@ -27,7 +27,7 @@ The preferred human-facing CLI surface is now grouped by purpose:
 - `scripts/external/`
 
 Legacy top-level `scripts/*.py` entry points remain available as compatibility
-wrappers because tests, script-to-script imports, and `reproduce.sh` still rely
+wrappers because tests, script-to-script imports, and compatibility entrypoints such as `reproduce.sh` still rely
 on them.
 
 ## Canonical Workflow
@@ -39,8 +39,9 @@ on them.
 | `scripts/experiments/run_seeds.py` | Multi-seed wrapper | Canonical | Can call other train scripts too |
 | `scripts/evaluation/evaluate_complete.py` | Quick checkpoint evaluation | Canonical | Figure-ready arrays |
 | `scripts/experiments/run_split_comparisons.py` | Fair split-wise comparison | Canonical | TGNN, DirectGNN, RF modes |
+| `scripts/experiments/reproduce_paper.py` | Structured article-reproduction runner | Canonical | Supports `core`, `article`, and `full` profiles |
 | `scripts/experiments/generate_paper_figures.py` | Figure generation | Canonical | Consumes result JSONs |
-| `reproduce.sh` | End-to-end driver | Canonical | Orchestrates the paper-style workflow |
+| `reproduce.sh` | Compatibility shell driver | Canonical | Delegates to `scripts/experiments/reproduce_paper.py --profile article` |
 
 ## Stable Utilities
 
@@ -67,7 +68,7 @@ on them.
 | `scripts/evaluation/error_analysis.py` | Detailed residual analysis | Research | Consumes evaluation JSON |
 | `scripts/experiments/learning_curves.py` | Data-efficiency study | Research | Multi-fraction, multi-seed |
 | `scripts/experiments/temperature_extrapolation.py` | Temperature extrapolation study | Research | Uses a combined dataset CSV |
-| `scripts/experiments/statistical_tests.py` | Paired significance testing | Research | Used by `reproduce.sh`, but still analysis-oriented |
+| `scripts/experiments/statistical_tests.py` | Paired significance testing | Research | Used by the `full` reproduction profile, but still analysis-oriented |
 | `scripts/experiments/generate_supplementary.py` | Supplementary table generation | Research | Consumes produced result JSONs |
 
 ## Optional External Baseline Wrappers
@@ -76,7 +77,7 @@ on them.
 |-------------|------|--------|-------|
 | `scripts/external/run_fastsolv.py` | Predict, train, or compare FastSolv | Optional | Preferred FastSolv wrapper |
 | `scripts/external/compare_fastsolv_tgnn.py` | Lightweight TGNN-vs-FastSolv comparison | Optional | Older convenience wrapper |
-| `scripts/external/run_solprop.py` | Predict or calibrate SolProp | Optional | Usually run in a separate environment |
+| `scripts/external/run_solprop.py` | Zero-shot, calibrated, or native-retrained SolProp | Optional | Usually run in a separate environment |
 
 ## Infrastructure
 

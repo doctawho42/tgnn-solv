@@ -166,30 +166,108 @@ and is not the recommended default workflow.
 ## SolProp
 
 SolProp is another optional external baseline that usually lives in its own
-environment.
+environment. In this repository the maintained entry point is the wrapper
+`scripts/run_solprop.py` (the legacy `scripts/external/run_solprop.py` path
+still forwards to it).
+
+Recommended local extras for the maintained wrappers:
+
+```bash
+pip install -e ".[baselines]"
+```
+
+The wrapper now supports three distinct SolProp baselines on TGNN-Solv data:
+
+- `predict`
+  - zero-shot SolProp runtime, exported back into `ln(x2)` / `logS`
+- `train`
+  - zero-shot SolProp plus train-split calibration
+- `train-native`
+  - native retraining of the SolProp MPNN/FFN architecture directly on our
+    `ln(x2)` targets, using solvent, solute, and temperature as model inputs
+
+Maintained comparison mode:
+
+- zero-shot SolProp is run at `298.15 K`
+- the wrapper then evaluates those predictions directly on our split, or
+  calibrates them on the train split with optional temperature input
+- native retraining of the SolProp architecture is the maintained article
+  comparison path when you want the competitor architecture trained directly on
+  TGNN-Solv targets
+
+Important runtime note:
+
+- upstream SolProp's temperature-dependent branch is numerically brittle on a
+  non-trivial fraction of our rows
+- the wrapper still exposes `--temperature-dependent`, but treats it as an
+  experimental mode and can fall back row-wise to room-temperature inference
 
 Prediction:
 
 ```bash
-conda activate solprop
-python scripts/external/run_solprop.py predict \
+python scripts/run_solprop.py predict \
     --input notebooks/data/processed/test.csv \
-    --output results/solprop_predictions.csv \
-    --temperature_dependent
+    --output results/solprop_predictions.csv
 ```
 
 Calibration on your own split:
 
 ```bash
-conda activate solprop
-python scripts/external/run_solprop.py train \
+python scripts/run_solprop.py train \
     --train notebooks/data/processed/train.csv \
     --val notebooks/data/processed/val.csv \
     --test notebooks/data/processed/test.csv \
     --outdir checkpoints/solprop_run \
-    --temperature_dependent \
-    --include_temperature \
-    --export_preds
+    --include-temperature
+```
+
+Native retraining on TGNN-Solv `ln(x2)`:
+
+```bash
+python scripts/run_solprop.py train-native \
+    --train notebooks/data/processed/train.csv \
+    --val notebooks/data/processed/val.csv \
+    --test notebooks/data/processed/test.csv \
+    --outdir checkpoints/solprop_native \
+    --device cpu \
+    --epochs 40 \
+    --patience 10 \
+    --batch-size 256 \
+    --num-models 5
+```
+
+Native checkpoint inference:
+
+```bash
+python scripts/run_solprop.py predict-native \
+    --checkpoint-dir checkpoints/solprop_native \
+    --input notebooks/data/processed/test.csv \
+    --output results/solprop_native_predictions.csv \
+    --metrics results/solprop_native_report.json \
+    --split-mode solute_scaffold
+```
+
+If the selected Python environment does not carry a working SolProp runtime,
+extract the maintained repo-local copy once:
+
+```bash
+python scripts/external/install_solprop_runtime.py
+```
+
+and then point the wrapper or benchmark runner at that extraction with
+`SOLPROP_RUNTIME_DIR` or `--solprop-runtime-dir`.
+
+For a fair external-baseline sweep on the canonical split family:
+
+```bash
+python scripts/experiments/run_external_baseline_benchmark.py \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --out-dir results/external_baselines \
+    --split-mode solute_scaffold \
+    --fastsolv-mode both \
+    --solprop-mode native
 ```
 
 ## Comparison Runners

@@ -13,7 +13,8 @@ to judge whether that bottleneck helps:
 - `DirectGNN`: matched GNN backbone with direct `ln(x2)` prediction
 - `DirectGNN + descriptors`: DirectGNN plus shared RDKit descriptor side-channel
 - `RF` baselines on RDKit descriptors, Morgan fingerprints, or both
-- optional external baselines: FastSolv and SolProp
+- optional external baselines: FastSolv and SolProp, including native SolProp
+  retraining on TGNN-Solv targets
 
 Documentation site:
 
@@ -158,7 +159,13 @@ python scripts/evaluation/evaluate_complete.py \
     --verbose
 ```
 
-Run the full end-to-end paper-style workflow:
+Run the maintained article-reproduction profile:
+
+```bash
+python scripts/experiments/reproduce_paper.py --profile article
+```
+
+The legacy shell entrypoint still works and delegates to the same structured runner:
 
 ```bash
 bash reproduce.sh

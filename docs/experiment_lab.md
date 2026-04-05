@@ -69,6 +69,16 @@ should execute in the real `tgnn-solv` environment.
 - curriculum-aware training setup
 - the same grouped training entry points documented in [Training](training.md)
 
+### Experiments
+
+- multi-seed, split-comparison, medium-budget, full-budget, and Optuna launchers
+- external baseline benchmark launcher for FastSolv and SolProp, including
+  native SolProp retraining on TGNN-Solv targets
+- custom-model benchmark launcher for arbitrary prediction CSVs or
+  command-generated outputs
+- canonical benchmark bundles that drop straight into the same results registry
+  and compare views as maintained models
+
 ### Pipeline Studio
 
 - Airflow-style DAG editor with drag, connect, and inline block editing
@@ -85,6 +95,9 @@ should execute in the real `tgnn-solv` environment.
 ### Results & Plots
 
 - artifact registry across `results/`, `checkpoints/`, `figures/`, and `tables/`
+- `Benchmark Studio` for canonical benchmark bundles with leaderboard,
+  parity/residual plots, temperature/error views, and stratified metrics
+  across FastSolv, SolProp, TGNN-family, and custom-model outputs
 - lineage graph linking configs, jobs, checkpoints, lab histories, and planner
   follow-ups
 - artifact diff for checkpoints, JSON reports, and CSV tables
@@ -92,11 +105,19 @@ should execute in the real `tgnn-solv` environment.
 ### Inference
 
 - single-system prediction with decomposition and temperature scan
+- explicit `DirectGNN` run-and-inspect path for the matched no-physics baseline
 - persistent history for saved inference runs
 - `Uncertainty lab` for ensemble and MC-dropout review
 - `Calibration dashboard` for `PICP_90`, `MPIW`, `MAE`, `RMSE`, and parity
   plots
 - OOD / applicability-domain scoring through `tgnn_solv.domain`
+
+Current scope note:
+
+- `Run & inspect` supports both `TGNN-Solv` and `DirectGNN`
+- `Uncertainty lab` and `Calibration dashboard` currently remain
+  `TGNN-Solv`-only because they rely on the maintained physics-facing
+  inference stack
 
 ### Planner
 
@@ -109,6 +130,15 @@ should execute in the real `tgnn-solv` environment.
 
 - local Markdown rendering from `docs/`
 - embedded published documentation site
+
+### Reproduce
+
+- structured article-reproduction launcher with `core`, `article`, and `full`
+  profiles
+- step-graph view sourced from the same maintained reproduction module used by
+  `reproduce.sh` and `scripts/experiments/reproduce_paper.py`
+- targeted launch of selected reproduction steps when you do not want the whole
+  profile
 
 ## History and Lineage
 
@@ -133,6 +163,8 @@ Use the lab when you need:
 - visual monitoring
 - ad hoc single-system analysis
 - artifact comparison
+- external baseline or custom-model benchmarking without hand-writing wrapper
+  commands
 - planning, scheduling, and manual review loops
 
 Use the CLI when you need:

@@ -7,8 +7,8 @@ for architecture decisions and reproducible comparisons.
 
 ### Reproduce the paper-style workflow
 
-Use `reproduce.sh` plus the canonical CLI stack when you want the full
-end-to-end baseline workflow.
+Use the structured reproduction runner when you want the maintained
+end-to-end article workflow.
 
 - [Open reproduction guide](reproducing_paper.md)
 
@@ -29,15 +29,23 @@ generalization results from one consistent code path.
 
 ## Canonical Reproduction
 
-The default repo-level reproduction driver is:
+The maintained reproduction runner is:
+
+```bash
+python scripts/experiments/reproduce_paper.py --profile article
+```
+
+The legacy shell wrapper still works:
 
 ```bash
 bash reproduce.sh
 ```
 
-Use this when you want the closest thing to the repository's paper-style
-workflow. It orchestrates data preparation, multi-seed TGNN training,
-evaluation, ablations, comparisons, and figure generation.
+Use this when you want the closest thing to the repository's current
+article-comparison workflow. It orchestrates data preparation, tuned TGNN
+multi-seed training, medium-budget comparison, external FastSolv/SolProp
+benchmarking, evaluation, split comparisons, supplementary tables, and figure
+generation.
 
 See [Reproducing the Paper](reproducing_paper.md) for the exact sequence and
 scope boundary.

@@ -20,6 +20,7 @@ from .config import TGNNSolvConfig
 from .features import (
     EDGE_FEAT_DIM,
     NODE_FEAT_DIM,
+    compute_molecular_descriptors,
     smiles_to_descriptor_prior_features,
     smiles_to_graph,
     smiles_to_group_prior_features,
@@ -27,6 +28,7 @@ from .features import (
 )
 from .group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from .model import TGNNSolv
+from .baselines.direct_gnn import DirectGNN
 from .data.solvent_types import solvent_type_id_from_smiles
 
 
@@ -368,6 +370,145 @@ def interpret_prediction(result: Dict) -> str:
     return "\n".join(lines)
 
 
+@torch.no_grad()
+def predict_direct_solubility(
+    model: DirectGNN,
+    solute_smiles: str,
+    solvent_smiles: str,
+    T: float = 298.15,
+    device: torch.device = None,
+) -> Dict:
+    """Predict solubility for a single system with DirectGNN."""
+    if device is None:
+        device = next(model.parameters()).device
+
+    model.eval()
+
+    sol_graph = smiles_to_graph(solute_smiles)
+    slv_graph = smiles_to_graph(solvent_smiles)
+    if sol_graph is None:
+        raise ValueError(f"Cannot parse solute SMILES: {solute_smiles}")
+    if slv_graph is None:
+        raise ValueError(f"Cannot parse solvent SMILES: {solvent_smiles}")
+
+    sol_batch = Batch.from_data_list([sol_graph]).to(device)
+    slv_batch = Batch.from_data_list([slv_graph]).to(device)
+    T_tensor = torch.tensor([T], device=device)
+
+    solute_morgan_fp = None
+    solvent_morgan_fp = None
+    if model.cfg.use_morgan_features:
+        sol_fp = smiles_to_morgan_fp(
+            solute_smiles,
+            radius=model.cfg.morgan_radius,
+            n_bits=model.cfg.morgan_n_bits,
+        )
+        slv_fp = smiles_to_morgan_fp(
+            solvent_smiles,
+            radius=model.cfg.morgan_radius,
+            n_bits=model.cfg.morgan_n_bits,
+        )
+        if sol_fp is None or slv_fp is None:
+            raise ValueError("Failed to compute Morgan fingerprints for DirectGNN inference.")
+        solute_morgan_fp = torch.tensor(sol_fp, device=device).unsqueeze(0)
+        solvent_morgan_fp = torch.tensor(slv_fp, device=device).unsqueeze(0)
+
+    solute_descriptors = None
+    solvent_descriptors = None
+    if model.cfg.use_descriptor_augmentation:
+        sol_desc = compute_molecular_descriptors(solute_smiles)
+        slv_desc = compute_molecular_descriptors(solvent_smiles)
+        if sol_desc is None or slv_desc is None:
+            raise ValueError("Failed to compute RDKit descriptors for DirectGNN inference.")
+        solute_descriptors = torch.tensor(sol_desc, device=device).unsqueeze(0)
+        solvent_descriptors = torch.tensor(slv_desc, device=device).unsqueeze(0)
+
+    output = model(
+        sol_batch,
+        slv_batch,
+        T_tensor,
+        solute_morgan_fp=solute_morgan_fp,
+        solvent_morgan_fp=solvent_morgan_fp,
+        solute_descriptors=solute_descriptors,
+        solvent_descriptors=solvent_descriptors,
+    )
+
+    return {
+        "solute": solute_smiles,
+        "solvent": solvent_smiles,
+        "T": T,
+        "x2": output["x2"].item(),
+        "ln_x2": output["ln_x2"].item(),
+        "model_family": "direct_gnn",
+        "uses_morgan": bool(model.cfg.use_morgan_features),
+        "uses_descriptors": bool(model.cfg.use_descriptor_augmentation),
+    }
+
+
+@torch.no_grad()
+def temperature_scan_direct(
+    model: DirectGNN,
+    solute_smiles: str,
+    solvent_smiles: str,
+    T_min: float = 270.0,
+    T_max: float = 340.0,
+    n_points: int = 15,
+    device: torch.device = None,
+) -> pd.DataFrame:
+    """Predict DirectGNN solubility across temperature."""
+    T_values = np.linspace(T_min, T_max, n_points)
+    results = []
+    for T_val in T_values:
+        results.append(
+            predict_direct_solubility(
+                model,
+                solute_smiles,
+                solvent_smiles,
+                float(T_val),
+                device,
+            )
+        )
+    df = pd.DataFrame(results)
+    return df[["T", "x2", "ln_x2"]]
+
+
+def interpret_direct_prediction(result: Dict) -> str:
+    """Generate a readable report for DirectGNN predictions."""
+    lines = []
+    lines.append("=" * 60)
+    lines.append("DirectGNN Prediction Report")
+    lines.append("=" * 60)
+    lines.append(f"Solute:  {result['solute']}")
+    lines.append(f"Solvent: {result['solvent']}")
+    lines.append(f"T = {result['T']:.1f} K ({result['T'] - 273.15:.1f} °C)")
+
+    lines.append("")
+    lines.append("PREDICTED SOLUBILITY:")
+    lines.append(f"  x₂ = {result['x2']:.5f} (mole fraction)")
+    lines.append(f"  ln(x₂) = {result['ln_x2']:.3f}")
+    if result["x2"] > 0.1:
+        lines.append("  → High solubility (>10 mol%)")
+    elif result["x2"] > 0.01:
+        lines.append("  → Moderate solubility (1–10 mol%)")
+    elif result["x2"] > 1e-4:
+        lines.append("  → Low solubility (0.01–1 mol%)")
+    else:
+        lines.append("  → Very low solubility (<0.01 mol%)")
+
+    lines.append("")
+    lines.append("MODEL PATH:")
+    lines.append("  DirectGNN predicts ln(x₂) directly from the matched graph backbone.")
+    lines.append("  No NRTL activity model, SLE solver, or bounded physics correction is used.")
+    lines.append(
+        f"  Morgan features: {'on' if result.get('uses_morgan') else 'off'}"
+    )
+    lines.append(
+        f"  RDKit descriptor augmentation: {'on' if result.get('uses_descriptors') else 'off'}"
+    )
+
+    return "\n".join(lines)
+
+
 # ================================================================== #
 #  Model I/O                                                          #
 # ================================================================== #
@@ -399,6 +540,27 @@ def load_model(
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     checkpoint = torch.load(path, map_location=device, weights_only=False)
+    if not isinstance(checkpoint, dict):
+        raise ValueError(
+            f"Unsupported checkpoint format at {path}: expected a dict payload, "
+            f"got {type(checkpoint).__name__}."
+        )
+    if "config" not in checkpoint or not isinstance(checkpoint["config"], dict):
+        top_keys = ", ".join(sorted(str(key) for key in checkpoint.keys()))
+        raise ValueError(
+            f"Checkpoint at {path} does not contain a TGNN-Solv config block. "
+            f"Top-level keys: {top_keys or 'none'}. "
+            "This loader only supports TGNN-Solv-style checkpoints saved with "
+            "`config` and compatible model weights."
+        )
+    model_class = str(checkpoint.get("model_class", ""))
+    model_type = str(checkpoint.get("model_type", ""))
+    if "directgnn" in model_class.lower() or "direct" in model_type.lower():
+        raise ValueError(
+            f"Checkpoint at {path} appears to belong to {model_class or model_type}, "
+            "not the TGNN-Solv physics model. The current inference helpers in "
+            "`tgnn_solv.inference` only support TGNN-Solv checkpoints."
+        )
     cfg = TGNNSolvConfig(**checkpoint["config"])
     node_feat_dim = int(checkpoint.get("node_feat_dim", NODE_FEAT_DIM))
     edge_feat_dim = int(checkpoint.get("edge_feat_dim", EDGE_FEAT_DIM))
@@ -427,4 +589,55 @@ def load_model(
         for k, v in checkpoint["metadata"].items():
             print(f"  {k}: {v}")
 
+    return model, cfg
+
+
+def load_directgnn_model(
+    path: str,
+    device: torch.device = None,
+) -> Tuple[DirectGNN, TGNNSolvConfig]:
+    """Load a DirectGNN baseline checkpoint."""
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    checkpoint = torch.load(path, map_location=device, weights_only=False)
+    if not isinstance(checkpoint, dict):
+        raise ValueError(
+            f"Unsupported checkpoint format at {path}: expected a dict payload, "
+            f"got {type(checkpoint).__name__}."
+        )
+    if "config" not in checkpoint or not isinstance(checkpoint["config"], dict):
+        top_keys = ", ".join(sorted(str(key) for key in checkpoint.keys()))
+        raise ValueError(
+            f"Checkpoint at {path} does not contain a DirectGNN config block. "
+            f"Top-level keys: {top_keys or 'none'}."
+        )
+    cfg = TGNNSolvConfig(**checkpoint["config"])
+    model = DirectGNN(
+        node_feat_dim=int(checkpoint.get("node_feat_dim", NODE_FEAT_DIM)),
+        edge_feat_dim=int(checkpoint.get("edge_feat_dim", EDGE_FEAT_DIM)),
+        cfg=cfg,
+    ).to(device)
+    if "model_state" in checkpoint:
+        state = checkpoint["model_state"]
+    elif "model_state_dict" in checkpoint:
+        state = checkpoint["model_state_dict"]
+    else:
+        state = checkpoint
+
+    model_state = model.state_dict()
+    compatible_state = {
+        key: value
+        for key, value in state.items()
+        if key in model_state and tuple(model_state[key].shape) == tuple(value.shape)
+    }
+    model.load_state_dict(compatible_state, strict=False)
+
+    if cfg.use_descriptor_augmentation:
+        descriptor_mean = checkpoint.get("descriptor_mean")
+        descriptor_std = checkpoint.get("descriptor_std")
+        if descriptor_mean is not None and descriptor_std is not None:
+            model.set_descriptor_normalization(descriptor_mean, descriptor_std)
+
+    print(f"DirectGNN model loaded from {path}")
     return model, cfg
