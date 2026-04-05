@@ -1,5 +1,5 @@
-# Tuned TGNN-Solv baseline with shared RDKit descriptor augmentation
-# in the pair representation feeding the physics heads.
+# Tuned TGNN-Solv with shared RDKit descriptor augmentation and the
+# maintained regularization settings for full-split medium-budget runs.
 
 model:
   hidden_dim: 256
@@ -49,7 +49,11 @@ training:
   lr_phase3: 8.528210688637238e-6
   warmup_epochs: 0
   patience: 30
+  early_stopping_patience: 15
+  early_stopping_phase3_patience: 5
+  early_stopping_min_epochs: 10
   grad_clip: 2.0
+  weight_decay: 1.0e-4
 
 data:
   split_mode: "solute_scaffold"
@@ -78,6 +82,7 @@ loss_weights:
     mono: 0.0
     res: 0.01
     bridge: 0.01
+    tau_reg: 0.01
     phys_pref: 0.01
     direct_reg: 0.01
     direct_nll: 0.01

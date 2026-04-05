@@ -1,0 +1,2302 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Physics-informed Graph Neural Network for Solubility Prediction">
+      
+      
+        <meta name="author" content="doctawho42">
+      
+      
+        <link rel="canonical" href="https://doctawho42.github.io/tgnn-solv/results/">
+      
+      
+        <link rel="prev" href="../config_cookbook/">
+      
+      
+        <link rel="next" href="../experiments/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Results - TGNN-Solv Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../assets/stylesheets/tgnn-presentation.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#results" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="TGNN-Solv Documentation" class="md-header__button md-logo" aria-label="TGNN-Solv Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TGNN-Solv Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Results
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="cyan"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="cyan"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/doctawho42/tgnn-solv" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    doctawho42/tgnn-solv
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../presentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Presentation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../getting_started/installation/" class="md-tabs__link">
+          
+  
+  
+  Start Here
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../architecture/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  Workflows
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../script_reference/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../contributing/" class="md-tabs__link">
+          
+  
+  
+  Project
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="TGNN-Solv Documentation" class="md-nav__button md-logo" aria-label="TGNN-Solv Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    TGNN-Solv Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/doctawho42/tgnn-solv" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    doctawho42/tgnn-solv
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Presentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start Here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start Here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/quick_start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notebooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notebooks & Tutorials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data_preparation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Preparation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Evaluation & Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../applications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Applications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../experiment_lab/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiment Lab
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../baselines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Baselines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config_cookbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Cookbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflows
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#read-this-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read This First
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-benchmark-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended Benchmark Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#canonical-artifact-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Canonical Artifact Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproduction-summaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproduction Summaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#committed-diagnostic-proxy-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Committed Diagnostic / Proxy Results
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Committed Diagnostic / Proxy Results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#proxy-diagnostic-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proxy diagnostic comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#descriptor-prior-medium-scaffold-diagnostic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Descriptor-prior medium scaffold diagnostic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maintained-architecture-comparison-bundles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintained Architecture Comparison Bundles
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Maintained Architecture Comparison Bundles">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#medium-budget-architecture-study" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Medium-budget architecture study
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#external-article-comparison-bundle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        External article-comparison bundle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-benchmark-bundles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom benchmark bundles
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frozen-release-manifests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frozen Release Manifests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#experiment-lab-histories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Experiment Lab Histories
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#descriptor-recovery-probe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Descriptor-Recovery Probe
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-to-report-publicly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What To Report Publicly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#which-artifact-should-i-trust" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which Artifact Should I Trust?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../experiments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiments & Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reproducing_paper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproducing the Paper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../free_gpu_training/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Free GPU / Preemptible Training
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../script_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Script Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../repository_audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#read-this-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read This First
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-benchmark-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended Benchmark Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#canonical-artifact-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Canonical Artifact Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproduction-summaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproduction Summaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#committed-diagnostic-proxy-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Committed Diagnostic / Proxy Results
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Committed Diagnostic / Proxy Results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#proxy-diagnostic-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proxy diagnostic comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#descriptor-prior-medium-scaffold-diagnostic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Descriptor-prior medium scaffold diagnostic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maintained-architecture-comparison-bundles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintained Architecture Comparison Bundles
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Maintained Architecture Comparison Bundles">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#medium-budget-architecture-study" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Medium-budget architecture study
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#external-article-comparison-bundle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        External article-comparison bundle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-benchmark-bundles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom benchmark bundles
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frozen-release-manifests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frozen Release Manifests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#experiment-lab-histories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Experiment Lab Histories
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#descriptor-recovery-probe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Descriptor-Recovery Probe
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-to-report-publicly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What To Report Publicly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#which-artifact-should-i-trust" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which Artifact Should I Trust?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="results">Results<a class="headerlink" href="#results" title="Permanent link">&para;</a></h1>
+<p>This page explains how to read the benchmark artifacts that currently live in
+the repository, which bundles are canonical, and which ones should still be
+treated as provisional diagnostics rather than final scientific claims.</p>
+<h2 id="read-this-first">Read This First<a class="headerlink" href="#read-this-first" title="Permanent link">&para;</a></h2>
+<p>The repo contains several different classes of results:</p>
+<ul>
+<li>structured reproduction summaries</li>
+<li>quick checkpoint evaluations</li>
+<li>canonical benchmark bundles</li>
+<li>proxy-budget diagnostic experiments</li>
+<li>split-comparison outputs</li>
+<li>medium-budget and full-budget benchmark runners</li>
+<li>targeted research probes, such as descriptor-recovery analyses</li>
+</ul>
+<p>Do not compare numbers across different sections unless the following are
+matched:</p>
+<ul>
+<li>split protocol</li>
+<li>training budget</li>
+<li>seed count</li>
+<li>feature path</li>
+<li>model family</li>
+</ul>
+<p>For this project, the strict default split is <code>solute_scaffold</code>.</p>
+<h2 id="recommended-benchmark-hierarchy">Recommended Benchmark Hierarchy<a class="headerlink" href="#recommended-benchmark-hierarchy" title="Permanent link">&para;</a></h2>
+<p>When reporting results from TGNN-Solv, prefer this order of evidence:</p>
+<ol>
+<li>full scaffold split over proxy subsets</li>
+<li>matched training budgets across TGNN and DirectGNN</li>
+<li>multi-seed aggregates over single-seed runs</li>
+<li>metric bundles that include both top-line error and TGNN bottleneck
+   diagnostics</li>
+</ol>
+<p>That is why the maintained benchmark pages focus on:</p>
+<ul>
+<li><code>scripts/experiments/reproduce_paper.py --profile article</code></li>
+<li><code>scripts/experiments/run_medium_budget_comparison.py</code></li>
+<li><code>scripts/experiments/run_full_budget_experiment.py</code></li>
+<li><code>scripts/experiments/run_split_comparisons.py</code></li>
+<li><code>scripts/experiments/run_external_baseline_benchmark.py</code></li>
+</ul>
+<h2 id="canonical-artifact-contract">Canonical Artifact Contract<a class="headerlink" href="#canonical-artifact-contract" title="Permanent link">&para;</a></h2>
+<p>The project now relies on one shared benchmark artifact format for maintained
+external baselines and custom models:</p>
+<ul>
+<li><code>summary.csv</code></li>
+<li><code>report.json</code></li>
+<li><code>predictions.csv</code></li>
+<li><code>run_manifest.json</code></li>
+<li><code>benchmark_card.json</code></li>
+</ul>
+<p>This is what powers:</p>
+<ul>
+<li><code>Results &amp; Plots -&gt; Benchmark Studio</code> in the lab</li>
+<li>artifact registry and diff views</li>
+<li>supplementary external-benchmark tables</li>
+</ul>
+<p>If a benchmark bundle does not follow that contract, treat it as ad hoc output
+rather than a first-class comparable result.</p>
+<p>The sidecars matter because they carry:</p>
+<ul>
+<li>file-level provenance and checksums</li>
+<li>split / model-family metadata</li>
+<li>capability flags such as uncertainty availability</li>
+<li>machine-readable inputs for <code>Benchmark Studio</code>, lineage, and release freezing</li>
+</ul>
+<h2 id="reproduction-summaries">Reproduction Summaries<a class="headerlink" href="#reproduction-summaries" title="Permanent link">&para;</a></h2>
+<p>Structured paper-reproduction runs now write:</p>
+<ul>
+<li><code>results/reproduction/core_summary.json</code></li>
+<li><code>results/reproduction/article_summary.json</code></li>
+<li><code>results/reproduction/full_summary.json</code></li>
+</ul>
+<p>These are orchestration summaries, not benchmark claims by themselves. Their
+purpose is to record:</p>
+<ul>
+<li>which maintained profile was used</li>
+<li>which steps completed, failed, or were skipped</li>
+<li>where the resulting benchmark and figure artifacts landed</li>
+</ul>
+<h2 id="committed-diagnostic-proxy-results">Committed Diagnostic / Proxy Results<a class="headerlink" href="#committed-diagnostic-proxy-results" title="Permanent link">&para;</a></h2>
+<p>The checked-in result bundles under <code>results/</code> are mostly diagnostic or
+research-stage outputs. They are useful for understanding failure modes, but
+they should not be treated as the repository's final benchmark claims.</p>
+<h3 id="proxy-diagnostic-comparison">Proxy diagnostic comparison<a class="headerlink" href="#proxy-diagnostic-comparison" title="Permanent link">&para;</a></h3>
+<p>Source artifacts:</p>
+<ul>
+<li><code>results/diagnostic_experiments/summary.json</code></li>
+<li><code>results/diagnostic_experiments/comparison_table.md</code></li>
+</ul>
+<p>Representative proxy numbers currently committed:</p>
+<table>
+<thead>
+<tr>
+<th>Experiment</th>
+<th style="text-align: right;">Test MAE</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TGNN tuned proxy</td>
+<td style="text-align: right;"><code>2.2275</code></td>
+<td>reference proxy checkpoint</td>
+</tr>
+<tr>
+<td>TGNN tuned proxy with oracle <code>T_m</code> substitution</td>
+<td style="text-align: right;"><code>2.2133</code></td>
+<td>only a small improvement on this proxy slice</td>
+</tr>
+<tr>
+<td>DirectGNN + descriptors proxy</td>
+<td style="text-align: right;"><code>2.0110</code></td>
+<td>strongest committed proxy result in this bundle</td>
+</tr>
+<tr>
+<td>TGNN combined proxy</td>
+<td style="text-align: right;"><code>5.9603</code></td>
+<td>clearly unstable / underperforming in this diagnostic run</td>
+</tr>
+</tbody>
+</table>
+<p>Important caveat:</p>
+<ul>
+<li>this bundle was run on a small proxy setup, not the maintained full-scaffold
+  architecture-comparison budget</li>
+</ul>
+<h3 id="descriptor-prior-medium-scaffold-diagnostic">Descriptor-prior medium scaffold diagnostic<a class="headerlink" href="#descriptor-prior-medium-scaffold-diagnostic" title="Permanent link">&para;</a></h3>
+<p>Source artifact:</p>
+<ul>
+<li><code>results/descriptor_prior_medium_scaffold.json</code></li>
+</ul>
+<p>Currently committed numbers:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align: right;">MAE</th>
+<th style="text-align: right;">RMSE</th>
+<th style="text-align: right;">R²</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tgnn_medium</code></td>
+<td style="text-align: right;"><code>2.2561</code></td>
+<td style="text-align: right;"><code>3.0619</code></td>
+<td style="text-align: right;"><code>-0.1660</code></td>
+</tr>
+<tr>
+<td><code>tgnn_priors_medium</code></td>
+<td style="text-align: right;"><code>2.2614</code></td>
+<td style="text-align: right;"><code>3.0674</code></td>
+<td style="text-align: right;"><code>-0.1702</code></td>
+</tr>
+<tr>
+<td><code>direct_gnn_medium</code></td>
+<td style="text-align: right;"><code>2.0692</code></td>
+<td style="text-align: right;"><code>2.8540</code></td>
+<td style="text-align: right;"><code>-0.0130</code></td>
+</tr>
+</tbody>
+</table>
+<p>Interpretation:</p>
+<ul>
+<li>these are medium-sized diagnostic runs on a specific scaffold slice</li>
+<li>they are useful for trend inspection, not as the primary benchmark table for
+  the project site</li>
+</ul>
+<h2 id="maintained-architecture-comparison-bundles">Maintained Architecture Comparison Bundles<a class="headerlink" href="#maintained-architecture-comparison-bundles" title="Permanent link">&para;</a></h2>
+<h3 id="medium-budget-architecture-study">Medium-budget architecture study<a class="headerlink" href="#medium-budget-architecture-study" title="Permanent link">&para;</a></h3>
+<p>The main in-repo architecture-comparison target is the full-scaffold
+medium-budget run under:</p>
+<ul>
+<li><code>results/medium_budget/</code></li>
+</ul>
+<p>At the moment, the repository contains the in-progress TGNN artifact layout:</p>
+<ul>
+<li><code>results/medium_budget/per_model/tgnn_tuned/checkpoint.pt</code></li>
+<li><code>results/medium_budget/per_model/tgnn_tuned/train.log</code></li>
+</ul>
+<p>The runner is designed to produce:</p>
+<ul>
+<li><code>results/medium_budget/summary.json</code></li>
+<li><code>results/medium_budget/comparison_table.md</code></li>
+<li><code>results/medium_budget/per_model/&lt;model&gt;/...</code></li>
+</ul>
+<p>That is the benchmark bundle the site should treat as the main in-repo
+architecture comparison once complete.</p>
+<p>Recent follow-up lanes derived from the same scaffold split and budget include:</p>
+<ul>
+<li>regularized TGNN variants</li>
+<li>TGNN with descriptor augmentation</li>
+<li>TGNN with the GPS encoder</li>
+<li>Stage 0 pretrained TGNN variants</li>
+</ul>
+<p>Those runs should be treated as queued / follow-up comparison tracks until
+their own summaries land under <code>results/</code>.</p>
+<h3 id="external-article-comparison-bundle">External article-comparison bundle<a class="headerlink" href="#external-article-comparison-bundle" title="Permanent link">&para;</a></h3>
+<p>The maintained external competitor bundle now lives under:</p>
+<ul>
+<li><code>results/external_baselines/article_benchmark/</code></li>
+</ul>
+<p>This is where FastSolv and native-retrained SolProp land when they are run
+through the shared orchestrator. Once present, this bundle should be compared
+against the in-repo model families through:</p>
+<ul>
+<li><code>Results &amp; Plots -&gt; Benchmark Studio</code></li>
+<li>supplementary <code>Table S10</code></li>
+<li>checksum-based benchmark release manifests built from those bundles</li>
+</ul>
+<h3 id="custom-benchmark-bundles">Custom benchmark bundles<a class="headerlink" href="#custom-benchmark-bundles" title="Permanent link">&para;</a></h3>
+<p>Arbitrary user-provided model predictions should land under:</p>
+<ul>
+<li><code>results/custom_benchmarks/&lt;model_name&gt;/</code></li>
+</ul>
+<p>They use the same canonical bundle contract and are therefore intentionally
+comparable to maintained model families inside the GUI.</p>
+<p>If the custom model is implemented through the adapter API instead of a raw
+CSV, the bundle also captures that fact in its benchmark card.</p>
+<h2 id="frozen-release-manifests">Frozen Release Manifests<a class="headerlink" href="#frozen-release-manifests" title="Permanent link">&para;</a></h2>
+<p>When a benchmark snapshot should become paper-facing rather than just
+locally inspectable, freeze it with:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>scripts/experiments/build_benchmark_release.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--release-name<span class="w"> </span>article-benchmark<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--version<span class="w"> </span><span class="m">0</span>.1.0<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--processed-dir<span class="w"> </span>notebooks/data/processed<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--bundle-root<span class="w"> </span>results/external_baselines/article_benchmark<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--bundle-root<span class="w"> </span>results/custom_benchmarks<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--out-dir<span class="w"> </span>results/releases/article_benchmark_v0_1_0
+</code></pre></div>
+<p>The produced <code>release_manifest.json</code> records checksums for:</p>
+<ul>
+<li>processed split CSVs</li>
+<li><code>split_manifest.json</code></li>
+<li>benchmark bundles and their sidecars</li>
+<li>optional checkpoints included in the release</li>
+</ul>
+<h2 id="experiment-lab-histories">Experiment Lab Histories<a class="headerlink" href="#experiment-lab-histories" title="Permanent link">&para;</a></h2>
+<p>The interactive <code>Experiment Lab</code> writes additional repo-local analysis history
+under:</p>
+<ul>
+<li><code>results/lab_runs/inference_history/</code></li>
+<li><code>results/lab_runs/uncertainty_history/</code></li>
+<li><code>results/lab_runs/calibration_history/</code></li>
+</ul>
+<p>These JSON artifacts are not benchmark claims by themselves. They are review
+artifacts used for:</p>
+<ul>
+<li>saved single-system case studies</li>
+<li>ensemble vs MC-dropout uncertainty comparison</li>
+<li>batch calibration sessions</li>
+<li>lineage tracing back to checkpoints and datasets</li>
+<li>planner and pipeline follow-up intake inside the GUI</li>
+</ul>
+<h2 id="descriptor-recovery-probe">Descriptor-Recovery Probe<a class="headerlink" href="#descriptor-recovery-probe" title="Permanent link">&para;</a></h2>
+<p>One recent diagnostic probe asks whether the solute graph embedding already
+linearly recovers standard RDKit descriptors.</p>
+<p>Source artifact:</p>
+<ul>
+<li><code>results/medium_budget/per_model/tgnn_tuned/descriptor_probe/summary.json</code></li>
+</ul>
+<p>Summary from the current probe:</p>
+<ul>
+<li>unique train solutes: <code>14997</code></li>
+<li>unique test solutes: <code>2352</code></li>
+<li>finite descriptor <code>R²</code>: <code>208 / 217</code></li>
+<li><code>R² &gt;= 0.8</code>: <code>3 / 208</code></li>
+<li>median descriptor <code>R²</code>: <code>0.505</code></li>
+</ul>
+<p>Representative descriptor recovery:</p>
+<table>
+<thead>
+<tr>
+<th>Descriptor</th>
+<th style="text-align: right;">Test R²</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FractionCSP3</code></td>
+<td style="text-align: right;"><code>0.926</code></td>
+</tr>
+<tr>
+<td><code>TPSA</code></td>
+<td style="text-align: right;"><code>0.650</code></td>
+</tr>
+<tr>
+<td><code>NumHDonors</code></td>
+<td style="text-align: right;"><code>0.693</code></td>
+</tr>
+<tr>
+<td><code>MolLogP</code></td>
+<td style="text-align: right;"><code>0.607</code></td>
+</tr>
+<tr>
+<td><code>MolWt</code></td>
+<td style="text-align: right;"><code>0.450</code></td>
+</tr>
+</tbody>
+</table>
+<p>Interpretation:</p>
+<ul>
+<li>the encoder clearly learns some chemically meaningful structure</li>
+<li>but it does not look "descriptor-complete" yet</li>
+<li>this supports treating encoder capacity as at least a partial bottleneck</li>
+</ul>
+<h2 id="what-to-report-publicly">What To Report Publicly<a class="headerlink" href="#what-to-report-publicly" title="Permanent link">&para;</a></h2>
+<p>For a paper, slide deck, or benchmark summary page, the safest reporting policy
+is:</p>
+<ul>
+<li>use <code>solute_scaffold</code> as the primary split</li>
+<li>use matched budgets for TGNN and DirectGNN</li>
+<li>report seed aggregates when available</li>
+<li>include both:</li>
+<li>solubility metrics such as MAE / RMSE / <code>R²</code></li>
+<li>TGNN bottleneck metrics such as <code>T_m</code> parity and oracle sensitivity</li>
+</ul>
+<h2 id="which-artifact-should-i-trust">Which Artifact Should I Trust?<a class="headerlink" href="#which-artifact-should-i-trust" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Best artifact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"Does this one checkpoint work?"</td>
+<td><code>evaluate_complete.py</code> output</td>
+</tr>
+<tr>
+<td>"How does TGNN compare with DirectGNN on a serious budget?"</td>
+<td><code>results/medium_budget/*</code> or <code>results/full_budget_experiment/*</code></td>
+</tr>
+<tr>
+<td>"How do FastSolv / SolProp compare on the same split?"</td>
+<td><code>results/external_baselines/article_benchmark/*</code></td>
+</tr>
+<tr>
+<td>"How does my custom model compare against maintained baselines?"</td>
+<td><code>results/custom_benchmarks/&lt;name&gt;/*</code></td>
+</tr>
+<tr>
+<td>"Are the physics intermediates sensible?"</td>
+<td><code>validate_physics.py</code> output or full-budget diagnostics</td>
+</tr>
+<tr>
+<td>"Did the solute encoder learn chemistry or just fit the task?"</td>
+<td>descriptor-recovery probe under <code>results/medium_budget/per_model/.../descriptor_probe/</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="related-pages">Related Pages<a class="headerlink" href="#related-pages" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../experiments/">Experiments &amp; Benchmarks</a></li>
+<li><a href="../experiment_lab/">Experiment Lab</a></li>
+<li><a href="../baselines/">Baselines</a></li>
+<li><a href="../model_zoo/">Model Zoo</a></li>
+<li><a href="../config_cookbook/">Config Cookbook</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/doctawho42/tgnn-solv" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.expand", "content.code.copy", "search.suggest", "search.highlight", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="../assets/javascripts/tgnn-presentation.bundle.js"></script>
+      
+    
+  </body>
+</html>
