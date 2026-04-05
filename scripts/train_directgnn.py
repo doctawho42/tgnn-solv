@@ -16,6 +16,7 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
+from tgnn_solv.artifacts import build_model_card, build_run_manifest, write_json
 from tgnn_solv.baselines.direct_gnn import DirectGNN, DirectGNNTrainer
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import make_loader
@@ -419,6 +420,41 @@ def main() -> None:
             test_metrics=test_metrics,
         )
         print(f"   Model saved to {checkpoint_path}")
+
+        manifest = build_run_manifest(
+            "training_run",
+            model_name=checkpoint_path.name,
+            model_family="direct_gnn",
+            inputs={
+                "config": args.config,
+                "train_data": args.train_data,
+                "val_data": args.val_data,
+                "test_data": args.test_data,
+                "resume_checkpoint": args.resume,
+            },
+            outputs={
+                "checkpoint": checkpoint_path,
+            },
+            metadata={
+                "experiment_name": logger.experiment_name,
+                "log_dir": str(logger.exp_dir),
+                "seed": int(args.seed),
+                "device": str(device),
+            },
+        )
+        model_card = build_model_card(
+            checkpoint_path=checkpoint_path,
+            model_family="direct_gnn",
+            config=dataclasses.asdict(config),
+            metrics=test_metrics or {},
+            metadata={
+                "experiment_name": logger.experiment_name,
+                "log_dir": str(logger.exp_dir),
+                "seed": int(args.seed),
+            },
+        )
+        write_json(checkpoint_path.with_suffix(".manifest.json"), manifest)
+        write_json(checkpoint_path.with_suffix(".model_card.json"), model_card)
 
         print("\n10. Finalizing experiment...")
         logger.finalize(test_metrics if test_metrics is not None else train_metrics)

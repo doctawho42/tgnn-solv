@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader
 
+from tgnn_solv.artifacts import build_benchmark_card, build_run_manifest, write_json
 from tgnn_solv.data.dataset import TGNNSolvDataset, collate_fn
 from tgnn_solv.data.split_registry import build_split_metadata
 from tgnn_solv.evaluate import Evaluator
@@ -172,6 +173,20 @@ def benchmark_model(
         
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(results_json, f, indent=2)
+        manifest = build_run_manifest(
+            "checkpoint_benchmark",
+            model_name=str(Path(model_path).name),
+            model_family="tgnn_solv",
+            inputs={"checkpoint": model_path, "test_data": test_csv},
+            outputs={"report": output_path},
+            metadata={"split": benchmark_results.get("split")},
+        )
+        card = build_benchmark_card(
+            benchmark_results,
+            metadata={"model_family": "tgnn_solv"},
+        )
+        write_json(output_path.with_suffix(".manifest.json"), manifest)
+        write_json(output_path.with_suffix(".card.json"), card)
         print(f"\n✓ Results saved to {output_json}")
     
     return benchmark_results

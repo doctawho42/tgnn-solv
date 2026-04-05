@@ -390,6 +390,32 @@ The heavy experiment runners reuse those checkpoints automatically:
 - `scripts/experiments/run_full_budget_experiment.py`
 - `scripts/experiments/run_medium_budget_comparison.py`
 
+## Artifact and Benchmark Metadata
+
+The architecture layer now extends beyond the forward graph itself. Maintained
+training and evaluation entry points emit structured sidecars so downstream
+benchmarking and reproduction can recover provenance without relying on shell
+history:
+
+- checkpoint sidecars
+  - `<checkpoint>.manifest.json`
+  - `<checkpoint>.model_card.json`
+- benchmark bundle sidecars
+  - `run_manifest.json`
+  - `benchmark_card.json`
+
+These metadata files are built through `tgnn_solv.artifacts` and describe:
+
+- model family
+- resolved config path
+- input data paths and checksums
+- git commit and dirty state
+- output artifact paths
+- supported capability flags such as uncertainty, OOD, and physics reporting
+
+That provenance layer is now part of the maintained system architecture, not an
+optional afterthought.
+
 <div class="tgnn-page-nav" markdown="1">
 
 ## Related Pages

@@ -1,14 +1,16 @@
 # Results
 
 This page explains how to read the benchmark artifacts that currently live in
- the repository and which ones should be treated as provisional diagnostics
- rather than final scientific claims.
+the repository, which bundles are canonical, and which ones should still be
+treated as provisional diagnostics rather than final scientific claims.
 
 ## Read This First
 
 The repo contains several different classes of results:
 
+- structured reproduction summaries
 - quick checkpoint evaluations
+- canonical benchmark bundles
 - proxy-budget diagnostic experiments
 - split-comparison outputs
 - medium-budget and full-budget benchmark runners
@@ -37,9 +39,53 @@ When reporting results from TGNN-Solv, prefer this order of evidence:
 
 That is why the maintained benchmark pages focus on:
 
+- `scripts/experiments/reproduce_paper.py --profile article`
 - `scripts/experiments/run_medium_budget_comparison.py`
 - `scripts/experiments/run_full_budget_experiment.py`
 - `scripts/experiments/run_split_comparisons.py`
+- `scripts/experiments/run_external_baseline_benchmark.py`
+
+## Canonical Artifact Contract
+
+The project now relies on one shared benchmark artifact format for maintained
+external baselines and custom models:
+
+- `summary.csv`
+- `report.json`
+- `predictions.csv`
+- `run_manifest.json`
+- `benchmark_card.json`
+
+This is what powers:
+
+- `Results & Plots -> Benchmark Studio` in the lab
+- artifact registry and diff views
+- supplementary external-benchmark tables
+
+If a benchmark bundle does not follow that contract, treat it as ad hoc output
+rather than a first-class comparable result.
+
+The sidecars matter because they carry:
+
+- file-level provenance and checksums
+- split / model-family metadata
+- capability flags such as uncertainty availability
+- machine-readable inputs for `Benchmark Studio`, lineage, and release freezing
+
+## Reproduction Summaries
+
+Structured paper-reproduction runs now write:
+
+- `results/reproduction/core_summary.json`
+- `results/reproduction/article_summary.json`
+- `results/reproduction/full_summary.json`
+
+These are orchestration summaries, not benchmark claims by themselves. Their
+purpose is to record:
+
+- which maintained profile was used
+- which steps completed, failed, or were skipped
+- where the resulting benchmark and figure artifacts landed
 
 ## Committed Diagnostic / Proxy Results
 
@@ -88,9 +134,11 @@ Interpretation:
 - they are useful for trend inspection, not as the primary benchmark table for
   the project site
 
-## Ongoing Full-Scaffold Medium-Budget Study
+## Maintained Architecture Comparison Bundles
 
-The maintained architecture-comparison target is the full-scaffold
+### Medium-budget architecture study
+
+The main in-repo architecture-comparison target is the full-scaffold
 medium-budget run under:
 
 - `results/medium_budget/`
@@ -106,8 +154,56 @@ The runner is designed to produce:
 - `results/medium_budget/comparison_table.md`
 - `results/medium_budget/per_model/<model>/...`
 
-That is the benchmark bundle the site should treat as the main architecture
-comparison once complete.
+That is the benchmark bundle the site should treat as the main in-repo
+architecture comparison once complete.
+
+### External article-comparison bundle
+
+The maintained external competitor bundle now lives under:
+
+- `results/external_baselines/article_benchmark/`
+
+This is where FastSolv and native-retrained SolProp land when they are run
+through the shared orchestrator. Once present, this bundle should be compared
+against the in-repo model families through:
+
+- `Results & Plots -> Benchmark Studio`
+- supplementary `Table S10`
+- checksum-based benchmark release manifests built from those bundles
+
+### Custom benchmark bundles
+
+Arbitrary user-provided model predictions should land under:
+
+- `results/custom_benchmarks/<model_name>/`
+
+They use the same canonical bundle contract and are therefore intentionally
+comparable to maintained model families inside the GUI.
+
+If the custom model is implemented through the adapter API instead of a raw
+CSV, the bundle also captures that fact in its benchmark card.
+
+## Frozen Release Manifests
+
+When a benchmark snapshot should become paper-facing rather than just
+locally inspectable, freeze it with:
+
+```bash
+python scripts/experiments/build_benchmark_release.py \
+    --release-name article-benchmark \
+    --version 0.1.0 \
+    --processed-dir notebooks/data/processed \
+    --bundle-root results/external_baselines/article_benchmark \
+    --bundle-root results/custom_benchmarks \
+    --out-dir results/releases/article_benchmark_v0_1_0
+```
+
+The produced `release_manifest.json` records checksums for:
+
+- processed split CSVs
+- `split_manifest.json`
+- benchmark bundles and their sidecars
+- optional checkpoints included in the release
 
 ## Experiment Lab Histories
 
@@ -178,6 +274,8 @@ is:
 | --- | --- |
 | "Does this one checkpoint work?" | `evaluate_complete.py` output |
 | "How does TGNN compare with DirectGNN on a serious budget?" | `results/medium_budget/*` or `results/full_budget_experiment/*` |
+| "How do FastSolv / SolProp compare on the same split?" | `results/external_baselines/article_benchmark/*` |
+| "How does my custom model compare against maintained baselines?" | `results/custom_benchmarks/<name>/*` |
 | "Are the physics intermediates sensible?" | `validate_physics.py` output or full-budget diagnostics |
 | "Did the solute encoder learn chemistry or just fit the task?" | descriptor-recovery probe under `results/medium_budget/per_model/.../descriptor_probe/` |
 

@@ -148,6 +148,9 @@ default reproduction path.
 - `results/external_baselines/article_benchmark/summary.csv`
 - `results/external_baselines/article_benchmark/comparison.json`
 - `results/reproduction/article_summary.json`
+- benchmark sidecars under the generated bundles:
+  - `run_manifest.json`
+  - `benchmark_card.json`
 
 ### Full profile
 
@@ -175,6 +178,13 @@ That means the article profile can feed both:
 - the supplementary-table generator
 
 from the same canonical `summary.csv + report.json + predictions.csv` bundles.
+
+If you want to freeze the resulting artifact snapshot for sharing or a paper
+appendix, follow the reproduction run with:
+
+```bash
+python scripts/experiments/build_benchmark_release.py ...
+```
 
 ## Validation Guidance
 

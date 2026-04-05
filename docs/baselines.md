@@ -13,6 +13,21 @@ The repository contains or wraps five main baseline families:
 These baselines answer different failure-mode questions. They should not be
 treated as interchangeable.
 
+All maintained external/custom benchmark surfaces now write the same canonical
+artifact bundle:
+
+- `summary.csv`
+- `report.json`
+- `predictions.csv`
+- `run_manifest.json`
+- `benchmark_card.json`
+
+That is the contract consumed by:
+
+- `Results & Plots -> Benchmark Studio` in the lab
+- supplementary benchmark tables
+- artifact registry and compare views
+
 The grouped CLI layout under `scripts/training/`, `scripts/experiments/`, and
 `scripts/external/` is now the preferred navigation surface. Legacy top-level
 script paths remain available as wrappers.
@@ -57,6 +72,15 @@ python scripts/experiments/run_seeds.py \
 
 `train_directgnn.py` also supports resumable checkpoints through
 `--checkpoint-every` and `--resume`.
+
+The maintained uncertainty helpers now also support `DirectGNN`, so the same
+family can participate in:
+
+- MC-dropout review
+- deep ensembles
+- interval calibration
+
+inside both the Python API and `Experiment Lab`.
 
 ## DirectGNN + Descriptor Augmentation
 
@@ -160,8 +184,20 @@ python scripts/external/run_fastsolv.py compare \
     --metrics results/fastsolv_compare.json
 ```
 
-Training FastSolv from scratch on TGNN-Solv data remains environment-sensitive
-and is not the recommended default workflow.
+The maintained wrapper now also supports scratch training/evaluation on the
+repo's own scaffold-aware splits, but the recommended article-comparison path
+is to call it through the shared orchestrator:
+
+```bash
+python scripts/experiments/run_external_baseline_benchmark.py \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --out-dir results/external_baselines/article_benchmark \
+    --split-mode solute_scaffold \
+    --fastsolv-mode both \
+    --solprop-mode native
+```
 
 ## SolProp
 
@@ -185,6 +221,10 @@ The wrapper now supports three distinct SolProp baselines on TGNN-Solv data:
 - `train-native`
   - native retraining of the SolProp MPNN/FFN architecture directly on our
     `ln(x2)` targets, using solvent, solute, and temperature as model inputs
+
+That native mode is the maintained article benchmark path when you want
+SolProp trained directly on the same target rather than only evaluated
+zero-shot or with a shallow calibration layer.
 
 Maintained comparison mode:
 
@@ -269,6 +309,12 @@ python scripts/experiments/run_external_baseline_benchmark.py \
     --fastsolv-mode both \
     --solprop-mode native
 ```
+
+The resulting bundle is directly visible in:
+
+- `Results & Plots -> Benchmark Studio`
+- `Results & Plots -> Experiment registry`
+- supplementary `Table S10` when generated
 
 ## Comparison Runners
 

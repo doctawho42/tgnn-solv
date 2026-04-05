@@ -66,9 +66,22 @@ This adds the dependencies used by:
 
 ### 6. (Optional) Install External Baselines
 
-For FastSolv baseline:
+For the maintained FastSolv / SolProp wrappers and benchmark helpers:
 ```bash
 pip install -e ".[baselines]"
+```
+
+This adds the dependencies used by:
+
+- `scripts/external/run_fastsolv.py`
+- `scripts/external/run_solprop.py`
+- `scripts/experiments/run_external_baseline_benchmark.py`
+- `scripts/evaluation/benchmark_custom_model.py`
+
+If you want both the GUI and the external-baseline stack:
+
+```bash
+pip install -e ".[gui,baselines,dev]"
 ```
 
 ## Verification

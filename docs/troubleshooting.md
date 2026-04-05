@@ -117,6 +117,26 @@ Important note:
 - if descriptor generation fails entirely, the issue is usually environment
   setup rather than the model code
 
+## `pytest` Uses the Wrong Python Environment
+
+Symptom:
+
+- tests fail during import with missing `numpy`, `pandas`, `torch`, or RDKit
+- the project code itself is fine when run from the intended conda env
+
+Cause:
+
+- `pytest` or `python` resolved to a system interpreter instead of the project
+  runtime
+
+Practical fix:
+
+```bash
+/Users/nikitapolomosnov/anaconda3/envs/tgnn-solv/bin/python -m pytest tests/ -v
+```
+
+or activate the intended environment first before running the CLI.
+
 ## FastSolv Produces NaNs
 
 This is a known external-stack issue when training FastSolv from scratch on
@@ -172,6 +192,26 @@ Fix:
 
 - set repository `Settings -> Pages -> Source` to `GitHub Actions`
 - let `.github/workflows/docs.yml` deploy the built `site/` artifact
+
+## Custom Adapter Benchmark Fails To Load
+
+Symptom:
+
+- `benchmark_adapter_model.py` raises an import error
+- the adapter object does not satisfy the expected contract
+
+Checks:
+
+- adapter reference is in `module:ClassOrFactory` form
+- the module is importable from the selected Python environment
+- the object implements:
+  - `describe()`
+  - `fit(...)`
+  - `predict_frame(...)`
+
+If the adapter works locally but not from the lab, inspect the lab sidebar's
+`Python command` field and make sure it points at the environment where the
+adapter module is installed.
 
 ## The Wrong Split Was Used
 

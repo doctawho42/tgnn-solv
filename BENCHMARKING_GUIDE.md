@@ -12,11 +12,39 @@ There are now four maintained benchmark layers in the repo:
   - full-budget TGNN-vs-DirectGNN diagnostic study
 - `scripts/experiments/run_medium_budget_comparison.py`
   - full-scaffold medium-budget architecture comparison
+- `scripts/evaluation/benchmark_adapter_model.py`
+  - formal adapter API for arbitrary custom Python models
+
+All maintained benchmark bundles now emit the same sidecars in addition to the
+core `summary.csv / report.json / predictions.csv` contract:
+
+- `run_manifest.json`
+- `benchmark_card.json`
+
+Those sidecars make the bundle machine-readable for:
+
+- `Results & Plots -> Benchmark Studio`
+- artifact lineage / diff views in the lab
+- frozen benchmark release manifests
+- downstream paper-table generation
 
 These grouped paths are the preferred human-facing CLI layout. The old
 top-level script paths remain available as compatibility wrappers.
 
 Use the lightest tool that answers the question you actually have.
+
+## Canonical Benchmark Bundle
+
+A first-class comparable benchmark bundle now means:
+
+- `summary.csv`
+- `report.json`
+- `predictions.csv`
+- `run_manifest.json`
+- `benchmark_card.json`
+
+If one of those sidecars is missing, the output may still be useful, but it is
+not as provenance-rich as the maintained bundle contract.
 
 ## Quick Checkpoint Benchmark
 
@@ -133,6 +161,69 @@ python scripts/evaluation/benchmark_tgnn_solv.py \
     --test-data notebooks/data/processed/test.csv \
     --output benchmarks/model_b.json
 ```
+
+## Benchmarking a Custom Python Model
+
+For a repo-native adapter instead of a raw predictions CSV:
+
+```bash
+python scripts/evaluation/benchmark_adapter_model.py \
+    --adapter your_package.your_adapter:YourAdapter \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --out-dir results/custom_benchmarks/your_adapter
+```
+
+The adapter contract lives in `src/tgnn_solv/benchmark_adapters.py` and expects:
+
+- `describe()`
+- `fit(...)`
+- `predict_frame(...)`
+
+This is the maintained path when a custom model should behave like a normal
+in-repo benchmark participant rather than an ad hoc CSV dump.
+
+## Thermodynamic Stress Suite
+
+Once you already have a canonical `predictions.csv`, run the stress suite:
+
+```bash
+python scripts/evaluation/run_thermo_stress_suite.py \
+    --predictions-csv results/custom_benchmarks/your_adapter/predictions.csv \
+    --train-data notebooks/data/processed/train.csv \
+    --output results/custom_benchmarks/your_adapter/stress_suite.json
+```
+
+This adds slice-level metrics for:
+
+- temperature extremes
+- very low vs moderate/high solubility
+- missing `T_m` / `dH_fus` supervision
+- water vs organic solvents
+- extreme `γ∞`-like regimes when those columns are present
+- seen vs unseen chemistry relative to the training split
+
+## Frozen Benchmark Release
+
+To freeze a benchmark release with checksums for processed splits and bundles:
+
+```bash
+python scripts/experiments/build_benchmark_release.py \
+    --release-name article-benchmark \
+    --version 0.1.0 \
+    --processed-dir notebooks/data/processed \
+    --bundle-root results/external_baselines/article_benchmark \
+    --bundle-root results/custom_benchmarks \
+    --out-dir results/releases/article_benchmark_v0_1_0
+```
+
+This writes `release_manifest.json` with hashes for:
+
+- processed split CSVs
+- `split_manifest.json`
+- benchmark bundles and their sidecars
+- optional checkpoints you choose to include
 
 ## Interpretation Guidance
 

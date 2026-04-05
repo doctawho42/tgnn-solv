@@ -31,6 +31,14 @@ pytest tests/test_integration.py -v
 pytest tests/test_dataset.py -v
 ```
 
+Useful repo-integration smoke checks:
+
+```bash
+python scripts/experiments/reproduce_paper.py --profile core --list-steps
+python scripts/experiments/reproduce_paper.py --profile core --step prepare_data --dry-run
+mkdocs build
+```
+
 ## Contribution Expectations
 
 1. Add or update tests for any behavior change.
@@ -40,11 +48,14 @@ pytest tests/test_dataset.py -v
    - checkpoint contents
    - dataset payload keys
    - evaluation outputs or JSON schemas
+   - artifact sidecars such as `run_manifest.json`, `benchmark_card.json`, or
+     checkpoint `*.model_card.json`
    - experiment runners or result directory layouts
 3. Preserve backward compatibility where practical for:
    - YAML configs
    - saved checkpoints
    - downstream JSON report consumers
+   - canonical benchmark bundle sidecars
 4. Keep optional dependency paths optional. Scripts using FastSolv or SolProp
    must still allow `--help` and unrelated commands without those packages.
 
@@ -75,6 +86,11 @@ ruff check src/ scripts/
   - `README.md`
   - `AGENTS.md`
   - the relevant file in `docs/`
+- If you change the canonical benchmark contract, also update:
+  - `BENCHMARKING_GUIDE.md`
+  - `docs/results.md`
+  - `docs/baselines.md`
+  - `docs/experiment_lab.md`
 - For new internal imports, prefer the grouped namespace surface where it keeps
   call sites clearer:
   - `tgnn_solv.core.*`
@@ -140,6 +156,8 @@ If you add a new baseline or experiment runner:
    - research / experimental
 6. Update `docs/script_reference.md`, `scripts/README.md`, `src/tgnn_solv/README.md`, and any affected
    guide in `docs/`.
+7. If the new CLI emits first-class artifacts, prefer machine-readable sidecars
+   rather than only prose notes.
 
 ## Pull Requests
 

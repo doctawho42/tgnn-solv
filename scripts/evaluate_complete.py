@@ -36,6 +36,7 @@ if importlib.util.find_spec("torch") is None:
 
 from tgnn_solv.data.utils import canonicalize
 from tgnn_solv.data.split_registry import build_split_metadata
+from tgnn_solv.artifacts import build_benchmark_card, build_run_manifest, write_json
 from tgnn_solv.inference import load_model, predict_solubility
 from tgnn_solv.reporting import build_report_payload
 
@@ -363,6 +364,24 @@ def main() -> None:
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2)
+    output_path = Path(args.output)
+    manifest = build_run_manifest(
+        "evaluation_report",
+        model_name=Path(str(args.tgnn_checkpoint)).name,
+        model_family="tgnn_solv",
+        inputs={
+            "checkpoint": args.tgnn_checkpoint,
+            "test_data": args.test_data,
+        },
+        outputs={"report": output_path},
+        metadata={"split": results.get("split")},
+    )
+    card = build_benchmark_card(
+        results,
+        metadata={"model_family": "tgnn_solv"},
+    )
+    write_json(output_path.with_suffix(".manifest.json"), manifest)
+    write_json(output_path.with_suffix(".card.json"), card)
     
     print(f"\n✓ Results saved to {args.output}")
     print("=" * 70)

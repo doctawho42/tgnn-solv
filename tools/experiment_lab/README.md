@@ -13,6 +13,8 @@ Interactive Streamlit control panel for the maintained TGNN-Solv workflow.
   checkpoints benchmarked through the same canonical artifact pipeline
 - custom-model benchmarking from an existing predictions CSV or a command that
   generates one
+- formal adapter-based custom benchmarking through
+  `tgnn_solv.benchmark_adapters`
 - `Pipeline Studio` for Airflow-style DAG planning, node editing, shell export, and one-click pipeline launch
 - repo-local DAG preset saving so custom workflow plans can be versioned with the project
 - `Pipeline Studio` and `Model Architect` now also expose drag/drop flow canvases with clickable nodes and editable connections
@@ -20,11 +22,12 @@ Interactive Streamlit control panel for the maintained TGNN-Solv workflow.
 - evaluation and physics-validation launchers
 - artifact browser for JSON, CSV, and image outputs
 - `Benchmark Studio` inside `Results & Plots` for leaderboard, parity/residual plots, stratified metrics, and comparison across FastSolv, SolProp, TGNN bundles, and custom-model benchmark outputs
+- benchmark-card and run-manifest inspection for canonical benchmark bundles
 - detailed single-system inference with temperature scans, persistent history, run-to-run comparison, and interpretation
 - structure drawing and editing in `Inference` via an embedded Ketcher sketcher, with RDKit-sanitized structure/graph preview, sync-back into the SMILES inputs, and one-click apply+run
 - `Run & inspect` now supports both `TGNN-Solv` and `DirectGNN` checkpoints
-- `Uncertainty lab` with ensemble vs MC-dropout review and saved uncertainty sessions
-- `Calibration dashboard` with saved batch calibration runs and compare views
+- `Uncertainty lab` with ensemble vs MC-dropout review and saved uncertainty sessions for both maintained model families
+- `Calibration dashboard` with saved batch calibration runs and compare views for both maintained model families
 - OOD / applicability-domain scoring through `tgnn_solv.domain`
 - lineage-aware results registry that connects checkpoints, configs, saved lab histories, and planner follow-ups
 - `Planner` workspace with kanban board, experiment todo list, time-based schedule, and intake from saved lab histories

@@ -164,6 +164,11 @@ with:
 
 The uncertainty helpers live in `src/tgnn_solv/uncertainty.py`.
 
+They now support both maintained model families:
+
+- `TGNN-Solv`
+- `DirectGNN`
+
 ### `MCDropoutPredictor`
 
 This is the low-friction post-hoc option when you have one checkpoint:
@@ -175,7 +180,7 @@ mc = MCDropoutPredictor(model, n_samples=30)
 pred = mc.predict("CC(=O)Nc1ccc(O)cc1", "CCO", T=298.15)
 ```
 
-It returns mean, std, and 5th/95th percentiles for:
+For `TGNN-Solv`, it returns mean, std, and 5th/95th percentiles for:
 
 - `ln_x2`
 - `x2`
@@ -185,6 +190,12 @@ It returns mean, std, and 5th/95th percentiles for:
 - `Phi`
 - `ln_gamma_2`
 - correction magnitude
+
+For `DirectGNN`, the maintained uncertainty payload is intentionally smaller and
+stays in the direct-prediction space:
+
+- `ln_x2`
+- `x2`
 
 ### `EnsemblePredictor`
 
@@ -294,6 +305,40 @@ These GUI views still delegate to the same underlying APIs:
 - `EnsemblePredictor`
 - `calibration_report`
 - `ApplicabilityDomain`
+
+Related results surface:
+
+- `Results & Plots -> Benchmark Studio`
+  - canonical benchmark-bundle comparison across maintained, external, and
+    custom models
+
+Current scope note:
+
+- `Run & inspect`, `Uncertainty lab`, and `Calibration dashboard` now support
+  both `TGNN-Solv` and `DirectGNN`
+- `ApplicabilityDomain` remains `TGNN-Solv`-specific because it relies on the
+  physics model's pair-representation extraction path
+
+## Thermodynamic Stress Suite
+
+Once you already have a canonical `predictions.csv`, the maintained stress
+suite can slice that bundle into harder evaluation regimes:
+
+```bash
+python scripts/evaluation/run_thermo_stress_suite.py \
+    --predictions-csv results/custom_benchmarks/my_model/predictions.csv \
+    --train-data notebooks/data/processed/train.csv \
+    --output results/custom_benchmarks/my_model/stress_suite.json
+```
+
+Current slices include:
+
+- temperature extremes
+- very low vs moderate/high solubility
+- missing `T_m` / `dH_fus` supervision
+- water vs organic solvents
+- extreme `γ∞`-like regions when those columns are available
+- seen vs unseen chemistry relative to the train split
 
 ## `scripts/evaluation/evaluate_complete.py`
 

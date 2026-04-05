@@ -27,6 +27,8 @@ Before opening a PR:
 3. preserve backward compatibility where practical for configs, checkpoints,
    and report formats
 4. keep optional dependency paths optional
+5. if you change the benchmark contract, update the sidecar story too
+   (`run_manifest.json`, `benchmark_card.json`, checkpoint `*.model_card.json`)
 
 ## Useful Checks
 
@@ -43,6 +45,14 @@ pytest tests/test_physics.py -v
 pytest tests/test_integration.py -v
 pytest tests/test_dataset.py -v
 pytest tests/test_loss.py -v
+```
+
+Useful repo-integration checks:
+
+```bash
+python scripts/experiments/reproduce_paper.py --profile core --list-steps
+python scripts/experiments/reproduce_paper.py --profile core --step prepare_data --dry-run
+mkdocs build
 ```
 
 If you changed a broad Python surface, also run:

@@ -27,6 +27,7 @@ relative to the same graph backbone trained directly on `ln(x2)`.
   <span class="tgnn-chip">Default strict split: <code>solute_scaffold</code></span>
   <span class="tgnn-chip">Maintained TGNN baseline: <code>paper_config_tuned.yaml</code></span>
   <span class="tgnn-chip">Matched no-physics baseline: <code>DirectGNN</code></span>
+  <span class="tgnn-chip">Structured reproduction: <code>core</code> / <code>article</code> / <code>full</code></span>
   <span class="tgnn-chip">Optional Stage 0 pretraining supported</span>
   <span class="tgnn-chip">Resume-safe training supported</span>
   <span class="tgnn-chip">Interactive Experiment Lab available</span>
@@ -61,6 +62,8 @@ This site documents the maintained paths for:
 - training and resume support
 - inference, uncertainty, and OOD checks
 - benchmark and experiment runners
+- external FastSolv / SolProp comparison
+- `Benchmark Studio`, benchmark cards/manifests, and structured reproduction profiles
 
 </div>
 
@@ -117,9 +120,11 @@ That is why the site consistently presents TGNN-Solv together with:
     - [Config Cookbook](config_cookbook.md)
       - pick the right config for TGNN, DirectGNN, or ablation work
     - [Results](results.md)
-      - understand what is committed now and which artifacts are provisional
+      - understand canonical benchmark bundles, reproduction outputs, and provisional artifacts
     - [Experiments & Benchmarks](experiments.md)
-      - medium-budget, full-budget, split-comparison, and tuning workflows
+      - medium-budget, full-budget, split-comparison, external-baseline, and reproduction workflows
+    - [Reproducing the Paper](reproducing_paper.md)
+      - choose between `core`, `article`, and `full` maintained profiles
     - [Model Zoo](model_zoo.md)
       - checkpoint conventions and current public-model status
 
@@ -134,7 +139,7 @@ That is why the site consistently presents TGNN-Solv together with:
     - [Evaluation & Inference](evaluation.md)
       - prediction APIs, uncertainty, calibration, and applicability domain
     - [Experiment Lab](experiment_lab.md)
-      - visual orchestration, DAGs, model editing, planner, lineage, and docs
+      - visual orchestration, DAGs, model editing, planner, lineage, docs, and Benchmark Studio
     - [Baselines](baselines.md)
       - what each baseline tests and how to run it
     - [FAQ](faq.md)

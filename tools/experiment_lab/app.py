@@ -1322,6 +1322,7 @@ def save_uncertainty_record(
     mc_samples: int,
     checkpoints: tuple[str, ...],
     include_mc: bool,
+    model_family: str,
     payload: dict[str, Any],
 ) -> Path:
     record = {
@@ -1336,6 +1337,7 @@ def save_uncertainty_record(
         "mc_samples": int(mc_samples),
         "checkpoints": list(checkpoints),
         "include_mc": bool(include_mc),
+        "model_family": str(model_family),
         "n_models": int(payload.get("n_models", len(checkpoints))),
         "ensemble": payload.get("ensemble"),
         "mc_dropout": payload.get("mc_dropout"),
@@ -1388,6 +1390,7 @@ def uncertainty_history_frame(records: list[dict[str, Any]]) -> pd.DataFrame:
                 "id": record.get("id"),
                 "created_at": format_timestamp(record.get("created_at")),
                 "pair": f"{short_smiles_label(str(record.get('solute_smiles', '')), 18)} in {short_smiles_label(str(record.get('solvent_smiles', '')), 14)}",
+                "family": str(record.get("model_family", "tgnn_solv")),
                 "T": round(float(record.get("temperature", 0.0)), 2),
                 "n_models": int(record.get("n_models", 0) or 0),
                 "ensemble_std": round(float(ensemble.get("ln_x2_std", float("nan"))), 4) if ensemble else np.nan,
@@ -1415,6 +1418,7 @@ def save_calibration_record(
     checkpoints: tuple[str, ...],
     include_mc: bool,
     include_ensemble: bool,
+    model_family: str,
     payload: dict[str, Any],
 ) -> Path:
     record = {
@@ -1426,6 +1430,7 @@ def save_calibration_record(
         "checkpoints": list(checkpoints),
         "include_mc": bool(include_mc),
         "include_ensemble": bool(include_ensemble),
+        "model_family": str(model_family),
         "n_rows": int(payload.get("n_rows", 0) or 0),
         "reports": payload.get("reports", {}),
         "samples": payload.get("samples", {}),
@@ -1476,6 +1481,7 @@ def calibration_history_frame(records: list[dict[str, Any]]) -> pd.DataFrame:
                 "id": record.get("id"),
                 "created_at": format_timestamp(record.get("created_at")),
                 "dataset": Path(str(record.get("dataset_csv", ""))).name,
+                "family": str(record.get("model_family", "tgnn_solv")),
                 "rows": int(record.get("n_rows", 0) or 0),
                 "n_checkpoints": len(record.get("checkpoints", [])),
                 "ensemble_PICP": round(float(ensemble.get("PICP_90", float("nan"))), 4) if ensemble else np.nan,
@@ -2612,10 +2618,8 @@ def inference_workbench_reason(payload: dict[str, Any]) -> str | None:
 
 def tgnn_inference_reason(payload: dict[str, Any]) -> str | None:
     family = checkpoint_family_from_payload(payload)
-    if family == "tgnn_solv":
+    if family in {"tgnn_solv", "direct_gnn"}:
         return None
-    if family == "direct_gnn":
-        return "DirectGNN is available in Run & inspect, but uncertainty and calibration are currently TGNN-Solv-only"
     if payload.get("error"):
         return str(payload["error"])
     if not payload.get("has_config"):
@@ -4656,13 +4660,19 @@ import json
 import numpy as np
 import sys
 from pathlib import Path
+import torch
 
 repo_root = Path({str(REPO_ROOT)!r})
 src_root = repo_root / "src"
 if str(src_root) not in sys.path:
     sys.path.insert(0, str(src_root))
 
-from tgnn_solv.inference import load_model, predict_solubility
+from tgnn_solv.inference import (
+    load_directgnn_model,
+    load_model,
+    predict_direct_solubility,
+    predict_solubility,
+)
 from tgnn_solv.uncertainty import EnsemblePredictor, MCDropoutPredictor
 
 paths = [item for item in sys.argv[1].split("::") if item]
@@ -4677,33 +4687,49 @@ include_mc = sys.argv[9] == "1"
 
 models = []
 configs = []
+families = []
 for path in paths:
-    model, cfg = load_model(path)
+    checkpoint = torch.load(path, map_location="cpu", weights_only=False)
+    model_class = str(checkpoint.get("model_class", "")).lower()
+    model_type = str(checkpoint.get("model_type", "")).lower()
+    top_keys = set(str(key) for key in checkpoint.keys())
+    if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+        family = "direct_gnn"
+        model, cfg = load_directgnn_model(path)
+    else:
+        family = "tgnn_solv"
+        model, cfg = load_model(path)
+    families.append(family)
     models.append(model)
     configs.append(getattr(cfg, "__dict__", {{}}))
+
+if len(set(families)) != 1:
+    raise ValueError("Selected uncertainty checkpoints must all belong to the same model family.")
+
+family = families[0]
+predict_one = predict_solubility if family == "tgnn_solv" else predict_direct_solubility
 
 temps = np.linspace(scan_tmin, scan_tmax, scan_points).tolist()
 payload = {{
     "checkpoints": paths,
     "n_models": len(models),
+    "model_family": family,
     "member_predictions": [],
     "temperatures": temps,
     "configs": configs,
 }}
 
 for path, model in zip(paths, models):
-    pred = predict_solubility(model, solute, solvent, T=temperature)
-    payload["member_predictions"].append({{
+    pred = predict_one(model, solute, solvent, T=temperature)
+    member = {{
         "checkpoint": path,
         "ln_x2": pred["ln_x2"],
         "x2": pred["x2"],
-        "gamma_2": pred["gamma_2"],
-        "Phi": pred["Phi"],
-        "T_m": pred["T_m"],
-        "dH_fus": pred["dH_fus"],
-        "correction": pred["correction"],
-        "gate": pred["gate"],
-    }})
+    }}
+    for key in ("gamma_2", "Phi", "T_m", "dH_fus", "correction", "gate"):
+        if key in pred:
+            member[key] = pred[key]
+    payload["member_predictions"].append(member)
 
 if len(models) >= 2:
     ensemble = EnsemblePredictor(models)
@@ -4762,13 +4788,14 @@ import json
 import pandas as pd
 import sys
 from pathlib import Path
+import torch
 
 repo_root = Path({str(REPO_ROOT)!r})
 src_root = repo_root / "src"
 if str(src_root) not in sys.path:
     sys.path.insert(0, str(src_root))
 
-from tgnn_solv.inference import load_model
+from tgnn_solv.inference import load_directgnn_model, load_model
 from tgnn_solv.uncertainty import EnsemblePredictor, MCDropoutPredictor, calibration_report
 
 paths = [item for item in sys.argv[1].split("::") if item]
@@ -4786,14 +4813,29 @@ if sample_size > 0 and len(df) > sample_size:
     df = df.sample(n=sample_size, random_state=42).sort_index()
 
 models = []
+families = []
 for path in paths:
-    model, _ = load_model(path)
+    checkpoint = torch.load(path, map_location="cpu", weights_only=False)
+    model_class = str(checkpoint.get("model_class", "")).lower()
+    model_type = str(checkpoint.get("model_type", "")).lower()
+    top_keys = set(str(key) for key in checkpoint.keys())
+    if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+        family = "direct_gnn"
+        model, _ = load_directgnn_model(path)
+    else:
+        family = "tgnn_solv"
+        model, _ = load_model(path)
+    families.append(family)
     models.append(model)
+
+if len(set(families)) != 1:
+    raise ValueError("Selected calibration checkpoints must all belong to the same model family.")
 
 payload = {{
     "dataset_csv": dataset_csv,
     "n_rows": int(len(df)),
     "checkpoints": paths,
+    "model_family": families[0] if families else "unknown",
     "reports": {{}},
     "samples": {{}},
 }}
@@ -5048,6 +5090,8 @@ def discover_benchmark_runs(search_roots: tuple[str, ...]) -> pd.DataFrame:
             report_path = bundle_dir / "report.json"
             predictions_path = bundle_dir / "predictions.csv"
             metadata_path = bundle_dir / "metadata.json"
+            benchmark_card_path = bundle_dir / "benchmark_card.json"
+            run_manifest_path = bundle_dir / "run_manifest.json"
             if not report_path.exists() and not predictions_path.exists():
                 continue
             try:
@@ -5064,6 +5108,8 @@ def discover_benchmark_runs(search_roots: tuple[str, ...]) -> pd.DataFrame:
                 metadata.update(report_metadata)
             if isinstance(metadata_payload, dict):
                 metadata.update(metadata_payload)
+            benchmark_card = _safe_read_json(benchmark_card_path) if benchmark_card_path.exists() else {}
+            card_capabilities = benchmark_card.get("capabilities", {}) if isinstance(benchmark_card, dict) else {}
             stat = summary_path.stat()
             split_info = metadata.get("split", {}) if isinstance(metadata.get("split"), dict) else {}
             root_label = relative_label(root) if root.exists() else str(root)
@@ -5094,6 +5140,8 @@ def discover_benchmark_runs(search_roots: tuple[str, ...]) -> pd.DataFrame:
                         "report_path": str(report_path) if report_path.exists() else "",
                         "predictions_path": str(predictions_path) if predictions_path.exists() else "",
                         "metadata_path": str(metadata_path) if metadata_path.exists() else "",
+                        "benchmark_card_path": str(benchmark_card_path) if benchmark_card_path.exists() else "",
+                        "run_manifest_path": str(run_manifest_path) if run_manifest_path.exists() else "",
                         "model": model_name,
                         "model_family": str(model_family),
                         "split": str(split_name),
@@ -5107,6 +5155,11 @@ def discover_benchmark_runs(search_roots: tuple[str, ...]) -> pd.DataFrame:
                         "has_predictions": predictions_path.exists(),
                         "predictions_source": str(metadata.get("predictions_csv") or ""),
                         "merge_on": str(metadata.get("merge_on") or ""),
+                        "has_uncertainty": bool(card_capabilities.get("uncertainty")),
+                        "has_physics": bool(card_capabilities.get("physics_decomposition")),
+                        "has_ood": bool(card_capabilities.get("ood_screening")),
+                        "native_training": bool(card_capabilities.get("native_training")),
+                        "custom_adapter": bool(card_capabilities.get("custom_adapter")),
                         "modified_at": datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds"),
                         "modified_ts": stat.st_mtime,
                     }
@@ -5294,8 +5347,13 @@ def render_benchmark_studio() -> None:
             {"field": "bundle", "value": focused_row["bundle_label"]},
             {"field": "report", "value": compact_path_label(focused_row["report_path"], keep_segments=4) if focused_row["report_path"] else "—"},
             {"field": "predictions", "value": compact_path_label(focused_row["predictions_path"], keep_segments=4) if focused_row["predictions_path"] else "—"},
+            {"field": "benchmark card", "value": compact_path_label(focused_row["benchmark_card_path"], keep_segments=4) if focused_row["benchmark_card_path"] else "—"},
+            {"field": "run manifest", "value": compact_path_label(focused_row["run_manifest_path"], keep_segments=4) if focused_row["run_manifest_path"] else "—"},
             {"field": "predictions source", "value": focused_row["predictions_source"] or "—"},
             {"field": "merge mode", "value": focused_row["merge_on"] or "—"},
+            {"field": "uncertainty", "value": "yes" if focused_row.get("has_uncertainty") else "no"},
+            {"field": "physics", "value": "yes" if focused_row.get("has_physics") else "no"},
+            {"field": "OOD", "value": "yes" if focused_row.get("has_ood") else "no"},
             {"field": "modified", "value": focused_row["modified_at"]},
         ]
         render_dataframe(pd.DataFrame(meta_rows), use_container_width=True, hide_index=True)
@@ -5325,6 +5383,8 @@ def render_benchmark_studio() -> None:
             st.plotly_chart(style_plot(fig), use_container_width=True)
 
     report_payload = cached_json(str(focused_row["report_path"])) if focused_row["report_path"] else {}
+    benchmark_card_payload = cached_json(str(focused_row["benchmark_card_path"])) if focused_row["benchmark_card_path"] else {}
+    run_manifest_payload = cached_json(str(focused_row["run_manifest_path"])) if focused_row["run_manifest_path"] else {}
     predictions_df = benchmark_predictions_frame(str(focused_row["predictions_path"]))
     detail_left, detail_right = st.columns([1.15, 0.85], gap="large")
     with detail_left:
@@ -5402,6 +5462,12 @@ def render_benchmark_studio() -> None:
         else:
             st.info("No canonical predictions file is available for the focused bundle.")
     with detail_right:
+        if benchmark_card_payload:
+            with st.expander("Benchmark card", expanded=False):
+                st.json(benchmark_card_payload)
+        if run_manifest_payload:
+            with st.expander("Run manifest", expanded=False):
+                st.json(run_manifest_payload)
         st.markdown("### Stratified metrics")
         stratified_df = benchmark_stratified_frame(report_payload)
         if stratified_df.empty:
@@ -6348,17 +6414,20 @@ def render_launcher_page(python_command: str, probe: dict[str, Any]) -> None:
         elif exp_tab == "Custom benchmark":
             cards = st.columns(3)
             with cards[0]:
-                info_card("Bring your own model", "Evaluate an arbitrary predictions CSV against the canonical TGNN-Solv test split.")
+                info_card("Bring your own model", "Benchmark either a plain predictions CSV or a repo-native Python adapter against the canonical TGNN-Solv bundle contract.")
             with cards[1]:
                 info_card("Command mode", "Optionally let the lab run a custom command that writes predictions before benchmarking them.")
             with cards[2]:
-                info_card("Visualization", "Outputs the same summary/report bundle as maintained models, so all existing tables and plots keep working.")
-            st.caption("Custom benchmark outputs use the same canonical artifact format as maintained models, so they automatically show up in `Results & Plots`, the artifact registry, and compare views.")
+                info_card("Visualization", "Outputs the same summary/report bundle as maintained models, including run manifests and benchmark cards, so all existing tables and plots keep working.")
+            st.caption("Custom benchmark outputs use the same canonical artifact format as maintained models, so they automatically show up in `Results & Plots`, the artifact registry, compare views, and the new release-manifest workflow.")
             with st.form("custom_benchmark_form", border=False):
                 model_name = st.text_input("Model name", value="custom_model")
                 test_data = st.text_input("Test CSV", value=str(PROCESSED_DIR / "test.csv"), key="custom_benchmark_test")
                 out_dir = st.text_input("Output dir", value=str(RESULTS_DIR / "custom_benchmarks" / "custom_model"))
-                source_mode = st.selectbox("Prediction source", ["Existing predictions CSV", "Command generates predictions"])
+                source_mode = st.selectbox(
+                    "Prediction source",
+                    ["Existing predictions CSV", "Command generates predictions", "Python adapter class"],
+                )
                 predictions_csv = st.text_input(
                     "Predictions CSV",
                     value=str(RESULTS_DIR / "custom_benchmarks" / "custom_model" / "predictions_input.csv"),
@@ -6366,6 +6435,12 @@ def render_launcher_page(python_command: str, probe: dict[str, Any]) -> None:
                 )
                 command_template = ""
                 generated_predictions = predictions_csv
+                adapter_ref = ""
+                train_data = str(PROCESSED_DIR / "train.csv")
+                val_data = str(PROCESSED_DIR / "val.csv")
+                init_kwargs_json = ""
+                fit_kwargs_json = ""
+                predict_kwargs_json = ""
                 if source_mode == "Command generates predictions":
                     generated_predictions = st.text_input(
                         "Generated predictions path",
@@ -6377,6 +6452,20 @@ def render_launcher_page(python_command: str, probe: dict[str, Any]) -> None:
                         height=120,
                         help="`{test_data}` and `{predictions_output}` will be substituted before execution.",
                     )
+                elif source_mode == "Python adapter class":
+                    adapter_ref = st.text_input(
+                        "Adapter reference",
+                        value="your_package.your_adapter:YourAdapter",
+                        help="Implement `describe()`, `fit(...)`, and `predict_frame(...)` as documented in `tgnn_solv.benchmark_adapters`.",
+                    )
+                    adapter_cols = st.columns(2)
+                    with adapter_cols[0]:
+                        train_data = st.text_input("Train CSV", value=str(PROCESSED_DIR / "train.csv"))
+                        init_kwargs_json = st.text_area("Init kwargs JSON", value="{}", height=100)
+                    with adapter_cols[1]:
+                        val_data = st.text_input("Val CSV", value=str(PROCESSED_DIR / "val.csv"))
+                        fit_kwargs_json = st.text_area("Fit kwargs JSON", value="{}", height=100)
+                    predict_kwargs_json = st.text_area("Predict kwargs JSON", value="{}", height=100)
                 cols_left, cols_right = st.columns(2)
                 with cols_left:
                     pred_lnx2_col = st.text_input("Predicted ln(x2) column", value="ln_x2_pred")
@@ -6386,36 +6475,65 @@ def render_launcher_page(python_command: str, probe: dict[str, Any]) -> None:
                     merge_on = st.selectbox("Merge mode", ["auto", "row_index", "pair"], index=0)
                 metadata_json = st.text_input("Metadata JSON (optional)", value="")
                 command = build_python_command(
-                    "scripts/evaluation/benchmark_custom_model.py",
+                    "scripts/evaluation/benchmark_adapter_model.py" if source_mode == "Python adapter class" else "scripts/evaluation/benchmark_custom_model.py",
                     "--model-name",
                     model_name,
-                    "--test-data",
-                    test_data,
                     "--out-dir",
                     out_dir,
-                    "--merge-on",
-                    merge_on,
                     python_command_text=python_command,
                 )
+                if source_mode == "Python adapter class":
+                    command += [
+                        "--adapter",
+                        adapter_ref,
+                        "--test-data",
+                        test_data,
+                        "--train-data",
+                        train_data,
+                        "--val-data",
+                        val_data,
+                    ]
+                else:
+                    command += [
+                        "--test-data",
+                        test_data,
+                        "--merge-on",
+                        merge_on,
+                    ]
                 if source_mode == "Existing predictions CSV":
                     command += ["--predictions-csv", predictions_csv]
-                else:
+                elif source_mode == "Command generates predictions":
                     command += [
                         "--command",
                         command_template,
                         "--generated-predictions",
                         generated_predictions,
                     ]
-                if pred_lnx2_col.strip():
-                    command += ["--pred-lnx2-col", pred_lnx2_col.strip()]
-                if pred_logs_col.strip():
-                    command += ["--pred-logs-col", pred_logs_col.strip()]
-                if uncertainty_col.strip():
-                    command += ["--uncertainty-col", uncertainty_col.strip()]
-                if metadata_json.strip():
-                    command += ["--metadata-json", metadata_json.strip()]
+                if source_mode == "Python adapter class":
+                    if pred_lnx2_col.strip():
+                        command += ["--pred-lnx2-col", pred_lnx2_col.strip()]
+                    if pred_logs_col.strip():
+                        command += ["--pred-logs-col", pred_logs_col.strip()]
+                    if uncertainty_col.strip():
+                        command += ["--uncertainty-col", uncertainty_col.strip()]
+                    if init_kwargs_json.strip():
+                        command += ["--init-kwargs-json", init_kwargs_json.strip()]
+                    if fit_kwargs_json.strip():
+                        command += ["--fit-kwargs-json", fit_kwargs_json.strip()]
+                    if predict_kwargs_json.strip():
+                        command += ["--predict-kwargs-json", predict_kwargs_json.strip()]
+                else:
+                    if pred_lnx2_col.strip():
+                        command += ["--pred-lnx2-col", pred_lnx2_col.strip()]
+                    if pred_logs_col.strip():
+                        command += ["--pred-logs-col", pred_logs_col.strip()]
+                    if uncertainty_col.strip():
+                        command += ["--uncertainty-col", uncertainty_col.strip()]
+                    if metadata_json.strip():
+                        command += ["--metadata-json", metadata_json.strip()]
                 st.code(quote_command(command), language="bash")
-                if st.form_submit_button("Benchmark custom model", use_container_width=True):
+                submit_label = "Benchmark custom adapter" if source_mode == "Python adapter class" else "Benchmark custom model"
+                if st.form_submit_button(submit_label, use_container_width=True):
                     launch_job("Custom model benchmark", "evaluation", command, REPO_ROOT, [out_dir])
                     st.success("Custom benchmark launched.")
         else:
@@ -8366,7 +8484,11 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
         return
 
     workbench_checkpoints, rejected_checkpoints = workbench_compatible_checkpoints(python_command, checkpoints)
-    tgnn_supported_checkpoints, _ = tgnn_inference_checkpoints(python_command, checkpoints)
+    uncertainty_supported_checkpoints, _ = tgnn_inference_checkpoints(python_command, checkpoints)
+    uncertainty_family_map: dict[str, str] = {}
+    for path in uncertainty_supported_checkpoints:
+        payload = inspect_checkpoint(python_command, str(path), path.stat().st_mtime)
+        uncertainty_family_map[str(path)] = checkpoint_family_from_payload(payload)
     if not workbench_checkpoints:
         st.error("No supported checkpoints are available for the inference workbench.")
         if rejected_checkpoints:
@@ -8624,13 +8746,42 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
             key="uncertainty_lab_mode",
             default="Run & inspect",
         )
-        checkpoint_labels = [relative_label(path) for path in tgnn_supported_checkpoints]
-        label_to_path = {relative_label(path): str(path) for path in tgnn_supported_checkpoints}
+        available_uncertainty_families = [
+            family
+            for family in ("tgnn_solv", "direct_gnn")
+            if any(value == family for value in uncertainty_family_map.values())
+        ]
+        family_label_map = {"tgnn_solv": "TGNN-Solv", "direct_gnn": "DirectGNN"}
+        if not available_uncertainty_families:
+            st.info("No compatible checkpoints are available for uncertainty analysis.")
+            return
+        selected_uncertainty_family = segmented_choice(
+            "Checkpoint family",
+            [family_label_map[value] for value in available_uncertainty_families],
+            key="uncertainty_family",
+            default=family_label_map[available_uncertainty_families[0]] if available_uncertainty_families else "TGNN-Solv",
+        )
+        selected_uncertainty_family_key = next(
+            (key for key, label in family_label_map.items() if label == selected_uncertainty_family),
+            "tgnn_solv",
+        )
+        family_checkpoints = [
+            path for path in uncertainty_supported_checkpoints if uncertainty_family_map.get(str(path)) == selected_uncertainty_family_key
+        ]
+        checkpoint_labels = [relative_label(path) for path in family_checkpoints]
+        label_to_path = {relative_label(path): str(path) for path in family_checkpoints}
         default_uncertainty = checkpoint_labels[: min(3, len(checkpoint_labels))]
         st.markdown("### Uncertainty lab")
-        st.caption("Use multiple trained checkpoints as a deep ensemble, optionally add MC-dropout on the first checkpoint, and inspect interval bands across temperature rather than only point estimates.")
-        if not tgnn_supported_checkpoints:
-            st.info("Uncertainty analysis currently supports TGNN-Solv checkpoints only.")
+        st.caption(
+            "Use multiple trained checkpoints as a deep ensemble, optionally add MC-dropout on the first checkpoint, and inspect interval bands across temperature rather than only point estimates."
+            + (
+                " For DirectGNN this stays in the direct-prediction space with no solver decomposition."
+                if selected_uncertainty_family_key == "direct_gnn"
+                else " For TGNN-Solv this still reflects the full solver-guided prediction path."
+            )
+        )
+        if not family_checkpoints:
+            st.info("No checkpoints of the selected family are available for uncertainty analysis.")
             return
         if uncertainty_mode == "Run & inspect":
             with st.form("uncertainty_lab_form", border=False):
@@ -8684,6 +8835,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                             mc_samples=int(uncertainty_mc_samples),
                             checkpoints=selected_paths,
                             include_mc=bool(include_mc),
+                            model_family=selected_uncertainty_family_key,
                             payload=uncertainty_payload,
                         )
                         st.session_state["uncertainty_last_payload"] = uncertainty_payload
@@ -8692,6 +8844,7 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                             "solvent": solvent,
                             "temperature": float(temperature),
                             "selected_checkpoints": selected_paths,
+                            "model_family": selected_uncertainty_family_key,
                             "record_path": str(record_path),
                         }
                         latest_uncertainty = uncertainty_payload
@@ -8910,13 +9063,42 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
             key="uncertainty_calibration_mode",
             default="Run & inspect",
         )
-        checkpoint_labels = [relative_label(path) for path in tgnn_supported_checkpoints]
-        label_to_path = {relative_label(path): str(path) for path in tgnn_supported_checkpoints}
+        available_calibration_families = [
+            family
+            for family in ("tgnn_solv", "direct_gnn")
+            if any(value == family for value in uncertainty_family_map.values())
+        ]
+        family_label_map = {"tgnn_solv": "TGNN-Solv", "direct_gnn": "DirectGNN"}
+        if not available_calibration_families:
+            st.info("No compatible checkpoints are available for calibration analysis.")
+            return
+        selected_calibration_family = segmented_choice(
+            "Checkpoint family",
+            [family_label_map[value] for value in available_calibration_families],
+            key="calibration_family",
+            default=family_label_map[available_calibration_families[0]] if available_calibration_families else "TGNN-Solv",
+        )
+        selected_calibration_family_key = next(
+            (key for key, label in family_label_map.items() if label == selected_calibration_family),
+            "tgnn_solv",
+        )
+        family_checkpoints = [
+            path for path in uncertainty_supported_checkpoints if uncertainty_family_map.get(str(path)) == selected_calibration_family_key
+        ]
+        checkpoint_labels = [relative_label(path) for path in family_checkpoints]
+        label_to_path = {relative_label(path): str(path) for path in family_checkpoints}
         default_labels = checkpoint_labels[: min(3, len(checkpoint_labels))]
         st.markdown("### Batch calibration dashboard")
-        st.caption("Evaluate whether uncertainty intervals are actually calibrated on a real held-out CSV using the maintained `calibration_report(...)` helper.")
-        if not tgnn_supported_checkpoints:
-            st.info("Calibration analysis currently supports TGNN-Solv checkpoints only.")
+        st.caption(
+            "Evaluate whether uncertainty intervals are actually calibrated on a real held-out CSV using the maintained `calibration_report(...)` helper."
+            + (
+                " DirectGNN uses the same interval diagnostics, just without solver-facing terms."
+                if selected_calibration_family_key == "direct_gnn"
+                else ""
+            )
+        )
+        if not family_checkpoints:
+            st.info("No checkpoints of the selected family are available for calibration analysis.")
             return
         if calibration_mode == "Run & inspect":
             with st.form("uncertainty_calibration_form", border=False):
@@ -8968,12 +9150,14 @@ def render_inference_page(python_command: str, probe: dict[str, Any]) -> None:
                             checkpoints=selected_paths,
                             include_mc=bool(include_mc_calibration),
                             include_ensemble=bool(include_ensemble),
+                            model_family=selected_calibration_family_key,
                             payload=calibration_payload,
                         )
                         st.session_state["uncertainty_calibration_payload"] = calibration_payload
                         st.session_state["uncertainty_calibration_meta"] = {
                             "dataset_csv": calibration_csv,
                             "selected_checkpoints": selected_paths,
+                            "model_family": selected_calibration_family_key,
                             "record_path": str(record_path),
                         }
                         latest_calibration = calibration_payload

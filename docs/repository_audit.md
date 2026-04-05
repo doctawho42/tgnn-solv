@@ -32,6 +32,9 @@ The main improvements relative to earlier states are:
   full-budget diagnostic path
 - split-wise comparison and baseline workflows are described consistently with
   the live code
+- benchmark bundles now carry machine-readable provenance sidecars
+- custom models can join the benchmark workflow through a formal adapter API
+- DirectGNN now participates in the maintained uncertainty / calibration path
 
 ## Current Strengths
 
@@ -90,6 +93,17 @@ Implication:
 - reproduction should be validated via generated artifacts and consistent
   schemas, not by a single hardcoded MAE target in the docs
 
+### 5. Benchmark Release Freezing Is Now Possible, But Still Manual
+
+The repo now has a checksum-based release-manifest builder for processed splits
+and benchmark bundles.
+
+Implication:
+
+- provenance is much better than before
+- a truly public frozen release still depends on choosing which bundles and
+  checkpoints to curate and publish
+
 ## Intentional Overlap
 
 Some overlap is useful and should remain:
@@ -135,7 +149,9 @@ Use:
 These are still good future hardening targets:
 
 1. expand resume-aware orchestration to more multi-run wrappers
-2. consolidate overlapping benchmark/report formatting helpers
+2. consolidate overlapping benchmark/report formatting helpers even further
 3. expand regression coverage for the research-heavy experiment scripts
 4. decide whether any current experimental config variants should be promoted to
    canonical status
+5. decide which checkpoints and release manifests deserve first-class public
+   publication rather than only local generation

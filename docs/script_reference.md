@@ -50,9 +50,11 @@ on them.
 | `scripts/training/train_directgnn.py` | Train DirectGNN baseline | Stable utility | Supports descriptor augmentation |
 | `scripts/training/run_resume_safe_train.sh` | Resume-safe TGNN wrapper for cloud sessions | Stable utility | Wraps `train.py --resume` |
 | `scripts/evaluation/benchmark_tgnn_solv.py` | Rich benchmark via `Evaluator` | Stable utility | Use when you want more than quick eval |
+| `scripts/evaluation/benchmark_adapter_model.py` | Benchmark a formal Python adapter | Stable utility | Preferred custom-model path when you want fit/predict/report in one contract |
 | `scripts/evaluation/analyze_benchmark.py` | Text summary of benchmark JSON | Stable utility | Lightweight reporting helper |
 | `scripts/evaluation/compare_models.py` | Compare multiple TGNN checkpoints | Stable utility | Wraps benchmark logic |
 | `scripts/training/diagnose_training.py` | Dataset stats and overfit sanity check | Stable utility | Good pre-flight tool |
+| `scripts/evaluation/run_thermo_stress_suite.py` | Stress slices on canonical prediction bundles | Stable utility | Reads `predictions.csv`, writes slice metrics JSON |
 | `scripts/experiments/run_optuna.py` | Hyperparameter tuning | Stable utility | Supports TGNN and DirectGNN |
 | `scripts/launch_lab.py` | Launch the maintained Streamlit control surface | Stable utility | Preferred GUI entry point |
 | `scripts/gui/launch_lab.py` | Namespaced launcher for the same lab | Stable utility | Same behavior, alternate path |
@@ -70,6 +72,7 @@ on them.
 | `scripts/experiments/temperature_extrapolation.py` | Temperature extrapolation study | Research | Uses a combined dataset CSV |
 | `scripts/experiments/statistical_tests.py` | Paired significance testing | Research | Used by the `full` reproduction profile, but still analysis-oriented |
 | `scripts/experiments/generate_supplementary.py` | Supplementary table generation | Research | Consumes produced result JSONs |
+| `scripts/experiments/build_benchmark_release.py` | Freeze a checksum-based benchmark release manifest | Research | Best when preparing a paper-ready artifact snapshot |
 
 ## Optional External Baseline Wrappers
 
@@ -99,9 +102,12 @@ They are available through the Python API and are demonstrated in notebooks.
 | `tgnn_solv.inference.temperature_scan` | Multi-temperature inference | Useful for van't Hoff style inspection |
 | `tgnn_solv.inference.interpret_prediction` | Human-readable prediction report | Good for manual case review |
 | `tgnn_solv.uncertainty.MCDropoutPredictor` | Single-checkpoint uncertainty | Covered in `notebooks/04_evaluation.ipynb` |
-| `tgnn_solv.uncertainty.EnsemblePredictor` | Multi-checkpoint uncertainty | Requires multiple trained models |
+| `tgnn_solv.uncertainty.EnsemblePredictor` | Multi-checkpoint uncertainty | Now works for both `TGNN-Solv` and `DirectGNN` families |
 | `tgnn_solv.uncertainty.calibration_report` | Interval calibration summary | Accepts MC-dropout or ensemble outputs |
 | `tgnn_solv.domain.ApplicabilityDomain` | Inference-time OOD / AD scoring | Covered in `notebooks/03_inference.ipynb` and `notebooks/04_evaluation.ipynb` |
+| `tgnn_solv.benchmark_adapters` | Formal custom-model adapter contract | Lets arbitrary models participate in canonical benchmark bundles |
+| `tgnn_solv.artifacts` | Run manifests and benchmark/model cards | Supplies machine-readable provenance sidecars |
+| `tgnn_solv.stress.build_stress_suite` | Thermodynamic stress slices for benchmark bundles | Used after `predictions.csv` already exists |
 
 The same maintained surfaces are also exposed together through
 `tools/experiment_lab/app.py`, but the GUI is an orchestration layer rather

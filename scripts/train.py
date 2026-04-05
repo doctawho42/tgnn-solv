@@ -20,6 +20,7 @@ import _bootstrap  # noqa: F401
 import torch
 from torch.utils.data import DataLoader
 
+from tgnn_solv.artifacts import build_model_card, build_run_manifest, write_json
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import make_loader
 from tgnn_solv.experiment_logger import ExperimentLogger
@@ -492,6 +493,41 @@ def main() -> None:
             print("\n   Test Metrics:")
             print(json.dumps(test_metrics, indent=2))
             logger.log_artifact("test_metrics", test_metrics)
+
+        manifest = build_run_manifest(
+            "training_run",
+            model_name=checkpoint_path.name,
+            model_family="tgnn_solv",
+            inputs={
+                "config": args.config,
+                "train_data": args.train_data,
+                "val_data": args.val_data,
+                "test_data": args.test_data,
+                "resume_checkpoint": args.resume,
+            },
+            outputs={
+                "checkpoint": checkpoint_path,
+            },
+            metadata={
+                "experiment_name": logger.experiment_name,
+                "log_dir": str(logger.exp_dir),
+                "seed": int(args.seed),
+                "device": str(device),
+            },
+        )
+        model_card = build_model_card(
+            checkpoint_path=checkpoint_path,
+            model_family="tgnn_solv",
+            config=dataclasses.asdict(config),
+            metrics=test_metrics or {},
+            metadata={
+                "experiment_name": logger.experiment_name,
+                "log_dir": str(logger.exp_dir),
+                "seed": int(args.seed),
+            },
+        )
+        write_json(checkpoint_path.with_suffix(".manifest.json"), manifest)
+        write_json(checkpoint_path.with_suffix(".model_card.json"), model_card)
         
         # Finalize logging
         print("\n10. Finalizing experiment...")

@@ -34,6 +34,18 @@ SH_WRAPPERS = {
     "scripts/training/run_resume_safe_train.sh": "scripts/run_resume_safe_train.sh",
 }
 
+GROUPED_ENTRY_POINTS = {
+    "scripts/evaluation/benchmark_adapter_model.py",
+    "scripts/evaluation/run_thermo_stress_suite.py",
+    "scripts/experiments/build_benchmark_release.py",
+}
+
+TOP_LEVEL_COMPAT_WRAPPERS = {
+    "scripts/benchmark_adapter_model.py": "scripts/evaluation/benchmark_adapter_model.py",
+    "scripts/run_thermo_stress_suite.py": "scripts/evaluation/run_thermo_stress_suite.py",
+    "scripts/build_benchmark_release.py": "scripts/experiments/build_benchmark_release.py",
+}
+
 
 def test_scripts_readme_exists() -> None:
     readme_path = ROOT / "scripts/README.md"
@@ -54,6 +66,28 @@ def test_python_wrappers_delegate_to_legacy_entry_points() -> None:
         text = wrapper_path.read_text(encoding="utf-8")
         assert "runpy.run_path" in text
         assert legacy_path.name in text
+
+
+def test_grouped_entry_points_exist_as_real_scripts() -> None:
+    for script_rel in GROUPED_ENTRY_POINTS:
+        script_path = ROOT / script_rel
+        assert script_path.is_file(), script_rel
+        text = script_path.read_text(encoding="utf-8")
+        assert "def main()" in text
+        assert "runpy.run_path" not in text
+
+
+def test_top_level_compat_wrappers_delegate_to_grouped_entry_points() -> None:
+    for wrapper_rel, grouped_rel in TOP_LEVEL_COMPAT_WRAPPERS.items():
+        wrapper_path = ROOT / wrapper_rel
+        grouped_path = ROOT / grouped_rel
+
+        assert wrapper_path.is_file(), wrapper_rel
+        assert grouped_path.is_file(), grouped_rel
+
+        text = wrapper_path.read_text(encoding="utf-8")
+        assert "runpy.run_path" in text
+        assert grouped_path.name in text
 
 
 def test_shell_wrappers_delegate_to_legacy_entry_points() -> None:

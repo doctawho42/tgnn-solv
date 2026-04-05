@@ -30,7 +30,8 @@ This file is the repo-internal map of the same maintained documentation set.
 - `docs/config_cookbook.md`
   - recommended config selection by use case
 - `docs/results.md`
-  - benchmark hierarchy and interpretation of committed result bundles
+  - benchmark hierarchy, canonical bundle contract, benchmark cards, manifests,
+    and release-freezing guidance
 - `docs/experiments.md`
   - maintained benchmark and comparison runners, output layouts, and runner
     selection guidance
@@ -52,15 +53,18 @@ This file is the repo-internal map of the same maintained documentation set.
 ## Top-Level Companion Docs
 
 - `README.md`
-  - high-level project overview and quick-start commands
+  - high-level project overview, lab entry points, and benchmark/reproduction
+    summary
 - `AGENTS.md`
   - compact repo notes for coding agents and terminal-driven contributors
 - `CONTRIBUTING.md`
   - contribution workflow and validation checklist
 - `scripts/README.md`
-  - grouped CLI layout and compatibility-wrapper policy
+  - grouped CLI layout, new benchmark/release/stress helpers, and
+    compatibility-wrapper policy
 - `src/tgnn_solv/README.md`
-  - grouped internal package layout and preferred import surface
+  - grouped internal package layout, artifact/adapter surfaces, and preferred
+    import style
 
 ## Recommended Reading Order
 
@@ -96,7 +100,16 @@ For contributors after that:
   - uncertainty via `tgnn_solv.uncertainty`
   - inference-time OOD screening via `tgnn_solv.domain`
 - Generated metrics and experiment artifacts live under `results/`.
+- Comparable benchmark bundles now include:
+  - `summary.csv`
+  - `report.json`
+  - `predictions.csv`
+  - `run_manifest.json`
+  - `benchmark_card.json`
 - Figures live under `figures/`, supplementary tables under `tables/`, and
   checkpoints under `checkpoints/`.
+- Checkpoints written by the maintained training CLIs now also emit:
+  - `<checkpoint>.manifest.json`
+  - `<checkpoint>.model_card.json`
 - For Python code navigation, prefer the grouped namespace surface documented in
   `src/tgnn_solv/README.md`; legacy flat imports remain valid for compatibility.

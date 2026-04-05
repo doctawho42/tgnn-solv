@@ -67,6 +67,14 @@ reproducible default remains the grouped CLI surface under:
 Use notebooks for inspection and explanation, and the CLIs for reproducible
 batch runs.
 
+Current scope note:
+
+- the formal benchmark-adapter API
+- checksum-based benchmark-release freezing
+- the thermodynamic stress suite
+
+are currently CLI-first rather than notebook-first surfaces.
+
 <div class="tgnn-page-nav" markdown="1">
 
 ## Related Pages

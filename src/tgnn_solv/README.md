@@ -74,7 +74,27 @@ from tgnn_solv.inference import load_model
 - inference, evaluator/reporting, plotting, and analysis helpers
 - uncertainty calibration and applicability-domain helpers consumed by the
   interactive `Experiment Lab`
+- benchmark adapters, artifact sidecars, and stress-suite helpers live nearby
+  and feed the same `Experiment Lab` and benchmark-bundle surfaces
 
 ### `tgnn_solv.research`
 
 - ablation helpers that remain more experimental than the canonical paths
+
+## Additional Maintained Modules
+
+Several maintained surfaces still live at the flat package level because they
+cut across namespaces:
+
+- `tgnn_solv.artifacts`
+  - run manifests, benchmark cards, and checkpoint model cards
+- `tgnn_solv.benchmark_adapters`
+  - formal adapter API for arbitrary custom models
+- `tgnn_solv.reproduction`
+  - shared `core / article / full` reproduction planning
+- `tgnn_solv.stress`
+  - thermodynamic stress-suite slices for benchmark bundles
+
+These are intended as infrastructure layers rather than end-user model APIs,
+which is why they are documented here and in the script/docs guides rather than
+on their own package subpages.

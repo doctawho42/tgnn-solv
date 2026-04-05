@@ -37,6 +37,20 @@ Stage 0 is optional and not run automatically by `scripts/training/train.py`.
 Use it when you want the current maintained TGNN baseline for architecture
 comparison on the scaffold split.
 
+## Which reproduction entry point should I use now?
+
+Use:
+
+- `python scripts/experiments/reproduce_paper.py --profile core`
+  - if you want the smallest maintained paper path
+- `python scripts/experiments/reproduce_paper.py --profile article`
+  - if you want the current article-comparison workflow
+- `python scripts/experiments/reproduce_paper.py --profile full`
+  - if you also want the heavier diagnostics
+
+`bash reproduce.sh` still works, but it is now just a compatibility wrapper for
+the `article` profile.
+
 ## When should I use `DirectGNN + descriptors`?
 
 Use it when you want to test whether hand-crafted chemical descriptors explain
@@ -97,12 +111,36 @@ No. Proxy runs are useful for:
 But they are not reliable enough for architectural conclusions, especially when
 the budget is so small that the models underfit.
 
+## Where should I compare maintained, external, and custom models?
+
+Use one of these two surfaces:
+
+- `Results & Plots -> Benchmark Studio` in the Experiment Lab
+- canonical benchmark bundles under `results/external_baselines/` and
+  `results/custom_benchmarks/`
+
+Those bundles all use the same `summary.csv` / `report.json` /
+`predictions.csv` contract, now with `run_manifest.json` and
+`benchmark_card.json` sidecars, so comparisons are not hardcoded model by
+model.
+
+## Can `DirectGNN` use the maintained uncertainty and calibration path now?
+
+Yes. The maintained `MCDropoutPredictor`, `EnsemblePredictor`, and the lab's
+`Uncertainty lab` / `Calibration dashboard` now support both:
+
+- `TGNN-Solv`
+- `DirectGNN`
+
+What stays `TGNN-Solv`-specific is the physics decomposition and the current
+OOD/applicability-domain helper.
+
 ## Why does the repo still keep legacy `scripts/*.py` wrappers?
 
 For compatibility:
 
 - tests still import some legacy paths
-- `reproduce.sh` still uses them
+- compatibility entrypoints such as `reproduce.sh` still use them
 - older automation can continue to work
 
 The preferred human-facing navigation surface is the grouped layout under:
@@ -128,6 +166,16 @@ For serious TGNN evaluation, also report:
 Not yet. The repository currently documents checkpoint conventions and local
 artifact layouts, but it does not yet publish a versioned checkpoint catalog on
 the site.
+
+What does exist now is the release-freezing path:
+
+```bash
+python scripts/experiments/build_benchmark_release.py ...
+```
+
+That creates a checksum-based `release_manifest.json` for processed splits and
+benchmark bundles, which is the repo's current bridge between local artifacts
+and a future public release.
 
 ## Where should I start if I am new?
 

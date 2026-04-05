@@ -42,10 +42,12 @@ They delegate to the legacy entry points, so behavior stays identical.
 
 - `evaluate_complete.py`
 - `benchmark_tgnn_solv.py`
+- `benchmark_adapter_model.py`
 - `validate_physics.py`
 - `analyze_benchmark.py`
 - `compare_models.py`
 - `error_analysis.py`
+- `run_thermo_stress_suite.py`
 
 ### `scripts/experiments/`
 
@@ -61,6 +63,7 @@ They delegate to the legacy entry points, so behavior stays identical.
 - `statistical_tests.py`
 - `generate_paper_figures.py`
 - `generate_supplementary.py`
+- `build_benchmark_release.py`
 
 ### `scripts/external/`
 
@@ -74,6 +77,16 @@ They delegate to the legacy entry points, so behavior stays identical.
 - train-split calibration
 - native SolProp retraining on TGNN-Solv `ln(x2)` targets
 
+The newer infrastructure scripts worth knowing about are:
+
+- `scripts/evaluation/benchmark_adapter_model.py`
+  - formal adapter API for arbitrary Python models
+- `scripts/evaluation/run_thermo_stress_suite.py`
+  - slice-based stress diagnostics for canonical `predictions.csv` bundles
+- `scripts/experiments/build_benchmark_release.py`
+  - frozen release manifest with checksums for processed splits and benchmark
+    bundles
+
 ## Usage Guidance
 
 Preferred examples:
@@ -81,7 +94,9 @@ Preferred examples:
 ```bash
 python scripts/training/train.py --help
 python scripts/evaluation/evaluate_complete.py --help
+python scripts/evaluation/benchmark_adapter_model.py --help
 python scripts/experiments/run_medium_budget_comparison.py --help
+python scripts/experiments/build_benchmark_release.py --help
 python scripts/external/run_fastsolv.py --help
 python scripts/launch_lab.py
 ```

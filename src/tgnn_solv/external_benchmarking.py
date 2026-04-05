@@ -5,13 +5,14 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Mapping, Sequence
 
 import numpy as np
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
 
+from .artifacts import build_benchmark_card, build_run_manifest, write_json
 from .data.sources import _density_map
 from .data.split_registry import build_split_metadata
 from .data.utils import canonicalize
@@ -401,6 +402,8 @@ def write_benchmark_artifacts(
     report_name: str = "report.json",
     predictions_name: str = "predictions.csv",
     summary_name: str = "summary.csv",
+    input_paths: Mapping[str, str | Path | None] | None = None,
+    command: Sequence[str] | None = None,
 ) -> tuple[Path, Path, Path]:
     """Write a benchmark bundle to disk."""
     root = Path(output_dir)
@@ -411,4 +414,43 @@ def write_benchmark_artifacts(
     report_path.write_text(json.dumps(artifacts.report, indent=2), encoding="utf-8")
     artifacts.predictions.to_csv(predictions_path, index=False)
     artifacts.summary.to_csv(summary_path, index=False)
+    metadata = artifacts.report.get("metadata", {}) if isinstance(artifacts.report, dict) else {}
+    model_name = None
+    model_family = None
+    if isinstance(metadata, Mapping):
+        model_name = metadata.get("model")
+        model_family = metadata.get("model_family")
+    if not model_name and not artifacts.summary.empty and "model" in artifacts.summary.columns:
+        model_name = artifacts.summary.iloc[0].get("model")
+    summary_row = artifacts.summary.iloc[0].to_dict() if not artifacts.summary.empty else {}
+    manifest = build_run_manifest(
+        "benchmark_bundle",
+        model_name=str(model_name) if model_name is not None else None,
+        model_family=str(model_family) if model_family is not None else None,
+        command=command,
+        inputs=input_paths or {
+            "test_data": metadata.get("test_data") if isinstance(metadata, Mapping) else None,
+            "train_data": metadata.get("train_data") if isinstance(metadata, Mapping) else None,
+            "val_data": metadata.get("val_data") if isinstance(metadata, Mapping) else None,
+            "predictions_source": metadata.get("predictions_csv") if isinstance(metadata, Mapping) else None,
+            "checkpoint": metadata.get("checkpoint") if isinstance(metadata, Mapping) else None,
+        },
+        outputs={
+            "report": report_path,
+            "predictions": predictions_path,
+            "summary": summary_path,
+        },
+        metadata={
+            "split": metadata.get("split") if isinstance(metadata, Mapping) else None,
+            "report_type": artifacts.report.get("report_type") if isinstance(artifacts.report, Mapping) else None,
+        },
+    )
+    card = build_benchmark_card(
+        artifacts.report,
+        summary_row=summary_row,
+        predictions_columns=artifacts.predictions.columns.tolist(),
+        metadata=metadata if isinstance(metadata, Mapping) else None,
+    )
+    write_json(root / "run_manifest.json", manifest)
+    write_json(root / "benchmark_card.json", card)
     return report_path, predictions_path, summary_path

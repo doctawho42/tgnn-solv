@@ -101,6 +101,11 @@ This gives you:
 - test-set regression metrics
 - figure-ready arrays
 - error slices such as aqueous and top-solvent subsets
+- a canonical report payload that can be opened directly in `Results & Plots`
+  and `Benchmark Studio` inside the lab
+- report sidecars:
+  - `full_evaluation.manifest.json`
+  - `full_evaluation.card.json`
 
 ## 5. Run a matched no-physics baseline
 
@@ -119,7 +124,24 @@ python scripts/training/train_directgnn.py \
 That is the main ablation used to test whether the explicit physics bottleneck
 is helping.
 
-## 6. Go deeper
+## 6. Optional: launch the GUI workbench
+
+```bash
+python scripts/launch_lab.py
+```
+
+Useful first places in the UI:
+
+- `Inference`
+  - draw/edit structures, run TGNN or DirectGNN inference, inspect uncertainty
+    and OOD
+- `Results & Plots -> Benchmark studio`
+  - compare canonical benchmark bundles, including external, custom, and
+    adapter-based models
+- `Reproduce`
+  - launch the maintained `core`, `article`, or `full` reproduction profile
+
+## 7. Go deeper
 
 After the first end-to-end run, the most useful next pages are:
 
@@ -130,12 +152,8 @@ After the first end-to-end run, the most useful next pages are:
 - [Training](../training.md)
   - curriculum phases, pair-aware batching, oracle injection, and resume
 - [Experiments & Benchmarks](../experiments.md)
-  - medium-budget comparison, full-budget diagnostic run, split studies
+  - medium-budget comparison, full-budget diagnostic run, split studies, and external baselines
+- [Reproducing the Paper](../reproducing_paper.md)
+  - structured `core`, `article`, and `full` workflows
 - [Notebooks & Tutorials](../notebooks.md)
   - interactive walk-throughs that mirror the maintained code paths
-
-Optional GUI launch:
-
-```bash
-python scripts/launch_lab.py
-```

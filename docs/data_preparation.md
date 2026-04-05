@@ -68,6 +68,10 @@ One run writes all supported split families:
 - `train_solvent.csv`, `val_solvent.csv`, `test_solvent.csv`
 - `split_manifest.json`
 
+When those processed splits are later frozen for an article-facing benchmark
+release, the release builder also records checksums and provenance metadata so
+that external comparisons can prove they used the same data bundle.
+
 The canonical training path uses:
 
 - `train.csv`
@@ -136,6 +140,12 @@ Supported modes:
 All modes use group-preserving assignment rather than naive row-wise random
 splits.
 
+The maintained article benchmark uses:
+
+- `solute_scaffold`
+  - strict molecular generalization
+  - the default split mode for benchmark-release manifests
+
 ## Auxiliary-Only Rows
 
 The builder can append auxiliary-only rows for pretraining, for example
@@ -154,6 +164,9 @@ When comparing against older literature or simpler baselines:
 - report `solute_scaffold` as the strict result
 - report `solute` only when matching a less strict protocol
 - use `scripts/experiments/run_split_comparisons.py` to avoid accidental split drift
+- use `scripts/experiments/build_benchmark_release.py` when freezing a
+  benchmark bundle for paper, external baselines, or adapter-based custom
+  models
 
 ## Data-Loader Feature Paths
 
@@ -174,6 +187,17 @@ Notes on the two higher-variance feature paths:
 - GC crystal priors are raw per-molecule estimates. The training script may
   later calibrate `T_m_gc`, but the dataset intentionally exposes the raw
   prior values.
+
+## Reproducibility Notes
+
+The project now treats processed splits as first-class artifacts rather than
+just intermediate CSVs. In practice this means:
+
+- the training and evaluation stack expects the canonical processed contract
+  under `notebooks/data/processed/`
+- benchmark bundles can record the exact split files and hashes they used
+- custom-model adapters are expected to benchmark against the same CSV schema
+  instead of inventing a parallel input format
 
 <div class="tgnn-page-nav" markdown="1">
 

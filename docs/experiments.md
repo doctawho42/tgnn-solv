@@ -5,7 +5,7 @@ for architecture decisions and reproducible comparisons.
 
 ## At a Glance
 
-### Reproduce the paper-style workflow
+### Reproduce the maintained article workflow
 
 Use the structured reproduction runner when you want the maintained
 end-to-end article workflow.
@@ -171,6 +171,7 @@ Several maintained but more research-oriented entry points live under
 - `temperature_extrapolation.py`
 - `statistical_tests.py`
 - `generate_supplementary.py`
+- `build_benchmark_release.py`
 
 Use the [Script Reference](script_reference.md) if you need the maturity level
 and intended role of each script before running it.
@@ -179,7 +180,8 @@ and intended role of each script before running it.
 
 | If you want to... | Use this |
 | --- | --- |
-| reproduce the repository's paper-style workflow | `reproduce.sh` |
+| reproduce the repository's current article-comparison workflow | `scripts/experiments/reproduce_paper.py --profile article` |
+| keep the old shell entrypoint for compatibility | `reproduce.sh` |
 | compare maintained architectures on the full scaffold split | `run_medium_budget_comparison.py` |
 | inspect TGNN physical intermediates and oracle diagnostics | `run_full_budget_experiment.py` |
 | compare scaffold, solute, and solvent protocols | `run_split_comparisons.py` |
@@ -194,9 +196,29 @@ The common pattern is:
 - per-model or per-seed subdirectories
 - markdown comparison tables for quick review
 - CSV exports when intermediate predictions matter
+- canonical benchmark bundles with sidecars when the output is meant to be
+  comparable across families:
+  - `summary.csv`
+  - `report.json`
+  - `predictions.csv`
+  - `run_manifest.json`
+  - `benchmark_card.json`
 
 That convention is intentional so downstream reporting and figure-generation
 scripts can consume the outputs consistently.
+
+When a local benchmark snapshot should become paper-facing instead of just
+inspectable, freeze it with:
+
+```bash
+python scripts/experiments/build_benchmark_release.py ...
+```
+
+For post-benchmark robustness slicing on an existing `predictions.csv`, use:
+
+```bash
+python scripts/evaluation/run_thermo_stress_suite.py ...
+```
 
 <div class="tgnn-page-nav" markdown="1">
 

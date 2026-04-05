@@ -42,11 +42,18 @@ will reuse the existing checkpoint and continue from the saved phase/epoch.
 - The resumable checkpoint is stored at `CHECKPOINT`.
 - The same checkpoint remains loadable for inference because it still contains
   `model_state_dict` and `config`.
+- The training script also writes checkpoint sidecars:
+  - `<checkpoint>.manifest.json`
+  - `<checkpoint>.model_card.json`
 - If a checkpoint already marks training as completed, `--resume` skips fitting
   and only reruns the final evaluation path.
 - `scripts/experiments/run_full_budget_experiment.py` and
   `scripts/experiments/run_medium_budget_comparison.py` also pass through
   `--checkpoint-every` and resume from existing per-model checkpoints.
+
+If you later benchmark or archive those checkpoints, the sidecars allow the
+artifact layer to recover the originating config, data paths, and git context
+without relying on notebook memory or shell history.
 
 <div class="tgnn-page-nav" markdown="1">
 

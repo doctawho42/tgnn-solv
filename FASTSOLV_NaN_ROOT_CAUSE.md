@@ -2,10 +2,10 @@
 
 ## Summary
 
-Training FastSolv from scratch on TGNN-Solv data can produce NaN predictions
-from the first epoch. The failure mode is tied to the external FastSolv
-descriptor pipeline, not to the maintained TGNN-Solv or DirectGNN descriptor
-paths.
+Earlier debugging showed that FastSolv scratch training could produce NaN
+predictions from the first epoch on TGNN-Solv data. The failure mode was tied
+to the external FastSolv descriptor pipeline, not to the maintained
+TGNN-Solv or DirectGNN descriptor paths.
 
 ## Observed Failure Mode
 
@@ -13,10 +13,26 @@ During the original debugging pass, FastSolv descriptor generation returned
 non-finite values before training even started. Once those NaNs entered the
 model, all downstream metrics became NaN as well.
 
-That led to a simple practical conclusion:
+That originally led to a conservative practical conclusion:
 
 - FastSolv works best in this repo as a pretrained external baseline
-- training FastSolv from scratch on these splits is not a maintained workflow
+- scratch training should be treated as environment-sensitive until it is
+  validated in the current runtime
+
+## Current Maintained Status
+
+The repository now does expose a maintained scratch-train wrapper through:
+
+- `scripts/external/run_fastsolv.py train`
+- `scripts/experiments/run_external_baseline_benchmark.py --fastsolv-mode scratch|both`
+
+That means scratch FastSolv is no longer completely absent from the maintained
+surface. The caveat is narrower:
+
+- the wrapper path is supported
+- the underlying FastSolv stack is still more brittle than the in-repo TGNN /
+  DirectGNN paths
+- if NaNs reappear, treat it as an external-baseline runtime issue first
 
 ## Scope Boundary
 
@@ -34,7 +50,7 @@ this repository:
 
 ## Recommended Usage
 
-Use FastSolv in one of these two modes:
+Safest usage modes remain:
 
 ```bash
 python scripts/external/run_fastsolv.py predict \
@@ -47,8 +63,21 @@ python scripts/external/run_fastsolv.py compare \
     --metrics results/fastsolv_compare.json
 ```
 
-The grouped `scripts/external/` path is the preferred navigation surface.
-Legacy top-level wrappers remain available for compatibility.
+If you want the scratch-training route, prefer the shared external benchmark
+runner so the output lands in the canonical benchmark bundle contract:
+
+```bash
+python scripts/experiments/run_external_baseline_benchmark.py \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --out-dir results/external_baselines/article_benchmark \
+    --fastsolv-mode both \
+    --solprop-mode skip
+```
+
+The grouped `scripts/external/` layout remains the preferred navigation
+surface. Legacy top-level wrappers remain available for compatibility.
 
 If you need a trainable in-repo baseline on the same data, use one of:
 

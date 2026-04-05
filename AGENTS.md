@@ -220,6 +220,14 @@ python scripts/evaluation/validate_physics.py \
     --output results/physics_validation.json
 ```
 
+### Benchmark Infrastructure
+
+```bash
+python scripts/evaluation/benchmark_adapter_model.py --help
+python scripts/evaluation/run_thermo_stress_suite.py --help
+python scripts/experiments/build_benchmark_release.py --help
+```
+
 ## Optional External Baselines
 
 ### FastSolv
@@ -450,6 +458,7 @@ Maintained config files:
 - `docs/script_reference.md`
 - `docs/repository_audit.md`
 - `docs/free_gpu_training.md`
+- `BENCHMARKING_GUIDE.md`
 - `scripts/README.md`
 - `src/tgnn_solv/README.md`
 
@@ -460,3 +469,7 @@ Maintained config files:
   its own orchestration around partial-progress recovery
 - FastSolv and SolProp remain optional external stacks
 - not every research script is as hardened as the canonical train/eval path
+- `DirectGNN` now supports the maintained uncertainty / calibration helpers,
+  but the current OOD/applicability-domain path remains TGNN-specific
+- benchmark bundles now include sidecars (`run_manifest.json`,
+  `benchmark_card.json`), so changing that contract requires extra care

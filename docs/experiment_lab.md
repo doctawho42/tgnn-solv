@@ -76,6 +76,8 @@ should execute in the real `tgnn-solv` environment.
   native SolProp retraining on TGNN-Solv targets
 - custom-model benchmark launcher for arbitrary prediction CSVs or
   command-generated outputs
+- formal adapter-based custom-model benchmarking through
+  `tgnn_solv.benchmark_adapters`
 - canonical benchmark bundles that drop straight into the same results registry
   and compare views as maintained models
 
@@ -98,6 +100,8 @@ should execute in the real `tgnn-solv` environment.
 - `Benchmark Studio` for canonical benchmark bundles with leaderboard,
   parity/residual plots, temperature/error views, and stratified metrics
   across FastSolv, SolProp, TGNN-family, and custom-model outputs
+- benchmark-card and run-manifest inspection directly from the focused bundle
+  view
 - lineage graph linking configs, jobs, checkpoints, lab histories, and planner
   follow-ups
 - artifact diff for checkpoints, JSON reports, and CSV tables
@@ -111,13 +115,16 @@ should execute in the real `tgnn-solv` environment.
 - `Calibration dashboard` for `PICP_90`, `MPIW`, `MAE`, `RMSE`, and parity
   plots
 - OOD / applicability-domain scoring through `tgnn_solv.domain`
+- structure drawing/editing with a sanitized RDKit preview before the model
+  ever sees the SMILES
 
 Current scope note:
 
-- `Run & inspect` supports both `TGNN-Solv` and `DirectGNN`
-- `Uncertainty lab` and `Calibration dashboard` currently remain
-  `TGNN-Solv`-only because they rely on the maintained physics-facing
-  inference stack
+- `Run & inspect`, `Uncertainty lab`, and `Calibration dashboard` now support
+  both `TGNN-Solv` and `DirectGNN`
+- solver decomposition, GC priors, and OOD / applicability-domain scoring
+  remain `TGNN-Solv`-specific because they rely on the physics-facing model
+  path
 
 ### Planner
 

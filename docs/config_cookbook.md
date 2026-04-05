@@ -20,6 +20,10 @@ If you need the matched no-physics baseline, use:
 
 - `configs/paper_config_directgnn_tuned.yaml`
 
+If you are preparing an article-facing comparison bundle, pair those configs
+with the canonical scaffold split and the maintained benchmark runners so the
+resulting checkpoints also receive manifest and model-card sidecars.
+
 ## Maintained TGNN Configs
 
 ### `paper_config_tuned.yaml`
@@ -182,6 +186,12 @@ Trade-off:
 - stronger baseline
 - less pure as a "graph-only" comparison
 
+This is also the strongest maintained DirectGNN family for:
+
+- DirectGNN uncertainty experiments
+- calibration studies without the physics bottleneck
+- adapter-based benchmark comparisons against descriptor-heavy custom models
+
 ## Legacy / Research Starting Points
 
 ### `paper_config.yaml`
@@ -258,6 +268,26 @@ Compare:
 - `paper_config_directgnn_tuned.yaml`
 - `paper_config_directgnn_descriptors.yaml`
 - optionally RF descriptor baselines
+
+## Output Sidecars and Provenance
+
+Both maintained training entry points now emit sidecars next to the
+checkpoint:
+
+- `<checkpoint>.manifest.json`
+- `<checkpoint>.model_card.json`
+
+That applies regardless of which config file you pick. The main difference is
+what the sidecar says about the resulting model family and supported capability
+surface:
+
+- TGNN configs
+  - solver-aware interpretation
+  - physics diagnostics
+  - thermodynamic stress evaluation
+- DirectGNN configs
+  - direct uncertainty and calibration paths
+  - no synthetic solver-term reporting
 
 ## Related Pages
 

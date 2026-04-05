@@ -247,6 +247,9 @@ TGNN checkpoints saved by `scripts/training/train.py` include:
 - training history
 - optional evaluation metrics
 - resume state when checkpointing during training
+- sidecars written next to the checkpoint:
+  - `<checkpoint>.manifest.json`
+  - `<checkpoint>.model_card.json`
 
 DirectGNN checkpoints include the same core items and additionally store
 descriptor normalization stats when descriptor augmentation is enabled:

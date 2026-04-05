@@ -13,9 +13,21 @@ What is available today:
 - checkpoints produced locally by the training scripts
 - per-seed and per-model checkpoints produced by experiment runners
 - consistent loading through `tgnn_solv.inference.load_model`
+- checkpoint sidecars emitted by the maintained training CLIs:
+  - `<checkpoint>.manifest.json`
+  - `<checkpoint>.model_card.json`
 
 That means the model zoo is currently a schema and workflow page rather than a
 download catalog.
+
+It is also useful to separate three artifact classes:
+
+- trainable checkpoints
+- benchmark bundles (`summary.csv`, `report.json`, `predictions.csv`,
+  `run_manifest.json`, `benchmark_card.json`)
+- lab-history JSON artifacts under `results/lab_runs/`
+
+Only the first class belongs to the model zoo in the strict sense.
 
 ## Where Checkpoints Come From
 
@@ -62,6 +74,14 @@ when descriptor augmentation is enabled:
 - `descriptor_mean`
 - `descriptor_std`
 
+Current tooling scope:
+
+- `TGNN-Solv` checkpoints support the full physics-facing inference workbench
+- `DirectGNN` checkpoints support `Run & inspect`, `Uncertainty lab`, and
+  `Calibration dashboard`
+- checkpoint model cards now capture capability flags such as descriptor
+  augmentation, GC priors, and uncertainty support
+
 ## Recommended Local Naming
 
 If you are creating your own checkpoint library, use names that encode:
@@ -81,8 +101,13 @@ directgnn_desc_scaffold_200_seed42.pt
 
 ## Suggested Metadata To Record
 
-For any checkpoint you intend to reuse or share, keep a sidecar JSON or README
-with:
+For any checkpoint you intend to reuse or share, keep or publish:
+
+- the checkpoint itself
+- the emitted `*.manifest.json`
+- the emitted `*.model_card.json`
+
+Those sidecars should contain at least:
 
 - training command
 - config path
@@ -116,6 +141,10 @@ Where `registry.json` contains:
 - notes
 - commit hash
 
+The maintained checkpoint sidecars already cover most of that schema, so a
+local registry can now be mostly an indexing layer rather than a place where
+you hand-write provenance from scratch.
+
 ## Current Site-Documented Artifacts
 
 Two local artifact families are already important enough to mention here:
@@ -139,6 +168,18 @@ Expected path:
 Purpose:
 
 - matched-budget TGNN-vs-DirectGNN diagnostics with intermediate exports
+
+### External competitor benchmark outputs
+
+Expected path:
+
+- `results/external_baselines/article_benchmark/`
+
+Purpose:
+
+- benchmark bundles for FastSolv and native-retrained SolProp
+- directly comparable in `Benchmark Studio`, but not model-zoo checkpoints in
+  the same sense as TGNN/DirectGNN training outputs
 
 ## If You Want a Public Download Section Later
 

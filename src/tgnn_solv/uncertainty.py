@@ -37,8 +37,10 @@ import torch
 import torch.nn as nn
 from torch_geometric.data import Batch
 
+from .baselines.direct_gnn import DirectGNN
 from .model import TGNNSolv
 from .features import (
+    compute_molecular_descriptors,
     smiles_to_descriptor_prior_features,
     smiles_to_graph,
     smiles_to_group_prior_features,
@@ -81,12 +83,38 @@ def _prepare_inputs(
 
 
 def _prepare_forward_kwargs(
-    model: TGNNSolv,
+    model: TGNNSolv | DirectGNN,
     solute_smiles: str,
     solvent_smiles: str,
     device: torch.device,
 ) -> dict[str, Any]:
     """Build optional forward kwargs required by the current model config."""
+    if isinstance(model, DirectGNN):
+        kwargs: dict[str, Any] = {}
+        if model.cfg.use_morgan_features:
+            sol_fp = smiles_to_morgan_fp(
+                solute_smiles,
+                radius=model.cfg.morgan_radius,
+                n_bits=model.cfg.morgan_n_bits,
+            )
+            slv_fp = smiles_to_morgan_fp(
+                solvent_smiles,
+                radius=model.cfg.morgan_radius,
+                n_bits=model.cfg.morgan_n_bits,
+            )
+            if sol_fp is None or slv_fp is None:
+                raise ValueError("Failed to compute Morgan fingerprints for DirectGNN uncertainty inference.")
+            kwargs["solute_morgan_fp"] = torch.tensor(sol_fp, device=device).unsqueeze(0)
+            kwargs["solvent_morgan_fp"] = torch.tensor(slv_fp, device=device).unsqueeze(0)
+        if model.cfg.use_descriptor_augmentation:
+            sol_desc = compute_molecular_descriptors(solute_smiles)
+            slv_desc = compute_molecular_descriptors(solvent_smiles)
+            if sol_desc is None or slv_desc is None:
+                raise ValueError("Failed to compute RDKit descriptors for DirectGNN uncertainty inference.")
+            kwargs["solute_descriptors"] = torch.tensor(sol_desc, device=device).unsqueeze(0)
+            kwargs["solvent_descriptors"] = torch.tensor(slv_desc, device=device).unsqueeze(0)
+        return kwargs
+
     kwargs: dict[str, Any] = {
         "solvent_type": torch.tensor(
             [solvent_type_id_from_smiles(solvent_smiles)],
@@ -161,6 +189,30 @@ def _summarize_samples(samples: dict[str, list[float]]) -> dict[str, float]:
     return result
 
 
+def _sample_outputs(
+    model: TGNNSolv | DirectGNN,
+    out: dict[str, Any],
+) -> dict[str, float]:
+    """Extract uncertainty-ready scalar outputs from one forward pass."""
+    samples = {
+        "ln_x2": float(out["ln_x2"].item()),
+        "x2": float(out["x2"].item()),
+    }
+    if isinstance(model, DirectGNN):
+        return samples
+    samples.update(
+        {
+            "gamma_2": math.exp(out["physics"]["ln_gamma_2"].item()),
+            "T_m": float(out["fusion_params"]["T_m"].item()),
+            "dH_fus": float(out["fusion_params"]["dH_fus"].item()),
+            "Phi": float(out["physics"]["Phi"].item()),
+            "ln_gamma_2": float(out["physics"]["ln_gamma_2"].item()),
+            "correction": float(out["correction"].item()),
+        }
+    )
+    return samples
+
+
 # ================================================================== #
 #  MC-Dropout Predictor                                               #
 # ================================================================== #
@@ -180,10 +232,11 @@ class MCDropoutPredictor:
         Number of stochastic forward passes (default 30).
     """
 
-    def __init__(self, model: TGNNSolv, n_samples: int = 30) -> None:
+    def __init__(self, model: TGNNSolv | DirectGNN, n_samples: int = 30) -> None:
         self.model = model
         self.n_samples = n_samples
         self.device = next(model.parameters()).device
+        self.model_family = "direct_gnn" if isinstance(model, DirectGNN) else "tgnn_solv"
 
     @torch.no_grad()
     def predict(
@@ -221,28 +274,24 @@ class MCDropoutPredictor:
         samples = {
             "ln_x2": [],
             "x2": [],
-            "gamma_2": [],
-            "T_m": [],
-            "dH_fus": [],
-            "Phi": [],
-            "ln_gamma_2": [],
-            "correction": [],
         }
+        if not isinstance(self.model, DirectGNN):
+            samples.update(
+                {
+                    "gamma_2": [],
+                    "T_m": [],
+                    "dH_fus": [],
+                    "Phi": [],
+                    "ln_gamma_2": [],
+                    "correction": [],
+                }
+            )
 
         for _ in trange(self.n_samples, desc="MC-dropout samples", leave=False):
             out = self.model(sol_b, slv_b, T_t, **forward_kwargs)
-            samples["ln_x2"].append(out["ln_x2"].item())
-            samples["x2"].append(out["x2"].item())
-            samples["gamma_2"].append(
-                math.exp(out["physics"]["ln_gamma_2"].item())
-            )
-            samples["T_m"].append(out["fusion_params"]["T_m"].item())
-            samples["dH_fus"].append(out["fusion_params"]["dH_fus"].item())
-            samples["Phi"].append(out["physics"]["Phi"].item())
-            samples["ln_gamma_2"].append(
-                out["physics"]["ln_gamma_2"].item()
-            )
-            samples["correction"].append(out["correction"].item())
+            sample = _sample_outputs(self.model, out)
+            for key, value in sample.items():
+                samples[key].append(value)
 
         # Restore full eval mode
         self.model.eval()
@@ -252,6 +301,7 @@ class MCDropoutPredictor:
             "solvent": solvent_smiles,
             "T": T,
             "n_samples": self.n_samples,
+            "model_family": self.model_family,
         }
         result.update(_summarize_samples(samples))
         return result
@@ -301,11 +351,15 @@ class EnsemblePredictor:
         K trained models (different random seeds / data folds).
     """
 
-    def __init__(self, models: list[TGNNSolv]) -> None:
+    def __init__(self, models: list[TGNNSolv | DirectGNN]) -> None:
         if len(models) < 2:
             raise ValueError("Ensemble requires ≥ 2 models")
+        families = {"direct_gnn" if isinstance(model, DirectGNN) else "tgnn_solv" for model in models}
+        if len(families) != 1:
+            raise ValueError("All ensemble members must belong to the same model family.")
         self.models = models
         self.device = next(models[0].parameters()).device
+        self.model_family = next(iter(families))
 
     @torch.no_grad()
     def predict(
@@ -322,11 +376,16 @@ class EnsemblePredictor:
         samples = {
             "ln_x2": [],
             "x2": [],
-            "gamma_2": [],
-            "T_m": [],
-            "dH_fus": [],
-            "correction": [],
         }
+        if self.model_family != "direct_gnn":
+            samples.update(
+                {
+                    "gamma_2": [],
+                    "T_m": [],
+                    "dH_fus": [],
+                    "correction": [],
+                }
+            )
 
         for model in progress(
             self.models, desc="Ensemble models", leave=False
@@ -339,20 +398,16 @@ class EnsemblePredictor:
                 self.device,
             )
             out = model(sol_b, slv_b, T_t, **forward_kwargs)
-            samples["ln_x2"].append(out["ln_x2"].item())
-            samples["x2"].append(out["x2"].item())
-            samples["gamma_2"].append(
-                math.exp(out["physics"]["ln_gamma_2"].item())
-            )
-            samples["T_m"].append(out["fusion_params"]["T_m"].item())
-            samples["dH_fus"].append(out["fusion_params"]["dH_fus"].item())
-            samples["correction"].append(out["correction"].item())
+            sample = _sample_outputs(model, out)
+            for key, value in sample.items():
+                samples[key].append(value)
 
         result = {
             "solute": solute_smiles,
             "solvent": solvent_smiles,
             "T": T,
             "n_models": len(self.models),
+            "model_family": self.model_family,
         }
         result.update(_summarize_samples(samples))
         return result

@@ -40,6 +40,12 @@ For the interactive GUI as well:
 pip install -e ".[gui,dev]"
 ```
 
+For the external baseline wrappers as well:
+
+```bash
+pip install -e ".[baselines]"
+```
+
 ## Experiment Lab
 
 The repository includes a maintained Streamlit control surface for the full
@@ -61,7 +67,7 @@ The lab covers:
 - `Pipeline Studio` for repo-backed DAG editing and shell export
 - `Model Architect` for visual TGNN-Solv / DirectGNN editing
 - `Inference` with persistent history, uncertainty, calibration, and OOD
-- `Results & Plots` with artifact registry, lineage graph, and diff
+- `Results & Plots` with `Benchmark Studio`, artifact registry, lineage graph, and diff
 - `Planner` with a kanban board, schedule, and follow-up tasks from lab history
 - in-app documentation browsing
 
@@ -109,7 +115,7 @@ python scripts/data/prepare_data.py \
     --seed 42
 ```
 
-Train one TGNN-Solv model with the paper curriculum:
+Train one TGNN-Solv model with the original broad paper curriculum:
 
 ```bash
 python scripts/training/train.py \
@@ -138,7 +144,7 @@ Run the canonical multi-seed comparison:
 
 ```bash
 python scripts/experiments/run_seeds.py \
-    --config configs/paper_config.yaml \
+    --config configs/paper_config_tuned.yaml \
     --train-data notebooks/data/processed/train.csv \
     --val-data notebooks/data/processed/val.csv \
     --test-data notebooks/data/processed/test.csv \
@@ -154,7 +160,7 @@ Evaluate a checkpoint:
 ```bash
 python scripts/evaluation/evaluate_complete.py \
     --test-data notebooks/data/processed/test.csv \
-    --tgnn-checkpoint checkpoints/tgnn_solv_trained.pt \
+    --tgnn-checkpoint checkpoints/tgnn_solv_tuned.pt \
     --output results/full_evaluation.json \
     --verbose
 ```
@@ -232,6 +238,53 @@ python scripts/experiments/run_medium_budget_comparison.py \
     --device cuda
 ```
 
+External article-comparison baselines on the same split:
+
+```bash
+python scripts/experiments/run_external_baseline_benchmark.py \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --out-dir results/external_baselines/article_benchmark \
+    --split-mode solute_scaffold \
+    --fastsolv-mode both \
+    --solprop-mode native
+```
+
+Benchmark an arbitrary custom model predictions CSV:
+
+```bash
+python scripts/evaluation/benchmark_custom_model.py \
+    --model-name my_model \
+    --test-data notebooks/data/processed/test.csv \
+    --predictions-csv results/custom_predictions.csv \
+    --pred-lnx2-col ln_x2_pred \
+    --out-dir results/custom_benchmarks/my_model
+```
+
+Benchmark a custom Python model through the formal adapter API:
+
+```bash
+python scripts/evaluation/benchmark_adapter_model.py \
+    --adapter your_package.your_adapter:YourAdapter \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --out-dir results/custom_benchmarks/your_adapter
+```
+
+Freeze a paper-facing benchmark release with checksums:
+
+```bash
+python scripts/experiments/build_benchmark_release.py \
+    --release-name article-benchmark \
+    --version 0.1.0 \
+    --processed-dir notebooks/data/processed \
+    --bundle-root results/external_baselines/article_benchmark \
+    --bundle-root results/custom_benchmarks \
+    --out-dir results/releases/article_benchmark_v0_1_0
+```
+
 The full-budget runner saves:
 
 - aggregate metrics for TGNN, DirectGNN, and oracle-evaluated TGNN
@@ -276,6 +329,12 @@ Post-hoc uncertainty and OOD helpers are also maintained:
 - `tgnn_solv.uncertainty.calibration_report`
 - `tgnn_solv.domain.ApplicabilityDomain`
 
+`MCDropoutPredictor` and `EnsemblePredictor` now support both maintained model
+families:
+
+- `TGNN-Solv`
+- `DirectGNN`
+
 Current OOD screening uses:
 
 - Mahalanobis distance in pair latent space
@@ -292,6 +351,16 @@ through:
 - `Inference -> History & compare`
 - `Inference -> Uncertainty lab`
 - `Inference -> Calibration dashboard`
+
+For bundle-level robustness slices after you already have `predictions.csv`,
+use:
+
+```bash
+python scripts/evaluation/run_thermo_stress_suite.py \
+    --predictions-csv results/custom_benchmarks/my_model/predictions.csv \
+    --train-data notebooks/data/processed/train.csv \
+    --output results/custom_benchmarks/my_model/stress_suite.json
+```
 
 ## Optional Stage 0 Pretraining
 
@@ -334,6 +403,9 @@ its temporary auxiliary heads after pretraining.
 - optional training-time oracle injection for supervised crystal parameters
 - optional Walden-rule consistency penalty
 - resumable training checkpoints in the main TGNN and DirectGNN CLIs
+- checkpoint sidecars:
+  - `<checkpoint>.manifest.json`
+  - `<checkpoint>.model_card.json`
 
 ## Provided Config Variants
 
@@ -375,8 +447,11 @@ its temporary auxiliary heads after pretraining.
 - `docs/experiment_lab.md`: interactive GUI for orchestration, inference,
   lineage, planning, and documentation browsing
 - `docs/baselines.md`: DirectGNN, RF, FastSolv, SolProp, and Ideal-SLE
-  workflows
-- `docs/reproducing_paper.md`: what `reproduce.sh` does and how to validate it
+  workflows plus canonical benchmark bundle semantics
+- `docs/results.md`: benchmark bundle sidecars, release manifests, and result
+  interpretation guidance
+- `docs/reproducing_paper.md`: structured `core` / `article` / `full`
+  reproduction profiles and validation guidance
 - `docs/script_reference.md`: maturity map for scripts and notebooks
 - `docs/repository_audit.md`: current repo strengths, gaps, and known
   limitations
