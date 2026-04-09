@@ -56,6 +56,7 @@ split_registry_module = _load_module(
     "tgnn_solv.data.split_registry",
     DATA_MODULE_ROOT / "split_registry.py",
 )
+config_module = _load_module("tgnn_solv.config", SRC_ROOT / "tgnn_solv" / "config.py")
 
 DataBuilder = builder_module.DataBuilder
 filter_for_sle = builder_module.filter_for_sle
@@ -70,6 +71,7 @@ build_split_metadata = split_registry_module.build_split_metadata
 get_split_display_name = split_registry_module.get_split_display_name
 normalize_split_mode = split_registry_module.normalize_split_mode
 split_paths = split_registry_module.split_paths
+TGNNSolvConfig = config_module.TGNNSolvConfig
 
 
 def parse_args() -> argparse.Namespace:
@@ -77,6 +79,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Prepare TGNN-Solv processed splits from raw data sources.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help=(
+            "Optional YAML config. When provided, include_water_solubility is "
+            "read from TGNNSolvConfig unless overridden by the CLI flag below."
+        ),
     )
     parser.add_argument(
         "--output-dir",
@@ -119,6 +130,15 @@ def parse_args() -> argparse.Namespace:
         "--skip-download",
         action="store_true",
         help="Disable network downloads and use only files already present on disk.",
+    )
+    parser.add_argument(
+        "--include-water-solubility",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Keep water-solvent rows in the supervised subset even though "
+            "water has only one atom. Defaults to the config value or True."
+        ),
     )
     return parser.parse_args()
 
@@ -247,6 +267,12 @@ def main() -> None:
     args = parse_args()
     validate_ratios(args.train_ratio, args.val_ratio, args.test_ratio)
     primary_split_mode = normalize_split_mode(args.split_mode)
+    resolved_include_water_solubility = True
+    if args.config:
+        cfg = TGNNSolvConfig.from_yaml(args.config)
+        resolved_include_water_solubility = bool(cfg.include_water_solubility)
+    if args.include_water_solubility is not None:
+        resolved_include_water_solubility = bool(args.include_water_solubility)
 
     output_dir = Path(args.output_dir)
     data_root, raw_dir = configure_data_paths(output_dir)
@@ -258,6 +284,7 @@ def main() -> None:
     print(f"Raw data root:    {raw_dir}")
     print(f"Primary split:    {primary_split_mode}")
     print(f"Seed:             {args.seed}")
+    print(f"Water supervision:{resolved_include_water_solubility}")
     print(
         f"Ratios:           train={args.train_ratio:.2f}, "
         f"val={args.val_ratio:.2f}, test={args.test_ratio:.2f}"
@@ -274,7 +301,11 @@ def main() -> None:
         bigsoldb = load_bigsoldb()
 
         print("\n2. Filtering for SLE compatibility...")
-        bigsoldb = filter_for_sle(bigsoldb, x2_max=0.98)
+        bigsoldb = filter_for_sle(
+            bigsoldb,
+            x2_max=0.98,
+            include_water_solubility=resolved_include_water_solubility,
+        )
         print(f"  After SLE filter: {len(bigsoldb):,}")
 
         print("\n3. Loading auxiliary sources...")

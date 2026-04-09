@@ -398,6 +398,7 @@ The easiest configuration flags to miss are:
 - `gc_prior_tm_scale`
 - `gc_prior_tm_bias`
 - `gc_prior_residual_freeze_epochs`
+- `include_water_solubility`
 - `use_oracle_injection`
 - `bridge_loss_weight`
 - `use_walden_check`
@@ -429,6 +430,12 @@ Core keys include:
 
 That second path is now the maintained route for standalone `gamma_inf`
 auxiliary supervision.
+
+For the primary `ln_x2` target, the canonical processed corpus now also keeps
+solvent-side water (`O`) in the supervised subset by default, even though it
+would fail the generic `min_atoms=2` solvent gate. Set
+`include_water_solubility: false` if you need to reproduce the legacy corpus
+without aqueous supervised rows.
 
 Optional keys appear when their feature paths are enabled:
 

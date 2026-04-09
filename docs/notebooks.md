@@ -20,7 +20,7 @@ jupyter lab
 
 | Notebook | Focus | When to use it | Link |
 | --- | --- | --- | --- |
-| `01_prepare_data.ipynb` | dataset construction, split logic, and external `IDAC` ingestion | when you want to inspect the processed CSV pipeline interactively, including `Zenodo idac.csv -> aux_only_gamma` and the underlying `ThermoML` regeneration path | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/01_prepare_data.ipynb) |
+| `01_prepare_data.ipynb` | dataset construction, split logic, external `IDAC` ingestion, and aqueous-supervision policy | when you want to inspect the processed CSV pipeline interactively, including `Zenodo idac.csv -> aux_only_gamma`, the `include_water_solubility` switch, and the underlying `ThermoML` regeneration path | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/01_prepare_data.ipynb) |
 | `02_train.ipynb` | TGNN-Solv training, optional Stage 0 pretraining, and encoder/config variants | when you want to step through the curriculum, `--pretrain`, and tuned TGNN follow-up configs | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/02_train.ipynb) |
 | `03_inference.ipynb` | single-point inference, temperature scan, and AD/OOD checks | when you want to inspect one system manually and keep solver-side `γ₂` separate from auxiliary `γ∞` labels | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/03_inference.ipynb) |
 | `04_evaluation.ipynb` | metrics, uncertainty, calibration, and error analysis | when you want richer post-hoc analysis than the quick CLI | [Open on GitHub](https://github.com/doctawho42/tgnn-solv/blob/main/notebooks/04_evaluation.ipynb) |
@@ -74,8 +74,10 @@ Current alignment notes:
   `scripts/training/train_with_pretrain.py`
 - `01_prepare_data.ipynb` now also documents the published Zenodo starter
   corpus (`idac.csv`, `idac_seed_dois.txt`), the maintained `ThermoML` helper
-  path through `scripts/data/extract_idac_from_thermoml.py`, and the resulting
-  `aux_only_gamma` supervision route
+  path through `scripts/data/extract_idac_from_thermoml.py`, the default
+  inclusion of supervised water-solubility rows via
+  `include_water_solubility`, and the resulting `aux_only_gamma`
+  supervision route
 - `08_optuna_tuning.ipynb` mirrors the current `OptunaTuner` model aliases,
   including GPS and descriptor-augmented TGNN variants
 

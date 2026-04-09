@@ -210,6 +210,8 @@ def collect_pipeline_data() -> dict[str, object]:
     solubility_rows = 0
     split_rows: dict[str, int] = {"train": 0, "val": 0, "test": 0}
     split_solubility_rows: dict[str, int] = {"train": 0, "val": 0, "test": 0}
+    water_supervised_rows = 0
+    water_supervised_pairs: set[tuple[str, str]] = set()
     aux_slots = 0
     aux_filled = 0
     unique_solutes: set[str] = set()
@@ -234,6 +236,11 @@ def collect_pipeline_data() -> dict[str, object]:
         if has_sol:
             solubility_rows += 1
             split_solubility_rows[split_name] += 1
+            if row.get("solvent_smiles") == "O":
+                water_supervised_rows += 1
+                water_supervised_pairs.add(
+                    (row.get("solute_smiles", ""), row.get("solvent_smiles", ""))
+                )
 
         aux_slots += 4
         aux_filled += int(has_tm) + int(has_dh) + int(has_hansen) + int(has_gamma)
@@ -279,6 +286,10 @@ def collect_pipeline_data() -> dict[str, object]:
         "split_solubility_rows_label": {
             key: compact_count(value) for key, value in split_solubility_rows.items()
         },
+        "water_supervised_rows": water_supervised_rows,
+        "water_supervised_rows_label": compact_count(water_supervised_rows),
+        "water_supervised_pairs": len(water_supervised_pairs),
+        "water_supervised_pairs_label": compact_count(len(water_supervised_pairs)),
         "ratios": ratios,
         "missing_fraction_aux": 1.0 - (aux_filled / aux_slots if aux_slots else 0.0),
         "missing_fraction_aux_label": f"{(1.0 - (aux_filled / aux_slots if aux_slots else 0.0)) * 100:.1f}%",

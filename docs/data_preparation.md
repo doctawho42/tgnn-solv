@@ -50,6 +50,22 @@ python scripts/data/prepare_data.py \
 `--skip-download` expects the raw files to already exist under the sibling
 `raw/` directory.
 
+Water-solubility supervision is now enabled by default for the canonical
+corpus. The SLE filter still enforces `min_atoms=2` for general solvents, but
+it keeps solvent-side water (`O`) so that measured aqueous `ln_x2` rows remain
+in the supervised subset. To reproduce the legacy corpus without supervised
+water rows, use either:
+
+```bash
+python scripts/data/prepare_data.py --no-include-water-solubility
+```
+
+or set the YAML config field:
+
+```yaml
+include_water_solubility: false
+```
+
 ## What the Script Does
 
 `scripts/data/prepare_data.py` performs the same high-level workflow as

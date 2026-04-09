@@ -134,3 +134,43 @@ def test_filter_for_sle_excludes_invalid_and_miscible() -> None:
     assert len(filtered) == 1
     assert filtered.iloc[0]["solute_smiles"] == "CCO"
     assert filtered.iloc[0]["solvent_smiles"] == "CO"
+
+
+def test_filter_for_sle_keeps_water_solubility_when_enabled() -> None:
+    df = pd.DataFrame(
+        {
+            "solute_smiles": ["CCO", "CCO", "CCO"],
+            "solvent_smiles": ["O", "N", "CO"],
+            "ln_x2": [np.log(0.2), np.log(0.2), np.log(0.2)],
+        }
+    )
+
+    filtered = filter_for_sle(
+        df,
+        x2_max=0.98,
+        min_atoms=2,
+        max_atoms=200,
+        include_water_solubility=True,
+    )
+
+    assert set(filtered["solvent_smiles"]) == {"O", "CO"}
+
+
+def test_filter_for_sle_excludes_water_solubility_when_disabled() -> None:
+    df = pd.DataFrame(
+        {
+            "solute_smiles": ["CCO", "CCO"],
+            "solvent_smiles": ["O", "CO"],
+            "ln_x2": [np.log(0.2), np.log(0.2)],
+        }
+    )
+
+    filtered = filter_for_sle(
+        df,
+        x2_max=0.98,
+        min_atoms=2,
+        max_atoms=200,
+        include_water_solubility=False,
+    )
+
+    assert set(filtered["solvent_smiles"]) == {"CO"}

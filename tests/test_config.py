@@ -70,6 +70,17 @@ def test_descriptor_hidden_dim_alias_prefers_new_config_field() -> None:
     assert cfg.resolved_descriptor_hidden_dim == 96
 
 
+def test_config_yaml_round_trip_preserves_water_supervision_flag(tmp_path: Path) -> None:
+    """Data-prep compatibility flags should survive YAML round-trip."""
+    cfg = TGNNSolvConfig(include_water_solubility=False)
+    path = tmp_path / "config.yaml"
+
+    cfg.to_yaml(str(path))
+    loaded = TGNNSolvConfig.from_yaml(str(path))
+
+    assert loaded.include_water_solubility is False
+
+
 @pytest.mark.parametrize(
     ("path", "expected_flags"),
     [

@@ -492,6 +492,14 @@ Additional split families:
 - `*_solute.csv`
 - `*_solvent.csv`
 
+Canonical data preparation now keeps solvent-side water (`O`) in the
+supervised `ln_x2` subset by default, even though water has only one atom and
+would otherwise fail the generic `min_atoms=2` solvent gate. To reproduce the
+legacy corpus without supervised aqueous rows, use either:
+
+- `python scripts/data/prepare_data.py --no-include-water-solubility`
+- `include_water_solubility: false` in the YAML config
+
 ### Dataset outputs
 
 `TGNNSolvDataset` returns `(solute_graph, solvent_graph, targets_dict)` with
@@ -536,6 +544,7 @@ High-signal flags that are easy to miss:
 - `gps_num_heads`
 - `gps_positional_encoding`
 - `gps_pe_dim`
+- `include_water_solubility`
 - `use_oracle_injection`
 - `bridge_loss_weight`
 - `use_walden_check`

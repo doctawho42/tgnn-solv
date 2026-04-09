@@ -276,7 +276,7 @@ function Figure1DataPipeline() {
     {
       id: "bigsoldb",
       title: "BigSolDBv2.1",
-      value: `~${pipeline.solubility_rows_label ?? "101.8k"} matched rows`,
+      value: `~${pipeline.solubility_rows_label ?? "108.3k"} matched rows`,
       subtitle: "solute · solvent · T · ln x₂",
       icon: "tube",
       color: COLORS.blue,
@@ -334,7 +334,7 @@ function Figure1DataPipeline() {
       footer={
         <StatStrip
           items={[
-            { label: "Unified rows", value: pipeline.total_rows_label ?? "120.2k" },
+            { label: "Unified rows", value: pipeline.total_rows_label ?? "127.1k" },
             { label: "Aux cells missing", value: pipeline.missing_fraction_aux_label ?? "85.0%" },
             {
               label: "Train/Test scaffold overlap",
@@ -435,8 +435,13 @@ function Figure1DataPipeline() {
               </div>
               <div className="pipeline-aside-card">
                 <strong>Processed split</strong>
-                <span>{pipeline.split_rows_label?.train ?? "104.6k"} / {pipeline.split_rows_label?.val ?? "7.8k"} / {pipeline.split_rows_label?.test ?? "7.8k"} rows</span>
+                <span>{pipeline.split_rows_label?.train ?? "111.0k"} / {pipeline.split_rows_label?.val ?? "8.0k"} / {pipeline.split_rows_label?.test ?? "8.0k"} rows</span>
                 <small>train / val / test after scaffold-aware partitioning.</small>
+              </div>
+              <div className="pipeline-aside-card">
+                <strong>Aqueous supervision</strong>
+                <span>{pipeline.water_supervised_rows_label ?? "6.5k"} water rows · {pipeline.water_supervised_pairs_label ?? "737"} pairs</span>
+                <small>Water (`O`) is kept in the canonical supervised corpus by default; use `--no-include-water-solubility` for the legacy ablation path.</small>
               </div>
               <div className="pipeline-aside-card">
                 <strong>γ∞ display values</strong>
@@ -468,15 +473,15 @@ function Figure1DataPipeline() {
           <div className="split-bar__stats">
             <div>
               <span>Train rows</span>
-              <strong>{pipeline.split_rows_label?.train ?? "104.6k"}</strong>
+              <strong>{pipeline.split_rows_label?.train ?? "111.0k"}</strong>
             </div>
             <div>
               <span>Val rows</span>
-              <strong>{pipeline.split_rows_label?.val ?? "7.8k"}</strong>
+              <strong>{pipeline.split_rows_label?.val ?? "8.0k"}</strong>
             </div>
             <div>
               <span>Test rows</span>
-              <strong>{pipeline.split_rows_label?.test ?? "7.8k"}</strong>
+              <strong>{pipeline.split_rows_label?.test ?? "8.0k"}</strong>
             </div>
           </div>
 

@@ -124,6 +124,7 @@ class TGNNSolvConfig:
 
     # --- Training ---
     batch_size: int = 64
+    include_water_solubility: bool = True
     use_pair_temperature_batching: bool = True
     pair_temperature_min_group_size: int = 2
     pair_temperature_group_chunk_size: int = 4

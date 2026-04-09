@@ -24,6 +24,7 @@ def filter_for_sle(
     x2_max: float = 0.98,
     min_atoms: int = 2,
     max_atoms: int = 200,
+    include_water_solubility: bool = True,
 ) -> pd.DataFrame:
     """
     Remove records incompatible with the SLE framework.
@@ -40,12 +41,15 @@ def filter_for_sle(
     x2_max : maximum allowed mole fraction (removes miscible pairs)
     min_atoms : minimum heavy atoms per molecule
     max_atoms : maximum heavy atoms per molecule
+    include_water_solubility : keep supervised water-solvent rows even though
+        water (`O`) has only one atom and would otherwise fail `min_atoms`
 
     Returns
     -------
     Filtered DataFrame (reset index).
     """
     n0 = len(df)
+    water_smi = canonicalize("O") or "O"
 
     # 1. Miscible systems
     ln_x2_max = np.log(x2_max)
@@ -62,7 +66,14 @@ def filter_for_sle(
                 bad_idx.append(idx)
                 break
             n_at = mol.GetNumAtoms()
-            if n_at < min_atoms or n_at > max_atoms:
+            # Preserve supervised water rows by exempting the solvent-side
+            # water graph from the minimum-atom threshold only.
+            is_water_solvent = (
+                include_water_solubility
+                and col == "solvent_smiles"
+                and row[col] == water_smi
+            )
+            if n_at > max_atoms or (n_at < min_atoms and not is_water_solvent):
                 bad_idx.append(idx)
                 break
             # Fragmented molecules (e.g. [Na+].[Cl-])

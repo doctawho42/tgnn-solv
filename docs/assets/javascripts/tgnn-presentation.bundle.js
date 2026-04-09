@@ -20121,17 +20121,21 @@
       generatedAt: null
     },
     pipeline: {
-      total_rows: 120197,
-      total_rows_label: "120.2k",
-      solubility_rows: 101763,
-      solubility_rows_label: "101.8k",
-      unique_solutes: 19878,
-      split_rows: { train: 104625, val: 7785, test: 7787 },
-      split_rows_label: { train: "104.6k", val: "7.8k", test: "7.8k" },
-      split_solubility_rows: { train: 90808, val: 5385, test: 5570 },
-      split_solubility_rows_label: { train: "90.8k", val: "5.4k", test: "5.6k" },
+      total_rows: 127088,
+      total_rows_label: "127.1k",
+      solubility_rows: 108287,
+      solubility_rows_label: "108.3k",
+      unique_solutes: 19924,
+      split_rows: { train: 111035, val: 8026, test: 8027 },
+      split_rows_label: { train: "111.0k", val: "8.0k", test: "8.0k" },
+      split_solubility_rows: { train: 96798, val: 5663, test: 5826 },
+      split_solubility_rows_label: { train: "96.8k", val: "5.7k", test: "5.8k" },
+      water_supervised_rows: 6524,
+      water_supervised_rows_label: "6.5k",
+      water_supervised_pairs: 737,
+      water_supervised_pairs_label: "737",
       ratios: { train: 0.8, val: 0.1, test: 0.1 },
-      missing_fraction_aux: 0.8496,
+      missing_fraction_aux: 0.8497576482437366,
       missing_fraction_aux_label: "85.0%",
       idac_rows: 404,
       idac_rows_label: "404",
@@ -20517,7 +20521,7 @@
       {
         id: "bigsoldb",
         title: "BigSolDBv2.1",
-        value: `~${pipeline.solubility_rows_label ?? "101.8k"} matched rows`,
+        value: `~${pipeline.solubility_rows_label ?? "108.3k"} matched rows`,
         subtitle: "solute \xB7 solvent \xB7 T \xB7 ln x\u2082",
         icon: "tube",
         color: COLORS.blue,
@@ -20576,7 +20580,7 @@
           StatStrip,
           {
             items: [
-              { label: "Unified rows", value: pipeline.total_rows_label ?? "120.2k" },
+              { label: "Unified rows", value: pipeline.total_rows_label ?? "127.1k" },
               { label: "Aux cells missing", value: pipeline.missing_fraction_aux_label ?? "85.0%" },
               {
                 label: "Train/Test scaffold overlap",
@@ -20662,14 +20666,24 @@
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pipeline-aside-card", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Processed split" }),
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
-                    pipeline.split_rows_label?.train ?? "104.6k",
+                    pipeline.split_rows_label?.train ?? "111.0k",
                     " / ",
-                    pipeline.split_rows_label?.val ?? "7.8k",
+                    pipeline.split_rows_label?.val ?? "8.0k",
                     " / ",
-                    pipeline.split_rows_label?.test ?? "7.8k",
+                    pipeline.split_rows_label?.test ?? "8.0k",
                     " rows"
                   ] }),
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "train / val / test after scaffold-aware partitioning." })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pipeline-aside-card", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Aqueous supervision" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                    pipeline.water_supervised_rows_label ?? "6.5k",
+                    " water rows \xB7 ",
+                    pipeline.water_supervised_pairs_label ?? "737",
+                    " pairs"
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "Water (`O`) is kept in the canonical supervised corpus by default; use `--no-include-water-solubility` for the legacy ablation path." })
                 ] }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pipeline-aside-card", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "\u03B3\u221E display values" }),
@@ -20705,15 +20719,15 @@
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "split-bar__stats", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Train rows" }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: pipeline.split_rows_label?.train ?? "104.6k" })
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: pipeline.split_rows_label?.train ?? "111.0k" })
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Val rows" }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: pipeline.split_rows_label?.val ?? "7.8k" })
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: pipeline.split_rows_label?.val ?? "8.0k" })
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Test rows" }),
-                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: pipeline.split_rows_label?.test ?? "7.8k" })
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: pipeline.split_rows_label?.test ?? "8.0k" })
               ] })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pipeline-scaffold-real", children: [
