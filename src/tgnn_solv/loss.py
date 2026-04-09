@@ -54,6 +54,8 @@ class TGNNSolvLoss(nn.Module):
             "T_m": 0.3,
             "dH": 0.3,
             "hansen": 0.2,
+            "timp_disp_hansen": 0.0,
+            "timp_polar_hansen": 0.0,
             "gamma_inf": 0.5,
             "mono": 0.1,
             "res": 0.01,
@@ -210,6 +212,28 @@ class TGNNSolvLoss(nn.Module):
                     tgt_h = targets["hansen_sol"].to(dev)[mask]
                     losses["hansen"] = (
                         ((pred_h - tgt_h) / self.S_hansen).pow(2).mean()
+                    )
+            if (
+                "timp_channel_probes" in output
+                and isinstance(output["timp_channel_probes"], dict)
+            ):
+                mask = targets["hansen_mask"].to(dev)
+                probes = output["timp_channel_probes"]
+                target_hansen = targets["hansen_sol"].to(dev)
+                if w.get("timp_disp_hansen", 0) > 0 and mask.sum() > 0:
+                    pred_delta_d = probes["delta_d"][mask]
+                    true_delta_d = target_hansen[mask, 0]
+                    losses["timp_disp_hansen"] = (
+                        ((pred_delta_d - true_delta_d) / self.S_hansen).pow(2).mean()
+                    )
+                if w.get("timp_polar_hansen", 0) > 0 and mask.sum() > 0:
+                    pred_delta_p = probes["delta_p"][mask]
+                    pred_delta_h = probes["delta_h"][mask]
+                    true_delta_p = target_hansen[mask, 1]
+                    true_delta_h = target_hansen[mask, 2]
+                    losses["timp_polar_hansen"] = (
+                        ((pred_delta_p - true_delta_p) / self.S_hansen).pow(2).mean()
+                        + ((pred_delta_h - true_delta_h) / self.S_hansen).pow(2).mean()
                     )
 
         # ============================================================

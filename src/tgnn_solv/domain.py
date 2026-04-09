@@ -139,13 +139,16 @@ class ApplicabilityDomain:
 
             # Get pair vectors (stop before SLE solver)
             t_feat = make_temperature_features(T)
-            _, g_sol = self.model._encode_and_readout(
+            _, g_sol_payload, _, _ = self.model._encode_and_readout(
                 sol_b, "solute", temp_feat=t_feat
             )
-            _, g_slv = self.model._encode_and_readout(
+            _, g_slv_payload, _, _ = self.model._encode_and_readout(
                 slv_b, "solvent", temp_feat=t_feat
             )
-            g_pair = self.model.pair_repr(g_sol, g_slv)
+            g_pair = self.model._build_pair_representation(
+                g_sol_payload,
+                g_slv_payload,
+            )
             if getattr(self.model, "solvent_moe", None) is not None:
                 if solvent_type is None:
                     solvent_type = torch.full(
@@ -252,8 +255,16 @@ class ApplicabilityDomain:
     ) -> torch.Tensor:
         """Get pair vector for a single query."""
         self.model.eval()
-        sol_g = smiles_to_graph(solute_smiles)
-        slv_g = smiles_to_graph(solvent_smiles)
+        sol_g = smiles_to_graph(
+            solute_smiles,
+            use_gasteiger_charges=bool(getattr(self.model.cfg, "use_gasteiger_charges", False)),
+            use_phys_edge_features=bool(getattr(self.model.cfg, "use_phys_edge_features", False)),
+        )
+        slv_g = smiles_to_graph(
+            solvent_smiles,
+            use_gasteiger_charges=bool(getattr(self.model.cfg, "use_gasteiger_charges", False)),
+            use_phys_edge_features=bool(getattr(self.model.cfg, "use_phys_edge_features", False)),
+        )
         if sol_g is None or slv_g is None:
             raise ValueError("Invalid SMILES")
 
@@ -262,13 +273,16 @@ class ApplicabilityDomain:
         T_tensor = torch.tensor([T], device=self.device)
         t_feat = make_temperature_features(T_tensor)
 
-        _, g_sol = self.model._encode_and_readout(
+        _, g_sol_payload, _, _ = self.model._encode_and_readout(
             sol_b, "solute", temp_feat=t_feat
         )
-        _, g_slv = self.model._encode_and_readout(
+        _, g_slv_payload, _, _ = self.model._encode_and_readout(
             slv_b, "solvent", temp_feat=t_feat
         )
-        g_pair = self.model.pair_repr(g_sol, g_slv)
+        g_pair = self.model._build_pair_representation(
+            g_sol_payload,
+            g_slv_payload,
+        )
         if getattr(self.model, "solvent_moe", None) is not None:
             solvent_type = torch.tensor(
                 [solvent_type_id_from_smiles(solvent_smiles)],

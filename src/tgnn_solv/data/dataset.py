@@ -188,6 +188,8 @@ class TGNNSolvDataset(Dataset):
         use_descriptor_priors: bool = False,
         use_group_priors: bool = False,
         use_gc_priors_crystal: bool = False,
+        use_gasteiger_charges: bool = False,
+        use_phys_edge_features: bool = False,
     ) -> None:
         self.cache: dict[str, Data] | None = {} if cache else None
         self.use_morgan_features = use_morgan_features
@@ -197,6 +199,8 @@ class TGNNSolvDataset(Dataset):
         self.use_descriptor_priors = use_descriptor_priors
         self.use_group_priors = use_group_priors
         self.use_gc_priors_crystal = use_gc_priors_crystal
+        self.use_gasteiger_charges = use_gasteiger_charges
+        self.use_phys_edge_features = use_phys_edge_features
         self.fp_cache: dict[str, torch.Tensor] | None = {} if cache and use_morgan_features else None
         self.descriptor_aug_cache: dict[str, torch.Tensor] | None = (
             {} if cache and use_descriptor_augmentation else None
@@ -243,7 +247,16 @@ class TGNNSolvDataset(Dataset):
         """Get graph from cache or build it."""
         if self.cache is not None and smi in self.cache:
             return self.cache[smi]
-        g = smiles_to_graph(smi)
+        try:
+            g = smiles_to_graph(
+                smi,
+                use_gasteiger_charges=self.use_gasteiger_charges,
+                use_phys_edge_features=self.use_phys_edge_features,
+            )
+        except TypeError:
+            # Legacy tests and some external callers monkeypatch `smiles_to_graph`
+            # with the historical single-argument signature.
+            g = smiles_to_graph(smi)
         if self.cache is not None and g is not None:
             self.cache[smi] = g
         return g
@@ -475,6 +488,8 @@ def make_loader(
     use_descriptor_priors: bool = False,
     use_group_priors: bool = False,
     use_gc_priors_crystal: bool = False,
+    use_gasteiger_charges: bool = False,
+    use_phys_edge_features: bool = False,
     seed: int = 42,
 ) -> DataLoader:
     """Create a single DataLoader with optional same-pair temperature batching."""
@@ -488,6 +503,8 @@ def make_loader(
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
         use_gc_priors_crystal=use_gc_priors_crystal,
+        use_gasteiger_charges=use_gasteiger_charges,
+        use_phys_edge_features=use_phys_edge_features,
     )
 
     if drop_last is None:
@@ -535,6 +552,8 @@ def make_loaders(
     use_descriptor_priors: bool = False,
     use_group_priors: bool = False,
     use_gc_priors_crystal: bool = False,
+    use_gasteiger_charges: bool = False,
+    use_phys_edge_features: bool = False,
     seed: int = 42,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
@@ -569,6 +588,8 @@ def make_loaders(
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
         use_gc_priors_crystal=use_gc_priors_crystal,
+        use_gasteiger_charges=use_gasteiger_charges,
+        use_phys_edge_features=use_phys_edge_features,
         seed=seed,
     )
     val_ld = make_loader(
@@ -585,6 +606,8 @@ def make_loaders(
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
         use_gc_priors_crystal=use_gc_priors_crystal,
+        use_gasteiger_charges=use_gasteiger_charges,
+        use_phys_edge_features=use_phys_edge_features,
     )
     test_ld = make_loader(
         test_df,
@@ -600,6 +623,8 @@ def make_loaders(
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
         use_gc_priors_crystal=use_gc_priors_crystal,
+        use_gasteiger_charges=use_gasteiger_charges,
+        use_phys_edge_features=use_phys_edge_features,
     )
 
     for name, frame, loader in [

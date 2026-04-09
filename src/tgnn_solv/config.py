@@ -23,18 +23,22 @@ class TGNNSolvConfig:
     # --- Architecture ---
     hidden_dim: int = 256
     n_gnn_layers: int = 6
-    encoder_type: str = "mpnn"  # "mpnn" or "gps"
+    encoder_type: str = "mpnn"  # "mpnn", "gps", or "timp"
     encoder_role_mode: str = "shared_residual"  # "shared_residual" or "split_late"
     encoder_role_specific_layers: int = 2
     gps_num_heads: int = 8
     gps_use_edge_attr: bool = True
     gps_positional_encoding: str = "laplacian"  # "laplacian" or "rwse"
     gps_pe_dim: int = 16
+    use_gasteiger_charges: bool = False
+    use_phys_edge_features: bool = False
     n_cross_attn_layers: int = 3
     n_attn_heads: int = 8
     dropout: float = 0.1
     pair_dim: int = 512
     interaction_mode: str = "cross_attn"  # "cross_attn" or "bipartite"
+    use_thermo_cross_attention: bool = False
+    thermo_cross_attention_beta_init: float = 0.1
     activity_model: str = "nrtl"  # "nrtl", "wilson", or "uniquac"
     nrtl_tau_mode: str = "ref_invT"  # "ref_invT", "legacy", or "abc"
     set2set_steps: int = 3

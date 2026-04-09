@@ -36,7 +36,7 @@ on them.
 | Entry point | Role | Status | Notes |
 |-------------|------|--------|-------|
 | `scripts/data/prepare_data.py` | Build processed splits from raw sources | Canonical | Writes all supported split families |
-| `scripts/training/train.py` | Train one TGNN-Solv model | Canonical | Three-phase curriculum |
+| `scripts/training/train.py` | Train one TGNN-Solv model | Canonical | Three-phase curriculum; supports `mpnn`, `gps`, and `timp` encoders |
 | `scripts/experiments/run_seeds.py` | Multi-seed wrapper | Canonical | Can call other train scripts too |
 | `scripts/evaluation/evaluate_complete.py` | Quick checkpoint evaluation | Canonical | Figure-ready arrays |
 | `scripts/experiments/run_split_comparisons.py` | Fair split-wise comparison | Canonical | TGNN, DirectGNN, RF modes |
@@ -48,7 +48,7 @@ on them.
 
 | Entry point | Role | Status | Notes |
 |-------------|------|--------|-------|
-| `scripts/training/train_directgnn.py` | Train DirectGNN baseline | Stable utility | Supports descriptor augmentation |
+| `scripts/training/train_directgnn.py` | Train DirectGNN baseline | Stable utility | Supports descriptor augmentation and TIMP/GPS backbones |
 | `scripts/training/train_with_pretrain.py` | Train TGNN-Solv with Stage 0 enabled by default | Stable utility | Thin wrapper over `train.py --pretrain --run-descriptor-probe`; useful for GPS and descriptor-augmented TGNN warm starts too |
 | `scripts/training/run_resume_safe_train.sh` | Resume-safe TGNN wrapper for cloud sessions | Stable utility | Wraps `train.py --resume` |
 | `scripts/evaluation/benchmark_tgnn_solv.py` | Rich benchmark via `Evaluator` | Stable utility | Use when you want more than quick eval |
@@ -69,6 +69,7 @@ on them.
 |-------------|------|--------|-------|
 | `scripts/experiments/run_ablation.py` | Multi-seed ablation sweeps | Research | Includes `fixed_group_priors` and `direct_gnn` |
 | `scripts/experiments/run_full_budget_experiment.py` | Full-budget TGNN-vs-DirectGNN diagnostic study | Research | Exports TGNN intermediates and oracle diagnostics |
+| `scripts/experiments/run_phase1_diagnostic.py` | Multi-seed full-budget wrapper with oracle and RF aggregation | Research | Writes per-seed subdirs, aggregate JSON, markdown summary, and paired t-tests |
 | `scripts/experiments/run_medium_budget_comparison.py` | Full-split medium-budget architecture comparison | Research | 4 TGNN variants, 2 DirectGNN variants, RF baseline |
 | `scripts/evaluation/validate_physics.py` | Physics-parameter diagnostics | Research | Useful for TGNN checkpoint inspection |
 | `scripts/evaluation/error_analysis.py` | Detailed residual analysis | Research | Consumes evaluation JSON |
@@ -172,6 +173,15 @@ than a separate model implementation.
 - exports `metrics.json`, `diagnostics.json`, and `tgnn_intermediates.csv`
 - passes `--checkpoint-every` through to the training CLIs
 - resumes from existing per-seed checkpoints when available
+
+### `scripts/experiments/run_phase1_diagnostic.py`
+
+- wraps the maintained training CLIs across multiple seeds
+- runs TGNN-Solv, DirectGNN, and optional RF descriptor/morgan/hybrid baselines
+- saves `seed_<n>/tgnn`, `seed_<n>/tgnn_oracle`, `seed_<n>/directgnn`, and optional `seed_<n>/rf`
+- writes `aggregate_metrics.json`, `statistical_tests.json`, and `summary.md`
+- reuses the TGNN oracle-evaluation path by forcing oracle injection during post-hoc intermediate export
+- auto-resumes from existing per-seed checkpoints when present
 
 ### `scripts/experiments/run_medium_budget_comparison.py`
 

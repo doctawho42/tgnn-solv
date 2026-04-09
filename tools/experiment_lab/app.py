@@ -4752,6 +4752,8 @@ if run_domain:
             use_descriptor_priors=bool(getattr(cfg, "use_descriptor_priors", False)),
             use_group_priors=bool(getattr(cfg, "use_group_priors", False)),
             use_gc_priors_crystal=bool(getattr(cfg, "use_gc_priors_crystal", False)),
+            use_gasteiger_charges=bool(getattr(cfg, "use_gasteiger_charges", False)),
+            use_phys_edge_features=bool(getattr(cfg, "use_phys_edge_features", False)),
         )
         ad = ApplicabilityDomain(
             model,

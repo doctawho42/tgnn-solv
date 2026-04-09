@@ -145,7 +145,11 @@ def extract_solute_embeddings(
             graphs = []
             kept_smiles = []
             for smiles in smiles_chunk:
-                graph = smiles_to_graph(smiles)
+                graph = smiles_to_graph(
+                    smiles,
+                    use_gasteiger_charges=bool(getattr(model.cfg, "use_gasteiger_charges", False)),
+                    use_phys_edge_features=bool(getattr(model.cfg, "use_phys_edge_features", False)),
+                )
                 if graph is None:
                     continue
                 graphs.append(graph)
@@ -162,11 +166,12 @@ def extract_solute_embeddings(
             )
             temp_feat = make_temperature_features(temperatures)
             encoder_t_feat = model._encoder_temp_features(temp_feat)
-            _, g_sol = model._encode_and_readout(
+            _, g_sol_payload, _, _ = model._encode_and_readout(
                 sol_batch,
                 role="solute",
                 temp_feat=encoder_t_feat,
             )
+            g_sol = g_sol_payload["value"]
 
             if model.cfg.use_morgan_features:
                 fps: list[np.ndarray] = []

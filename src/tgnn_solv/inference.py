@@ -21,6 +21,7 @@ from .features import (
     EDGE_FEAT_DIM,
     NODE_FEAT_DIM,
     compute_molecular_descriptors,
+    graph_feature_spec_from_config,
     smiles_to_descriptor_prior_features,
     smiles_to_graph,
     smiles_to_group_prior_features,
@@ -30,6 +31,22 @@ from .group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from .model import TGNNSolv
 from .baselines.direct_gnn import DirectGNN
 from .data.solvent_types import solvent_type_id_from_smiles
+
+
+def _smiles_to_graph_for_model(
+    smiles: str,
+    model: TGNNSolv | DirectGNN,
+):
+    """Build a graph that matches the feature flags stored on the loaded model config."""
+    return smiles_to_graph(
+        smiles,
+        use_gasteiger_charges=bool(
+            getattr(model.cfg, "use_gasteiger_charges", False)
+        ),
+        use_phys_edge_features=bool(
+            getattr(model.cfg, "use_phys_edge_features", False)
+        ),
+    )
 
 
 # ================================================================== #
@@ -54,8 +71,8 @@ def predict_solubility(
 
     model.eval()
 
-    sol_graph = smiles_to_graph(solute_smiles)
-    slv_graph = smiles_to_graph(solvent_smiles)
+    sol_graph = _smiles_to_graph_for_model(solute_smiles, model)
+    slv_graph = _smiles_to_graph_for_model(solvent_smiles, model)
     if sol_graph is None:
         raise ValueError(f"Cannot parse solute SMILES: {solute_smiles}")
     if slv_graph is None:
@@ -395,8 +412,8 @@ def predict_direct_solubility(
 
     model.eval()
 
-    sol_graph = smiles_to_graph(solute_smiles)
-    slv_graph = smiles_to_graph(solvent_smiles)
+    sol_graph = _smiles_to_graph_for_model(solute_smiles, model)
+    slv_graph = _smiles_to_graph_for_model(solvent_smiles, model)
     if sol_graph is None:
         raise ValueError(f"Cannot parse solute SMILES: {solute_smiles}")
     if slv_graph is None:
@@ -534,8 +551,8 @@ def save_model(
     checkpoint = {
         "model_state": model.state_dict(),
         "config": cfg.__dict__,
-        "node_feat_dim": NODE_FEAT_DIM,
-        "edge_feat_dim": EDGE_FEAT_DIM,
+        "node_feat_dim": int(getattr(model, "node_feat_dim", NODE_FEAT_DIM)),
+        "edge_feat_dim": int(getattr(model, "edge_feat_dim", EDGE_FEAT_DIM)),
         "metadata": metadata or {},
     }
     if cfg.use_descriptor_augmentation:
@@ -582,8 +599,9 @@ def load_model(
         cfg = TGNNSolvConfig(**cfg_dict)
     else:
         cfg = TGNNSolvConfig(**checkpoint["config"])
-    node_feat_dim = int(checkpoint.get("node_feat_dim", NODE_FEAT_DIM))
-    edge_feat_dim = int(checkpoint.get("edge_feat_dim", EDGE_FEAT_DIM))
+    feature_spec = graph_feature_spec_from_config(cfg)
+    node_feat_dim = int(checkpoint.get("node_feat_dim", feature_spec.node_dim))
+    edge_feat_dim = int(checkpoint.get("edge_feat_dim", feature_spec.edge_dim))
     model = TGNNSolv(
         node_feat_dim=node_feat_dim,
         edge_feat_dim=edge_feat_dim,
@@ -638,9 +656,10 @@ def load_directgnn_model(
             f"Top-level keys: {top_keys or 'none'}."
         )
     cfg = TGNNSolvConfig(**checkpoint["config"])
+    feature_spec = graph_feature_spec_from_config(cfg)
     model = DirectGNN(
-        node_feat_dim=int(checkpoint.get("node_feat_dim", NODE_FEAT_DIM)),
-        edge_feat_dim=int(checkpoint.get("edge_feat_dim", EDGE_FEAT_DIM)),
+        node_feat_dim=int(checkpoint.get("node_feat_dim", feature_spec.node_dim)),
+        edge_feat_dim=int(checkpoint.get("edge_feat_dim", feature_spec.edge_dim)),
         cfg=cfg,
     ).to(device)
     if "model_state" in checkpoint:

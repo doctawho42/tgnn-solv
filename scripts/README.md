@@ -60,6 +60,7 @@ They delegate to the legacy entry points, so behavior stays identical.
 - `run_ablation.py`
 - `run_split_comparisons.py`
 - `run_full_budget_experiment.py`
+- `run_phase1_diagnostic.py`
 - `run_medium_budget_comparison.py`
 - `run_optuna.py`
 - `reproduce_paper.py`
@@ -113,6 +114,10 @@ The main TGNN training entrypoint now also covers the newer maintained model
 surfaces:
 
 - GPS encoder configs through `encoder_type="gps"`
+- TIMP encoder configs through `encoder_type="timp"`
+  - optional `use_gasteiger_charges`
+  - optional `use_phys_edge_features`
+  - optional `use_thermo_cross_attention`
 - TGNN descriptor augmentation with stored descriptor normalization stats
 - Stage 0 warm starts through `--pretrain` / `--pretrain-checkpoint`
 
@@ -125,10 +130,18 @@ python scripts/training/train.py --help
 python scripts/training/train_with_pretrain.py --help
 python scripts/evaluation/evaluate_complete.py --help
 python scripts/evaluation/benchmark_adapter_model.py --help
+python scripts/experiments/run_phase1_diagnostic.py --help
 python scripts/experiments/run_medium_budget_comparison.py --help
 python scripts/experiments/build_benchmark_release.py --help
 python scripts/external/run_fastsolv.py --help
 python scripts/launch_lab.py
 ```
+
+`run_phase1_diagnostic.py` is the maintained multi-seed wrapper when you want:
+
+- matched TGNN-Solv vs DirectGNN runs across several seeds
+- optional RF descriptor/morgan/hybrid baselines in the same output tree
+- automatic TGNN oracle evaluation and `tgnn_intermediates.csv` export
+- one aggregate JSON/markdown bundle with paired t-tests
 
 Legacy top-level paths remain supported and unchanged.

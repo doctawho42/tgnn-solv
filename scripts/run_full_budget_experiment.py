@@ -255,6 +255,8 @@ def build_loader(
         use_descriptor_priors=cfg.use_descriptor_priors,
         use_group_priors=cfg.use_group_priors,
         use_gc_priors_crystal=cfg.use_gc_priors_crystal,
+        use_gasteiger_charges=cfg.use_gasteiger_charges,
+        use_phys_edge_features=cfg.use_phys_edge_features,
         seed=seed,
     )
 

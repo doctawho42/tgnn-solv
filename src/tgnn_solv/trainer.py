@@ -48,6 +48,7 @@ LOGGER = logging.getLogger(__name__)
 DEFAULT_PHASE_WEIGHTS = {
     1: {
         "sol": 0.0, "T_m": 1.0, "dH": 1.0, "hansen": 1.0,
+        "timp_disp_hansen": 0.0, "timp_polar_hansen": 0.0,
         "gamma_inf": 1.0,
         "mono": 0.0, "res": 0.0, "bridge": 0.0, "tau_reg": 0.0,
         "phys_pref": 0.0, "direct_reg": 0.0, "direct_nll": 0.0,
@@ -56,6 +57,7 @@ DEFAULT_PHASE_WEIGHTS = {
     },
     2: {
         "sol": 1.0, "T_m": 0.05, "dH": 0.05, "hansen": 0.05,
+        "timp_disp_hansen": 0.0, "timp_polar_hansen": 0.0,
         "gamma_inf": 0.1,
         "mono": 0.0, "res": 0.01, "bridge": 0.0,
         "tau_reg": 0.002,
@@ -70,6 +72,7 @@ DEFAULT_PHASE_WEIGHTS = {
     },
     3: {
         "sol": 1.0, "T_m": 0.03, "dH": 0.03, "hansen": 0.03,
+        "timp_disp_hansen": 0.0, "timp_polar_hansen": 0.0,
         "gamma_inf": 0.05,
         "mono": 0.1, "res": 0.02, "bridge": 0.0,
         "tau_reg": 0.002,
@@ -164,6 +167,9 @@ class TGNNSolvTrainer:
             defaults["descriptor_prior"] = self.cfg.descriptor_prior_reg_weight
         if phase >= 2 and self.cfg.group_prior_reg_weight > 0:
             defaults["group_prior"] = self.cfg.group_prior_reg_weight
+        if self.cfg.encoder_type == "timp":
+            defaults["timp_disp_hansen"] = 0.05 if phase == 1 else 0.02
+            defaults["timp_polar_hansen"] = 0.05 if phase == 1 else 0.02
         return defaults
 
     def state_dict(self) -> TrainerStateDict:
@@ -386,12 +392,14 @@ class TGNNSolvTrainer:
         nrtl_t_feat = model._nrtl_temp_features(t_feat)
 
         # Encode without leaking temperature into crystal-property heads unless requested.
-        _, g_sol = model._encode_and_readout(
+        _, g_sol_payload, _, _ = model._encode_and_readout(
             sol_batch, "solute", temp_feat=encoder_t_feat
         )
-        _, g_slv = model._encode_and_readout(
+        _, g_slv_payload, _, _ = model._encode_and_readout(
             slv_batch, "solvent", temp_feat=encoder_t_feat
         )
+        g_sol = g_sol_payload["value"]
+        g_slv = g_slv_payload["value"]
         if model.cfg.use_morgan_features:
             if solute_morgan_fp is None or solvent_morgan_fp is None:
                 raise ValueError(
@@ -427,7 +435,10 @@ class TGNNSolvTrainer:
             T_m_gc = model._calibrate_gc_tm_prior(T_m_gc.to(g_sol))
             dH_fus_gc = dH_fus_gc.to(g_sol)
             dCp_fus_gc = dCp_fus_gc.to(g_sol)
-        g_pair = model.pair_repr(g_sol, g_slv)
+        g_pair = model._build_pair_representation(
+            g_sol_payload,
+            g_slv_payload,
+        )
         g_pair = model._augment_pair_representation(
             g_pair,
             solute_descriptors=solute_descriptors,
@@ -494,8 +505,22 @@ class TGNNSolvTrainer:
 
         B = T.shape[0]
         dummy = torch.zeros(B, device=T.device)
+        timp_channel_probes = None
+        if (
+            model.is_timp
+            and model.timp_disp_probe is not None
+            and model.timp_polar_probe is not None
+            and g_sol_payload["disp"] is not None
+            and g_sol_payload["polar"] is not None
+        ):
+            polar_probe = model.timp_polar_probe(g_sol_payload["polar"])
+            timp_channel_probes = {
+                "delta_d": model.timp_disp_probe(g_sol_payload["disp"]).squeeze(-1),
+                "delta_p": polar_probe[:, 0],
+                "delta_h": polar_probe[:, 1],
+            }
 
-        return {
+        output = {
             "ln_x2": dummy,
             "fusion_params": fusion_params,
             "nrtl_params": nrtl_params,
@@ -511,6 +536,9 @@ class TGNNSolvTrainer:
             "correction": dummy,
             "gate": torch.tensor(0.0, device=T.device),
         }
+        if timp_channel_probes is not None:
+            output["timp_channel_probes"] = timp_channel_probes
+        return output
 
     # -------------------------------------------------------------- #
     #  Train one epoch                                                #

@@ -92,6 +92,10 @@ The encoder is selected by `encoder_type`:
 - `encoder_type="gps"`
   - `GPSEncoder`, which combines the local message-passing block with
     graph-global multi-head attention and per-graph positional encodings
+- `encoder_type="timp"`
+  - `TIMPEncoder`, which splits message passing into dispersive and polar
+    channels and can optionally consume folded heavy-atom Gasteiger charges,
+    physical edge features, and thermo-biased cross-attention
 
 When `encoder_type="gps"`, positional encodings are computed on the fly from
 the current batch graph:
@@ -102,7 +106,9 @@ the current batch graph:
   - random-walk structural encodings
 
 `gps_pe_dim`, `gps_num_heads`, and `gps_use_edge_attr` control the size and
-behavior of that encoder path.
+behavior of the GPS path. TIMP-specific controls include
+`use_gasteiger_charges`, `use_phys_edge_features`,
+`use_thermo_cross_attention`, and `thermo_cross_attention_beta_init`.
 
 Both encoder families support:
 
@@ -309,6 +315,7 @@ Optional DirectGNN feature paths:
 
 - `use_morgan_features=True`
 - `use_descriptor_augmentation=True`
+- `encoder_type="gps"` or `encoder_type="timp"`
 
 ### Descriptor augmentation
 

@@ -32,6 +32,7 @@ from tgnn_solv.data.solvent_types import solvent_type_id_from_smiles
 from tgnn_solv.features import (
     EDGE_FEAT_DIM,
     NODE_FEAT_DIM,
+    graph_feature_spec_from_config,
     smiles_to_descriptor_prior_features,
     smiles_to_graph,
     smiles_to_group_prior_features,
@@ -191,8 +192,9 @@ def load_model_from_checkpoint(path: Path, device: torch.device) -> tuple[TGNNSo
     else:
         cfg = config_data
 
-    node_feat_dim = int(checkpoint.get("node_feat_dim", NODE_FEAT_DIM))
-    edge_feat_dim = int(checkpoint.get("edge_feat_dim", EDGE_FEAT_DIM))
+    feature_spec = graph_feature_spec_from_config(cfg)
+    node_feat_dim = int(checkpoint.get("node_feat_dim", feature_spec.node_dim))
+    edge_feat_dim = int(checkpoint.get("edge_feat_dim", feature_spec.edge_dim))
 
     model = TGNNSolv(
         node_feat_dim=node_feat_dim,
@@ -499,8 +501,16 @@ def predict_pair_temperatures(
     device: torch.device,
 ) -> dict[str, np.ndarray]:
     """Predict one pair across a temperature grid in a single batched call."""
-    sol_graph = smiles_to_graph(solute_smiles)
-    slv_graph = smiles_to_graph(solvent_smiles)
+    sol_graph = smiles_to_graph(
+        solute_smiles,
+        use_gasteiger_charges=bool(getattr(model.cfg, "use_gasteiger_charges", False)),
+        use_phys_edge_features=bool(getattr(model.cfg, "use_phys_edge_features", False)),
+    )
+    slv_graph = smiles_to_graph(
+        solvent_smiles,
+        use_gasteiger_charges=bool(getattr(model.cfg, "use_gasteiger_charges", False)),
+        use_phys_edge_features=bool(getattr(model.cfg, "use_phys_edge_features", False)),
+    )
     if sol_graph is None or slv_graph is None:
         raise ValueError("Invalid SMILES for van't Hoff analysis.")
 

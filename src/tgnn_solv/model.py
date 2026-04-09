@@ -19,6 +19,7 @@ from .features import (
     DESCRIPTOR_Z_CLIP,
     EDGE_FEAT_DIM,
     NODE_FEAT_DIM,
+    graph_feature_spec_from_config,
     validate_descriptor_normalization_stats,
 )
 from .heads import (
@@ -59,8 +60,8 @@ class TGNNSolv(nn.Module):
 
     def __init__(
         self,
-        node_feat_dim: int = NODE_FEAT_DIM,
-        edge_feat_dim: int = EDGE_FEAT_DIM,
+        node_feat_dim: int | None = None,
+        edge_feat_dim: int | None = None,
         cfg: TGNNSolvConfig = TGNNSolvConfig(),
     ) -> None:
         super().__init__()
@@ -69,13 +70,25 @@ class TGNNSolv(nn.Module):
                 "Descriptor priors and fixed group priors are mutually exclusive."
             )
         self.cfg = cfg
+        feature_spec = graph_feature_spec_from_config(cfg)
+        if node_feat_dim is None:
+            node_feat_dim = feature_spec.node_dim
+        if edge_feat_dim is None:
+            edge_feat_dim = feature_spec.edge_dim
+        self.node_feat_dim = int(node_feat_dim)
+        self.edge_feat_dim = int(edge_feat_dim)
+        self.is_timp = cfg.encoder_type == "timp"
         self.use_molecular_priors = (
             cfg.use_descriptor_priors or cfg.use_group_priors
         )
         F = cfg.hidden_dim
 
         # --- Encoder ---
-        self.gnn = build_graph_encoder(node_feat_dim, edge_feat_dim, cfg)
+        self.gnn = build_graph_encoder(
+            self.node_feat_dim,
+            self.edge_feat_dim,
+            cfg,
+        )
 
         # --- Interaction stack ---
         self.interaction_mode = cfg.interaction_mode
@@ -83,7 +96,12 @@ class TGNNSolv(nn.Module):
         self.bipartite_layers = nn.ModuleList()
         if cfg.interaction_mode == "cross_attn":
             self.cross_attn_layers = nn.ModuleList([
-                SoluteSolventCrossAttention(F, cfg.n_attn_heads)
+                SoluteSolventCrossAttention(
+                    F,
+                    cfg.n_attn_heads,
+                    use_thermo_cross_attention=cfg.use_thermo_cross_attention,
+                    thermo_cross_attention_beta_init=cfg.thermo_cross_attention_beta_init,
+                )
                 for _ in range(cfg.n_cross_attn_layers)
             ])
         elif cfg.interaction_mode == "bipartite":
@@ -98,12 +116,38 @@ class TGNNSolv(nn.Module):
 
         # --- Readout ---
         self.readout = PhysicsAwareReadout(
-            F, set2set_steps=cfg.set2set_steps
+            F,
+            set2set_steps=cfg.set2set_steps,
+            channel_aware=self.is_timp,
+            channel_dim=(F // 2 if self.is_timp else None),
         )
         D_r = self.readout.output_dim  # hidden_dim * 3
 
         # --- Pair representation ---
         self.pair_repr = PairRepresentation(D_r, cfg.pair_dim)
+        self.timp_pair_repr_combined = None
+        self.timp_pair_repr_disp = None
+        self.timp_pair_repr_polar = None
+        self.timp_pair_proj = None
+        self.timp_disp_probe = None
+        self.timp_polar_probe = None
+        if self.is_timp:
+            channel_dim = F // 2
+            self.timp_pair_repr_combined = PairRepresentation(F * 3, cfg.pair_dim)
+            self.timp_pair_repr_disp = PairRepresentation(channel_dim, cfg.pair_dim)
+            self.timp_pair_repr_polar = PairRepresentation(channel_dim, cfg.pair_dim)
+            self.timp_pair_proj = nn.Linear(cfg.pair_dim * 3, cfg.pair_dim)
+            probe_hidden = max(channel_dim, 16)
+            self.timp_disp_probe = nn.Sequential(
+                nn.Linear(channel_dim, probe_hidden),
+                nn.SiLU(),
+                nn.Linear(probe_hidden, 1),
+            )
+            self.timp_polar_probe = nn.Sequential(
+                nn.Linear(channel_dim, probe_hidden),
+                nn.SiLU(),
+                nn.Linear(probe_hidden, 2),
+            )
         self.solvent_moe = None
         if cfg.use_solvent_moe:
             self.solvent_moe = SolventTypeMoE(
@@ -185,14 +229,14 @@ class TGNNSolv(nn.Module):
         self.sol_token_gate = nn.Parameter(torch.tensor(0.0))
         self.slv_token_gate = nn.Parameter(torch.tensor(0.0))
 
-    def _encode_and_readout(
+    def _run_encoder(
         self,
         data: Batch,
         role: str = "solute",
         temp_feat: Optional[torch.Tensor] = None,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Run GNN + readout on a batched graph."""
-        h_atoms = self.gnn(
+    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]:
+        """Run the configured encoder and normalize its return contract."""
+        encoder_out = self.gnn(
             data.x,
             data.edge_index,
             data.edge_attr,
@@ -200,8 +244,98 @@ class TGNNSolv(nn.Module):
             batch=data.batch,
             temp_feat=temp_feat,
         )
-        g_mol = self.readout(h_atoms, data.batch)
-        return h_atoms, g_mol
+        if isinstance(encoder_out, tuple) and len(encoder_out) == 3:
+            h_atoms, a_disp, a_polar = encoder_out
+            return h_atoms, a_disp, a_polar
+        return encoder_out, None, None
+
+    def _readout_payload(
+        self,
+        h_atoms: torch.Tensor,
+        batch: torch.Tensor,
+        *,
+        a_disp: Optional[torch.Tensor] = None,
+        a_polar: Optional[torch.Tensor] = None,
+    ) -> dict[str, Optional[torch.Tensor]]:
+        """Run graph pooling and always return a parts dict."""
+        payload = self.readout(
+            h_atoms,
+            batch,
+            a_disp=a_disp,
+            a_polar=a_polar,
+            return_parts=self.is_timp,
+        )
+        if isinstance(payload, dict):
+            return payload
+        return {
+            "value": payload,
+            "combined": payload,
+            "disp": None,
+            "polar": None,
+        }
+
+    def _encode_and_readout(
+        self,
+        data: Batch,
+        role: str = "solute",
+        temp_feat: Optional[torch.Tensor] = None,
+    ) -> tuple[
+        torch.Tensor,
+        dict[str, Optional[torch.Tensor]],
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+    ]:
+        """Run encoder + readout on a batched graph."""
+        h_atoms, a_disp, a_polar = self._run_encoder(
+            data,
+            role=role,
+            temp_feat=temp_feat,
+        )
+        g_payload = self._readout_payload(
+            h_atoms,
+            data.batch,
+            a_disp=a_disp,
+            a_polar=a_polar,
+        )
+        return h_atoms, g_payload, a_disp, a_polar
+
+    def _build_pair_representation(
+        self,
+        solute_payload: dict[str, Optional[torch.Tensor]],
+        solvent_payload: dict[str, Optional[torch.Tensor]],
+    ) -> torch.Tensor:
+        """Build the pair state, including TIMP channel fusion when enabled."""
+        if (
+            not self.is_timp
+            or self.timp_pair_repr_combined is None
+            or self.timp_pair_repr_disp is None
+            or self.timp_pair_repr_polar is None
+            or self.timp_pair_proj is None
+            or solute_payload["disp"] is None
+            or solute_payload["polar"] is None
+            or solvent_payload["disp"] is None
+            or solvent_payload["polar"] is None
+        ):
+            return self.pair_repr(
+                solute_payload["value"],
+                solvent_payload["value"],
+            )
+
+        g_pair_combined = self.timp_pair_repr_combined(
+            solute_payload["combined"],
+            solvent_payload["combined"],
+        )
+        g_pair_disp = self.timp_pair_repr_disp(
+            solute_payload["disp"],
+            solvent_payload["disp"],
+        )
+        g_pair_polar = self.timp_pair_repr_polar(
+            solute_payload["polar"],
+            solvent_payload["polar"],
+        )
+        return self.timp_pair_proj(
+            torch.cat([g_pair_combined, g_pair_disp, g_pair_polar], dim=-1)
+        )
 
     def _encoder_temp_features(
         self,
@@ -636,12 +770,14 @@ class TGNNSolv(nn.Module):
         nrtl_t_feat = self._nrtl_temp_features(t_feat)
 
         # ---- 1. Encode both molecules ----
-        h_sol_atoms, g_sol_pre = self._encode_and_readout(
+        h_sol_atoms, g_sol_pre_parts, sol_a_disp, sol_a_polar = self._encode_and_readout(
             solute_data, "solute", temp_feat=encoder_t_feat
         )
-        h_slv_atoms, g_slv_pre = self._encode_and_readout(
+        h_slv_atoms, g_slv_pre_parts, slv_a_disp, slv_a_polar = self._encode_and_readout(
             solvent_data, "solvent", temp_feat=encoder_t_feat
         )
+        g_sol_pre = g_sol_pre_parts["value"]
+        g_slv_pre = g_slv_pre_parts["value"]
         sol_fp_emb = None
         slv_fp_emb = None
         if self.cfg.use_morgan_features:
@@ -780,8 +916,20 @@ class TGNNSolv(nn.Module):
             slv_no_token, dtype=solvent_data.batch.dtype
         )
 
-        g_sol_post = self.readout(torch.cat(sol_no_token, dim=0), sol_batch)
-        g_slv_post = self.readout(torch.cat(slv_no_token, dim=0), slv_batch)
+        g_sol_post_parts = self._readout_payload(
+            torch.cat(sol_no_token, dim=0),
+            sol_batch,
+            a_disp=sol_a_disp,
+            a_polar=sol_a_polar,
+        )
+        g_slv_post_parts = self._readout_payload(
+            torch.cat(slv_no_token, dim=0),
+            slv_batch,
+            a_disp=slv_a_disp,
+            a_polar=slv_a_polar,
+        )
+        g_sol_post = g_sol_post_parts["value"]
+        g_slv_post = g_slv_post_parts["value"]
         g_sol_tok = self._extract_tokens(h_sol_padded, sol_lengths)
         g_slv_tok = self._extract_tokens(h_slv_padded, slv_lengths)
         g_sol_post = g_sol_post + self.sol_token_gate * self.token_proj(g_sol_tok)
@@ -791,7 +939,12 @@ class TGNNSolv(nn.Module):
             g_slv_post = g_slv_post + self.fp_post_scale * slv_fp_emb
 
         # ---- 5. Pair representation ----
-        g_pair = self.pair_repr(g_sol_post, g_slv_post)
+        g_sol_post_parts["value"] = g_sol_post
+        g_slv_post_parts["value"] = g_slv_post
+        g_pair = self._build_pair_representation(
+            g_sol_post_parts,
+            g_slv_post_parts,
+        )
         g_pair = self._augment_pair_representation(
             g_pair,
             solute_descriptors=solute_descriptors,
@@ -880,6 +1033,21 @@ class TGNNSolv(nn.Module):
         ln_x2_direct_log_sigma = proposal_log_sigma
         ln_x2 = ln_x2_physics + (1.0 - confidence) * bounded_residual
 
+        timp_channel_probes = None
+        if (
+            self.is_timp
+            and self.timp_disp_probe is not None
+            and self.timp_polar_probe is not None
+            and g_sol_pre_parts["disp"] is not None
+            and g_sol_pre_parts["polar"] is not None
+        ):
+            polar_probe = self.timp_polar_probe(g_sol_pre_parts["polar"])
+            timp_channel_probes = {
+                "delta_d": self.timp_disp_probe(g_sol_pre_parts["disp"]).squeeze(-1),
+                "delta_p": polar_probe[:, 0],
+                "delta_h": polar_probe[:, 1],
+            }
+
         output = {
             "ln_x2": ln_x2,
             "x2": torch.exp(ln_x2).clamp(0, 1),
@@ -904,6 +1072,16 @@ class TGNNSolv(nn.Module):
             "moe_gate": moe_gate,
             "attn_maps": attn_maps,
         }
+        if timp_channel_probes is not None:
+            output["timp_channel_probes"] = timp_channel_probes
+            output["timp_channels"] = {
+                "solute_disp": g_sol_pre_parts["disp"],
+                "solute_polar": g_sol_pre_parts["polar"],
+                "solute_combined": g_sol_pre_parts["combined"],
+                "solvent_disp": g_slv_pre_parts["disp"],
+                "solvent_polar": g_slv_pre_parts["polar"],
+                "solvent_combined": g_slv_pre_parts["combined"],
+            }
         if self.cfg.use_oracle_injection:
             output["oracle_injection_masks"] = oracle_injection_masks
         if self.cfg.use_gc_priors_crystal:
@@ -1037,8 +1215,33 @@ class TGNNSolv(nn.Module):
                 "g_slv_pre": g_slv_pre.detach(),
                 "g_sol_post": g_sol_post.detach(),
                 "g_slv_post": g_slv_post.detach(),
+                "g_sol_combined_pre": g_sol_pre_parts["combined"].detach(),
+                "g_slv_combined_pre": g_slv_pre_parts["combined"].detach(),
+                "g_sol_combined_post": g_sol_post_parts["combined"].detach(),
+                "g_slv_combined_post": g_slv_post_parts["combined"].detach(),
                 "g_pair": g_pair.detach(),
             }
+            if g_sol_pre_parts["disp"] is not None and g_sol_pre_parts["polar"] is not None:
+                intermediates.update(
+                    {
+                        "g_sol_disp_pre": g_sol_pre_parts["disp"].detach(),
+                        "g_slv_disp_pre": g_slv_pre_parts["disp"].detach(),
+                        "g_sol_polar_pre": g_sol_pre_parts["polar"].detach(),
+                        "g_slv_polar_pre": g_slv_pre_parts["polar"].detach(),
+                        "g_sol_disp_post": g_sol_post_parts["disp"].detach(),
+                        "g_slv_disp_post": g_slv_post_parts["disp"].detach(),
+                        "g_sol_polar_post": g_sol_post_parts["polar"].detach(),
+                        "g_slv_polar_post": g_slv_post_parts["polar"].detach(),
+                    }
+                )
+            if timp_channel_probes is not None:
+                intermediates.update(
+                    {
+                        "timp_delta_d": timp_channel_probes["delta_d"].detach(),
+                        "timp_delta_p": timp_channel_probes["delta_p"].detach(),
+                        "timp_delta_h": timp_channel_probes["delta_h"].detach(),
+                    }
+                )
             # Include all raw NRTL head outputs (mode-dependent keys)
             for k, v in nrtl_params.items():
                 if k not in intermediates:

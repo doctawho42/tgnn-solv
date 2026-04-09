@@ -47,6 +47,7 @@ from torch_geometric.data import Data, Batch
 
 from .config import TGNNSolvConfig
 from .features import (
+    graph_feature_spec_from_config,
     smiles_to_graph,
     NODE_FEAT_DIM,
 )
@@ -223,6 +224,8 @@ class PretrainDataset(Dataset):
         aug_node_mask_ratio: float = 0.15,
         aug_edge_mask_ratio: float = 0.15,
         cache: bool = True,
+        use_gasteiger_charges: bool = False,
+        use_phys_edge_features: bool = False,
     ) -> None:
         self.mask_ratio = mask_ratio
         self.mask_hops = mask_hops
@@ -230,6 +233,8 @@ class PretrainDataset(Dataset):
         self.aug_node_mask_ratio = aug_node_mask_ratio
         self.aug_edge_mask_ratio = aug_edge_mask_ratio
         self.cache = {} if cache else None
+        self.use_gasteiger_charges = use_gasteiger_charges
+        self.use_phys_edge_features = use_phys_edge_features
 
         # Filter valid SMILES
         valid = []
@@ -246,7 +251,14 @@ class PretrainDataset(Dataset):
     def _get_graph(self, smi: str) -> Data | None:
         if self.cache is not None and smi in self.cache:
             return self.cache[smi]
-        g = smiles_to_graph(smi)
+        try:
+            g = smiles_to_graph(
+                smi,
+                use_gasteiger_charges=self.use_gasteiger_charges,
+                use_phys_edge_features=self.use_phys_edge_features,
+            )
+        except TypeError:
+            g = smiles_to_graph(smi)
         if self.cache is not None and g is not None:
             self.cache[smi] = g
         return g
@@ -537,8 +549,9 @@ class Pretrainer:
             self.device = device
 
         # Pretraining heads (discarded after pretraining)
+        feature_spec = graph_feature_spec_from_config(cfg)
         self.atom_head = AtomPredictionHead(
-            cfg.hidden_dim, NODE_FEAT_DIM
+            cfg.hidden_dim, feature_spec.node_dim
         ).to(self.device)
 
         self.prop_head = PropertyPredictionHead(
@@ -616,6 +629,8 @@ class Pretrainer:
             bond_mask_ratio=bond_mask_ratio,
             aug_node_mask_ratio=aug_node_mask_ratio,
             aug_edge_mask_ratio=aug_edge_mask_ratio,
+            use_gasteiger_charges=self.cfg.use_gasteiger_charges,
+            use_phys_edge_features=self.cfg.use_phys_edge_features,
         )
         loader = DataLoader(
             dataset,

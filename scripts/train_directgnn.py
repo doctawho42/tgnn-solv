@@ -158,6 +158,8 @@ def load_data(
         use_descriptor_priors=config.use_descriptor_priors,
         use_group_priors=config.use_group_priors,
         use_gc_priors_crystal=config.use_gc_priors_crystal,
+        use_gasteiger_charges=config.use_gasteiger_charges,
+        use_phys_edge_features=config.use_phys_edge_features,
         seed=seed,
     )
 
@@ -284,6 +286,8 @@ def build_checkpoint_payload(
         "model_state": model.state_dict(),
         "model_state_dict": model.state_dict(),
         "config": dataclasses.asdict(config),
+        "node_feat_dim": int(getattr(model, "node_feat_dim", 0)),
+        "edge_feat_dim": int(getattr(model, "edge_feat_dim", 0)),
         "seed": seed,
         "experiment_name": experiment_name,
         "model_class": model.__class__.__name__,

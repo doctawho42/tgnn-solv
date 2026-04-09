@@ -199,6 +199,28 @@ The training CLIs now support resumable checkpoints via
 `--checkpoint-every` and `--resume`, and the full-budget runner reuses those
 per-seed checkpoints automatically.
 
+### Multi-seed phase-1 diagnostic wrapper
+
+```bash
+python scripts/experiments/run_phase1_diagnostic.py \
+    --seeds 42,123,456 \
+    --budget 50,200,50 \
+    --config configs/paper_config_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --output-dir results/phase1_diagnostic \
+    --device cuda
+```
+
+This wrapper orchestrates:
+
+- TGNN-Solv training/eval per seed
+- DirectGNN training/eval per seed
+- optional RF descriptor/morgan/hybrid baselines
+- TGNN oracle evaluation via forced oracle injection
+- aggregate JSON/markdown reporting and paired t-tests across seeds
+
 ### Medium-budget architecture comparison
 
 ```bash
@@ -348,6 +370,9 @@ The maintained `TGNNSolv` forward pass in `src/tgnn_solv/model.py` is:
 1. graph encoder
    - default `encoder_type="mpnn"` via `GNNEncoder`
    - optional `encoder_type="gps"` via `GPSEncoder`
+   - optional `encoder_type="timp"` via `TIMPEncoder`
+     - splits message passing into dispersive and polar channels
+     - can consume folded heavy-atom Gasteiger charges and extra physical edge features
    - default `encoder_role_mode="shared_residual"`
    - optional `split_late`
 2. pre-interaction auxiliary heads
@@ -402,6 +427,15 @@ diagnostic tensors such as:
 - `ln_x2_physics`
 - `ln_x2_final`
 
+When `encoder_type="timp"`, the intermediates also include channel-aware graph
+embeddings such as:
+
+- `g_sol_disp_pre`, `g_sol_polar_pre`
+- `g_slv_disp_pre`, `g_slv_polar_pre`
+- `g_sol_disp_post`, `g_sol_polar_post`
+- `g_slv_disp_post`, `g_slv_polar_post`
+- `timp_delta_d`, `timp_delta_p`, `timp_delta_h`
+
 ### DirectGNN
 
 `DirectGNN` reuses:
@@ -420,6 +454,7 @@ Optional DirectGNN feature paths:
 - `use_morgan_features`
 - `use_descriptor_augmentation`
 - `encoder_type="gps"` for the GPS backbone option
+- `encoder_type="timp"` for the TIMP backbone option
 
 Descriptor augmentation computes full RDKit descriptors for both molecules,
 sanitizes non-finite values, normalizes them using train-set statistics, and
@@ -450,6 +485,12 @@ zero-initialized so the starting prediction equals the calibrated GC prior, and
 they can be frozen for the first `gc_prior_residual_freeze_epochs` of Phase 1.
 
 The canonical paper budget is `50 / 200 / 50`.
+
+When `encoder_type="timp"`, the trainer also enables channel-supervision
+Hansen probes by default:
+
+- Phase 1: `timp_disp_hansen=0.05`, `timp_polar_hansen=0.05`
+- Phase 2/3: `timp_disp_hansen=0.02`, `timp_polar_hansen=0.02`
 
 ### Pair-aware batching
 
@@ -523,6 +564,14 @@ Optional keys appear when enabled:
 - `solute_group_prior_features`, `solvent_group_prior_features`
 - `T_m_gc`, `dH_fus_gc`, `dCp_fus_gc`
 
+Graph featurization is now config-driven. The default corpus still uses the
+historical `35/8` node/edge layout, while TIMP runs can opt into:
+
+- `use_gasteiger_charges`
+  - appends folded heavy-atom Gasteiger charge to each node feature vector
+- `use_phys_edge_features`
+  - appends `delta_chi`, `delta_rvdw`, `bond_polarity`, `hbond_cap` to each edge
+
 Application-layer modules build on top of the same inference surfaces and now
 live under `src/tgnn_solv/applications/` rather than the old flat
 `src/tgnn_solv/applications.py`.
@@ -544,6 +593,10 @@ High-signal flags that are easy to miss:
 - `gps_num_heads`
 - `gps_positional_encoding`
 - `gps_pe_dim`
+- `use_gasteiger_charges`
+- `use_phys_edge_features`
+- `use_thermo_cross_attention`
+- `thermo_cross_attention_beta_init`
 - `include_water_solubility`
 - `use_oracle_injection`
 - `bridge_loss_weight`
@@ -565,6 +618,8 @@ Maintained config files:
 - `configs/paper_config_tuned_regularized_gc.yaml`
 - `configs/paper_config_tuned_regularized_descriptors.yaml`
 - `configs/paper_config_tuned_gps.yaml`
+- `configs/paper_config_timp.yaml`
+- `configs/paper_config_timp_full.yaml`
 - `configs/paper_config_tuned_pretrained.yaml`
 - `configs/paper_config_tuned_pretrained_descriptors.yaml`
 - `configs/paper_config_directgnn_tuned.yaml`

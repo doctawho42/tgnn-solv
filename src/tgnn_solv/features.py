@@ -21,6 +21,7 @@ Bond features (8 dims):
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from collections.abc import Iterable
 from typing import TypeAlias
 
@@ -33,6 +34,7 @@ from rdkit.Chem import (
     Descriptors,
     Fragments,
     Lipinski,
+    rdPartialCharges,
     rdMolDescriptors,
 )
 from rdkit.ML.Descriptors import MoleculeDescriptors
@@ -40,6 +42,27 @@ from rdkit.DataStructs import ConvertToNumpyArray
 from torch_geometric.data import Data
 
 FeatureVector: TypeAlias = list[float]
+
+
+BASE_NODE_FEAT_DIM = 35
+BASE_EDGE_FEAT_DIM = 8
+ELECTRONEGATIVITY_FEATURE_IDX = 32
+VDW_RADIUS_FEATURE_IDX = 33
+POLARIZABILITY_FEATURE_IDX = 34
+
+
+@dataclass(frozen=True)
+class GraphFeatureSpec:
+    """Resolved graph feature layout for one featurization configuration."""
+
+    node_dim: int
+    edge_dim: int
+    electronegativity_idx: int = ELECTRONEGATIVITY_FEATURE_IDX
+    vdw_radius_idx: int = VDW_RADIUS_FEATURE_IDX
+    polarizability_idx: int = POLARIZABILITY_FEATURE_IDX
+    gasteiger_charge_idx: int | None = None
+    phys_edge_start_idx: int | None = None
+    phys_edge_end_idx: int | None = None
 
 
 ELECTRONEG = {
@@ -99,11 +122,113 @@ def _one_hot(value: object, choices: list[object]) -> FeatureVector:
     return enc
 
 
+def get_graph_feature_spec(
+    *,
+    use_gasteiger_charges: bool = False,
+    use_phys_edge_features: bool = False,
+) -> GraphFeatureSpec:
+    """Return the node/edge layout implied by the requested optional features."""
+    node_dim = BASE_NODE_FEAT_DIM + (1 if use_gasteiger_charges else 0)
+    edge_dim = BASE_EDGE_FEAT_DIM + (4 if use_phys_edge_features else 0)
+    charge_idx = BASE_NODE_FEAT_DIM if use_gasteiger_charges else None
+    phys_edge_start = BASE_EDGE_FEAT_DIM if use_phys_edge_features else None
+    phys_edge_end = edge_dim if use_phys_edge_features else None
+    return GraphFeatureSpec(
+        node_dim=node_dim,
+        edge_dim=edge_dim,
+        gasteiger_charge_idx=charge_idx,
+        phys_edge_start_idx=phys_edge_start,
+        phys_edge_end_idx=phys_edge_end,
+    )
+
+
+def graph_feature_spec_from_config(cfg: object | None) -> GraphFeatureSpec:
+    """Resolve graph feature dimensions from a config-like object."""
+    if cfg is None:
+        return get_graph_feature_spec()
+    return get_graph_feature_spec(
+        use_gasteiger_charges=bool(
+            getattr(cfg, "use_gasteiger_charges", False)
+        ),
+        use_phys_edge_features=bool(
+            getattr(cfg, "use_phys_edge_features", False)
+        ),
+    )
+
+
+def _sanitize_scalar(value: float | str | object, default: float = 0.0) -> float:
+    """Convert a scalar-like value into a finite float."""
+    try:
+        scalar = float(value)
+    except (TypeError, ValueError):
+        return default
+    if not np.isfinite(scalar):
+        return default
+    return scalar
+
+
+def _compute_gasteiger_charges(mol: object) -> list[float]:
+    """Compute heavy-atom charges, folding attached hydrogen charges back in."""
+    try:
+        mol_with_h = Chem.AddHs(Chem.Mol(mol))
+    except Exception:
+        mol_with_h = mol
+    try:
+        rdPartialCharges.ComputeGasteigerCharges(mol_with_h)
+    except Exception:
+        return [0.0] * mol.GetNumAtoms()
+
+    charges = [0.0] * mol.GetNumAtoms()
+    for atom in mol_with_h.GetAtoms():
+        value = None
+        if atom.HasProp("_GasteigerCharge"):
+            try:
+                value = atom.GetDoubleProp("_GasteigerCharge")
+            except RuntimeError:
+                value = atom.GetProp("_GasteigerCharge")
+        charge = _sanitize_scalar(value, default=0.0)
+        if atom.GetAtomicNum() == 1 and atom.GetDegree() == 1:
+            neighbor = atom.GetNeighbors()[0]
+            charges[neighbor.GetIdx()] += charge
+        elif atom.GetIdx() < len(charges):
+            charges[atom.GetIdx()] += charge
+    return charges
+
+
+def _is_hbond_donor_capable(atom: object) -> bool:
+    """Return whether a heavy atom can act as a donor in the H-suppressed graph."""
+    return atom.GetAtomicNum() in {7, 8, 9} and atom.GetTotalNumHs() > 0
+
+
+def _is_hbond_acceptor_capable(atom: object) -> bool:
+    """Return whether a heavy atom can act as an acceptor in the H-suppressed graph."""
+    if atom.GetAtomicNum() not in {7, 8, 9}:
+        return False
+    return atom.GetFormalCharge() <= 0
+
+
+def _bond_hbond_capability(atom_i: object, atom_j: object) -> float:
+    """Approximate H-bond activity on heavy-atom bonds after explicit H removal."""
+    donor_i = _is_hbond_donor_capable(atom_i)
+    donor_j = _is_hbond_donor_capable(atom_j)
+    accept_i = _is_hbond_acceptor_capable(atom_i)
+    accept_j = _is_hbond_acceptor_capable(atom_j)
+    return float(
+        (donor_i and (accept_i or accept_j))
+        or (donor_j and (accept_i or accept_j))
+    )
+
+
 # ------------------------------------------------------------------ #
 #  Per-atom / per-bond feature vectors                                #
 # ------------------------------------------------------------------ #
 
-def get_atom_features(atom: object) -> FeatureVector:
+def get_atom_features(
+    atom: object,
+    *,
+    gasteiger_charge: float | None = None,
+    use_gasteiger_charges: bool = False,
+) -> FeatureVector:
     """Return ~35-dim feature vector for a single atom."""
     anum = atom.GetAtomicNum()
     feats = []
@@ -116,13 +241,19 @@ def get_atom_features(atom: object) -> FeatureVector:
     feats.append(ELECTRONEG.get(anum, 2.0) / 4.0)            # 1
     feats.append(VDW_RADII.get(anum, 1.7) / 2.0)             # 1
     feats.append(POLARIZABILITY.get(anum, 1.5) / 5.0)        # 1
+    if use_gasteiger_charges:
+        feats.append(_sanitize_scalar(gasteiger_charge, default=0.0))  # 1
     return feats  # total = 35
 
 
-def get_bond_features(bond: object) -> FeatureVector:
+def get_bond_features(
+    bond: object,
+    *,
+    use_phys_edge_features: bool = False,
+) -> FeatureVector:
     """Return 8-dim feature vector for a single bond."""
     bt = bond.GetBondType()
-    return [
+    feats = [
         float(bt == Chem.rdchem.BondType.SINGLE),
         float(bt == Chem.rdchem.BondType.DOUBLE),
         float(bt == Chem.rdchem.BondType.TRIPLE),
@@ -132,13 +263,38 @@ def get_bond_features(bond: object) -> FeatureVector:
         float(bond.GetStereo() == Chem.rdchem.BondStereo.STEREOE),
         float(bond.GetStereo() == Chem.rdchem.BondStereo.STEREOZ),
     ]
+    if use_phys_edge_features:
+        atom_i = bond.GetBeginAtom()
+        atom_j = bond.GetEndAtom()
+        chi_i = ELECTRONEG.get(atom_i.GetAtomicNum(), 2.0)
+        chi_j = ELECTRONEG.get(atom_j.GetAtomicNum(), 2.0)
+        rvdw_i = VDW_RADII.get(atom_i.GetAtomicNum(), 1.7)
+        rvdw_j = VDW_RADII.get(atom_j.GetAtomicNum(), 1.7)
+        delta_chi = abs(chi_i - chi_j)
+        delta_rvdw = abs(rvdw_i - rvdw_j)
+        bond_polarity = delta_chi * (rvdw_i + rvdw_j)
+        feats.extend(
+            [
+                float(delta_chi),
+                float(delta_rvdw),
+                float(bond_polarity),
+                _bond_hbond_capability(atom_i, atom_j),
+            ]
+        )
+    return feats
 
 
 # ------------------------------------------------------------------ #
 #  SMILES → PyG graph                                                 #
 # ------------------------------------------------------------------ #
 
-def smiles_to_graph(smiles: str, compute_3d: bool = False) -> Data | None:
+def smiles_to_graph(
+    smiles: str,
+    compute_3d: bool = False,
+    *,
+    use_gasteiger_charges: bool = False,
+    use_phys_edge_features: bool = False,
+) -> Data | None:
     """
     Convert a SMILES string into a PyTorch-Geometric ``Data`` object.
 
@@ -179,9 +335,28 @@ def smiles_to_graph(smiles: str, compute_3d: bool = False) -> Data | None:
     if mol.GetNumAtoms() == 0:
         return None
 
+    spec = get_graph_feature_spec(
+        use_gasteiger_charges=use_gasteiger_charges,
+        use_phys_edge_features=use_phys_edge_features,
+    )
+    gasteiger_charges = (
+        _compute_gasteiger_charges(mol) if use_gasteiger_charges else None
+    )
+
     # Node features
     x = torch.tensor(
-        [get_atom_features(a) for a in mol.GetAtoms()],
+        [
+            get_atom_features(
+                atom,
+                gasteiger_charge=(
+                    gasteiger_charges[idx]
+                    if gasteiger_charges is not None
+                    else None
+                ),
+                use_gasteiger_charges=use_gasteiger_charges,
+            )
+            for idx, atom in enumerate(mol.GetAtoms())
+        ],
         dtype=torch.float,
     )
 
@@ -189,14 +364,17 @@ def smiles_to_graph(smiles: str, compute_3d: bool = False) -> Data | None:
     edge_indices, edge_attrs = [], []
     for bond in mol.GetBonds():
         i, j = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
-        bf = get_bond_features(bond)
+        bf = get_bond_features(
+            bond,
+            use_phys_edge_features=use_phys_edge_features,
+        )
         edge_indices += [[i, j], [j, i]]
         edge_attrs += [bf, bf]
 
     if len(edge_indices) == 0:
         # Single-atom molecule (e.g. noble gas) — add self-loop
         edge_index = torch.zeros((2, 1), dtype=torch.long)
-        edge_attr = torch.zeros((1, 8), dtype=torch.float)
+        edge_attr = torch.zeros((1, spec.edge_dim), dtype=torch.float)
     else:
         edge_index = torch.tensor(edge_indices, dtype=torch.long).t().contiguous()
         edge_attr = torch.tensor(edge_attrs, dtype=torch.float)
@@ -206,7 +384,28 @@ def smiles_to_graph(smiles: str, compute_3d: bool = False) -> Data | None:
         data.pos = pos
     data.smiles = smiles
     data.num_atoms = mol.GetNumAtoms()
+    data.graph_feature_node_dim = spec.node_dim
+    data.graph_feature_edge_dim = spec.edge_dim
     return data
+
+
+def smiles_to_graph_with_config(
+    smiles: str,
+    cfg: object | None,
+    *,
+    compute_3d: bool = False,
+) -> Data | None:
+    """Build a graph using the graph-feature flags stored on a config-like object."""
+    return smiles_to_graph(
+        smiles,
+        compute_3d=compute_3d,
+        use_gasteiger_charges=bool(
+            getattr(cfg, "use_gasteiger_charges", False)
+        ),
+        use_phys_edge_features=bool(
+            getattr(cfg, "use_phys_edge_features", False)
+        ),
+    )
 
 
 def smiles_to_morgan_fp(
@@ -497,7 +696,7 @@ def _compute_dims() -> tuple[int, int]:
     """Compute feature dimensions from a reference molecule."""
     g = smiles_to_graph("C")  # methane
     if g is None:
-        return 35, 8  # fallback
+        return BASE_NODE_FEAT_DIM, BASE_EDGE_FEAT_DIM
     node_dim = g.x.shape[1]
     edge_dim = g.edge_attr.shape[1]
     return node_dim, edge_dim

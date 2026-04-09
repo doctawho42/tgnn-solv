@@ -34,6 +34,7 @@ from ..features import (
     DESCRIPTOR_Z_CLIP,
     EDGE_FEAT_DIM,
     NODE_FEAT_DIM,
+    graph_feature_spec_from_config,
     validate_descriptor_normalization_stats,
 )
 from ..layers import (
@@ -68,8 +69,8 @@ class DirectGNN(nn.Module):
 
     def __init__(
         self,
-        node_feat_dim: int = NODE_FEAT_DIM,
-        edge_feat_dim: int = EDGE_FEAT_DIM,
+        node_feat_dim: int | None = None,
+        edge_feat_dim: int | None = None,
         cfg: TGNNSolvConfig = TGNNSolvConfig(),
         n_temp_bins: int = 20,
         T_min: float = 200.0,
@@ -77,10 +78,22 @@ class DirectGNN(nn.Module):
     ) -> None:
         super().__init__()
         self.cfg = cfg
+        feature_spec = graph_feature_spec_from_config(cfg)
+        if node_feat_dim is None:
+            node_feat_dim = feature_spec.node_dim
+        if edge_feat_dim is None:
+            edge_feat_dim = feature_spec.edge_dim
+        self.node_feat_dim = int(node_feat_dim)
+        self.edge_feat_dim = int(edge_feat_dim)
+        self.is_timp = cfg.encoder_type == "timp"
         F = cfg.hidden_dim
 
         # --- Same GNN encoder (shared backbone with role adapters) ---
-        self.gnn = build_graph_encoder(node_feat_dim, edge_feat_dim, cfg)
+        self.gnn = build_graph_encoder(
+            self.node_feat_dim,
+            self.edge_feat_dim,
+            cfg,
+        )
 
         # --- Same interaction stack ---
         self.interaction_mode = cfg.interaction_mode
@@ -88,7 +101,12 @@ class DirectGNN(nn.Module):
         self.bipartite_layers = nn.ModuleList()
         if cfg.interaction_mode == "cross_attn":
             self.cross_attn_layers = nn.ModuleList([
-                SoluteSolventCrossAttention(F, cfg.n_attn_heads)
+                SoluteSolventCrossAttention(
+                    F,
+                    cfg.n_attn_heads,
+                    use_thermo_cross_attention=cfg.use_thermo_cross_attention,
+                    thermo_cross_attention_beta_init=cfg.thermo_cross_attention_beta_init,
+                )
                 for _ in range(cfg.n_cross_attn_layers)
             ])
         elif cfg.interaction_mode == "bipartite":
@@ -103,7 +121,10 @@ class DirectGNN(nn.Module):
 
         # --- Same readout ---
         self.readout = PhysicsAwareReadout(
-            F, set2set_steps=cfg.set2set_steps
+            F,
+            set2set_steps=cfg.set2set_steps,
+            channel_aware=self.is_timp,
+            channel_dim=(F // 2 if self.is_timp else None),
         )
         D_r = self.readout.output_dim  # hidden_dim * 3
 
@@ -224,13 +245,13 @@ class DirectGNN(nn.Module):
         normalized = self._normalize_descriptors(descriptors)
         return self.descriptor_adapter(normalized)
 
-    def _encode_and_readout(
+    def _run_encoder(
         self,
         data: Batch,
         role: str = "solute",
         temp_feat: Tensor | None = None,
-    ) -> tuple[Tensor, Tensor]:
-        h_atoms = self.gnn(
+    ) -> tuple[Tensor, Tensor | None, Tensor | None]:
+        encoder_out = self.gnn(
             data.x,
             data.edge_index,
             data.edge_attr,
@@ -238,8 +259,53 @@ class DirectGNN(nn.Module):
             batch=data.batch,
             temp_feat=temp_feat,
         )
-        g_mol = self.readout(h_atoms, data.batch)
-        return h_atoms, g_mol
+        if isinstance(encoder_out, tuple) and len(encoder_out) == 3:
+            h_atoms, a_disp, a_polar = encoder_out
+            return h_atoms, a_disp, a_polar
+        return encoder_out, None, None
+
+    def _readout_payload(
+        self,
+        h_atoms: Tensor,
+        batch: Tensor,
+        *,
+        a_disp: Tensor | None = None,
+        a_polar: Tensor | None = None,
+    ) -> dict[str, Tensor | None]:
+        payload = self.readout(
+            h_atoms,
+            batch,
+            a_disp=a_disp,
+            a_polar=a_polar,
+            return_parts=self.is_timp,
+        )
+        if isinstance(payload, dict):
+            return payload
+        return {
+            "value": payload,
+            "combined": payload,
+            "disp": None,
+            "polar": None,
+        }
+
+    def _encode_and_readout(
+        self,
+        data: Batch,
+        role: str = "solute",
+        temp_feat: Tensor | None = None,
+    ) -> tuple[Tensor, dict[str, Tensor | None], Tensor | None, Tensor | None]:
+        h_atoms, a_disp, a_polar = self._run_encoder(
+            data,
+            role=role,
+            temp_feat=temp_feat,
+        )
+        payload = self._readout_payload(
+            h_atoms,
+            data.batch,
+            a_disp=a_disp,
+            a_polar=a_polar,
+        )
+        return h_atoms, payload, a_disp, a_polar
 
     def _split_atoms_by_graph(self, h_atoms: Tensor, batch: Tensor) -> TensorList:
         graphs: TensorList = []
@@ -287,12 +353,14 @@ class DirectGNN(nn.Module):
         """
         t_feat = make_temperature_features(T)
         # --- Encode both molecules ---
-        h_sol_atoms, g_sol = self._encode_and_readout(
+        h_sol_atoms, g_sol_parts, sol_a_disp, sol_a_polar = self._encode_and_readout(
             solute_data, "solute", temp_feat=t_feat
         )
-        h_slv_atoms, g_slv = self._encode_and_readout(
+        h_slv_atoms, g_slv_parts, slv_a_disp, slv_a_polar = self._encode_and_readout(
             solvent_data, "solvent", temp_feat=t_feat
         )
+        g_sol = g_sol_parts["value"]
+        g_slv = g_slv_parts["value"]
         sol_fp_emb = None
         slv_fp_emb = None
         if self.cfg.use_morgan_features:
@@ -347,8 +415,20 @@ class DirectGNN(nn.Module):
         slv_batch = build_batch_from_lists(
             slv_no_token, dtype=solvent_data.batch.dtype
         )
-        g_sol_post = self.readout(torch.cat(sol_no_token, dim=0), sol_batch)
-        g_slv_post = self.readout(torch.cat(slv_no_token, dim=0), slv_batch)
+        g_sol_post_parts = self._readout_payload(
+            torch.cat(sol_no_token, dim=0),
+            sol_batch,
+            a_disp=sol_a_disp,
+            a_polar=sol_a_polar,
+        )
+        g_slv_post_parts = self._readout_payload(
+            torch.cat(slv_no_token, dim=0),
+            slv_batch,
+            a_disp=slv_a_disp,
+            a_polar=slv_a_polar,
+        )
+        g_sol_post = g_sol_post_parts["value"]
+        g_slv_post = g_slv_post_parts["value"]
         g_sol_tok = self._extract_tokens(h_sol_padded, sol_lengths)
         g_slv_tok = self._extract_tokens(h_slv_padded, slv_lengths)
         g_sol_post = g_sol_post + self.sol_token_gate * self.token_proj(g_sol_tok)

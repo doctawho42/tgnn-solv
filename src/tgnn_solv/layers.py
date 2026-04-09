@@ -22,6 +22,7 @@ from typing import Optional, TYPE_CHECKING, TypeAlias
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 from torch_geometric.nn import (
     MessagePassing,
@@ -30,6 +31,7 @@ from torch_geometric.nn import (
 from torch_geometric.utils import to_dense_batch
 
 from .positional_encoding import PositionalEncoding
+from .features import graph_feature_spec_from_config
 
 if TYPE_CHECKING:
     from .config import TGNNSolvConfig
@@ -529,13 +531,244 @@ class GPSEncoder(nn.Module):
         return h
 
 
+class TIMPLayer(nn.Module):
+    """Thermodynamics-informed message passing with dispersive and polar channels."""
+
+    def __init__(self, hidden_dim: int, edge_dim: int, dropout: float = 0.0) -> None:
+        super().__init__()
+        if hidden_dim % 2 != 0:
+            raise ValueError("TIMP requires an even hidden_dim.")
+        half_dim = hidden_dim // 2
+        self.hidden_dim = hidden_dim
+        self.half_dim = half_dim
+        self.phi_disp = nn.Sequential(
+            nn.Linear(hidden_dim * 2 + edge_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, half_dim),
+        )
+        self.w_disp = nn.Parameter(torch.ones(1))
+        self.b_disp = nn.Parameter(torch.zeros(1))
+        self.phi_polar = nn.Sequential(
+            nn.Linear(hidden_dim * 2 + edge_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, half_dim),
+        )
+        self.combine = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+        self.update = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+        self.norm = nn.LayerNorm(hidden_dim)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(
+        self,
+        h: Tensor,
+        edge_index: Tensor,
+        edge_attr: Tensor,
+        alpha: Tensor,
+        charges: Tensor,
+    ) -> tuple[Tensor, Tensor, Tensor]:
+        src, dst = edge_index
+        h_dst = h[dst]
+        h_src = h[src]
+        inp = torch.cat([h_dst, h_src, edge_attr], dim=-1)
+
+        m_disp = self.phi_disp(inp)
+        disp_scale = (
+            self.w_disp
+            * torch.sqrt((alpha[src] * alpha[dst]).clamp(min=0.0) + 1.0e-8)
+            + self.b_disp
+        )
+        m_disp = m_disp * disp_scale.unsqueeze(-1)
+
+        m_polar = self.phi_polar(inp)
+        polar_scale = F.softplus(charges[src] * charges[dst])
+        m_polar = m_polar * polar_scale.unsqueeze(-1)
+
+        a_disp = scatter_add(m_disp, dst, dim=0, dim_size=h.size(0))
+        a_polar = scatter_add(m_polar, dst, dim=0, dim_size=h.size(0))
+        a = self.combine(torch.cat([a_disp, a_polar], dim=-1))
+        h_new = h + self.dropout(self.update(torch.cat([h, a], dim=-1)))
+        h_new = self.norm(h_new)
+        return h_new, a_disp, a_polar
+
+
+class TIMPEncoder(nn.Module):
+    """Role-aware TIMP stack with the same external API as the standard encoders."""
+
+    def __init__(
+        self,
+        node_feat_dim: int,
+        edge_feat_dim: int,
+        hidden_dim: int = 256,
+        n_layers: int = 6,
+        role_mode: str = "shared_residual",
+        role_specific_layers: int = 2,
+        *,
+        alpha_idx: int,
+        charge_idx: int | None,
+        dropout: float = 0.1,
+    ) -> None:
+        super().__init__()
+        if n_layers <= 0:
+            raise ValueError("n_layers must be positive")
+        if role_mode not in {"shared_residual", "split_late"}:
+            raise ValueError(f"Unsupported role_mode: {role_mode}")
+        if hidden_dim % 2 != 0:
+            raise ValueError("TIMP requires an even hidden_dim.")
+
+        self.role_mode = role_mode
+        if role_mode == "split_late":
+            self.role_specific_layers = min(
+                max(int(role_specific_layers), 0),
+                max(n_layers - 1, 0),
+            )
+        else:
+            self.role_specific_layers = 0
+        self.shared_layer_count = n_layers - self.role_specific_layers
+
+        self.alpha_idx = int(alpha_idx)
+        self.charge_idx = charge_idx if charge_idx is None else int(charge_idx)
+        self.channel_dim = hidden_dim // 2
+
+        self.node_embed = nn.Linear(node_feat_dim, hidden_dim)
+        self.edge_embed = nn.Linear(edge_feat_dim, hidden_dim)
+        self.shared_layers = nn.ModuleList(
+            [
+                TIMPLayer(hidden_dim, hidden_dim, dropout)
+                for _ in range(self.shared_layer_count)
+            ]
+        )
+        self.solute_layers = nn.ModuleList(
+            [
+                TIMPLayer(hidden_dim, hidden_dim, dropout)
+                for _ in range(self.role_specific_layers)
+            ]
+        )
+        self.solvent_layers = nn.ModuleList(
+            [
+                TIMPLayer(hidden_dim, hidden_dim, dropout)
+                for _ in range(self.role_specific_layers)
+            ]
+        )
+        self.solute_adapter = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim), nn.SiLU()
+        )
+        self.solvent_adapter = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim), nn.SiLU()
+        )
+        self.temp_mlp = nn.Sequential(
+            nn.Linear(3, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim * 2),
+        )
+
+    def _apply_temp_film(
+        self,
+        h: Tensor,
+        batch: Tensor,
+        temp_feat: Tensor,
+    ) -> Tensor:
+        gamma_beta = self.temp_mlp(temp_feat)
+        gamma, beta = gamma_beta.chunk(2, dim=-1)
+        return h * (1.0 + gamma[batch]) + beta[batch]
+
+    def _run_layer_stack(
+        self,
+        h: Tensor,
+        e: Tensor,
+        edge_index: Tensor,
+        layers: nn.ModuleList,
+        alpha: Tensor,
+        charges: Tensor,
+        batch: Optional[Tensor],
+        temp_feat: Optional[Tensor],
+    ) -> tuple[Tensor, Tensor, Tensor]:
+        a_disp = torch.zeros(
+            h.size(0),
+            self.channel_dim,
+            device=h.device,
+            dtype=h.dtype,
+        )
+        a_polar = torch.zeros_like(a_disp)
+        for layer in layers:
+            h, a_disp, a_polar = layer(h, edge_index, e, alpha, charges)
+            if temp_feat is not None and batch is not None:
+                h = self._apply_temp_film(h, batch, temp_feat)
+        return h, a_disp, a_polar
+
+    def forward(
+        self,
+        x: Tensor,
+        edge_index: Tensor,
+        edge_attr: Tensor,
+        role: str = "solute",
+        batch: Optional[Tensor] = None,
+        temp_feat: Optional[Tensor] = None,
+    ) -> tuple[Tensor, Tensor, Tensor]:
+        if batch is None:
+            batch = torch.zeros(
+                x.size(0),
+                dtype=torch.long,
+                device=x.device,
+            )
+        h = self.node_embed(x)
+        e = self.edge_embed(edge_attr)
+        alpha = x[:, self.alpha_idx].to(h)
+        if self.charge_idx is None:
+            charges = torch.zeros_like(alpha)
+        else:
+            charges = x[:, self.charge_idx].to(h)
+
+        h, a_disp, a_polar = self._run_layer_stack(
+            h,
+            e,
+            edge_index,
+            self.shared_layers,
+            alpha,
+            charges,
+            batch,
+            temp_feat,
+        )
+
+        if self.role_mode == "split_late":
+            role_layers = (
+                self.solute_layers if role == "solute" else self.solvent_layers
+            )
+            h, a_disp, a_polar = self._run_layer_stack(
+                h,
+                e,
+                edge_index,
+                role_layers,
+                alpha,
+                charges,
+                batch,
+                temp_feat,
+            )
+        elif role == "solute":
+            h = h + self.solute_adapter(h)
+        else:
+            h = h + self.solvent_adapter(h)
+
+        if temp_feat is not None and batch is not None:
+            h = self._apply_temp_film(h, batch, temp_feat)
+        return h, a_disp, a_polar
+
+
 def build_graph_encoder(
     node_feat_dim: int,
     edge_feat_dim: int,
     cfg: "TGNNSolvConfig",
 ) -> nn.Module:
     """Construct the configured graph encoder while keeping the downstream API stable."""
-    if getattr(cfg, "encoder_type", "mpnn") == "gps":
+    encoder_type = getattr(cfg, "encoder_type", "mpnn")
+    if encoder_type == "gps":
         return GPSEncoder(
             node_feat_dim,
             edge_feat_dim,
@@ -547,6 +780,19 @@ def build_graph_encoder(
             gps_use_edge_attr=cfg.gps_use_edge_attr,
             gps_positional_encoding=cfg.gps_positional_encoding,
             gps_pe_dim=cfg.gps_pe_dim,
+            dropout=cfg.dropout,
+        )
+    if encoder_type == "timp":
+        spec = graph_feature_spec_from_config(cfg)
+        return TIMPEncoder(
+            node_feat_dim,
+            edge_feat_dim,
+            hidden_dim=cfg.hidden_dim,
+            n_layers=cfg.n_gnn_layers,
+            role_mode=cfg.encoder_role_mode,
+            role_specific_layers=cfg.encoder_role_specific_layers,
+            alpha_idx=spec.polarizability_idx,
+            charge_idx=spec.gasteiger_charge_idx,
             dropout=cfg.dropout,
         )
     return GNNEncoder(
@@ -570,11 +816,46 @@ class SoluteSolventCrossAttention(nn.Module):
     One block = MultiheadAttention + LayerNorm + FFN + LayerNorm.
     """
 
-    def __init__(self, hidden_dim: int, n_heads: int = 8) -> None:
+    def __init__(
+        self,
+        hidden_dim: int,
+        n_heads: int = 8,
+        *,
+        use_thermo_cross_attention: bool = False,
+        thermo_cross_attention_beta_init: float = 0.1,
+    ) -> None:
         super().__init__()
-        self.cross_attn = nn.MultiheadAttention(
-            hidden_dim, n_heads, batch_first=True, dropout=0.1
-        )
+        if hidden_dim % n_heads != 0:
+            raise ValueError(
+                f"hidden_dim ({hidden_dim}) must be divisible by n_heads ({n_heads})"
+            )
+        self.hidden_dim = hidden_dim
+        self.n_heads = n_heads
+        self.head_dim = hidden_dim // n_heads
+        self.use_thermo_cross_attention = use_thermo_cross_attention
+        self.q_proj = nn.Linear(hidden_dim, hidden_dim)
+        self.k_proj = nn.Linear(hidden_dim, hidden_dim)
+        self.v_proj = nn.Linear(hidden_dim, hidden_dim)
+        self.out_proj = nn.Linear(hidden_dim, hidden_dim)
+        self.attn_dropout = nn.Dropout(0.1)
+        if use_thermo_cross_attention:
+            self.energy_mlp = nn.Sequential(
+                nn.Linear(hidden_dim * 2, hidden_dim),
+                nn.SiLU(),
+                nn.Linear(hidden_dim, 1),
+            )
+            self.acc_mlp = nn.Sequential(
+                nn.Linear(hidden_dim, hidden_dim // 4),
+                nn.SiLU(),
+                nn.Linear(hidden_dim // 4, 1),
+            )
+            self.beta = nn.Parameter(
+                torch.tensor(float(thermo_cross_attention_beta_init))
+            )
+        else:
+            self.energy_mlp = None
+            self.acc_mlp = None
+            self.register_parameter("beta", None)
         self.norm1 = nn.LayerNorm(hidden_dim)
         self.ffn = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim * 4),
@@ -589,6 +870,11 @@ class SoluteSolventCrossAttention(nn.Module):
             nn.SiLU(),
             nn.Linear(hidden_dim, hidden_dim * 2),
         )
+
+    def _shape_heads(self, x: Tensor) -> Tensor:
+        """Reshape `(B, N, D)` tensors into `(B, H, N, Dh)`."""
+        B, N, _ = x.shape
+        return x.view(B, N, self.n_heads, self.head_dim).transpose(1, 2)
 
     def forward(
         self,
@@ -611,19 +897,41 @@ class SoluteSolventCrossAttention(nn.Module):
         h_out : (B, N_sol, D)
         attn_weights : (B, N_sol, N_slv)
         """
-        # nn.MultiheadAttention expects key_padding_mask = True for PADDING
-        key_padding_mask = None
-        if solvent_mask is not None:
-            key_padding_mask = ~solvent_mask
+        q = self._shape_heads(self.q_proj(h_solute))
+        k = self._shape_heads(self.k_proj(h_solvent))
+        v = self._shape_heads(self.v_proj(h_solvent))
+        attn_logits = torch.matmul(q, k.transpose(-2, -1)) / (self.head_dim ** 0.5)
 
-        h_cross, attn_weights = self.cross_attn(
-            query=h_solute,
-            key=h_solvent,
-            value=h_solvent,
-            key_padding_mask=key_padding_mask,
-            need_weights=True,
-            average_attn_weights=True,
+        if self.use_thermo_cross_attention:
+            energy_input = torch.cat(
+                [
+                    h_solute[:, :, None, :].expand(-1, -1, h_solvent.size(1), -1),
+                    h_solvent[:, None, :, :].expand(-1, h_solute.size(1), -1, -1),
+                ],
+                dim=-1,
+            )
+            energy_ij = self.energy_mlp(energy_input).squeeze(-1)
+            acc_i = torch.sigmoid(self.acc_mlp(h_solute))
+            acc_j = torch.sigmoid(self.acc_mlp(h_solvent))
+            e_contact = energy_ij * acc_i * acc_j.transpose(1, 2)
+            attn_logits = attn_logits + self.beta * e_contact.unsqueeze(1)
+
+        if solvent_mask is not None:
+            attn_logits = attn_logits.masked_fill(
+                ~solvent_mask[:, None, None, :],
+                float("-inf"),
+            )
+
+        attn_weights_heads = torch.softmax(attn_logits, dim=-1)
+        if solvent_mask is not None and not solvent_mask.all():
+            attn_weights_heads = torch.nan_to_num(attn_weights_heads, nan=0.0)
+        attn_weights_heads = self.attn_dropout(attn_weights_heads)
+        h_cross = torch.matmul(attn_weights_heads, v)
+        h_cross = h_cross.transpose(1, 2).contiguous().view(
+            h_solute.size(0), h_solute.size(1), self.hidden_dim
         )
+        h_cross = self.out_proj(h_cross)
+        attn_weights = attn_weights_heads.mean(dim=1)
 
         h_out = self.norm1(h_solute + h_cross)
         if temp_feat is not None:
@@ -797,16 +1105,72 @@ class PhysicsAwareReadout(nn.Module):
     Output dimension = hidden_dim * 3.
     """
 
-    def __init__(self, hidden_dim: int, set2set_steps: int = 3) -> None:
+    def __init__(
+        self,
+        hidden_dim: int,
+        set2set_steps: int = 3,
+        *,
+        channel_aware: bool = False,
+        channel_dim: int | None = None,
+    ) -> None:
         super().__init__()
         self.attn_pool = AttentionPooling(hidden_dim)
         self.set2set = Set2Set(hidden_dim, processing_steps=set2set_steps)
-        self.output_dim = hidden_dim * 3
+        self.channel_aware = channel_aware
+        self.channel_dim = (
+            (hidden_dim // 2) if channel_dim is None else int(channel_dim)
+        )
+        if channel_aware:
+            self.disp_pool = AttentionPooling(self.channel_dim)
+            self.polar_pool = AttentionPooling(self.channel_dim)
+        else:
+            self.disp_pool = None
+            self.polar_pool = None
+        self.output_dim = hidden_dim * 3 + (
+            2 * self.channel_dim if channel_aware else 0
+        )
 
-    def forward(self, h: Tensor, batch: Tensor) -> Tensor:
+    def forward(
+        self,
+        h: Tensor,
+        batch: Tensor,
+        *,
+        a_disp: Tensor | None = None,
+        a_polar: Tensor | None = None,
+        return_parts: bool = False,
+    ) -> Tensor | dict[str, Tensor]:
         h_attn = self.attn_pool(h, batch)       # (B, D)
         h_s2s = self.set2set(h, batch)          # (B, 2D)
-        return torch.cat([h_attn, h_s2s], dim=-1)  # (B, 3D)
+        combined = torch.cat([h_attn, h_s2s], dim=-1)  # (B, 3D)
+
+        g_disp: Tensor | None = None
+        g_polar: Tensor | None = None
+        if (
+            self.channel_aware
+            and a_disp is not None
+            and a_polar is not None
+            and self.disp_pool is not None
+            and self.polar_pool is not None
+        ):
+            g_disp = self.disp_pool(a_disp, batch)
+            g_polar = self.polar_pool(a_polar, batch)
+            value = torch.cat([combined, g_disp, g_polar], dim=-1)
+        else:
+            value = combined
+            if self.channel_aware:
+                zeros = combined.new_zeros(combined.size(0), self.channel_dim)
+                g_disp = zeros
+                g_polar = zeros
+
+        if return_parts:
+            payload = {
+                "value": value,
+                "combined": combined,
+                "disp": g_disp,
+                "polar": g_polar,
+            }
+            return payload
+        return value
 
 
 # ================================================================== #

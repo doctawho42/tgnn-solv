@@ -63,14 +63,23 @@ def _enable_dropout(model: nn.Module) -> None:
 
 
 def _prepare_inputs(
+    model: TGNNSolv | DirectGNN,
     solute_smiles: str,
     solvent_smiles: str,
     T: float,
     device: torch.device,
 ) -> tuple[Batch, Batch, torch.Tensor]:
     """Build batched graph inputs for a single system."""
-    sol_g = smiles_to_graph(solute_smiles)
-    slv_g = smiles_to_graph(solvent_smiles)
+    sol_g = smiles_to_graph(
+        solute_smiles,
+        use_gasteiger_charges=bool(getattr(model.cfg, "use_gasteiger_charges", False)),
+        use_phys_edge_features=bool(getattr(model.cfg, "use_phys_edge_features", False)),
+    )
+    slv_g = smiles_to_graph(
+        solvent_smiles,
+        use_gasteiger_charges=bool(getattr(model.cfg, "use_gasteiger_charges", False)),
+        use_phys_edge_features=bool(getattr(model.cfg, "use_phys_edge_features", False)),
+    )
     if sol_g is None:
         raise ValueError(f"Invalid solute SMILES: {solute_smiles}")
     if slv_g is None:
@@ -272,7 +281,11 @@ class MCDropoutPredictor:
           n_samples
         """
         sol_b, slv_b, T_t = _prepare_inputs(
-            solute_smiles, solvent_smiles, T, self.device
+            self.model,
+            solute_smiles,
+            solvent_smiles,
+            T,
+            self.device,
         )
         forward_kwargs = _prepare_forward_kwargs(
             self.model,
@@ -384,7 +397,11 @@ class EnsemblePredictor:
     ) -> dict[str, float | int | str]:
         """Predict with ensemble uncertainty."""
         sol_b, slv_b, T_t = _prepare_inputs(
-            solute_smiles, solvent_smiles, T, self.device
+            self.models[0],
+            solute_smiles,
+            solvent_smiles,
+            T,
+            self.device,
         )
 
         samples = {

@@ -69,12 +69,14 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
         t_feat = make_temperature_features(T)
         encoder_t_feat = self._encoder_temp_features(t_feat)
         # Encode without cross-attention
-        h_sol_atoms, g_sol_pre = self._encode_and_readout(
+        h_sol_atoms, g_sol_pre_payload, sol_a_disp, sol_a_polar = self._encode_and_readout(
             solute_data, "solute", temp_feat=encoder_t_feat
         )
-        h_slv_atoms, g_slv_pre = self._encode_and_readout(
+        h_slv_atoms, g_slv_pre_payload, slv_a_disp, slv_a_polar = self._encode_and_readout(
             solvent_data, "solvent", temp_feat=encoder_t_feat
         )
+        g_sol_pre = g_sol_pre_payload["value"]
+        g_slv_pre = g_slv_pre_payload["value"]
 
         # Skip cross-attention entirely — readout with global tokens
         sol_list = self._append_global_token(
@@ -93,12 +95,20 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
         slv_batch = build_batch_from_lists(
             slv_no_token, dtype=solvent_data.batch.dtype
         )
-        g_sol_post = self.readout(
-            torch.cat(sol_no_token, dim=0), sol_batch
+        g_sol_post_payload = self._readout_payload(
+            torch.cat(sol_no_token, dim=0),
+            sol_batch,
+            a_disp=sol_a_disp,
+            a_polar=sol_a_polar,
         )
-        g_slv_post = self.readout(
-            torch.cat(slv_no_token, dim=0), slv_batch
+        g_slv_post_payload = self._readout_payload(
+            torch.cat(slv_no_token, dim=0),
+            slv_batch,
+            a_disp=slv_a_disp,
+            a_polar=slv_a_polar,
         )
+        g_sol_post = g_sol_post_payload["value"]
+        g_slv_post = g_slv_post_payload["value"]
         g_sol_tok = torch.stack([h[-1] for h in sol_list], dim=0)
         g_slv_tok = torch.stack([h[-1] for h in slv_list], dim=0)
         g_sol_post = g_sol_post + self.sol_token_gate * self.token_proj(g_sol_tok)
@@ -111,7 +121,12 @@ class TGNNSolvNoCrossAttn(TGNNSolv):
         aux_slv = self.head_aux(g_slv_pre)
 
         # Pair representation
-        g_pair = self.pair_repr(g_sol_post, g_slv_post)
+        g_sol_post_payload["value"] = g_sol_post
+        g_slv_post_payload["value"] = g_slv_post
+        g_pair = self._build_pair_representation(
+            g_sol_post_payload,
+            g_slv_post_payload,
+        )
         moe_gate = None
         if self.solvent_moe is not None:
             if solvent_type is None:
@@ -222,12 +237,14 @@ class TGNNSolvNoNRTL(TGNNSolv):
         encoder_t_feat = self._encoder_temp_features(t_feat)
         interaction_t_feat = self._interaction_temp_features(t_feat)
         # ---- 1. Encode both molecules ----
-        h_sol_atoms, g_sol_pre = self._encode_and_readout(
+        h_sol_atoms, g_sol_pre_payload, sol_a_disp, sol_a_polar = self._encode_and_readout(
             solute_data, "solute", temp_feat=encoder_t_feat
         )
-        h_slv_atoms, g_slv_pre = self._encode_and_readout(
+        h_slv_atoms, g_slv_pre_payload, slv_a_disp, slv_a_polar = self._encode_and_readout(
             solvent_data, "solvent", temp_feat=encoder_t_feat
         )
+        g_sol_pre = g_sol_pre_payload["value"]
+        g_slv_pre = g_slv_pre_payload["value"]
 
         # ---- 2. Auxiliary heads (before cross-attention) ----
         hansen_sol = self.head_hansen(g_sol_pre)
@@ -300,12 +317,20 @@ class TGNNSolvNoNRTL(TGNNSolv):
         slv_batch = build_batch_from_lists(
             slv_no_token, dtype=solvent_data.batch.dtype
         )
-        g_sol_post = self.readout(
-            torch.cat(sol_no_token, dim=0), sol_batch
+        g_sol_post_payload = self._readout_payload(
+            torch.cat(sol_no_token, dim=0),
+            sol_batch,
+            a_disp=sol_a_disp,
+            a_polar=sol_a_polar,
         )
-        g_slv_post = self.readout(
-            torch.cat(slv_no_token, dim=0), slv_batch
+        g_slv_post_payload = self._readout_payload(
+            torch.cat(slv_no_token, dim=0),
+            slv_batch,
+            a_disp=slv_a_disp,
+            a_polar=slv_a_polar,
         )
+        g_sol_post = g_sol_post_payload["value"]
+        g_slv_post = g_slv_post_payload["value"]
         sol_idx = torch.tensor(
             [length - 1 for length in sol_lengths],
             device=h_sol_padded.device,
@@ -326,7 +351,12 @@ class TGNNSolvNoNRTL(TGNNSolv):
         g_slv_post = g_slv_post + self.slv_token_gate * self.token_proj(g_slv_tok)
 
         # ---- 5. Pair representation ----
-        g_pair = self.pair_repr(g_sol_post, g_slv_post)
+        g_sol_post_payload["value"] = g_sol_post
+        g_slv_post_payload["value"] = g_slv_post
+        g_pair = self._build_pair_representation(
+            g_sol_post_payload,
+            g_slv_post_payload,
+        )
         moe_gate = None
         if self.solvent_moe is not None:
             if solvent_type is None:
