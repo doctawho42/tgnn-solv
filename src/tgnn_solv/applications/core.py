@@ -1,15 +1,4 @@
-"""Application-oriented helpers built on top of solubility predictions.
-
-This module stays deliberately lightweight. It does not try to turn TGNN-Solv
-into a full retrosynthesis engine or a mechanistic PK/PD simulator. Instead it
-provides transparent calculations that are defensible given what the model
-actually predicts:
-
-- solvent ranking for temperature-swing crystallization
-- solvent-swap / precipitation heuristics
-- aqueous dose and developability proxies
-- a capability matrix for downstream pharma interpretation
-"""
+"""Lightweight application helpers built on top of solubility predictions."""
 
 from __future__ import annotations
 
@@ -49,11 +38,7 @@ def clamp(value: float, lower: float, upper: float) -> float:
 
 
 def mole_fraction_to_molarity_in_water(x2: float) -> float:
-    """Approximate molarity from aqueous mole-fraction solubility.
-
-    This is intentionally only exposed for water. For arbitrary solvents the
-    conversion would require additional density / molar-volume assumptions.
-    """
+    """Approximate molarity from aqueous mole-fraction solubility."""
 
     x2 = clamp(x2, 0.0, 0.999999)
     return WATER_MOLARITY_MOL_L * x2 / max(1e-9, 1.0 - x2)
@@ -78,12 +63,7 @@ def dose_margin(max_supported_dose_mg: float | None, dose_mg: float | None) -> f
 
 
 def synthesis_window_metrics(hot_ln_x2: float, cold_ln_x2: float) -> dict[str, Any]:
-    """Score a solvent for temperature-swing isolation.
-
-    `hot` is the reaction/dissolution temperature and `cold` is the isolation
-    temperature. A useful solvent should dissolve more material hot than cold,
-    while still providing workable loading at the hot endpoint.
-    """
+    """Score a solvent for temperature-swing isolation."""
 
     hot_ln_x2 = float(hot_ln_x2)
     cold_ln_x2 = float(cold_ln_x2)
@@ -215,6 +195,7 @@ __all__ = [
     "SYNTHESIS_SOLVENT_LIBRARY",
     "WATER_MOLARITY_MOL_L",
     "aqueous_max_supported_dose_mg",
+    "clamp",
     "dose_margin",
     "mole_fraction_to_molarity_in_water",
     "pharma_capability_matrix",

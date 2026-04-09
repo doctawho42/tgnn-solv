@@ -421,6 +421,113 @@ const NOTES_BY_SLUG = {
       </p>
     ),
   },
+  "solvent-screening": {
+    summary: "How one checkpoint becomes a solvent-selection tool",
+    content: (
+      <>
+        <p>
+          The core object is a solvent-ranked table rather than a single prediction. For each solvent
+          <TexInline>{"v_j"}</TexInline>, the workflow evaluates
+          <TexInline>{"\\ln x_2(s, v_j, T)"}</TexInline>, converts it into an approximate concentration scale, and then
+          joins that score with boiling point, green score, ICH class, and simple miscibility metadata.
+        </p>
+        <p>
+          The important modeling point is that the application layer does not invent a second chemistry engine. It simply
+          batches the maintained inference path over a curated solvent library and keeps the physics-facing decomposition
+          when the checkpoint supports it, so ranking, green replacement, and antisolvent suggestions all stay tied to
+          the same underlying model outputs.
+        </p>
+      </>
+    ),
+    report: (
+      <p>
+        From a report perspective, this slide shows how TGNN-Solv can move from benchmark rows to a realistic solvent
+        selection workflow. The ranked table is useful on its own, but the crystallization-window panel and replacement
+        shortlist matter just as much because process decisions are usually constrained by safety, boiling point, and
+        sustainability rather than by absolute solubility alone.
+      </p>
+    ),
+  },
+  "process-optimization": {
+    summary: "Why optimization sits above screening",
+    content: (
+      <>
+        <p>
+          Screening answers “which solvent looks promising at one operating point”. Optimization answers a different
+          question: which solvent and temperature window maximize a process objective such as crystallization yield,
+          extraction leverage, or reactant-to-product selectivity. In the crystallization case the slide summarizes the
+          objective
+          <TexInline>{"Y \\approx \\frac{x_{hot} - x_{cold}}{x_{hot}}"}</TexInline>.
+        </p>
+        <p>
+          What makes this useful is that constraints stay inside the ranking loop. Boiling point, green score, toxicity,
+          and minimum loading are not afterthought annotations; they change the feasible set before the top candidates are
+          shown, which is why the Pareto panel is a better summary than a naive “highest yield wins” list.
+        </p>
+      </>
+    ),
+    report: (
+      <p>
+        This is still an equilibrium optimizer, not a kinetics or equipment model. That limitation is acceptable for the
+        intended use case: early process triage, where the main question is whether a solvent family and temperature swing
+        look worth taking into experimental development before the team spends time on detailed crystallization or
+        extraction studies.
+      </p>
+    ),
+  },
+  "drug-developability": {
+    summary: "How aqueous TGNN predictions become a developability report",
+    content: (
+      <>
+        <p>
+          The drug-facing layer combines aqueous screening with descriptor heuristics. BCS-style solubility is expressed
+          through the dose number
+          <TexInline>{"D_0 = \\frac{dose}{V \\cdot S}"}</TexInline>, while permeability is estimated conservatively from
+          proxy descriptors such as `LogP` and `TPSA` unless external transport data is available.
+        </p>
+        <p>
+          The developability radar then compresses several solubility-facing signals into one visual summary: intrinsic
+          aqueous solubility, predicted crystal burden, lipophilicity balance, solvent diversity, and local temperature
+          leverage. That makes the slide useful as a triage surface rather than just a restatement of one water-solubility
+          number.
+        </p>
+      </>
+    ),
+    report: (
+      <p>
+        The right interpretation is “BCS-style and formulation-facing”, not “fully pharmaceutical”. The module adds pH
+        correction, salt/cocrystal what-if screening, and recommendation logic on top of TGNN predictions, but it still
+        marks ionization, permeability, and ionic-state effects as approximations instead of overclaiming a complete
+        developability model.
+      </p>
+    ),
+  },
+  "pk-profile": {
+    summary: "What the PK solubility profile actually means",
+    content: (
+      <>
+        <p>
+          The GI profile is a compartmental solubility screen rather than a PBPK simulator. Each segment of the tract is
+          assigned a medium proxy, pH, and fluid volume; the workflow predicts aqueous solubility, applies a heuristic
+          pH correction when possible, and converts that into a dissolved-fraction estimate relative to the chosen dose.
+        </p>
+        <p>
+          The same logic extends naturally to biorelevant media, IV-compatible co-solvents, and topical vehicles. The
+          slide therefore shows several dosage-form questions on one page: where dissolution becomes limiting, whether fed
+          media suggest a food effect, and which formulation vehicles offer meaningful leverage without pretending that
+          clearance or tissue exposure have been solved.
+        </p>
+      </>
+    ),
+    report: (
+      <p>
+        This is valuable because it turns equilibrium solubility into a more realistic pharmaceutical narrative. The
+        model can now support conversations about dose pressure, GI dissolution windows, and formulation media in a way
+        that is still visibly grounded in solubility physics, while clearly separating those claims from full PK/PD or
+        PBPK modeling.
+      </p>
+    ),
+  },
 };
 
 const EXTRA_NOTES_BY_SLUG = {
@@ -675,6 +782,66 @@ const EXTRA_NOTES_BY_SLUG = {
         That also clarifies the project’s modeling philosophy. TGNN-Solv is not trying to learn an opaque map from molecules and
         temperature to solubility; it is trying to learn the physically meaningful ingredients whose sum determines solubility, which is
         why the architecture can support explanation and controlled extrapolation more naturally than a direct black-box predictor.
+      </p>
+    </>
+  ),
+  "solvent-screening": (
+    <>
+      <p>
+        The screening module is intentionally metadata-aware because solvent choice is always a multi-objective decision. A
+        solvent that wins on raw loading but fails on boiling point, toxicity class, or greenness is not actually the best
+        candidate for a real process, so those attributes have to remain visible in the same table and filter layer as the
+        model predictions.
+      </p>
+      <p>
+        The approximate `mg/mL` conversion is also presented honestly. It assumes the solvent dominates the solution volume
+        and uses solvent density plus mole-fraction algebra to create a process-readable concentration estimate. That is
+        good enough for ranking and “is this even in the right order of magnitude?” screening, but not a claim of exact
+        formulated concentration without experimental density information.
+      </p>
+    </>
+  ),
+  "process-optimization": (
+    <>
+      <p>
+        The mixture-design block matters because process development rarely ends at pure solvents. The current workflow uses
+        a deliberately simple two-stage approximation: interpolate solvent descriptors and Hansen coordinates first, then
+        score pseudo-pure mixture states with the same checkpoint. That keeps the method lightweight enough for screening
+        while still surfacing useful solvent-system ideas.
+      </p>
+      <p>
+        More broadly, this slide is a bridge from prediction to action. It shows that once the model can rank solvents and
+        scan temperature, it becomes straightforward to formulate objective-driven search problems that look much closer to
+        what a chemist or process scientist actually needs during route or formulation development.
+      </p>
+    </>
+  ),
+  "drug-developability": (
+    <>
+      <p>
+        The reference-drug context at the bottom is important because raw scores alone are hard to interpret. A BCS-style
+        class or a composite developability number becomes more useful once it is seen relative to familiar compounds such
+        as paracetamol, ibuprofen, carbamazepine, or metformin that represent very different formulation burdens.
+      </p>
+      <p>
+        The salt and cocrystal table is intentionally caveated as approximate because the base TGNN training set is still
+        dominated by neutral molecular systems. The value of that panel is not to certify an ionic form, but to highlight
+        when crystal-form engineering is plausible enough to deserve real experimental follow-up.
+      </p>
+    </>
+  ),
+  "pk-profile": (
+    <>
+      <p>
+        The media-specific panels make an important conceptual point: solubility is not one scalar property once dosage
+        form and physiology enter the picture. Water, gastric media, intestinal media, IV co-solvents, and topical vehicles
+        all stress the molecule in different ways, so the same checkpoint can now be used to build a structured map of
+        formulation opportunities and bottlenecks.
+      </p>
+      <p>
+        The UI keeps those claims conservative. GI dissolved fraction, food-effect tags, IV screens, and topical activity
+        are all framed as solubility-first heuristics that should feed into later permeability, exposure, stability, and
+        safety assessment rather than pretending to replace those downstream models.
       </p>
     </>
   ),

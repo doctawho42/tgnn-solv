@@ -48,6 +48,20 @@ function linePath(points) {
   return points.map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
 }
 
+function createChartScales({ left, right, top, bottom, xMin, xMax, yMin, yMax }) {
+  const safeXSpan = Math.max(xMax - xMin, 1e-9);
+  const safeYSpan = Math.max(yMax - yMin, 1e-9);
+
+  return {
+    left,
+    right,
+    top,
+    bottom,
+    xScale: (value) => left + ((value - xMin) / safeXSpan) * (right - left),
+    yScale: (value) => bottom - ((value - yMin) / safeYSpan) * (bottom - top),
+  };
+}
+
 function areaPath(topPoints, bottomPoints) {
   return `${linePath(topPoints)} ${bottomPoints
     .slice()
@@ -3400,6 +3414,871 @@ function Figure14MasterEquation() {
   );
 }
 
+function Figure15SolventScreening() {
+  const examples = {
+    paracetamol: {
+      name: "Paracetamol",
+      smiles: "CC(=O)Nc1ccc(O)cc1",
+      temperature: "298 K",
+      best: "DMSO",
+      green: "Ethanol",
+      anti: "Water",
+      rows: [
+        { name: "DMSO", cls: "sulfoxide", ln: -0.9, mg: 152, green: 5, ich: "3", color: COLORS.purple },
+        { name: "DMF", cls: "amide", ln: -1.3, mg: 96, green: 2, ich: "2", color: COLORS.red },
+        { name: "Ethanol", cls: "alcohol", ln: -2.7, mg: 34, green: 8, ich: "3", color: COLORS.blue },
+        { name: "Acetone", cls: "ketone", ln: -2.9, mg: 28, green: 8, ich: "3", color: COLORS.orange },
+        { name: "Ethyl acetate", cls: "ester", ln: -4.1, mg: 8, green: 8, ich: "3", color: COLORS.green },
+        { name: "Water", cls: "water", ln: -3.4, mg: 14, green: 10, ich: "3", color: COLORS.sky },
+      ],
+      window: {
+        solvent: "Ethanol",
+        hot: 333,
+        cold: 278,
+        yield: 0.74,
+        supersat: 4.2,
+        scan: [
+          [278, 0.014],
+          [288, 0.018],
+          [298, 0.024],
+          [308, 0.033],
+          [318, 0.046],
+          [333, 0.058],
+        ],
+      },
+      greenRows: [
+        { name: "Ethanol", retention: 0.35, gain: "+6" },
+        { name: "Dimethyl carbonate", retention: 0.28, gain: "+7" },
+        { name: "2-MeTHF", retention: 0.21, gain: "+6" },
+      ],
+      antisolvent: {
+        name: "Water",
+        ratio: 16,
+        miscibility: "miscible with ethanol",
+      },
+    },
+    carbamazepine: {
+      name: "Carbamazepine",
+      smiles: "NC(=O)N1c2ccccc2C=Cc2ccccc21",
+      temperature: "298 K",
+      best: "NMP",
+      green: "2-MeTHF",
+      anti: "Water",
+      rows: [
+        { name: "NMP", cls: "amide", ln: -0.7, mg: 184, green: 1, ich: "2", color: COLORS.red },
+        { name: "DMF", cls: "amide", ln: -1.0, mg: 140, green: 2, ich: "2", color: COLORS.purple },
+        { name: "DMSO", cls: "sulfoxide", ln: -1.1, mg: 132, green: 5, ich: "3", color: COLORS.blue },
+        { name: "Methanol", cls: "alcohol", ln: -2.9, mg: 24, green: 5, ich: "2", color: COLORS.orange },
+        { name: "2-MeTHF", cls: "ether", ln: -4.3, mg: 4.9, green: 8, ich: "n/a", color: COLORS.green },
+        { name: "Water", cls: "water", ln: -6.4, mg: 0.24, green: 10, ich: "3", color: COLORS.sky },
+      ],
+      window: {
+        solvent: "2-MeTHF",
+        hot: 348,
+        cold: 283,
+        yield: 0.88,
+        supersat: 12.5,
+        scan: [
+          [283, 0.0021],
+          [293, 0.0034],
+          [303, 0.0058],
+          [323, 0.014],
+          [338, 0.027],
+          [348, 0.034],
+        ],
+      },
+      greenRows: [
+        { name: "2-MeTHF", retention: 0.41, gain: "+7" },
+        { name: "Ethyl acetate", retention: 0.26, gain: "+6" },
+        { name: "CPME", retention: 0.22, gain: "+7" },
+      ],
+      antisolvent: {
+        name: "Water",
+        ratio: 140,
+        miscibility: "miscible with NMP / DMF",
+      },
+    },
+  };
+  const [activeKey, setActiveKey] = useState("paracetamol");
+  const example = examples[activeKey];
+  const maxMg = Math.max(...example.rows.map((row) => row.mg));
+  const scanMin = Math.min(...example.window.scan.map((point) => point[0]));
+  const scanMax = Math.max(...example.window.scan.map((point) => point[0]));
+  const windowChart = createChartScales({
+    left: 48,
+    right: 296,
+    top: 42,
+    bottom: 150,
+    xMin: scanMin,
+    xMax: scanMax,
+    yMin: 0,
+    yMax: example.window.scan[example.window.scan.length - 1][1],
+  });
+  const path = linePath(example.window.scan.map(([t, x]) => [windowChart.xScale(t), windowChart.yScale(x)]));
+  const hotX = windowChart.xScale(example.window.hot);
+  const coldX = windowChart.xScale(example.window.cold);
+  const hotAnchor = hotX > (windowChart.left + windowChart.right) / 2 ? "end" : "start";
+  const coldAnchor = coldX > (windowChart.left + windowChart.right) / 2 ? "end" : "start";
+
+  return (
+    <FigureCard
+      kicker="Figure 15"
+      title="Solvent Screening"
+      subtitle="Library ranking, crystallization windows, green replacements, and antisolvent logic on top of the same checkpoint."
+      controls={
+        <ToggleGroup
+          label="Screening example"
+          options={[
+            { label: "Paracetamol", value: "paracetamol" },
+            { label: "Carbamazepine", value: "carbamazepine" },
+          ]}
+          value={activeKey}
+          onChange={setActiveKey}
+        />
+      }
+    >
+      <div className="application-slide-grid">
+        <div className="application-slide-hero">
+          <MoleculeMiniCard role="screening target" name={example.name} smiles={example.smiles} compact />
+          <div className="application-slide-query">
+            <strong>Query</strong>
+            <span>{example.temperature} screen over the built-in solvent library</span>
+            <small>Same workflow works for `TGNN-Solv` and `DirectGNN`; full decomposition is richer on the physics path.</small>
+          </div>
+        </div>
+
+        <StatStrip
+          items={[
+            { label: "Best loading solvent", value: example.best },
+            { label: "Best green alternative", value: example.green },
+            { label: "Best antisolvent", value: example.anti },
+            { label: "mg/mL note", value: "density-based approximation" },
+          ]}
+        />
+
+        <div className="screening-slide-layout">
+          <div className="screening-rank-card">
+            <div className="application-card-title">Ranked solvent panel</div>
+            <div className="screening-rank-list">
+              {example.rows.map((row) => (
+                <div className="screening-rank-row" key={row.name}>
+                  <div className="screening-rank-meta">
+                    <span className="screening-rank-dot" style={{ background: row.color }} />
+                    <div>
+                      <strong>{row.name}</strong>
+                      <small>{row.cls} · ICH {row.ich} · green {row.green}</small>
+                    </div>
+                  </div>
+                  <div className="screening-rank-bar">
+                    <span className="screening-rank-fill" style={{ width: `${(row.mg / maxMg) * 100}%`, background: row.color }} />
+                  </div>
+                  <div className="screening-rank-values">
+                    <strong>{row.mg.toFixed(row.mg >= 10 ? 0 : 1)}</strong>
+                    <small>mg/mL</small>
+                    <span>{row.ln.toFixed(1)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <FigureLegend
+              items={[
+                { label: "green / low-hazard", color: COLORS.green },
+                { label: "workhorse polar aprotic", color: COLORS.purple },
+                { label: "common process solvent", color: COLORS.orange },
+              ]}
+            />
+          </div>
+
+          <div className="screening-side-column">
+            <div className="application-info-card">
+              <div className="application-card-title">Typical filters</div>
+              <div className="application-chip-list">
+                <span className="application-chip">green score ≥ 5</span>
+                <span className="application-chip">ICH class ≤ 2</span>
+                <span className="application-chip">exclude chlorinated</span>
+                <span className="application-chip">bp &lt; 373 K</span>
+              </div>
+              <p className="figure-subnote">Filtering happens before ranking so the UI can answer “best solvent under my process constraints”, not only “best solvent in theory”.</p>
+            </div>
+
+            <div className="application-info-card">
+              <div className="application-card-title">Green replacement</div>
+              <table className="application-mini-table">
+                <thead>
+                  <tr>
+                    <th>Replacement</th>
+                    <th>Retention</th>
+                    <th>Green Δ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {example.greenRows.map((row) => (
+                    <tr key={row.name}>
+                      <td>{row.name}</td>
+                      <td>{Math.round(row.retention * 100)}%</td>
+                      <td>{row.gain}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="application-info-card">
+              <div className="application-card-title">Antisolvent candidate</div>
+              <div className="application-highlight">
+                <strong>{example.antisolvent.name}</strong>
+                <span>{example.antisolvent.ratio}× poorer than the good solvent</span>
+                <small>{example.antisolvent.miscibility}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="screening-bottom-grid">
+          <div className="application-info-card">
+            <div className="application-card-title">Crystallization window</div>
+            <svg viewBox="0 0 340 190" role="img" aria-label="Crystallization window temperature scan">
+              <rect x="18" y="14" width="304" height="162" rx="16" fill={PAPER_FILL} stroke={PAPER_BORDER} />
+              <line x1={windowChart.left} y1={windowChart.bottom} x2={windowChart.right} y2={windowChart.bottom} stroke={PAPER_TEXT} strokeWidth="2" />
+              <line x1={windowChart.left} y1={windowChart.top} x2={windowChart.left} y2={windowChart.bottom} stroke={PAPER_TEXT} strokeWidth="2" />
+              <path d={path} fill="none" stroke={COLORS.blue} strokeWidth="4" strokeLinecap="round" />
+              {example.window.scan.map(([t, x]) => (
+                <g key={t}>
+                  <circle cx={windowChart.xScale(t)} cy={windowChart.yScale(x)} r="5" fill={COLORS.blue} />
+                  <text x={windowChart.xScale(t)} y="170" textAnchor="middle" fontSize="12" fill={PAPER_SOFT_TEXT}>
+                    {t}
+                  </text>
+                </g>
+              ))}
+              <line x1={hotX} y1={windowChart.top - 8} x2={hotX} y2={windowChart.bottom} stroke={COLORS.orange} strokeDasharray="5 4" />
+              <line x1={coldX} y1={windowChart.top - 8} x2={coldX} y2={windowChart.bottom} stroke={COLORS.green} strokeDasharray="5 4" />
+              <text x={hotX + (hotAnchor === "end" ? -4 : 4)} y="30" textAnchor={hotAnchor} fontSize="12" fill={COLORS.orange}>hot</text>
+              <text x={coldX + (coldAnchor === "end" ? -4 : 4)} y="30" textAnchor={coldAnchor} fontSize="12" fill={COLORS.green}>cold</text>
+            </svg>
+            <div className="application-metric-row">
+              <span><TexInline>{"Y \\approx \\frac{x_{hot}-x_{cold}}{x_{hot}}"}</TexInline></span>
+              <strong>{Math.round(example.window.yield * 100)}% yield</strong>
+              <span>{example.window.supersat.toFixed(1)}× supersaturation</span>
+            </div>
+          </div>
+
+          <div className="application-info-card">
+            <div className="application-card-title">Top candidates at a glance</div>
+            <table className="application-mini-table">
+              <thead>
+                <tr>
+                  <th>Solvent</th>
+                  <th>`ln x₂`</th>
+                  <th>mg/mL</th>
+                  <th>Green</th>
+                </tr>
+              </thead>
+              <tbody>
+                {example.rows.slice(0, 5).map((row) => (
+                  <tr key={`${row.name}-table`}>
+                    <td>{row.name}</td>
+                    <td>{row.ln.toFixed(1)}</td>
+                    <td>{row.mg.toFixed(row.mg >= 10 ? 0 : 1)}</td>
+                    <td>{row.green}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="figure-subnote">The full DataFrame also carries `Φ`, `γ₂`, `T_m`, `ΔH_fus`, Hansen distance, AD confidence, and solvent metadata when available.</p>
+          </div>
+        </div>
+      </div>
+    </FigureCard>
+  );
+}
+
+function Figure16ProcessOptimization() {
+  const paretoPoints = [
+    { name: "2-MeTHF", yield: 0.81, green: 8, color: COLORS.green, labelDx: 12, labelDy: -10, anchor: "start" },
+    { name: "EtOAc", yield: 0.66, green: 8, color: COLORS.blue, labelDx: 12, labelDy: 4, anchor: "start" },
+    { name: "Acetone", yield: 0.61, green: 8, color: COLORS.orange, labelDx: 12, labelDy: 16, anchor: "start" },
+    { name: "DMF", yield: 0.88, green: 2, color: COLORS.red, labelDx: 12, labelDy: -8, anchor: "start" },
+    { name: "DMSO", yield: 0.84, green: 5, color: COLORS.purple, labelDx: 12, labelDy: -8, anchor: "start" },
+  ];
+  const paretoChart = createChartScales({
+    left: 58,
+    right: 288,
+    top: 42,
+    bottom: 168,
+    xMin: 1,
+    xMax: 10,
+    yMin: 0.45,
+    yMax: 0.9,
+  });
+
+  return (
+    <FigureCard
+      kicker="Figure 16"
+      title="Process Optimization"
+      subtitle="The application layer can optimize operating windows, not only score isolated solvent points."
+    >
+      <div className="application-slide-grid">
+        <StatStrip
+          items={[
+            { label: "Best crystallization window", value: "2-MeTHF · 338→278 K · 81%" },
+            { label: "Best extraction solvent", value: "EtOAc · K = 14" },
+            { label: "Best reaction medium", value: "Acetone · reactants/product = 4.6" },
+            { label: "Mixture idea", value: "70% EtOH / 30% water" },
+          ]}
+        />
+
+        <div className="process-mode-grid">
+          <div className="application-info-card">
+            <div className="application-card-title">Crystallization</div>
+            <TexBlock>{"\\max\\ Y = \\frac{x_{hot} - x_{cold}}{x_{hot}}"}</TexBlock>
+            <ul className="application-bullet-list">
+              <li>`T_hot` constrained by solvent boiling point.</li>
+              <li>`T_cold` constrained by the practical cooling floor.</li>
+              <li>Ranking combines yield, supersaturation, green score, and loading.</li>
+            </ul>
+          </div>
+          <div className="application-info-card">
+            <div className="application-card-title">Extraction</div>
+            <TexBlock>{"K = \\frac{x_{2,extract}}{x_{2,source}}"}</TexBlock>
+            <ul className="application-bullet-list">
+              <li>Immiscibility and boiling point stay in the objective, not only in a post-hoc comment.</li>
+              <li>Good extraction solvents need both partition leverage and operability.</li>
+              <li>Recommended rows stay visible as a constrained shortlist.</li>
+            </ul>
+          </div>
+          <div className="application-info-card">
+            <div className="application-card-title">Reaction medium</div>
+            <TexBlock>{"\\max\\ \\frac{\\min_i S_{reactant,i}}{S_{product}}"}</TexBlock>
+            <ul className="application-bullet-list">
+              <li>Reactants should stay soluble while product should want to leave solution.</li>
+              <li>Useful for precipitation-driven workups and telescoped routes.</li>
+              <li>Shared solvent metadata keeps toxicity and green constraints visible.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="screening-bottom-grid">
+          <div className="application-info-card">
+            <div className="application-card-title">Pareto front: yield vs green score</div>
+            <svg viewBox="0 0 340 200" role="img" aria-label="Pareto front scatter plot">
+              <rect x="12" y="12" width="314" height="180" rx="16" fill={PAPER_FILL} stroke={PAPER_BORDER} />
+              <line x1={paretoChart.left} y1={paretoChart.bottom} x2={paretoChart.right} y2={paretoChart.bottom} stroke={PAPER_TEXT} strokeWidth="2" />
+              <line x1={paretoChart.left} y1={paretoChart.top} x2={paretoChart.left} y2={paretoChart.bottom} stroke={PAPER_TEXT} strokeWidth="2" />
+              {[2, 4, 6, 8, 10].map((tick) => (
+                <g key={`green-${tick}`}>
+                  <line x1={paretoChart.xScale(tick)} y1={paretoChart.bottom} x2={paretoChart.xScale(tick)} y2={paretoChart.bottom + 5} stroke={PAPER_TEXT} strokeWidth="1.6" />
+                  <text x={paretoChart.xScale(tick)} y="180" textAnchor="middle" fontSize="12" fill={PAPER_SOFT_TEXT}>
+                    {tick}
+                  </text>
+                </g>
+              ))}
+              {[0.5, 0.6, 0.7, 0.8, 0.9].map((tick) => (
+                <g key={`yield-${tick}`}>
+                  <line x1={paretoChart.left - 5} y1={paretoChart.yScale(tick)} x2={paretoChart.left} y2={paretoChart.yScale(tick)} stroke={PAPER_TEXT} strokeWidth="1.6" />
+                  <text x="42" y={paretoChart.yScale(tick)} textAnchor="end" dominantBaseline="middle" fontSize="12" fill={PAPER_SOFT_TEXT}>
+                    {tick.toFixed(1)}
+                  </text>
+                </g>
+              ))}
+              {paretoPoints.map((point) => {
+                const pointX = paretoChart.xScale(point.green);
+                const pointY = paretoChart.yScale(point.yield);
+
+                return (
+                  <g key={point.name}>
+                    <circle cx={pointX} cy={pointY} r="7" fill={point.color} />
+                    <text
+                      x={pointX + point.labelDx}
+                      y={pointY + point.labelDy}
+                      textAnchor={point.anchor}
+                      fontSize="12"
+                      fill={PAPER_TEXT}
+                      paintOrder="stroke"
+                      stroke={PAPER_FILL}
+                      strokeWidth="3"
+                      strokeLinejoin="round"
+                    >
+                      {point.name}
+                    </text>
+                  </g>
+                );
+              })}
+              <path
+                d={`M ${paretoChart.xScale(5)} ${paretoChart.yScale(0.84)} L ${paretoChart.xScale(8)} ${paretoChart.yScale(0.81)} L ${paretoChart.xScale(8)} ${paretoChart.yScale(0.66)}`}
+                fill="none"
+                stroke={COLORS.green}
+                strokeDasharray="5 4"
+                strokeWidth="2.5"
+              />
+              <text x={(paretoChart.left + paretoChart.right) / 2} y="188" textAnchor="middle" fontSize="12" fill={PAPER_SOFT_TEXT}>
+                green score
+              </text>
+              <text
+                x="24"
+                y={(paretoChart.top + paretoChart.bottom) / 2}
+                textAnchor="middle"
+                fontSize="12"
+                fill={PAPER_SOFT_TEXT}
+                transform={`rotate(-90 24 ${(paretoChart.top + paretoChart.bottom) / 2})`}
+              >
+                yield
+              </text>
+            </svg>
+          </div>
+
+          <div className="application-info-card">
+            <div className="application-card-title">Binary solvent design</div>
+            <table className="application-mini-table">
+              <thead>
+                <tr>
+                  <th>Mixture</th>
+                  <th>Target</th>
+                  <th>Predicted role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>70% EtOH / 30% water</td>
+                  <td>1 to 5 mg/mL</td>
+                  <td>Controlled crash-out</td>
+                </tr>
+                <tr>
+                  <td>60% acetone / 40% EtOAc</td>
+                  <td>high loading</td>
+                  <td>Fast solvent swap</td>
+                </tr>
+                <tr>
+                  <td>50% IPA / 50% water</td>
+                  <td>moderate window</td>
+                  <td>Gentler cooling isolation</td>
+                </tr>
+              </tbody>
+            </table>
+            <p className="figure-subnote">The first pass interpolates solvent descriptors and Hansen coordinates; the second pass re-evaluates a pseudo-pure mixture proxy with the same checkpoint.</p>
+          </div>
+        </div>
+      </div>
+    </FigureCard>
+  );
+}
+
+function Figure17DrugDevelopability() {
+  const cases = {
+    paracetamol: {
+      name: "Paracetamol",
+      smiles: "CC(=O)Nc1ccc(O)cc1",
+      bcs: "III",
+      badgeColor: COLORS.blue,
+      dose: 0.14,
+      permeability: "low proxy",
+      pH: [
+        { label: "pH 1.0", value: 14.2 },
+        { label: "pH 4.5", value: 14.0 },
+        { label: "pH 6.8", value: 13.7 },
+      ],
+      radar: [0.78, 0.63, 0.58, 0.80, 0.52],
+      risks: ["permeability-limited exposure risk", "moderate crystal stability"],
+      recs: ["simple IR remains plausible", "watch transport / absorption rather than only aqueous dose number"],
+      salts: [
+        { name: "Na salt surrogate", gain: "1.4×", note: "approximate ionic uplift" },
+        { name: "Nicotinamide cocrystal", gain: "1.2×", note: "modest crystal softening" },
+      ],
+    },
+    carbamazepine: {
+      name: "Carbamazepine",
+      smiles: "NC(=O)N1c2ccccc2C=Cc2ccccc21",
+      bcs: "II",
+      badgeColor: COLORS.orange,
+      dose: 11.2,
+      permeability: "high proxy",
+      pH: [
+        { label: "pH 1.0", value: 0.19 },
+        { label: "pH 4.5", value: 0.18 },
+        { label: "pH 6.8", value: 0.17 },
+      ],
+      radar: [0.16, 0.28, 0.61, 0.31, 0.44],
+      risks: ["severe aqueous solubility bottleneck", "high crystal stability"],
+      recs: ["salt or co-crystal screening", "amorphous solid dispersion / lipid formulation"],
+      salts: [
+        { name: "Saccharin cocrystal", gain: "2.6×", note: "approximate crystal-form effect" },
+        { name: "Maleate salt surrogate", gain: "3.1×", note: "flagged as lower confidence" },
+      ],
+    },
+  };
+  const radarAxes = ["Aq sol", "Crystal", "Lipo", "Diversity", "dlnx/dT"];
+  const [activeKey, setActiveKey] = useState("paracetamol");
+  const active = cases[activeKey];
+  const maxPh = Math.max(...active.pH.map((item) => item.value));
+  const radarCenterX = 168;
+  const radarCenterY = 148;
+  const radarInnerRadius = 34;
+  const radarOuterRadius = 112;
+  const radarLabelRadius = 132;
+
+  return (
+    <FigureCard
+      kicker="Figure 17"
+      title="Drug Developability"
+      subtitle="BCS-style classification and formulation-facing triage built on top of aqueous TGNN screening."
+      controls={
+        <ToggleGroup
+          label="Developability case"
+          options={[
+            { label: "Paracetamol", value: "paracetamol" },
+            { label: "Carbamazepine", value: "carbamazepine" },
+          ]}
+          value={activeKey}
+          onChange={setActiveKey}
+        />
+      }
+    >
+      <div className="application-slide-grid">
+        <div className="application-slide-hero">
+          <MoleculeMiniCard role="candidate" name={active.name} smiles={active.smiles} compact />
+          <div className="application-slide-query">
+            <strong>BCS-style output</strong>
+            <span>
+              <span className="application-badge" style={{ background: active.badgeColor }}>Class {active.bcs}</span>
+              <span>Dose number = {active.dose.toFixed(2)} · permeability = {active.permeability}</span>
+            </span>
+            <small>High/low permeability is still proxy-driven unless external transport data is supplied.</small>
+          </div>
+        </div>
+
+        <div className="developability-grid">
+          <div className="application-info-card">
+            <div className="application-card-title">Aqueous pH profile at 37 °C</div>
+            <div className="screening-rank-list">
+              {active.pH.map((row) => (
+                <div className="screening-rank-row" key={row.label}>
+                  <div className="screening-rank-meta">
+                    <span className="screening-rank-dot" style={{ background: COLORS.blue }} />
+                    <div>
+                      <strong>{row.label}</strong>
+                      <small>Henderson-Hasselbalch corrected when pKa estimate exists</small>
+                    </div>
+                  </div>
+                  <div className="screening-rank-bar">
+                    <span className="screening-rank-fill" style={{ width: `${(row.value / maxPh) * 100}%`, background: COLORS.blue }} />
+                  </div>
+                  <div className="screening-rank-values">
+                    <strong>{row.value.toFixed(row.value >= 1 ? 1 : 2)}</strong>
+                    <small>mg/mL</small>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="figure-subnote">BCS solubility logic is driven by <TexInline>{"D_0 = \\frac{dose}{V \\cdot S}"}</TexInline> with `V = 250 mL` by default.</p>
+          </div>
+
+          <div className="application-info-card">
+            <div className="application-card-title">Composite developability score</div>
+            <div className="comparison-radar-layout comparison-radar-layout--compact">
+              <div className="comparison-radar-card comparison-radar-card--compact">
+                <svg viewBox="0 0 350 300" role="img" aria-label="Developability radar chart">
+                  {Array.from({ length: 4 }, (_, ring) => {
+                    const radius = radarInnerRadius + ring * 26;
+                    const points = radarAxes.map((_, index) => {
+                      const angle = (360 / radarAxes.length) * index;
+                      const point = polarToCartesian(radarCenterX, radarCenterY, radius, angle);
+                      return `${point.x},${point.y}`;
+                    });
+                    return <polygon key={radius} points={points.join(" ")} fill="none" stroke={COLORS.line} strokeWidth="1.4" />;
+                  })}
+                  {radarAxes.map((axis, index) => {
+                    const angle = (360 / radarAxes.length) * index;
+                    const point = polarToCartesian(radarCenterX, radarCenterY, radarLabelRadius, angle);
+                    const anchor = point.x < radarCenterX - 8 ? "end" : point.x > radarCenterX + 8 ? "start" : "middle";
+                    return (
+                      <g key={axis}>
+                        <line x1={radarCenterX} y1={radarCenterY} x2={polarToCartesian(radarCenterX, radarCenterY, radarOuterRadius, angle).x} y2={polarToCartesian(radarCenterX, radarCenterY, radarOuterRadius, angle).y} stroke={COLORS.line} strokeWidth="1.4" />
+                        <text x={point.x} y={point.y} textAnchor={anchor} dominantBaseline="middle" fontSize="11.5" fill={DECK_TEXT} fontWeight="700">
+                          {axis}
+                        </text>
+                      </g>
+                    );
+                  })}
+                  <polygon
+                    points={active.radar.map((value, index) => {
+                      const angle = (360 / radarAxes.length) * index;
+                      const point = polarToCartesian(
+                        radarCenterX,
+                        radarCenterY,
+                        radarInnerRadius + value * (radarOuterRadius - radarInnerRadius),
+                        angle,
+                      );
+                      return `${point.x},${point.y}`;
+                    }).join(" ")}
+                    fill={active.badgeColor}
+                    fillOpacity="0.24"
+                    stroke={active.badgeColor}
+                    strokeWidth="3"
+                  />
+                </svg>
+              </div>
+              <div className="comparison-radar-side comparison-radar-side--compact">
+                <div className="application-highlight">
+                  <strong>Traffic light</strong>
+                  <span style={{ color: active.badgeColor }}>{active.bcs === "II" ? "yellow" : "green-yellow"}</span>
+                  <small>Composite score mixes aqueous solubility, crystal burden, lipophilicity balance, solvent diversity, and temperature leverage.</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="application-info-card">
+            <div className="application-card-title">Recommendations and risks</div>
+            <div className="application-chip-list">
+              {active.risks.map((risk) => (
+                <span key={risk} className="application-chip application-chip--risk">{risk}</span>
+              ))}
+            </div>
+            <ul className="application-bullet-list">
+              {active.recs.map((rec) => (
+                <li key={rec}>{rec}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="screening-bottom-grid">
+          <div className="application-info-card">
+            <div className="application-card-title">Salt / cocrystal triage</div>
+            <table className="application-mini-table">
+              <thead>
+                <tr>
+                  <th>Form</th>
+                  <th>Advantage</th>
+                  <th>Caveat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {active.salts.map((row) => (
+                  <tr key={row.name}>
+                    <td>{row.name}</td>
+                    <td>{row.gain}</td>
+                    <td>{row.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="application-info-card">
+            <div className="application-card-title">Reference-drug context</div>
+            <table className="application-mini-table">
+              <thead>
+                <tr>
+                  <th>Drug</th>
+                  <th>Class</th>
+                  <th>Interpretation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Paracetamol</td>
+                  <td>III</td>
+                  <td>soluble, transport-limited proxy</td>
+                </tr>
+                <tr>
+                  <td>Ibuprofen</td>
+                  <td>II</td>
+                  <td>lipophilic, dissolution-limited</td>
+                </tr>
+                <tr>
+                  <td>Metformin</td>
+                  <td>III</td>
+                  <td>highly polar, permeability-limited</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </FigureCard>
+  );
+}
+
+function Figure18PKProfile() {
+  const compartments = [
+    { name: "stomach\nfasted", sol: 3.2, frac: 1.0, dose: 0.31 },
+    { name: "stomach\nfed", sol: 4.1, frac: 1.0, dose: 0.18 },
+    { name: "duodenum", sol: 7.8, frac: 1.0, dose: 0.11 },
+    { name: "jejunum /\nileum", sol: 6.2, frac: 0.93, dose: 0.14 },
+    { name: "colon", sol: 2.4, frac: 0.42, dose: 0.58 },
+  ];
+  const media = [
+    { name: "FaSSGF", value: 3.0, color: COLORS.red },
+    { name: "FeSSGF", value: 4.2, color: COLORS.orange },
+    { name: "FaSSIF", value: 7.6, color: COLORS.blue },
+    { name: "FeSSIF", value: 12.4, color: COLORS.green },
+  ];
+  const maxMedia = Math.max(...media.map((item) => item.value));
+  const giChart = createChartScales({
+    left: 50,
+    right: 294,
+    top: 46,
+    bottom: 152,
+    xMin: 0,
+    xMax: compartments.length - 1,
+    yMin: 0,
+    yMax: 1,
+  });
+  const linePoints = compartments.map((row, index) => [giChart.xScale(index), giChart.yScale(row.frac)]);
+
+  return (
+    <FigureCard
+      kicker="Figure 18"
+      title="PK Solubility Profile"
+      subtitle="GI compartments, biorelevant media, and formulation-vehicle screens turn water solubility into a dosage-form narrative."
+    >
+      <div className="application-slide-grid">
+        <StatStrip
+          items={[
+            { label: "Max absorbable dose", value: "≈ 780 mg" },
+            { label: "`f_abs` proxy", value: "0.82" },
+            { label: "Rate-limiting step", value: "distal-water dilution" },
+            { label: "Food effect", value: "positive" },
+          ]}
+        />
+
+        <div className="pk-compartment-strip">
+          {compartments.map((row) => (
+            <div key={row.name} className="pk-compartment-card">
+              <strong>{row.name}</strong>
+              <span>{row.sol.toFixed(1)} mg/mL</span>
+              <small>{Math.round(row.frac * 100)}% dissolved</small>
+            </div>
+          ))}
+        </div>
+
+        <div className="screening-bottom-grid">
+          <div className="application-info-card">
+            <div className="application-card-title">Dissolved fraction along the GI tract</div>
+            <svg viewBox="0 0 340 190" role="img" aria-label="GI dissolved fraction">
+              <rect x="16" y="14" width="308" height="172" rx="16" fill={PAPER_FILL} stroke={PAPER_BORDER} />
+              <line x1={giChart.left} y1={giChart.bottom} x2={giChart.right} y2={giChart.bottom} stroke={PAPER_TEXT} strokeWidth="2" />
+              <line x1={giChart.left} y1={giChart.top} x2={giChart.left} y2={giChart.bottom} stroke={PAPER_TEXT} strokeWidth="2" />
+              <path d={linePath(linePoints)} fill="none" stroke={COLORS.blue} strokeWidth="4" strokeLinecap="round" />
+              {compartments.map((row, index) => (
+                <g key={`gi-${row.name}`}>
+                  <circle cx={giChart.xScale(index)} cy={giChart.yScale(row.frac)} r="5" fill={COLORS.blue} />
+                  <text x={giChart.xScale(index)} y="168" textAnchor="middle" fontSize="11" fill={PAPER_SOFT_TEXT}>
+                    {index + 1}
+                  </text>
+                </g>
+              ))}
+              <text x={(giChart.left + giChart.right) / 2} y="180" textAnchor="middle" fontSize="12" fill={PAPER_SOFT_TEXT}>
+                GI compartment index
+              </text>
+            </svg>
+            <p className="figure-subnote">Each compartment combines pH-corrected water solubility with a volume-limited dissolved-fraction estimate. The result is a dissolution pressure profile, not a full PBPK model.</p>
+          </div>
+
+          <div className="application-info-card">
+            <div className="application-card-title">Biorelevant media and food effect</div>
+            <div className="screening-rank-list">
+              {media.map((row) => (
+                <div className="screening-rank-row" key={row.name}>
+                  <div className="screening-rank-meta">
+                    <span className="screening-rank-dot" style={{ background: row.color }} />
+                    <div>
+                      <strong>{row.name}</strong>
+                      <small>{row.name.includes("Fe") ? "fed state" : "fasted state"}</small>
+                    </div>
+                  </div>
+                  <div className="screening-rank-bar">
+                    <span className="screening-rank-fill" style={{ width: `${(row.value / maxMedia) * 100}%`, background: row.color }} />
+                  </div>
+                  <div className="screening-rank-values">
+                    <strong>{row.value.toFixed(1)}</strong>
+                    <small>mg/mL</small>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="application-highlight">
+              <strong>Food-effect heuristic</strong>
+              <span>FeSSIF / FaSSIF ≈ 1.6×</span>
+              <small>Suggests a positive fed-state solubilization effect.</small>
+            </div>
+          </div>
+        </div>
+
+        <div className="screening-bottom-grid">
+          <div className="application-info-card">
+            <div className="application-card-title">IV vehicle screen</div>
+            <table className="application-mini-table">
+              <thead>
+                <tr>
+                  <th>Vehicle</th>
+                  <th>25 °C</th>
+                  <th>37 °C</th>
+                  <th>Flag</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>PEG 400 surrogate</td>
+                  <td>28</td>
+                  <td>34</td>
+                  <td>high osmolality</td>
+                </tr>
+                <tr>
+                  <td>Propylene glycol</td>
+                  <td>18</td>
+                  <td>22</td>
+                  <td>co-solvent ceiling</td>
+                </tr>
+                <tr>
+                  <td>Cyclodextrin solution</td>
+                  <td>11</td>
+                  <td>14</td>
+                  <td>complexation route</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="application-info-card">
+            <div className="application-card-title">Topical vehicle screen</div>
+            <table className="application-mini-table">
+              <thead>
+                <tr>
+                  <th>Vehicle</th>
+                  <th>Solubility</th>
+                  <th>Activity</th>
+                  <th>Use</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Propylene glycol</td>
+                  <td>16 mg/mL</td>
+                  <td>high</td>
+                  <td>balanced loading/activity</td>
+                </tr>
+                <tr>
+                  <td>Ethanol solution</td>
+                  <td>22 mg/mL</td>
+                  <td>medium</td>
+                  <td>volatile fast-drying</td>
+                </tr>
+                <tr>
+                  <td>DMSO</td>
+                  <td>80 mg/mL</td>
+                  <td>low</td>
+                  <td>penetration enhancer, irritation risk</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </FigureCard>
+  );
+}
+
 export const PRESENTATION_FIGURES = [
   {
     slug: "data-pipeline",
@@ -3536,5 +4415,37 @@ export const PRESENTATION_FIGURES = [
     blurb: "Two interpretable penalties add on one axis, which makes prediction outputs explainable by construction.",
     tags: ["equation", "interpretability", "physics"],
     component: Figure14MasterEquation,
+  },
+  {
+    slug: "solvent-screening",
+    title: "Solvent Screening",
+    subtitle: "Rank, filter, and turn solubility into process-facing solvent decisions",
+    blurb: "The screening layer converts one checkpoint into ranked solvents, crystallization windows, antisolvents, and green replacements.",
+    tags: ["applications", "screening", "solvents"],
+    component: Figure15SolventScreening,
+  },
+  {
+    slug: "process-optimization",
+    title: "Process Optimization",
+    subtitle: "Crystallization, extraction, reaction medium, and mixture design",
+    blurb: "Process-oriented objectives sit on top of the same solvent-screening core and stay constraint-aware.",
+    tags: ["applications", "process", "optimization"],
+    component: Figure16ProcessOptimization,
+  },
+  {
+    slug: "drug-developability",
+    title: "Drug Developability",
+    subtitle: "BCS-style solubility logic plus formulation-facing triage",
+    blurb: "Aqueous solubility, pH correction, descriptor proxies, and crystal terms combine into a developability report.",
+    tags: ["applications", "bcs", "formulation"],
+    component: Figure17DrugDevelopability,
+  },
+  {
+    slug: "pk-profile",
+    title: "PK Solubility Profile",
+    subtitle: "GI compartments, biorelevant media, IV vehicles, and topical screens",
+    blurb: "The PK layer keeps claims solubility-first: useful upstream of PBPK, not a substitute for it.",
+    tags: ["applications", "pk", "media"],
+    component: Figure18PKProfile,
   },
 ];

@@ -10,6 +10,8 @@ It includes:
 - TeX rendering
 - RDKit-backed molecule depictions and graph views where applicable
 - build-time data injection from repository artifacts
+- application-layer slides for solvent screening, developability, and
+  PK-facing workflows in addition to the core architecture deck
 
 The source of truth lives under `src/`. Generated assets are committed under
 `docs/assets/` because MkDocs serves them directly.

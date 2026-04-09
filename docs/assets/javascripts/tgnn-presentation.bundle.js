@@ -20336,6 +20336,18 @@
   function linePath(points) {
     return points.map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
   }
+  function createChartScales({ left, right, top, bottom, xMin, xMax, yMin, yMax }) {
+    const safeXSpan = Math.max(xMax - xMin, 1e-9);
+    const safeYSpan = Math.max(yMax - yMin, 1e-9);
+    return {
+      left,
+      right,
+      top,
+      bottom,
+      xScale: (value) => left + (value - xMin) / safeXSpan * (right - left),
+      yScale: (value) => bottom - (value - yMin) / safeYSpan * (bottom - top)
+    };
+  }
   function areaPath(topPoints, bottomPoints) {
     return `${linePath(topPoints)} ${bottomPoints.slice().reverse().map(([x, y]) => `L ${x} ${y}`).join(" ")} Z`;
   }
@@ -23718,6 +23730,819 @@
       }
     );
   }
+  function Figure15SolventScreening() {
+    const examples = {
+      paracetamol: {
+        name: "Paracetamol",
+        smiles: "CC(=O)Nc1ccc(O)cc1",
+        temperature: "298 K",
+        best: "DMSO",
+        green: "Ethanol",
+        anti: "Water",
+        rows: [
+          { name: "DMSO", cls: "sulfoxide", ln: -0.9, mg: 152, green: 5, ich: "3", color: COLORS.purple },
+          { name: "DMF", cls: "amide", ln: -1.3, mg: 96, green: 2, ich: "2", color: COLORS.red },
+          { name: "Ethanol", cls: "alcohol", ln: -2.7, mg: 34, green: 8, ich: "3", color: COLORS.blue },
+          { name: "Acetone", cls: "ketone", ln: -2.9, mg: 28, green: 8, ich: "3", color: COLORS.orange },
+          { name: "Ethyl acetate", cls: "ester", ln: -4.1, mg: 8, green: 8, ich: "3", color: COLORS.green },
+          { name: "Water", cls: "water", ln: -3.4, mg: 14, green: 10, ich: "3", color: COLORS.sky }
+        ],
+        window: {
+          solvent: "Ethanol",
+          hot: 333,
+          cold: 278,
+          yield: 0.74,
+          supersat: 4.2,
+          scan: [
+            [278, 0.014],
+            [288, 0.018],
+            [298, 0.024],
+            [308, 0.033],
+            [318, 0.046],
+            [333, 0.058]
+          ]
+        },
+        greenRows: [
+          { name: "Ethanol", retention: 0.35, gain: "+6" },
+          { name: "Dimethyl carbonate", retention: 0.28, gain: "+7" },
+          { name: "2-MeTHF", retention: 0.21, gain: "+6" }
+        ],
+        antisolvent: {
+          name: "Water",
+          ratio: 16,
+          miscibility: "miscible with ethanol"
+        }
+      },
+      carbamazepine: {
+        name: "Carbamazepine",
+        smiles: "NC(=O)N1c2ccccc2C=Cc2ccccc21",
+        temperature: "298 K",
+        best: "NMP",
+        green: "2-MeTHF",
+        anti: "Water",
+        rows: [
+          { name: "NMP", cls: "amide", ln: -0.7, mg: 184, green: 1, ich: "2", color: COLORS.red },
+          { name: "DMF", cls: "amide", ln: -1, mg: 140, green: 2, ich: "2", color: COLORS.purple },
+          { name: "DMSO", cls: "sulfoxide", ln: -1.1, mg: 132, green: 5, ich: "3", color: COLORS.blue },
+          { name: "Methanol", cls: "alcohol", ln: -2.9, mg: 24, green: 5, ich: "2", color: COLORS.orange },
+          { name: "2-MeTHF", cls: "ether", ln: -4.3, mg: 4.9, green: 8, ich: "n/a", color: COLORS.green },
+          { name: "Water", cls: "water", ln: -6.4, mg: 0.24, green: 10, ich: "3", color: COLORS.sky }
+        ],
+        window: {
+          solvent: "2-MeTHF",
+          hot: 348,
+          cold: 283,
+          yield: 0.88,
+          supersat: 12.5,
+          scan: [
+            [283, 21e-4],
+            [293, 34e-4],
+            [303, 58e-4],
+            [323, 0.014],
+            [338, 0.027],
+            [348, 0.034]
+          ]
+        },
+        greenRows: [
+          { name: "2-MeTHF", retention: 0.41, gain: "+7" },
+          { name: "Ethyl acetate", retention: 0.26, gain: "+6" },
+          { name: "CPME", retention: 0.22, gain: "+7" }
+        ],
+        antisolvent: {
+          name: "Water",
+          ratio: 140,
+          miscibility: "miscible with NMP / DMF"
+        }
+      }
+    };
+    const [activeKey, setActiveKey] = (0, import_react3.useState)("paracetamol");
+    const example = examples[activeKey];
+    const maxMg = Math.max(...example.rows.map((row) => row.mg));
+    const scanMin = Math.min(...example.window.scan.map((point) => point[0]));
+    const scanMax = Math.max(...example.window.scan.map((point) => point[0]));
+    const windowChart = createChartScales({
+      left: 48,
+      right: 296,
+      top: 42,
+      bottom: 150,
+      xMin: scanMin,
+      xMax: scanMax,
+      yMin: 0,
+      yMax: example.window.scan[example.window.scan.length - 1][1]
+    });
+    const path = linePath(example.window.scan.map(([t, x]) => [windowChart.xScale(t), windowChart.yScale(x)]));
+    const hotX = windowChart.xScale(example.window.hot);
+    const coldX = windowChart.xScale(example.window.cold);
+    const hotAnchor = hotX > (windowChart.left + windowChart.right) / 2 ? "end" : "start";
+    const coldAnchor = coldX > (windowChart.left + windowChart.right) / 2 ? "end" : "start";
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      FigureCard,
+      {
+        kicker: "Figure 15",
+        title: "Solvent Screening",
+        subtitle: "Library ranking, crystallization windows, green replacements, and antisolvent logic on top of the same checkpoint.",
+        controls: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          ToggleGroup,
+          {
+            label: "Screening example",
+            options: [
+              { label: "Paracetamol", value: "paracetamol" },
+              { label: "Carbamazepine", value: "carbamazepine" }
+            ],
+            value: activeKey,
+            onChange: setActiveKey
+          }
+        ),
+        children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-slide-grid", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-slide-hero", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(MoleculeMiniCard, { role: "screening target", name: example.name, smiles: example.smiles, compact: true }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-slide-query", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Query" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                example.temperature,
+                " screen over the built-in solvent library"
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "Same workflow works for `TGNN-Solv` and `DirectGNN`; full decomposition is richer on the physics path." })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            StatStrip,
+            {
+              items: [
+                { label: "Best loading solvent", value: example.best },
+                { label: "Best green alternative", value: example.green },
+                { label: "Best antisolvent", value: example.anti },
+                { label: "mg/mL note", value: "density-based approximation" }
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-slide-layout", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-rank-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Ranked solvent panel" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "screening-rank-list", children: example.rows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-rank-row", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-rank-meta", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "screening-rank-dot", style: { background: row.color } }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: row.name }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("small", { children: [
+                      row.cls,
+                      " \xB7 ICH ",
+                      row.ich,
+                      " \xB7 green ",
+                      row.green
+                    ] })
+                  ] })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "screening-rank-bar", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "screening-rank-fill", style: { width: `${row.mg / maxMg * 100}%`, background: row.color } }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-rank-values", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: row.mg.toFixed(row.mg >= 10 ? 0 : 1) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "mg/mL" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: row.ln.toFixed(1) })
+                ] })
+              ] }, row.name)) }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+                FigureLegend,
+                {
+                  items: [
+                    { label: "green / low-hazard", color: COLORS.green },
+                    { label: "workhorse polar aprotic", color: COLORS.purple },
+                    { label: "common process solvent", color: COLORS.orange }
+                  ]
+                }
+              )
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-side-column", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Typical filters" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-chip-list", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "application-chip", children: "green score \u2265 5" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "application-chip", children: "ICH class \u2264 2" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "application-chip", children: "exclude chlorinated" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "application-chip", children: "bp < 373 K" })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "Filtering happens before ranking so the UI can answer \u201Cbest solvent under my process constraints\u201D, not only \u201Cbest solvent in theory\u201D." })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Green replacement" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("table", { className: "application-mini-table", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Replacement" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Retention" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Green \u0394" })
+                  ] }) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("tbody", { children: example.greenRows.map((row) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: row.name }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("td", { children: [
+                      Math.round(row.retention * 100),
+                      "%"
+                    ] }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: row.gain })
+                  ] }, row.name)) })
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Antisolvent candidate" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-highlight", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: example.antisolvent.name }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                    example.antisolvent.ratio,
+                    "\xD7 poorer than the good solvent"
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: example.antisolvent.miscibility })
+                ] })
+              ] })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-bottom-grid", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Crystallization window" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { viewBox: "0 0 340 190", role: "img", "aria-label": "Crystallization window temperature scan", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "18", y: "14", width: "304", height: "162", rx: "16", fill: PAPER_FILL, stroke: PAPER_BORDER }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: windowChart.left, y1: windowChart.bottom, x2: windowChart.right, y2: windowChart.bottom, stroke: PAPER_TEXT, strokeWidth: "2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: windowChart.left, y1: windowChart.top, x2: windowChart.left, y2: windowChart.bottom, stroke: PAPER_TEXT, strokeWidth: "2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: path, fill: "none", stroke: COLORS.blue, strokeWidth: "4", strokeLinecap: "round" }),
+                example.window.scan.map(([t, x]) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: windowChart.xScale(t), cy: windowChart.yScale(x), r: "5", fill: COLORS.blue }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: windowChart.xScale(t), y: "170", textAnchor: "middle", fontSize: "12", fill: PAPER_SOFT_TEXT, children: t })
+                ] }, t)),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: hotX, y1: windowChart.top - 8, x2: hotX, y2: windowChart.bottom, stroke: COLORS.orange, strokeDasharray: "5 4" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: coldX, y1: windowChart.top - 8, x2: coldX, y2: windowChart.bottom, stroke: COLORS.green, strokeDasharray: "5 4" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: hotX + (hotAnchor === "end" ? -4 : 4), y: "30", textAnchor: hotAnchor, fontSize: "12", fill: COLORS.orange, children: "hot" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: coldX + (coldAnchor === "end" ? -4 : 4), y: "30", textAnchor: coldAnchor, fontSize: "12", fill: COLORS.green, children: "cold" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-metric-row", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "Y \\approx \\frac{x_{hot}-x_{cold}}{x_{hot}}" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("strong", { children: [
+                  Math.round(example.window.yield * 100),
+                  "% yield"
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                  example.window.supersat.toFixed(1),
+                  "\xD7 supersaturation"
+                ] })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Top candidates at a glance" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("table", { className: "application-mini-table", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Solvent" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "`ln x\u2082`" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "mg/mL" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Green" })
+                ] }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("tbody", { children: example.rows.slice(0, 5).map((row) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: row.name }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: row.ln.toFixed(1) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: row.mg.toFixed(row.mg >= 10 ? 0 : 1) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: row.green })
+                ] }, `${row.name}-table`)) })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "The full DataFrame also carries `\u03A6`, `\u03B3\u2082`, `T_m`, `\u0394H_fus`, Hansen distance, AD confidence, and solvent metadata when available." })
+            ] })
+          ] })
+        ] })
+      }
+    );
+  }
+  function Figure16ProcessOptimization() {
+    const paretoPoints = [
+      { name: "2-MeTHF", yield: 0.81, green: 8, color: COLORS.green, labelDx: 12, labelDy: -10, anchor: "start" },
+      { name: "EtOAc", yield: 0.66, green: 8, color: COLORS.blue, labelDx: 12, labelDy: 4, anchor: "start" },
+      { name: "Acetone", yield: 0.61, green: 8, color: COLORS.orange, labelDx: 12, labelDy: 16, anchor: "start" },
+      { name: "DMF", yield: 0.88, green: 2, color: COLORS.red, labelDx: 12, labelDy: -8, anchor: "start" },
+      { name: "DMSO", yield: 0.84, green: 5, color: COLORS.purple, labelDx: 12, labelDy: -8, anchor: "start" }
+    ];
+    const paretoChart = createChartScales({
+      left: 58,
+      right: 288,
+      top: 42,
+      bottom: 168,
+      xMin: 1,
+      xMax: 10,
+      yMin: 0.45,
+      yMax: 0.9
+    });
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      FigureCard,
+      {
+        kicker: "Figure 16",
+        title: "Process Optimization",
+        subtitle: "The application layer can optimize operating windows, not only score isolated solvent points.",
+        children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-slide-grid", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            StatStrip,
+            {
+              items: [
+                { label: "Best crystallization window", value: "2-MeTHF \xB7 338\u2192278 K \xB7 81%" },
+                { label: "Best extraction solvent", value: "EtOAc \xB7 K = 14" },
+                { label: "Best reaction medium", value: "Acetone \xB7 reactants/product = 4.6" },
+                { label: "Mixture idea", value: "70% EtOH / 30% water" }
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "process-mode-grid", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Crystallization" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexBlock, { children: "\\max\\ Y = \\frac{x_{hot} - x_{cold}}{x_{hot}}" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("ul", { className: "application-bullet-list", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { children: "`T_hot` constrained by solvent boiling point." }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { children: "`T_cold` constrained by the practical cooling floor." }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { children: "Ranking combines yield, supersaturation, green score, and loading." })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Extraction" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexBlock, { children: "K = \\frac{x_{2,extract}}{x_{2,source}}" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("ul", { className: "application-bullet-list", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { children: "Immiscibility and boiling point stay in the objective, not only in a post-hoc comment." }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { children: "Good extraction solvents need both partition leverage and operability." }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { children: "Recommended rows stay visible as a constrained shortlist." })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Reaction medium" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexBlock, { children: "\\max\\ \\frac{\\min_i S_{reactant,i}}{S_{product}}" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("ul", { className: "application-bullet-list", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { children: "Reactants should stay soluble while product should want to leave solution." }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { children: "Useful for precipitation-driven workups and telescoped routes." }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { children: "Shared solvent metadata keeps toxicity and green constraints visible." })
+              ] })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-bottom-grid", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Pareto front: yield vs green score" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { viewBox: "0 0 340 200", role: "img", "aria-label": "Pareto front scatter plot", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "12", y: "12", width: "314", height: "180", rx: "16", fill: PAPER_FILL, stroke: PAPER_BORDER }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: paretoChart.left, y1: paretoChart.bottom, x2: paretoChart.right, y2: paretoChart.bottom, stroke: PAPER_TEXT, strokeWidth: "2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: paretoChart.left, y1: paretoChart.top, x2: paretoChart.left, y2: paretoChart.bottom, stroke: PAPER_TEXT, strokeWidth: "2" }),
+                [2, 4, 6, 8, 10].map((tick) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: paretoChart.xScale(tick), y1: paretoChart.bottom, x2: paretoChart.xScale(tick), y2: paretoChart.bottom + 5, stroke: PAPER_TEXT, strokeWidth: "1.6" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: paretoChart.xScale(tick), y: "180", textAnchor: "middle", fontSize: "12", fill: PAPER_SOFT_TEXT, children: tick })
+                ] }, `green-${tick}`)),
+                [0.5, 0.6, 0.7, 0.8, 0.9].map((tick) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: paretoChart.left - 5, y1: paretoChart.yScale(tick), x2: paretoChart.left, y2: paretoChart.yScale(tick), stroke: PAPER_TEXT, strokeWidth: "1.6" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: "42", y: paretoChart.yScale(tick), textAnchor: "end", dominantBaseline: "middle", fontSize: "12", fill: PAPER_SOFT_TEXT, children: tick.toFixed(1) })
+                ] }, `yield-${tick}`)),
+                paretoPoints.map((point) => {
+                  const pointX = paretoChart.xScale(point.green);
+                  const pointY = paretoChart.yScale(point.yield);
+                  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: pointX, cy: pointY, r: "7", fill: point.color }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+                      "text",
+                      {
+                        x: pointX + point.labelDx,
+                        y: pointY + point.labelDy,
+                        textAnchor: point.anchor,
+                        fontSize: "12",
+                        fill: PAPER_TEXT,
+                        paintOrder: "stroke",
+                        stroke: PAPER_FILL,
+                        strokeWidth: "3",
+                        strokeLinejoin: "round",
+                        children: point.name
+                      }
+                    )
+                  ] }, point.name);
+                }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+                  "path",
+                  {
+                    d: `M ${paretoChart.xScale(5)} ${paretoChart.yScale(0.84)} L ${paretoChart.xScale(8)} ${paretoChart.yScale(0.81)} L ${paretoChart.xScale(8)} ${paretoChart.yScale(0.66)}`,
+                    fill: "none",
+                    stroke: COLORS.green,
+                    strokeDasharray: "5 4",
+                    strokeWidth: "2.5"
+                  }
+                ),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: (paretoChart.left + paretoChart.right) / 2, y: "188", textAnchor: "middle", fontSize: "12", fill: PAPER_SOFT_TEXT, children: "green score" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+                  "text",
+                  {
+                    x: "24",
+                    y: (paretoChart.top + paretoChart.bottom) / 2,
+                    textAnchor: "middle",
+                    fontSize: "12",
+                    fill: PAPER_SOFT_TEXT,
+                    transform: `rotate(-90 24 ${(paretoChart.top + paretoChart.bottom) / 2})`,
+                    children: "yield"
+                  }
+                )
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Binary solvent design" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("table", { className: "application-mini-table", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Mixture" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Target" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Predicted role" })
+                ] }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tbody", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "70% EtOH / 30% water" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "1 to 5 mg/mL" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "Controlled crash-out" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "60% acetone / 40% EtOAc" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "high loading" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "Fast solvent swap" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "50% IPA / 50% water" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "moderate window" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "Gentler cooling isolation" })
+                  ] })
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "The first pass interpolates solvent descriptors and Hansen coordinates; the second pass re-evaluates a pseudo-pure mixture proxy with the same checkpoint." })
+            ] })
+          ] })
+        ] })
+      }
+    );
+  }
+  function Figure17DrugDevelopability() {
+    const cases = {
+      paracetamol: {
+        name: "Paracetamol",
+        smiles: "CC(=O)Nc1ccc(O)cc1",
+        bcs: "III",
+        badgeColor: COLORS.blue,
+        dose: 0.14,
+        permeability: "low proxy",
+        pH: [
+          { label: "pH 1.0", value: 14.2 },
+          { label: "pH 4.5", value: 14 },
+          { label: "pH 6.8", value: 13.7 }
+        ],
+        radar: [0.78, 0.63, 0.58, 0.8, 0.52],
+        risks: ["permeability-limited exposure risk", "moderate crystal stability"],
+        recs: ["simple IR remains plausible", "watch transport / absorption rather than only aqueous dose number"],
+        salts: [
+          { name: "Na salt surrogate", gain: "1.4\xD7", note: "approximate ionic uplift" },
+          { name: "Nicotinamide cocrystal", gain: "1.2\xD7", note: "modest crystal softening" }
+        ]
+      },
+      carbamazepine: {
+        name: "Carbamazepine",
+        smiles: "NC(=O)N1c2ccccc2C=Cc2ccccc21",
+        bcs: "II",
+        badgeColor: COLORS.orange,
+        dose: 11.2,
+        permeability: "high proxy",
+        pH: [
+          { label: "pH 1.0", value: 0.19 },
+          { label: "pH 4.5", value: 0.18 },
+          { label: "pH 6.8", value: 0.17 }
+        ],
+        radar: [0.16, 0.28, 0.61, 0.31, 0.44],
+        risks: ["severe aqueous solubility bottleneck", "high crystal stability"],
+        recs: ["salt or co-crystal screening", "amorphous solid dispersion / lipid formulation"],
+        salts: [
+          { name: "Saccharin cocrystal", gain: "2.6\xD7", note: "approximate crystal-form effect" },
+          { name: "Maleate salt surrogate", gain: "3.1\xD7", note: "flagged as lower confidence" }
+        ]
+      }
+    };
+    const radarAxes = ["Aq sol", "Crystal", "Lipo", "Diversity", "dlnx/dT"];
+    const [activeKey, setActiveKey] = (0, import_react3.useState)("paracetamol");
+    const active = cases[activeKey];
+    const maxPh = Math.max(...active.pH.map((item) => item.value));
+    const radarCenterX = 168;
+    const radarCenterY = 148;
+    const radarInnerRadius = 34;
+    const radarOuterRadius = 112;
+    const radarLabelRadius = 132;
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      FigureCard,
+      {
+        kicker: "Figure 17",
+        title: "Drug Developability",
+        subtitle: "BCS-style classification and formulation-facing triage built on top of aqueous TGNN screening.",
+        controls: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          ToggleGroup,
+          {
+            label: "Developability case",
+            options: [
+              { label: "Paracetamol", value: "paracetamol" },
+              { label: "Carbamazepine", value: "carbamazepine" }
+            ],
+            value: activeKey,
+            onChange: setActiveKey
+          }
+        ),
+        children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-slide-grid", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-slide-hero", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(MoleculeMiniCard, { role: "candidate", name: active.name, smiles: active.smiles, compact: true }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-slide-query", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "BCS-style output" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "application-badge", style: { background: active.badgeColor }, children: [
+                  "Class ",
+                  active.bcs
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                  "Dose number = ",
+                  active.dose.toFixed(2),
+                  " \xB7 permeability = ",
+                  active.permeability
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "High/low permeability is still proxy-driven unless external transport data is supplied." })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "developability-grid", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Aqueous pH profile at 37 \xB0C" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "screening-rank-list", children: active.pH.map((row) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-rank-row", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-rank-meta", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "screening-rank-dot", style: { background: COLORS.blue } }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: row.label }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "Henderson-Hasselbalch corrected when pKa estimate exists" })
+                  ] })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "screening-rank-bar", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "screening-rank-fill", style: { width: `${row.value / maxPh * 100}%`, background: COLORS.blue } }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-rank-values", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: row.value.toFixed(row.value >= 1 ? 1 : 2) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "mg/mL" })
+                ] })
+              ] }, row.label)) }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("p", { className: "figure-subnote", children: [
+                "BCS solubility logic is driven by ",
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "D_0 = \\frac{dose}{V \\cdot S}" }),
+                " with `V = 250 mL` by default."
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Composite developability score" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "comparison-radar-layout comparison-radar-layout--compact", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "comparison-radar-card comparison-radar-card--compact", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { viewBox: "0 0 350 300", role: "img", "aria-label": "Developability radar chart", children: [
+                  Array.from({ length: 4 }, (_, ring) => {
+                    const radius = radarInnerRadius + ring * 26;
+                    const points = radarAxes.map((_2, index) => {
+                      const angle = 360 / radarAxes.length * index;
+                      const point = polarToCartesian(radarCenterX, radarCenterY, radius, angle);
+                      return `${point.x},${point.y}`;
+                    });
+                    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("polygon", { points: points.join(" "), fill: "none", stroke: COLORS.line, strokeWidth: "1.4" }, radius);
+                  }),
+                  radarAxes.map((axis, index) => {
+                    const angle = 360 / radarAxes.length * index;
+                    const point = polarToCartesian(radarCenterX, radarCenterY, radarLabelRadius, angle);
+                    const anchor = point.x < radarCenterX - 8 ? "end" : point.x > radarCenterX + 8 ? "start" : "middle";
+                    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: radarCenterX, y1: radarCenterY, x2: polarToCartesian(radarCenterX, radarCenterY, radarOuterRadius, angle).x, y2: polarToCartesian(radarCenterX, radarCenterY, radarOuterRadius, angle).y, stroke: COLORS.line, strokeWidth: "1.4" }),
+                      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: point.x, y: point.y, textAnchor: anchor, dominantBaseline: "middle", fontSize: "11.5", fill: DECK_TEXT, fontWeight: "700", children: axis })
+                    ] }, axis);
+                  }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+                    "polygon",
+                    {
+                      points: active.radar.map((value, index) => {
+                        const angle = 360 / radarAxes.length * index;
+                        const point = polarToCartesian(
+                          radarCenterX,
+                          radarCenterY,
+                          radarInnerRadius + value * (radarOuterRadius - radarInnerRadius),
+                          angle
+                        );
+                        return `${point.x},${point.y}`;
+                      }).join(" "),
+                      fill: active.badgeColor,
+                      fillOpacity: "0.24",
+                      stroke: active.badgeColor,
+                      strokeWidth: "3"
+                    }
+                  )
+                ] }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "comparison-radar-side comparison-radar-side--compact", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-highlight", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Traffic light" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { color: active.badgeColor }, children: active.bcs === "II" ? "yellow" : "green-yellow" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "Composite score mixes aqueous solubility, crystal burden, lipophilicity balance, solvent diversity, and temperature leverage." })
+                ] }) })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Recommendations and risks" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-chip-list", children: active.risks.map((risk) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "application-chip application-chip--risk", children: risk }, risk)) }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("ul", { className: "application-bullet-list", children: active.recs.map((rec) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("li", { children: rec }, rec)) })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-bottom-grid", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Salt / cocrystal triage" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("table", { className: "application-mini-table", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Form" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Advantage" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Caveat" })
+                ] }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("tbody", { children: active.salts.map((row) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: row.name }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: row.gain }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: row.note })
+                ] }, row.name)) })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Reference-drug context" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("table", { className: "application-mini-table", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Drug" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Class" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Interpretation" })
+                ] }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tbody", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "Paracetamol" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "III" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "soluble, transport-limited proxy" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "Ibuprofen" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "II" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "lipophilic, dissolution-limited" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "Metformin" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "III" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "highly polar, permeability-limited" })
+                  ] })
+                ] })
+              ] })
+            ] })
+          ] })
+        ] })
+      }
+    );
+  }
+  function Figure18PKProfile() {
+    const compartments = [
+      { name: "stomach\nfasted", sol: 3.2, frac: 1, dose: 0.31 },
+      { name: "stomach\nfed", sol: 4.1, frac: 1, dose: 0.18 },
+      { name: "duodenum", sol: 7.8, frac: 1, dose: 0.11 },
+      { name: "jejunum /\nileum", sol: 6.2, frac: 0.93, dose: 0.14 },
+      { name: "colon", sol: 2.4, frac: 0.42, dose: 0.58 }
+    ];
+    const media = [
+      { name: "FaSSGF", value: 3, color: COLORS.red },
+      { name: "FeSSGF", value: 4.2, color: COLORS.orange },
+      { name: "FaSSIF", value: 7.6, color: COLORS.blue },
+      { name: "FeSSIF", value: 12.4, color: COLORS.green }
+    ];
+    const maxMedia = Math.max(...media.map((item) => item.value));
+    const giChart = createChartScales({
+      left: 50,
+      right: 294,
+      top: 46,
+      bottom: 152,
+      xMin: 0,
+      xMax: compartments.length - 1,
+      yMin: 0,
+      yMax: 1
+    });
+    const linePoints = compartments.map((row, index) => [giChart.xScale(index), giChart.yScale(row.frac)]);
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      FigureCard,
+      {
+        kicker: "Figure 18",
+        title: "PK Solubility Profile",
+        subtitle: "GI compartments, biorelevant media, and formulation-vehicle screens turn water solubility into a dosage-form narrative.",
+        children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-slide-grid", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            StatStrip,
+            {
+              items: [
+                { label: "Max absorbable dose", value: "\u2248 780 mg" },
+                { label: "`f_abs` proxy", value: "0.82" },
+                { label: "Rate-limiting step", value: "distal-water dilution" },
+                { label: "Food effect", value: "positive" }
+              ]
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "pk-compartment-strip", children: compartments.map((row) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pk-compartment-card", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: row.name }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+              row.sol.toFixed(1),
+              " mg/mL"
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("small", { children: [
+              Math.round(row.frac * 100),
+              "% dissolved"
+            ] })
+          ] }, row.name)) }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-bottom-grid", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Dissolved fraction along the GI tract" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("svg", { viewBox: "0 0 340 190", role: "img", "aria-label": "GI dissolved fraction", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("rect", { x: "16", y: "14", width: "308", height: "172", rx: "16", fill: PAPER_FILL, stroke: PAPER_BORDER }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: giChart.left, y1: giChart.bottom, x2: giChart.right, y2: giChart.bottom, stroke: PAPER_TEXT, strokeWidth: "2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("line", { x1: giChart.left, y1: giChart.top, x2: giChart.left, y2: giChart.bottom, stroke: PAPER_TEXT, strokeWidth: "2" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("path", { d: linePath(linePoints), fill: "none", stroke: COLORS.blue, strokeWidth: "4", strokeLinecap: "round" }),
+                compartments.map((row, index) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("g", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("circle", { cx: giChart.xScale(index), cy: giChart.yScale(row.frac), r: "5", fill: COLORS.blue }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: giChart.xScale(index), y: "168", textAnchor: "middle", fontSize: "11", fill: PAPER_SOFT_TEXT, children: index + 1 })
+                ] }, `gi-${row.name}`)),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("text", { x: (giChart.left + giChart.right) / 2, y: "180", textAnchor: "middle", fontSize: "12", fill: PAPER_SOFT_TEXT, children: "GI compartment index" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "Each compartment combines pH-corrected water solubility with a volume-limited dissolved-fraction estimate. The result is a dissolution pressure profile, not a full PBPK model." })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Biorelevant media and food effect" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "screening-rank-list", children: media.map((row) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-rank-row", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-rank-meta", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "screening-rank-dot", style: { background: row.color } }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: row.name }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: row.name.includes("Fe") ? "fed state" : "fasted state" })
+                  ] })
+                ] }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "screening-rank-bar", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "screening-rank-fill", style: { width: `${row.value / maxMedia * 100}%`, background: row.color } }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-rank-values", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: row.value.toFixed(1) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "mg/mL" })
+                ] })
+              ] }, row.name)) }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-highlight", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Food-effect heuristic" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "FeSSIF / FaSSIF \u2248 1.6\xD7" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "Suggests a positive fed-state solubilization effect." })
+              ] })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "screening-bottom-grid", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "IV vehicle screen" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("table", { className: "application-mini-table", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Vehicle" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "25 \xB0C" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "37 \xB0C" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Flag" })
+                ] }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tbody", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "PEG 400 surrogate" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "28" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "34" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "high osmolality" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "Propylene glycol" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "18" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "22" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "co-solvent ceiling" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "Cyclodextrin solution" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "11" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "14" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "complexation route" })
+                  ] })
+                ] })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "application-info-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "application-card-title", children: "Topical vehicle screen" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("table", { className: "application-mini-table", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Vehicle" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Solubility" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Activity" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("th", { children: "Use" })
+                ] }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tbody", { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "Propylene glycol" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "16 mg/mL" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "high" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "balanced loading/activity" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "Ethanol solution" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "22 mg/mL" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "medium" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "volatile fast-drying" })
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("tr", { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "DMSO" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "80 mg/mL" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "low" }),
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("td", { children: "penetration enhancer, irritation risk" })
+                  ] })
+                ] })
+              ] })
+            ] })
+          ] })
+        ] })
+      }
+    );
+  }
   var PRESENTATION_FIGURES = [
     {
       slug: "data-pipeline",
@@ -23854,6 +24679,38 @@
       blurb: "Two interpretable penalties add on one axis, which makes prediction outputs explainable by construction.",
       tags: ["equation", "interpretability", "physics"],
       component: Figure14MasterEquation
+    },
+    {
+      slug: "solvent-screening",
+      title: "Solvent Screening",
+      subtitle: "Rank, filter, and turn solubility into process-facing solvent decisions",
+      blurb: "The screening layer converts one checkpoint into ranked solvents, crystallization windows, antisolvents, and green replacements.",
+      tags: ["applications", "screening", "solvents"],
+      component: Figure15SolventScreening
+    },
+    {
+      slug: "process-optimization",
+      title: "Process Optimization",
+      subtitle: "Crystallization, extraction, reaction medium, and mixture design",
+      blurb: "Process-oriented objectives sit on top of the same solvent-screening core and stay constraint-aware.",
+      tags: ["applications", "process", "optimization"],
+      component: Figure16ProcessOptimization
+    },
+    {
+      slug: "drug-developability",
+      title: "Drug Developability",
+      subtitle: "BCS-style solubility logic plus formulation-facing triage",
+      blurb: "Aqueous solubility, pH correction, descriptor proxies, and crystal terms combine into a developability report.",
+      tags: ["applications", "bcs", "formulation"],
+      component: Figure17DrugDevelopability
+    },
+    {
+      slug: "pk-profile",
+      title: "PK Solubility Profile",
+      subtitle: "GI compartments, biorelevant media, IV vehicles, and topical screens",
+      blurb: "The PK layer keeps claims solubility-first: useful upstream of PBPK, not a substitute for it.",
+      tags: ["applications", "pk", "media"],
+      component: Figure18PKProfile
     }
   ];
 
@@ -24139,6 +24996,52 @@
         ] })
       ] }),
       report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "As a report summary, this is the cleanest mental model for TGNN-Solv. The network is learning two physically interpretable penalties whose sum determines the final prediction, which is exactly why the model can support explanation, diagnostics, and controlled extrapolation better than a direct black-box regressor." })
+    },
+    "solvent-screening": {
+      summary: "How one checkpoint becomes a solvent-selection tool",
+      content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+          "The core object is a solvent-ranked table rather than a single prediction. For each solvent",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "v_j" }),
+          ", the workflow evaluates",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "\\ln x_2(s, v_j, T)" }),
+          ", converts it into an approximate concentration scale, and then joins that score with boiling point, green score, ICH class, and simple miscibility metadata."
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The important modeling point is that the application layer does not invent a second chemistry engine. It simply batches the maintained inference path over a curated solvent library and keeps the physics-facing decomposition when the checkpoint supports it, so ranking, green replacement, and antisolvent suggestions all stay tied to the same underlying model outputs." })
+      ] }),
+      report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "From a report perspective, this slide shows how TGNN-Solv can move from benchmark rows to a realistic solvent selection workflow. The ranked table is useful on its own, but the crystallization-window panel and replacement shortlist matter just as much because process decisions are usually constrained by safety, boiling point, and sustainability rather than by absolute solubility alone." })
+    },
+    "process-optimization": {
+      summary: "Why optimization sits above screening",
+      content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+          "Screening answers \u201Cwhich solvent looks promising at one operating point\u201D. Optimization answers a different question: which solvent and temperature window maximize a process objective such as crystallization yield, extraction leverage, or reactant-to-product selectivity. In the crystallization case the slide summarizes the objective",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "Y \\approx \\frac{x_{hot} - x_{cold}}{x_{hot}}" }),
+          "."
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "What makes this useful is that constraints stay inside the ranking loop. Boiling point, green score, toxicity, and minimum loading are not afterthought annotations; they change the feasible set before the top candidates are shown, which is why the Pareto panel is a better summary than a naive \u201Chighest yield wins\u201D list." })
+      ] }),
+      report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "This is still an equilibrium optimizer, not a kinetics or equipment model. That limitation is acceptable for the intended use case: early process triage, where the main question is whether a solvent family and temperature swing look worth taking into experimental development before the team spends time on detailed crystallization or extraction studies." })
+    },
+    "drug-developability": {
+      summary: "How aqueous TGNN predictions become a developability report",
+      content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("p", { children: [
+          "The drug-facing layer combines aqueous screening with descriptor heuristics. BCS-style solubility is expressed through the dose number",
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(TexInline2, { children: "D_0 = \\frac{dose}{V \\cdot S}" }),
+          ", while permeability is estimated conservatively from proxy descriptors such as `LogP` and `TPSA` unless external transport data is available."
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The developability radar then compresses several solubility-facing signals into one visual summary: intrinsic aqueous solubility, predicted crystal burden, lipophilicity balance, solvent diversity, and local temperature leverage. That makes the slide useful as a triage surface rather than just a restatement of one water-solubility number." })
+      ] }),
+      report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The right interpretation is \u201CBCS-style and formulation-facing\u201D, not \u201Cfully pharmaceutical\u201D. The module adds pH correction, salt/cocrystal what-if screening, and recommendation logic on top of TGNN predictions, but it still marks ionization, permeability, and ionic-state effects as approximations instead of overclaiming a complete developability model." })
+    },
+    "pk-profile": {
+      summary: "What the PK solubility profile actually means",
+      content: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The GI profile is a compartmental solubility screen rather than a PBPK simulator. Each segment of the tract is assigned a medium proxy, pH, and fluid volume; the workflow predicts aqueous solubility, applies a heuristic pH correction when possible, and converts that into a dissolved-fraction estimate relative to the chosen dose." }),
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The same logic extends naturally to biorelevant media, IV-compatible co-solvents, and topical vehicles. The slide therefore shows several dosage-form questions on one page: where dissolution becomes limiting, whether fed media suggest a food effect, and which formulation vehicles offer meaningful leverage without pretending that clearance or tissue exposure have been solved." })
+      ] }),
+      report: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "This is valuable because it turns equilibrium solubility into a more realistic pharmaceutical narrative. The model can now support conversations about dose pressure, GI dissolution windows, and formulation media in a way that is still visibly grounded in solubility physics, while clearly separating those claims from full PK/PD or PBPK modeling." })
     }
   };
   var EXTRA_NOTES_BY_SLUG = {
@@ -24230,6 +25133,22 @@
     "master-equation": /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The reason this decomposition is so useful is that it turns one prediction into two interpretable penalties. In log space, additive structure is especially convenient: a worse crystal term or a worse interaction term simply shifts the same scalar outcome leftward, making diagnosis and explanation far more direct." }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "That also clarifies the project\u2019s modeling philosophy. TGNN-Solv is not trying to learn an opaque map from molecules and temperature to solubility; it is trying to learn the physically meaningful ingredients whose sum determines solubility, which is why the architecture can support explanation and controlled extrapolation more naturally than a direct black-box predictor." })
+    ] }),
+    "solvent-screening": /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The screening module is intentionally metadata-aware because solvent choice is always a multi-objective decision. A solvent that wins on raw loading but fails on boiling point, toxicity class, or greenness is not actually the best candidate for a real process, so those attributes have to remain visible in the same table and filter layer as the model predictions." }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The approximate `mg/mL` conversion is also presented honestly. It assumes the solvent dominates the solution volume and uses solvent density plus mole-fraction algebra to create a process-readable concentration estimate. That is good enough for ranking and \u201Cis this even in the right order of magnitude?\u201D screening, but not a claim of exact formulated concentration without experimental density information." })
+    ] }),
+    "process-optimization": /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The mixture-design block matters because process development rarely ends at pure solvents. The current workflow uses a deliberately simple two-stage approximation: interpolate solvent descriptors and Hansen coordinates first, then score pseudo-pure mixture states with the same checkpoint. That keeps the method lightweight enough for screening while still surfacing useful solvent-system ideas." }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "More broadly, this slide is a bridge from prediction to action. It shows that once the model can rank solvents and scan temperature, it becomes straightforward to formulate objective-driven search problems that look much closer to what a chemist or process scientist actually needs during route or formulation development." })
+    ] }),
+    "drug-developability": /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The reference-drug context at the bottom is important because raw scores alone are hard to interpret. A BCS-style class or a composite developability number becomes more useful once it is seen relative to familiar compounds such as paracetamol, ibuprofen, carbamazepine, or metformin that represent very different formulation burdens." }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The salt and cocrystal table is intentionally caveated as approximate because the base TGNN training set is still dominated by neutral molecular systems. The value of that panel is not to certify an ionic form, but to highlight when crystal-form engineering is plausible enough to deserve real experimental follow-up." })
+    ] }),
+    "pk-profile": /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The media-specific panels make an important conceptual point: solubility is not one scalar property once dosage form and physiology enter the picture. Water, gastric media, intestinal media, IV co-solvents, and topical vehicles all stress the molecule in different ways, so the same checkpoint can now be used to build a structured map of formulation opportunities and bottlenecks." }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { children: "The UI keeps those claims conservative. GI dissolved fraction, food-effect tags, IV screens, and topical activity are all framed as solubility-first heuristics that should feed into later permeability, exposure, stability, and safety assessment rather than pretending to replace those downstream models." })
     ] })
   };
   function readInitialOpenState() {

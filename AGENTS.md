@@ -29,6 +29,13 @@ pip install torch-geometric -f https://data.pyg.org/whl/torch-2.4.0+cu121.html
 pip install -e ".[dev]"
 ```
 
+Useful optional extras:
+
+- `pip install -e ".[gui,dev]"`
+  - Streamlit `Experiment Lab`, Ketcher, flow editor, planner UI
+- `pip install -e ".[baselines]"`
+  - external baseline wrappers such as FastSolv and SolProp helpers
+
 Preferred CLI navigation is now grouped by purpose under:
 
 - `scripts/data/`
@@ -36,6 +43,7 @@ Preferred CLI navigation is now grouped by purpose under:
 - `scripts/evaluation/`
 - `scripts/experiments/`
 - `scripts/external/`
+- `scripts/applications/`
 
 Legacy top-level `scripts/*.py` entry points are intentionally retained for
 backward compatibility with imports, tests, and automation such as
@@ -52,6 +60,7 @@ The internal package surface now also has grouped namespaces for navigation:
 - `tgnn_solv.evaluation`
 - `tgnn_solv.baselines`
 - `tgnn_solv.research`
+- `tgnn_solv.applications`
 
 Legacy flat imports such as `tgnn_solv.model`, `tgnn_solv.trainer`, and
 `tgnn_solv.inference` remain supported and are still the implementation source
@@ -244,6 +253,44 @@ Current scope note:
   because rerunning ZINC-scale pretraining inside each trial would dominate
   the actual TGNN search cost
 
+### Experiment Lab
+
+```bash
+python scripts/launch_lab.py
+```
+
+The maintained Streamlit surface now includes:
+
+- `Training`
+- `Experiments`
+- `Pipeline Studio`
+- `Model Architect`
+- `Results & Plots`
+  - including `Benchmark Studio`, lineage, artifact diff, registry
+- `Inference`
+  - TGNN-Solv and DirectGNN, uncertainty, calibration, AD/OOD, Ketcher editing
+- `Applications`
+  - solvent screening, process optimization, drug developability, PK solubility profile
+- `Planner`
+- `Documentation`
+- `Reproduce`
+
+### Application CLIs
+
+```bash
+python scripts/applications/screen_solvents.py --help
+python scripts/applications/optimize_process.py --help
+python scripts/applications/drug_developability.py --help
+python scripts/applications/pk_profile.py --help
+```
+
+These are maintained thin wrappers over:
+
+- `tgnn_solv.applications.solvent_screening`
+- `tgnn_solv.applications.process_optimization`
+- `tgnn_solv.applications.drug_properties`
+- `tgnn_solv.applications.pk_profiling`
+
 ### Diagnostics
 
 ```bash
@@ -287,6 +334,10 @@ python scripts/external/run_solprop.py predict \
     --output results/solprop_predictions.csv \
     --temperature_dependent
 ```
+
+For current article-comparison benchmarking, the maintained SolProp mode is
+native retraining on TGNN-Solv targets via `run_solprop.py train-native` /
+`predict-native`.
 
 ## Architecture
 
@@ -464,6 +515,10 @@ Optional keys appear when enabled:
 - `solute_group_prior_features`, `solvent_group_prior_features`
 - `T_m_gc`, `dH_fus_gc`, `dCp_fus_gc`
 
+Application-layer modules build on top of the same inference surfaces and now
+live under `src/tgnn_solv/applications/` rather than the old flat
+`src/tgnn_solv/applications.py`.
+
 ## Configuration
 
 All hyperparameters live in `src/tgnn_solv/config.py` in `TGNNSolvConfig`.
@@ -513,11 +568,14 @@ Maintained config files:
 - `docs/data_preparation.md`
 - `docs/training.md`
 - `docs/evaluation.md`
+- `docs/applications.md`
+- `docs/experiment_lab.md`
 - `docs/baselines.md`
 - `docs/reproducing_paper.md`
 - `docs/script_reference.md`
 - `docs/repository_audit.md`
 - `docs/free_gpu_training.md`
+- `docs/presentation.md`
 - `BENCHMARKING_GUIDE.md`
 - `scripts/README.md`
 - `src/tgnn_solv/README.md`
@@ -533,3 +591,5 @@ Maintained config files:
   but the current OOD/applicability-domain path remains TGNN-specific
 - benchmark bundles now include sidecars (`run_manifest.json`,
   `benchmark_card.json`), so changing that contract requires extra care
+- application workflows are solubility-first decision tools, not full
+  retrosynthesis, PBPK, or mechanistic PK/PD models

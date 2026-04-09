@@ -70,8 +70,8 @@ The lab covers:
 - `Pipeline Studio` for repo-backed DAG editing and shell export
 - `Model Architect` for visual TGNN-Solv / DirectGNN editing
 - `Inference` with persistent history, uncertainty, calibration, and OOD
-- `Applications` for synthesis-route solvent screening, developability /
-  oral-dose proxies, and solvent-swap analysis
+- `Applications` for solvent screening, process optimization, drug
+  developability, and PK-relevant solubility profiling
 - `Results & Plots` with `Benchmark Studio`, artifact registry, lineage graph, and diff
 - `Planner` with a kanban board, schedule, and follow-up tasks from lab history
 - in-app documentation browsing
@@ -530,8 +530,9 @@ The maintained CLI surfaces are now:
   and experiment runners
 - `docs/evaluation.md`: inference API, uncertainty, OOD/applicability-domain,
   evaluation entry points, and diagnostic outputs
-- `docs/applications.md`: synthesis-route screening, developability proxies,
-  solvent-swap analysis, and PK/PD scope boundaries
+- `docs/applications.md`: solvent screening, process optimization,
+  developability, BCS-facing heuristics, PK solubility profiling, and scope
+  boundaries
 - `docs/experiment_lab.md`: interactive GUI for orchestration, inference,
   lineage, planning, and documentation browsing
 - `docs/baselines.md`: DirectGNN, RF, FastSolv, SolProp, and Ideal-SLE

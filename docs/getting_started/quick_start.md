@@ -135,6 +135,9 @@ Useful first places in the UI:
 - `Inference`
   - draw/edit structures, run TGNN or DirectGNN inference, inspect uncertainty
     and OOD
+- `Applications`
+  - screen solvents, optimize crystallization/extraction conditions, and open
+    the drug-developability or PK-profile workbenches
 - `Results & Plots -> Benchmark studio`
   - compare canonical benchmark bundles, including external, custom, and
     adapter-based models

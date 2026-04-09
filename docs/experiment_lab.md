@@ -9,7 +9,7 @@ Use it when you want:
 - one place to launch training, evaluation, experiments, and reproduction jobs
 - interactive single-system inference with RDKit structures and atom graphs
 - post-hoc uncertainty inspection, calibration review, and OOD checks
-- application-facing solvent screening for synthesis and formulation work
+- application-facing solvent, process, developability, and PK solubility workbenches
 - artifact browsing, lineage tracing, and side-by-side result comparison
 - visual DAG planning and model-architecture editing
 - a repo-backed kanban board and experiment schedule
@@ -134,12 +134,17 @@ Current scope note:
 
 ### Applications
 
-- synthesis-route solvent screening
-  - ranks explicit solvents for hot-to-cold isolation windows per intermediate
-- developability / oral dose-pressure proxies
-  - uses water plus a small explicit-solvent panel
-- solvent-swap screening
-  - estimates crash-out pressure during workup or antisolvent transfer
+- solvent screening
+  - ranks solvent libraries, antisolvents, green replacements, and
+    crystallization windows from one solute query
+- process optimization
+  - crystallization, extraction, and reaction-medium workflows with constraint
+    sliders and Pareto-style plots
+- drug developability
+  - BCS-style classification, developability scoring, salt/cocrystal triage,
+    and formulation recommendations
+- PK solubility profile
+  - GI compartment, biorelevant media, IV vehicle, and topical vehicle screens
 
 Important scope note:
 

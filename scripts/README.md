@@ -9,6 +9,7 @@ The repository now exposes two parallel CLI layouts:
   - `scripts/evaluation/`
   - `scripts/experiments/`
   - `scripts/external/`
+  - `scripts/applications/`
 - GUI launchers under:
   - `scripts/launch_lab.py`
   - `scripts/gui/launch_lab.py`
@@ -87,6 +88,23 @@ The newer infrastructure scripts worth knowing about are:
 - `scripts/experiments/build_benchmark_release.py`
   - frozen release manifest with checksums for processed splits and benchmark
     bundles
+
+### `scripts/applications/`
+
+- `screen_solvents.py`
+- `optimize_process.py`
+- `drug_developability.py`
+- `pk_profile.py`
+
+These application CLIs are maintained thin wrappers around:
+
+- `tgnn_solv.applications.solvent_screening`
+- `tgnn_solv.applications.process_optimization`
+- `tgnn_solv.applications.drug_properties`
+- `tgnn_solv.applications.pk_profiling`
+
+They are intended for explicit solvent/process/formulation triage, not as
+general retrosynthesis or mechanistic PK/PD simulators.
 
 The main TGNN training entrypoint now also covers the newer maintained model
 surfaces:

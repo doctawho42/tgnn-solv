@@ -94,6 +94,9 @@ cut across namespaces:
   - shared `core / article / full` reproduction planning
 - `tgnn_solv.stress`
   - thermodynamic stress-suite slices for benchmark bundles
+- `tgnn_solv.applications`
+  - solvent screening, process optimization, drug developability, and
+    PK-relevant solubility workflows
 
 These are intended as infrastructure layers rather than end-user model APIs,
 which is why they are documented here and in the script/docs guides rather than

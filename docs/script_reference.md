@@ -25,6 +25,7 @@ The preferred human-facing CLI surface is now grouped by purpose:
 - `scripts/evaluation/`
 - `scripts/experiments/`
 - `scripts/external/`
+- `scripts/applications/`
 
 Legacy top-level `scripts/*.py` entry points remain available as compatibility
 wrappers because tests, script-to-script imports, and compatibility entrypoints such as `reproduce.sh` still rely
@@ -84,6 +85,15 @@ on them.
 | `scripts/external/compare_fastsolv_tgnn.py` | Lightweight TGNN-vs-FastSolv comparison | Optional | Older convenience wrapper |
 | `scripts/external/run_solprop.py` | Zero-shot, calibrated, or native-retrained SolProp | Optional | Usually run in a separate environment |
 
+## Application CLIs
+
+| Entry point | Role | Status | Notes |
+|-------------|------|--------|-------|
+| `scripts/applications/screen_solvents.py` | Solvent library screening, antisolvent search, and green replacement | Stable utility | Works with `TGNN-Solv` and `DirectGNN` checkpoints |
+| `scripts/applications/optimize_process.py` | Crystallization, extraction, and reaction-medium optimization | Stable utility | Uses equilibrium heuristics, not kinetics |
+| `scripts/applications/drug_developability.py` | BCS-style classification and developability scoring | Stable utility | pH correction and permeability remain heuristic |
+| `scripts/applications/pk_profile.py` | GI/media/vehicle PK-facing solubility profile | Stable utility | Solubility-first PK support, not PBPK |
+
 ## Infrastructure
 
 | Entry point | Role | Status | Notes |
@@ -111,6 +121,10 @@ They are available through the Python API and are demonstrated in notebooks.
 | `tgnn_solv.benchmark_adapters` | Formal custom-model adapter contract | Lets arbitrary models participate in canonical benchmark bundles |
 | `tgnn_solv.artifacts` | Run manifests and benchmark/model cards | Supplies machine-readable provenance sidecars |
 | `tgnn_solv.stress.build_stress_suite` | Thermodynamic stress slices for benchmark bundles | Used after `predictions.csv` already exists |
+| `tgnn_solv.applications.solvent_screening.SolventScreener` | Solvent ranking and crystallization-window screening | Shared by CLI and `Experiment Lab` |
+| `tgnn_solv.applications.process_optimization.ProcessOptimizer` | Process-facing solvent and temperature optimization | Shared by CLI and `Experiment Lab` |
+| `tgnn_solv.applications.drug_properties.DrugPropertyPredictor` | BCS/developability workflow | Shared by CLI and `Experiment Lab` |
+| `tgnn_solv.applications.pk_profiling.PKSolubilityProfiler` | GI/media/vehicle PK profile | Shared by CLI and `Experiment Lab` |
 
 The same maintained surfaces are also exposed together through
 `tools/experiment_lab/app.py`, but the GUI is an orchestration layer rather

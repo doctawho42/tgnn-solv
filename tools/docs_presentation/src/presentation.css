@@ -3568,7 +3568,14 @@ body.tgnn-presentation-route .md-content__inner {
   .md-typeset .waterfall-steps,
   .md-typeset .gc-example-flow,
   .md-typeset .equation-summary-strip,
-  .md-typeset .feature-vector-grid {
+  .md-typeset .feature-vector-grid,
+  .md-typeset .application-slide-hero,
+  .md-typeset .screening-slide-layout,
+  .md-typeset .screening-bottom-grid,
+  .md-typeset .process-mode-grid,
+  .md-typeset .developability-grid,
+  .md-typeset .pk-compartment-strip,
+  .md-typeset .comparison-radar-layout--compact {
     grid-template-columns: 1fr;
   }
 
@@ -3582,6 +3589,337 @@ body.tgnn-presentation-route .md-content__inner {
 
   .md-typeset .molecule-mini-card,
   .md-typeset .molecule-mini-card--compact {
+    grid-template-columns: 1fr;
+  }
+}
+
+.md-typeset .application-slide-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.md-typeset .application-slide-grid,
+.md-typeset .application-slide-hero,
+.md-typeset .screening-slide-layout,
+.md-typeset .screening-side-column,
+.md-typeset .screening-bottom-grid,
+.md-typeset .process-mode-grid,
+.md-typeset .developability-grid,
+.md-typeset .comparison-radar-layout--compact,
+.md-typeset .pk-compartment-strip,
+.md-typeset .application-slide-query,
+.md-typeset .application-info-card,
+.md-typeset .screening-rank-card {
+  min-width: 0;
+}
+
+.md-typeset .application-slide-hero {
+  display: grid;
+  grid-template-columns: minmax(14rem, 17rem) 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.md-typeset .application-slide-query,
+.md-typeset .application-info-card,
+.md-typeset .screening-rank-card {
+  background: var(--deck-paper);
+  border: 1px solid var(--deck-paper-border);
+  border-radius: 1rem;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
+}
+
+.md-typeset .application-slide-query,
+.md-typeset .application-info-card,
+.md-typeset .screening-rank-card {
+  padding: 1rem 1.05rem;
+}
+
+.md-typeset .application-info-card,
+.md-typeset .screening-rank-card {
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+}
+
+.md-typeset .application-info-card > :first-child,
+.md-typeset .screening-rank-card > :first-child {
+  margin-top: 0;
+}
+
+.md-typeset .application-slide-query {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+}
+
+.md-typeset .application-slide-query strong,
+.md-typeset .application-card-title {
+  color: var(--deck-paper-text);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.md-typeset .application-slide-query span,
+.md-typeset .application-slide-query small {
+  color: var(--deck-paper-soft);
+  line-height: 1.55;
+}
+
+.md-typeset .application-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.75rem;
+  margin-right: 0.65rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.md-typeset .screening-slide-layout,
+.md-typeset .screening-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.md-typeset .screening-side-column,
+.md-typeset .application-card-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.md-typeset .screening-rank-list {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+}
+
+.md-typeset .screening-rank-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.md-typeset .screening-rank-meta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.md-typeset .screening-rank-meta strong {
+  display: block;
+  color: var(--deck-paper-text);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.md-typeset .screening-rank-meta small,
+.md-typeset .figure-subnote {
+  color: var(--deck-paper-soft);
+  line-height: 1.55;
+}
+
+.md-typeset .screening-rank-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.md-typeset .screening-rank-bar {
+  position: relative;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--deck-paper-soft) 18%, transparent);
+  overflow: hidden;
+}
+
+.md-typeset .screening-rank-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+}
+
+.md-typeset .screening-rank-values {
+  display: grid;
+  justify-items: end;
+  gap: 0.05rem;
+  text-align: right;
+}
+
+.md-typeset .screening-rank-values strong,
+.md-typeset .application-highlight strong {
+  color: var(--deck-paper-text);
+  line-height: 1.25;
+}
+
+.md-typeset .screening-rank-values small,
+.md-typeset .screening-rank-values span,
+.md-typeset .application-highlight span,
+.md-typeset .application-highlight small {
+  color: var(--deck-paper-soft);
+  line-height: 1.45;
+}
+
+.md-typeset .application-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.md-typeset .application-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--deck-accent) 12%, var(--deck-paper));
+  border: 1px solid color-mix(in srgb, var(--deck-accent) 18%, var(--deck-paper-border));
+  color: var(--deck-paper-text);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.md-typeset .application-chip--risk {
+  background: color-mix(in srgb, #ef4444 12%, var(--deck-paper));
+  border-color: color-mix(in srgb, #ef4444 24%, var(--deck-paper-border));
+}
+
+.md-typeset .application-mini-table {
+  width: 100%;
+  margin-top: 0.75rem;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.78rem;
+}
+
+.md-typeset .application-mini-table th,
+.md-typeset .application-mini-table td {
+  padding: 0.5rem 0.45rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--deck-paper-border) 78%, transparent);
+  text-align: left;
+  vertical-align: top;
+  color: var(--deck-paper-text);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.md-typeset .application-mini-table th {
+  color: var(--deck-paper-soft);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.md-typeset .application-highlight {
+  display: grid;
+  gap: 0.18rem;
+  margin-top: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--deck-accent) 10%, var(--deck-paper));
+  border: 1px solid color-mix(in srgb, var(--deck-accent) 18%, var(--deck-paper-border));
+}
+
+.md-typeset .application-bullet-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1rem;
+  color: var(--deck-paper-text);
+}
+
+.md-typeset .application-bullet-list li {
+  margin-bottom: 0.45rem;
+  line-height: 1.55;
+}
+
+.md-typeset .application-metric-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: center;
+  margin-top: 0.65rem;
+  color: var(--deck-paper-text);
+}
+
+.md-typeset .process-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.md-typeset .developability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.md-typeset .comparison-radar-layout--compact {
+  grid-template-columns: minmax(0, 1.18fr) minmax(11rem, 0.56fr);
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.md-typeset .comparison-radar-card--compact {
+  padding: 0;
+}
+
+.md-typeset .comparison-radar-side--compact {
+  justify-content: center;
+}
+
+.md-typeset .pk-compartment-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.25rem, 1fr));
+  gap: 0.7rem;
+}
+
+.md-typeset .pk-compartment-card {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.95rem;
+  background: var(--deck-paper);
+  border: 1px solid var(--deck-paper-border);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.md-typeset .pk-compartment-card strong {
+  color: var(--deck-paper-text);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+.md-typeset .pk-compartment-card span,
+.md-typeset .pk-compartment-card small {
+  color: var(--deck-paper-soft);
+  line-height: 1.45;
+}
+
+.md-typeset .application-info-card svg,
+.md-typeset .screening-rank-card svg,
+.md-typeset .comparison-radar-card svg {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+@media screen and (max-width: 76rem) {
+  .md-typeset .application-slide-hero,
+  .md-typeset .screening-slide-layout,
+  .md-typeset .screening-bottom-grid,
+  .md-typeset .comparison-radar-layout--compact {
     grid-template-columns: 1fr;
   }
 }
@@ -3607,5 +3945,15 @@ body.tgnn-presentation-route .md-content__inner {
 
   .md-typeset .example-pair-strip__divider {
     min-width: 0;
+  }
+
+  .md-typeset .screening-rank-row {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .md-typeset .screening-rank-values {
+    justify-items: start;
+    text-align: left;
   }
 }

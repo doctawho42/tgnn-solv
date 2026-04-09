@@ -110,10 +110,12 @@ if str(SRC_ROOT) not in sys.path:
 
 try:
     from tgnn_solv.applications import (
+        BUILTIN_SOLVENT_LIBRARY,
         PHARMA_MEDIA_LIBRARY,
         SYNTHESIS_SOLVENT_LIBRARY,
     )
 except Exception:  # pragma: no cover - fallback only
+    BUILTIN_SOLVENT_LIBRARY = []
     SYNTHESIS_SOLVENT_LIBRARY = {
         "Water": "O",
         "Methanol": "CO",
@@ -5383,6 +5385,194 @@ print(json.dumps(payload))
 
 
 @st.cache_data(show_spinner=False)
+def run_drug_developability_analysis(
+    python_command: str,
+    checkpoint_path: str,
+    solute_smiles: str,
+    temperature: float,
+    dose_mg: float,
+    volume_ml: float,
+    counterions_json: str,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import math
+import sys
+from pathlib import Path
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.applications import DrugPropertyPredictor
+from tgnn_solv.inference import load_directgnn_model, load_model
+
+checkpoint_path = sys.argv[1]
+solute_smiles = sys.argv[2]
+temperature = float(sys.argv[3])
+dose_mg = float(sys.argv[4])
+volume_ml = float(sys.argv[5])
+counterions = json.loads(sys.argv[6])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, cfg = load_directgnn_model(checkpoint_path)
+else:
+    family = "tgnn_solv"
+    model, cfg = load_model(checkpoint_path)
+
+predictor = DrugPropertyPredictor(model, cfg, next(model.parameters()).device)
+
+def to_jsonable(value):
+    if isinstance(value, dict):
+        return {{str(key): to_jsonable(val) for key, val in value.items()}}
+    if isinstance(value, (list, tuple)):
+        return [to_jsonable(item) for item in value]
+    if hasattr(value, "to_dict") and value.__class__.__name__ == "DataFrame":
+        return value.where(value.notna(), None).to_dict(orient="records")
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if hasattr(value, "item"):
+        try:
+            scalar = value.item()
+            if isinstance(scalar, float):
+                return scalar if math.isfinite(scalar) else None
+            return scalar
+        except Exception:
+            return value
+    return value
+
+bcs = predictor.bcs_classify(solute_smiles, dose_mg=dose_mg, volume_mL=volume_ml, T=temperature)
+developability = predictor.developability_score(solute_smiles, T=temperature)
+media_profile = predictor.pharma_media_profile(solute_smiles, T=temperature)
+reference_comparison = predictor.compare_with_reference_drugs(solute_smiles, top_k=5)
+salt_screen = predictor.salt_cocrystal_impact(solute_smiles, counterions, T=temperature)
+
+payload = {{
+    "model_family": family,
+    "checkpoint_path": checkpoint_path,
+    "solute_smiles": solute_smiles,
+    "temperature": temperature,
+    "dose_mg": dose_mg,
+    "volume_ml": volume_ml,
+    "bcs": to_jsonable(bcs),
+    "developability": to_jsonable(developability),
+    "media_profile": to_jsonable(media_profile),
+    "reference_comparison": to_jsonable(reference_comparison),
+    "salt_cocrystal_screen": to_jsonable(salt_screen),
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [
+            checkpoint_path,
+            solute_smiles,
+            str(float(temperature)),
+            str(float(dose_mg)),
+            str(float(volume_ml)),
+            counterions_json,
+        ],
+        timeout=3600,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
+def run_pk_profile_analysis(
+    python_command: str,
+    checkpoint_path: str,
+    solute_smiles: str,
+    dose_mg: float,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import math
+import sys
+from pathlib import Path
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.applications import PKSolubilityProfiler
+from tgnn_solv.inference import load_directgnn_model, load_model
+
+checkpoint_path = sys.argv[1]
+solute_smiles = sys.argv[2]
+dose_mg = float(sys.argv[3])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, cfg = load_directgnn_model(checkpoint_path)
+else:
+    family = "tgnn_solv"
+    model, cfg = load_model(checkpoint_path)
+
+profiler = PKSolubilityProfiler(model, cfg, next(model.parameters()).device)
+
+def to_jsonable(value):
+    if isinstance(value, dict):
+        return {{str(key): to_jsonable(val) for key, val in value.items()}}
+    if isinstance(value, (list, tuple)):
+        return [to_jsonable(item) for item in value]
+    if hasattr(value, "to_dict") and value.__class__.__name__ == "DataFrame":
+        return value.where(value.notna(), None).to_dict(orient="records")
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if hasattr(value, "item"):
+        try:
+            scalar = value.item()
+            if isinstance(scalar, float):
+                return scalar if math.isfinite(scalar) else None
+            return scalar
+        except Exception:
+            return value
+    return value
+
+payload = {{
+    "model_family": family,
+    "checkpoint_path": checkpoint_path,
+    "solute_smiles": solute_smiles,
+    "dose_mg": dose_mg,
+    "gi_profile": to_jsonable(profiler.gi_tract_profile(solute_smiles, dose_mg=dose_mg)),
+    "biorelevant_media": to_jsonable(profiler.biorelevant_media_screen(solute_smiles)),
+    "iv_screen": to_jsonable(profiler.iv_formulation_screening(solute_smiles)),
+    "topical_screen": to_jsonable(profiler.topical_vehicle_screening(solute_smiles)),
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [
+            checkpoint_path,
+            solute_smiles,
+            str(float(dose_mg)),
+        ],
+        timeout=3600,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
 def run_solvent_swap_screen(
     python_command: str,
     checkpoint_path: str,
@@ -5496,6 +5686,442 @@ print(json.dumps(payload))
             str(int(scan_points)),
         ],
         timeout=1800,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
+def run_solvent_screening(
+    python_command: str,
+    checkpoint_path: str,
+    solute_smiles: str,
+    temperature: float,
+    top_k: int,
+    filters_json: str,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import sys
+from pathlib import Path
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.applications import SolventScreener
+from tgnn_solv.inference import load_directgnn_model, load_model
+
+checkpoint_path = sys.argv[1]
+solute_smiles = sys.argv[2]
+temperature = float(sys.argv[3])
+top_k = int(sys.argv[4])
+filters = json.loads(sys.argv[5])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, cfg = load_directgnn_model(checkpoint_path)
+else:
+    family = "tgnn_solv"
+    model, cfg = load_model(checkpoint_path)
+
+screener = SolventScreener(model, cfg, next(model.parameters()).device)
+screen_df = screener.screen(solute_smiles, T=temperature, top_k=top_k, filters=filters, return_details=True)
+records = screen_df.where(screen_df.notna(), None).to_dict(orient="records")
+payload = {{
+    "model_family": family,
+    "checkpoint_path": checkpoint_path,
+    "solute_smiles": solute_smiles,
+    "temperature": temperature,
+    "screening_rows": records,
+    "assumptions": screen_df.attrs.get("assumptions", {{}}),
+    "library_size": len(screener.solvent_library),
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [
+            checkpoint_path,
+            solute_smiles,
+            str(float(temperature)),
+            str(int(top_k)),
+            filters_json,
+        ],
+        timeout=3600,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
+def run_crystallization_window_analysis(
+    python_command: str,
+    checkpoint_path: str,
+    solute_smiles: str,
+    solvent_smiles: str,
+    temperature_hot: float | None,
+    temperature_cold: float | None,
+    n_points: int,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import sys
+from pathlib import Path
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.applications import SolventScreener
+from tgnn_solv.inference import load_directgnn_model, load_model
+
+checkpoint_path = sys.argv[1]
+solute_smiles = sys.argv[2]
+solvent_smiles = sys.argv[3]
+temperature_hot = None if sys.argv[4] == "none" else float(sys.argv[4])
+temperature_cold = None if sys.argv[5] == "none" else float(sys.argv[5])
+n_points = int(sys.argv[6])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, cfg = load_directgnn_model(checkpoint_path)
+else:
+    family = "tgnn_solv"
+    model, cfg = load_model(checkpoint_path)
+
+screener = SolventScreener(model, cfg, next(model.parameters()).device)
+payload = screener.crystallization_window(
+    solute_smiles,
+    solvent_smiles,
+    T_hot=temperature_hot,
+    T_cold=temperature_cold,
+    n_points=n_points,
+)
+scan = payload["temperature_scan"].where(payload["temperature_scan"].notna(), None).to_dict(orient="records")
+payload["temperature_scan"] = scan
+payload["model_family"] = family
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [
+            checkpoint_path,
+            solute_smiles,
+            solvent_smiles,
+            "none" if temperature_hot is None else str(float(temperature_hot)),
+            "none" if temperature_cold is None else str(float(temperature_cold)),
+            str(int(n_points)),
+        ],
+        timeout=2400,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
+def run_antisolvent_screening_analysis(
+    python_command: str,
+    checkpoint_path: str,
+    solute_smiles: str,
+    good_solvent_smiles: str,
+    temperature: float,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import sys
+from pathlib import Path
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.applications import SolventScreener
+from tgnn_solv.inference import load_directgnn_model, load_model
+
+checkpoint_path = sys.argv[1]
+solute_smiles = sys.argv[2]
+good_solvent_smiles = sys.argv[3]
+temperature = float(sys.argv[4])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, cfg = load_directgnn_model(checkpoint_path)
+else:
+    family = "tgnn_solv"
+    model, cfg = load_model(checkpoint_path)
+
+screener = SolventScreener(model, cfg, next(model.parameters()).device)
+df = screener.antisolvent_screening(solute_smiles, good_solvent_smiles, T=temperature)
+payload = {{
+    "model_family": family,
+    "rows": df.where(df.notna(), None).to_dict(orient="records"),
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [checkpoint_path, solute_smiles, good_solvent_smiles, str(float(temperature))],
+        timeout=2400,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
+def run_green_replacement_analysis(
+    python_command: str,
+    checkpoint_path: str,
+    solute_smiles: str,
+    current_solvent_smiles: str,
+    temperature: float,
+    min_solubility_fraction: float,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import sys
+from pathlib import Path
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.applications import SolventScreener
+from tgnn_solv.inference import load_directgnn_model, load_model
+
+checkpoint_path = sys.argv[1]
+solute_smiles = sys.argv[2]
+current_solvent_smiles = sys.argv[3]
+temperature = float(sys.argv[4])
+min_solubility_fraction = float(sys.argv[5])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, cfg = load_directgnn_model(checkpoint_path)
+else:
+    family = "tgnn_solv"
+    model, cfg = load_model(checkpoint_path)
+
+screener = SolventScreener(model, cfg, next(model.parameters()).device)
+df = screener.green_solvent_replacement(
+    solute_smiles,
+    current_solvent_smiles,
+    T=temperature,
+    min_solubility_fraction=min_solubility_fraction,
+)
+payload = {{
+    "model_family": family,
+    "rows": df.where(df.notna(), None).to_dict(orient="records"),
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [
+            checkpoint_path,
+            solute_smiles,
+            current_solvent_smiles,
+            str(float(temperature)),
+            str(float(min_solubility_fraction)),
+        ],
+        timeout=2400,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
+def run_process_optimization_analysis(
+    python_command: str,
+    checkpoint_path: str,
+    mode: str,
+    payload_json: str,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import sys
+from pathlib import Path
+import pandas as pd
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.applications import ProcessOptimizer
+from tgnn_solv.inference import load_directgnn_model, load_model
+
+checkpoint_path = sys.argv[1]
+mode = sys.argv[2]
+payload = json.loads(sys.argv[3])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, cfg = load_directgnn_model(checkpoint_path)
+else:
+    family = "tgnn_solv"
+    model, cfg = load_model(checkpoint_path)
+
+optimizer = ProcessOptimizer(model, cfg, next(model.parameters()).device)
+if mode == "crystallization":
+    result = optimizer.optimize_crystallization(
+        payload["solute_smiles"],
+        target_yield=float(payload.get("target_yield", 0.8)),
+        T_range=(float(payload.get("T_min", 273.0)), float(payload.get("T_max", 373.0))),
+        constraints=payload.get("constraints"),
+    )
+elif mode == "extraction":
+    result = optimizer.optimize_extraction(
+        payload["solute_smiles"],
+        payload["source_solvent"],
+        T=float(payload.get("temperature", 298.15)),
+        constraints=payload.get("constraints"),
+    )
+elif mode == "reaction_medium":
+    result = optimizer.optimize_reaction_medium(
+        payload["reactants"],
+        payload["product_smiles"],
+        T_reaction=float(payload.get("temperature", 298.15)),
+        constraints=payload.get("constraints"),
+    )
+else:
+    result = optimizer.design_solvent_system(
+        payload["solute_smiles"],
+        tuple(payload["target_solubility_range"]),
+        T=float(payload.get("temperature", 298.15)),
+    )
+
+if isinstance(result, pd.DataFrame):
+    result_payload = result.where(result.notna(), None).to_dict(orient="records")
+    assumptions = getattr(result, "attrs", {{}}).get("assumptions", {{}})
+else:
+    result_payload = result
+    assumptions = {{}}
+
+payload = {{
+    "model_family": family,
+    "mode": mode,
+    "checkpoint_path": checkpoint_path,
+    "result": result_payload,
+    "assumptions": assumptions,
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [checkpoint_path, mode, payload_json],
+        timeout=3600,
+    )
+    if error:
+        return {"error": error}
+    return payload or {}
+
+
+@st.cache_data(show_spinner=False)
+def run_process_candidate_scan(
+    python_command: str,
+    checkpoint_path: str,
+    solute_smiles: str,
+    solvent_smiles: str,
+    T_min: float,
+    T_max: float,
+    n_points: int,
+) -> dict[str, Any]:
+    script = f"""
+import json
+import sys
+from pathlib import Path
+import torch
+
+repo_root = Path({str(REPO_ROOT)!r})
+src_root = repo_root / "src"
+if str(src_root) not in sys.path:
+    sys.path.insert(0, str(src_root))
+
+from tgnn_solv.applications import SolventScreener
+from tgnn_solv.inference import load_directgnn_model, load_model
+
+checkpoint_path = sys.argv[1]
+solute_smiles = sys.argv[2]
+solvent_smiles = sys.argv[3]
+T_min = float(sys.argv[4])
+T_max = float(sys.argv[5])
+n_points = int(sys.argv[6])
+
+checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+model_class = str(checkpoint.get("model_class", "")).lower()
+model_type = str(checkpoint.get("model_type", "")).lower()
+top_keys = set(str(key) for key in checkpoint.keys())
+if ("directgnn" in model_class or "direct" in model_type) and ({{"model_state", "model_state_dict"}} & top_keys):
+    family = "direct_gnn"
+    model, cfg = load_directgnn_model(checkpoint_path)
+else:
+    family = "tgnn_solv"
+    model, cfg = load_model(checkpoint_path)
+
+screener = SolventScreener(model, cfg, next(model.parameters()).device)
+scan = screener._augment_scan(
+    screener._temperature_scan(solute_smiles, solvent_smiles, T_min=T_min, T_max=T_max, n_points=n_points),
+    solute_smiles,
+    solvent_smiles,
+)
+payload = {{
+    "model_family": family,
+    "scan": scan.where(scan.notna(), None).to_dict(orient="records"),
+}}
+print(json.dumps(payload))
+"""
+    payload, error = run_selected_python_json(
+        python_command,
+        script,
+        [
+            checkpoint_path,
+            solute_smiles,
+            solvent_smiles,
+            str(float(T_min)),
+            str(float(T_max)),
+            str(int(n_points)),
+        ],
+        timeout=2400,
     )
     if error:
         return {"error": error}
@@ -11034,6 +11660,7 @@ def render_applications_page(python_command: str, probe: dict[str, Any]) -> None
         eyebrow="Applications",
         chips=[
             ("Checkpoints", str(len(checkpoints))),
+            ("Screening library", str(len(BUILTIN_SOLVENT_LIBRARY) if BUILTIN_SOLVENT_LIBRARY else 0)),
             ("Synthesis library", str(len(SYNTHESIS_SOLVENT_LIBRARY))),
             ("Pharma media", str(len(PHARMA_MEDIA_LIBRARY))),
             ("Runtime", probe.get("python", python_command)),
@@ -11059,15 +11686,897 @@ def render_applications_page(python_command: str, probe: dict[str, Any]) -> None
 
     workspace = segmented_choice(
         "Applications workspace",
-        ["Synthesis route screening", "Developability & PK proxy", "Solvent swap"],
+        ["Process optimization", "Solvent screening", "Synthesis route screening", "Drug developability", "PK solubility profile", "Solvent swap"],
         key="applications_workspace",
-        default="Synthesis route screening",
+        default="Process optimization",
     )
     default_checkpoint = CHECKPOINTS_DIR / "tgnn_solv_trained.pt"
     if default_checkpoint not in supported_checkpoints:
         default_checkpoint = supported_checkpoints[0]
 
-    if workspace == "Synthesis route screening":
+    if workspace == "Process optimization":
+        pending_process_cryst_solute = st.session_state.pop("applications_process_cryst_solute_input_pending", None)
+        if pending_process_cryst_solute is not None:
+            st.session_state["applications_process_cryst_solute"] = pending_process_cryst_solute
+            st.session_state["applications_process_cryst_solute_input"] = pending_process_cryst_solute
+        pending_process_extract_solute = st.session_state.pop("applications_process_extract_solute_input_pending", None)
+        if pending_process_extract_solute is not None:
+            st.session_state["applications_process_extract_solute"] = pending_process_extract_solute
+            st.session_state["applications_process_extract_solute_input"] = pending_process_extract_solute
+        pending_process_rxn_product = st.session_state.pop("applications_process_rxn_product_input_pending", None)
+        if pending_process_rxn_product is not None:
+            st.session_state["applications_process_rxn_product"] = pending_process_rxn_product
+            st.session_state["applications_process_rxn_product_input"] = pending_process_rxn_product
+        builtin_solvent_map = {str(entry["name"]): str(entry["smiles"]) for entry in BUILTIN_SOLVENT_LIBRARY}
+        process_mode = segmented_choice(
+            "Optimization mode",
+            ["Crystallization", "Extraction", "Reaction medium"],
+            key="applications_process_mode",
+            default="Crystallization",
+        )
+        left, right = st.columns([1.02, 0.98], gap="large")
+        with left:
+            checkpoint_path = render_path_select("Checkpoint", supported_checkpoints, default_checkpoint, "applications_process_checkpoint")
+            if process_mode == "Crystallization":
+                solute_smiles = st.text_input(
+                    "Target solute SMILES",
+                    value=st.session_state.get("applications_process_cryst_solute", DEFAULT_SOLUTE_SMILES),
+                    key="applications_process_cryst_solute_input",
+                )
+                temp_window = st.slider(
+                    "Search temperature window (K)",
+                    min_value=273,
+                    max_value=400,
+                    value=(273, 360),
+                    step=1,
+                    key="applications_process_cryst_window",
+                )
+                target_yield = float(
+                    st.slider(
+                        "Target yield",
+                        min_value=0.10,
+                        max_value=0.98,
+                        value=0.80,
+                        step=0.01,
+                        key="applications_process_cryst_target_yield",
+                    )
+                )
+                c1, c2, c3, c4 = st.columns(4, gap="small")
+                with c1:
+                    min_green = int(st.slider("Min green", 1, 10, 5, 1, key="applications_process_cryst_green"))
+                with c2:
+                    max_tox = int(st.slider("Max tox severity", 1, 3, 2, 1, key="applications_process_cryst_tox"))
+                with c3:
+                    min_dissolve = float(st.number_input("Min hot mg/mL", min_value=0.0, max_value=500.0, value=2.0, step=0.5, key="applications_process_cryst_dissolve"))
+                with c4:
+                    max_bp = float(st.number_input("Max bp (K)", min_value=300.0, max_value=700.0, value=450.0, step=5.0, key="applications_process_cryst_bp"))
+                if st.button("Run crystallization optimization", key="applications_process_cryst_run", use_container_width=True):
+                    canonical_solute, error = canonicalize_smiles(solute_smiles)
+                    if not canonical_solute:
+                        st.session_state["applications_process_result"] = {"error": error or "Invalid solute SMILES."}
+                    else:
+                        st.session_state["applications_process_cryst_solute"] = canonical_solute
+                        st.session_state["applications_process_cryst_solute_input_pending"] = canonical_solute
+                        st.session_state["applications_process_result"] = run_process_optimization_analysis(
+                            python_command,
+                            checkpoint_path,
+                            "crystallization",
+                            json.dumps(
+                                {
+                                    "solute_smiles": canonical_solute,
+                                    "target_yield": target_yield,
+                                    "T_min": float(temp_window[0]),
+                                    "T_max": float(temp_window[1]),
+                                    "constraints": {
+                                        "min_green_score": min_green,
+                                        "max_toxicity_class": max_tox,
+                                        "min_dissolving_concentration_mg_mL": min_dissolve,
+                                        "max_boiling_point_K": max_bp,
+                                    },
+                                }
+                            ),
+                        )
+                        st.rerun()
+            elif process_mode == "Extraction":
+                solute_smiles = st.text_input(
+                    "Target solute SMILES",
+                    value=st.session_state.get("applications_process_extract_solute", DEFAULT_SOLUTE_SMILES),
+                    key="applications_process_extract_solute_input",
+                )
+                source_options = list(builtin_solvent_map.keys())
+                default_source = "Water" if "Water" in builtin_solvent_map else source_options[0]
+                source_label = st.selectbox("Source solvent", options=source_options, index=source_options.index(default_source), key="applications_process_extract_source")
+                temperature = float(st.number_input("Extraction temperature (K)", min_value=250.0, max_value=400.0, value=298.15, step=1.0, key="applications_process_extract_T"))
+                c1, c2, c3, c4 = st.columns(4, gap="small")
+                with c1:
+                    min_green = int(st.slider("Min green", 1, 10, 4, 1, key="applications_process_extract_green"))
+                with c2:
+                    max_tox = int(st.slider("Max tox severity", 1, 3, 2, 1, key="applications_process_extract_tox"))
+                with c3:
+                    min_part = float(st.number_input("Min partition K", min_value=1.0, max_value=1000.0, value=3.0, step=0.5, key="applications_process_extract_partition"))
+                with c4:
+                    max_bp = float(st.number_input("Max bp (K)", min_value=300.0, max_value=700.0, value=420.0, step=5.0, key="applications_process_extract_bp"))
+                if st.button("Run extraction optimization", key="applications_process_extract_run", use_container_width=True):
+                    canonical_solute, error = canonicalize_smiles(solute_smiles)
+                    if not canonical_solute:
+                        st.session_state["applications_process_result"] = {"error": error or "Invalid solute SMILES."}
+                    else:
+                        st.session_state["applications_process_extract_solute"] = canonical_solute
+                        st.session_state["applications_process_extract_solute_input_pending"] = canonical_solute
+                        st.session_state["applications_process_result"] = run_process_optimization_analysis(
+                            python_command,
+                            checkpoint_path,
+                            "extraction",
+                            json.dumps(
+                                {
+                                    "solute_smiles": canonical_solute,
+                                    "source_solvent": builtin_solvent_map[source_label],
+                                    "temperature": temperature,
+                                    "constraints": {
+                                        "min_green_score": min_green,
+                                        "max_toxicity_class": max_tox,
+                                        "min_partition_coefficient": min_part,
+                                        "max_boiling_point_K": max_bp,
+                                    },
+                                }
+                            ),
+                        )
+                        st.rerun()
+            else:
+                reactants_text = st.text_area(
+                    "Reactant SMILES",
+                    value=st.session_state.get("applications_process_rxn_reactants", "CCO\nCCN"),
+                    height=120,
+                    key="applications_process_rxn_reactants",
+                )
+                product_smiles = st.text_input(
+                    "Product SMILES",
+                    value=st.session_state.get("applications_process_rxn_product", "CC(=O)O"),
+                    key="applications_process_rxn_product_input",
+                )
+                temperature = float(st.number_input("Reaction temperature (K)", min_value=250.0, max_value=450.0, value=298.15, step=1.0, key="applications_process_rxn_T"))
+                c1, c2, c3, c4 = st.columns(4, gap="small")
+                with c1:
+                    min_green = int(st.slider("Min green", 1, 10, 5, 1, key="applications_process_rxn_green"))
+                with c2:
+                    max_tox = int(st.slider("Max tox severity", 1, 3, 2, 1, key="applications_process_rxn_tox"))
+                with c3:
+                    min_react = float(st.number_input("Min reactant mg/mL", min_value=0.0, max_value=500.0, value=1.0, step=0.5, key="applications_process_rxn_react"))
+                with c4:
+                    min_selectivity = float(st.number_input("Min selectivity ratio", min_value=0.1, max_value=1000.0, value=2.0, step=0.5, key="applications_process_rxn_selectivity"))
+                if st.button("Run reaction-medium optimization", key="applications_process_rxn_run", use_container_width=True):
+                    reactants: list[str] = []
+                    issues: list[str] = []
+                    for token in re.split(r"[,\n;]+", reactants_text):
+                        raw = token.strip()
+                        if not raw:
+                            continue
+                        canonical, error = canonicalize_smiles(raw)
+                        if canonical:
+                            reactants.append(canonical)
+                        elif error:
+                            issues.append(error)
+                    canonical_product, product_error = canonicalize_smiles(product_smiles)
+                    if not reactants:
+                        st.session_state["applications_process_result"] = {"error": "Provide at least one valid reactant SMILES."}
+                    elif not canonical_product:
+                        st.session_state["applications_process_result"] = {"error": product_error or "Invalid product SMILES."}
+                    else:
+                        st.session_state["applications_process_rxn_product"] = canonical_product
+                        st.session_state["applications_process_rxn_product_input_pending"] = canonical_product
+                        st.session_state["applications_process_result"] = run_process_optimization_analysis(
+                            python_command,
+                            checkpoint_path,
+                            "reaction_medium",
+                            json.dumps(
+                                {
+                                    "reactants": reactants,
+                                    "product_smiles": canonical_product,
+                                    "temperature": temperature,
+                                    "constraints": {
+                                        "min_green_score": min_green,
+                                        "max_toxicity_class": max_tox,
+                                        "min_reactant_solubility_mg_mL": min_react,
+                                        "min_selectivity_ratio": min_selectivity,
+                                    },
+                                }
+                            ),
+                        )
+                        if issues:
+                            st.warning("Some reactants were skipped: " + "; ".join(issues))
+                        st.rerun()
+
+        with right:
+            if process_mode == "Crystallization":
+                render_molecule_showcase(
+                    st.session_state.get("applications_process_cryst_solute", DEFAULT_SOLUTE_SMILES),
+                    title="Crystallization target",
+                    subtitle="Search operating windows over solvent identity and hot/cold endpoints, subject to dissolution, safety, and operability constraints.",
+                    svg_size=(520, 320),
+                    graph_height=360,
+                    compact=True,
+                )
+            elif process_mode == "Extraction":
+                render_molecule_showcase(
+                    st.session_state.get("applications_process_extract_solute", DEFAULT_SOLUTE_SMILES),
+                    title="Extraction target",
+                    subtitle="Rank candidate extraction solvents by partition leverage against the source solvent, while preferring immiscibility and easy solvent removal.",
+                    svg_size=(520, 320),
+                    graph_height=360,
+                    compact=True,
+                )
+            else:
+                render_molecule_showcase(
+                    st.session_state.get("applications_process_rxn_product", "CC(=O)O"),
+                    title="Reaction product target",
+                    subtitle="Look for media that dissolve the reactants but keep the target product comparatively less soluble to aid equilibrium or in situ precipitation.",
+                    svg_size=(520, 320),
+                    graph_height=360,
+                    compact=True,
+                )
+            info_card(
+                "Pareto view",
+                "The optimizer returns simple screening heuristics rather than rigorous process economics. Use the scatter plots as a process-facing trade-off map, not as a closed-form optimum proof.",
+            )
+            info_card(
+                "Temperature scans",
+                "After ranking, inspect the top solvent through explicit temperature scans to see whether the recommendation is robust or only local to one operating point.",
+            )
+
+        process_payload = st.session_state.get("applications_process_result")
+        if process_payload:
+            if process_payload.get("error"):
+                st.error(process_payload["error"])
+            else:
+                result_mode = str(process_payload.get("mode", "")).lower()
+                if result_mode == "crystallization":
+                    rows = process_payload.get("result", []) or []
+                    rows_df = pd.DataFrame(rows)
+                    if rows_df.empty:
+                        st.warning("No crystallization solutions satisfied the current constraints.")
+                    else:
+                        top_row = rows_df.iloc[0]
+                        render_stat_tiles(
+                            [
+                                ("Top solvent", str(top_row.get("solvent_name", "—")), "best ranked candidate"),
+                                ("Best yield", f"{100.0 * float(top_row.get('yield', 0.0)):.1f}%", "equilibrium capture"),
+                                ("Hot / cold", f"{float(top_row.get('T_hot', 0.0)):.0f} / {float(top_row.get('T_cold', 0.0)):.0f} K", "selected endpoints"),
+                                ("Model family", str(process_payload.get("model_family", "unknown")), "active inference backend"),
+                            ]
+                        )
+                        plot_left, plot_right = st.columns(2, gap="large")
+                        with plot_left:
+                            pareto = px.scatter(
+                                rows_df,
+                                x="hot_solubility_mg_mL",
+                                y="yield",
+                                color="green_score",
+                                size="delta_T",
+                                hover_name="solvent_name",
+                                hover_data=["T_hot", "T_cold", "toxicity_class", "boiling_point_K"],
+                                title="Crystallization Pareto front",
+                            )
+                            pareto.update_layout(height=420, xaxis_title="Hot-end approx. mg/mL", yaxis_title="Yield")
+                            st.plotly_chart(style_plot(pareto), use_container_width=True)
+                        with plot_right:
+                            top_bar = px.bar(
+                                rows_df.head(10),
+                                x="solvent_name",
+                                y="yield",
+                                color="recommended",
+                                hover_data=["T_hot", "T_cold", "green_score", "toxicity_class"],
+                                title="Top crystallization candidates",
+                            )
+                            top_bar.update_layout(height=420, xaxis_title="Solvent", yaxis_title="Yield")
+                            st.plotly_chart(style_plot(top_bar), use_container_width=True)
+                        render_dataframe(
+                            rows_df[["solvent_name", "T_hot", "T_cold", "yield", "hot_solubility_mg_mL", "cold_solubility_mg_mL", "green_score", "toxicity_class", "recommended"]],
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+                        labels = [
+                            f"{row['solvent_name']} | {float(row['T_hot']):.0f}/{float(row['T_cold']):.0f} K | {100.0 * float(row['yield']):.1f}%"
+                            for row in rows
+                        ]
+                        selected_label = st.selectbox("Top candidate detail", labels, key="applications_process_cryst_selected")
+                        selected_row = rows[labels.index(selected_label)]
+                        scan_df = pd.DataFrame(selected_row.get("temperature_scan", []))
+                        if not scan_df.empty:
+                            scan_fig = px.line(scan_df, x="T", y="x2", title=f"Temperature scan for {selected_row['solvent_name']}")
+                            scan_fig.add_vline(x=float(selected_row["T_hot"]), line_dash="dash", line_color="#2563EB")
+                            scan_fig.add_vline(x=float(selected_row["T_cold"]), line_dash="dash", line_color="#EF4444")
+                            scan_fig.update_layout(height=380, xaxis_title="Temperature (K)", yaxis_title="Predicted x2")
+                            st.plotly_chart(style_plot(scan_fig), use_container_width=True)
+                elif result_mode == "extraction":
+                    rows_df = pd.DataFrame(process_payload.get("result", []) or [])
+                    if rows_df.empty:
+                        st.warning("No extraction solvents satisfied the current constraints.")
+                    else:
+                        top_row = rows_df.iloc[0]
+                        render_stat_tiles(
+                            [
+                                ("Top solvent", str(top_row.get("solvent_name", "—")), "best extraction candidate"),
+                                ("Best K", f"{float(top_row.get('partition_coefficient', 0.0)):.2f}", "x2(extract) / x2(source)"),
+                                ("Miscible", "yes" if bool(top_row.get("miscible_with_source")) else "no", "with source solvent"),
+                                ("Recommended", "yes" if bool(top_row.get("recommended")) else "no", "screening heuristic"),
+                            ]
+                        )
+                        plot_left, plot_right = st.columns(2, gap="large")
+                        with plot_left:
+                            pareto = px.scatter(
+                                rows_df,
+                                x="partition_coefficient",
+                                y="boiling_point_K",
+                                color="recommended",
+                                size="overall_score",
+                                hover_name="solvent_name",
+                                hover_data=["miscible_with_source", "green_score", "toxicity_class"],
+                                title="Extraction trade-off map",
+                            )
+                            pareto.update_layout(height=420, xaxis_title="Partition coefficient", yaxis_title="Boiling point (K)")
+                            st.plotly_chart(style_plot(pareto), use_container_width=True)
+                        with plot_right:
+                            k_bar = px.bar(
+                                rows_df.head(12),
+                                x="solvent_name",
+                                y="partition_coefficient",
+                                color="recommended",
+                                title="Top extraction solvents by partition coefficient",
+                            )
+                            k_bar.update_layout(height=420, xaxis_title="Solvent", yaxis_title="K")
+                            st.plotly_chart(style_plot(k_bar), use_container_width=True)
+                        render_dataframe(
+                            rows_df[["rank", "solvent_name", "partition_coefficient", "miscible_with_source", "boiling_point_K", "green_score", "toxicity_class", "recommended"]],
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+                        selected_name = st.selectbox("Extraction candidate", rows_df["solvent_name"].astype(str).tolist(), key="applications_process_extract_selected")
+                        selected_row = rows_df[rows_df["solvent_name"] == selected_name].iloc[0]
+                        source_smiles = str(selected_row.get("source_solvent", ""))
+                        source_scan = run_process_candidate_scan(
+                            python_command,
+                            str(process_payload.get("checkpoint_path", checkpoint_path)),
+                            st.session_state.get("applications_process_extract_solute", DEFAULT_SOLUTE_SMILES),
+                            source_smiles,
+                            273.0,
+                            353.0,
+                            14,
+                        )
+                        candidate_scan = run_process_candidate_scan(
+                            python_command,
+                            str(process_payload.get("checkpoint_path", checkpoint_path)),
+                            st.session_state.get("applications_process_extract_solute", DEFAULT_SOLUTE_SMILES),
+                            str(selected_row.get("solvent_smiles", "")),
+                            273.0,
+                            353.0,
+                            14,
+                        )
+                        overlay_rows = []
+                        for label, payload in [("Source", source_scan), (selected_name, candidate_scan)]:
+                            scan_df = pd.DataFrame(payload.get("scan", []))
+                            if not scan_df.empty:
+                                scan_df = scan_df.copy()
+                                scan_df["system"] = label
+                                overlay_rows.append(scan_df)
+                        if overlay_rows:
+                            overlay_df = pd.concat(overlay_rows, ignore_index=True)
+                            overlay = px.line(overlay_df, x="T", y="x2", color="system", title="Temperature scan: source vs extraction solvent")
+                            overlay.update_layout(height=360, xaxis_title="Temperature (K)", yaxis_title="Predicted x2")
+                            st.plotly_chart(style_plot(overlay), use_container_width=True)
+                elif result_mode == "reaction_medium":
+                    rows_df = pd.DataFrame(process_payload.get("result", []) or [])
+                    if rows_df.empty:
+                        st.warning("No reaction solvents satisfied the current constraints.")
+                    else:
+                        top_row = rows_df.iloc[0]
+                        reactant_cols = [col for col in rows_df.columns if col.startswith("reactant_") and col.endswith("_solubility_mg_mL")]
+                        render_stat_tiles(
+                            [
+                                ("Top solvent", str(top_row.get("solvent_name", "—")), "best reaction medium"),
+                                ("Reactant min mg/mL", f"{float(top_row.get('reactant_min_solubility_mg_mL', 0.0)):.2f}", "limiting reactant"),
+                                ("Product mg/mL", f"{float(top_row.get('product_solubility_mg_mL', 0.0)):.2f}", "target product"),
+                                ("Selectivity", f"{float(top_row.get('reactant_product_selectivity', 0.0)):.2f}", "reactant min / product"),
+                            ]
+                        )
+                        plot_left, plot_right = st.columns(2, gap="large")
+                        with plot_left:
+                            pareto = px.scatter(
+                                rows_df,
+                                x="reactant_min_solubility_mg_mL",
+                                y="reactant_product_selectivity",
+                                color="recommended",
+                                size="overall_score",
+                                hover_name="solvent_name",
+                                hover_data=["green_score", "toxicity_class", "boiling_point_K"],
+                                title="Reaction-medium Pareto front",
+                            )
+                            pareto.update_layout(height=420, xaxis_title="Limiting reactant mg/mL", yaxis_title="Reactant/product selectivity")
+                            st.plotly_chart(style_plot(pareto), use_container_width=True)
+                        with plot_right:
+                            selectivity_bar = px.bar(
+                                rows_df.head(12),
+                                x="solvent_name",
+                                y="reactant_product_selectivity",
+                                color="recommended",
+                                title="Top reaction media by selectivity",
+                            )
+                            selectivity_bar.update_layout(height=420, xaxis_title="Solvent", yaxis_title="Selectivity ratio")
+                            st.plotly_chart(style_plot(selectivity_bar), use_container_width=True)
+                        display_cols = ["rank", "solvent_name", "reactant_min_solubility_mg_mL", "product_solubility_mg_mL", "reactant_product_selectivity", "green_score", "toxicity_class", "recommended"]
+                        render_dataframe(rows_df[[col for col in display_cols if col in rows_df.columns]], use_container_width=True, hide_index=True)
+                        selected_name = st.selectbox("Reaction-medium candidate", rows_df["solvent_name"].astype(str).tolist(), key="applications_process_rxn_selected")
+                        selected_row = rows_df[rows_df["solvent_name"] == selected_name].iloc[0]
+                        scan_rows = []
+                        product_scan = run_process_candidate_scan(
+                            python_command,
+                            str(process_payload.get("checkpoint_path", checkpoint_path)),
+                            str(selected_row.get("product_smiles", st.session_state.get("applications_process_rxn_product", "CC(=O)O"))),
+                            str(selected_row.get("solvent_smiles", "")),
+                            273.0,
+                            353.0,
+                            14,
+                        )
+                        product_df = pd.DataFrame(product_scan.get("scan", []))
+                        if not product_df.empty:
+                            product_df["species"] = "Product"
+                            scan_rows.append(product_df)
+                        for idx, reactant_col in enumerate(sorted(col for col in rows_df.columns if col.startswith("reactant_") and col.endswith("_smiles"))[:2], start=1):
+                            reactant_smiles = str(selected_row.get(reactant_col, ""))
+                            reactant_scan = run_process_candidate_scan(
+                                python_command,
+                                str(process_payload.get("checkpoint_path", checkpoint_path)),
+                                reactant_smiles,
+                                str(selected_row.get("solvent_smiles", "")),
+                                273.0,
+                                353.0,
+                                14,
+                            )
+                            reactant_df = pd.DataFrame(reactant_scan.get("scan", []))
+                            if not reactant_df.empty:
+                                reactant_df["species"] = f"Reactant {idx}"
+                                scan_rows.append(reactant_df)
+                        if scan_rows:
+                            overlay_df = pd.concat(scan_rows, ignore_index=True)
+                            overlay = px.line(overlay_df, x="T", y="x2", color="species", title=f"Top candidate temperature scan in {selected_name}")
+                            overlay.update_layout(height=360, xaxis_title="Temperature (K)", yaxis_title="Predicted x2")
+                            st.plotly_chart(style_plot(overlay), use_container_width=True)
+
+    elif workspace == "Solvent screening":
+        screen_editor_version = int(st.session_state.get("applications_screen_editor_version", 0))
+        pending_screen_solute = st.session_state.pop("applications_screen_solute_input_pending", None)
+        if pending_screen_solute is not None:
+            st.session_state["applications_screen_solute"] = pending_screen_solute
+            st.session_state["applications_screen_solute_input"] = pending_screen_solute
+        left, right = st.columns([1.05, 0.95], gap="large")
+        solvent_classes = sorted({str(entry.get("solvent_class", "")) for entry in BUILTIN_SOLVENT_LIBRARY if entry.get("solvent_class")})
+        with left:
+            checkpoint_path = render_path_select("Checkpoint", supported_checkpoints, default_checkpoint, "applications_screen_checkpoint")
+            solute_smiles = st.text_input(
+                "Target solute SMILES",
+                value=st.session_state.get("applications_screen_solute", DEFAULT_SOLUTE_SMILES),
+                key="applications_screen_solute_input",
+            )
+            temp_cols = st.columns([1.1, 0.9], gap="small")
+            with temp_cols[0]:
+                temperature = float(
+                    st.slider(
+                        "Screen temperature (K)",
+                        min_value=250,
+                        max_value=400,
+                        value=298,
+                        step=1,
+                        key="applications_screen_temperature",
+                    )
+                )
+            with temp_cols[1]:
+                top_k = int(
+                    st.slider(
+                        "Top K solvents",
+                        min_value=5,
+                        max_value=60,
+                        value=20,
+                        step=1,
+                        key="applications_screen_top_k",
+                    )
+                )
+            st.markdown("#### Filters")
+            filter_cols = st.columns(3, gap="small")
+            with filter_cols[0]:
+                min_solubility = st.number_input(
+                    "Min mg/mL",
+                    min_value=0.0,
+                    max_value=500.0,
+                    value=0.0,
+                    step=0.5,
+                    key="applications_screen_min_solubility",
+                )
+                min_green = int(
+                    st.slider(
+                        "Min green score",
+                        min_value=1,
+                        max_value=10,
+                        value=1,
+                        step=1,
+                        key="applications_screen_min_green",
+                    )
+                )
+            with filter_cols[1]:
+                max_toxicity = int(
+                    st.slider(
+                        "Max toxicity severity",
+                        min_value=1,
+                        max_value=3,
+                        value=3,
+                        step=1,
+                        key="applications_screen_max_toxicity",
+                    )
+                )
+                max_bp = float(
+                    st.number_input(
+                        "Max boiling point (K)",
+                        min_value=280.0,
+                        max_value=700.0,
+                        value=700.0,
+                        step=5.0,
+                        key="applications_screen_max_bp",
+                    )
+                )
+            with filter_cols[2]:
+                require_water_miscible = st.toggle(
+                    "Require water miscible",
+                    value=False,
+                    key="applications_screen_require_water_miscible",
+                )
+                exclude_classes = st.multiselect(
+                    "Exclude classes",
+                    options=solvent_classes,
+                    default=[],
+                    key="applications_screen_exclude_classes",
+                )
+
+            filters = {
+                "min_solubility_mg_mL": float(min_solubility) if min_solubility > 0 else None,
+                "max_toxicity_class": int(max_toxicity) if max_toxicity < 3 else None,
+                "min_green_score": int(min_green) if min_green > 1 else None,
+                "max_boiling_point_K": float(max_bp) if max_bp < 699.0 else None,
+                "exclude_classes": exclude_classes,
+                "require_water_miscible": bool(require_water_miscible),
+            }
+            filters = {key: value for key, value in filters.items() if value not in (None, [], False)}
+
+            if st.button("Run solvent screen", key="applications_screen_run", use_container_width=True):
+                canonical_solute, error = canonicalize_smiles(solute_smiles)
+                if not canonical_solute:
+                    st.session_state["applications_screen_result"] = {"error": error or "Invalid solute SMILES."}
+                else:
+                    st.session_state["applications_screen_solute"] = canonical_solute
+                    st.session_state["applications_screen_solute_input_pending"] = canonical_solute
+                    st.session_state["applications_screen_result"] = run_solvent_screening(
+                        python_command,
+                        checkpoint_path,
+                        canonical_solute,
+                        float(temperature),
+                        int(top_k),
+                        json.dumps(filters),
+                    )
+                    st.rerun()
+
+        with right:
+            render_molecule_showcase(
+                st.session_state.get("applications_screen_solute", DEFAULT_SOLUTE_SMILES),
+                title="Screening target",
+                subtitle="Rank the built-in solvent library for one solute, then drill into crystallization leverage, drowning-out options, and greener replacements.",
+                svg_size=(520, 320),
+                graph_height=360,
+                compact=True,
+            )
+            with st.expander("Structure editor", expanded=False):
+                if st_ketcher is None:
+                    st.info("Ketcher is unavailable in this environment. Restart the lab from the GUI-enabled Python environment.")
+                    if KETCHER_ERROR:
+                        st.caption(f"Editor import error: {KETCHER_ERROR}")
+                else:
+                    drawn_solute = st_ketcher(
+                        st.session_state.get("applications_screen_solute", DEFAULT_SOLUTE_SMILES),
+                        height=420,
+                        molecule_format="SMILES",
+                        key=f"applications_screen_editor_{screen_editor_version}",
+                    )
+                    editor_smiles, editor_error = canonicalize_smiles(drawn_solute)
+                    render_structure_editor_preview(
+                        "Solute",
+                        editor_smiles,
+                        raw_smiles=drawn_solute,
+                        error=editor_error,
+                    )
+                    if st.button("Use drawing in solvent screening", key="applications_screen_apply_editor", use_container_width=True):
+                        if editor_smiles:
+                            st.session_state["applications_screen_solute"] = editor_smiles
+                            st.session_state["applications_screen_solute_input_pending"] = editor_smiles
+                            st.session_state["applications_screen_editor_version"] = screen_editor_version + 1
+                            st.rerun()
+                        st.error(editor_error or "The editor did not export a valid structure.")
+            info_card(
+                "Conversion assumption",
+                "mg/mL is reported from a solvent-dominated volume approximation, using pure-solvent density and molecular weights. It is useful for screening, not for regulatory release values.",
+            )
+            info_card(
+                "Confidence and Hansen space",
+                "AD confidence is shown only when a fitted applicability-domain model is available. Hansen plots require TGNN-Solv because DirectGNN does not expose the physics-side decomposition.",
+            )
+
+        screening_payload = st.session_state.get("applications_screen_result")
+        if screening_payload:
+            if screening_payload.get("error"):
+                st.error(screening_payload["error"])
+            else:
+                rows_df = pd.DataFrame(screening_payload.get("screening_rows", []))
+                if rows_df.empty:
+                    st.warning("No solvents satisfied the current filters.")
+                else:
+                    top_row = rows_df.iloc[0]
+                    render_stat_tiles(
+                        [
+                            ("Ranked solvents", str(len(rows_df)), "after filters"),
+                            ("Top solvent", str(top_row.get("solvent_name", "—")), "highest approximate mg/mL"),
+                            ("Top mg/mL", f"{float(top_row.get('solubility_mg_mL', 0.0)):.2f}" if pd.notna(top_row.get("solubility_mg_mL")) else "—", "volume-based approximation"),
+                            ("Model family", str(screening_payload.get("model_family", "unknown")), "active inference backend"),
+                        ]
+                    )
+                    chart_left, chart_right = st.columns(2, gap="large")
+                    with chart_left:
+                        top_plot_df = rows_df.head(min(20, len(rows_df))).copy()
+                        bar = px.bar(
+                            top_plot_df,
+                            x="solvent_name",
+                            y="solubility_mg_mL",
+                            color="solvent_class",
+                            hover_data=["ln_x2", "x2", "green_score", "toxicity_class", "boiling_point_K"],
+                            title="Top solvents by approximate mg/mL",
+                        )
+                        bar.update_layout(height=430, xaxis_title="Solvent", yaxis_title="Approx. solubility (mg/mL)")
+                        st.plotly_chart(style_plot(bar), use_container_width=True)
+                    with chart_right:
+                        class_df = (
+                            rows_df.groupby("solvent_class", as_index=False)
+                            .agg(solubility_mg_mL=("solubility_mg_mL", "mean"), green_score=("green_score", "mean"))
+                            .sort_values("solubility_mg_mL", ascending=False)
+                        )
+                        class_fig = px.bar(
+                            class_df,
+                            x="solvent_class",
+                            y="solubility_mg_mL",
+                            color="green_score",
+                            title="Mean approximate solubility by solvent class",
+                        )
+                        class_fig.update_layout(height=430, xaxis_title="Solvent class", yaxis_title="Mean approx. mg/mL")
+                        st.plotly_chart(style_plot(class_fig), use_container_width=True)
+
+                    assumptions = screening_payload.get("assumptions") or {}
+                    if assumptions:
+                        with st.expander("Screening assumptions", expanded=False):
+                            for label, text in assumptions.items():
+                                st.markdown(f"**{label.replace('_', ' ').title()}**")
+                                st.caption(str(text))
+
+                    render_dataframe(
+                        rows_df[
+                            [
+                                "rank",
+                                "solvent_name",
+                                "solvent_class",
+                                "solubility_mg_mL",
+                                "ln_x2",
+                                "x2",
+                                "green_score",
+                                "toxicity_class",
+                                "boiling_point_K",
+                                "confidence",
+                            ]
+                        ],
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+                    solvent_names = rows_df["solvent_name"].astype(str).tolist()
+                    detail_checkpoint_path = str(screening_payload.get("checkpoint_path", checkpoint_path))
+                    detail_solute_smiles = str(screening_payload.get("solute_smiles", st.session_state.get("applications_screen_solute", DEFAULT_SOLUTE_SMILES)))
+                    detail_temperature = float(screening_payload.get("temperature", temperature))
+                    selected_solvent_name = st.selectbox(
+                        "Selected solvent for detailed analysis",
+                        options=solvent_names,
+                        key="applications_screen_selected_solvent",
+                    )
+                    selected_row = rows_df[rows_df["solvent_name"] == selected_solvent_name].iloc[0]
+                    detail_left, detail_right = st.columns([0.72, 1.28], gap="large")
+                    with detail_left:
+                        render_molecule_panel(
+                            str(selected_row.get("solvent_smiles", "")),
+                            f"Selected solvent: {selected_solvent_name}",
+                            f"{selected_row.get('solvent_class', 'solvent')} | {selected_row.get('toxicity_class', 'toxicity n/a')} | green {selected_row.get('green_score', '—')}",
+                            width=420,
+                            height=280,
+                        )
+                        render_stat_tiles(
+                            [
+                                ("Approx. mg/mL", f"{float(selected_row.get('solubility_mg_mL', 0.0)):.2f}" if pd.notna(selected_row.get("solubility_mg_mL")) else "—", "screening approximation"),
+                                ("ln x2", f"{float(selected_row.get('ln_x2', 0.0)):.2f}", "model prediction"),
+                                ("Boiling point", f"{float(selected_row.get('boiling_point_K', 0.0)):.1f} K" if pd.notna(selected_row.get("boiling_point_K")) else "—", "operability proxy"),
+                                ("Confidence", f"{float(selected_row.get('confidence', 0.0)):.2f}" if pd.notna(selected_row.get("confidence")) else "—", "AD if fitted"),
+                            ]
+                        )
+                    with detail_right:
+                        crystallization_payload = run_crystallization_window_analysis(
+                            python_command,
+                            detail_checkpoint_path,
+                            detail_solute_smiles,
+                            str(selected_row.get("solvent_smiles", "")),
+                            None,
+                            None,
+                            18,
+                        )
+                        if crystallization_payload.get("error"):
+                            st.error(crystallization_payload["error"])
+                        else:
+                            cryst_stats = [
+                                ("Hot T", f"{float(crystallization_payload.get('T_hot', 0.0)):.1f} K", "default dissolution endpoint"),
+                                ("Cold T", f"{float(crystallization_payload.get('T_cold', 0.0)):.1f} K", "default crystallization endpoint"),
+                                ("Yield", f"{100.0 * float(crystallization_payload.get('theoretical_yield', 0.0)):.1f}%", "theoretical equilibrium capture"),
+                                ("MZW", f"{float(crystallization_payload.get('metastable_zone_width_estimate', 0.0)):.1f} K", "heuristic from d ln x2 / dT"),
+                            ]
+                            render_stat_tiles(cryst_stats)
+                            scan_df = pd.DataFrame(crystallization_payload.get("temperature_scan", []))
+                            if not scan_df.empty:
+                                scan_fig = px.line(
+                                    scan_df,
+                                    x="T",
+                                    y="x2",
+                                    title=f"Crystallization window for {selected_solvent_name}",
+                                )
+                                scan_fig.add_vrect(
+                                    x0=float(crystallization_payload.get("T_cold", 0.0)),
+                                    x1=float(crystallization_payload.get("T_hot", 0.0)),
+                                    fillcolor="rgba(37,99,235,0.08)",
+                                    line_width=0,
+                                )
+                                scan_fig.update_layout(height=380, xaxis_title="Temperature (K)", yaxis_title="Predicted x2")
+                                st.plotly_chart(style_plot(scan_fig), use_container_width=True)
+                                if "gamma_2" in scan_df.columns and scan_df["gamma_2"].notna().any():
+                                    gamma_fig = px.line(
+                                        scan_df,
+                                        x="T",
+                                        y="gamma_2",
+                                        title="Activity coefficient over the cooling path",
+                                    )
+                                    gamma_fig.update_layout(height=280, xaxis_title="Temperature (K)", yaxis_title="gamma_2")
+                                    st.plotly_chart(style_plot(gamma_fig), use_container_width=True)
+                            st.caption(str(crystallization_payload.get("recommended_cooling_rate", "")))
+
+                    if screening_payload.get("model_family") == "tgnn_solv":
+                        hansen_cols = ["hansen_slv_d", "hansen_slv_p", "hansen_slv_h", "hansen_sol_d", "hansen_sol_p", "hansen_sol_h"]
+                        if all(col in rows_df.columns for col in hansen_cols) and rows_df[hansen_cols[:3]].notna().any().all():
+                            hansen_left, hansen_right = st.columns([1.2, 0.8], gap="large")
+                            with hansen_left:
+                                hansen_fig = go.Figure()
+                                hansen_fig.add_trace(
+                                    go.Scatter3d(
+                                        x=rows_df["hansen_slv_d"],
+                                        y=rows_df["hansen_slv_p"],
+                                        z=rows_df["hansen_slv_h"],
+                                        mode="markers",
+                                        marker={
+                                            "size": 6,
+                                            "color": rows_df["solubility_mg_mL"].fillna(rows_df["x2"]),
+                                            "colorscale": "Viridis",
+                                            "showscale": True,
+                                        },
+                                        text=rows_df["solvent_name"],
+                                        name="Solvents",
+                                    )
+                                )
+                                hansen_fig.add_trace(
+                                    go.Scatter3d(
+                                        x=[float(selected_row.get("hansen_sol_d"))],
+                                        y=[float(selected_row.get("hansen_sol_p"))],
+                                        z=[float(selected_row.get("hansen_sol_h"))],
+                                        mode="markers+text",
+                                        marker={"size": 10, "color": "#EF4444"},
+                                        text=["Solute"],
+                                        textposition="top center",
+                                        name="Solute",
+                                    )
+                                )
+                                hansen_fig.update_layout(
+                                    height=460,
+                                    title="Hansen space: solute vs screened solvents",
+                                    scene={
+                                        "xaxis_title": "δd",
+                                        "yaxis_title": "δp",
+                                        "zaxis_title": "δh",
+                                    },
+                                )
+                                st.plotly_chart(style_plot(hansen_fig), use_container_width=True)
+                            with hansen_right:
+                                delta_fig = px.scatter(
+                                    rows_df,
+                                    x="hansen_Ra",
+                                    y="solubility_mg_mL",
+                                    color="solvent_class",
+                                    hover_name="solvent_name",
+                                    title="Hansen distance vs approximate mg/mL",
+                                )
+                                delta_fig.update_layout(height=460, xaxis_title="Ra", yaxis_title="Approx. mg/mL")
+                                st.plotly_chart(style_plot(delta_fig), use_container_width=True)
+                        else:
+                            st.info("Hansen-space visualization is available only when the selected checkpoint emits TGNN solvent/solute Hansen parameters.")
+                    else:
+                        st.info("Hansen-space visualization is disabled for DirectGNN because the baseline does not expose solver-side Hansen parameters.")
+
+                    follow_left, follow_right = st.columns(2, gap="large")
+                    with follow_left:
+                        anti_payload = run_antisolvent_screening_analysis(
+                            python_command,
+                            detail_checkpoint_path,
+                            detail_solute_smiles,
+                            str(selected_row.get("solvent_smiles", "")),
+                            detail_temperature,
+                        )
+                        if anti_payload.get("error"):
+                            st.error(anti_payload["error"])
+                        else:
+                            anti_df = pd.DataFrame(anti_payload.get("rows", []))
+                            st.markdown("### Antisolvent suggestions")
+                            if anti_df.empty:
+                                st.info("No antisolvent candidates were produced for this solvent.")
+                            else:
+                                anti_fig = px.bar(
+                                    anti_df.head(12),
+                                    x="antisolvent_name",
+                                    y="solubility_ratio",
+                                    color="recommended",
+                                    title="Good-solvent / antisolvent solubility ratio",
+                                )
+                                anti_fig.update_layout(height=360, xaxis_title="Antisolvent", yaxis_title="x2(good) / x2(anti)")
+                                st.plotly_chart(style_plot(anti_fig), use_container_width=True)
+                                render_dataframe(
+                                    anti_df[["rank", "antisolvent_name", "solubility_ratio", "miscible_with_good_solvent", "recommended", "toxicity_class", "green_score"]],
+                                    use_container_width=True,
+                                    hide_index=True,
+                                )
+                    with follow_right:
+                        green_payload = run_green_replacement_analysis(
+                            python_command,
+                            detail_checkpoint_path,
+                            detail_solute_smiles,
+                            str(selected_row.get("solvent_smiles", "")),
+                            detail_temperature,
+                            0.5,
+                        )
+                        if green_payload.get("error"):
+                            st.error(green_payload["error"])
+                        else:
+                            green_df = pd.DataFrame(green_payload.get("rows", []))
+                            st.markdown("### Green replacement suggestions")
+                            if green_df.empty:
+                                st.info("No greener alternatives met the current retention threshold.")
+                            else:
+                                green_fig = px.scatter(
+                                    green_df.head(20),
+                                    x="solubility_retention",
+                                    y="green_improvement",
+                                    color="recommended",
+                                    hover_name="solvent_name",
+                                    title="Green improvement vs solubility retention",
+                                )
+                                green_fig.update_layout(height=360, xaxis_title="Retention vs current solvent", yaxis_title="Green-score improvement")
+                                st.plotly_chart(style_plot(green_fig), use_container_width=True)
+                                render_dataframe(
+                                    green_df[["rank", "solvent_name", "green_score", "green_improvement", "solubility_retention", "toxicity_improvement", "recommended"]],
+                                    use_container_width=True,
+                                    hide_index=True,
+                                )
+
+    elif workspace == "Synthesis route screening":
         route_version = int(st.session_state.get("applications_route_editor_version", 0))
         route_seed_key = f"applications_route_seed_{route_version}"
         route_editor_key = f"applications_route_editor_{route_version}"
@@ -11275,90 +12784,619 @@ def render_applications_page(python_command: str, probe: dict[str, Any]) -> None
                                     overlay.update_layout(height=360, xaxis_title="Temperature (K)", yaxis_title="Predicted ln x2")
                                     st.plotly_chart(style_plot(overlay), use_container_width=True)
 
-    elif workspace == "Developability & PK proxy":
-        left, right = st.columns([1.0, 1.0], gap="large")
+    elif workspace == "Drug developability":
+        drug_editor_version = int(st.session_state.get("applications_drug_editor_version", 0))
+        pending_drug_solute = st.session_state.pop("applications_drug_solute_input_pending", None)
+        if pending_drug_solute is not None:
+            st.session_state["applications_drug_solute"] = pending_drug_solute
+            st.session_state["applications_drug_solute_input"] = pending_drug_solute
+
+        left, right = st.columns([1.05, 0.95], gap="large")
         with left:
-            checkpoint_path = render_path_select("Checkpoint", supported_checkpoints, default_checkpoint, "applications_dev_checkpoint")
-            solute_smiles = st.text_input("Compound SMILES", value=st.session_state.get("applications_dev_solute", DEFAULT_SOLUTE_SMILES), key="applications_dev_solute")
-            temperature = st.number_input("Screen temperature (K)", min_value=250.0, max_value=400.0, value=310.15, step=1.0, key="applications_dev_temperature")
-            dose_mg = st.number_input("Dose for aqueous proxy (mg)", min_value=0.0, max_value=5000.0, value=100.0, step=25.0, key="applications_dev_dose")
-            selected_media_labels = st.multiselect(
-                "Media / solvent surrogates",
-                options=list(PHARMA_MEDIA_LIBRARY.keys()),
-                default=["Water", "Ethanol", "Propylene glycol", "DMSO"],
-                key="applications_dev_media",
+            checkpoint_path = render_path_select("Checkpoint", supported_checkpoints, default_checkpoint, "applications_drug_checkpoint")
+            solute_smiles = st.text_input(
+                "Candidate SMILES",
+                value=st.session_state.get("applications_drug_solute", DEFAULT_SOLUTE_SMILES),
+                key="applications_drug_solute_input",
             )
-            if st.button("Run developability screen", key="applications_dev_run", use_container_width=True):
-                media_payload = [{"label": label, "smiles": PHARMA_MEDIA_LIBRARY[label]} for label in selected_media_labels]
-                st.session_state["applications_dev_result"] = run_developability_screen(
-                    python_command,
-                    checkpoint_path,
-                    solute_smiles,
-                    float(temperature),
-                    float(dose_mg),
-                    json.dumps(media_payload),
+            control_cols = st.columns(3, gap="small")
+            with control_cols[0]:
+                temperature = float(
+                    st.number_input(
+                        "Body-temperature screen (K)",
+                        min_value=280.0,
+                        max_value=340.0,
+                        value=310.15,
+                        step=1.0,
+                        key="applications_drug_temperature",
+                    )
                 )
+            with control_cols[1]:
+                dose_mg = float(
+                    st.number_input(
+                        "Dose strength (mg)",
+                        min_value=1.0,
+                        max_value=5000.0,
+                        value=500.0,
+                        step=25.0,
+                        key="applications_drug_dose",
+                    )
+                )
+            with control_cols[2]:
+                volume_ml = float(
+                    st.number_input(
+                        "Reference volume (mL)",
+                        min_value=50.0,
+                        max_value=1000.0,
+                        value=250.0,
+                        step=25.0,
+                        key="applications_drug_volume",
+                    )
+                )
+            counterions_raw = st.text_area(
+                "Counterions / coformers (SMILES or known labels, one per line)",
+                value=st.session_state.get("applications_drug_counterions", ""),
+                height=120,
+                key="applications_drug_counterions",
+                help="Optional. Salt and cocrystal screening is approximate because the maintained model is trained on neutral molecules.",
+            )
+            if st.button("Run drug developability analysis", key="applications_drug_run", use_container_width=True):
+                canonical_solute, error = canonicalize_smiles(solute_smiles)
+                if not canonical_solute:
+                    st.session_state["applications_drug_result"] = {"error": error or "Invalid candidate SMILES."}
+                else:
+                    counterions = [smiles for _, smiles in parse_smiles_tokens(counterions_raw)]
+                    st.session_state["applications_drug_solute"] = canonical_solute
+                    st.session_state["applications_drug_solute_input_pending"] = canonical_solute
+                    st.session_state["applications_drug_result"] = run_drug_developability_analysis(
+                        python_command,
+                        checkpoint_path,
+                        canonical_solute,
+                        float(temperature),
+                        float(dose_mg),
+                        float(volume_ml),
+                        json.dumps(counterions),
+                    )
+                    st.rerun()
+
         with right:
             render_molecule_showcase(
-                st.session_state.get("applications_dev_solute", DEFAULT_SOLUTE_SMILES),
-                title="Developability target",
-                subtitle="Use water plus a few formulation-relevant pure-solvent surrogates to measure how much room there is before the problem stops being a solubility question and starts being a full ADME problem.",
+                st.session_state.get("applications_drug_solute", DEFAULT_SOLUTE_SMILES),
+                title="Drug-developability target",
+                subtitle="Translate TGNN-Solv predictions into an oral-developability readout: BCS-style dose pressure, crystal barrier, solvent latitude, and approximate salt / cocrystal leverage.",
                 svg_size=(520, 320),
                 graph_height=360,
                 compact=True,
             )
+            with st.expander("Structure editor", expanded=False):
+                if st_ketcher is None:
+                    st.info("Ketcher is unavailable in this environment. Restart the lab from the GUI-enabled Python environment.")
+                    if KETCHER_ERROR:
+                        st.caption(f"Editor import error: {KETCHER_ERROR}")
+                else:
+                    drawn_solute = st_ketcher(
+                        st.session_state.get("applications_drug_solute", DEFAULT_SOLUTE_SMILES),
+                        height=420,
+                        molecule_format="SMILES",
+                        key=f"applications_drug_editor_{drug_editor_version}",
+                    )
+                    editor_smiles, editor_error = canonicalize_smiles(drawn_solute)
+                    render_structure_editor_preview(
+                        "Candidate",
+                        editor_smiles,
+                        raw_smiles=drawn_solute,
+                        error=editor_error,
+                    )
+                    if st.button("Use drawing in drug developability", key="applications_drug_apply_editor", use_container_width=True):
+                        if editor_smiles:
+                            st.session_state["applications_drug_solute"] = editor_smiles
+                            st.session_state["applications_drug_solute_input_pending"] = editor_smiles
+                            st.session_state["applications_drug_editor_version"] = drug_editor_version + 1
+                            st.rerun()
+                        st.error(editor_error or "The editor did not export a valid structure.")
+            info_card(
+                "BCS scope",
+                "This page approximates the solubility limb of BCS from predicted equilibrium water solubility and combines it with descriptor-level permeability proxies. It is a triage tool, not a regulatory biowaiver claim.",
+            )
+            info_card(
+                "Salt / cocrystal caveat",
+                "Salt and cocrystal ranking uses disconnected API.counterion surrogates and should be interpreted qualitatively. It is useful for prioritization, not as a replacement for explicit solid-form characterization.",
+            )
 
-        dev_payload = st.session_state.get("applications_dev_result")
+        dev_payload = st.session_state.get("applications_drug_result")
         if dev_payload:
             if dev_payload.get("error"):
                 st.error(dev_payload["error"])
             else:
-                water_row = dev_payload.get("water_row") or {}
+                palette = theme_palette()
+                bcs_payload = dev_payload.get("bcs") or {}
+                developability = dev_payload.get("developability") or {}
+                media_df = pd.DataFrame(dev_payload.get("media_profile", []))
+                reference_df = pd.DataFrame(dev_payload.get("reference_comparison", []))
+                salt_df = pd.DataFrame(dev_payload.get("salt_cocrystal_screen", []))
+                water_prediction = bcs_payload.get("water_prediction") or developability.get("water_prediction") or {}
+                descriptor_profile = developability.get("descriptor_profile") or {}
+                bcs_class = int(bcs_payload.get("bcs_class", 4)) if bcs_payload.get("bcs_class") is not None else 4
+                badge_palette = {
+                    1: (palette["green"], "Class I", "High solubility / high permeability"),
+                    2: (palette["orange"], "Class II", "Low solubility / high permeability"),
+                    3: (palette["blue"], "Class III", "High solubility / low permeability"),
+                    4: (palette["red"], "Class IV", "Low solubility / low permeability"),
+                }
+                badge_color, badge_label, badge_caption = badge_palette[bcs_class]
+                st.markdown(
+                    f"""
+                    <div class="lab-card" style="border:1px solid {hex_to_rgba(badge_color, 0.35)};">
+                      <div class="lab-kicker-row">
+                        <span class="lab-kicker" style="{accent_pill_style(badge_color)}">BCS {escape(badge_label)}</span>
+                        <span class="lab-kicker">{escape(str(dev_payload.get("model_family", "unknown")))}</span>
+                        <span class="lab-kicker">{escape(str(dev_payload.get("solute_smiles", "")))}</span>
+                      </div>
+                      <h3>{escape(badge_caption)}</h3>
+                      <p>{escape(str(bcs_payload.get("formulation_challenge", "No formulation challenge summary available.")))}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
                 render_stat_tiles(
                     [
-                        ("MolWt", f"{float(dev_payload.get('mol_weight', 0.0)):.1f}" if dev_payload.get("mol_weight") else "—", "g/mol"),
-                        ("Water ln x2", f"{float(water_row.get('ln_x2', 0.0)):.2f}" if water_row else "—", "selected T"),
-                        ("Water dose margin", f"{float(water_row.get('dose_margin', 0.0)):.2f}x" if water_row.get("dose_margin") is not None else "—", "max soluble dose / requested dose"),
-                        ("Best cosolvent uplift", f"{float(dev_payload.get('best_cosolvent_uplift', 0.0)):.1f}x" if dev_payload.get("best_cosolvent_uplift") else "—", "relative to water"),
+                        ("Aqueous mg/mL", f"{float(bcs_payload.get('solubility_intrinsic_mg_mL', 0.0)):.2f}" if bcs_payload.get("solubility_intrinsic_mg_mL") is not None else "—", "intrinsic water solubility at body temperature"),
+                        ("Dose number", f"{float(bcs_payload.get('dose_number', 0.0)):.2f}" if bcs_payload.get("dose_number") is not None else "—", "worst-case over pH 1.0 / 4.5 / 6.8"),
+                        ("Developability", f"{float(developability.get('developability_score', 0.0)):.2f}" if developability.get("developability_score") is not None else "—", str(developability.get("traffic_light", "—"))),
+                        ("High permeability", "yes" if bcs_payload.get("high_permeability") else "no", "descriptor proxy"),
+                        ("T_m", f"{float(water_prediction.get('T_m', 0.0)):.1f} K" if water_prediction.get("T_m") is not None else "—", "predicted crystal stability"),
+                        ("ΔH_fus", f"{float(water_prediction.get('dH_fus', 0.0)) / 1000.0:.1f} kJ/mol" if water_prediction.get("dH_fus") is not None else "—", "fusion enthalpy"),
+                        ("LogP", f"{float((bcs_payload.get('permeability_proxy') or {}).get('LogP', 0.0)):.2f}" if (bcs_payload.get("permeability_proxy") or {}).get("LogP") is not None else "—", "descriptor proxy"),
+                        ("TPSA", f"{float((bcs_payload.get('permeability_proxy') or {}).get('TPSA', 0.0)):.1f}" if (bcs_payload.get("permeability_proxy") or {}).get("TPSA") is not None else "—", "A^2"),
                     ]
                 )
-                rows_df = pd.DataFrame(dev_payload.get("rows", []))
-                if not rows_df.empty:
-                    plot_left, plot_right = st.columns(2, gap="large")
-                    with plot_left:
-                        media_fig = px.bar(
-                            rows_df.sort_values("ln_x2", ascending=False),
-                            x="medium",
-                            y="ln_x2",
-                            color="medium",
-                            title="Predicted equilibrium solubility across media",
+
+                chart_left, chart_right = st.columns(2, gap="large")
+                with chart_left:
+                    solubility_profile = pd.DataFrame(
+                        [
+                            {"medium": "Intrinsic water", "solubility_mg_mL": bcs_payload.get("solubility_intrinsic_mg_mL")},
+                            {"medium": "pH 1.0", "solubility_mg_mL": bcs_payload.get("solubility_pH1")},
+                            {"medium": "pH 4.5", "solubility_mg_mL": bcs_payload.get("solubility_pH4_5")},
+                            {"medium": "pH 6.8", "solubility_mg_mL": bcs_payload.get("solubility_pH6_8")},
+                        ]
+                    ).dropna(subset=["solubility_mg_mL"])
+                    solubility_fig = px.bar(
+                        solubility_profile,
+                        x="medium",
+                        y="solubility_mg_mL",
+                        color="solubility_mg_mL",
+                        title="BCS-relevant aqueous solubility profile",
+                    )
+                    solubility_fig.update_layout(height=420, xaxis_title="Medium", yaxis_title="Approx. solubility (mg/mL)")
+                    st.plotly_chart(style_plot(solubility_fig), use_container_width=True)
+                with chart_right:
+                    component_scores = developability.get("component_scores") or {}
+                    radar_df = pd.DataFrame(
+                        {
+                            "metric": list(component_scores.keys()),
+                            "score": [float(value) for value in component_scores.values()],
+                        }
+                    )
+                    if not radar_df.empty:
+                        radar = go.Figure()
+                        radar.add_trace(
+                            go.Scatterpolar(
+                                r=radar_df["score"].tolist() + [radar_df["score"].tolist()[0]],
+                                theta=radar_df["metric"].tolist() + [radar_df["metric"].tolist()[0]],
+                                fill="toself",
+                                line={"color": palette["blue"], "width": 3},
+                                fillcolor=hex_to_rgba(palette["blue"], 0.22),
+                                name="Developability components",
+                            )
                         )
-                        media_fig.update_layout(height=420, xaxis_title="Medium", yaxis_title="Predicted ln x2")
+                        radar.update_layout(
+                            title="Developability radar",
+                            height=420,
+                            polar={"radialaxis": {"range": [0, 1], "tickformat": ".1f"}},
+                            showlegend=False,
+                        )
+                        st.plotly_chart(style_plot(radar), use_container_width=True)
+                    else:
+                        st.info("Component-score radar becomes available after a successful developability run.")
+
+                if not media_df.empty:
+                    st.markdown("### Pharma-medium profile")
+                    profile_left, profile_right = st.columns(2, gap="large")
+                    with profile_left:
+                        media_fig = px.bar(
+                            media_df.sort_values("solubility_mg_mL", ascending=False),
+                            x="medium",
+                            y="solubility_mg_mL",
+                            color="medium",
+                            hover_data=["ln_x2", "x2", "fold_vs_water"],
+                            title="Predicted solubility across formulation-relevant media",
+                        )
+                        media_fig.update_layout(height=420, xaxis_title="Medium", yaxis_title="Approx. solubility (mg/mL)")
                         st.plotly_chart(style_plot(media_fig), use_container_width=True)
-                    with plot_right:
-                        uplift_df = rows_df.dropna(subset=["fold_vs_water"]).copy()
-                        if not uplift_df.empty:
+                    with profile_right:
+                        if "fold_vs_water" in media_df.columns and media_df["fold_vs_water"].notna().any():
                             uplift_fig = px.bar(
-                                uplift_df.sort_values("fold_vs_water", ascending=False),
+                                media_df.dropna(subset=["fold_vs_water"]).sort_values("fold_vs_water", ascending=False),
                                 x="medium",
                                 y="fold_vs_water",
                                 color="medium",
-                                title="Fold uplift vs water",
+                                title="Formulation uplift relative to water",
                             )
                             uplift_fig.update_layout(height=420, xaxis_title="Medium", yaxis_title="x2 / water x2")
                             st.plotly_chart(style_plot(uplift_fig), use_container_width=True)
                         else:
-                            st.info("Select Water to unlock water-relative formulation uplift.")
+                            st.info("Water-relative uplift is unavailable because the media profile lacks a water anchor.")
                     render_dataframe(
-                        rows_df[["medium", "ln_x2", "x2", "fold_vs_water", "molarity_proxy_mol_l", "max_supported_dose_mg_250ml", "dose_margin"]],
+                        media_df[[col for col in ["medium", "solubility_mg_mL", "ln_x2", "x2", "fold_vs_water", "green_score", "toxicity_class"] if col in media_df.columns]],
                         use_container_width=True,
                         hide_index=True,
                     )
-                capability_df = pd.DataFrame(dev_payload.get("capability_matrix", []))
-                if not capability_df.empty:
-                    st.markdown("### What this says about PK / PD")
-                    st.caption("This workspace draws a hard line: TGNN-Solv can support solubility-aware preformulation and oral dose-pressure proxies, but it does not replace permeability, clearance, or pharmacodynamic models.")
-                    render_dataframe(capability_df, use_container_width=True, hide_index=True)
+
+                detail_left, detail_right = st.columns([1.1, 0.9], gap="large")
+                with detail_left:
+                    temp_scan_rows = ((developability.get("temperature_sensitivity") or {}).get("scan")) or []
+                    if temp_scan_rows:
+                        scan_df = pd.DataFrame(temp_scan_rows)
+                        temp_fig = px.line(
+                            scan_df,
+                            x="T",
+                            y="x2",
+                            title="Water temperature sensitivity around body temperature",
+                        )
+                        temp_fig.update_layout(height=360, xaxis_title="Temperature (K)", yaxis_title="Predicted x2")
+                        st.plotly_chart(style_plot(temp_fig), use_container_width=True)
+                    if dev_payload.get("model_family") == "tgnn_solv":
+                        hansen_cols = ["hansen_slv_d", "hansen_slv_p", "hansen_slv_h", "hansen_sol_d", "hansen_sol_p", "hansen_sol_h"]
+                        if not media_df.empty and all(col in media_df.columns for col in hansen_cols):
+                            hansen_fig = go.Figure()
+                            hansen_fig.add_trace(
+                                go.Scatter3d(
+                                    x=media_df["hansen_slv_d"],
+                                    y=media_df["hansen_slv_p"],
+                                    z=media_df["hansen_slv_h"],
+                                    mode="markers+text",
+                                    marker={
+                                        "size": 8,
+                                        "color": media_df["solubility_mg_mL"].fillna(media_df["x2"]),
+                                        "colorscale": "Viridis",
+                                        "showscale": True,
+                                    },
+                                    text=media_df["medium"],
+                                    textposition="top center",
+                                    name="Media",
+                                )
+                            )
+                            hansen_fig.add_trace(
+                                go.Scatter3d(
+                                    x=[float(media_df.iloc[0]["hansen_sol_d"])],
+                                    y=[float(media_df.iloc[0]["hansen_sol_p"])],
+                                    z=[float(media_df.iloc[0]["hansen_sol_h"])],
+                                    mode="markers+text",
+                                    marker={"size": 10, "color": palette["red"]},
+                                    text=["Solute"],
+                                    textposition="top center",
+                                    name="Solute",
+                                )
+                            )
+                            hansen_fig.update_layout(
+                                title="Hansen space: candidate vs pharma media",
+                                height=440,
+                                scene={"xaxis_title": "δd", "yaxis_title": "δp", "zaxis_title": "δh"},
+                            )
+                            st.plotly_chart(style_plot(hansen_fig), use_container_width=True)
+                        else:
+                            st.info("Hansen-space visualization requires TGNN checkpoints that emit solvent and solute Hansen parameters.")
+                    else:
+                        st.info("Hansen-space visualization is unavailable for DirectGNN because the baseline does not expose physics-side Hansen parameters.")
+                with detail_right:
+                    st.markdown("### Recommendations")
+                    for item in bcs_payload.get("recommendations", []):
+                        st.markdown(f"- {item}")
+                    for item in developability.get("recommendations", []):
+                        st.markdown(f"- {item}")
+                    if developability.get("key_risks"):
+                        st.markdown("### Key risks")
+                        for item in developability.get("key_risks", []):
+                            st.markdown(f"- {item}")
+                    caveats = list(dict.fromkeys([*bcs_payload.get("caveats", []), "Equilibrium solubility does not replace permeability, clearance, precipitation kinetics, or PBPK modelling."]))
+                    if caveats:
+                        st.markdown("### Caveats")
+                        for item in caveats:
+                            st.markdown(f"- {item}")
+
+                if not salt_df.empty:
+                    st.markdown("### Salt / cocrystal screening")
+                    salt_left, salt_right = st.columns([1.0, 1.0], gap="large")
+                    with salt_left:
+                        salt_plot = px.bar(
+                            salt_df.dropna(subset=["solubility_advantage"]),
+                            x="counterion",
+                            y="solubility_advantage",
+                            color="confidence",
+                            title="Approximate salt / cocrystal solubility leverage",
+                        )
+                        salt_plot.update_layout(height=360, xaxis_title="Counterion / coformer", yaxis_title="x2(salt surrogate) / x2(free form)")
+                        st.plotly_chart(style_plot(salt_plot), use_container_width=True)
+                    with salt_right:
+                        render_dataframe(
+                            salt_df[[col for col in ["counterion", "salt_smiles", "x2_freeform", "x2_salt", "solubility_advantage", "confidence", "caveats"] if col in salt_df.columns]],
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+
+                if not reference_df.empty:
+                    st.markdown("### Reference-drug comparison")
+                    render_dataframe(reference_df, use_container_width=True, hide_index=True)
+
+    elif workspace == "PK solubility profile":
+        pk_editor_version = int(st.session_state.get("applications_pk_editor_version", 0))
+        pending_pk_solute = st.session_state.pop("applications_pk_solute_input_pending", None)
+        if pending_pk_solute is not None:
+            st.session_state["applications_pk_solute"] = pending_pk_solute
+            st.session_state["applications_pk_solute_input"] = pending_pk_solute
+
+        left, right = st.columns([1.0, 1.0], gap="large")
+        with left:
+            checkpoint_path = render_path_select("Checkpoint", supported_checkpoints, default_checkpoint, "applications_pk_checkpoint")
+            solute_smiles = st.text_input(
+                "Candidate SMILES",
+                value=st.session_state.get("applications_pk_solute", DEFAULT_SOLUTE_SMILES),
+                key="applications_pk_solute_input",
+            )
+            dose_mg = float(
+                st.number_input(
+                    "Oral dose (mg)",
+                    min_value=1.0,
+                    max_value=5000.0,
+                    value=500.0,
+                    step=25.0,
+                    key="applications_pk_dose",
+                )
+            )
+            if st.button("Run PK solubility profile", key="applications_pk_run", use_container_width=True):
+                canonical_solute, error = canonicalize_smiles(solute_smiles)
+                if not canonical_solute:
+                    st.session_state["applications_pk_result"] = {"error": error or "Invalid candidate SMILES."}
+                else:
+                    st.session_state["applications_pk_solute"] = canonical_solute
+                    st.session_state["applications_pk_solute_input_pending"] = canonical_solute
+                    st.session_state["applications_pk_result"] = run_pk_profile_analysis(
+                        python_command,
+                        checkpoint_path,
+                        canonical_solute,
+                        float(dose_mg),
+                    )
+                    st.rerun()
+
+        with right:
+            render_molecule_showcase(
+                st.session_state.get("applications_pk_solute", DEFAULT_SOLUTE_SMILES),
+                title="PK solubility target",
+                subtitle="Estimate where dissolution becomes limiting along the GI tract, whether food likely helps, and which IV or topical vehicles provide the most practical solubility leverage.",
+                svg_size=(520, 320),
+                graph_height=360,
+                compact=True,
+            )
+            with st.expander("Structure editor", expanded=False):
+                if st_ketcher is None:
+                    st.info("Ketcher is unavailable in this environment. Restart the lab from the GUI-enabled Python environment.")
+                    if KETCHER_ERROR:
+                        st.caption(f"Editor import error: {KETCHER_ERROR}")
+                else:
+                    drawn_solute = st_ketcher(
+                        st.session_state.get("applications_pk_solute", DEFAULT_SOLUTE_SMILES),
+                        height=420,
+                        molecule_format="SMILES",
+                        key=f"applications_pk_editor_{pk_editor_version}",
+                    )
+                    editor_smiles, editor_error = canonicalize_smiles(drawn_solute)
+                    render_structure_editor_preview(
+                        "Candidate",
+                        editor_smiles,
+                        raw_smiles=drawn_solute,
+                        error=editor_error,
+                    )
+                    if st.button("Use drawing in PK profile", key="applications_pk_apply_editor", use_container_width=True):
+                        if editor_smiles:
+                            st.session_state["applications_pk_solute"] = editor_smiles
+                            st.session_state["applications_pk_solute_input_pending"] = editor_smiles
+                            st.session_state["applications_pk_editor_version"] = pk_editor_version + 1
+                            st.rerun()
+                        st.error(editor_error or "The editor did not export a valid structure.")
+            info_card(
+                "Scope",
+                "This page is still a solubility-facing PK proxy. It estimates dissolution pressure, food-effect direction, and formulation latitude, but it does not replace PBPK, precipitation kinetics, or transporter models.",
+            )
+            info_card(
+                "Biorelevant media",
+                "FaSSGF / FeSSGF / FaSSIF / FeSSIF are approximated from water plus pH correction and heuristic surfactant or lipid enhancement factors. Read the outputs as triage guidance, not compendial measurements.",
+            )
+
+        pk_payload = st.session_state.get("applications_pk_result")
+        if pk_payload:
+            if pk_payload.get("error"):
+                st.error(pk_payload["error"])
+            else:
+                palette = theme_palette()
+                gi_payload = pk_payload.get("gi_profile") or {}
+                media_payload = pk_payload.get("biorelevant_media") or {}
+                gi_df = pd.DataFrame(gi_payload.get("compartments", []))
+                media_df = pd.DataFrame(media_payload.get("media", []))
+                iv_df = pd.DataFrame(pk_payload.get("iv_screen", []))
+                topical_df = pd.DataFrame(pk_payload.get("topical_screen", []))
+
+                render_stat_tiles(
+                    [
+                        ("f_abs estimate", f"{100.0 * float(gi_payload.get('f_abs_estimate', 0.0)):.1f}%" if gi_payload.get("f_abs_estimate") is not None else "—", "rough absorption fraction proxy"),
+                        ("Max absorbable dose", f"{float(gi_payload.get('max_absorbable_dose', 0.0)):.0f} mg" if gi_payload.get("max_absorbable_dose") is not None else "—", "largest compartmental dissolved mass"),
+                        ("Rate-limiting step", str(gi_payload.get("rate_limiting_step", "—")), "dominant current bottleneck"),
+                        ("Food effect", str(media_payload.get("food_effect_prediction", "—")), "FeSSIF vs FaSSIF heuristic"),
+                    ]
+                )
+
+                if not gi_df.empty:
+                    st.markdown("### GI tract profile")
+                    gi_left, gi_right = st.columns(2, gap="large")
+                    with gi_left:
+                        gi_diagram = go.Figure()
+                        gi_diagram.add_trace(
+                            go.Scatter(
+                                x=gi_df["index"],
+                                y=[1.0] * len(gi_df),
+                                mode="lines+markers+text",
+                                text=gi_df["label"],
+                                textposition="top center",
+                                marker={
+                                    "size": 22,
+                                    "color": gi_df["dissolved_fraction"],
+                                    "colorscale": [[0.0, hex_to_rgba(palette["red"], 1.0)], [0.5, hex_to_rgba(palette["orange"], 1.0)], [1.0, hex_to_rgba(palette["green"], 1.0)]],
+                                    "cmin": 0,
+                                    "cmax": 1,
+                                    "showscale": True,
+                                },
+                                line={"color": palette["border"], "width": 5},
+                                hovertemplate="%{text}<br>Dissolved fraction=%{marker.color:.2f}<extra></extra>",
+                                showlegend=False,
+                            )
+                        )
+                        gi_diagram.update_layout(
+                            title="GI compartment map",
+                            height=320,
+                            xaxis={"tickmode": "array", "tickvals": gi_df["index"], "ticktext": gi_df["label"], "title": "GI position"},
+                            yaxis={"visible": False},
+                            margin=dict(l=24, r=24, t=48, b=24),
+                        )
+                        st.plotly_chart(style_plot(gi_diagram), use_container_width=True)
+                    with gi_right:
+                        dissolved_fig = px.line(
+                            gi_df,
+                            x="label",
+                            y="dissolved_fraction",
+                            markers=True,
+                            title="Dissolved fraction by GI compartment",
+                        )
+                        dissolved_fig.update_layout(height=320, xaxis_title="Compartment", yaxis_title="Dissolved fraction")
+                        st.plotly_chart(style_plot(dissolved_fig), use_container_width=True)
+
+                    comp_left, comp_right = st.columns(2, gap="large")
+                    with comp_left:
+                        sol_fig = px.bar(
+                            gi_df,
+                            x="label",
+                            y="solubility_mg_mL",
+                            color="dissolution_limited",
+                            title="Solubility across GI compartments",
+                        )
+                        sol_fig.update_layout(height=360, xaxis_title="Compartment", yaxis_title="Approx. solubility (mg/mL)")
+                        st.plotly_chart(style_plot(sol_fig), use_container_width=True)
+                    with comp_right:
+                        dose_fig = px.bar(
+                            gi_df,
+                            x="label",
+                            y="dose_number",
+                            color="dissolution_limited",
+                            title="Dose-number pressure by compartment",
+                        )
+                        dose_fig.update_layout(height=360, xaxis_title="Compartment", yaxis_title="Dose number")
+                        st.plotly_chart(style_plot(dose_fig), use_container_width=True)
+                    render_dataframe(
+                        gi_df[[col for col in ["label", "pH", "volume_mL", "solubility_mg_mL", "dissolved_fraction", "dose_number", "dissolution_limited"] if col in gi_df.columns]],
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+                if not media_df.empty:
+                    st.markdown("### Biorelevant media")
+                    media_left, media_right = st.columns(2, gap="large")
+                    with media_left:
+                        media_fig = px.bar(
+                            media_df,
+                            x="label",
+                            y="solubility_mg_mL",
+                            color="enhancement_factor",
+                            title="Biorelevant media solubility comparison",
+                        )
+                        media_fig.update_layout(height=380, xaxis_title="Medium", yaxis_title="Approx. solubility (mg/mL)")
+                        st.plotly_chart(style_plot(media_fig), use_container_width=True)
+                    with media_right:
+                        comparison_fig = px.scatter(
+                            media_df,
+                            x="pH",
+                            y="solubility_mg_mL",
+                            size="enhancement_factor",
+                            color="label",
+                            title="pH and medium-effect map",
+                        )
+                        comparison_fig.update_layout(height=380, xaxis_title="pH", yaxis_title="Approx. solubility (mg/mL)")
+                        st.plotly_chart(style_plot(comparison_fig), use_container_width=True)
+                    st.markdown(
+                        f"**Food effect prediction:** `{media_payload.get('food_effect_prediction', 'undetermined')}`. {media_payload.get('administration_recommendation', '')}"
+                    )
+                    render_dataframe(media_df, use_container_width=True, hide_index=True)
+
+                if not iv_df.empty:
+                    st.markdown("### IV formulation screening")
+                    iv_left, iv_right = st.columns(2, gap="large")
+                    with iv_left:
+                        iv_fig = px.bar(
+                            iv_df.head(10),
+                            x="vehicle_name",
+                            y="iv_estimated_concentration_37C_mg_mL",
+                            color="recommended",
+                            title="Estimated IV-compatible concentration at 37 C",
+                        )
+                        iv_fig.update_layout(height=380, xaxis_title="Vehicle", yaxis_title="Estimated concentration (mg/mL)")
+                        st.plotly_chart(style_plot(iv_fig), use_container_width=True)
+                    with iv_right:
+                        osm_fig = px.scatter(
+                            iv_df,
+                            x="max_fraction_vv",
+                            y="iv_estimated_concentration_37C_mg_mL",
+                            color="osmolality_concern",
+                            symbol="research_only",
+                            hover_name="vehicle_name",
+                            title="IV screening: capacity vs formulation stress",
+                        )
+                        osm_fig.update_layout(height=380, xaxis_title="Max compatible fraction", yaxis_title="Estimated concentration (mg/mL)")
+                        st.plotly_chart(style_plot(osm_fig), use_container_width=True)
+                    render_dataframe(
+                        iv_df[[col for col in ["vehicle_name", "vehicle_type", "max_fraction_vv", "iv_estimated_concentration_25C_mg_mL", "iv_estimated_concentration_37C_mg_mL", "osmolality_concern", "research_only", "recommended", "note"] if col in iv_df.columns]],
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+                if not topical_df.empty:
+                    st.markdown("### Topical vehicle screening")
+                    top_left, top_right = st.columns(2, gap="large")
+                    with top_left:
+                        top_fig = px.bar(
+                            topical_df.head(10),
+                            x="vehicle_name",
+                            y="thermodynamic_activity",
+                            color="recommended",
+                            title="Thermodynamic activity by topical vehicle",
+                        )
+                        top_fig.update_layout(height=380, xaxis_title="Vehicle", yaxis_title="x2 * gamma2")
+                        st.plotly_chart(style_plot(top_fig), use_container_width=True)
+                    with top_right:
+                        perm_fig = px.scatter(
+                            topical_df,
+                            x="solubility_mg_mL",
+                            y="permeation_potential",
+                            color="vehicle_type",
+                            size="thermodynamic_activity",
+                            hover_name="vehicle_name",
+                            title="Topical screening: solubility vs permeation potential",
+                        )
+                        perm_fig.update_layout(height=380, xaxis_title="Approx. solubility (mg/mL)", yaxis_title="Permeation potential")
+                        st.plotly_chart(style_plot(perm_fig), use_container_width=True)
+                    render_dataframe(
+                        topical_df[[col for col in ["vehicle_name", "vehicle_type", "solubility_mg_mL", "gamma_2", "thermodynamic_activity", "near_saturation_score", "permeation_potential", "recommended", "note"] if col in topical_df.columns]],
+                        use_container_width=True,
+                        hide_index=True,
+                    )
 
     else:
         left, right = st.columns([1.0, 1.0], gap="large")
