@@ -56,6 +56,7 @@ on them.
 | `scripts/evaluation/analyze_benchmark.py` | Text summary of benchmark JSON | Stable utility | Lightweight reporting helper |
 | `scripts/evaluation/compare_models.py` | Compare multiple TGNN checkpoints | Stable utility | Wraps benchmark logic |
 | `scripts/training/diagnose_training.py` | Dataset stats and overfit sanity check | Stable utility | Good pre-flight tool |
+| `scripts/data/extract_idac_from_thermoml.py` | Build `idac.csv` from NIST ThermoML JSON records | Stable utility | Useful when enabling real `gamma_inf` supervision; works directly with `notebooks/data/raw/idac_seed_dois.txt` and can recreate the published Zenodo starter corpus |
 | `scripts/evaluation/probe_gsol_descriptor_recovery.py` | Ridge linear probe from `g_sol` to RDKit descriptors | Stable utility | Useful for encoder-capacity diagnostics |
 | `scripts/evaluation/run_thermo_stress_suite.py` | Stress slices on canonical prediction bundles | Stable utility | Reads `predictions.csv`, writes slice metrics JSON |
 | `scripts/experiments/run_optuna.py` | Hyperparameter tuning | Stable utility | Supports TGNN, GPS TGNN, descriptor-augmented TGNN, and DirectGNN families |

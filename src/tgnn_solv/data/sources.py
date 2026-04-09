@@ -11,6 +11,8 @@ Sources:
   CombiSolv-QM  — solvation free energies (~10k)
 """
 
+import os
+import re
 from typing import Optional
 
 import numpy as np
@@ -55,6 +57,144 @@ _DENSITY_G_ML_RAW = {
     "O=Cc1ccccc1": 1.045,
 }
 _DENSITY_G_ML_CANON = None
+_IDAC_CANDIDATE_FILENAMES = (
+    "idac.csv",
+    "idac.tsv",
+    "idac_gamma_inf.csv",
+    "gamma_inf.csv",
+    "idac_ln_gamma_inf.csv",
+)
+
+
+def _normalize_column_name(name: str) -> str:
+    """Normalize a raw column name for alias matching."""
+    return re.sub(r"[^a-z0-9]+", "", str(name).strip().lower())
+
+
+def _resolve_column(df: pd.DataFrame, aliases: tuple[str, ...]) -> Optional[str]:
+    """Resolve the first matching column using normalized aliases."""
+    normalized = {
+        _normalize_column_name(column): column for column in df.columns
+    }
+    for alias in aliases:
+        key = _normalize_column_name(alias)
+        if key in normalized:
+            return normalized[key]
+    return None
+
+
+def _local_idac_path() -> Optional[tuple[str, object]]:
+    """Return a configured local IDAC file if available."""
+    env_path = os.environ.get("TGNN_SOLV_IDAC_PATH")
+    if env_path:
+        path = RAW_DIR.__class__(env_path).expanduser()
+        if path.exists():
+            return "env", path
+
+    for filename in _IDAC_CANDIDATE_FILENAMES:
+        path = RAW_DIR / filename
+        if path.exists():
+            return "raw", path
+    return None
+
+
+def _load_local_idac(path) -> pd.DataFrame:
+    """Parse a local IDAC file into the canonical dataframe shape."""
+    if not verify_csv(path):
+        raise ValueError(f"IDAC file is not a valid text table: {path}")
+
+    if path.suffix.lower() == ".tsv":
+        df = pd.read_csv(path, sep="\t", low_memory=False)
+    else:
+        df = pd.read_csv(path, sep=None, engine="python")
+
+    solute_col = _resolve_column(
+        df,
+        (
+            "solute_smiles",
+            "smiles_solute",
+            "solute",
+            "solute_canonical_smiles",
+            "solute_can_smiles",
+        ),
+    )
+    solvent_col = _resolve_column(
+        df,
+        (
+            "solvent_smiles",
+            "smiles_solvent",
+            "solvent",
+            "solvent_canonical_smiles",
+            "solvent_can_smiles",
+        ),
+    )
+    gamma_col = _resolve_column(
+        df,
+        (
+            "ln_gamma_inf",
+            "gamma_inf",
+            "log_gamma_inf",
+            "lngamma_inf",
+            "lngammainf",
+        ),
+    )
+    temp_col = _resolve_column(
+        df,
+        (
+            "temperature",
+            "temperature_k",
+            "temp",
+            "temp_k",
+            "t",
+        ),
+    )
+
+    missing = []
+    if solute_col is None:
+        missing.append("solute_smiles")
+    if solvent_col is None:
+        missing.append("solvent_smiles")
+    if gamma_col is None:
+        missing.append("ln_gamma_inf")
+    if missing:
+        raise ValueError(
+            "IDAC file is missing required columns. "
+            f"Need aliases for: {', '.join(missing)}"
+        )
+    if _normalize_column_name(gamma_col) == "gammainf":
+        print("  Interpreting `gamma_inf` column as precomputed ln_gamma_inf values")
+
+    result = pd.DataFrame(
+        {
+            "solute_smiles": df[solute_col],
+            "solvent_smiles": df[solvent_col],
+            "ln_gamma_inf": pd.to_numeric(df[gamma_col], errors="coerce"),
+        }
+    )
+    if temp_col is not None:
+        result["temperature"] = pd.to_numeric(df[temp_col], errors="coerce")
+    else:
+        result["temperature"] = 298.15
+
+    result["solute_smiles"] = result["solute_smiles"].apply(canonicalize)
+    result["solvent_smiles"] = result["solvent_smiles"].apply(canonicalize)
+    result["temperature"] = result["temperature"].fillna(298.15)
+
+    before = len(result)
+    result = result.dropna(
+        subset=["solute_smiles", "solvent_smiles", "ln_gamma_inf"]
+    )
+    dropped = before - len(result)
+    result = result.drop_duplicates(
+        subset=["solute_smiles", "solvent_smiles", "temperature"],
+        keep="first",
+    ).reset_index(drop=True)
+
+    print(f"  Local file: {path}")
+    print(f"  Parsed rows: {len(result)}")
+    if dropped > 0:
+        print(f"  Dropped invalid/empty rows: {dropped}")
+    return result
 
 
 def _density_map() -> dict:
@@ -537,6 +677,17 @@ def load_idac() -> pd.DataFrame:
     print("\n" + "=" * 60)
     print("Loading IDAC data")
     print("=" * 60)
+
+    local = _local_idac_path()
+    if local is not None:
+        origin, path = local
+        if origin == "env":
+            print("  Using TGNN_SOLV_IDAC_PATH override")
+        else:
+            print("  Using local IDAC file from raw data directory")
+        return _load_local_idac(path)
+
+    print("  No local IDAC file found; using built-in fallback")
 
     data = [
         ("CCCCCC", "O", 7.60, 298.15),

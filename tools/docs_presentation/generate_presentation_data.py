@@ -20,6 +20,10 @@ except Exception:
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCS_DATA_PATH = REPO_ROOT / "docs" / "assets" / "data" / "tgnn-presentation-data.json"
 PROCESSED_DIR = REPO_ROOT / "notebooks" / "data" / "processed"
+RAW_IDAC_PATH = REPO_ROOT / "notebooks" / "data" / "raw" / "idac.csv"
+IDAC_ZENODO_RECORD_URL = "https://zenodo.org/records/19484205"
+IDAC_ZENODO_CSV_URL = f"{IDAC_ZENODO_RECORD_URL}/files/idac.csv"
+IDAC_ZENODO_DOIS_URL = f"{IDAC_ZENODO_RECORD_URL}/files/idac_seed_dois.txt"
 TRAIN_PATH = PROCESSED_DIR / "train.csv"
 VAL_PATH = PROCESSED_DIR / "val.csv"
 TEST_PATH = PROCESSED_DIR / "test.csv"
@@ -93,6 +97,104 @@ def format_preview_row(row: dict[str, str]) -> dict[str, str]:
     }
 
 
+def format_idac_preview_row(row: dict[str, str]) -> dict[str, str]:
+    temp = safe_float(row.get("temperature"), 298.15)
+    gamma = safe_float(row.get("ln_gamma_inf"))
+    sample = row.get("solute_name") or clamp_text(row.get("solute_smiles", ""), 16)
+    return {
+        "sample": sample,
+        "solute_smiles": clamp_text(row.get("solute_smiles", "—"), 17),
+        "solvent_smiles": clamp_text(row.get("solvent_smiles", "—"), 12),
+        "T": f"{temp:.0f}" if temp is not None else "—",
+        "ln_x2": "—",
+        "T_m": "—",
+        "dH_fus": "—",
+        "delta_hansen": "—",
+        "gamma_inf": f"{gamma:.2f}" if gamma is not None else "—",
+        "source": "IDAC / Zenodo",
+    }
+
+
+def collect_idac_data() -> dict[str, object]:
+    if not RAW_IDAC_PATH.exists():
+        return {
+            "idac_rows": 0,
+            "idac_rows_label": "0",
+            "idac_pairs": 0,
+            "idac_pairs_label": "0",
+            "idac_dois": 0,
+            "idac_dois_label": "0",
+            "idac_temperature_range_label": "—",
+            "idac_release_label": "Zenodo 19484205",
+            "idac_record_url": IDAC_ZENODO_RECORD_URL,
+            "idac_csv_url": IDAC_ZENODO_CSV_URL,
+            "idac_doi_list_url": IDAC_ZENODO_DOIS_URL,
+            "idac_preview_row": None,
+        }
+
+    with RAW_IDAC_PATH.open(newline="") as handle:
+        rows = list(csv.DictReader(handle))
+
+    if not rows:
+        return {
+            "idac_rows": 0,
+            "idac_rows_label": "0",
+            "idac_pairs": 0,
+            "idac_pairs_label": "0",
+            "idac_dois": 0,
+            "idac_dois_label": "0",
+            "idac_temperature_range_label": "—",
+            "idac_release_label": "Zenodo 19484205",
+            "idac_record_url": IDAC_ZENODO_RECORD_URL,
+            "idac_csv_url": IDAC_ZENODO_CSV_URL,
+            "idac_doi_list_url": IDAC_ZENODO_DOIS_URL,
+            "idac_preview_row": None,
+        }
+
+    def preview_rank(row: dict[str, str]) -> tuple[int, int, float]:
+        solvent = (row.get("solvent_name") or "").lower()
+        solute = (row.get("solute_name") or "").lower()
+        smiles = f"{row.get('solute_smiles', '')}{row.get('solvent_smiles', '')}"
+        penalty = (
+            int("imidazolium" in solvent)
+            + int("imidazolium" in solute)
+            + int("[" in smiles)
+            + int("+" in smiles)
+            + int("-" in smiles)
+        )
+        name_len = len(solvent) + len(solute)
+        gamma = abs(safe_float(row.get("ln_gamma_inf"), 0.0) or 0.0)
+        return (penalty, name_len, gamma)
+
+    preview_row = min(rows, key=preview_rank)
+    temperatures = [safe_float(row.get("temperature")) for row in rows]
+    temperatures = [value for value in temperatures if value is not None]
+    unique_pairs = {
+        (row.get("solute_smiles", ""), row.get("solvent_smiles", ""))
+        for row in rows
+    }
+    dois = {row.get("doi", "") for row in rows if row.get("doi")}
+
+    t_range = "—"
+    if temperatures:
+        t_range = f"{min(temperatures):.0f}–{max(temperatures):.0f} K"
+
+    return {
+        "idac_rows": len(rows),
+        "idac_rows_label": compact_count(len(rows)),
+        "idac_pairs": len(unique_pairs),
+        "idac_pairs_label": compact_count(len(unique_pairs)),
+        "idac_dois": len(dois),
+        "idac_dois_label": compact_count(len(dois)),
+        "idac_temperature_range_label": t_range,
+        "idac_release_label": "Zenodo 19484205",
+        "idac_record_url": IDAC_ZENODO_RECORD_URL,
+        "idac_csv_url": IDAC_ZENODO_CSV_URL,
+        "idac_doi_list_url": IDAC_ZENODO_DOIS_URL,
+        "idac_preview_row": format_idac_preview_row(preview_row),
+    }
+
+
 def iter_split_rows():
     for split_name, path in (("train", TRAIN_PATH), ("val", VAL_PATH), ("test", TEST_PATH)):
         if not path.exists():
@@ -155,6 +257,9 @@ def collect_pipeline_data() -> dict[str, object]:
         )
         if row is not None
     ]
+    idac_data = collect_idac_data()
+    if idac_data.get("idac_preview_row") is not None:
+        preview_rows.append(idac_data["idac_preview_row"])
 
     ratios = {"train": 0.8, "val": 0.1, "test": 0.1}
     if SPLIT_MANIFEST_PATH.exists():
@@ -179,6 +284,7 @@ def collect_pipeline_data() -> dict[str, object]:
         "missing_fraction_aux_label": f"{(1.0 - (aux_filled / aux_slots if aux_slots else 0.0)) * 100:.1f}%",
         "preview_rows": preview_rows,
     }
+    pipeline.update(idac_data)
     pipeline.update(collect_scaffold_data())
     return pipeline
 

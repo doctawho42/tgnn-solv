@@ -69,6 +69,39 @@ def test_builder_gamma_merge_handles_nan_temperature() -> None:
     assert not row_nan["has_gamma_inf"]
 
 
+def test_builder_adds_gamma_aux_only_rows_without_pair_overlap() -> None:
+    solubility_df = pd.DataFrame(
+        {
+            "solute_smiles": ["CCO"],
+            "solvent_smiles": ["CO"],
+            "temperature": [300.0],
+            "ln_x2": [np.log(0.2)],
+        }
+    )
+    gamma_df = pd.DataFrame(
+        {
+            "solute_smiles": ["c1ccccc1"],
+            "solvent_smiles": ["O"],
+            "ln_gamma_inf": [1.7],
+            "temperature": [298.15],
+        }
+    )
+
+    builder = DataBuilder()
+    builder.add_gamma(gamma_df)
+    built = builder.build(solubility_df)
+
+    assert len(built) == 2
+
+    gamma_row = built[built["has_gamma_inf"]].iloc[0]
+    assert not gamma_row["has_solubility"]
+    assert gamma_row["solute_smiles"] == "c1ccccc1"
+    assert gamma_row["solvent_smiles"] == "O"
+    assert gamma_row["temperature"] == 298.15
+    assert gamma_row["ln_gamma_inf"] == 1.7
+    assert gamma_row["source"] == "aux_only_gamma"
+
+
 def test_filter_for_sle_excludes_invalid_and_miscible() -> None:
     df = pd.DataFrame(
         {

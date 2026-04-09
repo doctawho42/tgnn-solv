@@ -17,6 +17,10 @@ Main sources used by `src/tgnn_solv/data/sources.py`:
   - `hansen_d`, `hansen_p`, `hansen_h`
 - IDAC / infinite-dilution activity coefficients
   - `ln_gamma_inf`
+  - by default the repository falls back to a tiny built-in curated table
+  - for real supervision, use the published Zenodo starter files or place a
+    local `idac.csv` under `notebooks/data/raw/`
+  - you can also set `TGNN_SOLV_IDAC_PATH=/abs/path/to/idac.csv`
 
 The merged dataframe is built by `DataBuilder` and then split with the helpers
 in `split.py` and `split_registry.py`.
@@ -104,6 +108,103 @@ Common mask and auxiliary columns:
 - `ln_gamma_inf`
 - `has_gamma_inf`
 - `source`
+
+## Adding Real IDAC Data
+
+`load_idac()` first looks for a local file before falling back to the built-in
+demo table. Supported file locations:
+
+- `notebooks/data/raw/idac.csv`
+- `notebooks/data/raw/idac.tsv`
+- `notebooks/data/raw/idac_gamma_inf.csv`
+- `notebooks/data/raw/gamma_inf.csv`
+- `TGNN_SOLV_IDAC_PATH=/abs/path/to/file`
+
+The repository now also ships a small maintained starter corpus:
+
+- `notebooks/data/raw/idac.csv`
+- `notebooks/data/raw/idac_seed_dois.txt`
+
+Canonical public copies of the same starter release are published on Zenodo:
+
+- [`idac.csv`](https://zenodo.org/records/19484205/files/idac.csv)
+- [`idac_seed_dois.txt`](https://zenodo.org/records/19484205/files/idac_seed_dois.txt)
+- record page: [`Zenodo 19484205`](https://zenodo.org/records/19484205)
+
+Current starter-corpus stats:
+
+- `404` rows
+- `138` unique `(solute, solvent)` pairs
+- `9` ThermoML DOI sources
+- temperature range `298.0 .. 438.0 K`
+- `ln_gamma_inf` range `-1.386 .. 7.185`
+
+This file is intentionally external to the main solubility corpus. It should be
+read as a bootstrap `IDAC` source, not as evidence that `BigSolDB` itself
+already contains matched `gamma_inf` supervision.
+
+If you want to refresh the local copies from the published release, use:
+
+```bash
+curl -L https://zenodo.org/records/19484205/files/idac.csv \
+    -o notebooks/data/raw/idac.csv
+curl -L https://zenodo.org/records/19484205/files/idac_seed_dois.txt \
+    -o notebooks/data/raw/idac_seed_dois.txt
+```
+
+Required logical columns:
+
+- solute SMILES
+  - aliases such as `solute_smiles`, `smiles_solute`, `solute`
+- solvent SMILES
+  - aliases such as `solvent_smiles`, `smiles_solvent`, `solvent`
+- `ln_gamma_inf`
+  - aliases such as `ln_gamma_inf`, `gamma_inf`, `log_gamma_inf`
+  - values must already be in log-space; the loader does not apply `log()`
+
+Optional:
+
+- temperature
+  - aliases such as `temperature`, `temperature_k`, `temp`, `t`
+  - if omitted, `298.15 K` is assumed
+
+After placing the file, rebuild processed splits:
+
+```bash
+python scripts/data/prepare_data.py --output-dir notebooks/data/processed
+```
+
+The CLI already prints `gamma_inf` counts for the unified dataframe and for
+each split. A non-zero count there means `has_gamma_inf` is now active.
+
+`gamma_inf` rows do not need an exact overlap with the solubility corpus
+anymore. During dataset build they can also appear as `aux_only_gamma`
+records, which enables standalone supervision of the `ln_gamma_inf` head in
+Phase 1 / auxiliary training.
+
+The practical implication is important: a dedicated external `IDAC` corpus is
+now useful even when its `(solute, solvent, T)` tuples do not coincide with
+existing `ln(x2)` rows. The previous matched-pair-only bottleneck no longer
+applies.
+
+If you need to build `idac.csv` yourself from NIST ThermoML JSON pages, use:
+
+```bash
+python scripts/data/extract_idac_from_thermoml.py \
+    --doi-file notebooks/data/raw/idac_seed_dois.txt \
+    --output notebooks/data/raw/idac.csv
+```
+
+This helper:
+
+- fetches ThermoML `JSON` from `trc.nist.gov`
+- extracts only binary `Activity coefficient` measurements at infinite dilution
+- converts `gamma_inf` to `ln_gamma_inf`
+- derives SMILES from the standard InChI using RDKit
+- can be used to recreate or extend the published Zenodo starter release
+
+You can also pass `--doi-file path/to/dois.txt` or parse a local directory of
+ThermoML JSON files with `--json-dir path/to/json_archive`.
 
 The dataset layer will derive additional non-CSV fields at load time, such as:
 

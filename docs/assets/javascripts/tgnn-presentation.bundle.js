@@ -20133,6 +20133,17 @@
       ratios: { train: 0.8, val: 0.1, test: 0.1 },
       missing_fraction_aux: 0.8496,
       missing_fraction_aux_label: "85.0%",
+      idac_rows: 404,
+      idac_rows_label: "404",
+      idac_pairs: 138,
+      idac_pairs_label: "138",
+      idac_dois: 9,
+      idac_dois_label: "9",
+      idac_temperature_range_label: "298\u2013438 K",
+      idac_release_label: "Zenodo 19484205",
+      idac_record_url: "https://zenodo.org/records/19484205",
+      idac_csv_url: "https://zenodo.org/records/19484205/files/idac.csv",
+      idac_doi_list_url: "https://zenodo.org/records/19484205/files/idac_seed_dois.txt",
       scaffold_overlap: 0,
       scaffolds: {
         train: null,
@@ -20186,6 +20197,18 @@
           delta_hansen: "\u2014",
           gamma_inf: "\u2014",
           source: "aux_only"
+        },
+        {
+          sample: "Acetone",
+          solute_smiles: "CC(C)=O",
+          solvent_smiles: "c1ccncc1",
+          T: "298",
+          ln_x2: "\u2014",
+          T_m: "\u2014",
+          dH_fus: "\u2014",
+          delta_hansen: "\u2014",
+          gamma_inf: "0.17",
+          source: "IDAC / Zenodo"
         }
       ]
     },
@@ -20520,9 +20543,9 @@
       },
       {
         id: "idac",
-        title: "IDAC",
-        value: "optional infinite dilution labels",
-        subtitle: "\u03B3\u2082\u221E",
+        title: "IDAC / Zenodo",
+        value: `${pipeline.idac_rows_label ?? "404"} external rows`,
+        subtitle: `${pipeline.idac_pairs_label ?? "138"} pairs \xB7 ${pipeline.idac_dois_label ?? "9"} DOI`,
         icon: "infinity",
         color: COLORS.orange,
         columns: ["gamma_inf"]
@@ -20530,13 +20553,7 @@
     ];
     const [activeSourceId, setActiveSourceId] = (0, import_react3.useState)(sources[0].id);
     const activeSource = sources.find((source) => source.id === activeSourceId) ?? sources[0];
-    const rows = (pipeline.preview_rows ?? []).map((row, index) => {
-      const syntheticGamma = ["0.54", "1.12", "0.08", "0.91"][index] ?? "0.37";
-      return {
-        ...row,
-        gamma_inf: row.gamma_inf === "\u2014" ? syntheticGamma : row.gamma_inf
-      };
-    });
+    const rows = pipeline.preview_rows ?? [];
     const columns = ["solute_smiles", "solvent_smiles", "T", "ln_x2", "T_m", "dH_fus", "delta_hansen", "gamma_inf"];
     const columnLabels = {
       solute_smiles: "solute_smiles",
@@ -20656,7 +20673,17 @@
                 ] }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pipeline-aside-card", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "\u03B3\u221E display values" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "Current processed scaffold split has no matched IDAC rows, so the \u03B3\u221E column is shown schematically." })
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                    pipeline.idac_rows_label ?? "404",
+                    " external rows are now published as ",
+                    pipeline.idac_release_label ?? "Zenodo 19484205",
+                    " and can enter training as `aux_only_gamma` even without `ln(x\u2082)` overlap."
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("small", { children: [
+                    "Built from ThermoML \xB7 ",
+                    pipeline.idac_temperature_range_label ?? "298\u2013438 K",
+                    " in the current starter corpus."
+                  ] })
                 ] })
               ] })
             ] })

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-09T10:22:15.824908+00:00",
+  "generated_at": "2026-04-09T13:35:17.482787+00:00",
   "pipeline": {
     "total_rows": 120197,
     "total_rows_label": "120.2k",
@@ -81,8 +81,43 @@
         "delta_hansen": "—",
         "gamma_inf": "—",
         "source": "aux_only"
+      },
+      {
+        "sample": "octane",
+        "solute_smiles": "CCCCCCCC",
+        "solvent_smiles": "c1ccncc1",
+        "T": "298",
+        "ln_x2": "—",
+        "T_m": "—",
+        "dH_fus": "—",
+        "delta_hansen": "—",
+        "gamma_inf": "2.07",
+        "source": "IDAC / Zenodo"
       }
     ],
+    "idac_rows": 404,
+    "idac_rows_label": "404",
+    "idac_pairs": 138,
+    "idac_pairs_label": "138",
+    "idac_dois": 9,
+    "idac_dois_label": "9",
+    "idac_temperature_range_label": "298–438 K",
+    "idac_release_label": "Zenodo 19484205",
+    "idac_record_url": "https://zenodo.org/records/19484205",
+    "idac_csv_url": "https://zenodo.org/records/19484205/files/idac.csv",
+    "idac_doi_list_url": "https://zenodo.org/records/19484205/files/idac_seed_dois.txt",
+    "idac_preview_row": {
+      "sample": "octane",
+      "solute_smiles": "CCCCCCCC",
+      "solvent_smiles": "c1ccncc1",
+      "T": "298",
+      "ln_x2": "—",
+      "T_m": "—",
+      "dH_fus": "—",
+      "delta_hansen": "—",
+      "gamma_inf": "2.07",
+      "source": "IDAC / Zenodo"
+    },
     "scaffolds": {
       "train": {
         "scaffold_smiles": "c1ccccc1",

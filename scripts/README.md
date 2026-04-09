@@ -31,6 +31,9 @@ They delegate to the legacy entry points, so behavior stays identical.
 ### `scripts/data/`
 
 - `prepare_data.py`
+- `extract_idac_from_thermoml.py`
+  - can recreate or extend the published Zenodo starter files
+    `idac.csv` / `idac_seed_dois.txt` from NIST ThermoML JSON
 
 ### `scripts/training/`
 

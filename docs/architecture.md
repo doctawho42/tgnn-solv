@@ -421,6 +421,15 @@ Core keys include:
 - `hansen_sol`, `hansen_mask`
 - `ln_gamma_inf`, `gamma_mask`
 
+`ln_gamma_inf` can now enter the dataset in two ways:
+
+- matched pair rows when an external `IDAC` record aligns with a solubility row
+- `aux_only_gamma` rows when the external `IDAC` corpus is available but no
+  matching `ln(x2)` observation exists
+
+That second path is now the maintained route for standalone `gamma_inf`
+auxiliary supervision.
+
 Optional keys appear when their feature paths are enabled:
 
 - `solute_morgan_fp`, `solvent_morgan_fp`

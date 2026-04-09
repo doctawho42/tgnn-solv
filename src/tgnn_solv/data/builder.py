@@ -255,6 +255,18 @@ class DataBuilder:
 
         # --- Auxiliary-only records for Phase 1 pretraining ---
         existing_solutes = set(df["solute_smiles"].unique())
+        existing_pairs = {
+            (str(row["solute_smiles"]), str(row["solvent_smiles"]))
+            for _, row in df.iterrows()
+        }
+        existing_keys = {
+            (
+                str(row["solute_smiles"]),
+                str(row["solvent_smiles"]),
+                float(row["temperature"]),
+            )
+            for _, row in df[df["temperature"].notna()].iterrows()
+        }
         aux_rows = []
         water_smi = canonicalize("O")
 
@@ -262,6 +274,7 @@ class DataBuilder:
             for _, r in self.mp_df.iterrows():
                 smi = r["solute_smiles"]
                 if smi not in existing_solutes:
+                    key = (str(smi), str(water_smi), 298.15)
                     row = {
                         "solute_smiles": smi,
                         "solvent_smiles": water_smi,
@@ -281,9 +294,57 @@ class DataBuilder:
                         "source": "aux_only",
                     }
                     aux_rows.append(row)
+                    existing_keys.add(key)
+
+        if self.gamma_df is not None:
+            gamma_aux = self.gamma_df.dropna(
+                subset=["solute_smiles", "solvent_smiles", "gamma_T", "ln_gamma_inf"]
+            ).drop_duplicates(
+                subset=["solute_smiles", "solvent_smiles", "gamma_T"],
+                keep="first",
+            )
+            for _, r in gamma_aux.iterrows():
+                pair_key = (str(r["solute_smiles"]), str(r["solvent_smiles"]))
+                if pair_key in existing_pairs:
+                    continue
+                key = (
+                    pair_key[0],
+                    pair_key[1],
+                    float(r["gamma_T"]),
+                )
+                if key in existing_keys:
+                    continue
+                aux_rows.append(
+                    {
+                        "solute_smiles": r["solute_smiles"],
+                        "solvent_smiles": r["solvent_smiles"],
+                        "temperature": float(r["gamma_T"]),
+                        "ln_x2": 0.0,
+                        "has_solubility": False,
+                        "T_m": 0.0,
+                        "has_T_m": False,
+                        "dH_fus": 0.0,
+                        "has_dH_fus": False,
+                        "hansen_d": 0.0,
+                        "hansen_p": 0.0,
+                        "hansen_h": 0.0,
+                        "has_hansen": False,
+                        "ln_gamma_inf": float(r["ln_gamma_inf"]),
+                        "has_gamma_inf": True,
+                        "source": "aux_only_gamma",
+                    }
+                )
+                existing_keys.add(key)
 
         if aux_rows:
             aux_df = pd.DataFrame(aux_rows)
+
+            # Attach T_m to aux-only records where available
+            if self.mp_df is not None:
+                mp_map = self.mp_df.set_index("solute_smiles")["T_m"]
+                matched = aux_df["solute_smiles"].map(mp_map)
+                aux_df.loc[matched.notna(), "T_m"] = matched.dropna()
+                aux_df.loc[matched.notna(), "has_T_m"] = True
 
             # Attach dH_fus to aux-only records where available
             if self.dh_df is not None:

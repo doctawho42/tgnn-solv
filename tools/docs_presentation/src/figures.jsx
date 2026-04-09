@@ -302,9 +302,9 @@ function Figure1DataPipeline() {
     },
     {
       id: "idac",
-      title: "IDAC",
-      value: "optional infinite dilution labels",
-      subtitle: "γ₂∞",
+      title: "IDAC / Zenodo",
+      value: `${pipeline.idac_rows_label ?? "404"} external rows`,
+      subtitle: `${pipeline.idac_pairs_label ?? "138"} pairs · ${pipeline.idac_dois_label ?? "9"} DOI`,
       icon: "infinity",
       color: COLORS.orange,
       columns: ["gamma_inf"],
@@ -312,13 +312,7 @@ function Figure1DataPipeline() {
   ];
   const [activeSourceId, setActiveSourceId] = useState(sources[0].id);
   const activeSource = sources.find((source) => source.id === activeSourceId) ?? sources[0];
-  const rows = (pipeline.preview_rows ?? []).map((row, index) => {
-    const syntheticGamma = ["0.54", "1.12", "0.08", "0.91"][index] ?? "0.37";
-    return {
-      ...row,
-      gamma_inf: row.gamma_inf === "—" ? syntheticGamma : row.gamma_inf,
-    };
-  });
+  const rows = pipeline.preview_rows ?? [];
   const columns = ["solute_smiles", "solvent_smiles", "T", "ln_x2", "T_m", "dH_fus", "delta_hansen", "gamma_inf"];
   const columnLabels = {
     solute_smiles: "solute_smiles",
@@ -446,7 +440,8 @@ function Figure1DataPipeline() {
               </div>
               <div className="pipeline-aside-card">
                 <strong>γ∞ display values</strong>
-                <span>Current processed scaffold split has no matched IDAC rows, so the γ∞ column is shown schematically.</span>
+                <span>{pipeline.idac_rows_label ?? "404"} external rows are now published as {pipeline.idac_release_label ?? "Zenodo 19484205"} and can enter training as `aux_only_gamma` even without `ln(x₂)` overlap.</span>
+                <small>Built from ThermoML · {pipeline.idac_temperature_range_label ?? "298–438 K"} in the current starter corpus.</small>
               </div>
           </div>
         </div>
