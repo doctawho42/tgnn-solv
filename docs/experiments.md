@@ -78,6 +78,8 @@ logic include:
 
 - TGNN + descriptor augmentation
 - TGNN + GPS encoder
+- TGNN + TIMP encoder
+- TGNN + TIMP + thermo cross-attention
 - Stage 0 pretrained TGNN variants
 
 Expected outputs:

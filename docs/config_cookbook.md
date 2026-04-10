@@ -114,6 +114,45 @@ Key properties:
 - can be switched to `rwse` without changing the rest of TGNN
 - shared GPS encoder output shape matches the standard MPNN path
 
+### `paper_config_timp.yaml`
+
+Use this when:
+
+- you want the TIMP backbone while keeping the rest of TGNN-Solv unchanged
+- you want graph message passing to split into dispersive and polar channels
+- you want the maintained configuration that turns on TIMP-specific graph features
+
+Key properties:
+
+- `encoder_type="timp"`
+- `use_gasteiger_charges=true`
+- `use_phys_edge_features=true`
+- `use_thermo_cross_attention=false`
+- enables TIMP Hansen channel probes during training through the default trainer schedule
+
+Trade-off:
+
+- more physically structured graph updates before the solver
+- higher featurization complexity than the default MPNN and GPS paths
+
+### `paper_config_timp_full.yaml`
+
+Use this when:
+
+- you want the full TIMP stack, including thermo-biased cross-attention
+- you want to test whether interaction-level thermodynamic bias helps on top of TIMP
+
+Key properties:
+
+- everything from `paper_config_timp.yaml`
+- `use_thermo_cross_attention=true`
+- `thermo_cross_attention_beta_init=0.1`
+
+Trade-off:
+
+- richest maintained TIMP path
+- adds one more interaction-time inductive bias beyond the encoder itself
+
 ### `paper_config_tuned_pretrained.yaml`
 
 Use this when:
@@ -327,6 +366,8 @@ Do not use it for architectural conclusions.
 | tuned TGNN + descriptors | `paper_config_tuned_tgnn_descriptors.yaml` |
 | tuned TGNN + stronger regularization | `paper_config_tuned_regularized.yaml` |
 | tuned TGNN + GPS encoder | `paper_config_tuned_gps.yaml` |
+| tuned TGNN + TIMP encoder | `paper_config_timp.yaml` |
+| tuned TGNN + TIMP + thermo cross-attn | `paper_config_timp_full.yaml` |
 | tuned TGNN + Stage 0 pretraining | `paper_config_tuned_pretrained.yaml` |
 | TGNN with crystal priors | `paper_config_gc_priors.yaml` |
 | TGNN without bridge | `paper_config_no_bridge.yaml` |
@@ -367,6 +408,14 @@ Compare:
 - `paper_config_directgnn_tuned.yaml`
 - `paper_config_directgnn_descriptors.yaml`
 - optionally RF descriptor baselines
+
+### I want to test thermodynamics-informed message passing before changing the solver
+
+Compare:
+
+- `paper_config_tuned.yaml`
+- `paper_config_timp.yaml`
+- optionally `paper_config_timp_full.yaml`
 
 ## Output Sidecars and Provenance
 

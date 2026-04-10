@@ -157,10 +157,11 @@ Practical behavior:
 
 Important implementation notes:
 
-- Stage 0 is compatible with both `encoder_type="mpnn"` and
-  `encoder_type="gps"`
+- Stage 0 is compatible with `encoder_type="mpnn"`, `encoder_type="gps"`,
+  and `encoder_type="timp"`
 - `Pretrainer` passes the PyG `batch` vector into the encoder, so GPS
-  positional encodings remain valid during Stage 0
+  positional encodings and TIMP channel-aware readout wiring remain valid
+  during Stage 0
 - `tgnn_solv.pretrain_pipeline` is the maintained helper layer for loading
   SMILES sources, saving warm-start checkpoints, and restoring those weights
   later through `--pretrain-checkpoint`
@@ -423,6 +424,11 @@ Maintained TGNN configs:
   - regularized tuned TGNN plus descriptor augmentation
 - `configs/paper_config_tuned_gps.yaml`
   - tuned TGNN with the GPS encoder replacing the local-only MPNN
+- `configs/paper_config_timp.yaml`
+  - tuned TGNN with thermodynamics-informed message passing, Gasteiger
+    charges, and physical edge features
+- `configs/paper_config_timp_full.yaml`
+  - TIMP plus thermo-biased cross-attention
 - `configs/paper_config_tuned_pretrained.yaml`
   - tuned TGNN intended for Stage 0 + curriculum experiments
 - `configs/paper_config_tuned_pretrained_descriptors.yaml`

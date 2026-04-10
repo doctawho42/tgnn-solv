@@ -21714,7 +21714,7 @@
               { label: "Source", value: "ZINC250k" },
               { label: "Targets", value: "12 RDKit props" },
               { label: "Batch / LR", value: "128 / 3e-4" },
-              { label: "Encoder", value: "MPNN or GPS" }
+              { label: "Encoder", value: "MPNN / GPS / TIMP" }
             ]
           }
         ),
@@ -21752,7 +21752,7 @@
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "The same parsed SMILES drives both the 2D depiction and the graph below; the slide no longer uses hand-drawn toy nodes." })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "pretrain-overview__graph", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "pretrain-task-card__eyebrow", children: "Structure \u2192 graph \u2192 shared MPNN / GPS encoder" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "pretrain-task-card__eyebrow", children: "Structure \u2192 graph \u2192 shared MPNN / GPS / TIMP encoder" }),
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "pretrain-graph-frame pretrain-graph-frame--large", children: graphData ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
                 PretrainGraphView,
                 {
@@ -21773,7 +21773,7 @@
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "\u2192" }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "`h_atoms`, `g_mol`, `z`" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "`test_pretrain_pipeline.py` explicitly checks that Stage 0 passes the graph `batch` vector through the encoder, which is why GPS remains pretraining-safe rather than a special-case branch." })
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "figure-subnote", children: "`test_pretrain_pipeline.py` explicitly checks that Stage 0 passes the graph `batch` vector through the encoder, which is why GPS and TIMP remain pretraining-safe rather than special-case branches." })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "pretrain-overview__vectors", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "pretrain-signal-card", children: [
@@ -21957,13 +21957,13 @@
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "architecture-card__row", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
                     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Shared GNN encoder" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "`encoder_type = mpnn | gps` with tied weights" })
+                    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "`encoder_type = mpnn | gps | timp` with tied weights" })
                   ] }),
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "architecture-badge", children: "weight sharing" })
                 ] }),
                 /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "architecture-encoding-grid", children: [
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "architecture-card architecture-card--ghost", children: "h_sol atoms" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "architecture-card architecture-card--ghost", children: "GPS adds Laplacian / RWSE PE + global attention" }),
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "architecture-card architecture-card--ghost", children: "GPS adds Laplacian / RWSE PE; TIMP splits dispersive / polar message flow" }),
                   /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "architecture-card architecture-card--ghost", children: "h_slv atoms" })
                 ] })
               ] })
@@ -22077,18 +22077,138 @@
       }
     );
   }
-  function Figure3ABaseline() {
+  function Figure3ATimp() {
     return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
       FigureCard,
       {
         kicker: "Figure 3A",
+        title: "TIMP Encoder",
+        subtitle: "Thermodynamics-informed message passing splits graph updates into dispersive and polar channels while preserving the same downstream pair contract.",
+        footer: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          StatStrip,
+          {
+            items: [
+              { label: "Channels", value: "disp + polar" },
+              { label: "Optional node cue", value: "Gasteiger q" },
+              { label: "Optional edge cue", value: "\u0394\u03C7 / \u0394r_vdw / H-bond" },
+              { label: "Optional interaction bias", value: "thermo \u03B2-attn" }
+            ]
+          }
+        ),
+        children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-slide", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "baseline-shared", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-shared__header", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "pipeline-builder__eyebrow", children: "Optional encoder family" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h3", { children: "Shared downstream contract, different message physics" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("small", { children: "`TIMPEncoder` preserves the same readout and pair-building interface used by both TGNN-Solv and DirectGNN." })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-shared__flow", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-chip baseline-chip--shared", children: [
+                "node features + optional ",
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "q_Gasteiger" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-arrow", children: "\u2192" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-chip baseline-chip--shared", children: [
+                "edge features + ",
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "\u0394\u03C7" }),
+                " / ",
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "\u0394r_vdw" }),
+                " / H-bond"
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-arrow", children: "\u2192" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip baseline-chip--shared", children: "TIMP layers" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-arrow", children: "\u2192" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip baseline-chip--shared", children: "channel-aware readout" })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-branches", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "baseline-lane baseline-lane--physics", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__header", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Dispersive channel" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "baseline-lane__badge baseline-lane__badge--physics", children: "vdW / polarizability" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__stack", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "m_{disp} = \\phi_{disp}(...)\\cdot (w\\sqrt{\\alpha_i\\alpha_j}+b)" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "a_{disp} = \\sum_j m_{disp,ij}" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-chip", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "g_disp" }),
+                  " feeds the TIMP dispersion probe for ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "\\delta_d" })
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__notes", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { children: "Scaling depends on atomic polarizability rather than only learned hidden states." }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { children: "This branch is meant to concentrate softer, dispersion-dominated interaction structure." })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("section", { className: "baseline-lane baseline-lane--direct", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__header", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Polar channel" }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: "baseline-lane__badge baseline-lane__badge--direct", children: "electrostatic / H-bond" })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__stack", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "m_{polar} = \\phi_{polar}(...)\\cdot \\mathrm{softplus}(q_i q_j)" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "baseline-chip", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "a_{polar} = \\sum_j m_{polar,ij}" }) }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-chip", children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "g_polar" }),
+                  " feeds TIMP Hansen probes for ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "\\delta_p,\\ \\delta_h" })
+                ] })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-lane__notes", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { children: "Folded heavy-atom Gasteiger charges provide the default polar scaling cue." }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+                  "Optional thermo cross-attention adds ",
+                  /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(TexInline, { children: "\\beta E_{contact}" }),
+                  " to standard cross-attention logits instead of replacing them."
+                ] })
+              ] })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-grid", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Readout contract" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "g_combined || g_disp || g_polar" }),
+                " expands the graph state, but the rest of the pair pipeline still consumes one fused pair representation."
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Model coverage" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                "The same TIMP encoder is available for both model families through ",
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: 'encoder_type="timp"' }),
+                "."
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Maintained configs" }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "paper_config_timp.yaml" }),
+                " enables TIMP with physical graph features; ",
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("code", { children: "paper_config_timp_full.yaml" }),
+                " additionally turns on thermo-biased cross-attention."
+              ] })
+            ] })
+          ] })
+        ] })
+      }
+    );
+  }
+  function Figure3ABaseline() {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      FigureCard,
+      {
+        kicker: "Figure 3B",
         title: "Matched Baseline",
         subtitle: "TGNN-Solv and DirectGNN share the same upstream chemistry stack; the maintained comparison isolates the physics bottleneck itself.",
         footer: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
           StatStrip,
           {
             items: [
-              { label: "Shared encoder", value: "same MPNN / GPS" },
+              { label: "Shared encoder", value: "same MPNN / GPS / TIMP" },
               { label: "Shared interaction", value: "same cross-attn" },
               { label: "Different head", value: "physics vs direct" }
             ]
@@ -22170,7 +22290,7 @@
           /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-grid", children: [
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "Same chemistry frontend" }),
-              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "The experiment holds graph encoding, interaction, and readout fixed, even when the shared encoder family is switched from MPNN to GPS." })
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { children: "The experiment holds graph encoding, interaction, and readout fixed, even when the shared encoder family is switched from MPNN to GPS or TIMP." })
             ] }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "baseline-summary-card", children: [
               /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("strong", { children: "One modeling question" }),
@@ -22189,7 +22309,7 @@
     return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
       FigureCard,
       {
-        kicker: "Figure 3B",
+        kicker: "Figure 3C",
         title: "Solver-Facing Diagnostics",
         subtitle: "`model.forward(...)` exposes both raw head outputs and the values that actually enter the solver, which makes oracle/GC diagnostics auditable.",
         footer: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
@@ -24613,9 +24733,17 @@
       slug: "architecture",
       title: "TGNN-Solv Architecture",
       subtitle: "Five swim lanes from graphs to `ln x\u2082_final`",
-      blurb: "The core figure shows where shared MPNN/GPS representation learning ends and where hardcoded thermodynamics begin.",
+      blurb: "The core figure shows where shared MPNN/GPS/TIMP representation learning ends and where hardcoded thermodynamics begin.",
       tags: ["architecture", "physics", "solver"],
       component: Figure3Architecture
+    },
+    {
+      slug: "timp-encoder",
+      title: "TIMP Encoder",
+      subtitle: "Dispersive and polar message passing",
+      blurb: "TIMP adds a physically structured encoder option without changing the downstream solver-versus-direct comparison contract.",
+      tags: ["architecture", "timp", "encoder"],
+      component: Figure3ATimp
     },
     {
       slug: "matched-baseline",

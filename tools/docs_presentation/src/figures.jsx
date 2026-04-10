@@ -1459,7 +1459,7 @@ function FigurePretraining() {
             { label: "Source", value: "ZINC250k" },
             { label: "Targets", value: "12 RDKit props" },
             { label: "Batch / LR", value: "128 / 3e-4" },
-            { label: "Encoder", value: "MPNN or GPS" },
+            { label: "Encoder", value: "MPNN / GPS / TIMP" },
           ]}
         />
       }
@@ -1503,7 +1503,7 @@ function FigurePretraining() {
           </section>
 
           <section className="pretrain-overview__graph">
-            <div className="pretrain-task-card__eyebrow">Structure → graph → shared MPNN / GPS encoder</div>
+            <div className="pretrain-task-card__eyebrow">Structure → graph → shared MPNN / GPS / TIMP encoder</div>
             <div className="pretrain-graph-frame pretrain-graph-frame--large">
               {graphData ? (
                 <PretrainGraphView
@@ -1527,7 +1527,7 @@ function FigurePretraining() {
               <span>→</span>
               <span>`h_atoms`, `g_mol`, `z`</span>
             </div>
-            <p className="figure-subnote">`test_pretrain_pipeline.py` explicitly checks that Stage 0 passes the graph `batch` vector through the encoder, which is why GPS remains pretraining-safe rather than a special-case branch.</p>
+            <p className="figure-subnote">`test_pretrain_pipeline.py` explicitly checks that Stage 0 passes the graph `batch` vector through the encoder, which is why GPS and TIMP remain pretraining-safe rather than special-case branches.</p>
           </section>
 
           <section className="pretrain-overview__vectors">
@@ -1728,13 +1728,13 @@ function Figure3Architecture() {
               <div className="architecture-card__row">
                 <div>
                   <strong>Shared GNN encoder</strong>
-                  <span>`encoder_type = mpnn | gps` with tied weights</span>
+                  <span>`encoder_type = mpnn | gps | timp` with tied weights</span>
                 </div>
                 <div className="architecture-badge">weight sharing</div>
               </div>
               <div className="architecture-encoding-grid">
                 <div className="architecture-card architecture-card--ghost">h_sol atoms</div>
-                <div className="architecture-card architecture-card--ghost">GPS adds Laplacian / RWSE PE + global attention</div>
+                <div className="architecture-card architecture-card--ghost">GPS adds Laplacian / RWSE PE; TIMP splits dispersive / polar message flow</div>
                 <div className="architecture-card architecture-card--ghost">h_slv atoms</div>
               </div>
             </div>
@@ -1843,16 +1843,106 @@ function Figure3Architecture() {
   );
 }
 
-function Figure3ABaseline() {
+function Figure3ATimp() {
   return (
     <FigureCard
       kicker="Figure 3A"
+      title="TIMP Encoder"
+      subtitle="Thermodynamics-informed message passing splits graph updates into dispersive and polar channels while preserving the same downstream pair contract."
+      footer={
+        <StatStrip
+          items={[
+            { label: "Channels", value: "disp + polar" },
+            { label: "Optional node cue", value: "Gasteiger q" },
+            { label: "Optional edge cue", value: "Δχ / Δr_vdw / H-bond" },
+            { label: "Optional interaction bias", value: "thermo β-attn" },
+          ]}
+        />
+      }
+    >
+      <div className="baseline-slide">
+        <section className="baseline-shared">
+          <div className="baseline-shared__header">
+            <div>
+              <span className="pipeline-builder__eyebrow">Optional encoder family</span>
+              <h3>Shared downstream contract, different message physics</h3>
+            </div>
+            <small>`TIMPEncoder` preserves the same readout and pair-building interface used by both TGNN-Solv and DirectGNN.</small>
+          </div>
+          <div className="baseline-shared__flow">
+            <div className="baseline-chip baseline-chip--shared">node features + optional <code>q_Gasteiger</code></div>
+            <div className="baseline-arrow">→</div>
+            <div className="baseline-chip baseline-chip--shared">edge features + <code>Δχ</code> / <code>Δr_vdw</code> / H-bond</div>
+            <div className="baseline-arrow">→</div>
+            <div className="baseline-chip baseline-chip--shared">TIMP layers</div>
+            <div className="baseline-arrow">→</div>
+            <div className="baseline-chip baseline-chip--shared">channel-aware readout</div>
+          </div>
+        </section>
+
+        <div className="baseline-branches">
+          <section className="baseline-lane baseline-lane--physics">
+            <div className="baseline-lane__header">
+              <strong>Dispersive channel</strong>
+              <span className="baseline-lane__badge baseline-lane__badge--physics">vdW / polarizability</span>
+            </div>
+            <div className="baseline-lane__stack">
+              <div className="baseline-chip"><TexInline>{"m_{disp} = \\phi_{disp}(...)\\cdot (w\\sqrt{\\alpha_i\\alpha_j}+b)"}</TexInline></div>
+              <div className="baseline-chip"><TexInline>{"a_{disp} = \\sum_j m_{disp,ij}"}</TexInline></div>
+              <div className="baseline-chip"><code>g_disp</code> feeds the TIMP dispersion probe for <TexInline>{"\\delta_d"}</TexInline></div>
+            </div>
+            <div className="baseline-lane__notes">
+              <div>Scaling depends on atomic polarizability rather than only learned hidden states.</div>
+              <div>This branch is meant to concentrate softer, dispersion-dominated interaction structure.</div>
+            </div>
+          </section>
+
+          <section className="baseline-lane baseline-lane--direct">
+            <div className="baseline-lane__header">
+              <strong>Polar channel</strong>
+              <span className="baseline-lane__badge baseline-lane__badge--direct">electrostatic / H-bond</span>
+            </div>
+            <div className="baseline-lane__stack">
+              <div className="baseline-chip"><TexInline>{"m_{polar} = \\phi_{polar}(...)\\cdot \\mathrm{softplus}(q_i q_j)"}</TexInline></div>
+              <div className="baseline-chip"><TexInline>{"a_{polar} = \\sum_j m_{polar,ij}"}</TexInline></div>
+              <div className="baseline-chip"><code>g_polar</code> feeds TIMP Hansen probes for <TexInline>{"\\delta_p,\\ \\delta_h"}</TexInline></div>
+            </div>
+            <div className="baseline-lane__notes">
+              <div>Folded heavy-atom Gasteiger charges provide the default polar scaling cue.</div>
+              <div>Optional thermo cross-attention adds <TexInline>{"\\beta E_{contact}"}</TexInline> to standard cross-attention logits instead of replacing them.</div>
+            </div>
+          </section>
+        </div>
+
+        <div className="baseline-summary-grid">
+          <div className="baseline-summary-card">
+            <strong>Readout contract</strong>
+            <span><code>g_combined || g_disp || g_polar</code> expands the graph state, but the rest of the pair pipeline still consumes one fused pair representation.</span>
+          </div>
+          <div className="baseline-summary-card">
+            <strong>Model coverage</strong>
+            <span>The same TIMP encoder is available for both model families through <code>encoder_type=&quot;timp&quot;</code>.</span>
+          </div>
+          <div className="baseline-summary-card">
+            <strong>Maintained configs</strong>
+            <span><code>paper_config_timp.yaml</code> enables TIMP with physical graph features; <code>paper_config_timp_full.yaml</code> additionally turns on thermo-biased cross-attention.</span>
+          </div>
+        </div>
+      </div>
+    </FigureCard>
+  );
+}
+
+function Figure3ABaseline() {
+  return (
+    <FigureCard
+      kicker="Figure 3B"
       title="Matched Baseline"
       subtitle="TGNN-Solv and DirectGNN share the same upstream chemistry stack; the maintained comparison isolates the physics bottleneck itself."
       footer={
         <StatStrip
           items={[
-            { label: "Shared encoder", value: "same MPNN / GPS" },
+            { label: "Shared encoder", value: "same MPNN / GPS / TIMP" },
             { label: "Shared interaction", value: "same cross-attn" },
             { label: "Different head", value: "physics vs direct" },
           ]}
@@ -1920,7 +2010,7 @@ function Figure3ABaseline() {
         <div className="baseline-summary-grid">
           <div className="baseline-summary-card">
             <strong>Same chemistry frontend</strong>
-            <span>The experiment holds graph encoding, interaction, and readout fixed, even when the shared encoder family is switched from MPNN to GPS.</span>
+            <span>The experiment holds graph encoding, interaction, and readout fixed, even when the shared encoder family is switched from MPNN to GPS or TIMP.</span>
           </div>
           <div className="baseline-summary-card">
             <strong>One modeling question</strong>
@@ -1939,7 +2029,7 @@ function Figure3ABaseline() {
 function Figure3BDiagnostics() {
   return (
     <FigureCard
-      kicker="Figure 3B"
+      kicker="Figure 3C"
       title="Solver-Facing Diagnostics"
       subtitle="`model.forward(...)` exposes both raw head outputs and the values that actually enter the solver, which makes oracle/GC diagnostics auditable."
       footer={
@@ -4308,9 +4398,17 @@ export const PRESENTATION_FIGURES = [
     slug: "architecture",
     title: "TGNN-Solv Architecture",
     subtitle: "Five swim lanes from graphs to `ln x₂_final`",
-    blurb: "The core figure shows where shared MPNN/GPS representation learning ends and where hardcoded thermodynamics begin.",
+    blurb: "The core figure shows where shared MPNN/GPS/TIMP representation learning ends and where hardcoded thermodynamics begin.",
     tags: ["architecture", "physics", "solver"],
     component: Figure3Architecture,
+  },
+  {
+    slug: "timp-encoder",
+    title: "TIMP Encoder",
+    subtitle: "Dispersive and polar message passing",
+    blurb: "TIMP adds a physically structured encoder option without changing the downstream solver-versus-direct comparison contract.",
+    tags: ["architecture", "timp", "encoder"],
+    component: Figure3ATimp,
   },
   {
     slug: "matched-baseline",

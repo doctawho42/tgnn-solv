@@ -204,10 +204,11 @@ ARCHITECTURE_VISUAL_NODES: dict[str, list[dict[str, Any]]] = {
         {"id": "solute_graph", "label": "Solute graph", "track": "input", "kind": "core", "x": 20, "y": 40, "note": "Parsed RDKit solute graph"},
         {"id": "solvent_graph", "label": "Solvent graph", "track": "input", "kind": "core", "x": 20, "y": 220, "note": "Parsed RDKit solvent graph"},
         {"id": "stage0_warmstart", "label": "Stage 0 warm start", "track": "shared", "kind": "toggle", "x": 250, "y": 20, "note": "Optional pretraining of `model.gnn` and `model.readout` before the main curriculum"},
-        {"id": "shared_encoder", "label": "Shared MPNN / GPS encoder", "track": "shared", "kind": "core", "x": 250, "y": 130, "note": "Shared residual or split-late encoder selected by `encoder_type`"},
+        {"id": "shared_encoder", "label": "Shared MPNN / GPS / TIMP encoder", "track": "shared", "kind": "core", "x": 250, "y": 130, "note": "Shared residual or split-late encoder selected by `encoder_type`"},
         {"id": "gps_pe", "label": "GPS positional encoding", "track": "shared", "kind": "toggle", "x": 250, "y": 360, "note": "Laplacian or RWSE node positional features when `encoder_type=gps`"},
+        {"id": "timp_features", "label": "TIMP channels + features", "track": "shared", "kind": "toggle", "x": 250, "y": 450, "note": "Dispersive/polar message passing with optional Gasteiger charges and physical edge features when `encoder_type=timp`"},
         {"id": "pre_head_priors", "label": "Pre-head priors", "track": "tgnn", "kind": "toggle", "flag": "use_descriptor_priors", "x": 500, "y": 30, "note": "Descriptor/group/GC prior lane"},
-        {"id": "interaction", "label": "Interaction stack", "track": "shared", "kind": "core", "x": 500, "y": 170, "note": "Cross-attention or bipartite interaction"},
+        {"id": "interaction", "label": "Interaction stack", "track": "shared", "kind": "core", "x": 500, "y": 170, "note": "Cross-attention or bipartite interaction; TIMP can optionally add thermo-biased cross-attention"},
         {"id": "readout_pair", "label": "Readout + pair", "track": "shared", "kind": "core", "x": 500, "y": 320, "note": "Set2Set plus pair construction"},
         {"id": "morgan_adapter", "label": "Morgan adapter", "track": "shared", "kind": "toggle", "flag": "use_morgan_features", "x": 260, "y": 370, "note": "Optional fingerprint side path"},
         {"id": "descriptor_aug", "label": "Descriptor augmentation", "track": "shared", "kind": "toggle", "flag": "use_descriptor_augmentation", "x": 500, "y": 420, "note": "Normalized RDKit descriptors fused back into the TGNN pair representation"},
@@ -222,9 +223,10 @@ ARCHITECTURE_VISUAL_NODES: dict[str, list[dict[str, Any]]] = {
     "DirectGNN": [
         {"id": "solute_graph", "label": "Solute graph", "track": "input", "kind": "core", "x": 20, "y": 70, "note": "Parsed RDKit solute graph"},
         {"id": "solvent_graph", "label": "Solvent graph", "track": "input", "kind": "core", "x": 20, "y": 260, "note": "Parsed RDKit solvent graph"},
-        {"id": "shared_encoder", "label": "Shared MPNN / GPS encoder", "track": "shared", "kind": "core", "x": 250, "y": 155, "note": "Same maintained encoder stack as TGNN-Solv"},
+        {"id": "shared_encoder", "label": "Shared MPNN / GPS / TIMP encoder", "track": "shared", "kind": "core", "x": 250, "y": 155, "note": "Same maintained encoder stack as TGNN-Solv"},
         {"id": "gps_pe", "label": "GPS positional encoding", "track": "shared", "kind": "toggle", "x": 250, "y": 360, "note": "Optional Laplacian or RWSE node positional features"},
-        {"id": "interaction_readout", "label": "Interaction + readout", "track": "shared", "kind": "core", "x": 520, "y": 155, "note": "Shared interaction and readout stack"},
+        {"id": "timp_features", "label": "TIMP channels + features", "track": "shared", "kind": "toggle", "x": 250, "y": 450, "note": "Dispersive/polar message passing with optional Gasteiger charges and physical edge features when `encoder_type=timp`"},
+        {"id": "interaction_readout", "label": "Interaction + readout", "track": "shared", "kind": "core", "x": 520, "y": 155, "note": "Shared interaction and readout stack; TIMP can optionally bias cross-attention thermodynamically"},
         {"id": "temperature", "label": "Thermometer encoder", "track": "direct", "kind": "core", "x": 800, "y": 35, "note": "Direct temperature encoding"},
         {"id": "descriptor_aug", "label": "Descriptor augmentation", "track": "direct", "kind": "toggle", "flag": "use_descriptor_augmentation", "x": 800, "y": 175, "note": "Full RDKit descriptor path"},
         {"id": "morgan_path", "label": "Morgan path", "track": "direct", "kind": "toggle", "flag": "use_morgan_features", "x": 800, "y": 315, "note": "Optional fingerprint path"},
@@ -238,6 +240,7 @@ ARCHITECTURE_VISUAL_EDGES: dict[str, list[tuple[str, str, str]]] = {
         ("e_solvent_encoder", "solvent_graph", "shared_encoder"),
         ("e_stage0_encoder", "stage0_warmstart", "shared_encoder"),
         ("e_gps_encoder", "gps_pe", "shared_encoder"),
+        ("e_timp_encoder", "timp_features", "shared_encoder"),
         ("e_encoder_priors", "shared_encoder", "pre_head_priors"),
         ("e_encoder_interaction", "shared_encoder", "interaction"),
         ("e_interaction_readout", "interaction", "readout_pair"),
@@ -260,6 +263,7 @@ ARCHITECTURE_VISUAL_EDGES: dict[str, list[tuple[str, str, str]]] = {
         ("e_solute_encoder", "solute_graph", "shared_encoder"),
         ("e_solvent_encoder", "solvent_graph", "shared_encoder"),
         ("e_gps_encoder", "gps_pe", "shared_encoder"),
+        ("e_timp_encoder", "timp_features", "shared_encoder"),
         ("e_encoder_readout", "shared_encoder", "interaction_readout"),
         ("e_temperature_head", "temperature", "mlp_head"),
         ("e_descriptor_head", "descriptor_aug", "mlp_head"),
@@ -890,6 +894,10 @@ def load_architecture_doc(family: str, config_path: str | Path) -> dict[str, Any
         model.setdefault("gps_use_edge_attr", True)
         model.setdefault("gps_positional_encoding", "laplacian")
         model.setdefault("gps_pe_dim", 8)
+        model.setdefault("use_gasteiger_charges", False)
+        model.setdefault("use_phys_edge_features", False)
+        model.setdefault("use_thermo_cross_attention", False)
+        model.setdefault("thermo_cross_attention_beta_init", 0.1)
         model.setdefault("hidden_dim", 256)
         model.setdefault("pair_dim", 512)
         model.setdefault("n_gnn_layers", 6)
@@ -915,6 +923,10 @@ def load_architecture_doc(family: str, config_path: str | Path) -> dict[str, Any
         model.setdefault("gps_use_edge_attr", True)
         model.setdefault("gps_positional_encoding", "laplacian")
         model.setdefault("gps_pe_dim", 8)
+        model.setdefault("use_gasteiger_charges", False)
+        model.setdefault("use_phys_edge_features", False)
+        model.setdefault("use_thermo_cross_attention", False)
+        model.setdefault("thermo_cross_attention_beta_init", 0.1)
         model.setdefault("hidden_dim", 256)
         model.setdefault("pair_dim", 512)
         model.setdefault("n_gnn_layers", 6)
@@ -1803,20 +1815,43 @@ def branch_state_label(state: str) -> str:
 def architecture_branch_rows(tgnn_doc: dict[str, Any], direct_doc: dict[str, Any]) -> pd.DataFrame:
     tgnn_model = tgnn_doc.get("model", {})
     direct_model = direct_doc.get("model", {})
+    tgnn_encoder = str(tgnn_model.get("encoder_type", "mpnn"))
+    direct_encoder = str(direct_model.get("encoder_type", "mpnn"))
     rows = [
         {
             "module": "Encoder family",
             "track": "shared backbone",
-            "tgnn": "active" if tgnn_model.get("encoder_type", "mpnn") == "gps" else "core",
-            "direct": "active" if direct_model.get("encoder_type", "mpnn") == "gps" else "core",
-            "explanation": "Both model families can keep the same downstream contract while swapping the local MPNN encoder for GPSEncoder.",
+            "tgnn": "active" if tgnn_encoder in {"gps", "timp"} else "core",
+            "direct": "active" if direct_encoder in {"gps", "timp"} else "core",
+            "explanation": "Both model families keep the same downstream contract while swapping the default local MPNN encoder for GPS or TIMP.",
         },
         {
             "module": "Positional encoding",
             "track": "shared backbone",
-            "tgnn": "active" if tgnn_model.get("encoder_type", "mpnn") == "gps" else "off",
-            "direct": "active" if direct_model.get("encoder_type", "mpnn") == "gps" else "off",
+            "tgnn": "active" if tgnn_encoder == "gps" else "off",
+            "direct": "active" if direct_encoder == "gps" else "off",
             "explanation": "GPS mode appends Laplacian or RWSE structural positional features before graph-global attention.",
+        },
+        {
+            "module": "TIMP channels",
+            "track": "shared backbone",
+            "tgnn": "active" if tgnn_encoder == "timp" else "off",
+            "direct": "active" if direct_encoder == "timp" else "off",
+            "explanation": "TIMP splits message passing into dispersive and polar channels before channel-aware readout.",
+        },
+        {
+            "module": "TIMP physical features",
+            "track": "shared backbone",
+            "tgnn": "active" if tgnn_encoder == "timp" and (tgnn_model.get("use_gasteiger_charges") or tgnn_model.get("use_phys_edge_features")) else "off",
+            "direct": "active" if direct_encoder == "timp" and (direct_model.get("use_gasteiger_charges") or direct_model.get("use_phys_edge_features")) else "off",
+            "explanation": "TIMP can augment node and edge features with folded Gasteiger charges and physically motivated edge descriptors.",
+        },
+        {
+            "module": "Thermo cross-attention",
+            "track": "shared backbone",
+            "tgnn": "active" if tgnn_encoder == "timp" and tgnn_model.get("use_thermo_cross_attention") and tgnn_model.get("interaction_mode", "cross_attn") == "cross_attn" else "off",
+            "direct": "active" if direct_encoder == "timp" and direct_model.get("use_thermo_cross_attention") and direct_model.get("interaction_mode", "cross_attn") == "cross_attn" else "off",
+            "explanation": "Optional TIMP-only bias term adds thermodynamic contact energy into cross-attention logits.",
         },
         {
             "module": "Shared GNN encoder",
@@ -1830,14 +1865,14 @@ def architecture_branch_rows(tgnn_doc: dict[str, Any], direct_doc: dict[str, Any
             "track": "shared backbone",
             "tgnn": "core",
             "direct": "core",
-            "explanation": "Cross-attention or bipartite message passing across solute and solvent atoms.",
+            "explanation": "Cross-attention or bipartite message passing across solute and solvent atoms, optionally thermo-biased in TIMP mode.",
         },
         {
             "module": "Physics-aware readout",
             "track": "shared backbone",
             "tgnn": "core",
             "direct": "core",
-            "explanation": "Set2Set-style graph readout before the heads diverge.",
+            "explanation": "Set2Set-style graph readout before the heads diverge, with channel-aware pooling when TIMP is active.",
         },
         {
             "module": "Morgan adapter",
@@ -1978,7 +2013,7 @@ def architecture_branch_heatmap(tgnn_doc: dict[str, Any], direct_doc: dict[str, 
     )
     fig.update_layout(
         title="Active-branch matrix",
-        height=420,
+        height=520,
         margin=dict(l=20, r=20, t=56, b=20),
         xaxis={"tickangle": 35},
         yaxis={"title": ""},
@@ -2026,10 +2061,15 @@ def shared_backbone_compare_frame(tgnn_doc: dict[str, Any], direct_doc: dict[str
     direct_model = direct_doc.get("model", {})
     rows = []
     keys = [
+        ("encoder_type", "encoder_type"),
         ("hidden_dim", "hidden_dim"),
         ("n_gnn_layers", "n_gnn_layers"),
         ("encoder_role_mode", "encoder_role_mode"),
+        ("use_gasteiger_charges", "use_gasteiger_charges"),
+        ("use_phys_edge_features", "use_phys_edge_features"),
         ("interaction_mode", "interaction_mode"),
+        ("use_thermo_cross_attention", "use_thermo_cross_attention"),
+        ("thermo_cross_attention_beta_init", "thermo_cross_attention_beta_init"),
         ("n_cross_attn_layers", "n_cross_attn_layers"),
         ("n_attn_heads", "n_attn_heads"),
         ("pair_dim", "pair_dim"),
@@ -2053,6 +2093,28 @@ def branch_strip_html(title: str, items: list[tuple[str, str]]) -> str:
         f'<div class="lab-workspace-panel"><h4>{escape(title)}</h4>'
         f'<div class="lab-branch-strip">{pills}</div></div>'
     )
+
+
+def timp_feature_tokens(model: dict[str, Any]) -> list[str]:
+    tokens: list[str] = []
+    if model.get("use_gasteiger_charges"):
+        tokens.append("q")
+    if model.get("use_phys_edge_features"):
+        tokens.append("edge")
+    if model.get("use_thermo_cross_attention") and model.get("interaction_mode", "cross_attn") == "cross_attn":
+        tokens.append("beta")
+    return tokens
+
+
+def architecture_encoder_label(model: dict[str, Any]) -> str:
+    encoder_type = str(model.get("encoder_type", "mpnn"))
+    if encoder_type == "gps":
+        return f"GPS · {model.get('gps_positional_encoding', 'laplacian')}"
+    if encoder_type == "timp":
+        extras = " + ".join(timp_feature_tokens(model)) or "base"
+        return f"TIMP · {extras}"
+    return "MPNN"
+
 
 def pipeline_nodes_for_preset(name: str) -> list[dict[str, Any]]:
     preset = PIPELINE_PRESETS.get(name) or next(iter(PIPELINE_PRESETS.values()))
@@ -2297,8 +2359,15 @@ def architecture_summary(family: str, doc: dict[str, Any]) -> dict[str, Any]:
     training = doc.get("training", {})
     stage0 = doc.get("stage0", {})
     active_modules = 4
-    if model.get("encoder_type", "mpnn") == "gps":
+    encoder_type = str(model.get("encoder_type", "mpnn"))
+    if encoder_type == "gps":
         active_modules += 1
+    if encoder_type == "timp":
+        active_modules += 1
+        if model.get("use_gasteiger_charges") or model.get("use_phys_edge_features"):
+            active_modules += 1
+        if model.get("use_thermo_cross_attention") and model.get("interaction_mode", "cross_attn") == "cross_attn":
+            active_modules += 1
     if model.get("use_morgan_features"):
         active_modules += 1
     if model.get("use_descriptor_augmentation"):
@@ -2309,15 +2378,10 @@ def architecture_summary(family: str, doc: dict[str, Any]) -> dict[str, Any]:
         for flag in ("use_descriptor_priors", "use_group_priors", "use_gc_priors_crystal", "use_oracle_injection"):
             if model.get(flag):
                 active_modules += 1
-    readout_dim = int(model.get("hidden_dim", 256)) * 3
+    readout_dim = int(model.get("hidden_dim", 256)) * (4 if encoder_type == "timp" else 3)
     pair_dim = int(model.get("pair_dim", 512))
     total_epochs = int(training.get("epochs_phase1", 0) or 0) + int(training.get("epochs_phase2", 0) or 0) + int(training.get("epochs_phase3", 0) or 0)
-    encoder_type = str(model.get("encoder_type", "mpnn"))
-    encoder_label = (
-        f"GPS · {model.get('gps_positional_encoding', 'laplacian')}"
-        if encoder_type == "gps"
-        else "MPNN"
-    )
+    encoder_label = architecture_encoder_label(model)
     return {
         "encoder": encoder_label,
         "hidden_dim": int(model.get("hidden_dim", 256)),
@@ -2388,11 +2452,31 @@ def architecture_svg(family: str, doc: dict[str, Any]) -> str:
                     weight=700,
                 )
             )
+        elif model.get("encoder_type", "mpnn") == "timp":
+            timp_lines = ["dispersive + polar channels"]
+            if model.get("use_gasteiger_charges") or model.get("use_phys_edge_features"):
+                extras = []
+                if model.get("use_gasteiger_charges"):
+                    extras.append("q_Gasteiger")
+                if model.get("use_phys_edge_features"):
+                    extras.append("phys-edge")
+                timp_lines.append(" · ".join(extras))
+            else:
+                timp_lines.append("base node/edge features")
+            texts.append(svg_text_block(353, 270, timp_lines, fill=palette["blue"], size=12, weight=700))
         else:
             texts.append(svg_text_block(353, 270, ["local message passing", "no GPS positional branch"], fill=palette["muted"], size=12, weight=600))
         box(502, 72, 200, 104, "Pre-head priors", "descriptor / group / GC bounds", "rgba(124,58,237,0.12)", palette["purple"], dashed=not any(model.get(flag) for flag in ("use_descriptor_priors", "use_group_priors", "use_gc_priors_crystal")))
-        box(502, 214, 200, 104, "Interaction", f"{model.get('interaction_mode', 'cross_attn')} × {model.get('n_cross_attn_layers', 3)}", "rgba(5,150,105,0.12)", palette["green"])
-        box(502, 356, 200, 104, "Readout + pair", f"Set2Set {model.get('set2set_steps', 3)} · pair {summary['pair_dim']}d", "rgba(148,163,184,0.16)", palette["slate"])
+        interaction_label = f"{model.get('interaction_mode', 'cross_attn')} × {model.get('n_cross_attn_layers', 3)}"
+        if model.get("use_thermo_cross_attention") and model.get("interaction_mode", "cross_attn") == "cross_attn":
+            interaction_label += " · thermo β"
+        readout_label = (
+            f"channel-aware readout · pair {summary['pair_dim']}d"
+            if model.get("encoder_type", "mpnn") == "timp"
+            else f"Set2Set {model.get('set2set_steps', 3)} · pair {summary['pair_dim']}d"
+        )
+        box(502, 214, 200, 104, "Interaction", interaction_label, "rgba(5,150,105,0.12)", palette["green"])
+        box(502, 356, 200, 104, "Readout + pair", readout_label, "rgba(148,163,184,0.16)", palette["slate"])
         box(748, 72, 190, 104, "Fusion head", "Tₘ · ΔHfus · optional ΔCp", "rgba(245,158,11,0.14)", palette["orange"])
         box(748, 214, 190, 104, "NRTL head", model.get("nrtl_tau_mode", "ref_invT"), "rgba(245,158,11,0.10)", palette["orange"])
         box(748, 356, 190, 104, "Correction", "bounded solver-space deltas", "rgba(239,68,68,0.12)", palette["red"])
@@ -2436,7 +2520,14 @@ def architecture_svg(family: str, doc: dict[str, Any]) -> str:
         box(38, 122, 180, 116, "Solute graph", "real RDKit graph input", palette["card"], palette["border"])
         box(38, 286, 180, 116, "Solvent graph", "real RDKit graph input", palette["card"], palette["border"])
         box(268, 158, 212, 196, "Shared encoder", f"{summary['encoder']} · {summary['layers']} layers · {summary['hidden_dim']}d", "rgba(37,99,235,0.12)", palette["blue"])
-        box(532, 158, 208, 196, "Interaction + readout", f"{model.get('interaction_mode', 'cross_attn')} · Set2Set {model.get('set2set_steps', 3)}", "rgba(16,185,129,0.12)", palette["green"])
+        interaction_label = (
+            f"{model.get('interaction_mode', 'cross_attn')} · channel-aware"
+            if model.get("encoder_type", "mpnn") == "timp"
+            else f"{model.get('interaction_mode', 'cross_attn')} · Set2Set {model.get('set2set_steps', 3)}"
+        )
+        if model.get("use_thermo_cross_attention") and model.get("interaction_mode", "cross_attn") == "cross_attn":
+            interaction_label += " · thermo β"
+        box(532, 158, 208, 196, "Interaction + readout", interaction_label, "rgba(16,185,129,0.12)", palette["green"])
         box(792, 80, 160, 102, "Temperature", "thermometer encoder", "rgba(251,191,36,0.12)", palette["orange"])
         box(792, 206, 160, 102, "Descriptor aug", "RDKit descriptors", "rgba(124,58,237,0.12)", palette["purple"], dashed=not bool(model.get("use_descriptor_augmentation")))
         box(792, 332, 160, 102, "Morgan path", "fingerprint adapter", "rgba(37,99,235,0.10)", palette["blue"], dashed=not bool(model.get("use_morgan_features")))
@@ -3399,6 +3490,8 @@ def module_flag_state(family: str, doc: dict[str, Any], node_id: str, flag: str 
         return any(bool(model.get(key)) for key in ("use_descriptor_priors", "use_group_priors", "use_gc_priors_crystal"))
     if node_id == "gps_pe":
         return str(model.get("encoder_type", "mpnn")) == "gps"
+    if node_id == "timp_features":
+        return str(model.get("encoder_type", "mpnn")) == "timp"
     if family == "TGNN-Solv" and node_id == "stage0_warmstart":
         return bool(stage0.get("enabled"))
     if flag is None:
@@ -3591,6 +3684,7 @@ def architecture_visual_signature(family: str, doc: dict[str, Any]) -> str:
             "gps_use_edge_attr",
             "gps_positional_encoding",
             "gps_pe_dim",
+            "thermo_cross_attention_beta_init",
         }
     }
     payload = {
@@ -6243,6 +6337,22 @@ def config_feature_rows(config_path: str) -> pd.DataFrame:
                 else "—"
             ),
         },
+        {
+            "feature": "TIMP charges / phys-edge",
+            "value": (
+                f"{bool(model.get('use_gasteiger_charges', False))} / {bool(model.get('use_phys_edge_features', False))}"
+                if model.get("encoder_type", "mpnn") == "timp"
+                else "off"
+            ),
+        },
+        {
+            "feature": "Thermo cross-attn",
+            "value": (
+                f"{bool(model.get('use_thermo_cross_attention', False))} / β={model.get('thermo_cross_attention_beta_init', '—')}"
+                if model.get("encoder_type", "mpnn") == "timp"
+                else "off"
+            ),
+        },
         {"feature": "Shared encoder", "value": model.get("encoder_role_mode", "—")},
         {"feature": "Cross-attention layers", "value": model.get("n_cross_attn_layers", "—")},
         {"feature": "Descriptor augmentation", "value": model.get("use_descriptor_augmentation", "—")},
@@ -6802,6 +6912,11 @@ def config_training_snapshot(config_path: str) -> tuple[pd.DataFrame, pd.DataFra
         "gps_positional_encoding": model.get("gps_positional_encoding"),
         "gps_num_heads": model.get("gps_num_heads"),
         "gps_pe_dim": model.get("gps_pe_dim"),
+        "interaction_mode": model.get("interaction_mode"),
+        "use_gasteiger_charges": model.get("use_gasteiger_charges", False),
+        "use_phys_edge_features": model.get("use_phys_edge_features", False),
+        "use_thermo_cross_attention": model.get("use_thermo_cross_attention", False),
+        "thermo_cross_attention_beta_init": model.get("thermo_cross_attention_beta_init"),
         "cross_attn_layers": model.get("n_cross_attn_layers"),
         "dropout": model.get("dropout"),
         "encoder_role_mode": model.get("encoder_role_mode"),
@@ -7322,11 +7437,7 @@ def render_training_page(python_command: str, probe: dict[str, Any]) -> None:
             with cards[1]:
                 st.metric("Batch size", str(meta.get("batch_size", "—")))
             with cards[2]:
-                encoder_type = meta.get("encoder_type", "mpnn")
-                if encoder_type == "gps":
-                    encoder_label = f"GPS / {meta.get('gps_positional_encoding', 'laplacian')}"
-                else:
-                    encoder_label = f"MPNN / {meta.get('hidden_dim', '—')}d"
+                encoder_label = architecture_encoder_label(meta)
                 st.metric("Encoder", encoder_label)
             with cards[3]:
                 st.metric("Pair-temp batching", "on" if meta.get("pair_temp_batching") else "off")
@@ -8720,7 +8831,7 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
 
     page_header(
         "Model Architect",
-        "Visual editor for the maintained model families. Tweak real config flags, inspect the live forward path, compare TGNN-Solv against DirectGNN by active branches, preview real structure-derived graphs, and launch training from the edited design, including GPS encoder switches, TGNN descriptor augmentation, and optional Stage 0 warm starts.",
+        "Visual editor for the maintained model families. Tweak real config flags, inspect the live forward path, compare TGNN-Solv against DirectGNN by active branches, preview real structure-derived graphs, and launch training from the edited design, including GPS/TIMP encoder switches, TIMP feature flags, TGNN descriptor augmentation, and optional Stage 0 warm starts.",
         eyebrow="Architecture",
         chips=[
             ("Family", family),
@@ -8771,10 +8882,12 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
             control_cols = st.columns(3, gap="large")
             with control_cols[0]:
                 st.markdown("#### Backbone")
+                encoder_options = ["mpnn", "gps", "timp"]
+                encoder_current = str(model.get("encoder_type", "mpnn"))
                 encoder_type = st.selectbox(
                     "Encoder type",
-                    ["mpnn", "gps"],
-                    index=["mpnn", "gps"].index(str(model.get("encoder_type", "mpnn"))),
+                    encoder_options,
+                    index=encoder_options.index(encoder_current) if encoder_current in encoder_options else 0,
                     key=f"{family}_encoder_type",
                 )
                 hidden_dim = st.slider("Hidden dim", 64, 512, int(model.get("hidden_dim", 256)), step=32, key=f"{family}_hidden_dim")
@@ -8814,6 +8927,41 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
                     gps_positional_encoding = str(model.get("gps_positional_encoding", "laplacian"))
                     gps_pe_dim = int(model.get("gps_pe_dim", 8))
                     gps_use_edge_attr = bool(model.get("gps_use_edge_attr", True))
+                if encoder_type == "timp":
+                    st.caption("TIMP keeps the shared encoder contract but splits message passing into dispersive and polar channels.")
+                    use_gasteiger_charges = st.toggle(
+                        "Gasteiger charges",
+                        value=bool(model.get("use_gasteiger_charges", False)),
+                        key=f"{family}_gasteiger",
+                    )
+                    use_phys_edge_features = st.toggle(
+                        "Physical edge features",
+                        value=bool(model.get("use_phys_edge_features", False)),
+                        key=f"{family}_phys_edge",
+                    )
+                    use_thermo_cross_attention = st.toggle(
+                        "Thermo cross-attention",
+                        value=bool(model.get("use_thermo_cross_attention", False)),
+                        key=f"{family}_thermo_cross",
+                    )
+                    if use_thermo_cross_attention:
+                        thermo_cross_attention_beta_init = st.number_input(
+                            "Thermo attention β",
+                            value=float(model.get("thermo_cross_attention_beta_init", 0.1)),
+                            min_value=0.0,
+                            step=0.05,
+                            format="%.3f",
+                            key=f"{family}_thermo_cross_beta",
+                        )
+                    else:
+                        thermo_cross_attention_beta_init = float(model.get("thermo_cross_attention_beta_init", 0.1))
+                    if interaction_mode != "cross_attn" and use_thermo_cross_attention:
+                        st.info("Thermo cross-attention is only consumed by the cross-attention interaction path.")
+                else:
+                    use_gasteiger_charges = bool(model.get("use_gasteiger_charges", False))
+                    use_phys_edge_features = bool(model.get("use_phys_edge_features", False))
+                    use_thermo_cross_attention = bool(model.get("use_thermo_cross_attention", False))
+                    thermo_cross_attention_beta_init = float(model.get("thermo_cross_attention_beta_init", 0.1))
 
             with control_cols[1]:
                 st.markdown("#### Side information")
@@ -9000,13 +9148,17 @@ def render_model_architect(python_command: str, probe: dict[str, Any]) -> None:
                     run_descriptor_probe = False
                     descriptor_probe_output_dir = ""
                     descriptor_probe_device = "cpu"
-                    st.info("DirectGNN keeps the shared encoder / interaction stack but removes the physics path in favor of a thermometer-plus-MLP head.")
+                    st.info("DirectGNN keeps the shared encoder / interaction stack, including GPS/TIMP backbones, but removes the physics path in favor of a thermometer-plus-MLP head.")
 
     model["encoder_type"] = encoder_type
     model["gps_num_heads"] = gps_num_heads
     model["gps_use_edge_attr"] = gps_use_edge_attr
     model["gps_positional_encoding"] = gps_positional_encoding
     model["gps_pe_dim"] = gps_pe_dim
+    model["use_gasteiger_charges"] = bool(use_gasteiger_charges) if encoder_type == "timp" else False
+    model["use_phys_edge_features"] = bool(use_phys_edge_features) if encoder_type == "timp" else False
+    model["use_thermo_cross_attention"] = bool(use_thermo_cross_attention) if encoder_type == "timp" else False
+    model["thermo_cross_attention_beta_init"] = float(thermo_cross_attention_beta_init)
     model["hidden_dim"] = hidden_dim
     model["n_gnn_layers"] = n_gnn_layers
     model["encoder_role_mode"] = encoder_role_mode
