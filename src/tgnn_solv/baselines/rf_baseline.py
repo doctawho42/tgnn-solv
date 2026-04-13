@@ -110,6 +110,8 @@ class RFBaseline:
         self.feature_mode = feature_mode
         self.morgan_radius = morgan_radius
         self.morgan_n_bits = morgan_n_bits
+        self._descriptor_cache: dict[str, np.ndarray | None] = {}
+        self._morgan_cache: dict[tuple[str, int, int], np.ndarray | None] = {}
 
     @staticmethod
     def _validate_columns(df: pd.DataFrame) -> None:
@@ -139,7 +141,8 @@ class RFBaseline:
         valid_descriptors: list[np.ndarray] = []
         targets: list[float] = []
 
-        for row in train_df.itertuples(index=False):
+        train_view = self._supervised_view(train_df)
+        for row in train_view.itertuples(index=False):
             descriptor = self._compute_pair_features(
                 row.solute_smiles,
                 row.solvent_smiles,
@@ -168,7 +171,7 @@ class RFBaseline:
 
         print(
             f"RFBaseline[{self.feature_mode}] fitted on {len(X)} samples "
-            f"({len(train_df) - len(X)} skipped)"
+            f"({len(train_view) - len(X)} supervised rows skipped)"
         )
         return self
 
@@ -183,6 +186,7 @@ class RFBaseline:
         """
         assert self.fitted, "RFBaseline must be fitted before calling predict()."
         self._validate_columns(test_df)
+        test_df = self._supervised_view(test_df).reset_index(drop=True)
 
         valid_descriptors: list[np.ndarray] = []
         valid_indices: list[int] = []
@@ -216,7 +220,8 @@ class RFBaseline:
         Returns:
             Dictionary with regression metrics and sample counts.
         """
-        predictions, valid_idx = self.predict(test_df)
+        eval_df = self._supervised_view(test_df).reset_index(drop=True)
+        predictions, valid_idx = self.predict(eval_df)
         if len(valid_idx) == 0:
             return {
                 "mae": float("nan"),
@@ -224,10 +229,10 @@ class RFBaseline:
                 "r2": float("nan"),
                 "pearson_r": float("nan"),
                 "n_samples": 0,
-                "n_skipped": len(test_df),
+                "n_skipped": len(eval_df),
             }
 
-        true = test_df.iloc[valid_idx]["ln_x2"].values.astype(float)
+        true = eval_df.iloc[valid_idx]["ln_x2"].values.astype(float)
 
         mae = float(mean_absolute_error(true, predictions))
         rmse = float(np.sqrt(mean_squared_error(true, predictions)))
@@ -244,7 +249,7 @@ class RFBaseline:
             "r2": r2,
             "pearson_r": pearson_r,
             "n_samples": int(len(valid_idx)),
-            "n_skipped": int(len(test_df) - len(valid_idx)),
+            "n_skipped": int(len(eval_df) - len(valid_idx)),
         }
 
     def _compute_pair_features(
@@ -258,18 +263,16 @@ class RFBaseline:
         morgan_features = None
 
         if self.feature_mode in {"descriptors", "hybrid"}:
-            descriptor_features = compute_pair_descriptors(
+            descriptor_features = self._compute_pair_descriptors_cached(
                 solute_smiles,
                 solvent_smiles,
                 temperature,
             )
         if self.feature_mode in {"morgan", "hybrid"}:
-            morgan_features = compute_pair_morgan_features(
+            morgan_features = self._compute_pair_morgan_cached(
                 solute_smiles,
                 solvent_smiles,
                 temperature,
-                radius=self.morgan_radius,
-                n_bits=self.morgan_n_bits,
             )
 
         if self.feature_mode == "descriptors":
@@ -279,6 +282,78 @@ class RFBaseline:
         if descriptor_features is None or morgan_features is None:
             return None
         return np.concatenate([descriptor_features, morgan_features]).astype(
+            np.float32,
+            copy=False,
+        )
+
+    @staticmethod
+    def _supervised_view(df: pd.DataFrame) -> pd.DataFrame:
+        """Restrict fitting/evaluation to rows with experimental solubility."""
+        if "has_solubility" not in df.columns:
+            return df
+        series = df["has_solubility"]
+        if pd.api.types.is_bool_dtype(series):
+            mask = series.fillna(False).to_numpy(dtype=bool)
+        else:
+            mask = (
+                series.fillna(False)
+                .astype(str)
+                .str.strip()
+                .str.lower()
+                .isin({"true", "1", "yes", "y", "t"})
+                .to_numpy(dtype=bool)
+            )
+        return df.loc[mask].copy()
+
+    def _molecular_descriptors_cached(self, smiles: str) -> np.ndarray | None:
+        key = str(smiles)
+        if key not in self._descriptor_cache:
+            self._descriptor_cache[key] = compute_molecular_descriptors(key)
+        return self._descriptor_cache[key]
+
+    def _morgan_fp_cached(self, smiles: str) -> np.ndarray | None:
+        from tgnn_solv.features import smiles_to_morgan_fp
+
+        key = (str(smiles), int(self.morgan_radius), int(self.morgan_n_bits))
+        if key not in self._morgan_cache:
+            self._morgan_cache[key] = smiles_to_morgan_fp(
+                key[0],
+                radius=key[1],
+                n_bits=key[2],
+            )
+        return self._morgan_cache[key]
+
+    def _compute_pair_descriptors_cached(
+        self,
+        solute_smiles: str,
+        solvent_smiles: str,
+        temperature: float,
+    ) -> np.ndarray | None:
+        desc_sol = self._molecular_descriptors_cached(solute_smiles)
+        desc_slv = self._molecular_descriptors_cached(solvent_smiles)
+        if desc_sol is None or desc_slv is None:
+            return None
+        temp = float(temperature)
+        return np.concatenate(
+            [
+                desc_sol.astype(float, copy=False),
+                desc_slv.astype(float, copy=False),
+                [temp, 1.0 / temp],
+            ]
+        )
+
+    def _compute_pair_morgan_cached(
+        self,
+        solute_smiles: str,
+        solvent_smiles: str,
+        temperature: float,
+    ) -> np.ndarray | None:
+        solute_fp = self._morgan_fp_cached(solute_smiles)
+        solvent_fp = self._morgan_fp_cached(solvent_smiles)
+        if solute_fp is None or solvent_fp is None:
+            return None
+        temp = float(temperature)
+        return np.concatenate([solute_fp, solvent_fp, [temp, 1.0 / temp]]).astype(
             np.float32,
             copy=False,
         )

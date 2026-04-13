@@ -28,6 +28,7 @@ from ..features import (
     smiles_to_morgan_fp,
 )
 from ..group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
+from ..hansen_contrastive import pseudo_hansen_from_smiles
 from .solvent_types import solvent_type_id_from_smiles
 
 TargetValue: TypeAlias = torch.Tensor | str
@@ -172,6 +173,7 @@ class TGNNSolvDataset(Dataset):
       T_m, T_m_mask
       dH_fus, dH_mask
       hansen_sol (3,), hansen_mask
+      hansen_*_effective, pair_Ra, pair_hansen_mask for Hansen contrastive
       ln_gamma_inf, gamma_mask
       dG_solv, dG_mask
     """
@@ -190,6 +192,8 @@ class TGNNSolvDataset(Dataset):
         use_gc_priors_crystal: bool = False,
         use_gasteiger_charges: bool = False,
         use_phys_edge_features: bool = False,
+        use_pseudo_hansen: bool = False,
+        pseudo_hansen_weight_discount: float = 0.3,
     ) -> None:
         self.cache: dict[str, Data] | None = {} if cache else None
         self.use_morgan_features = use_morgan_features
@@ -201,6 +205,8 @@ class TGNNSolvDataset(Dataset):
         self.use_gc_priors_crystal = use_gc_priors_crystal
         self.use_gasteiger_charges = use_gasteiger_charges
         self.use_phys_edge_features = use_phys_edge_features
+        self.use_pseudo_hansen = use_pseudo_hansen
+        self.pseudo_hansen_weight_discount = float(pseudo_hansen_weight_discount)
         self.fp_cache: dict[str, torch.Tensor] | None = {} if cache and use_morgan_features else None
         self.descriptor_aug_cache: dict[str, torch.Tensor] | None = (
             {} if cache and use_descriptor_augmentation else None
@@ -213,6 +219,9 @@ class TGNNSolvDataset(Dataset):
         )
         self.crystal_gc_cache: dict[str, torch.Tensor] | None = (
             {} if cache and use_gc_priors_crystal else None
+        )
+        self.pseudo_hansen_cache: dict[str, torch.Tensor | None] | None = (
+            {} if cache and use_pseudo_hansen else None
         )
 
         # Validate all SMILES upfront (fast: uses cache after first pass)
@@ -343,6 +352,81 @@ class TGNNSolvDataset(Dataset):
             self.crystal_gc_cache[smi] = tensor
         return tensor
 
+    def _pseudo_hansen(self, smi: str) -> torch.Tensor | None:
+        """Get cached pseudo-Hansen labels for contrastive regularization."""
+        if not self.use_pseudo_hansen:
+            return None
+        if self.pseudo_hansen_cache is not None and smi in self.pseudo_hansen_cache:
+            return self.pseudo_hansen_cache[smi]
+        values = pseudo_hansen_from_smiles(smi)
+        tensor = (
+            torch.tensor(values, dtype=torch.float)
+            if values is not None
+            else None
+        )
+        if self.pseudo_hansen_cache is not None:
+            self.pseudo_hansen_cache[smi] = tensor
+        return tensor
+
+    @staticmethod
+    def _finite_triplet(values: list[object]) -> torch.Tensor | None:
+        try:
+            floats = [float(value) for value in values]
+        except (TypeError, ValueError):
+            return None
+        if not all(math.isfinite(value) for value in floats):
+            return None
+        return torch.tensor(floats, dtype=torch.float)
+
+    @staticmethod
+    def _row_bool(r: pd.Series, names: Sequence[str]) -> bool | None:
+        for name in names:
+            if name in r.index and pd.notna(r[name]):
+                return bool(r[name])
+        return None
+
+    def _row_hansen_triplet(
+        self,
+        r: pd.Series,
+        *,
+        prefixes: Sequence[tuple[str, str, str]],
+        masks: Sequence[str],
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Read optional experimental Hansen triplets from flexible column names."""
+        mask_value = self._row_bool(r, masks)
+        for d_col, p_col, h_col in prefixes:
+            if {d_col, p_col, h_col} <= set(r.index):
+                triplet = self._finite_triplet([r[d_col], r[p_col], r[h_col]])
+                if triplet is not None and (mask_value is None or mask_value):
+                    return triplet, torch.tensor(True, dtype=torch.bool)
+        return torch.zeros(3, dtype=torch.float), torch.tensor(False, dtype=torch.bool)
+
+    def _effective_hansen(
+        self,
+        real_values: torch.Tensor,
+        real_mask: torch.Tensor,
+        smiles: str,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return values, mask, and confidence weight for contrastive Hansen."""
+        if bool(real_mask):
+            return (
+                real_values,
+                torch.tensor(True, dtype=torch.bool),
+                torch.tensor(1.0, dtype=torch.float),
+            )
+        pseudo = self._pseudo_hansen(smiles)
+        if pseudo is None:
+            return (
+                torch.zeros(3, dtype=torch.float),
+                torch.tensor(False, dtype=torch.bool),
+                torch.tensor(0.0, dtype=torch.float),
+            )
+        return (
+            pseudo,
+            torch.tensor(True, dtype=torch.bool),
+            torch.tensor(self.pseudo_hansen_weight_discount, dtype=torch.float),
+        )
+
     def __len__(self) -> int:
         return len(self.df)
 
@@ -360,6 +444,67 @@ class TGNNSolvDataset(Dataset):
         sol_group = self._group_prior_features(r["solute_smiles"])
         slv_group = self._group_prior_features(r["solvent_smiles"])
         sol_gc = self._crystal_gc_priors(r["solute_smiles"])
+        hansen_sol_triplet = self._finite_triplet(
+            [r["hansen_d"], r["hansen_p"], r["hansen_h"]]
+        )
+        hansen_sol_real = (
+            hansen_sol_triplet
+            if hansen_sol_triplet is not None
+            else torch.zeros(3, dtype=torch.float)
+        )
+        hansen_sol_mask = torch.tensor(
+            bool(r["has_hansen"]) and hansen_sol_triplet is not None,
+            dtype=torch.bool,
+        )
+        hansen_slv_real, hansen_slv_mask = self._row_hansen_triplet(
+            r,
+            prefixes=(
+                ("solvent_hansen_d", "solvent_hansen_p", "solvent_hansen_h"),
+                ("hansen_slv_d", "hansen_slv_p", "hansen_slv_h"),
+                ("slv_hansen_d", "slv_hansen_p", "slv_hansen_h"),
+            ),
+            masks=("has_solvent_hansen", "has_hansen_slv", "slv_hansen_mask"),
+        )
+        hansen_sol_eff, hansen_sol_contrastive_mask, hansen_sol_weight = (
+            self._effective_hansen(
+                hansen_sol_real,
+                hansen_sol_mask,
+                str(r["solute_smiles"]),
+            )
+        )
+        hansen_slv_eff, hansen_slv_contrastive_mask, hansen_slv_weight = (
+            self._effective_hansen(
+                hansen_slv_real,
+                hansen_slv_mask,
+                str(r["solvent_smiles"]),
+            )
+        )
+        pseudo_hansen_sol = self._pseudo_hansen(str(r["solute_smiles"]))
+        pseudo_hansen_slv = self._pseudo_hansen(str(r["solvent_smiles"]))
+        pseudo_hansen_sol_mask = pseudo_hansen_sol is not None
+        pseudo_hansen_slv_mask = pseudo_hansen_slv is not None
+        pseudo_hansen_sol = (
+            pseudo_hansen_sol
+            if pseudo_hansen_sol is not None
+            else torch.zeros(3, dtype=torch.float)
+        )
+        pseudo_hansen_slv = (
+            pseudo_hansen_slv
+            if pseudo_hansen_slv is not None
+            else torch.zeros(3, dtype=torch.float)
+        )
+        pair_hansen_mask = bool(hansen_sol_contrastive_mask.item()) and bool(
+            hansen_slv_contrastive_mask.item()
+        )
+        if pair_hansen_mask:
+            diff = hansen_sol_eff - hansen_slv_eff
+            pair_Ra = torch.sqrt(
+                4.0 * diff[0].pow(2) + diff[1].pow(2) + diff[2].pow(2)
+            )
+            pair_weight = hansen_sol_weight * hansen_slv_weight
+        else:
+            pair_Ra = torch.tensor(0.0, dtype=torch.float)
+            pair_weight = torch.tensor(0.0, dtype=torch.float)
 
         t = {
             "T": torch.tensor(float(r["temperature"]), dtype=torch.float),
@@ -390,14 +535,29 @@ class TGNNSolvDataset(Dataset):
             "has_dH_fus": torch.tensor(
                 bool(r["has_dH_fus"]), dtype=torch.bool
             ),
-            "hansen_sol": torch.tensor(
-                [float(r["hansen_d"]), float(r["hansen_p"]),
-                 float(r["hansen_h"])],
-                dtype=torch.float,
+            "hansen_sol": hansen_sol_real,
+            "hansen_mask": hansen_sol_mask,
+            "hansen_slv": hansen_slv_real,
+            "hansen_slv_mask": hansen_slv_mask,
+            "hansen_sol_effective": hansen_sol_eff,
+            "hansen_slv_effective": hansen_slv_eff,
+            "hansen_contrastive_mask": hansen_sol_contrastive_mask,
+            "hansen_slv_contrastive_mask": hansen_slv_contrastive_mask,
+            "hansen_sol_contrastive_weight": hansen_sol_weight,
+            "hansen_slv_contrastive_weight": hansen_slv_weight,
+            "pseudo_hansen_params": pseudo_hansen_sol,
+            "pseudo_hansen_mask": torch.tensor(
+                pseudo_hansen_sol_mask,
+                dtype=torch.bool,
             ),
-            "hansen_mask": torch.tensor(
-                bool(r["has_hansen"]), dtype=torch.bool
+            "pseudo_hansen_slv": pseudo_hansen_slv,
+            "pseudo_hansen_slv_mask": torch.tensor(
+                pseudo_hansen_slv_mask,
+                dtype=torch.bool,
             ),
+            "pair_Ra": pair_Ra,
+            "pair_hansen_mask": torch.tensor(pair_hansen_mask, dtype=torch.bool),
+            "pair_hansen_weight": pair_weight,
             "ln_gamma_inf": torch.tensor(
                 float(r["ln_gamma_inf"]), dtype=torch.float
             ),
@@ -490,6 +650,8 @@ def make_loader(
     use_gc_priors_crystal: bool = False,
     use_gasteiger_charges: bool = False,
     use_phys_edge_features: bool = False,
+    use_pseudo_hansen: bool = False,
+    pseudo_hansen_weight_discount: float = 0.3,
     seed: int = 42,
 ) -> DataLoader:
     """Create a single DataLoader with optional same-pair temperature batching."""
@@ -505,6 +667,8 @@ def make_loader(
         use_gc_priors_crystal=use_gc_priors_crystal,
         use_gasteiger_charges=use_gasteiger_charges,
         use_phys_edge_features=use_phys_edge_features,
+        use_pseudo_hansen=use_pseudo_hansen,
+        pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
     )
 
     if drop_last is None:
@@ -554,6 +718,8 @@ def make_loaders(
     use_gc_priors_crystal: bool = False,
     use_gasteiger_charges: bool = False,
     use_phys_edge_features: bool = False,
+    use_pseudo_hansen: bool = False,
+    pseudo_hansen_weight_discount: float = 0.3,
     seed: int = 42,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
@@ -590,6 +756,8 @@ def make_loaders(
         use_gc_priors_crystal=use_gc_priors_crystal,
         use_gasteiger_charges=use_gasteiger_charges,
         use_phys_edge_features=use_phys_edge_features,
+        use_pseudo_hansen=use_pseudo_hansen,
+        pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
         seed=seed,
     )
     val_ld = make_loader(
@@ -608,6 +776,8 @@ def make_loaders(
         use_gc_priors_crystal=use_gc_priors_crystal,
         use_gasteiger_charges=use_gasteiger_charges,
         use_phys_edge_features=use_phys_edge_features,
+        use_pseudo_hansen=use_pseudo_hansen,
+        pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
     )
     test_ld = make_loader(
         test_df,
@@ -625,6 +795,8 @@ def make_loaders(
         use_gc_priors_crystal=use_gc_priors_crystal,
         use_gasteiger_charges=use_gasteiger_charges,
         use_phys_edge_features=use_phys_edge_features,
+        use_pseudo_hansen=use_pseudo_hansen,
+        pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
     )
 
     for name, frame, loader in [

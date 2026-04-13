@@ -54,6 +54,10 @@ DEFAULT_PHASE_WEIGHTS = {
         "phys_pref": 0.0, "direct_reg": 0.0, "direct_nll": 0.0,
         "pair_temp_rank": 0.0, "vant_hoff_local": 0.0,
         "moe_balance": 0.0, "descriptor_prior": 0.0, "group_prior": 0.0,
+        "hansen_contrastive_mol": 0.0,
+        "hansen_contrastive_channel": 0.0,
+        "hansen_contrastive_pair": 0.0,
+        "hansen_channel_orth": 0.0,
     },
     2: {
         "sol": 1.0, "T_m": 0.05, "dH": 0.05, "hansen": 0.05,
@@ -69,6 +73,10 @@ DEFAULT_PHASE_WEIGHTS = {
         "moe_balance": 0.005,
         "descriptor_prior": 0.0,
         "group_prior": 0.0,
+        "hansen_contrastive_mol": 0.0,
+        "hansen_contrastive_channel": 0.0,
+        "hansen_contrastive_pair": 0.0,
+        "hansen_channel_orth": 0.0,
     },
     3: {
         "sol": 1.0, "T_m": 0.03, "dH": 0.03, "hansen": 0.03,
@@ -84,6 +92,10 @@ DEFAULT_PHASE_WEIGHTS = {
         "moe_balance": 0.01,
         "descriptor_prior": 0.0,
         "group_prior": 0.0,
+        "hansen_contrastive_mol": 0.0,
+        "hansen_contrastive_channel": 0.0,
+        "hansen_contrastive_pair": 0.0,
+        "hansen_channel_orth": 0.0,
     },
 }
 
@@ -95,6 +107,7 @@ class TGNNSolvTrainer:
         self.cfg = cfg
         self.loss_fn = TGNNSolvLoss(cfg)
         self.device = next(model.parameters()).device
+        self.loss_fn.to(self.device)
         self._base_oracle_injection_prob = cfg.oracle_injection_prob
 
         self.phase_weights = {
@@ -159,6 +172,7 @@ class TGNNSolvTrainer:
         bridge_explicitly_overridden = (
             overrides is not None and "bridge" in overrides
         )
+        override_keys = set(overrides or {})
         if overrides is not None:
             defaults.update(overrides)
         if not bridge_explicitly_overridden:
@@ -170,6 +184,29 @@ class TGNNSolvTrainer:
         if self.cfg.encoder_type == "timp":
             defaults["timp_disp_hansen"] = 0.05 if phase == 1 else 0.02
             defaults["timp_polar_hansen"] = 0.05 if phase == 1 else 0.02
+        if self.cfg.use_hansen_contrastive:
+            phase_contrastive = {
+                1: {
+                    "hansen_contrastive_mol": 0.10,
+                    "hansen_contrastive_channel": 0.10,
+                    "hansen_contrastive_pair": 0.0,
+                },
+                2: {
+                    "hansen_contrastive_mol": self.cfg.hansen_contrastive_mol_weight,
+                    "hansen_contrastive_channel": self.cfg.hansen_contrastive_channel_weight,
+                    "hansen_contrastive_pair": self.cfg.hansen_contrastive_pair_weight,
+                },
+                3: {
+                    "hansen_contrastive_mol": 0.02,
+                    "hansen_contrastive_channel": 0.02,
+                    "hansen_contrastive_pair": 0.01,
+                },
+            }[phase]
+            for key, value in phase_contrastive.items():
+                if key not in override_keys:
+                    defaults[key] = value
+            if "hansen_channel_orth" not in override_keys:
+                defaults["hansen_channel_orth"] = self.cfg.hansen_contrastive_orth_weight
         return defaults
 
     def state_dict(self) -> TrainerStateDict:
@@ -184,6 +221,7 @@ class TGNNSolvTrainer:
             "last_confidence": self._last_confidence,
             "base_oracle_injection_prob": self._base_oracle_injection_prob,
             "current_oracle_injection_prob": self.cfg.oracle_injection_prob,
+            "loss_fn_state_dict": self.loss_fn.state_dict(),
         }
 
     def load_state_dict(self, state: TrainerStateDict | None) -> None:
@@ -219,6 +257,9 @@ class TGNNSolvTrainer:
         )
         self.cfg.oracle_injection_prob = current_oracle_prob
         self.model.cfg.oracle_injection_prob = current_oracle_prob
+        loss_state = state.get("loss_fn_state_dict")
+        if isinstance(loss_state, dict):
+            self.loss_fn.load_state_dict(loss_state, strict=False)
 
     # -------------------------------------------------------------- #
     #  Optimizer / scheduler                                          #
@@ -230,8 +271,11 @@ class TGNNSolvTrainer:
             2: self.cfg.lr_phase2,
             3: self.cfg.lr_phase3,
         }[phase]
+        params = list(self.model.parameters())
+        if self.cfg.use_hansen_contrastive:
+            params.extend(self.loss_fn.parameters())
         return AdamW(
-            self.model.parameters(),
+            params,
             lr=lr,
             weight_decay=float(self.cfg.weight_decay),
             betas=(0.9, 0.999),
@@ -410,6 +454,8 @@ class TGNNSolvTrainer:
             slv_fp_emb = model.solvent_fp_adapter(solvent_morgan_fp.to(g_slv))
             g_sol = g_sol + model.fp_pre_scale * sol_fp_emb
             g_slv = g_slv + model.fp_pre_scale * slv_fp_emb
+            g_sol_payload["value"] = g_sol
+            g_slv_payload["value"] = g_slv
         sol_prior = None
         slv_prior = None
         if model.cfg.use_descriptor_priors:
@@ -535,7 +581,29 @@ class TGNNSolvTrainer:
             },
             "correction": dummy,
             "gate": torch.tensor(0.0, device=T.device),
+            "representations": {
+                "g_sol_pre": g_sol,
+                "g_slv_pre": g_slv,
+                "g_sol_post": g_sol,
+                "g_slv_post": g_slv,
+                "g_pair": g_pair,
+            },
         }
+        if (
+            model.is_timp
+            and g_sol_payload["disp"] is not None
+            and g_sol_payload["polar"] is not None
+            and g_slv_payload["disp"] is not None
+            and g_slv_payload["polar"] is not None
+        ):
+            output["timp_channels"] = {
+                "solute_disp": g_sol_payload["disp"],
+                "solute_polar": g_sol_payload["polar"],
+                "solute_combined": g_sol_payload["combined"],
+                "solvent_disp": g_slv_payload["disp"],
+                "solvent_polar": g_slv_payload["polar"],
+                "solvent_combined": g_slv_payload["combined"],
+            }
         if timp_channel_probes is not None:
             output["timp_channel_probes"] = timp_channel_probes
         return output
@@ -671,8 +739,11 @@ class TGNNSolvTrainer:
             )
 
             loss.backward()
+            grad_params = list(self.model.parameters())
+            if self.cfg.use_hansen_contrastive:
+                grad_params.extend(self.loss_fn.parameters())
             torch.nn.utils.clip_grad_norm_(
-                self.model.parameters(), self.cfg.grad_clip,
+                grad_params, self.cfg.grad_clip,
             )
             optimizer.step()
             self._maybe_release_device_cache()

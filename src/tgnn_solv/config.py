@@ -81,6 +81,14 @@ class TGNNSolvConfig:
     walden_target: float = 56.5
     walden_tolerance: float = 30.0
     walden_weight: float = 0.1
+    use_hansen_contrastive: bool = False
+    hansen_contrastive_mol_weight: float = 0.05
+    hansen_contrastive_channel_weight: float = 0.05
+    hansen_contrastive_pair_weight: float = 0.03
+    hansen_contrastive_orth_weight: float = 0.01
+    use_pseudo_hansen: bool = True
+    pseudo_hansen_weight_discount: float = 0.3
+    hansen_contrastive_temperature: float = 0.1
 
     # --- Physics constants (NOT learnable) ---
     R: float = 8.314          # Gas constant, J/(mol·K)

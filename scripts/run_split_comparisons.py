@@ -104,6 +104,12 @@ def parse_args() -> argparse.Namespace:
         help="Root directory for split-wise checkpoints.",
     )
     parser.add_argument(
+        "--rf-n-estimators",
+        type=int,
+        default=500,
+        help="Number of trees for RF baselines; reduce for local proxy runs.",
+    )
+    parser.add_argument(
         "--skip-significance",
         action="store_true",
         help="Skip per-split significance testing.",
@@ -208,6 +214,7 @@ def build_rf_multi_seed_results(
     base_seed: int,
     output_path: Path,
     feature_mode: str = "descriptors",
+    n_estimators: int = 500,
 ) -> dict[str, Any]:
     """Train and evaluate the RF baseline across seeds on one split."""
     from tgnn_solv.baselines.rf_baseline import RFBaseline
@@ -219,7 +226,11 @@ def build_rf_multi_seed_results(
     seeds = [base_seed + idx for idx in range(n_seeds)]
     for seed in seeds:
         print(f"  [rf:{feature_mode}][seed {seed}] fitting...")
-        model = RFBaseline(random_state=seed, feature_mode=feature_mode)
+        model = RFBaseline(
+            random_state=seed,
+            feature_mode=feature_mode,
+            n_estimators=n_estimators,
+        )
         model.fit(train_df)
         metrics = model.evaluate(test_df)
         per_seed.append(
@@ -244,6 +255,7 @@ def build_rf_multi_seed_results(
 
     payload = {
         "model": f"rf_{feature_mode}",
+        "n_estimators": int(n_estimators),
         "split": build_split_metadata(
             split_mode=split_mode,
             train_data=train_path,
@@ -449,6 +461,7 @@ def main() -> int:
                     base_seed=args.base_seed,
                     output_path=model_output_path,
                     feature_mode=rf_mode,
+                    n_estimators=args.rf_n_estimators,
                 )
 
             split_payload["models"][model_name] = {

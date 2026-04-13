@@ -84,7 +84,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--val-data",
         type=str,
-        required=True,
+        default=None,
         help="Path to validation CSV file",
     )
     parser.add_argument(
@@ -168,6 +168,24 @@ def parse_args() -> argparse.Namespace:
         help="Override learning rate (lr_phase2) from config",
     )
     parser.add_argument(
+        "--epochs-phase1",
+        type=int,
+        default=None,
+        help="Override Phase 1 epoch count from config.",
+    )
+    parser.add_argument(
+        "--epochs-phase2",
+        type=int,
+        default=None,
+        help="Override Phase 2 epoch count from config.",
+    )
+    parser.add_argument(
+        "--epochs-phase3",
+        type=int,
+        default=None,
+        help="Override Phase 3 epoch count from config.",
+    )
+    parser.add_argument(
         "--pretrain",
         action="store_true",
         help="Run Stage 0 pretraining on an external SMILES corpus before standard TGNN training.",
@@ -218,6 +236,11 @@ def parse_args() -> argparse.Namespace:
         "--run-descriptor-probe",
         action="store_true",
         help="After training, run the existing Ridge linear probe from `g_sol` to RDKit descriptors.",
+    )
+    parser.add_argument(
+        "--probe-only",
+        action="store_true",
+        help="Skip training and run only the descriptor probe for --checkpoint.",
     )
     parser.add_argument(
         "--descriptor-probe-output-dir",
@@ -462,6 +485,10 @@ def load_data(
         use_gc_priors_crystal=config.use_gc_priors_crystal,
         use_gasteiger_charges=config.use_gasteiger_charges,
         use_phys_edge_features=config.use_phys_edge_features,
+        use_pseudo_hansen=(
+            config.use_hansen_contrastive and config.use_pseudo_hansen
+        ),
+        pseudo_hansen_weight_discount=config.pseudo_hansen_weight_discount,
         seed=seed,
     )
 
@@ -542,6 +569,12 @@ def main() -> None:
             raise ValueError(
                 "Use either --pretrain or --pretrain-checkpoint, not both."
             )
+        if args.probe_only and not args.run_descriptor_probe:
+            args.run_descriptor_probe = True
+        if not args.probe_only and args.val_data is None:
+            raise ValueError("--val-data is required unless --probe-only is used.")
+        if args.probe_only and args.test_data is None:
+            raise ValueError("--test-data is required for --probe-only descriptor probes.")
         
         print("=" * 70)
         print("TGNN-Solv Training Pipeline")
@@ -590,12 +623,21 @@ def main() -> None:
                 config.batch_size = args.batch_size
             if args.lr is not None:
                 config.lr_phase2 = args.lr
+            if args.epochs_phase1 is not None:
+                config.epochs_phase1 = int(args.epochs_phase1)
+            if args.epochs_phase2 is not None:
+                config.epochs_phase2 = int(args.epochs_phase2)
+            if args.epochs_phase3 is not None:
+                config.epochs_phase3 = int(args.epochs_phase3)
         elif any(
             override is not None
             for override in (
                 args.hidden_dim,
                 args.n_gnn_layers,
                 args.lr,
+                args.epochs_phase1,
+                args.epochs_phase2,
+                args.epochs_phase3,
             )
         ):
             print(
@@ -614,6 +656,10 @@ def main() -> None:
         
         print(f"   Device: {device}")
         print(f"   Seed: {args.seed}")
+        print(
+            "   Epoch budget: "
+            f"{config.epochs_phase1}/{config.epochs_phase2}/{config.epochs_phase3}"
+        )
         
         # Set random seed
         print("\n2. Setting random seed...")
@@ -628,6 +674,23 @@ def main() -> None:
         logger.log_config(config)
         print(f"   Experiment: {logger.experiment_name}")
         print(f"   Log directory: {logger.exp_dir}")
+
+        if args.probe_only:
+            checkpoint_path = Path(args.checkpoint)
+            if not checkpoint_path.is_file():
+                raise FileNotFoundError(f"Checkpoint for --probe-only not found: {checkpoint_path}")
+            print("\n4. Running descriptor probe only...")
+            maybe_run_descriptor_probe(
+                checkpoint_path=checkpoint_path,
+                train_data=args.train_data,
+                test_data=args.test_data,
+                output_dir=args.descriptor_probe_output_dir,
+                device=args.descriptor_probe_device,
+                logger=logger,
+            )
+            logger.finalize(None)
+            print("\nDescriptor probe completed.")
+            return
         
         # Load datasets
         print("\n4. Loading datasets...")

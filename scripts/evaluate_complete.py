@@ -37,8 +37,17 @@ if importlib.util.find_spec("torch") is None:
 from tgnn_solv.data.utils import canonicalize
 from tgnn_solv.data.split_registry import build_split_metadata
 from tgnn_solv.artifacts import build_benchmark_card, build_run_manifest, write_json
-from tgnn_solv.inference import load_model, predict_solubility
+from tgnn_solv.inference import load_directgnn_model, load_model, predict_solubility
 from tgnn_solv.reporting import build_report_payload
+
+import torch
+
+from run_full_budget_experiment import (
+    build_loader,
+    collect_direct_metrics,
+    collect_tgnn_intermediates,
+    regression_metrics as batch_regression_metrics,
+)
 
 
 def load_test_data(csv_path: str, n_samples: int = None) -> pd.DataFrame:
@@ -153,6 +162,29 @@ def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[s
     }
 
 
+def resolve_device(device_str: str) -> torch.device:
+    """Resolve requested evaluation device with a safe fallback."""
+    requested = device_str.strip().lower()
+    if requested.startswith("cuda") and not torch.cuda.is_available():
+        print("WARNING: CUDA requested but unavailable; falling back to CPU.")
+        return torch.device("cpu")
+    if requested == "mps" and not torch.backends.mps.is_available():
+        print("WARNING: MPS requested but unavailable; falling back to CPU.")
+        return torch.device("cpu")
+    return torch.device(device_str)
+
+
+def normalize_overall_metrics(metrics: dict) -> dict:
+    """Expose both canonical and legacy metric names for downstream scripts."""
+    normalized = dict(metrics)
+    if "n" in normalized and "n_samples" not in normalized:
+        normalized["n_samples"] = normalized["n"]
+    for name in ("mae", "rmse", "r2"):
+        if name in normalized and f"test_{name}" not in normalized:
+            normalized[f"test_{name}"] = normalized[name]
+    return normalized
+
+
 def temperature_stratified_metrics(df: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, Dict]:
     """Compute metrics stratified by temperature."""
     y_true = df['ln_x2'].values
@@ -236,9 +268,17 @@ def aux_data_metrics(df: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, Dict]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--test-data', type=str, default='notebooks/data/processed/test.csv')
-    parser.add_argument('--tgnn-checkpoint', type=str, default='checkpoints/tgnn_solv_trained.pt')
+    parser.add_argument('--tgnn-checkpoint', type=str, default=None)
+    parser.add_argument('--directgnn-checkpoint', type=str, default=None)
     parser.add_argument('--output', type=str, default='benchmarks/complete_evaluation.json')
     parser.add_argument('--n-samples', type=int, default=None)
+    parser.add_argument('--device', type=str, default='cpu')
+    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument(
+        '--oracle',
+        action='store_true',
+        help='For TGNN-Solv, force oracle crystal-target substitution where labels exist.',
+    )
     parser.add_argument(
         '--split-mode',
         type=str,
@@ -248,42 +288,89 @@ def main() -> None:
     parser.add_argument('--verbose', action='store_true')
     
     args = parser.parse_args()
+    if args.tgnn_checkpoint is None and args.directgnn_checkpoint is None:
+        args.tgnn_checkpoint = 'checkpoints/tgnn_solv_trained.pt'
+    if args.tgnn_checkpoint is not None and args.directgnn_checkpoint is not None:
+        raise ValueError("Use either --tgnn-checkpoint or --directgnn-checkpoint, not both.")
     
     print("=" * 70)
-    print("COMPLETE TGNN-Solv EVALUATION")
+    print("COMPLETE MODEL EVALUATION")
     print("=" * 70)
     
     args.test_data = str(_bootstrap.resolve_path(args.test_data))
-    args.tgnn_checkpoint = str(_bootstrap.resolve_path(args.tgnn_checkpoint))
+    if args.tgnn_checkpoint is not None:
+        args.tgnn_checkpoint = str(_bootstrap.resolve_path(args.tgnn_checkpoint))
+    if args.directgnn_checkpoint is not None:
+        args.directgnn_checkpoint = str(_bootstrap.resolve_path(args.directgnn_checkpoint))
     args.output = str(_bootstrap.resolve_path(args.output))
+    device = resolve_device(args.device)
 
     # Load data
     print(f"\n[1/4] Loading test data from {args.test_data}...")
     df = load_test_data(args.test_data, args.n_samples)
     n_supervised = int(solubility_supervision_mask(df).sum())
     print(f"✓ Loaded {len(df)} samples ({n_supervised} with solubility labels)")
-    
+
+    checkpoint_path = args.tgnn_checkpoint or args.directgnn_checkpoint
+    model_family = "tgnn_solv" if args.tgnn_checkpoint is not None else "direct_gnn"
+
     # Load model
-    print(f"\n[2/4] Loading model from {args.tgnn_checkpoint}...")
-    model, config = load_model(args.tgnn_checkpoint)
-    print(f"✓ Model loaded (hidden_dim={config.hidden_dim})")
-    
-    # Predict
-    print("\n[3/4] Running inference...")
-    y_pred = predict_batch(model, df, verbose=args.verbose)
-    n_valid = np.sum(~np.isnan(y_pred))
-    print(f"✓ Got {n_valid}/{len(df)} valid predictions")
-    
-    # Compute metrics
+    print(f"\n[2/4] Loading {model_family} model from {checkpoint_path}...")
+    if args.directgnn_checkpoint is not None:
+        model, config = load_directgnn_model(args.directgnn_checkpoint, device=device)
+    else:
+        model, config = load_model(args.tgnn_checkpoint, device=device)
+    print(f"✓ Model loaded (hidden_dim={config.hidden_dim}, device={device})")
+
+    # Predict and compute metrics in the batch evaluation path. This is much
+    # faster than row-by-row inference and supports DirectGNN checkpoints.
+    print("\n[3/4] Running batch inference...")
+    loader = build_loader(df, config, seed=args.seed)
+    if args.directgnn_checkpoint is not None:
+        overall_metrics = normalize_overall_metrics(collect_direct_metrics(model, loader, device))
+        metric_df = df.loc[solubility_supervision_mask(df)].reset_index(drop=True)
+        metric_pred = np.array([], dtype=float)
+        y_true = metric_df["ln_x2"].to_numpy(dtype=float)
+        valid_mask = np.ones(len(y_true), dtype=bool)
+        temp_metrics = {}
+        solubility_metrics = {}
+        solvent_type_metrics = {}
+        by_solvent = {}
+        aux_metrics = {}
+        predictions_payload = {}
+        n_valid = overall_metrics.get("n_samples", overall_metrics.get("n", 0))
+    else:
+        tgnn_df = collect_tgnn_intermediates(
+            model,
+            loader,
+            device,
+            force_oracle_injection=args.oracle,
+        )
+        metric_df = tgnn_df.loc[tgnn_df["has_solubility"].astype(bool)].reset_index(drop=True)
+        y_true = metric_df["ln_x2_true"].to_numpy(dtype=float)
+        metric_pred = metric_df["ln_x2_final"].to_numpy(dtype=float)
+        valid_mask = ~(np.isnan(y_true) | np.isnan(metric_pred))
+        overall_metrics = normalize_overall_metrics(
+            batch_regression_metrics(metric_pred[valid_mask], y_true[valid_mask])
+        )
+        temp_metrics = temperature_stratified_metrics(metric_df, metric_pred)
+        solubility_metrics = solubility_range_metrics(metric_df, metric_pred)
+        solvent_type_metrics, by_solvent = solvent_metrics(metric_df, metric_pred)
+        aux_metrics = aux_data_metrics(metric_df, metric_pred)
+        row_indices = (
+            metric_df["row_index"].astype(int).to_numpy()
+            if "row_index" in metric_df.columns
+            else metric_df.index.to_numpy(dtype=int)
+        )
+        predictions_payload = {
+            "true_ln_x2": y_true[valid_mask].tolist(),
+            "pred_ln_x2": metric_pred[valid_mask].tolist(),
+            "row_indices": row_indices[valid_mask].tolist(),
+        }
+        n_valid = int(valid_mask.sum())
+    print(f"✓ Got {n_valid} valid supervised predictions")
+
     print("\n[4/4] Computing metrics...")
-    
-    metric_df, metric_pred = supervised_eval_view(df, y_pred)
-    y_true = metric_df['ln_x2'].values
-    overall_metrics = compute_regression_metrics(y_true, metric_pred)
-    temp_metrics = temperature_stratified_metrics(metric_df, metric_pred)
-    solubility_metrics = solubility_range_metrics(metric_df, metric_pred)
-    solvent_type_metrics, by_solvent = solvent_metrics(metric_df, metric_pred)
-    aux_metrics = aux_data_metrics(metric_df, metric_pred)
     
     # Print summary
     print("\n" + "=" * 70)
@@ -323,12 +410,12 @@ def main() -> None:
             print("    Insufficient data")
     
     # Save results
-    valid_mask = ~(np.isnan(y_true) | np.isnan(metric_pred))
-
     results = build_report_payload(
         "evaluation",
         metadata={
-            "checkpoint": args.tgnn_checkpoint,
+            "checkpoint": checkpoint_path,
+            "model_family": model_family,
+            "oracle": bool(args.oracle),
             "test_data": args.test_data,
             "sample_random_state": 42 if args.n_samples else None,
             "split": build_split_metadata(
@@ -344,7 +431,7 @@ def main() -> None:
             "test_samples": int(len(df)),
             "supervised_test_samples": int(len(metric_df)),
             "n_model_predictions": int(n_valid),
-            "n_valid_predictions": int(valid_mask.sum()),
+            "n_valid_predictions": int(n_valid),
         },
         overall=overall_metrics,
         stratified={
@@ -354,11 +441,7 @@ def main() -> None:
             "solvent": by_solvent,
             "aux_data": aux_metrics,
         },
-        predictions={
-            "true_ln_x2": y_true[valid_mask].tolist(),
-            "pred_ln_x2": metric_pred[valid_mask].tolist(),
-            "row_indices": metric_df.loc[valid_mask, "row_index"].astype(int).tolist(),
-        },
+        predictions=predictions_payload,
     )
     
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
@@ -367,10 +450,10 @@ def main() -> None:
     output_path = Path(args.output)
     manifest = build_run_manifest(
         "evaluation_report",
-        model_name=Path(str(args.tgnn_checkpoint)).name,
-        model_family="tgnn_solv",
+        model_name=Path(str(checkpoint_path)).name,
+        model_family=model_family,
         inputs={
-            "checkpoint": args.tgnn_checkpoint,
+            "checkpoint": checkpoint_path,
             "test_data": args.test_data,
         },
         outputs={"report": output_path},

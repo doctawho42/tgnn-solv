@@ -185,6 +185,8 @@ class OptunaTuner:
                 use_gc_priors_crystal=cfg.use_gc_priors_crystal,
                 use_gasteiger_charges=cfg.use_gasteiger_charges,
                 use_phys_edge_features=cfg.use_phys_edge_features,
+                use_pseudo_hansen=cfg.use_hansen_contrastive and cfg.use_pseudo_hansen,
+                pseudo_hansen_weight_discount=cfg.pseudo_hansen_weight_discount,
                 seed=seed,
             )
 

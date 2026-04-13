@@ -160,6 +160,10 @@ def load_data(
         use_gc_priors_crystal=config.use_gc_priors_crystal,
         use_gasteiger_charges=config.use_gasteiger_charges,
         use_phys_edge_features=config.use_phys_edge_features,
+        use_pseudo_hansen=(
+            config.use_hansen_contrastive and config.use_pseudo_hansen
+        ),
+        pseudo_hansen_weight_discount=config.pseudo_hansen_weight_discount,
         seed=seed,
     )
 

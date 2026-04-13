@@ -1071,9 +1071,21 @@ class TGNNSolv(nn.Module):
             "gate": confidence.mean(),
             "moe_gate": moe_gate,
             "attn_maps": attn_maps,
+            "representations": {
+                "g_sol_pre": g_sol_pre,
+                "g_slv_pre": g_slv_pre,
+                "g_sol_post": g_sol_post,
+                "g_slv_post": g_slv_post,
+                "g_pair": g_pair,
+            },
         }
-        if timp_channel_probes is not None:
-            output["timp_channel_probes"] = timp_channel_probes
+        if (
+            self.is_timp
+            and g_sol_pre_parts["disp"] is not None
+            and g_sol_pre_parts["polar"] is not None
+            and g_slv_pre_parts["disp"] is not None
+            and g_slv_pre_parts["polar"] is not None
+        ):
             output["timp_channels"] = {
                 "solute_disp": g_sol_pre_parts["disp"],
                 "solute_polar": g_sol_pre_parts["polar"],
@@ -1082,6 +1094,8 @@ class TGNNSolv(nn.Module):
                 "solvent_polar": g_slv_pre_parts["polar"],
                 "solvent_combined": g_slv_pre_parts["combined"],
             }
+        if timp_channel_probes is not None:
+            output["timp_channel_probes"] = timp_channel_probes
         if self.cfg.use_oracle_injection:
             output["oracle_injection_masks"] = oracle_injection_masks
         if self.cfg.use_gc_priors_crystal:

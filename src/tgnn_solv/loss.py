@@ -18,6 +18,8 @@ Components:
   vant_hoff_local : Local linearity in ln(x₂) vs 1/T for same-pair batches
   moe_balance: Encourage balanced MoE expert usage
   walden    : Walden-rule entropy-of-fusion consistency for unsupervised samples
+  hansen_contrastive_* : Align molecular / TIMP-channel / pair latent distances
+                         with Hansen distances when enabled
 """
 
 from __future__ import annotations
@@ -30,6 +32,12 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from .config import TGNNSolvConfig
+from .hansen_contrastive import (
+    ChannelHansenContrastiveLoss,
+    HansenContrastiveLoss,
+    PairHansenContrastiveLoss,
+    channel_orthogonality_penalty,
+)
 
 if TYPE_CHECKING:
     from .model import TGNNSolv
@@ -69,6 +77,10 @@ class TGNNSolvLoss(nn.Module):
             "moe_balance": 0.02,
             "descriptor_prior": 0.0,
             "group_prior": 0.0,
+            "hansen_contrastive_mol": 0.0,
+            "hansen_contrastive_channel": 0.0,
+            "hansen_contrastive_pair": 0.0,
+            "hansen_channel_orth": 0.0,
         }
         if weights is not None:
             self.default_weights.update(weights)
@@ -78,6 +90,15 @@ class TGNNSolvLoss(nn.Module):
         self.S_hansen = 5.0
         self.S_bridge = 3.0
         self.huber_delta = 1.0
+        self.hansen_contrastive = HansenContrastiveLoss(
+            temperature=cfg.hansen_contrastive_temperature
+        )
+        self.channel_hansen_contrastive = ChannelHansenContrastiveLoss(
+            temperature=cfg.hansen_contrastive_temperature
+        )
+        self.pair_hansen_contrastive = PairHansenContrastiveLoss(
+            temperature=cfg.hansen_contrastive_temperature
+        )
 
     def huber_loss(
         self, pred: Tensor, target: Tensor, delta: float | None = None
@@ -356,6 +377,96 @@ class TGNNSolvLoss(nn.Module):
             and w.get("group_prior", 0) > 0
         ):
             losses["group_prior"] = group_prior_reg
+
+        if self.cfg.use_hansen_contrastive:
+            representations = output.get("representations", {})
+            if not isinstance(representations, dict):
+                representations = {}
+            g_sol = representations.get("g_sol_pre")
+            if (
+                isinstance(g_sol, Tensor)
+                and w.get("hansen_contrastive_mol", 0) > 0
+            ):
+                hansen_target = targets.get(
+                    "hansen_sol_effective",
+                    targets.get("hansen_sol"),
+                )
+                hansen_mask = targets.get(
+                    "hansen_contrastive_mask",
+                    targets.get("hansen_mask"),
+                )
+                if isinstance(hansen_target, Tensor) and isinstance(hansen_mask, Tensor):
+                    sample_weight = targets.get("hansen_sol_contrastive_weight")
+                    losses["hansen_contrastive_mol"] = self.hansen_contrastive(
+                        g_sol,
+                        hansen_target.to(dev),
+                        hansen_mask.to(dev),
+                        sample_weight=(
+                            sample_weight.to(dev)
+                            if isinstance(sample_weight, Tensor)
+                            else None
+                        ),
+                    )
+
+            timp_channels = output.get("timp_channels", {})
+            if not isinstance(timp_channels, dict):
+                timp_channels = {}
+            g_disp = timp_channels.get("solute_disp")
+            g_polar = timp_channels.get("solute_polar")
+            if w.get("hansen_contrastive_channel", 0) > 0:
+                hansen_target = targets.get(
+                    "hansen_sol_effective",
+                    targets.get("hansen_sol"),
+                )
+                hansen_mask = targets.get(
+                    "hansen_contrastive_mask",
+                    targets.get("hansen_mask"),
+                )
+                if isinstance(hansen_target, Tensor) and isinstance(hansen_mask, Tensor):
+                    sample_weight = targets.get("hansen_sol_contrastive_weight")
+                    losses["hansen_contrastive_channel"] = (
+                        self.channel_hansen_contrastive(
+                            g_disp if isinstance(g_disp, Tensor) else None,
+                            g_polar if isinstance(g_polar, Tensor) else None,
+                            hansen_target.to(dev),
+                            hansen_mask.to(dev),
+                            sample_weight=(
+                                sample_weight.to(dev)
+                                if isinstance(sample_weight, Tensor)
+                                else None
+                            ),
+                        )
+                    )
+            if (
+                isinstance(g_disp, Tensor)
+                and isinstance(g_polar, Tensor)
+                and w.get("hansen_channel_orth", 0) > 0
+            ):
+                losses["hansen_channel_orth"] = channel_orthogonality_penalty(
+                    g_disp,
+                    g_polar,
+                )
+
+            g_pair = representations.get("g_pair")
+            pair_Ra = targets.get("pair_Ra")
+            pair_mask = targets.get("pair_hansen_mask")
+            if (
+                isinstance(g_pair, Tensor)
+                and isinstance(pair_Ra, Tensor)
+                and isinstance(pair_mask, Tensor)
+                and w.get("hansen_contrastive_pair", 0) > 0
+            ):
+                pair_weight = targets.get("pair_hansen_weight")
+                losses["hansen_contrastive_pair"] = self.pair_hansen_contrastive(
+                    g_pair,
+                    pair_Ra.to(dev),
+                    pair_mask.to(dev),
+                    sample_weight=(
+                        pair_weight.to(dev)
+                        if isinstance(pair_weight, Tensor)
+                        else None
+                    ),
+                )
 
         if self.cfg.use_walden_check and self.cfg.walden_weight > 0:
             losses["walden"] = self._walden_loss(output, targets, dev)
