@@ -20,6 +20,8 @@ Components:
   walden    : Walden-rule entropy-of-fusion consistency for unsupervised samples
   hansen_contrastive_* : Align molecular / TIMP-channel / pair latent distances
                          with Hansen distances when enabled
+  aux_direct_sol : training-only direct solubility head on pair representation
+                   to feed gradients into interaction layers
 """
 
 from __future__ import annotations
@@ -81,6 +83,7 @@ class TGNNSolvLoss(nn.Module):
             "hansen_contrastive_channel": 0.0,
             "hansen_contrastive_pair": 0.0,
             "hansen_channel_orth": 0.0,
+            "aux_direct_sol": 0.0,
         }
         if weights is not None:
             self.default_weights.update(weights)
@@ -161,6 +164,7 @@ class TGNNSolvLoss(nn.Module):
         T_m_gc: Tensor | None = None,
         dH_fus_gc: Tensor | None = None,
         dCp_fus_gc: Tensor | None = None,
+        detach_crystal_from_encoder: bool = False,
     ) -> tuple[Tensor, dict[str, float]]:
         w = weights if weights is not None else self.default_weights
         losses = {}
@@ -180,6 +184,16 @@ class TGNNSolvLoss(nn.Module):
         if w.get("sol", 0) > 0 and sol_mask.any():
             losses["sol"] = self.huber_loss(
                 output["ln_x2"][sol_mask],
+                targets["ln_x2"].to(dev)[sol_mask],
+            )
+
+        if (
+            w.get("aux_direct_sol", 0) > 0
+            and sol_mask.any()
+            and isinstance(output.get("ln_x2_aux"), Tensor)
+        ):
+            losses["aux_direct_sol"] = self.huber_loss(
+                output["ln_x2_aux"][sol_mask],
                 targets["ln_x2"].to(dev)[sol_mask],
             )
 
@@ -292,6 +306,7 @@ class TGNNSolvLoss(nn.Module):
                     T_m_gc=T_m_gc,
                     dH_fus_gc=dH_fus_gc,
                     dCp_fus_gc=dCp_fus_gc,
+                    detach_crystal_from_encoder=detach_crystal_from_encoder,
                 )
 
         # ============================================================
@@ -615,6 +630,7 @@ class TGNNSolvLoss(nn.Module):
         T_m_gc: Tensor | None = None,
         dH_fus_gc: Tensor | None = None,
         dCp_fus_gc: Tensor | None = None,
+        detach_crystal_from_encoder: bool = False,
     ) -> Tensor:
         """Penalize dx₂/dT < 0 using the configured solver path."""
         T_var = T.detach().requires_grad_(True)
@@ -641,6 +657,7 @@ class TGNNSolvLoss(nn.Module):
                     dH_fus_gc=dH_fus_gc,
                     dCp_fus_gc=dCp_fus_gc,
                     targets=targets,
+                    detach_crystal_from_encoder=detach_crystal_from_encoder,
                 )
                 d_lnx2_dT = torch.autograd.grad(
                     out["ln_x2"].sum(),

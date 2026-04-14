@@ -36,6 +36,15 @@ def make_small_config() -> TGNNSolvConfig:
     )
 
 
+def make_aux_direct_config() -> TGNNSolvConfig:
+    """Reduced config with the training-only auxiliary solubility head enabled."""
+    cfg = make_small_config()
+    cfg.use_aux_direct_sol_loss = True
+    cfg.aux_direct_sol_loss_weight = 0.1
+    cfg.aux_direct_sol_loss_phase3_weight = 0.01
+    return cfg
+
+
 def make_split_late_config() -> TGNNSolvConfig:
     """Create a reduced config that exercises the asymmetric late encoder path."""
     return TGNNSolvConfig(
@@ -261,6 +270,7 @@ def run_model(
     batch: tuple[object, object, torch.Tensor, torch.Tensor, dict[str, torch.Tensor]],
     *,
     targets: dict[str, torch.Tensor] | None = None,
+    detach_crystal_from_encoder: bool = False,
 ) -> dict[str, torch.Tensor]:
     """Run the model on a test batch using the real forward signature."""
     solute_batch, solvent_batch, temperature, solvent_type, extras = batch
@@ -279,6 +289,7 @@ def run_model(
         dH_fus_gc=extras.get("dH_fus_gc"),
         dCp_fus_gc=extras.get("dCp_fus_gc"),
         targets=targets,
+        detach_crystal_from_encoder=detach_crystal_from_encoder,
     )
 
 
@@ -319,6 +330,41 @@ class TestForwardPass:
         assert expected_keys.issubset(out.keys()), f"Unexpected output keys: {sorted(out.keys())}"
         assert "tau_ref_12" in out["nrtl_params"]
         assert "tau_ref_21" in out["nrtl_params"]
+
+    def test_aux_direct_solubility_head_forward(self) -> None:
+        """Optional auxiliary head returns a training-only ln(x2) prediction."""
+        model = TGNNSolv(cfg=make_aux_direct_config())
+        model.eval()
+        batch = make_test_batch([("CCO", "O", 298.15), ("CC(=O)O", "CCO", 310.0)])
+        out = run_model(model, batch)
+
+        assert "ln_x2_aux" in out
+        assert out["ln_x2_aux"].shape == out["ln_x2"].shape
+        assert torch.isfinite(out["ln_x2_aux"]).all()
+
+    def test_detach_crystal_from_encoder_blocks_crystal_gradients(self) -> None:
+        """Crystal head can update itself without backpropagating into encoder."""
+        cfg = make_aux_direct_config()
+        cfg.detach_crystal_from_encoder = True
+        model = TGNNSolv(cfg=cfg)
+        model.train()
+        batch = make_test_batch([("CCO", "O", 298.15), ("CC(=O)O", "CCO", 310.0)])
+
+        out = run_model(model, batch, detach_crystal_from_encoder=True)
+        loss = out["fusion_params"]["T_m"].mean()
+        loss.backward()
+
+        encoder_grad_norm = 0.0
+        for name, param in model.named_parameters():
+            if name.startswith("encoder.") and param.grad is not None:
+                encoder_grad_norm += float(param.grad.abs().sum())
+        fusion_grad_norm = 0.0
+        for name, param in model.named_parameters():
+            if name.startswith("head_fusion.") and param.grad is not None:
+                fusion_grad_norm += float(param.grad.abs().sum())
+
+        assert encoder_grad_norm == 0.0
+        assert fusion_grad_norm > 0.0
 
     def test_no_nan_output(self, small_model: TGNNSolv) -> None:
         """Valid molecular pairs do not produce NaN or Inf outputs."""

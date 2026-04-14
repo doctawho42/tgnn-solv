@@ -163,6 +163,14 @@ class TGNNSolv(nn.Module):
         self.head_fusion = FusionHead(D_r, cfg)
         self.fusion_head = self.head_fusion
         self.head_nrtl = NRTLHead(cfg.pair_dim, cfg)
+        self.aux_direct_sol_head = None
+        if cfg.use_aux_direct_sol_loss:
+            self.aux_direct_sol_head = nn.Sequential(
+                nn.Linear(cfg.pair_dim, cfg.hidden_dim),
+                nn.SiLU(),
+                nn.Dropout(cfg.dropout),
+                nn.Linear(cfg.hidden_dim, 1),
+            )
         self.head_hansen = HansenHead(D_r, cfg)
         self.head_aux = AuxPropsHead(D_r, cfg)
         self.solute_fp_adapter = None
@@ -732,6 +740,7 @@ class TGNNSolv(nn.Module):
             dCp_fus_gc: Optional[torch.Tensor] = None,
             targets: Optional[Dict[str, torch.Tensor | object]] = None,
             force_oracle_injection: bool = False,
+            detach_crystal_from_encoder: Optional[bool] = None,
             return_intermediates: bool = False,  # ✦ NEW
     ) -> Dict[str, torch.Tensor]:
         """
@@ -964,8 +973,14 @@ class TGNNSolv(nn.Module):
             g_pair, moe_gate = self.solvent_moe(g_pair, solvent_type)
 
         # ---- 6. Prediction heads ----
+        detach_crystal = (
+            self.cfg.detach_crystal_from_encoder
+            if detach_crystal_from_encoder is None
+            else bool(detach_crystal_from_encoder)
+        )
+        g_sol_for_crystal = g_sol_pre.detach() if detach_crystal else g_sol_pre
         fusion_params = self.head_fusion(
-            g_sol_pre,
+            g_sol_for_crystal,
             T_m_gc=solute_T_m_gc,
             dH_fus_gc=solute_dH_fus_gc,
             dCp_fus_gc=solute_dCp_fus_gc,
@@ -978,6 +993,9 @@ class TGNNSolv(nn.Module):
             )
         )
         nrtl_params = self.head_nrtl(g_pair, temp_feat=nrtl_t_feat)
+        ln_x2_aux = None
+        if self.aux_direct_sol_head is not None:
+            ln_x2_aux = self.aux_direct_sol_head(g_pair).squeeze(-1)
 
         # ---- 7. SLE solver (float32 for numerical stability) ----
         with torch.amp.autocast(device_type='cpu', enabled=False):
@@ -1079,6 +1097,8 @@ class TGNNSolv(nn.Module):
                 "g_pair": g_pair,
             },
         }
+        if ln_x2_aux is not None:
+            output["ln_x2_aux"] = ln_x2_aux
         if (
             self.is_timp
             and g_sol_pre_parts["disp"] is not None
@@ -1176,6 +1196,11 @@ class TGNNSolv(nn.Module):
                 # Physics path vs learned path vs final
                 "ln_x2_physics": physics_out["ln_x2"],
                 "ln_x2_direct": ln_x2_direct,
+                "ln_x2_aux": (
+                    ln_x2_aux
+                    if ln_x2_aux is not None
+                    else torch.zeros_like(ln_x2)
+                ),
                 "ln_x2_final": ln_x2,
                 "ln_x2_proposal": proposal_out["ln_x2"],
                 # Correction gate: σ(w) per sample

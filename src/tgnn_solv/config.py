@@ -89,6 +89,10 @@ class TGNNSolvConfig:
     use_pseudo_hansen: bool = True
     pseudo_hansen_weight_discount: float = 0.3
     hansen_contrastive_temperature: float = 0.1
+    use_aux_direct_sol_loss: bool = False
+    aux_direct_sol_loss_weight: float = 0.1
+    aux_direct_sol_loss_phase3_weight: float = 0.01
+    detach_crystal_from_encoder: bool = False
 
     # --- Physics constants (NOT learnable) ---
     R: float = 8.314          # Gas constant, J/(mol·K)
@@ -152,6 +156,7 @@ class TGNNSolvConfig:
     early_stopping_patience: Optional[int] = None
     early_stopping_phase3_patience: Optional[int] = None
     early_stopping_min_epochs: int = 10
+    probe_every: int = 0
 
     phase1_loss_weights: Optional[Dict[str, float]] = None
     phase2_loss_weights: Optional[Dict[str, float]] = None

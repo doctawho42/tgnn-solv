@@ -392,6 +392,8 @@ def _invoke_tgnn(
         solvent_type=targets.get("solvent_type"),
         solute_morgan_fp=targets.get("solute_morgan_fp"),
         solvent_morgan_fp=targets.get("solvent_morgan_fp"),
+        solute_descriptors=targets.get("solute_descriptors"),
+        solvent_descriptors=targets.get("solvent_descriptors"),
         solute_descriptor_prior_features=targets.get("solute_descriptor_prior_features"),
         solvent_descriptor_prior_features=targets.get("solvent_descriptor_prior_features"),
         solute_group_prior_features=targets.get("solute_group_prior_features"),

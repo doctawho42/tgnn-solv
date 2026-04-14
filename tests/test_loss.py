@@ -237,6 +237,29 @@ class TestBridgeAndWaldenControls:
         assert trainer.phase_weights[2]["bridge"] == 0.02
         assert trainer.phase_weights[3]["bridge"] == 0.07
 
+    def test_aux_direct_solubility_weight_schedule(self) -> None:
+        """Auxiliary direct solubility loss is phase-gated by the trainer."""
+        cfg = TGNNSolvConfig(
+            hidden_dim=32,
+            n_gnn_layers=2,
+            n_cross_attn_layers=1,
+            n_attn_heads=4,
+            pair_dim=64,
+            solvent_moe_hidden=64,
+            solvent_type_emb_dim=8,
+            n_iter_train=2,
+            n_iter_eval=2,
+            set2set_steps=2,
+            use_aux_direct_sol_loss=True,
+            aux_direct_sol_loss_weight=0.1,
+            aux_direct_sol_loss_phase3_weight=0.01,
+        )
+        trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+
+        assert trainer.phase_weights[1]["aux_direct_sol"] == 0.0
+        assert trainer.phase_weights[2]["aux_direct_sol"] == 0.1
+        assert trainer.phase_weights[3]["aux_direct_sol"] == 0.01
+
     def test_oracle_injection_probability_anneals_over_phase2(self) -> None:
         """Phase 2 should ramp oracle injection down over the last 50 epochs."""
         cfg = TGNNSolvConfig(

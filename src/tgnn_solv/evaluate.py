@@ -109,6 +109,8 @@ class Evaluator:
             solvent_type = tgt.get("solvent_type")
             solute_morgan_fp = tgt.get("solute_morgan_fp")
             solvent_morgan_fp = tgt.get("solvent_morgan_fp")
+            solute_descriptors = tgt.get("solute_descriptors")
+            solvent_descriptors = tgt.get("solvent_descriptors")
             solute_descriptor_prior_features = tgt.get(
                 "solute_descriptor_prior_features"
             )
@@ -139,6 +141,16 @@ class Evaluator:
                 solvent_morgan_fp=(
                     solvent_morgan_fp.to(self.device)
                     if isinstance(solvent_morgan_fp, torch.Tensor)
+                    else None
+                ),
+                solute_descriptors=(
+                    solute_descriptors.to(self.device)
+                    if isinstance(solute_descriptors, torch.Tensor)
+                    else None
+                ),
+                solvent_descriptors=(
+                    solvent_descriptors.to(self.device)
+                    if isinstance(solvent_descriptors, torch.Tensor)
                     else None
                 ),
                 solute_descriptor_prior_features=(

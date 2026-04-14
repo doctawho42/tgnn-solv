@@ -58,6 +58,7 @@ DEFAULT_PHASE_WEIGHTS = {
         "hansen_contrastive_channel": 0.0,
         "hansen_contrastive_pair": 0.0,
         "hansen_channel_orth": 0.0,
+        "aux_direct_sol": 0.0,
     },
     2: {
         "sol": 1.0, "T_m": 0.05, "dH": 0.05, "hansen": 0.05,
@@ -77,6 +78,7 @@ DEFAULT_PHASE_WEIGHTS = {
         "hansen_contrastive_channel": 0.0,
         "hansen_contrastive_pair": 0.0,
         "hansen_channel_orth": 0.0,
+        "aux_direct_sol": 0.0,
     },
     3: {
         "sol": 1.0, "T_m": 0.03, "dH": 0.03, "hansen": 0.03,
@@ -96,6 +98,7 @@ DEFAULT_PHASE_WEIGHTS = {
         "hansen_contrastive_channel": 0.0,
         "hansen_contrastive_pair": 0.0,
         "hansen_channel_orth": 0.0,
+        "aux_direct_sol": 0.0,
     },
 }
 
@@ -207,6 +210,12 @@ class TGNNSolvTrainer:
                     defaults[key] = value
             if "hansen_channel_orth" not in override_keys:
                 defaults["hansen_channel_orth"] = self.cfg.hansen_contrastive_orth_weight
+        if self.cfg.use_aux_direct_sol_loss and "aux_direct_sol" not in override_keys:
+            defaults["aux_direct_sol"] = {
+                1: 0.0,
+                2: self.cfg.aux_direct_sol_loss_weight,
+                3: self.cfg.aux_direct_sol_loss_phase3_weight,
+            }[phase]
         return defaults
 
     def state_dict(self) -> TrainerStateDict:
@@ -715,6 +724,9 @@ class TGNNSolvTrainer:
                     dH_fus_gc=dH_fus_gc,
                     dCp_fus_gc=dCp_fus_gc,
                     targets=targets,
+                    detach_crystal_from_encoder=(
+                        self.cfg.detach_crystal_from_encoder and phase == 2
+                    ),
                 )
 
             loss, loss_dict = self.loss_fn(
@@ -736,6 +748,9 @@ class TGNNSolvTrainer:
                 T_m_gc=T_m_gc,
                 dH_fus_gc=dH_fus_gc,
                 dCp_fus_gc=dCp_fus_gc,
+                detach_crystal_from_encoder=(
+                    self.cfg.detach_crystal_from_encoder and phase == 2
+                ),
             )
 
             loss.backward()
@@ -908,6 +923,9 @@ class TGNNSolvTrainer:
                     dH_fus_gc=dH_fus_gc,
                     dCp_fus_gc=dCp_fus_gc,
                     targets=targets,
+                    detach_crystal_from_encoder=(
+                        self.cfg.detach_crystal_from_encoder and phase == 2
+                    ),
                 )
 
             loss, _ = self.loss_fn(output, targets, weights=weights)

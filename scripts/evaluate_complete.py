@@ -275,6 +275,12 @@ def main() -> None:
     parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument(
+        '--intermediates-output',
+        type=str,
+        default=None,
+        help='Optional CSV path for TGNN-Solv intermediate physics quantities.',
+    )
+    parser.add_argument(
         '--oracle',
         action='store_true',
         help='For TGNN-Solv, force oracle crystal-target substitution where labels exist.',
@@ -346,6 +352,11 @@ def main() -> None:
             device,
             force_oracle_injection=args.oracle,
         )
+        if args.intermediates_output is not None:
+            intermediates_path = Path(args.intermediates_output)
+            intermediates_path.parent.mkdir(parents=True, exist_ok=True)
+            tgnn_df.to_csv(intermediates_path, index=False)
+            print(f"✓ Saved TGNN intermediates to {intermediates_path}")
         metric_df = tgnn_df.loc[tgnn_df["has_solubility"].astype(bool)].reset_index(drop=True)
         y_true = metric_df["ln_x2_true"].to_numpy(dtype=float)
         metric_pred = metric_df["ln_x2_final"].to_numpy(dtype=float)

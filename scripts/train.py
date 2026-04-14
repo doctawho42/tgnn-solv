@@ -254,6 +254,27 @@ def parse_args() -> argparse.Namespace:
         default="cpu",
         help="Device for the descriptor probe. Defaults to CPU to avoid contending with training.",
     )
+    parser.add_argument(
+        "--probe-every",
+        type=int,
+        default=0,
+        help=(
+            "During training, run the descriptor linear probe every N epochs "
+            "for the selected phases (0 disables probe evolution tracking)."
+        ),
+    )
+    parser.add_argument(
+        "--probe-phases",
+        type=str,
+        default="2",
+        help="Comma-separated phases for --probe-every, for example '2' or '1,2,3'.",
+    )
+    parser.add_argument(
+        "--probe-evolution-output",
+        type=str,
+        default=None,
+        help="CSV path for in-training probe evolution. Defaults to <checkpoint>_probe_evolution.csv.",
+    )
     
     return parser.parse_args()
 
@@ -449,6 +470,138 @@ def maybe_run_descriptor_probe(
     print(f"   Descriptor probe written to {probe_output_dir}")
 
 
+def parse_probe_phases(raw: str) -> set[int]:
+    """Parse a comma-separated phase list for in-training descriptor probes."""
+    phases: set[int] = set()
+    for item in str(raw).split(","):
+        item = item.strip()
+        if not item:
+            continue
+        phase = int(item)
+        if phase not in {1, 2, 3}:
+            raise ValueError("--probe-phases may only contain 1, 2, and 3.")
+        phases.add(phase)
+    return phases
+
+
+def maybe_run_probe_evolution_snapshot(
+    *,
+    model: TGNNSolv,
+    config: TGNNSolvConfig,
+    phase: int,
+    epoch_in_phase: int,
+    global_epoch: int,
+    train_data: str,
+    test_data: str | None,
+    output_csv: Path,
+    output_root: Path,
+    logger: ExperimentLogger,
+) -> None:
+    """Run a descriptor linear probe on the live model and append one CSV row."""
+    if test_data is None:
+        print("   Skipping probe evolution snapshot because no --test-data path was provided.")
+        return
+
+    from probe_gsol_descriptor_recovery import (
+        CORE_DESCRIPTOR_NAMES,
+        build_descriptor_matrix,
+        extract_solute_embeddings,
+        fit_descriptor_probes,
+        load_unique_solutes,
+    )
+    from tgnn_solv.reporting import json_safe
+
+    probe_device = next(model.parameters()).device
+    snapshot_dir = output_root / f"phase{phase}_epoch{epoch_in_phase + 1:04d}"
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+
+    was_training = model.training
+    model.eval()
+    try:
+        train_path = Path(train_data).resolve()
+        test_path = Path(test_data).resolve()
+        train_solutes = load_unique_solutes(train_path)
+        test_solutes = load_unique_solutes(test_path)
+
+        train_smiles, X_train = extract_solute_embeddings(
+            model=model,
+            smiles_list=train_solutes,
+            device=probe_device,
+            batch_size=512,
+            temperature_K=298.15,
+        )
+        test_smiles, X_test = extract_solute_embeddings(
+            model=model,
+            smiles_list=test_solutes,
+            device=probe_device,
+            batch_size=512,
+            temperature_K=298.15,
+        )
+        Y_train = build_descriptor_matrix(train_smiles)
+        Y_test = build_descriptor_matrix(test_smiles)
+        results_df, probe_summary = fit_descriptor_probes(
+            X_train=X_train,
+            X_test=X_test,
+            Y_train=Y_train,
+            Y_test=Y_test,
+            alpha=1.0,
+        )
+    finally:
+        model.train(was_training)
+
+    results_df.to_csv(snapshot_dir / "descriptor_r2.csv", index=False)
+    summary_payload = {
+        "phase": int(phase),
+        "epoch_in_phase": int(epoch_in_phase + 1),
+        "global_epoch": int(global_epoch),
+        "config": {
+            "encoder_type": str(getattr(config, "encoder_type", "mpnn")),
+            "hidden_dim": int(config.hidden_dim),
+        },
+        "summary": probe_summary,
+    }
+    (snapshot_dir / "summary.json").write_text(
+        json.dumps(json_safe(summary_payload), indent=2),
+        encoding="utf-8",
+    )
+
+    core_df = (
+        results_df[results_df["descriptor"].isin(CORE_DESCRIPTOR_NAMES)]
+        .set_index("descriptor")
+    )
+    tracked = ("MolLogP", "TPSA", "NumHDonors", "NumHAcceptors", "FractionCSP3", "MolWt")
+    row: dict[str, float | int | str | None] = {
+        "global_epoch": int(global_epoch),
+        "phase": int(phase),
+        "epoch_in_phase": int(epoch_in_phase + 1),
+        "median_R2": probe_summary.get("median_r2_test"),
+        "mean_R2": probe_summary.get("mean_r2_test"),
+        "n_descriptors": probe_summary.get("n_descriptors_with_finite_r2"),
+    }
+    for descriptor in tracked:
+        if descriptor in core_df.index:
+            value = core_df.loc[descriptor, "r2_test"]
+            row[f"{descriptor}_R2"] = None if pd.isna(value) else float(value)
+        else:
+            row[f"{descriptor}_R2"] = None
+
+    output_csv.parent.mkdir(parents=True, exist_ok=True)
+    row_df = pd.DataFrame([row])
+    if output_csv.exists():
+        row_df.to_csv(output_csv, mode="a", header=False, index=False)
+    else:
+        row_df.to_csv(output_csv, index=False)
+
+    logger.log_artifact(f"probe_evolution_phase{phase}_epoch{epoch_in_phase + 1}", row)
+    median = row.get("median_R2")
+    median_str = "NA" if median is None else f"{float(median):.3f}"
+    print(
+        "   Probe evolution snapshot: "
+        f"phase={phase}, epoch={epoch_in_phase + 1}, "
+        f"global={global_epoch}, median_R2={median_str}"
+    )
+
+
 def load_data(
     csv_path: str,
     config: TGNNSolvConfig,
@@ -629,6 +782,8 @@ def main() -> None:
                 config.epochs_phase2 = int(args.epochs_phase2)
             if args.epochs_phase3 is not None:
                 config.epochs_phase3 = int(args.epochs_phase3)
+            if args.probe_every > 0:
+                config.probe_every = int(args.probe_every)
         elif any(
             override is not None
             for override in (
@@ -650,6 +805,8 @@ def main() -> None:
                 "   Applying resume-time batch_size override for data loading: "
                 f"{config.batch_size}"
             )
+        if resume_checkpoint is not None and args.probe_every > 0:
+            config.probe_every = int(args.probe_every)
 
         if resume_checkpoint is None:
             maybe_fit_gc_tm_calibration(args.train_data, config)
@@ -827,6 +984,43 @@ def main() -> None:
                 f"to {checkpoint_path}"
             )
 
+        probe_phases = parse_probe_phases(args.probe_phases)
+        probe_evolution_csv = (
+            Path(args.probe_evolution_output).expanduser().resolve()
+            if args.probe_evolution_output is not None
+            else checkpoint_path.with_name(f"{checkpoint_path.stem}_probe_evolution.csv")
+        )
+        probe_evolution_root = probe_evolution_csv.with_suffix("")
+
+        def on_epoch_end(state: dict) -> None:
+            maybe_save_resume_checkpoint(state)
+            probe_every = int(getattr(config, "probe_every", 0))
+            if probe_every <= 0:
+                return
+            phase = int(state["phase"])
+            next_epoch = int(state["next_epoch_in_phase"])
+            if phase not in probe_phases or next_epoch <= 0:
+                return
+            if next_epoch % probe_every != 0:
+                return
+            phase_offsets = {
+                1: 0,
+                2: int(config.epochs_phase1),
+                3: int(config.epochs_phase1 + config.epochs_phase2),
+            }
+            maybe_run_probe_evolution_snapshot(
+                model=model,
+                config=config,
+                phase=phase,
+                epoch_in_phase=next_epoch - 1,
+                global_epoch=phase_offsets[phase] + next_epoch,
+                train_data=args.train_data,
+                test_data=args.test_data,
+                output_csv=probe_evolution_csv,
+                output_root=probe_evolution_root,
+                logger=logger,
+            )
+
         resume_state = (
             resume_checkpoint.get("resume_state")
             if resume_checkpoint is not None
@@ -839,7 +1033,7 @@ def main() -> None:
                 train_loader,
                 val_loader,
                 resume_state=resume_state,
-                on_epoch_end=maybe_save_resume_checkpoint,
+                on_epoch_end=on_epoch_end,
             )
 
         # Save checkpoint
