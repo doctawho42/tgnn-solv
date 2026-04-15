@@ -153,6 +153,30 @@ Trade-off:
 - richest maintained TIMP path
 - adds one more interaction-time inductive bias beyond the encoder itself
 
+### `paper_config_hansen_contrastive.yaml`
+
+Use this when:
+
+- you want the TIMP backbone plus explicit representation-level Hansen-distance
+  regularization
+- you want molecular, channel, and pair embeddings to reflect measured or
+  pseudo-Hansen structure
+- you are running channel-analysis follow-up work rather than the default
+  headline benchmark
+
+Key properties:
+
+- everything from `paper_config_timp.yaml`
+- `use_hansen_contrastive=true`
+- `use_pseudo_hansen=true`
+- explicit `hansen_contrastive_mol`, `hansen_contrastive_channel`, and
+  `hansen_contrastive_pair` phase weights
+
+Trade-off:
+
+- strongest TIMP-structure supervision path currently in the repo
+- more diagnostic / representation-focused than the maintained default
+
 ### `paper_config_tuned_pretrained.yaml`
 
 Use this when:
@@ -286,6 +310,27 @@ Key property:
 
 This is mainly an architectural ablation, not the default production config.
 
+### `paper_config_tuned_interaction_rescue.yaml`
+
+Use this when:
+
+- you suspect the physics bottleneck is under-training the interaction block
+- you want a train-only auxiliary direct `ln(x2)` head on the pair
+  representation
+- you plan to inspect gradient-flow diagnostics rather than report a new
+  default benchmark
+
+Key properties:
+
+- tuned TGNN baseline plus `use_aux_direct_sol_loss=true`
+- `aux_direct_sol` is active in Phases 2 and 3
+- `detach_crystal_from_encoder=true`
+
+Trade-off:
+
+- useful for diagnosing weak interaction gradients without removing the solver
+- intentionally not the default maintained comparison config
+
 ## Maintained DirectGNN Configs
 
 ### `paper_config_directgnn_tuned.yaml`
@@ -368,10 +413,12 @@ Do not use it for architectural conclusions.
 | tuned TGNN + GPS encoder | `paper_config_tuned_gps.yaml` |
 | tuned TGNN + TIMP encoder | `paper_config_timp.yaml` |
 | tuned TGNN + TIMP + thermo cross-attn | `paper_config_timp_full.yaml` |
+| TIMP + Hansen-contrastive regularization | `paper_config_hansen_contrastive.yaml` |
 | tuned TGNN + Stage 0 pretraining | `paper_config_tuned_pretrained.yaml` |
 | TGNN with crystal priors | `paper_config_gc_priors.yaml` |
 | TGNN without bridge | `paper_config_no_bridge.yaml` |
 | strongest structured TGNN variant | `paper_config_combined.yaml` |
+| TGNN interaction-gradient rescue | `paper_config_tuned_interaction_rescue.yaml` |
 | matched no-physics baseline | `paper_config_directgnn_tuned.yaml` |
 | strongest in-repo non-physics baseline | `paper_config_directgnn_descriptors.yaml` |
 | oracle diagnosis | `paper_config_oracle.yaml` |
@@ -416,6 +463,20 @@ Compare:
 - `paper_config_tuned.yaml`
 - `paper_config_timp.yaml`
 - optionally `paper_config_timp_full.yaml`
+
+### I want to know whether TIMP channels align better with Hansen structure
+
+Compare:
+
+- `paper_config_timp.yaml`
+- `paper_config_hansen_contrastive.yaml`
+
+### I want to diagnose weak interaction gradients without deleting the solver
+
+Use:
+
+- `paper_config_tuned_interaction_rescue.yaml`
+- `scripts/analysis/diagnose_gradient_flow.py`
 
 ## Output Sidecars and Provenance
 

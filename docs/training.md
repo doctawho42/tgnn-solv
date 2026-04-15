@@ -251,7 +251,7 @@ The canonical loader path uses:
 This matters because losses such as `pair_temp_rank` and `vant_hoff_local`
 depend on seeing multiple temperatures from the same pair together.
 
-## Bridge, Walden, and Oracle Controls
+## Bridge, Walden, Contrastive, and Oracle Controls
 
 Current semantics:
 
@@ -260,6 +260,10 @@ Current semantics:
 - `configs/paper_config.yaml` therefore still trains with bridge loss through
   the phase-loss tables
 - `use_walden_check=True` adds an unsupervised consistency penalty
+- `use_hansen_contrastive=True` adds molecular, TIMP-channel, and pair
+  contrastive losses using experimental or pseudo-Hansen signals
+- `use_aux_direct_sol_loss=True` adds a train-only auxiliary direct `ln(x2)`
+  head on the pair representation for interaction-gradient rescue
 - `use_oracle_injection=True` affects solver inputs during training, not normal
   inference
 
@@ -429,6 +433,8 @@ Maintained TGNN configs:
     charges, and physical edge features
 - `configs/paper_config_timp_full.yaml`
   - TIMP plus thermo-biased cross-attention
+- `configs/paper_config_hansen_contrastive.yaml`
+  - TIMP plus Hansen-contrastive regularization with pseudo-Hansen fallback
 - `configs/paper_config_tuned_pretrained.yaml`
   - tuned TGNN intended for Stage 0 + curriculum experiments
 - `configs/paper_config_tuned_pretrained_descriptors.yaml`
@@ -445,6 +451,8 @@ Maintained TGNN configs:
   - bridge and Walden both disabled
 - `configs/paper_config_combined.yaml`
   - GC priors + no bridge + Walden + oracle injection
+- `configs/paper_config_tuned_interaction_rescue.yaml`
+  - tuned TGNN with a train-only auxiliary direct-solubility rescue head
 
 Maintained DirectGNN configs:
 
@@ -452,6 +460,13 @@ Maintained DirectGNN configs:
   - tuned no-physics baseline
 - `configs/paper_config_directgnn_descriptors.yaml`
   - descriptor-augmented DirectGNN baseline
+
+Research activity-model comparison configs:
+
+- `configs/paper_config_uniquac.yaml`
+  - activity-model comparison surface
+- `configs/paper_config_wilson.yaml`
+  - activity-model comparison surface
 
 ## Experiment Runners
 
@@ -522,6 +537,9 @@ injection is disabled during training for that specific comparison.
 - Pair-temperature batching is important if you want temperature-consistency
   losses such as `pair_temp_rank` and `vant_hoff_local` to have enough same-pair
   temperature structure inside a batch.
+- `paper_config_hansen_contrastive.yaml` and
+  `paper_config_tuned_interaction_rescue.yaml` are diagnostic/research configs,
+  not the default maintained benchmark baselines.
 
 <div class="tgnn-page-nav" markdown="1">
 

@@ -28,8 +28,11 @@ For contributor navigation, the package now also exposes grouped namespaces:
 - `tgnn_solv.physics`
 - `tgnn_solv.training`
 - `tgnn_solv.evaluation`
+- `tgnn_solv.baselines`
+- `tgnn_solv.research`
 - `tgnn_solv.chemistry`
 - `tgnn_solv.core`
+- `tgnn_solv.applications`
 
 Those grouped imports are thin compatibility re-exports over the legacy flat
 modules. They do not change runtime behavior.
@@ -180,6 +183,11 @@ useful when you want to test whether missing chemistry signal is upstream of
 the thermodynamic head rather than inside it.
 
 Optional solvent-type routing is handled by `SolventTypeMoE`.
+
+When `use_aux_direct_sol_loss=True`, the same pair representation also feeds a
+train-only auxiliary direct `ln(x2)` head. That head is intended as a
+gradient-rescue / diagnosis aid; it does not replace the solver-facing output
+at inference time.
 
 ### 5. `FusionHead` crystal-property prediction
 
@@ -379,6 +387,15 @@ implementation’s decision path.
 
 The canonical paper budget remains `50 / 200 / 50`.
 
+Two train-only extensions are easy to miss:
+
+- `use_hansen_contrastive=True`
+  - adds molecular, TIMP-channel, and pair Hansen-distance alignment losses
+    using measured or pseudo-Hansen targets
+- `use_aux_direct_sol_loss=True`
+  - adds the auxiliary direct-solubility head on the pair representation
+    during training only
+
 ## Pair-Aware Temperature Batching
 
 The main TGNN training path uses pair-aware batching by default so losses like:
@@ -396,16 +413,22 @@ DirectGNN reuses the same batching controls where applicable.
 The easiest configuration flags to miss are:
 
 - `encoder_role_mode`
+- `encoder_type`
 - `nrtl_tau_mode`
 - `use_morgan_features`
 - `use_descriptor_augmentation`
 - `use_descriptor_priors`
 - `use_group_priors`
 - `use_gc_priors_crystal`
+- `use_gasteiger_charges`
+- `use_phys_edge_features`
+- `use_thermo_cross_attention`
 - `gc_prior_tm_scale`
 - `gc_prior_tm_bias`
 - `gc_prior_residual_freeze_epochs`
 - `include_water_solubility`
+- `use_hansen_contrastive`
+- `use_aux_direct_sol_loss`
 - `use_oracle_injection`
 - `bridge_loss_weight`
 - `use_walden_check`
@@ -451,6 +474,10 @@ Optional keys appear when their feature paths are enabled:
 - `solute_descriptor_prior_features`, `solvent_descriptor_prior_features`
 - `solute_group_prior_features`, `solvent_group_prior_features`
 - `T_m_gc`, `dH_fus_gc`, `dCp_fus_gc`
+- `hansen_sol_effective`, `hansen_slv_effective`
+- `hansen_contrastive_mask`, `hansen_slv_contrastive_mask`
+- `hansen_sol_contrastive_weight`, `hansen_slv_contrastive_weight`
+- `pair_Ra`, `pair_hansen_mask`
 
 ## Checkpoints and Resume
 

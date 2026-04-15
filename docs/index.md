@@ -8,9 +8,10 @@ Physics-informed graph learning for solid-liquid equilibrium solubility
 prediction.
 
 TGNN-Solv does not predict solubility directly by default. It predicts crystal
-and interaction parameters, solves the SLE equation with an NRTL activity
-model, and only then applies a bounded correction. The central question across
-this repository is whether that explicit thermodynamic bottleneck helps
+and interaction parameters, solves the SLE equation with a default NRTL
+activity model, and only then applies a bounded correction. The central
+question across this repository is whether that explicit thermodynamic
+bottleneck helps
 relative to the same graph backbone trained directly on `ln(x2)`.
 
 <div class="tgnn-button-row" markdown="1">
@@ -26,11 +27,13 @@ relative to the same graph backbone trained directly on `ln(x2)`.
 <div class="tgnn-chip-list">
   <span class="tgnn-chip">Default strict split: <code>solute_scaffold</code></span>
   <span class="tgnn-chip">Maintained TGNN baseline: <code>paper_config_tuned.yaml</code></span>
-  <span class="tgnn-chip">Encoder options: <code>mpnn</code> or <code>gps</code></span>
+  <span class="tgnn-chip">Encoder options: <code>mpnn</code>, <code>gps</code>, or <code>timp</code></span>
   <span class="tgnn-chip">Optional TGNN descriptor augmentation available</span>
+  <span class="tgnn-chip">TIMP and Hansen-contrastive variants available</span>
   <span class="tgnn-chip">Matched no-physics baseline: <code>DirectGNN</code></span>
   <span class="tgnn-chip">Structured reproduction: <code>core</code> / <code>article</code> / <code>full</code></span>
   <span class="tgnn-chip">Optional Stage 0 pretraining supported</span>
+  <span class="tgnn-chip">Water supervision kept by default</span>
   <span class="tgnn-chip">Resume-safe training supported</span>
   <span class="tgnn-chip">Interactive Experiment Lab available</span>
 </div>
@@ -50,6 +53,8 @@ The maintained comparison is:
 - `TGNN-Solv`
 - `TGNN-Solv + descriptors`
 - `TGNN-Solv + GPS encoder`
+- `TGNN-Solv + TIMP encoder`
+- `TGNN-Solv + TIMP + Hansen contrastive`
 - `TGNN-Solv + Stage 0 pretraining`
 - `DirectGNN`
 - `DirectGNN + descriptors`
@@ -65,10 +70,12 @@ This site documents the maintained paths for:
 
 - data preparation
 - training and resume support
-- Stage 0 encoder warm starts and GPS / descriptor-augmented TGNN variants
+- Stage 0 encoder warm starts and GPS / TIMP / descriptor-augmented TGNN variants
 - inference, uncertainty, and OOD checks
 - benchmark and experiment runners
+- gradient-flow, TIMP-channel, sensitivity, and weight diagnostics
 - external FastSolv / SolProp comparison
+- solvent/process/preformulation application workflows
 - `Benchmark Studio`, benchmark cards/manifests, and structured reproduction profiles
 
 </div>
@@ -141,7 +148,7 @@ That is why the site consistently presents TGNN-Solv together with:
     - [Architecture](architecture.md)
       - the TGNN forward path, DirectGNN, GC priors, and Stage 0 pretraining
     - [Training](training.md)
-      - curriculum phases, pair-aware batching, oracle injection, resume
+      - curriculum phases, pair-aware batching, auxiliary/contrastive losses, oracle injection, resume
     - [Evaluation & Inference](evaluation.md)
       - prediction APIs, uncertainty, calibration, and applicability domain
     - [Applications](applications.md)
@@ -241,8 +248,9 @@ Use these pages when you need targeted answers:
 - predicts `T_m`, `dH_fus`, `dCp_fus`, and NRTL state
 - solves the SLE equation explicitly
 - applies a bounded correction only after the solver
-- supports GC crystal priors, descriptor augmentation, GPS encoder variants,
-  and Stage 0 warm starts
+- supports GC crystal priors, descriptor augmentation, GPS and TIMP encoder
+  variants, a train-only auxiliary direct-solubility rescue head, and Stage 0
+  warm starts
 
 </div>
 

@@ -13,6 +13,7 @@ The package now exposes two parallel internal layouts:
   - `tgnn_solv.evaluation`
   - `tgnn_solv.baselines`
   - `tgnn_solv.research`
+  - `tgnn_solv.applications`
 
 ## Why Both Exist
 
@@ -59,7 +60,7 @@ from tgnn_solv.inference import load_model
 
 ### `tgnn_solv.models`
 
-- TGNN-Solv model, DirectGNN, heads, layers, and optional GPS encoder path
+- TGNN-Solv model, DirectGNN, heads, layers, and optional GPS / TIMP encoder paths
 
 ### `tgnn_solv.physics`
 
@@ -80,6 +81,11 @@ from tgnn_solv.inference import load_model
 ### `tgnn_solv.research`
 
 - ablation helpers that remain more experimental than the canonical paths
+
+### `tgnn_solv.applications`
+
+- solvent screening, process optimization, drug developability, and
+  PK-relevant solubility workflows
 
 ## Additional Maintained Modules
 

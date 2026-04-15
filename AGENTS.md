@@ -45,6 +45,10 @@ Preferred CLI navigation is now grouped by purpose under:
 - `scripts/external/`
 - `scripts/applications/`
 
+Additional research diagnostics and interpretation helpers live under:
+
+- `scripts/analysis/`
+
 Legacy top-level `scripts/*.py` entry points are intentionally retained for
 backward compatibility with imports, tests, and automation such as
 `reproduce.sh`.
@@ -115,8 +119,14 @@ Useful maintained follow-up configs:
 - `configs/paper_config_tuned_regularized_gc.yaml`
 - `configs/paper_config_tuned_regularized_descriptors.yaml`
 - `configs/paper_config_tuned_gps.yaml`
+- `configs/paper_config_timp.yaml`
+- `configs/paper_config_timp_full.yaml`
+- `configs/paper_config_hansen_contrastive.yaml`
 - `configs/paper_config_tuned_pretrained.yaml`
 - `configs/paper_config_tuned_pretrained_descriptors.yaml`
+- `configs/paper_config_tuned_interaction_rescue.yaml`
+- `configs/paper_config_uniquac.yaml`
+- `configs/paper_config_wilson.yaml`
 
 ### Train TGNN-Solv with Stage 0 pretraining
 
@@ -322,6 +332,10 @@ python scripts/evaluation/validate_physics.py \
     --checkpoint checkpoints/tgnn_solv_trained.pt \
     --test-data notebooks/data/processed/test.csv \
     --output results/physics_validation.json
+python scripts/analysis/diagnose_gradient_flow.py --help
+python scripts/analysis/analyze_timp_channels.py --help
+python scripts/analysis/sensitivity_analysis.py --help
+python scripts/analysis/weight_analysis.py --help
 ```
 
 ### Benchmark Infrastructure
@@ -389,6 +403,8 @@ The maintained `TGNNSolv` forward pass in `src/tgnn_solv/model.py` is:
 7. pair representation and optional solvent-type MoE
    - optional shared RDKit descriptor augmentation enriches the pair state and
      projects it back to `pair_dim` before the physics heads
+   - optional train-only auxiliary direct-solubility head can read the pair
+     state for interaction-gradient rescue
 8. `FusionHead`
    - standard mode: predicts `T_m`, `dH_fus`, optional `dCp_fus`
    - crystal GC mode: bounded residual around calibrated `T_m_gc`,
@@ -508,12 +524,16 @@ Current behavior:
 
 - `bridge_loss_weight` defaults to `0.0`
 - explicit phase-level bridge weights in YAML still override that default
+- `use_hansen_contrastive` is optional and off by default
+- `use_aux_direct_sol_loss` is optional and off by default
 - `use_walden_check` is optional and off by default
 - `use_oracle_injection` is train-only unless a diagnostic script explicitly
   forces it in eval mode
 
 The main maintained configs around these controls are:
 
+- `paper_config_hansen_contrastive.yaml`
+- `paper_config_tuned_interaction_rescue.yaml`
 - `paper_config_oracle.yaml`
 - `paper_config_no_bridge.yaml`
 - `paper_config_no_bridge_no_walden.yaml`
@@ -563,6 +583,10 @@ Optional keys appear when enabled:
 - `solute_descriptor_prior_features`, `solvent_descriptor_prior_features`
 - `solute_group_prior_features`, `solvent_group_prior_features`
 - `T_m_gc`, `dH_fus_gc`, `dCp_fus_gc`
+- `hansen_sol_effective`, `hansen_slv_effective`
+- `hansen_contrastive_mask`, `hansen_slv_contrastive_mask`
+- `hansen_sol_contrastive_weight`, `hansen_slv_contrastive_weight`
+- `pair_Ra`, `pair_hansen_mask`
 
 Graph featurization is now config-driven. The default corpus still uses the
 historical `35/8` node/edge layout, while TIMP runs can opt into:
@@ -582,6 +606,7 @@ All hyperparameters live in `src/tgnn_solv/config.py` in `TGNNSolvConfig`.
 
 High-signal flags that are easy to miss:
 
+- `activity_model`
 - `encoder_role_mode`
 - `nrtl_tau_mode`
 - `use_morgan_features`
@@ -597,6 +622,8 @@ High-signal flags that are easy to miss:
 - `use_phys_edge_features`
 - `use_thermo_cross_attention`
 - `thermo_cross_attention_beta_init`
+- `use_hansen_contrastive`
+- `use_aux_direct_sol_loss`
 - `include_water_solubility`
 - `use_oracle_injection`
 - `bridge_loss_weight`
@@ -620,23 +647,37 @@ Maintained config files:
 - `configs/paper_config_tuned_gps.yaml`
 - `configs/paper_config_timp.yaml`
 - `configs/paper_config_timp_full.yaml`
+- `configs/paper_config_hansen_contrastive.yaml`
 - `configs/paper_config_tuned_pretrained.yaml`
 - `configs/paper_config_tuned_pretrained_descriptors.yaml`
+- `configs/paper_config_tuned_interaction_rescue.yaml`
 - `configs/paper_config_directgnn_tuned.yaml`
 - `configs/paper_config_directgnn_descriptors.yaml`
+- `configs/paper_config_uniquac.yaml`
+- `configs/paper_config_wilson.yaml`
 - `configs/small_debug.yaml`
 
 ## Documentation Map
 
+- `docs/index.md`
+- `docs/getting_started/installation.md`
+- `docs/getting_started/quick_start.md`
 - `docs/architecture.md`
+- `docs/config_cookbook.md`
 - `docs/data_preparation.md`
 - `docs/training.md`
 - `docs/evaluation.md`
+- `docs/experiments.md`
+- `docs/results.md`
+- `docs/model_zoo.md`
+- `docs/notebooks.md`
 - `docs/applications.md`
 - `docs/experiment_lab.md`
 - `docs/baselines.md`
 - `docs/reproducing_paper.md`
 - `docs/script_reference.md`
+- `docs/faq.md`
+- `docs/troubleshooting.md`
 - `docs/repository_audit.md`
 - `docs/free_gpu_training.md`
 - `docs/presentation.md`

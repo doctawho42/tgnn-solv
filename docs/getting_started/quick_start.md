@@ -25,6 +25,10 @@ This writes:
 - additional `_solute` and `_solvent` split variants
 - `split_manifest.json`
 
+The canonical processed corpus now keeps supervised solvent-side water rows by
+default. If you need the older ablation path without aqueous supervised rows,
+rerun data preparation with `--no-include-water-solubility`.
+
 ## 2. Train the maintained tuned TGNN baseline
 
 Use the tuned TGNN config for the current architecture-comparison baseline:
@@ -41,6 +45,17 @@ python scripts/training/train.py \
 
 If CUDA is unavailable, replace `--device cuda` with `--device mps` or
 `--device cpu`.
+
+Common maintained follow-up configs on the same split:
+
+- `configs/paper_config_tuned_tgnn_descriptors.yaml`
+  - tuned TGNN plus pair-level RDKit descriptor augmentation
+- `configs/paper_config_timp.yaml`
+  - tuned TGNN plus the TIMP encoder, Gasteiger charges, and physical edge features
+- `configs/paper_config_timp_full.yaml`
+  - TIMP plus thermo-biased cross-attention
+- `configs/paper_config_tuned_pretrained.yaml`
+  - tuned TGNN intended for Stage 0 warm starts
 
 ### Resume-safe variant
 

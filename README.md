@@ -12,6 +12,8 @@ to judge whether that bottleneck helps:
 - `TGNN-Solv`: physics-first GNN with SLE + NRTL
 - `TGNN-Solv + descriptors`: same solver path with pair-level RDKit descriptor fusion
 - `TGNN-Solv + GPS`: same downstream physics path with a GPS encoder
+- `TGNN-Solv + TIMP`: same downstream physics path with thermodynamics-informed message passing
+- `TGNN-Solv + TIMP + Hansen contrastive`: TIMP with representation-level Hansen regularization
 - `TGNN-Solv + Stage 0`: warm-started encoder/readout before the main curriculum
 - `DirectGNN`: matched GNN backbone with direct `ln(x2)` prediction
 - `DirectGNN + descriptors`: DirectGNN plus shared RDKit descriptor side-channel
@@ -112,6 +114,11 @@ The preferred human-facing CLI layout is now grouped by purpose:
 - `scripts/evaluation/`
 - `scripts/experiments/`
 - `scripts/external/`
+- `scripts/applications/`
+
+Additional research diagnostics and interpretation helpers live under:
+
+- `scripts/analysis/`
 
 The old top-level `scripts/*.py` entry points are still present as a
 compatibility layer for tests, imports, and existing automation such as
@@ -129,6 +136,7 @@ The internal Python package now follows the same principle:
   - `tgnn_solv.evaluation`
   - `tgnn_solv.baselines`
   - `tgnn_solv.research`
+  - `tgnn_solv.applications`
 - legacy flat modules such as `tgnn_solv.model` and `tgnn_solv.trainer`
   remain supported as the compatibility layer
 
@@ -257,6 +265,30 @@ python scripts/training/train.py \
     --device cuda
 ```
 
+TGNN with the TIMP encoder:
+
+```bash
+python scripts/training/train.py \
+    --config configs/paper_config_timp.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_timp.pt \
+    --device cuda
+```
+
+TIMP with Hansen-contrastive regularization:
+
+```bash
+python scripts/training/train.py \
+    --config configs/paper_config_hansen_contrastive.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --checkpoint checkpoints/tgnn_timp_hansen.pt \
+    --device cuda
+```
+
 TGNN with pair-level descriptor augmentation:
 
 ```bash
@@ -349,6 +381,15 @@ python scripts/experiments/build_benchmark_release.py \
     --bundle-root results/external_baselines/article_benchmark \
     --bundle-root results/custom_benchmarks \
     --out-dir results/releases/article_benchmark_v0_1_0
+```
+
+Selected post-hoc analysis utilities:
+
+```bash
+python scripts/analysis/diagnose_gradient_flow.py --help
+python scripts/analysis/analyze_timp_channels.py --help
+python scripts/analysis/sensitivity_analysis.py --help
+python scripts/analysis/weight_analysis.py --help
 ```
 
 The full-budget runner saves:
@@ -461,17 +502,22 @@ The maintained CLI surfaces are now:
 
 ## Key Architecture Features
 
-- shared or split-late dual-graph GNN encoder
+- shared or split-late dual-graph GNN encoder with `mpnn`, `gps`, or `timp`
+  backbones
 - cross-attention or bipartite solute-solvent interaction
 - hardcoded SLE + NRTL solver with optional implicit differentiation
 - bounded parameter-space correction head instead of a free direct bypass
 - same-pair temperature batching and temperature-consistency regularization
 - optional Morgan augmentation for TGNN-Solv and DirectGNN
+- optional Gasteiger-charge and physical-edge augmentation for TIMP runs
 - optional descriptor-conditioned or fixed group-count priors for `Hansen` and
   `V_m`
 - optional crystal GC priors for `T_m`, `dH_fus`, and fixed `dCp_fus`
 - train-only affine calibration of `T_m_gc` before it reaches `FusionHead`
 - zero-initialized GC residual heads with optional early-Phase-1 freezing
+- optional train-only Hansen-contrastive regularization for molecular, TIMP,
+  and pair representations
+- optional auxiliary direct-solubility head for interaction-gradient rescue
 - optional training-time oracle injection for supervised crystal parameters
 - optional Walden-rule consistency penalty
 - resumable training checkpoints in the main TGNN and DirectGNN CLIs
@@ -495,6 +541,13 @@ The maintained CLI surfaces are now:
   - regularized TGNN with descriptor augmentation
 - `configs/paper_config_tuned_gps.yaml`
   - tuned TGNN with the GPS encoder
+- `configs/paper_config_timp.yaml`
+  - tuned TGNN with the TIMP encoder, Gasteiger charges, and physical edge
+    features
+- `configs/paper_config_timp_full.yaml`
+  - TIMP plus thermo-biased cross-attention
+- `configs/paper_config_hansen_contrastive.yaml`
+  - TIMP plus Hansen-contrastive regularization and pseudo-Hansen fallback
 - `configs/paper_config_tuned_pretrained.yaml`
   - tuned TGNN intended for Stage 0 + curriculum runs
 - `configs/paper_config_tuned_pretrained_descriptors.yaml`
@@ -512,24 +565,36 @@ The maintained CLI surfaces are now:
   - disables both bridge and Walden soft constraints
 - `configs/paper_config_combined.yaml`
   - GC priors + no bridge + Walden + oracle injection
+- `configs/paper_config_tuned_interaction_rescue.yaml`
+  - tuned TGNN with a train-only auxiliary direct-solubility rescue head
 - `configs/paper_config_directgnn_tuned.yaml`
   - maintained tuned DirectGNN baseline
 - `configs/paper_config_directgnn_descriptors.yaml`
   - DirectGNN with shared RDKit descriptor augmentation
+- `configs/paper_config_uniquac.yaml`
+  - research activity-model comparison config
+- `configs/paper_config_wilson.yaml`
+  - research activity-model comparison config
 - `configs/small_debug.yaml`
   - short debug budget
 
 ## Documentation Map
 
 - `docs/index.md`: published documentation-site landing page
-- `DOCS_INDEX.md`: repo-internal documentation index
+- `docs/getting_started/installation.md`: environment setup, extras, Docker,
+  and validation
+- `docs/getting_started/quick_start.md`: shortest path from clone to first
+  tuned TGNN run
 - `docs/architecture.md`: forward paths, loss structure, and current design
   choices
+- `docs/config_cookbook.md`: when to use each maintained or research config
 - `docs/data_preparation.md`: raw sources, processed CSV layout, split modes
 - `docs/training.md`: training CLIs, standalone pretraining, config variants,
   and experiment runners
 - `docs/evaluation.md`: inference API, uncertainty, OOD/applicability-domain,
   evaluation entry points, and diagnostic outputs
+- `docs/experiments.md`: architecture-comparison, reproduction, and benchmark
+  workflow guide
 - `docs/applications.md`: solvent screening, process optimization,
   developability, BCS-facing heuristics, PK solubility profiling, and scope
   boundaries
@@ -539,9 +604,13 @@ The maintained CLI surfaces are now:
   workflows plus canonical benchmark bundle semantics
 - `docs/results.md`: benchmark bundle sidecars, release manifests, and result
   interpretation guidance
+- `docs/model_zoo.md`: checkpoint conventions and current public-model status
+- `docs/notebooks.md`: notebook walk-throughs mapped to maintained workflows
 - `docs/reproducing_paper.md`: structured `core` / `article` / `full`
   reproduction profiles and validation guidance
 - `docs/script_reference.md`: maturity map for scripts and notebooks
+- `docs/faq.md`: practical and conceptual project questions
+- `docs/troubleshooting.md`: setup, runtime, and workflow failure cases
 - `docs/repository_audit.md`: current repo strengths, gaps, and known
   limitations
 - `scripts/README.md`: grouped CLI layout and legacy-wrapper policy
@@ -556,6 +625,9 @@ The maintained CLI surfaces are now:
 ## Practical Notes
 
 - The canonical processed data lives under `notebooks/data/processed/`.
+- The canonical processed corpus now keeps supervised solvent-side water rows
+  by default; use `--no-include-water-solubility` or
+  `include_water_solubility: false` for the legacy ablation path.
 - `scripts/training/train.py` uses pair-aware train batching by default.
 - `scripts/training/train.py` and `scripts/training/train_directgnn.py` support
   `--checkpoint-every` and `--resume` for mid-run recovery.
@@ -564,6 +636,10 @@ The maintained CLI surfaces are now:
   `scripts/training/train_with_pretrain.py`.
 - `scripts/training/train.py` can also reuse `--pretrain-checkpoint` and run
   the built-in `g_sol -> descriptors` probe with `--run-descriptor-probe`.
+- Research training aids include `paper_config_hansen_contrastive.yaml` for
+  TIMP-channel Hansen regularization and
+  `paper_config_tuned_interaction_rescue.yaml` for the auxiliary direct
+  solubility rescue head.
 - `TGNNSolvConfig.bridge_loss_weight` defaults to `0.0`, but
   `configs/paper_config.yaml` still enables bridge loss explicitly through the
   phase loss-weight overrides.
@@ -579,6 +655,9 @@ The maintained CLI surfaces are now:
   `gc_prior_tm_bias` on the training split only.
 - DirectGNN descriptor augmentation sanitizes NaN/Inf RDKit descriptors and
   stores descriptor normalization stats in the checkpoint.
+- Post-hoc research diagnostics now include gradient-flow comparison,
+  TIMP-channel probing, local solver-sensitivity analysis, and architectural
+  weight-distribution analysis under `scripts/analysis/`.
 - FastSolv and SolProp are optional external dependency stacks; the repository
   degrades gracefully when they are absent.
 - This documentation intentionally does not promise fixed benchmark numbers from

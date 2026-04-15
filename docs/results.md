@@ -14,7 +14,8 @@ The repo contains several different classes of results:
 - proxy-budget diagnostic experiments
 - split-comparison outputs
 - medium-budget and full-budget benchmark runners
-- targeted research probes, such as descriptor-recovery analyses
+- targeted research probes, such as descriptor-recovery, TIMP-channel,
+  gradient-flow, and local-sensitivity analyses
 
 Do not compare numbers across different sections unless the following are
 matched:
@@ -162,6 +163,10 @@ Recent follow-up lanes derived from the same scaffold split and budget include:
 - regularized TGNN variants
 - TGNN with descriptor augmentation
 - TGNN with the GPS encoder
+- TGNN with the TIMP encoder
+- TGNN with TIMP plus thermo-biased cross-attention
+- TIMP plus Hansen-contrastive regularization
+- interaction-gradient rescue runs
 - Stage 0 pretrained TGNN variants
 
 Those runs should be treated as queued / follow-up comparison tracks until
@@ -265,6 +270,27 @@ Interpretation:
 - the encoder clearly learns some chemically meaningful structure
 - but it does not look "descriptor-complete" yet
 - this supports treating encoder capacity as at least a partial bottleneck
+
+## Post-Hoc Analysis Surfaces
+
+Recent repo-local diagnostics do not all produce canonical benchmark bundles,
+but they are still useful for understanding failure modes after a benchmark or
+training run completes.
+
+Main entry points:
+
+- `scripts/analysis/diagnose_gradient_flow.py`
+  - compares gradient norms across TGNN-Solv and DirectGNN blocks
+- `scripts/analysis/analyze_timp_channels.py`
+  - probes TIMP dispersive and polar channels against Hansen and descriptor targets
+- `scripts/analysis/sensitivity_analysis.py`
+  - computes local `d ln(x2) / d parameter` sensitivities from `tgnn_intermediates.csv`
+- `scripts/analysis/weight_analysis.py`
+  - summarizes checkpoint parameter distributions by architectural block
+
+Interpret these outputs as engineering diagnostics, not as primary benchmark
+tables. They are most useful for prioritizing the next architecture or loss
+change once a benchmark run has already shown a gap.
 
 ## What To Report Publicly
 

@@ -27,6 +27,10 @@ The preferred human-facing CLI surface is now grouped by purpose:
 - `scripts/external/`
 - `scripts/applications/`
 
+Additional research diagnostics and visualization helpers live under:
+
+- `scripts/analysis/`
+
 Legacy top-level `scripts/*.py` entry points remain available as compatibility
 wrappers because tests, script-to-script imports, and compatibility entrypoints such as `reproduce.sh` still rely
 on them.
@@ -96,6 +100,19 @@ on them.
 | `scripts/applications/drug_developability.py` | BCS-style classification and developability scoring | Stable utility | pH correction and permeability remain heuristic |
 | `scripts/applications/pk_profile.py` | GI/media/vehicle PK-facing solubility profile | Stable utility | Solubility-first PK support, not PBPK |
 
+## Analysis and Diagnostic Utilities
+
+| Entry point | Role | Status | Notes |
+|-------------|------|--------|-------|
+| `scripts/analysis/diagnose_gradient_flow.py` | Compare gradient flow between TGNN-Solv and DirectGNN | Research | Useful with `paper_config_tuned_interaction_rescue.yaml` and config overrides |
+| `scripts/analysis/analyze_timp_channels.py` | Probe TIMP dispersive vs polar channels against Hansen and descriptor targets | Research | Best with TIMP checkpoints and optional train/test CSV pair |
+| `scripts/analysis/sensitivity_analysis.py` | Compute local `d ln(x2) / d parameter` sensitivities from intermediates CSV | Research | Consumes `tgnn_intermediates.csv`-style exports |
+| `scripts/analysis/weight_analysis.py` | Summarize trained weight distributions by model block | Research | Works for both TGNN-Solv and DirectGNN checkpoints |
+| `scripts/analysis/aggregate_proxy_results.py` | Aggregate proxy experiment outputs into one comparison summary | Research | Lightweight reporting helper |
+| `scripts/analysis/plot_probe_evolution.py` | Plot probe metrics across checkpoints or epochs | Research | Useful for descriptor-recovery follow-up |
+| `scripts/analysis/visualize_attribution.py` | Visualize attribution-style explanations for selected predictions | Research | Interpretation-oriented, not benchmark-critical |
+| `scripts/analysis/generate_presentation_figures.py` | Build presentation-only figures from maintained artifacts | Research | Separate from paper-figure generation |
+
 ## Infrastructure
 
 | Entry point | Role | Status | Notes |
@@ -160,6 +177,9 @@ than a separate model implementation.
 - fits `gc_prior_tm_scale` / `gc_prior_tm_bias` on the training split when
   `use_gc_priors_crystal=True`
 - preserves those calibrated GC settings inside the saved config
+- can enable Hansen-contrastive objectives and the auxiliary direct-solubility
+  rescue head through config flags such as `paper_config_hansen_contrastive.yaml`
+  and `paper_config_tuned_interaction_rescue.yaml`
 
 ### `scripts/experiments/run_ablation.py`
 

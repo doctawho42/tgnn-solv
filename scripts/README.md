@@ -10,6 +10,8 @@ The repository now exposes two parallel CLI layouts:
   - `scripts/experiments/`
   - `scripts/external/`
   - `scripts/applications/`
+- research diagnostics under:
+  - `scripts/analysis/`
 - GUI launchers under:
   - `scripts/launch_lab.py`
   - `scripts/gui/launch_lab.py`
@@ -109,6 +111,21 @@ These application CLIs are maintained thin wrappers around:
 
 They are intended for explicit solvent/process/formulation triage, not as
 general retrosynthesis or mechanistic PK/PD simulators.
+
+### `scripts/analysis/`
+
+- `diagnose_gradient_flow.py`
+- `analyze_timp_channels.py`
+- `sensitivity_analysis.py`
+- `weight_analysis.py`
+- `aggregate_proxy_results.py`
+- `plot_probe_evolution.py`
+- `visualize_attribution.py`
+- `generate_presentation_figures.py`
+
+These are research diagnostics and interpretation helpers rather than canonical
+training/evaluation entry points. They are most useful after you already have
+checkpoints, benchmark bundles, or `tgnn_intermediates.csv` exports.
 
 The main TGNN training entrypoint now also covers the newer maintained model
 surfaces:

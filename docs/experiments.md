@@ -22,6 +22,11 @@ variants, DirectGNN variants, and RF.
 Use the matched-budget TGNN-vs-DirectGNN study when you need physical
 intermediates and oracle diagnostics.
 
+### Run the multi-seed diagnostic wrapper
+
+Use the phase-1 diagnostic wrapper when you want TGNN, DirectGNN, optional RF
+baselines, oracle exports, and paired tests in one output tree.
+
 ### Compare split protocols
 
 Use the split-comparison runner when you need scaffold, solute, and solvent
@@ -80,6 +85,8 @@ logic include:
 - TGNN + GPS encoder
 - TGNN + TIMP encoder
 - TGNN + TIMP + thermo cross-attention
+- TIMP + Hansen-contrastive regularization
+- interaction-gradient rescue via the auxiliary direct-solubility head
 - Stage 0 pretrained TGNN variants
 
 Expected outputs:
@@ -122,6 +129,12 @@ Use it when you need to inspect whether errors are coming from:
 - correction magnitude
 - oracle-vs-predicted solver inputs
 
+This runner is also the main source of `tgnn_intermediates.csv` for post-hoc
+diagnostics such as:
+
+- `scripts/analysis/sensitivity_analysis.py`
+- `scripts/analysis/weight_analysis.py`
+
 ## Split-Wise Comparison
 
 Use the split-comparison runner when you need the same model family evaluated
@@ -141,6 +154,34 @@ This is the safest way to avoid split drift when comparing:
 - scaffold generalization
 - exact-solute generalization
 - solvent-held-out generalization
+
+## Multi-Seed Diagnostic Wrapper
+
+Use the phase-1 diagnostic wrapper when you want one multi-seed tree covering
+TGNN, DirectGNN, optional RF baselines, oracle exports, and significance tests:
+
+```bash
+python scripts/experiments/run_phase1_diagnostic.py \
+    --seeds 42,123,456 \
+    --budget 50,200,50 \
+    --config configs/paper_config_tuned.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --output-dir results/phase1_diagnostic \
+    --device cuda
+```
+
+Typical outputs include:
+
+- per-seed `tgnn`, `tgnn_oracle`, `directgnn`, and optional `rf` subtrees
+- `aggregate_metrics.json`
+- `statistical_tests.json`
+- `summary.md`
+
+Use this when you want stronger seed-level evidence than a single
+full-budget run, but still want richer diagnostics than a minimal metrics-only
+wrapper.
 
 ## Hyperparameter Tuning
 
@@ -191,6 +232,17 @@ Several maintained but more research-oriented entry points live under
 Use the [Script Reference](script_reference.md) if you need the maturity level
 and intended role of each script before running it.
 
+Related post-hoc analysis utilities live under `scripts/analysis/`:
+
+- `diagnose_gradient_flow.py`
+- `analyze_timp_channels.py`
+- `sensitivity_analysis.py`
+- `weight_analysis.py`
+
+These are not benchmark runners themselves. They consume checkpoints,
+benchmark bundles, or `tgnn_intermediates.csv` exports after the main
+experiment run.
+
 ## Which Runner Should You Use?
 
 | If you want to... | Use this |
@@ -199,6 +251,7 @@ and intended role of each script before running it.
 | keep the old shell entrypoint for compatibility | `reproduce.sh` |
 | compare maintained architectures on the full scaffold split | `run_medium_budget_comparison.py` |
 | inspect TGNN physical intermediates and oracle diagnostics | `run_full_budget_experiment.py` |
+| run multi-seed TGNN vs DirectGNN diagnostics with paired tests | `run_phase1_diagnostic.py` |
 | compare scaffold, solute, and solvent protocols | `run_split_comparisons.py` |
 | tune hyperparameters | `run_optuna.py` or `08_optuna_tuning.ipynb` |
 
@@ -234,6 +287,9 @@ For post-benchmark robustness slicing on an existing `predictions.csv`, use:
 ```bash
 python scripts/evaluation/run_thermo_stress_suite.py ...
 ```
+
+For checkpoint- or intermediate-level interpretation after training, use the
+analysis surfaces under `scripts/analysis/`.
 
 <div class="tgnn-page-nav" markdown="1">
 
