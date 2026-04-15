@@ -108,6 +108,8 @@ def _stats(values: np.ndarray) -> dict[str, float | int]:
         "std": std,
         "min": float(values.min()),
         "max": float(values.max()),
+        "q005": float(np.quantile(values, 0.005)),
+        "q995": float(np.quantile(values, 0.995)),
         "fraction_zero": float(np.mean(np.abs(values) < 1.0e-6)),
         "fraction_extreme": float(
             np.mean(np.abs(values - mean) > 3.0 * max(std, 1.0e-12))
@@ -132,25 +134,95 @@ def _plot(groups: dict[str, list[np.ndarray]], output_dir: Path, max_points: int
     ]
     labels: list[str] = []
     data: list[np.ndarray] = []
+    zero_fractions: list[float] = []
+    extreme_fractions: list[float] = []
     for group in order:
         if group not in groups:
             continue
         values = np.concatenate(groups[group])
+        q_low, q_high = np.quantile(values, [0.005, 0.995])
+        clipped = np.clip(values, q_low, q_high)
+        zero_fractions.append(float(np.mean(np.abs(values) < 1.0e-6)))
+        mean = float(values.mean())
+        std = float(values.std())
+        extreme_fractions.append(
+            float(np.mean(np.abs(values - mean) > 3.0 * max(std, 1.0e-12)))
+        )
+        values = clipped
         if values.size > max_points:
             values = rng.choice(values, size=max_points, replace=False)
         labels.append(group)
         data.append(values)
-    fig, ax = plt.subplots(figsize=(10.5, 5.2))
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=(12.8, 5.5),
+        gridspec_kw={"width_ratios": [2.6, 1.55], "wspace": 0.42},
+    )
+    ax = axes[0]
     parts = ax.violinplot(data, showmeans=True, showextrema=False)
     for body in parts["bodies"]:
         body.set_facecolor("#A8DADC")
         body.set_edgecolor("#4C78A8")
         body.set_alpha(0.78)
     parts["cmeans"].set_color("#E45756")
+    ax.boxplot(
+        data,
+        positions=np.arange(1, len(labels) + 1),
+        widths=0.16,
+        showfliers=False,
+        patch_artist=True,
+        boxprops={"facecolor": "white", "edgecolor": "#4C5A67", "linewidth": 0.9},
+        medianprops={"color": "#E45756", "linewidth": 1.4},
+        whiskerprops={"color": "#7A8691", "linewidth": 0.8},
+        capprops={"color": "#7A8691", "linewidth": 0.8},
+    )
     ax.set_xticks(np.arange(1, len(labels) + 1), labels, rotation=30, ha="right")
     ax.set_ylabel("значение веса")
-    ax.set_title("Распределения обученных весов по блокам")
+    ax.set_title("Центральные 99% значений весов")
+    ax.axhline(0.0, color="#7A8691", lw=0.9, alpha=0.7)
     ax.grid(True, axis="y", alpha=0.25)
+    ax2 = axes[1]
+    y_pos = np.arange(len(labels))
+    height = 0.34
+    zero_pct = [100.0 * v for v in zero_fractions]
+    extreme_pct = [100.0 * v for v in extreme_fractions]
+    ax2.barh(
+        y_pos - height / 2,
+        zero_pct,
+        height=height,
+        color="#6BAED6",
+        edgecolor="#3C6E91",
+        alpha=0.9,
+        label=r"$|w| < 10^{-6}$",
+    )
+    ax2.barh(
+        y_pos + height / 2,
+        extreme_pct,
+        height=height,
+        color="#F4A261",
+        edgecolor="#C77000",
+        alpha=0.9,
+        label=r"$|w-\mu| > 3\sigma$",
+    )
+    ax2.set_yticks(y_pos, labels)
+    ax2.invert_yaxis()
+    max_pct = max(zero_pct + extreme_pct) if (zero_pct or extreme_pct) else 1.0
+    ax2.set_xlim(0.0, max(0.6, max_pct * 1.35))
+    ax2.set_xlabel("доля параметров, %")
+    ax2.set_title("Нулевые и экстремальные веса")
+    ax2.grid(True, axis="x", alpha=0.25)
+    ax2.tick_params(axis="y", labelsize=8.5, pad=2)
+    ax2.legend(loc="lower right", fontsize=7.2, frameon=True)
+    fig.suptitle("Распределение весов по архитектурным блокам", y=1.02)
+    fig.text(
+        0.02,
+        0.002,
+        "Слева показаны центральные 99% значений; выбросы сохранены в CSV-статистике.",
+        fontsize=8.5,
+        color="#4C5A67",
+    )
+    fig.subplots_adjust(bottom=0.20)
     fig.savefig(output_dir / "weight_violin.pdf", bbox_inches="tight")
     fig.savefig(output_dir / "weight_violin.png", dpi=220, bbox_inches="tight")
 

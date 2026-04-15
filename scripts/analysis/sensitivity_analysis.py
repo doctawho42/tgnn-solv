@@ -96,7 +96,7 @@ def _save(fig: plt.Figure, path: Path) -> None:
         fig.savefig(path.with_suffix(".png"), dpi=220, bbox_inches="tight")
 
 
-def _boxplot(out: pd.DataFrame, output_dir: Path) -> None:
+def _hierarchy_plot(out: pd.DataFrame, output_dir: Path) -> None:
     cols = [
         ("d_lnx2_dTm_abs", "$T_m$"),
         ("d_lnx2_ddH_abs", "$\\Delta H_{fus}$"),
@@ -104,49 +104,47 @@ def _boxplot(out: pd.DataFrame, output_dir: Path) -> None:
         ("d_lnx2_dtau21_abs", "$\\tau_{21}$"),
         ("d_lnx2_dalpha_abs", "$\\alpha$"),
     ]
-    data = [out[col].replace([np.inf, -np.inf], np.nan).dropna().to_numpy() for col, _ in cols]
-    fig, ax = plt.subplots(figsize=(8.8, 5.0))
-    box = ax.boxplot(
-        data,
-        tick_labels=[label for _, label in cols],
-        showfliers=False,
-        patch_artist=True,
-    )
-    for patch, color in zip(box["boxes"], ["#A8DADC", "#C7E9C0", "#FAD2A5", "#F8B4A5", "#D7C2F0"], strict=False):
-        patch.set_facecolor(color)
-    ax.set_yscale("log")
-    ax.set_ylabel(r"$|\partial \ln x_2 / \partial \theta|$")
-    ax.set_title("Распределение чувствительности по тестовым примерам")
-    ax.grid(True, axis="y", alpha=0.25)
-    _save(fig, output_dir / "sensitivity_boxplot.pdf")
-
-
-def _scatter(out: pd.DataFrame, output_dir: Path) -> None:
-    if "abs_error" not in out.columns or out["abs_error"].notna().sum() < 5:
-        return
-    fig, ax = plt.subplots(figsize=(7.2, 5.0))
-    x = out["d_lnx2_dtau12_abs"].replace([np.inf, -np.inf], np.nan)
-    y = out["abs_error"].replace([np.inf, -np.inf], np.nan)
-    mask = x.notna() & y.notna()
-    ax.scatter(x[mask], y[mask], s=9, alpha=0.35, color="#4C78A8")
-    ax.set_xscale("log")
-    ax.set_xlabel(r"$|\partial \ln x_2 / \partial \tau_{12}|$")
-    ax.set_ylabel(r"$|\mathrm{ошибка}\ \ln x_2|$")
-    ax.set_title("Чувствительность к $\\tau_{12}$ и ошибка")
-    ax.grid(True, alpha=0.25)
-    corr = np.corrcoef(np.log10(x[mask].clip(lower=1e-12)), y[mask])[0, 1] if mask.sum() > 2 else np.nan
-    if np.isfinite(corr):
-        ax.text(
-            0.03,
-            0.95,
-            f"corr(log sens, error) = {corr:.2f}",
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=10,
-            bbox={"boxstyle": "round,pad=0.25", "facecolor": "white", "edgecolor": "#B8C2CC"},
+    rows = []
+    for col, label in cols:
+        values = out[col].replace([np.inf, -np.inf], np.nan).dropna().to_numpy()
+        rows.append(
+            {
+                "label": label,
+                "p10": float(np.quantile(values, 0.10)),
+                "median": float(np.quantile(values, 0.50)),
+                "p90": float(np.quantile(values, 0.90)),
+            }
         )
-    _save(fig, output_dir / "sensitivity_vs_error.pdf")
+    stat_df = pd.DataFrame(rows).sort_values("median", ascending=True).reset_index(drop=True)
+    scale = float(stat_df["median"].max()) if len(stat_df) else 1.0
+    stat_df["median_rel"] = stat_df["median"] / scale
+    stat_df["p90_rel"] = stat_df["p90"] / scale
+    y = np.arange(len(stat_df))
+    colors = ["#A8DADC", "#A8DADC", "#F4A261", "#F4A261", "#E76F51"]
+    fig, ax = plt.subplots(figsize=(8.8, 5.1))
+    ax.barh(
+        y,
+        stat_df["p90_rel"],
+        height=0.56,
+        color="#D9E2EC",
+        edgecolor="#B7C5D3",
+        label="90-й перцентиль",
+    )
+    ax.barh(
+        y,
+        stat_df["median_rel"],
+        height=0.56,
+        color=colors,
+        edgecolor="#5B6770",
+        label="медиана",
+    )
+    ax.set_yticks(y, stat_df["label"])
+    ax.set_xlim(0.0, 1.02)
+    ax.set_xlabel(r"относительная чувствительность ($\tau_{12}=1$ по медиане)")
+    ax.set_title("Глобальная иерархия чувствительности")
+    ax.grid(True, axis="x", alpha=0.25)
+    ax.legend(loc="lower right", fontsize=9, frameon=False)
+    _save(fig, output_dir / "sensitivity_boxplot.pdf")
 
 
 def _heatmap(out: pd.DataFrame, output_dir: Path) -> None:
@@ -161,17 +159,20 @@ def _heatmap(out: pd.DataFrame, output_dir: Path) -> None:
         ]
         .median()
     )
+    grouped = grouped.dropna(how="all")
+    matrix = grouped.to_numpy(dtype=float)
+    row_max = np.nanmax(matrix, axis=1, keepdims=True)
+    matrix_rel = np.divide(matrix, row_max, out=np.full_like(matrix, np.nan), where=row_max > 0)
     fig, ax = plt.subplots(figsize=(8.8, 4.3))
-    matrix = np.log10(grouped.replace(0, np.nan).to_numpy(dtype=float))
-    im = ax.imshow(matrix.T, aspect="auto", cmap="YlGnBu")
+    im = ax.imshow(matrix_rel.T, aspect="auto", cmap="YlGnBu", vmin=0.0, vmax=1.0)
     ax.set_xticks(np.arange(len(grouped.index)), grouped.index.astype(str), rotation=25, ha="right")
     ax.set_yticks(
         np.arange(5),
         ["$T_m$", "$\\Delta H$", "$\\tau_{12}$", "$\\tau_{21}$", "$\\alpha$"],
     )
-    ax.set_title("Медианная чувствительность по диапазонам растворимости")
+    ax.set_title("Кто доминирует в разных диапазонах $\\ln x_2$")
     cbar = fig.colorbar(im, ax=ax)
-    cbar.set_label(r"$\log_{10}|\partial \ln x_2 / \partial \theta|$")
+    cbar.set_label("доля от максимальной медианы в диапазоне")
     _save(fig, output_dir / "sensitivity_heatmap.pdf")
 
 
@@ -228,8 +229,7 @@ def main() -> None:
         out["abs_error"] = (df["ln_x2_final"].astype(float) - df["ln_x2_true"].astype(float)).abs()
 
     out.to_csv(output_dir / "sensitivity_per_sample.csv", index=False)
-    _boxplot(out, output_dir)
-    _scatter(out, output_dir)
+    _hierarchy_plot(out, output_dir)
     _heatmap(out, output_dir)
 
     summary = {
