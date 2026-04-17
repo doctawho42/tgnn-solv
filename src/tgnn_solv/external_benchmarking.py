@@ -16,7 +16,7 @@ from .artifacts import build_benchmark_card, build_run_manifest, write_json
 from .data.sources import _density_map
 from .data.split_registry import build_split_metadata
 from .data.utils import canonicalize
-from .reporting import build_report_payload
+from .reporting import build_report_payload, json_safe
 
 
 REQUIRED_PAIR_COLUMNS = {"solute_smiles", "solvent_smiles", "temperature"}
@@ -27,6 +27,8 @@ DEFAULT_TEMPERATURE_BINS = (
     (323.0, 373.0, "T_323_to_373K"),
     (373.0, 500.0, "T_373_to_500K"),
 )
+MAX_FINITE_X2_FOR_LOGS = 0.999999
+MAX_FINITE_LN_X2_FOR_LOGS = float(np.log(MAX_FINITE_X2_FOR_LOGS))
 
 
 @dataclass(slots=True)
@@ -109,7 +111,7 @@ def merge_prediction_frame(
 
 def estimate_solvent_molarity(smiles: str) -> float | None:
     """Estimate solvent molarity (mol/L) from density tables or molecular volume."""
-    if not smiles:
+    if not isinstance(smiles, str) or not smiles.strip():
         return None
     can = canonicalize(smiles) or smiles
     mol = Chem.MolFromSmiles(can)
@@ -170,6 +172,15 @@ def logS_from_ln_x2(
         solubility = x2 * c_solvent / (1.0 - x2)
         log_s = np.log10(solubility)
     return pd.Series(log_s, index=df.index, dtype=float)
+
+
+def clip_ln_x2_for_logS(values: Sequence[float] | np.ndarray | pd.Series) -> np.ndarray:
+    """Clip ln(x2) so predicted logS conversions stay finite near x2 -> 1.
+
+    This helper is for prediction-side conversions only. It should not be used
+    to silently modify ground-truth targets during ingestion.
+    """
+    return np.minimum(np.asarray(values, dtype=float), MAX_FINITE_LN_X2_FOR_LOGS)
 
 
 def ln_x2_from_logS(
@@ -297,6 +308,7 @@ def build_predictions_frame(
     *,
     model_name: str,
     pred_ln_x2: np.ndarray,
+    true_logS: np.ndarray | None = None,
     pred_logS: np.ndarray | None = None,
     uncertainty: np.ndarray | None = None,
 ) -> pd.DataFrame:
@@ -304,6 +316,8 @@ def build_predictions_frame(
     out = df.copy().reset_index(drop=True)
     out["model"] = model_name
     out["ln_x2_pred"] = np.asarray(pred_ln_x2, dtype=float)
+    if true_logS is not None:
+        out["logS_true"] = np.asarray(true_logS, dtype=float)
     if pred_logS is not None:
         out["logS_pred"] = np.asarray(pred_logS, dtype=float)
     if uncertainty is not None:
@@ -311,7 +325,103 @@ def build_predictions_frame(
     if "ln_x2" in out.columns:
         out["error"] = out["ln_x2_pred"] - pd.to_numeric(out["ln_x2"], errors="coerce")
         out["abs_error"] = np.abs(out["error"])
+    if "logS_true" in out.columns and "logS_pred" in out.columns:
+        out["logS_error"] = (
+            pd.to_numeric(out["logS_pred"], errors="coerce")
+            - pd.to_numeric(out["logS_true"], errors="coerce")
+        )
+        out["logS_abs_error"] = np.abs(out["logS_error"])
     return out
+
+
+def _pred_logS_from_ln_x2(
+    solvent_smiles: pd.Series,
+    pred_ln_x2: np.ndarray,
+) -> np.ndarray:
+    clipped = clip_ln_x2_for_logS(pred_ln_x2)
+    pred_log_s = logS_from_ln_x2(
+        pd.DataFrame(
+            {
+                "solvent_smiles": solvent_smiles,
+                "ln_x2": clipped,
+            }
+        ),
+        ln_x2_col="ln_x2",
+    )
+    return pred_log_s.to_numpy(dtype=float)
+
+
+def _build_evaluation_subsets(predictions_df: pd.DataFrame) -> dict[str, Any]:
+    supervision_mask = predictions_df["has_solubility"].fillna(False).astype(bool).to_numpy()
+    n_rows = len(predictions_df)
+    ln_x2_true = (
+        pd.to_numeric(predictions_df["ln_x2"], errors="coerce").to_numpy(dtype=float)
+        if "ln_x2" in predictions_df.columns
+        else np.full(n_rows, np.nan, dtype=float)
+    )
+    ln_x2_pred = (
+        pd.to_numeric(predictions_df["ln_x2_pred"], errors="coerce").to_numpy(dtype=float)
+        if "ln_x2_pred" in predictions_df.columns
+        else np.full(n_rows, np.nan, dtype=float)
+    )
+    true_log_s = (
+        pd.to_numeric(predictions_df["logS_true"], errors="coerce").to_numpy(dtype=float)
+        if "logS_true" in predictions_df.columns
+        else np.full(n_rows, np.nan, dtype=float)
+    )
+    pred_log_s = (
+        pd.to_numeric(predictions_df["logS_pred"], errors="coerce").to_numpy(dtype=float)
+        if "logS_pred" in predictions_df.columns
+        else np.full(n_rows, np.nan, dtype=float)
+    )
+
+    finite_pred_ln_x2_mask = supervision_mask & np.isfinite(ln_x2_pred)
+    finite_true_log_s_mask = supervision_mask & np.isfinite(true_log_s)
+    finite_pred_log_s_mask = supervision_mask & np.isfinite(pred_log_s)
+    finite_log_s_eval_mask = supervision_mask & finite_true_log_s_mask & finite_pred_log_s_mask
+    exact_miscible_mask = supervision_mask & np.isfinite(ln_x2_true) & (ln_x2_true == 0.0)
+
+    predictions_df["logS_true_finite"] = finite_true_log_s_mask
+    predictions_df["logS_pred_finite"] = finite_pred_log_s_mask
+    predictions_df["logS_eval_mask"] = finite_log_s_eval_mask
+    predictions_df["ln_x2_eq_0_target"] = exact_miscible_mask
+
+    subsets: dict[str, Any] = {
+        "policy": {
+            "headline_metric_space": "ln_x2",
+            "headline_subset": "ln_x2_all_supervised",
+            "logS_metric_subset": "finite_logS_only",
+            "exclude_exact_ln_x2_eq_0_from_logS_metrics": True,
+            "notes": (
+                "logS metrics are computed only where both true and predicted logS are finite. "
+                "Exact ln_x2 = 0 implies x2 = 1 and therefore infinite true logS, so those rows "
+                "remain in ln_x2 metrics but are excluded from logS metrics."
+            ),
+            "coverage": {
+                "n_total_rows": int(len(predictions_df)),
+                "n_supervised_rows": int(supervision_mask.sum()),
+                "n_finite_pred_ln_x2_rows": int(finite_pred_ln_x2_mask.sum()),
+                "n_true_logS_finite_rows": int(finite_true_log_s_mask.sum()),
+                "n_pred_logS_finite_rows": int(finite_pred_log_s_mask.sum()),
+                "n_finite_logS_eval_rows": int(finite_log_s_eval_mask.sum()),
+                "n_exact_ln_x2_eq_0_rows": int(exact_miscible_mask.sum()),
+                "n_logS_rows_excluded": int(supervision_mask.sum() - finite_log_s_eval_mask.sum()),
+            },
+        },
+        "ln_x2_all_supervised": regression_metrics(
+            ln_x2_true[supervision_mask],
+            ln_x2_pred[supervision_mask],
+        ),
+        "ln_x2_finite_logS_subset": regression_metrics(
+            ln_x2_true[finite_log_s_eval_mask],
+            ln_x2_pred[finite_log_s_eval_mask],
+        ),
+        "logS_finite_subset": regression_metrics(
+            true_log_s[finite_log_s_eval_mask],
+            pred_log_s[finite_log_s_eval_mask],
+        ),
+    }
+    return json_safe(subsets)
 
 
 def build_benchmark_artifacts(
@@ -326,19 +436,31 @@ def build_benchmark_artifacts(
     test_data: str | None = None,
 ) -> BenchmarkArtifacts:
     """Build canonical report + predictions + summary outputs for one model."""
+    eval_frame = eval_df.copy().reset_index(drop=True)
+    true_log_s: np.ndarray | None = None
+    if "ln_x2" in eval_frame.columns:
+        true_log_s_series = logS_from_ln_x2(eval_frame)
+        true_log_s = true_log_s_series.to_numpy(dtype=float)
+        eval_frame["logS_true"] = true_log_s
+        if "logS" not in eval_frame.columns:
+            eval_frame["logS"] = true_log_s
+    if pred_logS is None:
+        pred_logS = _pred_logS_from_ln_x2(
+            eval_frame["solvent_smiles"],
+            np.asarray(pred_ln_x2, dtype=float),
+        )
     predictions_df = build_predictions_frame(
-        eval_df,
+        eval_frame,
         model_name=model_name,
         pred_ln_x2=pred_ln_x2,
+        true_logS=true_log_s,
         pred_logS=pred_logS,
         uncertainty=uncertainty,
     )
+    evaluation_subsets = _build_evaluation_subsets(predictions_df)
     supervision_mask = predictions_df["has_solubility"].fillna(False).astype(bool).to_numpy()
     finite_mask = supervision_mask & np.isfinite(predictions_df["ln_x2_pred"].to_numpy(dtype=float))
-    overall = regression_metrics(
-        predictions_df.loc[supervision_mask, "ln_x2"].to_numpy(dtype=float),
-        predictions_df.loc[supervision_mask, "ln_x2_pred"].to_numpy(dtype=float),
-    )
+    overall = dict(evaluation_subsets.get("ln_x2_all_supervised", {}))
     overall["n_predictions"] = int(finite_mask.sum())
     overall["n_total"] = int(len(predictions_df))
     overall["n_supervised"] = int(supervision_mask.sum())
@@ -355,6 +477,7 @@ def build_benchmark_artifacts(
             "model": model_name,
             "split": build_split_metadata(split_mode=split_mode, test_data=test_data) if test_data or split_mode else None,
             "test_samples": int(len(predictions_df)),
+            "logS_evaluation_policy": evaluation_subsets.get("policy", {}),
         },
         overall=overall,
         stratified={
@@ -367,8 +490,12 @@ def build_benchmark_artifacts(
         predictions={
             "true_ln_x2": predictions_df.loc[supervision_mask, "ln_x2"].to_numpy(dtype=float).tolist() if "ln_x2" in predictions_df.columns else [],
             "pred_ln_x2": predictions_df.loc[supervision_mask, "ln_x2_pred"].to_numpy(dtype=float).tolist(),
+            "true_logS": predictions_df.loc[supervision_mask, "logS_true"].to_numpy(dtype=float).tolist() if "logS_true" in predictions_df.columns else [],
+            "pred_logS": predictions_df.loc[supervision_mask, "logS_pred"].to_numpy(dtype=float).tolist() if "logS_pred" in predictions_df.columns else [],
+            "logS_eval_mask": predictions_df.loc[supervision_mask, "logS_eval_mask"].astype(bool).tolist() if "logS_eval_mask" in predictions_df.columns else [],
             "row_indices": predictions_df.loc[supervision_mask, "row_index"].astype(int).tolist() if "row_index" in predictions_df.columns else list(range(int(supervision_mask.sum()))),
         },
+        evaluation_subsets=evaluation_subsets,
     )
 
     summary = pd.DataFrame(
@@ -381,6 +508,36 @@ def build_benchmark_artifacts(
                 "bias": report["overall"].get("bias"),
                 "n_samples": report["overall"].get("n_samples"),
                 "n_predictions": report["overall"].get("n_predictions"),
+                "mae_ln_x2_logS_subset": (
+                    ((report.get("evaluation_subsets") or {}).get("ln_x2_finite_logS_subset") or {}).get("mae")
+                ),
+                "rmse_ln_x2_logS_subset": (
+                    ((report.get("evaluation_subsets") or {}).get("ln_x2_finite_logS_subset") or {}).get("rmse")
+                ),
+                "r2_ln_x2_logS_subset": (
+                    ((report.get("evaluation_subsets") or {}).get("ln_x2_finite_logS_subset") or {}).get("r2")
+                ),
+                "n_samples_ln_x2_logS_subset": (
+                    ((report.get("evaluation_subsets") or {}).get("ln_x2_finite_logS_subset") or {}).get("n_samples")
+                ),
+                "mae_logS_finite_subset": (
+                    ((report.get("evaluation_subsets") or {}).get("logS_finite_subset") or {}).get("mae")
+                ),
+                "rmse_logS_finite_subset": (
+                    ((report.get("evaluation_subsets") or {}).get("logS_finite_subset") or {}).get("rmse")
+                ),
+                "r2_logS_finite_subset": (
+                    ((report.get("evaluation_subsets") or {}).get("logS_finite_subset") or {}).get("r2")
+                ),
+                "n_samples_logS_finite_subset": (
+                    ((report.get("evaluation_subsets") or {}).get("logS_finite_subset") or {}).get("n_samples")
+                ),
+                "n_exact_ln_x2_eq_0": (
+                    ((((report.get("evaluation_subsets") or {}).get("policy") or {}).get("coverage") or {}).get("n_exact_ln_x2_eq_0_rows"))
+                ),
+                "n_finite_logS_eval_rows": (
+                    ((((report.get("evaluation_subsets") or {}).get("policy") or {}).get("coverage") or {}).get("n_finite_logS_eval_rows"))
+                ),
                 "split": (
                     (
                         ((report.get("metadata") or {}).get("split") or {}).get("split_mode")

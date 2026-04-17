@@ -17,7 +17,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from rdkit import Chem
+from rdkit import Chem, RDLogger
 from rdkit.Chem import Descriptors
 from rdkit.Chem import AllChem, rdMolDescriptors
 
@@ -64,6 +64,11 @@ _IDAC_CANDIDATE_FILENAMES = (
     "gamma_inf.csv",
     "idac_ln_gamma_inf.csv",
 )
+BIGSOLDB_DENSITIES_URL = (
+    "https://raw.githubusercontent.com/levakrasnovs/BigSolDBv2.0/"
+    "refs/heads/main/BigSolDBv2.1_densities.csv"
+)
+BIGSOLDB_DENSITIES_PATH = RAW_DIR / "BigSolDBv2.1_densities.csv"
 
 
 def _normalize_column_name(name: str) -> str:
@@ -205,6 +210,7 @@ def _density_map() -> dict:
             can = canonicalize(smi)
             if can:
                 _DENSITY_G_ML_CANON[can] = rho
+        _DENSITY_G_ML_CANON.update(_load_bigsoldb_roomtemp_density_map())
     return _DENSITY_G_ML_CANON
 
 
@@ -216,12 +222,103 @@ BIGSOLDB_URL = "https://zenodo.org/records/18552681/files/BigSolDBv2.1.csv"
 BIGSOLDB_PATH = RAW_DIR / "BigSolDBv2.1.csv"
 
 
-def load_bigsoldb() -> pd.DataFrame:
+def _load_bigsoldb_roomtemp_density_map() -> dict[str, float]:
+    """Build a solvent density map from the BigSolDB companion density table.
+
+    The companion CSV stores densities by solvent name and temperature. For the
+    current room-temperature conversions we select the measurements nearest to
+    298.15 K for each solvent, average ties across sources, then join them to
+    canonical `SMILES_Solvent` values from the main BigSolDB table.
+    """
+    if not download_file(
+        BIGSOLDB_DENSITIES_URL,
+        BIGSOLDB_DENSITIES_PATH,
+        "BigSolDBv2.1 solvent densities",
+    ) or not verify_csv(BIGSOLDB_DENSITIES_PATH):
+        return {}
+
+    if not download_file(BIGSOLDB_URL, BIGSOLDB_PATH, "BigSolDBv2.1") or not verify_csv(
+        BIGSOLDB_PATH
+    ):
+        return {}
+
+    try:
+        density_df = pd.read_csv(BIGSOLDB_DENSITIES_PATH, low_memory=False)
+        raw_df = pd.read_csv(BIGSOLDB_PATH, low_memory=False)
+    except Exception:
+        return {}
+
+    solvent_name_col = _resolve_column(density_df, ("Solvent",))
+    temp_col = _resolve_column(density_df, ("Temperature_K",))
+    rho_col = _resolve_column(density_df, ("Density_g/cm^3", "Density_g_cm_3"))
+    raw_solvent_name_col = _resolve_column(raw_df, ("Solvent",))
+    raw_solvent_smiles_col = _resolve_column(raw_df, ("SMILES_Solvent",))
+    if (
+        solvent_name_col is None
+        or temp_col is None
+        or rho_col is None
+        or raw_solvent_name_col is None
+        or raw_solvent_smiles_col is None
+    ):
+        return {}
+
+    name_to_smiles = raw_df[[raw_solvent_name_col, raw_solvent_smiles_col]].copy()
+    name_to_smiles.columns = ["solvent_name", "solvent_smiles"]
+    name_to_smiles["solvent_name"] = (
+        name_to_smiles["solvent_name"].astype(str).str.strip().str.lower()
+    )
+    raw_smiles = name_to_smiles["solvent_smiles"].astype(str).str.strip()
+    name_to_smiles = name_to_smiles.loc[
+        raw_smiles.ne("-") & raw_smiles.ne("") & raw_smiles.str.lower().ne("nan")
+    ].copy()
+    unique_smiles = name_to_smiles["solvent_smiles"].astype(str).unique().tolist()
+    RDLogger.DisableLog("rdApp.error")
+    try:
+        canonical_map = {smi: canonicalize(smi) for smi in unique_smiles}
+    finally:
+        RDLogger.EnableLog("rdApp.error")
+    name_to_smiles["solvent_smiles"] = name_to_smiles["solvent_smiles"].map(canonical_map)
+    name_to_smiles = (
+        name_to_smiles.dropna(subset=["solvent_smiles"])
+        .drop_duplicates(subset=["solvent_name", "solvent_smiles"])
+        .drop_duplicates(subset=["solvent_name"], keep="first")
+    )
+
+    densities = density_df[[solvent_name_col, temp_col, rho_col]].copy()
+    densities.columns = ["solvent_name", "temperature_k", "density_g_ml"]
+    densities["solvent_name"] = densities["solvent_name"].astype(str).str.strip().str.lower()
+    densities["temperature_k"] = pd.to_numeric(densities["temperature_k"], errors="coerce")
+    densities["density_g_ml"] = pd.to_numeric(densities["density_g_ml"], errors="coerce")
+    densities = densities.dropna(subset=["solvent_name", "temperature_k", "density_g_ml"])
+    if densities.empty or name_to_smiles.empty:
+        return {}
+
+    densities["delta_room_temp"] = (densities["temperature_k"] - 298.15).abs()
+    nearest = densities.groupby("solvent_name")["delta_room_temp"].transform("min")
+    room_temp = densities.loc[nearest.eq(densities["delta_room_temp"])]
+    room_temp = (
+        room_temp.groupby("solvent_name", as_index=False)["density_g_ml"].mean()
+    )
+    merged = room_temp.merge(name_to_smiles, on="solvent_name", how="inner")
+    return {
+        str(row.solvent_smiles): float(row.density_g_ml)
+        for row in merged.itertuples(index=False)
+        if pd.notna(row.solvent_smiles) and pd.notna(row.density_g_ml)
+    }
+
+
+def load_bigsoldb(*, preserve_source_detail: bool = False) -> pd.DataFrame:
     """
     Load BigSolDBv2.1 solubility database.
 
     Returns DataFrame with columns:
       solute_smiles, solvent_smiles, temperature, ln_x2, source
+
+    When ``preserve_source_detail=True``, the returned frame also includes:
+      source_family, source_raw
+
+    and ``source`` is populated with the raw BigSolDB source identifier
+    (typically a DOI) instead of the collapsed family label.
     """
     print("\n" + "=" * 60)
     print("Loading BigSolDBv2.1")
@@ -237,11 +334,18 @@ def load_bigsoldb() -> pd.DataFrame:
     print(f"  Raw records: {n_raw:,}")
     print(f"  Columns: {list(df.columns)}")
 
-    result = _process_bigsoldb_raw(df)
+    result = _process_bigsoldb_raw(
+        df,
+        preserve_source_detail=preserve_source_detail,
+    )
     return result
 
 
-def _process_bigsoldb_raw(df: pd.DataFrame) -> pd.DataFrame:
+def _process_bigsoldb_raw(
+    df: pd.DataFrame,
+    *,
+    preserve_source_detail: bool = False,
+) -> pd.DataFrame:
     """Parse and clean raw BigSolDB CSV."""
 
     # --- Map columns (case-insensitive) ---
@@ -254,6 +358,7 @@ def _process_bigsoldb_raw(df: pd.DataFrame) -> pd.DataFrame:
         "compound_name": "solute_name",
         "logs(mol/l)": "logS",
         "fda_approved": "fda_approved",
+        "source": "source_raw",
     }
 
     # Build lowercase → original column name mapping
@@ -370,8 +475,22 @@ def _process_bigsoldb_raw(df: pd.DataFrame) -> pd.DataFrame:
         keep="first",
     )
 
-    result["source"] = "BigSolDBv2.1"
+    result["source_family"] = "BigSolDBv2.1"
+    if preserve_source_detail and "source_raw" in result.columns:
+        source_raw = (
+            result["source_raw"]
+            .fillna("BigSolDBv2.1")
+            .astype(str)
+            .str.strip()
+            .replace("", "BigSolDBv2.1")
+        )
+        result["source_raw"] = source_raw
+        result["source"] = source_raw
+    else:
+        result["source"] = result["source_family"]
     keep = ["solute_smiles", "solvent_smiles", "temperature", "ln_x2", "source"]
+    if preserve_source_detail:
+        keep.extend(["source_family", "source_raw"])
     for c in ["solute_name", "solvent_name", "fda_approved"]:
         if c in result.columns:
             keep.append(c)

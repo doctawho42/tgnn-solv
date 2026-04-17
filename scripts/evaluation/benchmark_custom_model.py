@@ -20,6 +20,7 @@ import pandas as pd
 
 from tgnn_solv.external_benchmarking import (
     build_benchmark_artifacts,
+    clip_ln_x2_for_logS,
     ln_x2_from_logS,
     logS_from_ln_x2,
     merge_prediction_frame,
@@ -29,7 +30,7 @@ from tgnn_solv.external_benchmarking import (
 
 
 def _safe_pred_logS(solvent_smiles: pd.Series, pred_ln_x2: np.ndarray) -> pd.Series:
-    clipped = np.minimum(np.asarray(pred_ln_x2, dtype=float), np.log(0.999999))
+    clipped = clip_ln_x2_for_logS(pred_ln_x2)
     return logS_from_ln_x2(
         pd.DataFrame({"solvent_smiles": solvent_smiles, "ln_x2": clipped}),
         ln_x2_col="ln_x2",

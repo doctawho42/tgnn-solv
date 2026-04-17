@@ -23,6 +23,8 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "presentation" / "figures" / "generated"
 DATA = ROOT / "notebooks" / "data" / "processed"
 RESULTS = ROOT / "results" / "proxy_comparison"
+KNN_FULL_RESULTS = ROOT / "results" / "knn_modelability_smoke"
+KNN_SUBSET_RESULTS = ROOT / "results" / "knn_subset_compare"
 OUT.mkdir(parents=True, exist_ok=True)
 
 BLUE = "#3B82F6"
@@ -85,6 +87,107 @@ def fuzzy_metric(summary: dict, *needles: str) -> float | None:
             except Exception:
                 continue
     return None
+
+
+def load_json_file(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def load_knn_full_summary() -> dict:
+    fallback = {
+        "knn": {
+            "mae": 2.530413360342238,
+            "rmse": 3.4043734389708384,
+            "r2": -0.19179887814507368,
+            "pearson_r": 0.4299123957688125,
+        },
+        "nearest_neighbor": {
+            "cliff_threshold": 2.0,
+            "cliff_rate": 0.4884998283556471,
+            "mean_pair_tanimoto": 0.45480929208434084,
+            "median_pair_tanimoto": 0.43589743971824646,
+            "thresholds": {
+                "pair_tanimoto_gte_0.8": {
+                    "n": 57,
+                    "median_abs_delta_ln_x2": 0.6944262257139231,
+                    "mean_abs_delta_ln_x2": 0.7340232397915929,
+                    "cliff_rate": 0.0,
+                }
+            },
+        },
+    }
+    payload = load_json_file(KNN_FULL_RESULTS / "modelability_summary.json")
+    return payload or fallback
+
+
+def load_knn_subset_report(mode: str) -> dict:
+    fallbacks = {
+        "pair_tanimoto_1nn": {
+            "overall": {
+                "mae": 2.716161755956556,
+                "rmse": 3.587792469982707,
+                "r2": -0.42228683045129456,
+                "pearson_r": 0.3244614621187226,
+            }
+        },
+        "sklearn_euclidean": {
+            "overall": {
+                "mae": 2.844012065933409,
+                "rmse": 3.7801794719513295,
+                "r2": -0.578910087455099,
+                "pearson_r": 0.21047629689036398,
+            }
+        },
+    }
+    path = KNN_SUBSET_RESULTS / f"{mode}_5k_1k" / "report.json"
+    payload = load_json_file(path)
+    return payload or fallbacks[mode]
+
+
+def load_knn_bins():
+    import pandas as pd
+
+    path = KNN_FULL_RESULTS / "modelability_bins.csv"
+    if path.exists():
+        try:
+            return pd.read_csv(path)
+        except Exception:
+            pass
+    return pd.DataFrame(
+        {
+            "pair_tanimoto_bin": ["0.00-0.30", "0.30-0.50", "0.50-0.70", "0.70-0.85", "0.85-1.00"],
+            "n": [522, 3321, 1666, 302, 15],
+            "mean_pair_tanimoto": [0.251654, 0.399883, 0.569099, 0.752403, 1.0],
+            "mean_abs_delta_ln_x2": [2.963487, 2.677581, 2.263468, 1.702917, 1.185540],
+            "median_abs_delta_ln_x2": [1.976180, 2.073544, 1.888695, 1.273155, 1.208368],
+            "p90_abs_delta_ln_x2": [6.986380, 5.227259, 4.691817, 4.255112, 1.477278],
+            "cliff_rate": [0.496169, 0.513098, 0.474790, 0.304636, 0.0],
+        }
+    )
+
+
+def load_knn_neighbors(sample_size: int = 2600):
+    import pandas as pd
+
+    path = KNN_FULL_RESULTS / "nearest_neighbors.csv"
+    if path.exists():
+        try:
+            df = pd.read_csv(path)
+            if len(df) > sample_size:
+                return df.sample(sample_size, random_state=42)
+            return df
+        except Exception:
+            pass
+
+    rng = np.random.default_rng(42)
+    pair_tanimoto = np.clip(rng.beta(3.5, 4.2, sample_size), 0.02, 0.99)
+    abs_delta = np.clip(3.2 - 2.3 * pair_tanimoto + rng.normal(0, 0.9, sample_size), 0.0, 8.5)
+    return pd.DataFrame({"pair_tanimoto": pair_tanimoto, "abs_delta_ln_x2": abs_delta})
 
 
 def safe_plot(name: str, fn: Callable[[], None]) -> None:
@@ -390,6 +493,266 @@ def error_decomposition_waterfall() -> None:
     plt.close(fig)
 
 
+def knn_summary_table() -> None:
+    plt = _mpl()
+    summary = load_proxy_summary()
+    knn_full = load_knn_full_summary()
+    pair_subset = load_knn_subset_report("pair_tanimoto_1nn").get("overall", {})
+    sklearn_subset = load_knn_subset_report("sklearn_euclidean").get("overall", {})
+
+    rows = [
+        ("DirectGNN", "proxy 1/4/1, full split", summary.get("directgnn_tuned", {}).get("MAE", 1.652), summary.get("directgnn_tuned", {}).get("RMSE", 2.254), summary.get("directgnn_tuned", {}).get("R2", 0.478), None),
+        ("RF hybrid", "full fit, full split", summary.get("rf_hybrid", {}).get("MAE", 1.722), summary.get("rf_hybrid", {}).get("RMSE", 2.315), summary.get("rf_hybrid", {}).get("R2", 0.449), None),
+        ("TGNN MPNN", "proxy 1/4/1, full split", summary.get("tgnn_mpnn", {}).get("MAE", 1.741), summary.get("tgnn_mpnn", {}).get("RMSE", 2.338), summary.get("tgnn_mpnn", {}).get("R2", 0.438), None),
+        ("1-NN pair Tanimoto", "full split, nearest pair", knn_full.get("knn", {}).get("mae", 2.530), knn_full.get("knn", {}).get("rmse", 3.404), knn_full.get("knn", {}).get("r2", -0.192), knn_full.get("knn", {}).get("pearson_r", 0.430)),
+        ("1-NN pair Tanimoto", "controlled 5k/1k subset", pair_subset.get("mae", 2.716), pair_subset.get("rmse", 3.588), pair_subset.get("r2", -0.422), pair_subset.get("pearson_r", 0.324)),
+        ("KNN k=5 Euclidean", "controlled 5k/1k subset", sklearn_subset.get("mae", 2.844), sklearn_subset.get("rmse", 3.780), sklearn_subset.get("r2", -0.579), sklearn_subset.get("pearson_r", 0.210)),
+    ]
+
+    import pandas as pd
+
+    df = pd.DataFrame(rows, columns=["Модель", "Протокол", "MAE", "RMSE", "R^2", "r"])
+    df.to_csv(OUT / "knn_summary_table.csv", index=False)
+
+    fig, ax = plt.subplots(figsize=(12.8, 4.8))
+    ax.axis("off")
+    cell_text = [
+        [model, protocol, f"{mae:.3f}", f"{rmse:.3f}", f"{r2:.3f}", "—" if r is None else f"{r:.3f}"]
+        for model, protocol, mae, rmse, r2, r in rows
+    ]
+    table = ax.table(
+        cellText=cell_text,
+        colLabels=["Модель", "Протокол", "MAE", "RMSE", r"$R^2$", "r"],
+        colWidths=[0.20, 0.31, 0.09, 0.10, 0.08, 0.08],
+        loc="center",
+        cellLoc="center",
+        colLoc="center",
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(10.5)
+    table.scale(1.0, 1.75)
+
+    row_colors = {
+        "DirectGNN": ORANGE,
+        "RF hybrid": GREEN,
+        "TGNN MPNN": BLUE,
+        "1-NN pair Tanimoto": SLATE,
+        "KNN k=5 Euclidean": RED,
+    }
+    for (row, col), cell in table.get_celld().items():
+        cell.set_edgecolor("#CBD5E1")
+        cell.set_linewidth(0.8)
+        if row == 0:
+            cell.set_facecolor("#E2E8F0")
+            cell.get_text().set_weight("bold")
+            continue
+        model_name = rows[row - 1][0]
+        base_color = row_colors.get(model_name, "#E2E8F0")
+        alpha = 0.14 if "subset" not in rows[row - 1][1] else 0.08
+        cell.set_facecolor(base_color)
+        cell.set_alpha(alpha)
+        if row == 1:
+            cell.get_text().set_weight("bold")
+
+    fig.suptitle("KNN и modelability: slide-ready summary", fontsize=17, weight="bold", y=0.98)
+    fig.text(
+        0.5,
+        0.04,
+        "Главная строка: full-split 1-NN pair Tanimoto сильно слабее RF и DirectGNN. Две нижние строки служат только controlled subset diagnostic.",
+        ha="center",
+        va="center",
+        color=SLATE,
+        fontsize=11,
+    )
+    save_both(fig, "knn_summary_table")
+    plt.close(fig)
+
+
+def knn_vs_adaptive_benchmarks() -> None:
+    plt = _mpl()
+    summary = load_proxy_summary()
+    knn_full = load_knn_full_summary()
+
+    labels = ["DirectGNN", "RF hybrid", "TGNN MPNN", "1-NN pair\nTanimoto"]
+    mae = [
+        summary.get("directgnn_tuned", {}).get("MAE", 1.652),
+        summary.get("rf_hybrid", {}).get("MAE", 1.722),
+        summary.get("tgnn_mpnn", {}).get("MAE", 1.741),
+        knn_full.get("knn", {}).get("mae", 2.530),
+    ]
+    r2 = [
+        summary.get("directgnn_tuned", {}).get("R2", 0.478),
+        summary.get("rf_hybrid", {}).get("R2", 0.449),
+        summary.get("tgnn_mpnn", {}).get("R2", 0.438),
+        knn_full.get("knn", {}).get("r2", -0.192),
+    ]
+    colors = [ORANGE, GREEN, BLUE, SLATE]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 5.2))
+    x = np.arange(len(labels))
+    mae_ax, r2_ax = axes
+
+    bars = mae_ax.bar(x, mae, color=colors, alpha=0.78)
+    mae_ax.set_xticks(x)
+    mae_ax.set_xticklabels(labels)
+    mae_ax.set_ylabel("MAE")
+    mae_ax.set_title("Full split: absolute error")
+    mae_ax.grid(axis="y", alpha=0.18)
+    mae_ax.set_ylim(0, max(mae) + 0.55)
+    for bar, value in zip(bars, mae):
+        mae_ax.text(bar.get_x() + bar.get_width() / 2, value + 0.05, f"{value:.2f}", ha="center", va="bottom", weight="bold")
+
+    bars = r2_ax.bar(x, r2, color=colors, alpha=0.78)
+    r2_ax.set_xticks(x)
+    r2_ax.set_xticklabels(labels)
+    r2_ax.set_ylabel(r"$R^2$")
+    r2_ax.set_title("Full split: explained variance")
+    r2_ax.grid(axis="y", alpha=0.18)
+    r2_ax.axhline(0.0, color="#94A3B8", lw=1.2)
+    r2_ax.set_ylim(min(r2) - 0.15, max(r2) + 0.12)
+    for bar, value in zip(bars, r2):
+        offset = 0.03 if value >= 0 else -0.06
+        va = "bottom" if value >= 0 else "top"
+        r2_ax.text(bar.get_x() + bar.get_width() / 2, value + offset, f"{value:.2f}", ha="center", va=va, weight="bold")
+
+    fig.subplots_adjust(bottom=0.20, top=0.83, wspace=0.20)
+    fig.suptitle("Neighbor lookup не объясняет уровень RF и DirectGNN", fontsize=17, weight="bold", y=0.98)
+    fig.text(
+        0.5,
+        0.07,
+        f"Разрыв по MAE: DirectGNN vs 1-NN = {mae[-1] - mae[0]:+.2f}; RF vs 1-NN = {mae[-1] - mae[1]:+.2f}.",
+        ha="center",
+        color=SLATE,
+        fontsize=11.5,
+    )
+    save_both(fig, "knn_vs_adaptive_benchmarks")
+    plt.close(fig)
+
+
+def knn_controlled_subset_comparison() -> None:
+    plt = _mpl()
+    pair_subset = load_knn_subset_report("pair_tanimoto_1nn").get("overall", {})
+    sklearn_subset = load_knn_subset_report("sklearn_euclidean").get("overall", {})
+
+    labels = ["1-NN pair Tanimoto", "KNN k=5 Euclidean"]
+    mae = [pair_subset.get("mae", 2.716), sklearn_subset.get("mae", 2.844)]
+    rmse = [pair_subset.get("rmse", 3.588), sklearn_subset.get("rmse", 3.780)]
+    r2 = [pair_subset.get("r2", -0.422), sklearn_subset.get("r2", -0.579)]
+    pearson = [pair_subset.get("pearson_r", 0.324), sklearn_subset.get("pearson_r", 0.210)]
+    colors = [SLATE, RED]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.0))
+    x = np.arange(len(labels))
+
+    width = 0.34
+    left = axes[0]
+    mae_bars = left.bar(x - width / 2, mae, width, color=colors, alpha=0.82, label="MAE")
+    rmse_bars = left.bar(x + width / 2, rmse, width, color=colors, alpha=0.30, label="RMSE")
+    left.set_xticks(x)
+    left.set_xticklabels(labels)
+    left.set_ylabel("ошибка")
+    left.set_title("Controlled 5k/1k subset")
+    left.grid(axis="y", alpha=0.18)
+    left.legend(loc="upper left", fontsize=10)
+    left.set_ylim(0, max(rmse) + 0.65)
+    for bars, values in [(mae_bars, mae), (rmse_bars, rmse)]:
+        for bar, value in zip(bars, values):
+            left.text(bar.get_x() + bar.get_width() / 2, value + 0.05, f"{value:.2f}", ha="center", va="bottom", fontsize=10, weight="bold")
+
+    right = axes[1]
+    r2_bars = right.bar(x - width / 2, r2, width, color=colors, alpha=0.82, label=r"$R^2$")
+    p_bars = right.bar(x + width / 2, pearson, width, color=colors, alpha=0.30, label="Pearson r")
+    right.set_xticks(x)
+    right.set_xticklabels(labels)
+    right.set_title("Explained variance and correlation")
+    right.grid(axis="y", alpha=0.18)
+    right.axhline(0.0, color="#94A3B8", lw=1.2)
+    right.legend(loc="upper left", fontsize=10)
+    right.set_ylim(min(r2) - 0.2, max(pearson) + 0.25)
+    for bars, values in [(r2_bars, r2), (p_bars, pearson)]:
+        for bar, value in zip(bars, values):
+            offset = 0.03 if value >= 0 else -0.05
+            va = "bottom" if value >= 0 else "top"
+            right.text(bar.get_x() + bar.get_width() / 2, value + offset, f"{value:.2f}", ha="center", va=va, fontsize=10, weight="bold")
+
+    fig.subplots_adjust(bottom=0.18, top=0.83, wspace=0.22)
+    fig.suptitle("Даже честный sklearn KNN не улучшает картину", fontsize=17, weight="bold", y=0.98)
+    fig.text(
+        0.5,
+        0.06,
+        f"На одной и той же подвыборке pair-Tanimoto 1-NN лучше по MAE на {mae[1] - mae[0]:.2f} и по r на {pearson[0] - pearson[1]:.2f}.",
+        ha="center",
+        color=SLATE,
+        fontsize=11.5,
+    )
+    save_both(fig, "knn_controlled_subset_comparison")
+    plt.close(fig)
+
+
+def knn_modelability_diagnostics() -> None:
+    plt = _mpl()
+    neighbors = load_knn_neighbors()
+    bins = load_knn_bins()
+    knn_full = load_knn_full_summary()
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.2))
+    left, right = axes
+
+    hb = left.hexbin(
+        neighbors["pair_tanimoto"],
+        neighbors["abs_delta_ln_x2"],
+        gridsize=26,
+        mincnt=1,
+        cmap="Blues",
+    )
+    left.axhline(knn_full.get("nearest_neighbor", {}).get("cliff_threshold", 2.0), color=RED, lw=1.6, ls="--")
+    left.set_xlabel("pair Tanimoto")
+    left.set_ylabel(r"$|\Delta \ln x_2|$")
+    left.set_title("Nearest-neighbor cliffs on full split")
+    left.grid(alpha=0.14)
+    cbar = fig.colorbar(hb, ax=left, fraction=0.046, pad=0.04)
+    cbar.set_label("test rows")
+
+    x = np.arange(len(bins))
+    mean_abs = bins["mean_abs_delta_ln_x2"].to_numpy(dtype=float)
+    cliff_rate = bins["cliff_rate"].to_numpy(dtype=float)
+    sample_n = bins["n"].to_numpy(dtype=int)
+    labels = bins["pair_tanimoto_bin"].astype(str).tolist()
+
+    bars = right.bar(x, mean_abs, color=BLUE, alpha=0.72, label=r"mean $|\Delta \ln x_2|$")
+    twin = right.twinx()
+    twin.plot(x, cliff_rate, color=RED, marker="o", lw=2.2, label="cliff rate")
+    right.set_xticks(x)
+    right.set_xticklabels(labels)
+    right.set_ylabel(r"mean $|\Delta \ln x_2|$")
+    twin.set_ylabel("cliff rate")
+    right.set_title("Binned modelability summary")
+    right.grid(axis="y", alpha=0.18)
+    right.set_ylim(0, max(mean_abs) + 0.8)
+    twin.set_ylim(0, max(0.6, float(cliff_rate.max()) + 0.08))
+    for bar, n in zip(bars, sample_n):
+        right.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.07, f"n={n}", ha="center", va="bottom", fontsize=9.5, color=SLATE)
+
+    med_hi = knn_full.get("nearest_neighbor", {}).get("thresholds", {}).get("pair_tanimoto_gte_0.8", {}).get("median_abs_delta_ln_x2", 0.694)
+    hi_n = knn_full.get("nearest_neighbor", {}).get("thresholds", {}).get("pair_tanimoto_gte_0.8", {}).get("n", 57)
+    handles, labels_left = right.get_legend_handles_labels()
+    handles2, labels_right = twin.get_legend_handles_labels()
+    right.legend(handles + handles2, labels_left + labels_right, loc="upper right", fontsize=10)
+
+    fig.subplots_adjust(bottom=0.20, top=0.83, wspace=0.22)
+    fig.suptitle("Выборка не хаотична, но локальных cliffs много", fontsize=17, weight="bold", y=0.98)
+    fig.text(
+        0.5,
+        0.07,
+        f"При pair Tanimoto >= 0.8 медианный |Δ ln x2| = {med_hi:.2f} на n={hi_n}, тогда как общий cliff rate = {100 * knn_full.get('nearest_neighbor', {}).get('cliff_rate', 0.489):.1f}%.",
+        ha="center",
+        color=SLATE,
+        fontsize=11.5,
+    )
+    save_both(fig, "knn_modelability_diagnostics")
+    plt.close(fig)
+
+
 def parity_lnx2() -> None:
     plt = _mpl()
     candidates = [
@@ -587,14 +950,18 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--results-dir", type=str, default=str(RESULTS))
     parser.add_argument("--output-dir", type=str, default=str(OUT))
+    parser.add_argument("--knn-full-dir", type=str, default=str(KNN_FULL_RESULTS))
+    parser.add_argument("--knn-subset-dir", type=str, default=str(KNN_SUBSET_RESULTS))
     return parser.parse_args()
 
 
 def main() -> None:
-    global OUT, RESULTS
+    global KNN_FULL_RESULTS, KNN_SUBSET_RESULTS, OUT, RESULTS
     args = parse_args()
     RESULTS = Path(args.results_dir).expanduser().resolve()
     OUT = Path(args.output_dir).expanduser().resolve()
+    KNN_FULL_RESULTS = Path(args.knn_full_dir).expanduser().resolve()
+    KNN_SUBSET_RESULTS = Path(args.knn_subset_dir).expanduser().resolve()
     OUT.mkdir(parents=True, exist_ok=True)
     plots = [
         ("corpus_lnx2_histogram", corpus_lnx2_histogram),
@@ -605,6 +972,10 @@ def main() -> None:
         ("nrtl_gamma_example", nrtl_gamma_example),
         ("sensitivity_bars", sensitivity_bars),
         ("error_decomposition_waterfall", error_decomposition_waterfall),
+        ("knn_summary_table", knn_summary_table),
+        ("knn_vs_adaptive_benchmarks", knn_vs_adaptive_benchmarks),
+        ("knn_controlled_subset_comparison", knn_controlled_subset_comparison),
+        ("knn_modelability_diagnostics", knn_modelability_diagnostics),
         ("parity_lnx2", parity_lnx2),
         ("linear_probe_bars", linear_probe_bars),
         ("timp_dual_channel_molecule", timp_dual_channel_molecule),

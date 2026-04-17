@@ -19,6 +19,36 @@ The key maintained comparison is:
 The main research question is whether the explicit physics bottleneck helps
 relative to the same graph backbone trained directly on solubility.
 
+## Project Memory
+
+Canonical cross-agent project memory lives in:
+
+- `PROJECT_MEMORY.md`
+
+All coding agents must treat it as a maintained operational source of truth.
+
+Required workflow:
+
+- before substantial work, read `PROJECT_MEMORY.md`
+- when old narrative assets (`main.tex`, presentation text, older docs) disagree
+  with fresh result bundles, prefer current reproducible artifacts and
+  `PROJECT_MEMORY.md`
+- after any significant incident, update `PROJECT_MEMORY.md` in the same turn
+  if feasible
+
+For this repository, an "incident" includes:
+
+- new benchmark result
+- failed or unstable run
+- split/protocol change
+- environment/runtime issue
+- documentation drift discovery
+- accepted hypothesis change
+- artifact contract change
+
+Memory updates should be factual, dated, concise, and point to concrete files
+under `results/`, `logs/`, `docs/`, or source code.
+
 ## Installation
 
 ```bash
@@ -332,8 +362,16 @@ python scripts/evaluation/validate_physics.py \
     --checkpoint checkpoints/tgnn_solv_trained.pt \
     --test-data notebooks/data/processed/test.csv \
     --output results/physics_validation.json
+python scripts/evaluation/run_knn_modelability.py \
+    --train-data notebooks/data/processed/train.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --out-dir results/knn_modelability
+python scripts/evaluation/run_metric_diagnostics.py \
+    --protocols scaffold,solute,solvent,pair_random,row_random \
+    --out-dir results/metric_diagnosis_bundle
 python scripts/analysis/diagnose_gradient_flow.py --help
 python scripts/analysis/analyze_timp_channels.py --help
+python scripts/analysis/run_source_uncertainty_audit.py --help
 python scripts/analysis/sensitivity_analysis.py --help
 python scripts/analysis/weight_analysis.py --help
 ```
@@ -587,6 +625,8 @@ Optional keys appear when enabled:
 - `hansen_contrastive_mask`, `hansen_slv_contrastive_mask`
 - `hansen_sol_contrastive_weight`, `hansen_slv_contrastive_weight`
 - `pair_Ra`, `pair_hansen_mask`
+- `source_sigma_ln_x2`, `source_solubility_weight`
+- `source_method_guess`, `source_detail`
 
 Graph featurization is now config-driven. The default corpus still uses the
 historical `35/8` node/edge layout, while TIMP runs can opt into:
@@ -625,6 +665,9 @@ High-signal flags that are easy to miss:
 - `use_hansen_contrastive`
 - `use_aux_direct_sol_loss`
 - `include_water_solubility`
+- `use_source_uncertainty_weights`
+- `source_uncertainty_csv`
+- `source_uncertainty_weight_mode`
 - `use_oracle_injection`
 - `bridge_loss_weight`
 - `use_walden_check`

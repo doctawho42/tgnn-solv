@@ -642,6 +642,16 @@ def load_data(
             config.use_hansen_contrastive and config.use_pseudo_hansen
         ),
         pseudo_hansen_weight_discount=config.pseudo_hansen_weight_discount,
+        source_uncertainty_csv=(
+            config.source_uncertainty_csv
+            if config.use_source_uncertainty_weights
+            else ""
+        ),
+        source_uncertainty_weight_mode=config.source_uncertainty_weight_mode,
+        source_uncertainty_default_sigma_ln_x2=config.source_uncertainty_default_sigma_ln_x2,
+        source_uncertainty_min_sigma_ln_x2=config.source_uncertainty_min_sigma_ln_x2,
+        source_uncertainty_min_weight=config.source_uncertainty_min_weight,
+        source_uncertainty_max_weight=config.source_uncertainty_max_weight,
         seed=seed,
     )
 

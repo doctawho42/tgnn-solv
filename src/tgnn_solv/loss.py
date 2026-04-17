@@ -114,6 +114,37 @@ class TGNNSolvLoss(nn.Module):
             ar <= delta, 0.5 * r ** 2, delta * (ar - 0.5 * delta)
         ).mean()
 
+    def weighted_huber_loss(
+        self,
+        pred: Tensor,
+        target: Tensor,
+        weight: Tensor | None = None,
+        delta: float | None = None,
+    ) -> Tensor:
+        if weight is None:
+            return self.huber_loss(pred, target, delta=delta)
+        if delta is None:
+            delta = self.huber_delta
+        r = pred - target
+        ar = r.abs()
+        huber = torch.where(
+            ar <= delta,
+            0.5 * r ** 2,
+            delta * (ar - 0.5 * delta),
+        )
+        weight = weight.to(pred.device, dtype=pred.dtype).clamp_min(self.cfg.eps)
+        return (weight * huber).sum() / weight.sum().clamp_min(self.cfg.eps)
+
+    def weighted_mean(
+        self,
+        value: Tensor,
+        weight: Tensor | None = None,
+    ) -> Tensor:
+        if weight is None:
+            return value.mean()
+        weight = weight.to(value.device, dtype=value.dtype).clamp_min(self.cfg.eps)
+        return (weight * value).sum() / weight.sum().clamp_min(self.cfg.eps)
+
     def masked_mse(
         self,
         pred: Tensor,
@@ -180,11 +211,17 @@ class TGNNSolvLoss(nn.Module):
             )
         else:
             sol_mask = sol_mask.to(dev)
+        sol_sample_weight = None
+        if self.cfg.use_source_uncertainty_weights:
+            maybe_weight = targets.get("source_solubility_weight")
+            if isinstance(maybe_weight, Tensor):
+                sol_sample_weight = maybe_weight.to(dev)[sol_mask]
 
         if w.get("sol", 0) > 0 and sol_mask.any():
-            losses["sol"] = self.huber_loss(
+            losses["sol"] = self.weighted_huber_loss(
                 output["ln_x2"][sol_mask],
                 targets["ln_x2"].to(dev)[sol_mask],
+                weight=sol_sample_weight,
             )
 
         if (
@@ -192,9 +229,10 @@ class TGNNSolvLoss(nn.Module):
             and sol_mask.any()
             and isinstance(output.get("ln_x2_aux"), Tensor)
         ):
-            losses["aux_direct_sol"] = self.huber_loss(
+            losses["aux_direct_sol"] = self.weighted_huber_loss(
                 output["ln_x2_aux"][sol_mask],
                 targets["ln_x2"].to(dev)[sol_mask],
+                weight=sol_sample_weight,
             )
 
         if (
@@ -208,9 +246,13 @@ class TGNNSolvLoss(nn.Module):
             true = targets["ln_x2"].to(dev)[sol_mask]
             res = mu - true
             inv_var = torch.exp(-2.0 * log_sigma)
-            losses["direct_nll"] = (
+            direct_nll = (
                 0.5 * inv_var * res.pow(2) + log_sigma
-            ).mean()
+            )
+            losses["direct_nll"] = self.weighted_mean(
+                direct_nll,
+                weight=sol_sample_weight,
+            )
 
         # ============================================================
         # 2. Melting point

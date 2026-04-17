@@ -29,6 +29,7 @@ from ..features import (
 )
 from ..group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from ..hansen_contrastive import pseudo_hansen_from_smiles
+from .source_uncertainty import attach_source_uncertainty
 from .solvent_types import solvent_type_id_from_smiles
 
 TargetValue: TypeAlias = torch.Tensor | str
@@ -194,6 +195,12 @@ class TGNNSolvDataset(Dataset):
         use_phys_edge_features: bool = False,
         use_pseudo_hansen: bool = False,
         pseudo_hansen_weight_discount: float = 0.3,
+        source_uncertainty_csv: str = "",
+        source_uncertainty_weight_mode: str = "inverse_variance",
+        source_uncertainty_default_sigma_ln_x2: float = 0.75,
+        source_uncertainty_min_sigma_ln_x2: float = 0.20,
+        source_uncertainty_min_weight: float = 0.25,
+        source_uncertainty_max_weight: float = 4.0,
     ) -> None:
         self.cache: dict[str, Data] | None = {} if cache else None
         self.use_morgan_features = use_morgan_features
@@ -207,6 +214,17 @@ class TGNNSolvDataset(Dataset):
         self.use_phys_edge_features = use_phys_edge_features
         self.use_pseudo_hansen = use_pseudo_hansen
         self.pseudo_hansen_weight_discount = float(pseudo_hansen_weight_discount)
+        if str(source_uncertainty_csv).strip():
+            df = attach_source_uncertainty(
+                df,
+                uncertainty_csv=str(source_uncertainty_csv).strip(),
+                weight_mode=source_uncertainty_weight_mode,
+                default_sigma_ln_x2=float(source_uncertainty_default_sigma_ln_x2),
+                min_sigma_ln_x2=float(source_uncertainty_min_sigma_ln_x2),
+                min_weight=float(source_uncertainty_min_weight),
+                max_weight=float(source_uncertainty_max_weight),
+                strict_for_supervised=True,
+            )
         self.fp_cache: dict[str, torch.Tensor] | None = {} if cache and use_morgan_features else None
         self.descriptor_aug_cache: dict[str, torch.Tensor] | None = (
             {} if cache and use_descriptor_augmentation else None
@@ -567,6 +585,28 @@ class TGNNSolvDataset(Dataset):
             "pair_key": str(r["pair_key"]),
             "solute_smiles": str(r["solute_smiles"]),
             "solvent_smiles": str(r["solvent_smiles"]),
+            "source_method_guess": (
+                str(r["source_method_guess"])
+                if "source_method_guess" in r.index and pd.notna(r["source_method_guess"])
+                else ""
+            ),
+            "source_detail": (
+                str(r["source_detail"])
+                if "source_detail" in r.index and pd.notna(r["source_detail"])
+                else ""
+            ),
+            "source_sigma_ln_x2": torch.tensor(
+                float(r["source_sigma_ln_x2"])
+                if "source_sigma_ln_x2" in r.index and pd.notna(r["source_sigma_ln_x2"])
+                else 0.75,
+                dtype=torch.float,
+            ),
+            "source_solubility_weight": torch.tensor(
+                float(r["source_solubility_weight"])
+                if "source_solubility_weight" in r.index and pd.notna(r["source_solubility_weight"])
+                else 1.0,
+                dtype=torch.float,
+            ),
         }
         if self.use_gc_priors_crystal:
             if sol_gc is None:
@@ -652,6 +692,12 @@ def make_loader(
     use_phys_edge_features: bool = False,
     use_pseudo_hansen: bool = False,
     pseudo_hansen_weight_discount: float = 0.3,
+    source_uncertainty_csv: str = "",
+    source_uncertainty_weight_mode: str = "inverse_variance",
+    source_uncertainty_default_sigma_ln_x2: float = 0.75,
+    source_uncertainty_min_sigma_ln_x2: float = 0.20,
+    source_uncertainty_min_weight: float = 0.25,
+    source_uncertainty_max_weight: float = 4.0,
     seed: int = 42,
 ) -> DataLoader:
     """Create a single DataLoader with optional same-pair temperature batching."""
@@ -669,6 +715,12 @@ def make_loader(
         use_phys_edge_features=use_phys_edge_features,
         use_pseudo_hansen=use_pseudo_hansen,
         pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
+        source_uncertainty_csv=source_uncertainty_csv,
+        source_uncertainty_weight_mode=source_uncertainty_weight_mode,
+        source_uncertainty_default_sigma_ln_x2=source_uncertainty_default_sigma_ln_x2,
+        source_uncertainty_min_sigma_ln_x2=source_uncertainty_min_sigma_ln_x2,
+        source_uncertainty_min_weight=source_uncertainty_min_weight,
+        source_uncertainty_max_weight=source_uncertainty_max_weight,
     )
 
     if drop_last is None:
@@ -720,6 +772,12 @@ def make_loaders(
     use_phys_edge_features: bool = False,
     use_pseudo_hansen: bool = False,
     pseudo_hansen_weight_discount: float = 0.3,
+    source_uncertainty_csv: str = "",
+    source_uncertainty_weight_mode: str = "inverse_variance",
+    source_uncertainty_default_sigma_ln_x2: float = 0.75,
+    source_uncertainty_min_sigma_ln_x2: float = 0.20,
+    source_uncertainty_min_weight: float = 0.25,
+    source_uncertainty_max_weight: float = 4.0,
     seed: int = 42,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
@@ -758,6 +816,12 @@ def make_loaders(
         use_phys_edge_features=use_phys_edge_features,
         use_pseudo_hansen=use_pseudo_hansen,
         pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
+        source_uncertainty_csv=source_uncertainty_csv,
+        source_uncertainty_weight_mode=source_uncertainty_weight_mode,
+        source_uncertainty_default_sigma_ln_x2=source_uncertainty_default_sigma_ln_x2,
+        source_uncertainty_min_sigma_ln_x2=source_uncertainty_min_sigma_ln_x2,
+        source_uncertainty_min_weight=source_uncertainty_min_weight,
+        source_uncertainty_max_weight=source_uncertainty_max_weight,
         seed=seed,
     )
     val_ld = make_loader(
@@ -778,6 +842,12 @@ def make_loaders(
         use_phys_edge_features=use_phys_edge_features,
         use_pseudo_hansen=use_pseudo_hansen,
         pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
+        source_uncertainty_csv=source_uncertainty_csv,
+        source_uncertainty_weight_mode=source_uncertainty_weight_mode,
+        source_uncertainty_default_sigma_ln_x2=source_uncertainty_default_sigma_ln_x2,
+        source_uncertainty_min_sigma_ln_x2=source_uncertainty_min_sigma_ln_x2,
+        source_uncertainty_min_weight=source_uncertainty_min_weight,
+        source_uncertainty_max_weight=source_uncertainty_max_weight,
     )
     test_ld = make_loader(
         test_df,
@@ -797,6 +867,12 @@ def make_loaders(
         use_phys_edge_features=use_phys_edge_features,
         use_pseudo_hansen=use_pseudo_hansen,
         pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
+        source_uncertainty_csv=source_uncertainty_csv,
+        source_uncertainty_weight_mode=source_uncertainty_weight_mode,
+        source_uncertainty_default_sigma_ln_x2=source_uncertainty_default_sigma_ln_x2,
+        source_uncertainty_min_sigma_ln_x2=source_uncertainty_min_sigma_ln_x2,
+        source_uncertainty_min_weight=source_uncertainty_min_weight,
+        source_uncertainty_max_weight=source_uncertainty_max_weight,
     )
 
     for name, frame, loader in [

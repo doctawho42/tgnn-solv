@@ -57,6 +57,7 @@ on them.
 | `scripts/training/run_resume_safe_train.sh` | Resume-safe TGNN wrapper for cloud sessions | Stable utility | Wraps `train.py --resume` |
 | `scripts/evaluation/benchmark_tgnn_solv.py` | Rich benchmark via `Evaluator` | Stable utility | Use when you want more than quick eval |
 | `scripts/evaluation/benchmark_adapter_model.py` | Benchmark a formal Python adapter | Stable utility | Preferred custom-model path when you want fit/predict/report in one contract |
+| `scripts/evaluation/run_knn_modelability.py` | KNN-style Morgan baseline plus nearest-neighbor modelability diagnostics | Stable utility | Writes a canonical benchmark bundle and pair-Tanimoto neighbor summaries |
 | `scripts/evaluation/analyze_benchmark.py` | Text summary of benchmark JSON | Stable utility | Lightweight reporting helper |
 | `scripts/evaluation/compare_models.py` | Compare multiple TGNN checkpoints | Stable utility | Wraps benchmark logic |
 | `scripts/training/diagnose_training.py` | Dataset stats and overfit sanity check | Stable utility | Good pre-flight tool |
@@ -106,6 +107,7 @@ on them.
 |-------------|------|--------|-------|
 | `scripts/analysis/diagnose_gradient_flow.py` | Compare gradient flow between TGNN-Solv and DirectGNN | Research | Useful with `paper_config_tuned_interaction_rescue.yaml` and config overrides |
 | `scripts/analysis/analyze_timp_channels.py` | Probe TIMP dispersive vs polar channels against Hansen and descriptor targets | Research | Best with TIMP checkpoints and optional train/test CSV pair |
+| `scripts/analysis/run_source_uncertainty_audit.py` | Build source-level method/sigma priors from raw BigSolDB `Source` identifiers | Research | Preserves detailed sources through the maintained conversion path, computes van't Hoff smoothness proxies, and exports manual-review CSVs |
 | `scripts/analysis/sensitivity_analysis.py` | Compute local `d ln(x2) / d parameter` sensitivities from intermediates CSV | Research | Consumes `tgnn_intermediates.csv`-style exports |
 | `scripts/analysis/weight_analysis.py` | Summarize trained weight distributions by model block | Research | Works for both TGNN-Solv and DirectGNN checkpoints |
 | `scripts/analysis/aggregate_proxy_results.py` | Aggregate proxy experiment outputs into one comparison summary | Research | Lightweight reporting helper |

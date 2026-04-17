@@ -527,6 +527,26 @@ class DirectGNNTrainer:
         }
         self._cache_release_counter = 0
 
+    def _weighted_huber_loss(
+        self,
+        pred: Tensor,
+        true: Tensor,
+        weight: Tensor | None = None,
+        *,
+        delta: float = 1.0,
+    ) -> Tensor:
+        if weight is None:
+            return nn.functional.huber_loss(pred, true, delta=delta)
+        residual = pred - true
+        abs_residual = residual.abs()
+        huber = torch.where(
+            abs_residual <= delta,
+            0.5 * residual ** 2,
+            delta * (abs_residual - 0.5 * delta),
+        )
+        weight = weight.to(pred.device, dtype=pred.dtype).clamp_min(1.0e-8)
+        return (weight * huber).sum() / weight.sum().clamp_min(1.0e-8)
+
     def _maybe_release_device_cache(self, *, force: bool = False) -> None:
         """Periodically release MPS cached memory to reduce fragmentation."""
         if self.device.type != "mps":
@@ -673,7 +693,17 @@ class DirectGNNTrainer:
 
                 pred = out["ln_x2"][mask]
                 true = tgt["ln_x2"].to(self.device)[mask]
-                loss = nn.functional.huber_loss(pred, true, delta=1.0)
+                sol_weight = None
+                if self.model.cfg.use_source_uncertainty_weights:
+                    maybe_weight = tgt.get("source_solubility_weight")
+                    if isinstance(maybe_weight, Tensor):
+                        sol_weight = maybe_weight.to(self.device)[mask]
+                loss = self._weighted_huber_loss(
+                    pred,
+                    true,
+                    weight=sol_weight,
+                    delta=1.0,
+                )
 
                 loss.backward()
                 nn.utils.clip_grad_norm_(

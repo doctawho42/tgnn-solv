@@ -126,15 +126,24 @@ def normalize_predictions(payload: Mapping[str, object]) -> dict[str, list[JSONV
 
     true = predictions.get("true_ln_x2", payload.get("true_ln_x2"))
     pred = predictions.get("pred_ln_x2", payload.get("pred_ln_x2"))
+    true_logS = predictions.get("true_logS", payload.get("true_logS"))
+    pred_logS = predictions.get("pred_logS", payload.get("pred_logS"))
     row_indices = predictions.get("row_indices", payload.get("row_indices"))
+    logS_eval_mask = predictions.get("logS_eval_mask", payload.get("logS_eval_mask"))
 
     result: dict[str, list[JSONValue]] = {}
     if true is not None:
         result["true_ln_x2"] = json_safe(list(true))
     if pred is not None:
         result["pred_ln_x2"] = json_safe(list(pred))
+    if true_logS is not None:
+        result["true_logS"] = json_safe(list(true_logS))
+    if pred_logS is not None:
+        result["pred_logS"] = json_safe(list(pred_logS))
     if row_indices is not None:
         result["row_indices"] = json_safe(list(row_indices))
+    if logS_eval_mask is not None:
+        result["logS_eval_mask"] = json_safe(list(logS_eval_mask))
     return result
 
 
@@ -202,6 +211,7 @@ def normalize_report_payload(payload: Mapping[str, object]) -> dict[str, JSONVal
         },
         "physics_summary": json_safe(payload.get("physics_summary", {})),
         "predictions": predictions,
+        "evaluation_subsets": json_safe(payload.get("evaluation_subsets", {})),
     }
 
     # Compatibility aliases for existing downstream consumers.
@@ -226,6 +236,12 @@ def normalize_report_payload(payload: Mapping[str, object]) -> dict[str, JSONVal
         normalized["pred_ln_x2"] = predictions["pred_ln_x2"]
     if "row_indices" in predictions:
         normalized["row_indices"] = predictions["row_indices"]
+    if "true_logS" in predictions:
+        normalized["true_logS"] = predictions["true_logS"]
+    if "pred_logS" in predictions:
+        normalized["pred_logS"] = predictions["pred_logS"]
+    if "logS_eval_mask" in predictions:
+        normalized["logS_eval_mask"] = predictions["logS_eval_mask"]
 
     return json_safe(normalized)
 
@@ -238,6 +254,7 @@ def build_report_payload(
     stratified: Mapping[str, Mapping[str, object]] | None = None,
     predictions: Mapping[str, object] | None = None,
     physics_summary: Mapping[str, object] | None = None,
+    evaluation_subsets: Mapping[str, object] | None = None,
 ) -> dict[str, JSONValue]:
     """Build a canonical report payload with compatibility aliases."""
     metadata = dict(metadata or {})
@@ -261,5 +278,6 @@ def build_report_payload(
         },
         "physics_summary": dict(physics_summary or {}),
         "predictions": dict(predictions or {}),
+        "evaluation_subsets": dict(evaluation_subsets or {}),
     }
     return normalize_report_payload(payload)

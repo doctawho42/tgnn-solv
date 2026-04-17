@@ -144,6 +144,16 @@ class TGNNSolvConfig:
     use_pair_temperature_batching: bool = True
     pair_temperature_min_group_size: int = 2
     pair_temperature_group_chunk_size: int = 4
+    use_source_uncertainty_weights: bool = False
+    source_uncertainty_csv: str = (
+        "results/source_uncertainty_audit_reviewed/"
+        "supervised_rows_with_source_uncertainty.csv"
+    )
+    source_uncertainty_weight_mode: str = "inverse_variance"
+    source_uncertainty_default_sigma_ln_x2: float = 0.75
+    source_uncertainty_min_sigma_ln_x2: float = 0.20
+    source_uncertainty_min_weight: float = 0.25
+    source_uncertainty_max_weight: float = 4.0
     lr_phase1: float = 3e-4
     lr_phase2: float = 1e-4
     lr_phase3: float = 1e-6

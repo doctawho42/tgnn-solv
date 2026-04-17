@@ -131,12 +131,41 @@ def _compute_descriptors(
     descriptor_frame = get_descriptors(False, ALL_2D, mols).apply(pd.to_numeric, errors="coerce")
     descriptor_array = descriptor_frame.to_numpy(dtype=np.float32)
     finite_mask = np.isfinite(descriptor_array)
+    nonfinite_before = int((~finite_mask).sum())
+    rows_with_nonfinite_before = (
+        int((~finite_mask).any(axis=1).sum()) if descriptor_array.ndim == 2 else 0
+    )
+    cols_with_nonfinite_before = (
+        int((~finite_mask).any(axis=0).sum()) if descriptor_array.ndim == 2 else 0
+    )
+
+    # FastSolv's descriptor stack emits NaN/inf in a stable subset of columns for
+    # this corpus. Replace them with train/predict-independent column statistics
+    # so scaling and checkpoint buffers remain finite.
+    if descriptor_array.ndim == 2 and descriptor_array.size:
+        sanitized = descriptor_array.astype(np.float32, copy=True)
+        with np.errstate(invalid="ignore"):
+            column_fill = np.nanmean(np.where(finite_mask, sanitized, np.nan), axis=0)
+        column_fill = np.where(np.isfinite(column_fill), column_fill, 0.0).astype(np.float32, copy=False)
+        nonfinite_rows, nonfinite_cols = np.where(~finite_mask)
+        if nonfinite_rows.size:
+            sanitized[nonfinite_rows, nonfinite_cols] = column_fill[nonfinite_cols]
+        descriptor_array = sanitized
+
+    finite_mask_after = np.isfinite(descriptor_array)
     diagnostics = {
         "n_smiles": int(len(smiles_array)),
         "n_descriptor_columns": int(descriptor_array.shape[1]) if descriptor_array.ndim == 2 else 0,
-        "nonfinite_cells": int((~finite_mask).sum()),
-        "rows_with_nonfinite": int((~finite_mask).any(axis=1).sum()) if descriptor_array.ndim == 2 else 0,
-        "cols_with_nonfinite": int((~finite_mask).any(axis=0).sum()) if descriptor_array.ndim == 2 else 0,
+        "nonfinite_cells_before_sanitize": nonfinite_before,
+        "rows_with_nonfinite_before_sanitize": rows_with_nonfinite_before,
+        "cols_with_nonfinite_before_sanitize": cols_with_nonfinite_before,
+        "nonfinite_cells_after_sanitize": int((~finite_mask_after).sum()),
+        "rows_with_nonfinite_after_sanitize": (
+            int((~finite_mask_after).any(axis=1).sum()) if descriptor_array.ndim == 2 else 0
+        ),
+        "cols_with_nonfinite_after_sanitize": (
+            int((~finite_mask_after).any(axis=0).sum()) if descriptor_array.ndim == 2 else 0
+        ),
         "descriptor_nproc": int(descriptor_nproc),
     }
     return {
@@ -229,6 +258,65 @@ def _compute_gradients(df: pd.DataFrame, logS_col: str = "logS") -> np.ndarray:
         grad_values = np.gradient(logs[order], temperatures[order])
         gradients[np.asarray(idx)[order]] = grad_values
     return gradients
+
+
+def _summarize_logS_targets(df: pd.DataFrame) -> dict[str, Any]:
+    values = pd.to_numeric(df["logS"], errors="coerce").to_numpy(dtype=float)
+    finite_mask = np.isfinite(values)
+    invalid_rows = df.loc[~finite_mask].copy()
+    invalid_solvents = (
+        invalid_rows["solvent_smiles"].astype(str).value_counts().head(20).to_dict()
+        if not invalid_rows.empty
+        else {}
+    )
+    ln_x2_nonnegative = 0
+    if "ln_x2" in df.columns:
+        ln_x2 = pd.to_numeric(df["ln_x2"], errors="coerce")
+        ln_x2_nonnegative = int((ln_x2 >= 0.0).sum())
+    return {
+        "rows_before_filter": int(len(df)),
+        "finite_rows": int(finite_mask.sum()),
+        "nan_rows": int(np.isnan(values).sum()),
+        "posinf_rows": int(np.isposinf(values).sum()),
+        "neginf_rows": int(np.isneginf(values).sum()),
+        "rows_with_ln_x2_ge_0": ln_x2_nonnegative,
+        "top_invalid_solvents": invalid_solvents,
+    }
+
+
+def _filter_finite_logS_rows(
+    df: pd.DataFrame,
+    *,
+    split_name: str,
+) -> tuple[pd.DataFrame, dict[str, Any]]:
+    diagnostics = _summarize_logS_targets(df)
+    finite_mask = np.isfinite(pd.to_numeric(df["logS"], errors="coerce").to_numpy(dtype=float))
+    filtered = df.loc[finite_mask].reset_index(drop=True)
+    diagnostics.update(
+        {
+            "split": split_name,
+            "rows_after_filter": int(len(filtered)),
+            "rows_dropped": int(len(df) - len(filtered)),
+        }
+    )
+    return filtered, diagnostics
+
+
+def _assert_finite_stats(stats: dict[str, "torch.Tensor"]) -> None:
+    import torch
+
+    bad: list[str] = []
+    for name, tensor in stats.items():
+        if tensor is None:
+            bad.append(f"{name}=None")
+            continue
+        if not torch.isfinite(tensor).all():
+            bad.append(name)
+    if bad:
+        raise ValueError(
+            "Non-finite FastSolv scaling statistics detected: "
+            + ", ".join(bad)
+        )
 
 
 def _predict_with_model(
@@ -413,10 +501,17 @@ def run_train(args: argparse.Namespace) -> int:
             continue
         split_df["logS"] = logS_from_ln_x2(split_df)
 
-    train_df = train_df.dropna(subset=["logS"]).reset_index(drop=True)
-    val_df = val_df.dropna(subset=["logS"]).reset_index(drop=True)
+    train_df, train_target_diag = _filter_finite_logS_rows(train_df, split_name="train")
+    val_df, val_target_diag = _filter_finite_logS_rows(val_df, split_name="val")
+    test_target_diag = None
     if test_df is not None:
-        test_df = test_df.dropna(subset=["logS"]).reset_index(drop=True)
+        test_df, test_target_diag = _filter_finite_logS_rows(test_df, split_name="test")
+
+    if train_df.empty or val_df.empty:
+        raise ValueError(
+            "FastSolv training received no finite logS targets after filtering. "
+            "Check solvent molarity coverage and ln_x2->logS conversion."
+        )
 
     if args.compute_gradients:
         train_df["dlogS_dT"] = _compute_gradients(train_df)
@@ -454,6 +549,7 @@ def run_train(args: argparse.Namespace) -> int:
         train_temp,
         train_target,
     )
+    _assert_finite_stats(stats)
     val_sol_s, val_slv_s, val_temp_s, val_target_s, _ = _scale_split(
         val_sol,
         val_slv,
@@ -476,7 +572,17 @@ def run_train(args: argparse.Namespace) -> int:
         print(f"  test rows:  {len(test_df)}")
     print(f"  descriptor nproc: {int(args.descriptor_nproc)}")
     print(f"  effective lr: {effective_lr:.2e}")
-    print(f"  non-finite descriptor cells: {diagnostics['nonfinite_cells']}")
+    print(
+        "  non-finite descriptor cells: "
+        f"{diagnostics['nonfinite_cells_before_sanitize']} -> "
+        f"{diagnostics['nonfinite_cells_after_sanitize']}"
+    )
+    print(
+        "  non-finite logS rows filtered: "
+        f"train {train_target_diag['rows_dropped']}, "
+        f"val {val_target_diag['rows_dropped']}, "
+        f"test {test_target_diag['rows_dropped'] if test_target_diag is not None else 0}"
+    )
 
     NaNTolerantFastsolv = _get_nan_tolerant_fastsolv_class()
     model = NaNTolerantFastsolv(
@@ -549,6 +655,11 @@ def run_train(args: argparse.Namespace) -> int:
             "train_rows": int(len(train_df)),
             "val_rows": int(len(val_df)),
             "test_rows": int(len(test_df)) if test_df is not None else 0,
+            "target_diagnostics": {
+                "train": train_target_diag,
+                "val": val_target_diag,
+                "test": test_target_diag,
+            },
         },
     )
 
@@ -580,9 +691,9 @@ def run_train(args: argparse.Namespace) -> int:
             "predictions": str(predictions_path),
             "summary": str(summary_path),
             "overall": artifacts.report["overall"],
-            "logS_metrics": regression_metrics(
-                split_df["logS"].to_numpy(dtype=float),
-                pred_logS,
+            "evaluation_subsets": artifacts.report.get("evaluation_subsets", {}),
+            "logS_metrics": (
+                ((artifacts.report.get("evaluation_subsets") or {}).get("logS_finite_subset"))
             ),
         }
 
@@ -590,8 +701,23 @@ def run_train(args: argparse.Namespace) -> int:
         "model": "fastsolv",
         "checkpoint": best_checkpoint,
         "split": build_split_metadata(split_mode=getattr(args, "split_mode", None), test_data=args.test or args.val),
+        "headline_metric_space": "ln_x2",
+        "logS_evaluation_policy": {
+            "mode": "finite_only",
+            "exclude_exact_ln_x2_eq_0": True,
+            "notes": (
+                "FastSolv is trained/predicted in logS, but headline bundle metrics are reported in ln_x2 "
+                "on all supervised rows. logS metrics are auxiliary and restricted to rows with finite true "
+                "and predicted logS."
+            ),
+        },
         "splits": split_payloads,
         "descriptor_diagnostics": diagnostics,
+        "target_diagnostics": {
+            "train": train_target_diag,
+            "val": val_target_diag,
+            "test": test_target_diag,
+        },
     }
     (outdir / "metrics.json").write_text(json.dumps(top_level, indent=2), encoding="utf-8")
     if all_summaries:

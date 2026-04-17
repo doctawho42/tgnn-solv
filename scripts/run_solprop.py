@@ -22,11 +22,11 @@ from rdkit import RDLogger
 from tgnn_solv.external_benchmarking import (
     BenchmarkArtifacts,
     build_benchmark_artifacts,
+    clip_ln_x2_for_logS,
     ln_x2_from_logS,
     logS_from_ln_x2,
     merge_prediction_frame,
     prepare_pair_dataframe,
-    regression_metrics,
     write_benchmark_artifacts,
 )
 
@@ -459,7 +459,7 @@ def _safe_logS_to_ln_x2(solvent_smiles: pd.Series, logS: pd.Series) -> pd.Series
 
 
 def _safe_ln_x2_to_logS(solvent_smiles: pd.Series, pred_ln_x2: np.ndarray) -> pd.Series:
-    clipped = np.minimum(np.asarray(pred_ln_x2, dtype=float), np.log(0.999999))
+    clipped = clip_ln_x2_for_logS(pred_ln_x2)
     return logS_from_ln_x2(
         pd.DataFrame({"solvent_smiles": solvent_smiles, "ln_x2": clipped}),
         ln_x2_col="ln_x2",
@@ -905,8 +905,38 @@ def run_train(args: argparse.Namespace) -> int:
         train_pred["temperature"].to_numpy(dtype=float),
         calibrator,
     )
+    train_raw_artifacts = _evaluate_prediction_bundle(
+        model_name="solprop_zero_shot",
+        split_name="train",
+        split_df=train_pred,
+        pred_ln_x2=train_pred["solprop_ln_x2"].to_numpy(dtype=float),
+        pred_logS=train_pred["solprop_logS"].to_numpy(dtype=float),
+        uncertainty=train_pred["solprop_logS_stdev"].to_numpy(dtype=float),
+        split_mode="train",
+        test_data=args.train,
+        metadata={"calibrated": False, "diagnostics": {"train": train_diag}},
+    )
+    train_calibrated_artifacts = _evaluate_prediction_bundle(
+        model_name="solprop_calibrated",
+        split_name="train",
+        split_df=train_pred,
+        pred_ln_x2=train_cal,
+        pred_logS=_safe_ln_x2_to_logS(train_pred["solvent_smiles"], train_cal).to_numpy(dtype=float),
+        split_mode="train",
+        test_data=args.train,
+        metadata={"calibrated": True, "calibrator": calibrator},
+    )
     metrics_payload: dict[str, Any] = {
         "model_family": "solprop",
+        "headline_metric_space": "ln_x2",
+        "logS_evaluation_policy": {
+            "mode": "finite_only",
+            "exclude_exact_ln_x2_eq_0": True,
+            "notes": (
+                "Zero-shot and calibrated SolProp headline metrics are reported in ln_x2 on all supervised rows. "
+                "Auxiliary logS metrics are restricted to rows with finite true and predicted logS."
+            ),
+        },
         "temperature_dependent": bool(args.temperature_dependent),
         "include_temperature": bool(args.include_temperature),
         "reduced_number": bool(args.reduced_number),
@@ -917,14 +947,10 @@ def run_train(args: argparse.Namespace) -> int:
             "test": test_diag,
         },
         "train": {
-            "raw": regression_metrics(
-                train_pred["ln_x2"].to_numpy(dtype=float),
-                train_pred["solprop_ln_x2"].to_numpy(dtype=float),
-            ),
-            "calibrated": regression_metrics(
-                train_pred["ln_x2"].to_numpy(dtype=float),
-                train_cal,
-            ),
+            "raw": train_raw_artifacts.report["overall"],
+            "raw_evaluation_subsets": train_raw_artifacts.report.get("evaluation_subsets", {}),
+            "calibrated": train_calibrated_artifacts.report["overall"],
+            "calibrated_evaluation_subsets": train_calibrated_artifacts.report.get("evaluation_subsets", {}),
         },
         "splits": {},
     }
@@ -980,12 +1006,20 @@ def run_train(args: argparse.Namespace) -> int:
         metrics_payload["splits"][split_name] = {
             "raw": {
                 "overall": raw_artifacts.report["overall"],
+                "evaluation_subsets": raw_artifacts.report.get("evaluation_subsets", {}),
+                "logS_metrics": (
+                    ((raw_artifacts.report.get("evaluation_subsets") or {}).get("logS_finite_subset"))
+                ),
                 "report": str(raw_report_path),
                 "predictions": str(raw_predictions_path),
                 "summary": str(raw_summary_path),
             },
             "calibrated": {
                 "overall": calibrated_artifacts.report["overall"],
+                "evaluation_subsets": calibrated_artifacts.report.get("evaluation_subsets", {}),
+                "logS_metrics": (
+                    ((calibrated_artifacts.report.get("evaluation_subsets") or {}).get("logS_finite_subset"))
+                ),
                 "report": str(cal_report_path),
                 "predictions": str(cal_predictions_path),
                 "summary": str(cal_summary_path),
@@ -1204,6 +1238,15 @@ def run_native_train(args: argparse.Namespace) -> int:
         "model_family": "solprop",
         "native_retrain": True,
         "target_space": "ln_x2",
+        "headline_metric_space": "ln_x2",
+        "logS_evaluation_policy": {
+            "mode": "finite_only_auxiliary",
+            "exclude_exact_ln_x2_eq_0": True,
+            "notes": (
+                "Native SolProp retraining is evaluated primarily in ln_x2 on all supervised rows. "
+                "Derived logS metrics are auxiliary and restricted to rows with finite true and predicted logS."
+            ),
+        },
         "temperature_feature": True,
         "n_models": len(checkpoint_paths),
         "device": _normalize_native_device(args.device),
@@ -1223,12 +1266,31 @@ def run_native_train(args: argparse.Namespace) -> int:
             "seed": int(args.seed),
         },
         "training_history": histories,
-        "train_metrics": regression_metrics(
-            train_pred_df["ln_x2"].to_numpy(dtype=float),
-            train_pred_ln_x2,
-        ),
+        "train": {},
         "splits": {},
     }
+
+    train_artifacts = _evaluate_prediction_bundle(
+        model_name="solprop_native",
+        split_name="train",
+        split_df=train_pred_df,
+        pred_ln_x2=train_pred_ln_x2,
+        pred_logS=_safe_ln_x2_to_logS(train_pred_df["solvent_smiles"], train_pred_ln_x2).to_numpy(dtype=float),
+        uncertainty=train_pred_std,
+        split_mode="train",
+        test_data=args.train,
+        metadata={
+            "native_retrain": True,
+            "n_models": len(checkpoint_paths),
+            "target_space": "ln_x2",
+            "temperature_feature": True,
+        },
+    )
+    metrics_payload["train"] = {
+        "overall": train_artifacts.report["overall"],
+        "evaluation_subsets": train_artifacts.report.get("evaluation_subsets", {}),
+    }
+    metrics_payload["train_metrics"] = train_artifacts.report["overall"]
 
     all_summaries: list[pd.DataFrame] = []
     split_payloads: list[tuple[str, pd.DataFrame, np.ndarray, np.ndarray | None, str | None]] = [
@@ -1259,6 +1321,10 @@ def run_native_train(args: argparse.Namespace) -> int:
         all_summaries.append(artifacts.summary)
         metrics_payload["splits"][split_name] = {
             "overall": artifacts.report["overall"],
+            "evaluation_subsets": artifacts.report.get("evaluation_subsets", {}),
+            "logS_metrics": (
+                ((artifacts.report.get("evaluation_subsets") or {}).get("logS_finite_subset"))
+            ),
             "report": str(report_path),
             "predictions": str(predictions_path),
             "summary": str(summary_path),

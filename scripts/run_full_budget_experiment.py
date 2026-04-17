@@ -259,6 +259,16 @@ def build_loader(
         use_phys_edge_features=cfg.use_phys_edge_features,
         use_pseudo_hansen=cfg.use_hansen_contrastive and cfg.use_pseudo_hansen,
         pseudo_hansen_weight_discount=cfg.pseudo_hansen_weight_discount,
+        source_uncertainty_csv=(
+            cfg.source_uncertainty_csv
+            if cfg.use_source_uncertainty_weights
+            else ""
+        ),
+        source_uncertainty_weight_mode=cfg.source_uncertainty_weight_mode,
+        source_uncertainty_default_sigma_ln_x2=cfg.source_uncertainty_default_sigma_ln_x2,
+        source_uncertainty_min_sigma_ln_x2=cfg.source_uncertainty_min_sigma_ln_x2,
+        source_uncertainty_min_weight=cfg.source_uncertainty_min_weight,
+        source_uncertainty_max_weight=cfg.source_uncertainty_max_weight,
         seed=seed,
     )
 

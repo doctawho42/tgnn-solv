@@ -749,6 +749,16 @@ def main() -> None:
         use_descriptor_priors=feature_flags["use_descriptor_priors"],
         use_group_priors=feature_flags["use_group_priors"],
         use_gc_priors_crystal=feature_flags["use_gc_priors_crystal"],
+        source_uncertainty_csv=(
+            base_cfg.source_uncertainty_csv
+            if base_cfg.use_source_uncertainty_weights
+            else ""
+        ),
+        source_uncertainty_weight_mode=base_cfg.source_uncertainty_weight_mode,
+        source_uncertainty_default_sigma_ln_x2=base_cfg.source_uncertainty_default_sigma_ln_x2,
+        source_uncertainty_min_sigma_ln_x2=base_cfg.source_uncertainty_min_sigma_ln_x2,
+        source_uncertainty_min_weight=base_cfg.source_uncertainty_min_weight,
+        source_uncertainty_max_weight=base_cfg.source_uncertainty_max_weight,
     )
     val_dataset = TGNNSolvDataset(
         val_df,
@@ -760,6 +770,16 @@ def main() -> None:
         use_descriptor_priors=feature_flags["use_descriptor_priors"],
         use_group_priors=feature_flags["use_group_priors"],
         use_gc_priors_crystal=feature_flags["use_gc_priors_crystal"],
+        source_uncertainty_csv=(
+            base_cfg.source_uncertainty_csv
+            if base_cfg.use_source_uncertainty_weights
+            else ""
+        ),
+        source_uncertainty_weight_mode=base_cfg.source_uncertainty_weight_mode,
+        source_uncertainty_default_sigma_ln_x2=base_cfg.source_uncertainty_default_sigma_ln_x2,
+        source_uncertainty_min_sigma_ln_x2=base_cfg.source_uncertainty_min_sigma_ln_x2,
+        source_uncertainty_min_weight=base_cfg.source_uncertainty_min_weight,
+        source_uncertainty_max_weight=base_cfg.source_uncertainty_max_weight,
     )
     test_dataset = TGNNSolvDataset(
         test_df,
@@ -771,6 +791,16 @@ def main() -> None:
         use_descriptor_priors=feature_flags["use_descriptor_priors"],
         use_group_priors=feature_flags["use_group_priors"],
         use_gc_priors_crystal=feature_flags["use_gc_priors_crystal"],
+        source_uncertainty_csv=(
+            base_cfg.source_uncertainty_csv
+            if base_cfg.use_source_uncertainty_weights
+            else ""
+        ),
+        source_uncertainty_weight_mode=base_cfg.source_uncertainty_weight_mode,
+        source_uncertainty_default_sigma_ln_x2=base_cfg.source_uncertainty_default_sigma_ln_x2,
+        source_uncertainty_min_sigma_ln_x2=base_cfg.source_uncertainty_min_sigma_ln_x2,
+        source_uncertainty_min_weight=base_cfg.source_uncertainty_min_weight,
+        source_uncertainty_max_weight=base_cfg.source_uncertainty_max_weight,
     )
 
     train_loader = make_dataloader(train_dataset, base_cfg.batch_size, shuffle=True)

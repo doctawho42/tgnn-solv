@@ -50,6 +50,7 @@ They delegate to the legacy entry points, so behavior stays identical.
 - `evaluate_complete.py`
 - `benchmark_tgnn_solv.py`
 - `benchmark_adapter_model.py`
+- `run_knn_modelability.py`
 - `validate_physics.py`
 - `analyze_benchmark.py`
 - `compare_models.py`
@@ -89,6 +90,11 @@ The newer infrastructure scripts worth knowing about are:
 
 - `scripts/evaluation/benchmark_adapter_model.py`
   - formal adapter API for arbitrary Python models
+- `scripts/evaluation/run_knn_modelability.py`
+  - KNN-style Morgan baseline plus nearest-neighbor `ln_x2` cliff/modelability diagnostics
+- `scripts/evaluation/run_metric_diagnostics.py`
+  - split-sensitivity bundle for `scaffold` / `solute` / `solvent` / pair-random / row-random RF comparisons,
+    overlap summaries, and target-shift diagnostics
 - `scripts/evaluation/run_thermo_stress_suite.py`
   - slice-based stress diagnostics for canonical `predictions.csv` bundles
 - `scripts/experiments/build_benchmark_release.py`
@@ -116,6 +122,7 @@ general retrosynthesis or mechanistic PK/PD simulators.
 
 - `diagnose_gradient_flow.py`
 - `analyze_timp_channels.py`
+- `run_source_uncertainty_audit.py`
 - `sensitivity_analysis.py`
 - `weight_analysis.py`
 - `aggregate_proxy_results.py`
@@ -126,6 +133,16 @@ general retrosynthesis or mechanistic PK/PD simulators.
 These are research diagnostics and interpretation helpers rather than canonical
 training/evaluation entry points. They are most useful after you already have
 checkpoints, benchmark bundles, or `tgnn_intermediates.csv` exports.
+
+`run_source_uncertainty_audit.py` is the maintained source-quality utility for
+BigSolDB:
+
+- preserves detailed raw `Source` identifiers through the maintained
+  BigSolDB-to-`ln(x2)` conversion path
+- computes source footprint diagnostics such as temperature-grid density and
+  van't Hoff smoothness proxies
+- exports heuristic source-level method/sigma priors plus a manual-review CSV
+  for future weighted-loss experiments
 
 The main TGNN training entrypoint now also covers the newer maintained model
 surfaces:

@@ -13,6 +13,7 @@ import pandas as pd
 from .external_benchmarking import (
     BenchmarkArtifacts,
     build_benchmark_artifacts,
+    clip_ln_x2_for_logS,
     ln_x2_from_logS,
     logS_from_ln_x2,
     merge_prediction_frame,
@@ -90,7 +91,9 @@ def load_adapter(ref: str, *, init_kwargs: Mapping[str, Any] | None = None) -> B
 
 
 def _safe_pred_logS(predictions: pd.DataFrame, pred_ln_x2_col: str) -> pd.Series:
-    clipped = pd.to_numeric(predictions[pred_ln_x2_col], errors="coerce").clip(upper=0.0)
+    clipped = clip_ln_x2_for_logS(
+        pd.to_numeric(predictions[pred_ln_x2_col], errors="coerce")
+    )
     return logS_from_ln_x2(
         pd.DataFrame(
             {
