@@ -31,6 +31,7 @@ from .group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from .model import TGNNSolv
 from .baselines.direct_gnn import DirectGNN
 from .data.solvent_types import solvent_type_id_from_smiles
+from .unifac import modified_unifac_lngamma_inf
 
 
 def _smiles_to_graph_for_model(
@@ -45,6 +46,12 @@ def _smiles_to_graph_for_model(
         ),
         use_phys_edge_features=bool(
             getattr(model.cfg, "use_phys_edge_features", False)
+        ),
+        explicit_h_small_molecules=bool(
+            getattr(model.cfg, "explicit_h_small_molecules", False)
+        ),
+        explicit_h_max_heavy_atoms=int(
+            getattr(model.cfg, "explicit_h_max_heavy_atoms", 3)
         ),
     )
 
@@ -89,6 +96,8 @@ def predict_solubility(
     solvent_descriptor_prior_features = None
     solute_group_prior_features = None
     solvent_group_prior_features = None
+    unifac_ln_gamma_inf = None
+    unifac_gamma_mask = None
     T_m_gc = None
     dH_fus_gc = None
     dCp_fus_gc = None
@@ -127,7 +136,7 @@ def predict_solubility(
             slv_desc,
             device=device,
         ).unsqueeze(0)
-    if model.cfg.use_group_priors:
+    if model.cfg.requires_group_prior_features:
         sol_group = smiles_to_group_prior_features(solute_smiles)
         slv_group = smiles_to_group_prior_features(solvent_smiles)
         if sol_group is None or slv_group is None:
@@ -140,6 +149,19 @@ def predict_solubility(
             slv_group,
             device=device,
         ).unsqueeze(0)
+    if getattr(model.cfg, "use_unifac_gamma_prior", False):
+        lng = modified_unifac_lngamma_inf(solute_smiles, solvent_smiles, float(T))
+        has_unifac = lng is not None
+        unifac_ln_gamma_inf = torch.tensor(
+            [float(lng) if has_unifac else 0.0],
+            device=device,
+            dtype=torch.float32,
+        )
+        unifac_gamma_mask = torch.tensor(
+            [has_unifac],
+            device=device,
+            dtype=torch.bool,
+        )
     if model.cfg.use_gc_priors_crystal:
         gc_priors = compute_gc_priors(solute_smiles)
         if any(gc_priors[key] is None for key in ("T_m_gc", "dH_fus_gc", "dCp_fus_gc")):
@@ -166,6 +188,8 @@ def predict_solubility(
         solvent_descriptor_prior_features=solvent_descriptor_prior_features,
         solute_group_prior_features=solute_group_prior_features,
         solvent_group_prior_features=solvent_group_prior_features,
+        unifac_ln_gamma_inf=unifac_ln_gamma_inf,
+        unifac_gamma_mask=unifac_gamma_mask,
         T_m_gc=T_m_gc,
         dH_fus_gc=dH_fus_gc,
         dCp_fus_gc=dCp_fus_gc,

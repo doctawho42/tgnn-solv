@@ -46,5 +46,11 @@ baselines = [
     "tensorboardX",
 ]
 
+thermo = [
+    "thermo>=0.6.0",
+    "chemicals>=1.5.1",
+    "lxml>=6.0",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]

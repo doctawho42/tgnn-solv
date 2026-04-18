@@ -139,6 +139,37 @@ python scripts/training/train.py \
     --device cuda
 ```
 
+Optional expanded-IDAC supervision is now passed as a separate auxiliary
+stream, not by appending gamma-only rows to the main SLE CSV:
+
+```bash
+python scripts/training/train.py \
+    --config configs/paper_config_tuned_entropy_interaction_rescue_explicit_h_small.yaml \
+    --train-data notebooks/data/processed/train.csv \
+    --val-data notebooks/data/processed/val.csv \
+    --test-data notebooks/data/processed/test.csv \
+    --idac-train-data results/temperature_extrapolation_enhanced_proxy/splits/idac_aux_train.csv \
+    --idac-steps-per-epoch 4 \
+    --idac-batch-size 64 \
+    --checkpoint checkpoints/tgnn_with_idac_aux.pt \
+    --device cuda
+```
+
+For same-pair temperature-extrapolation ablations, precomputed Van't Hoff
+anchor rows can be added to the low-temperature train split without treating
+them as measured solubility labels:
+
+```bash
+python scripts/data/build_vant_hoff_anchor_split.py \
+    --train-data results/temperature_extrapolation_baselines/splits/train_low.csv \
+    --output results/temperature_extrapolation_enhanced_proxy/splits/train_low_vh_anchor_350.csv \
+    --summary results/temperature_extrapolation_enhanced_proxy/vh_anchor_350_summary.json \
+    --temperatures 350.0 \
+    --min-points 3 \
+    --min-temp-span 5.0 \
+    --weight 1.0
+```
+
 For the maintained tuned TGNN baseline used in current architecture
 comparisons, prefer `configs/paper_config_tuned.yaml`.
 
@@ -148,6 +179,7 @@ Useful maintained follow-up configs:
 - `configs/paper_config_tuned_regularized.yaml`
 - `configs/paper_config_tuned_regularized_gc.yaml`
 - `configs/paper_config_tuned_regularized_descriptors.yaml`
+- `configs/paper_config_tuned_source_weighted.yaml`
 - `configs/paper_config_tuned_gps.yaml`
 - `configs/paper_config_timp.yaml`
 - `configs/paper_config_timp_full.yaml`
@@ -155,6 +187,12 @@ Useful maintained follow-up configs:
 - `configs/paper_config_tuned_pretrained.yaml`
 - `configs/paper_config_tuned_pretrained_descriptors.yaml`
 - `configs/paper_config_tuned_interaction_rescue.yaml`
+- `configs/paper_config_tuned_entropy_fusion.yaml`
+- `configs/paper_config_tuned_entropy_interaction_rescue_explicit_h_small.yaml`
+- `configs/paper_config_tuned_explicit_h_small.yaml`
+- `configs/paper_config_tuned_tgnn_descriptors_explicit_h_small.yaml`
+- `configs/paper_config_directgnn_tuned_explicit_h_small.yaml`
+- `configs/paper_config_directgnn_descriptors_explicit_h_small.yaml`
 - `configs/paper_config_uniquac.yaml`
 - `configs/paper_config_wilson.yaml`
 
@@ -369,8 +407,17 @@ python scripts/evaluation/run_knn_modelability.py \
 python scripts/evaluation/run_metric_diagnostics.py \
     --protocols scaffold,solute,solvent,pair_random,row_random \
     --out-dir results/metric_diagnosis_bundle
+python scripts/evaluation/run_directgnn_error_structure_diagnostics.py --help
+python scripts/evaluation/run_prediction_error_slices.py --help
+python scripts/evaluation/plot_prediction_error_slices.py --help
+python scripts/evaluation/run_temperature_extrapolation_baselines.py --help
+python scripts/evaluation/run_temperature_interpolation_baselines.py --help
+python scripts/data/build_vant_hoff_anchor_split.py --help
+python scripts/analysis/run_structural_extrapolation_diagnosis.py --help
+python scripts/analysis/audit_water_small_molecule_graphs.py --help
 python scripts/analysis/diagnose_gradient_flow.py --help
 python scripts/analysis/analyze_timp_channels.py --help
+python scripts/analysis/audit_fusion_supervision.py --help
 python scripts/analysis/run_source_uncertainty_audit.py --help
 python scripts/analysis/sensitivity_analysis.py --help
 python scripts/analysis/weight_analysis.py --help
@@ -445,6 +492,8 @@ The maintained `TGNNSolv` forward pass in `src/tgnn_solv/model.py` is:
      state for interaction-gradient rescue
 8. `FusionHead`
    - standard mode: predicts `T_m`, `dH_fus`, optional `dCp_fus`
+   - optional `fusion_output_mode="entropy_coupled"` standard-head mode:
+     predicts `dH_fus` and `dS_fus`, then derives `T_m = dH_fus / dS_fus`
    - crystal GC mode: bounded residual around calibrated `T_m_gc`,
      `dH_fus_gc`, fixed `dCp_fus_gc`
 9. `NRTLHead`
@@ -474,6 +523,7 @@ diagnostic tensors such as:
 - `T_m_solver`
 - `dH_fus_solver`
 - `dCp_fus_solver`
+- `dS_fus`
 - `tau_12`
 - `tau_21`
 - `ln_gamma_2`
@@ -572,6 +622,7 @@ The main maintained configs around these controls are:
 
 - `paper_config_hansen_contrastive.yaml`
 - `paper_config_tuned_interaction_rescue.yaml`
+- `paper_config_tuned_entropy_interaction_rescue_explicit_h_small.yaml`
 - `paper_config_oracle.yaml`
 - `paper_config_no_bridge.yaml`
 - `paper_config_no_bridge_no_walden.yaml`
@@ -635,6 +686,11 @@ historical `35/8` node/edge layout, while TIMP runs can opt into:
   - appends folded heavy-atom Gasteiger charge to each node feature vector
 - `use_phys_edge_features`
   - appends `delta_chi`, `delta_rvdw`, `bond_polarity`, `hbond_cap` to each edge
+- `explicit_h_small_molecules`
+  - opt-in topology change for molecules with at most
+    `explicit_h_max_heavy_atoms` heavy atoms; water changes from a one-node
+    self-loop graph to an explicit O-H graph without changing feature
+    dimensions
 
 Application-layer modules build on top of the same inference surfaces and now
 live under `src/tgnn_solv/applications/` rather than the old flat
@@ -654,12 +710,19 @@ High-signal flags that are easy to miss:
 - `use_descriptor_priors`
 - `use_group_priors`
 - `use_gc_priors_crystal`
+- `fusion_output_mode`
+- `fusion_entropy_min`
+- `fusion_entropy_max`
+- `fusion_entropy_init`
+- `fusion_enthalpy_init`
 - `encoder_type`
 - `gps_num_heads`
 - `gps_positional_encoding`
 - `gps_pe_dim`
 - `use_gasteiger_charges`
 - `use_phys_edge_features`
+- `explicit_h_small_molecules`
+- `explicit_h_max_heavy_atoms`
 - `use_thermo_cross_attention`
 - `thermo_cross_attention_beta_init`
 - `use_hansen_contrastive`
@@ -668,6 +731,13 @@ High-signal flags that are easy to miss:
 - `use_source_uncertainty_weights`
 - `source_uncertainty_csv`
 - `source_uncertainty_weight_mode`
+- `idac_aux_steps_per_epoch`
+- `idac_aux_phase1_weight`
+- `idac_aux_phase2_weight`
+- `idac_aux_phase3_weight`
+- `vant_hoff_slope_scale`
+- `vant_hoff_intercept_scale`
+- `vh_anchor_default_weight`
 - `use_oracle_injection`
 - `bridge_loss_weight`
 - `use_walden_check`
@@ -694,8 +764,15 @@ Maintained config files:
 - `configs/paper_config_tuned_pretrained.yaml`
 - `configs/paper_config_tuned_pretrained_descriptors.yaml`
 - `configs/paper_config_tuned_interaction_rescue.yaml`
+- `configs/paper_config_tuned_entropy_fusion.yaml`
+- `configs/paper_config_tuned_entropy_interaction_rescue_explicit_h_small.yaml`
+- `configs/paper_config_tuned_explicit_h_small.yaml`
+- `configs/paper_config_tuned_tgnn_descriptors_explicit_h_small.yaml`
 - `configs/paper_config_directgnn_tuned.yaml`
+- `configs/paper_config_directgnn_tuned_source_weighted.yaml`
+- `configs/paper_config_directgnn_tuned_explicit_h_small.yaml`
 - `configs/paper_config_directgnn_descriptors.yaml`
+- `configs/paper_config_directgnn_descriptors_explicit_h_small.yaml`
 - `configs/paper_config_uniquac.yaml`
 - `configs/paper_config_wilson.yaml`
 - `configs/small_debug.yaml`

@@ -49,6 +49,7 @@ from .features import (
 from .group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from .progress import progress, trange
 from .data.solvent_types import solvent_type_id_from_smiles
+from .unifac import modified_unifac_lngamma_inf
 
 
 # ================================================================== #
@@ -74,11 +75,15 @@ def _prepare_inputs(
         solute_smiles,
         use_gasteiger_charges=bool(getattr(model.cfg, "use_gasteiger_charges", False)),
         use_phys_edge_features=bool(getattr(model.cfg, "use_phys_edge_features", False)),
+        explicit_h_small_molecules=bool(getattr(model.cfg, "explicit_h_small_molecules", False)),
+        explicit_h_max_heavy_atoms=int(getattr(model.cfg, "explicit_h_max_heavy_atoms", 3)),
     )
     slv_g = smiles_to_graph(
         solvent_smiles,
         use_gasteiger_charges=bool(getattr(model.cfg, "use_gasteiger_charges", False)),
         use_phys_edge_features=bool(getattr(model.cfg, "use_phys_edge_features", False)),
+        explicit_h_small_molecules=bool(getattr(model.cfg, "explicit_h_small_molecules", False)),
+        explicit_h_max_heavy_atoms=int(getattr(model.cfg, "explicit_h_max_heavy_atoms", 3)),
     )
     if sol_g is None:
         raise ValueError(f"Invalid solute SMILES: {solute_smiles}")
@@ -175,7 +180,7 @@ def _prepare_forward_kwargs(
             slv_desc,
             device=device,
         ).unsqueeze(0)
-    elif model.cfg.use_group_priors:
+    if model.cfg.requires_group_prior_features:
         sol_group = smiles_to_group_prior_features(solute_smiles)
         slv_group = smiles_to_group_prior_features(solvent_smiles)
         if sol_group is None or slv_group is None:
@@ -188,6 +193,20 @@ def _prepare_forward_kwargs(
             slv_group,
             device=device,
         ).unsqueeze(0)
+
+    if getattr(model.cfg, "use_unifac_gamma_prior", False):
+        lng = modified_unifac_lngamma_inf(solute_smiles, solvent_smiles, float(T))
+        has_unifac = lng is not None
+        kwargs["unifac_ln_gamma_inf"] = torch.tensor(
+            [float(lng) if has_unifac else 0.0],
+            device=device,
+            dtype=torch.float32,
+        )
+        kwargs["unifac_gamma_mask"] = torch.tensor(
+            [has_unifac],
+            device=device,
+            dtype=torch.bool,
+        )
 
     if model.cfg.use_gc_priors_crystal:
         gc_priors = compute_gc_priors(solute_smiles)

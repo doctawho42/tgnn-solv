@@ -117,6 +117,24 @@ def make_group_prior_config() -> TGNNSolvConfig:
     )
 
 
+def make_nrtl_group_prior_config() -> TGNNSolvConfig:
+    """Create a reduced config that exercises the NRTL group tau prior."""
+    cfg = make_small_config()
+    cfg.use_nrtl_group_prior = True
+    cfg.nrtl_group_prior_tau_scale = 0.35
+    cfg.nrtl_group_prior_tau_clamp = 1.5
+    return cfg
+
+
+def make_unifac_gamma_prior_config() -> TGNNSolvConfig:
+    """Create a reduced config that exercises the precomputed UNIFAC gamma prior."""
+    cfg = make_nrtl_group_prior_config()
+    cfg.use_unifac_gamma_prior = True
+    cfg.unifac_gamma_prior_tau_scale = 1.0
+    cfg.unifac_gamma_prior_tau_clamp = 3.0
+    return cfg
+
+
 def make_gc_prior_config() -> TGNNSolvConfig:
     """Create a reduced config that exercises crystal GC priors."""
     return TGNNSolvConfig(
@@ -158,6 +176,7 @@ def make_test_batch(
     include_morgan: bool = False,
     include_descriptor_priors: bool = False,
     include_group_priors: bool = False,
+    include_unifac_prior: bool = False,
     include_gc_priors: bool = False,
 ) -> tuple[object, object, torch.Tensor, torch.Tensor, dict[str, torch.Tensor]]:
     """Build model inputs from `(solute_smiles, solvent_smiles, temperature)` tuples.
@@ -220,6 +239,9 @@ def make_test_batch(
                 solvent_group,
                 dtype=torch.float32,
             )
+        if include_unifac_prior:
+            targets["unifac_ln_gamma_inf"] = torch.tensor(1.25, dtype=torch.float32)
+            targets["unifac_gamma_mask"] = torch.tensor(True, dtype=torch.bool)
         if include_gc_priors:
             gc_priors = compute_gc_priors(solute_smiles)
             assert gc_priors["T_m_gc"] is not None
@@ -258,6 +280,9 @@ def make_test_batch(
         extras["solvent_group_prior_features"] = targets[
             "solvent_group_prior_features"
         ]
+    if include_unifac_prior:
+        extras["unifac_ln_gamma_inf"] = targets["unifac_ln_gamma_inf"]
+        extras["unifac_gamma_mask"] = targets["unifac_gamma_mask"]
     if include_gc_priors:
         extras["T_m_gc"] = targets["T_m_gc"]
         extras["dH_fus_gc"] = targets["dH_fus_gc"]
@@ -285,6 +310,8 @@ def run_model(
         solvent_descriptor_prior_features=extras.get("solvent_descriptor_prior_features"),
         solute_group_prior_features=extras.get("solute_group_prior_features"),
         solvent_group_prior_features=extras.get("solvent_group_prior_features"),
+        unifac_ln_gamma_inf=extras.get("unifac_ln_gamma_inf"),
+        unifac_gamma_mask=extras.get("unifac_gamma_mask"),
         T_m_gc=extras.get("T_m_gc"),
         dH_fus_gc=extras.get("dH_fus_gc"),
         dCp_fus_gc=extras.get("dCp_fus_gc"),
@@ -341,6 +368,43 @@ class TestForwardPass:
         assert "ln_x2_aux" in out
         assert out["ln_x2_aux"].shape == out["ln_x2"].shape
         assert torch.isfinite(out["ln_x2_aux"]).all()
+
+    def test_nrtl_group_prior_forward(self) -> None:
+        """Optional group prior offsets NRTL tau_ref without enabling Hansen priors."""
+        cfg = make_nrtl_group_prior_config()
+        model = TGNNSolv(cfg=cfg)
+        model.eval()
+        batch = make_test_batch(
+            [("CCO", "O", 298.15), ("c1ccccc1", "CCO", 310.0)],
+            include_group_priors=True,
+        )
+        out = run_model(model, batch)
+
+        assert cfg.requires_group_prior_features
+        assert "nrtl_group_tau_prior_12" in out["nrtl_params"]
+        assert "nrtl_group_tau_prior_21" in out["nrtl_params"]
+        assert "hansen_sol_prior" not in out
+        assert torch.isfinite(out["ln_x2"]).all()
+        assert torch.isfinite(out["nrtl_params"]["nrtl_group_tau_prior_12"]).all()
+        assert torch.isfinite(out["nrtl_params"]["nrtl_group_tau_prior_21"]).all()
+
+    def test_unifac_gamma_prior_forward(self) -> None:
+        """Optional precomputed UNIFAC gamma prior offsets NRTL tau_ref."""
+        cfg = make_unifac_gamma_prior_config()
+        model = TGNNSolv(cfg=cfg)
+        model.eval()
+        batch = make_test_batch(
+            [("CCO", "O", 298.15), ("c1ccccc1", "CCO", 310.0)],
+            include_group_priors=True,
+            include_unifac_prior=True,
+        )
+        out = run_model(model, batch, targets=batch[4])
+
+        assert "unifac_gamma_tau_prior_12" in out["nrtl_params"]
+        assert "unifac_gamma_tau_prior_21" in out["nrtl_params"]
+        assert torch.isfinite(out["ln_x2"]).all()
+        assert torch.isfinite(out["nrtl_params"]["unifac_gamma_tau_prior_12"]).all()
+        assert torch.isfinite(out["nrtl_params"]["unifac_gamma_tau_prior_21"]).all()
 
     def test_detach_crystal_from_encoder_blocks_crystal_gradients(self) -> None:
         """Crystal head can update itself without backpropagating into encoder."""
@@ -563,6 +627,53 @@ class TestForwardPass:
             batch[-1]["dCp_fus_gc"],
             atol=1e-5,
         )
+
+    def test_entropy_coupled_fusion_head_derives_tm_from_entropy(self) -> None:
+        """Entropy-coupled fusion predicts dH/dS and derives a consistent Tm."""
+        cfg = make_small_config()
+        cfg.fusion_output_mode = "entropy_coupled"
+        head = FusionHead(input_dim=8, cfg=cfg)
+
+        out = head(torch.zeros((3, 8), dtype=torch.float32))
+
+        assert torch.isfinite(out["T_m"]).all()
+        assert torch.isfinite(out["dH_fus"]).all()
+        assert torch.isfinite(out["dS_fus"]).all()
+        assert (out["dH_fus"] > 0.0).all()
+        assert (out["dS_fus"] >= cfg.fusion_entropy_min).all()
+        assert (out["dS_fus"] <= cfg.fusion_entropy_max).all()
+        assert torch.allclose(
+            out["dH_fus"],
+            out["T_m"] * out["dS_fus"],
+            rtol=1.0e-5,
+            atol=1.0e-4,
+        )
+
+    def test_entropy_coupled_model_forward_exposes_entropy_diagnostics(self) -> None:
+        """Full model forward should keep entropy diagnostics on all fusion paths."""
+        cfg = make_small_config()
+        cfg.fusion_output_mode = "entropy_coupled"
+        model = TGNNSolv(cfg=cfg)
+        model.eval()
+        batch = make_test_batch([("CCO", "O", 298.15), ("CCN", "CCO", 315.0)])
+
+        with torch.no_grad():
+            out = run_model(model, batch)
+
+        for payload_key in (
+            "fusion_params",
+            "solver_fusion_params",
+            "corrected_fusion_params",
+        ):
+            payload = out[payload_key]
+            assert "dS_fus" in payload
+            assert torch.isfinite(payload["dS_fus"]).all()
+            assert torch.allclose(
+                payload["dH_fus"],
+                payload["T_m"] * payload["dS_fus"],
+                rtol=1.0e-5,
+                atol=1.0e-4,
+            )
 
     def test_gc_crystal_prior_preserves_high_tm_values(self) -> None:
         """GC-prior fusion should not crush high melting priors to the global 700 K cap."""

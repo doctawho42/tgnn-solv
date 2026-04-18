@@ -77,6 +77,43 @@ def test_pretrainer_runs_with_gps_encoder() -> None:
     assert all(len(values) == 1 for values in history.values())
 
 
+def test_pretrainer_runs_with_pairwise_contrastive_artifact(tmp_path: Path) -> None:
+    """Stage 0 can consume materialized pairwise compatibility rows."""
+    cfg = make_small_config()
+    model = TGNNSolv(cfg=cfg)
+    pretrainer = Pretrainer(model.gnn, model.readout, cfg, device=torch.device("cpu"))
+    pairwise_path = tmp_path / "pairwise.csv"
+    pd.DataFrame(
+        {
+            "solvent_smiles": ["O", "CCO"],
+            "solute_a_smiles": ["CCO", "CCN"],
+            "solute_b_smiles": ["CCN", "CCO"],
+            "contrastive_label": [1, 0],
+            "sample_weight": [1.0, 0.5],
+        }
+    ).to_csv(pairwise_path, index=False)
+
+    history = pretrainer.pretrain(
+        ["CCO", "CCN", "O", "c1ccccc1"],
+        n_epochs=1,
+        batch_size=2,
+        lr=1.0e-3,
+        pairwise_contrastive_csv=pairwise_path,
+        pairwise_contrastive_weight=0.1,
+        pairwise_contrastive_batch_size=2,
+    )
+
+    assert set(history) == {
+        "total",
+        "atom",
+        "bond",
+        "prop",
+        "contrastive",
+        "pairwise",
+    }
+    assert all(len(values) == 1 for values in history.values())
+
+
 def test_stage0_checkpoint_roundtrip(tmp_path: Path) -> None:
     """Saved Stage 0 checkpoints should restore `gnn` and `readout` exactly."""
     cfg = make_small_config()

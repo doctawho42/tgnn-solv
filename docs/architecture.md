@@ -113,6 +113,14 @@ behavior of the GPS path. TIMP-specific controls include
 `use_gasteiger_charges`, `use_phys_edge_features`,
 `use_thermo_cross_attention`, and `thermo_cross_attention_beta_init`.
 
+Small molecules can optionally keep explicit hydrogens during graph
+construction via `explicit_h_small_molecules=true` and
+`explicit_h_max_heavy_atoms=3`. This leaves node/edge feature dimensions
+unchanged but changes graph topology. The main intended case is water:
+the legacy representation is a one-node self-loop graph, while the opt-in
+representation exposes O-H bonds so MPNN/TIMP message passing has real polar
+edges.
+
 Both encoder families support:
 
 - `encoder_role_mode="shared_residual"` by default
@@ -197,13 +205,24 @@ at inference time.
 - `dH_fus`
 - `dCp_fus`
 
-There are two maintained crystal modes.
+The maintained crystal paths are:
 
 Standard mode:
 
 - `T_m = T_m_min + (T_m_max - T_m_min) * sigmoid(...)`
 - `dH_fus = S_H * softplus(...)`
 - `dCp_fus = fixed_dCp_fus` unless `predict_dCp_fus=True`
+
+Entropy-coupled standard mode:
+
+- enabled with `fusion_output_mode="entropy_coupled"`
+- the absolute fusion head predicts `dH_fus` and `dS_fus`
+- `T_m` is derived as `T_m = dH_fus / dS_fus`, then projected into the
+  configured solver-safe `T_m_min` / `T_m_max` interval
+- `fusion_params`, `solver_fusion_params`, and `corrected_fusion_params`
+  expose `dS_fus` diagnostics
+- this mode is intended for controlled ablations of the thermodynamic identity
+  `T_m = dH_fus / dS_fus`; it is not the default
 
 Crystal GC-prior mode:
 
@@ -228,6 +247,9 @@ Important implementation details:
 - `gc_prior_residual_freeze_epochs` can freeze those residual branches during
   the early part of Phase 1
 - `use_gc_priors_crystal=True` requires `predict_dCp_fus=False`
+- `fusion_output_mode="entropy_coupled"` affects the absolute standard head;
+  GC-prior mode remains a bounded-residual prior path and reports
+  `dS_fus = dH_fus / T_m` as a diagnostic
 
 ### 6. `NRTLHead`
 
@@ -422,6 +444,8 @@ The easiest configuration flags to miss are:
 - `use_gc_priors_crystal`
 - `use_gasteiger_charges`
 - `use_phys_edge_features`
+- `explicit_h_small_molecules`
+- `explicit_h_max_heavy_atoms`
 - `use_thermo_cross_attention`
 - `gc_prior_tm_scale`
 - `gc_prior_tm_bias`

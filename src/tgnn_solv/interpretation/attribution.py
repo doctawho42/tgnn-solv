@@ -20,6 +20,7 @@ from tgnn_solv.features import (
 )
 from tgnn_solv.group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from tgnn_solv.model import TGNNSolv
+from tgnn_solv.unifac import modified_unifac_lngamma_inf
 
 
 def _as_device(device: str | torch.device | None, model: torch.nn.Module) -> torch.device:
@@ -68,11 +69,15 @@ def build_single_system_inputs(
         solute_smiles,
         use_gasteiger_charges=bool(getattr(cfg, "use_gasteiger_charges", False)),
         use_phys_edge_features=bool(getattr(cfg, "use_phys_edge_features", False)),
+        explicit_h_small_molecules=bool(getattr(cfg, "explicit_h_small_molecules", False)),
+        explicit_h_max_heavy_atoms=int(getattr(cfg, "explicit_h_max_heavy_atoms", 3)),
     )
     solvent_graph = smiles_to_graph(
         solvent_smiles,
         use_gasteiger_charges=bool(getattr(cfg, "use_gasteiger_charges", False)),
         use_phys_edge_features=bool(getattr(cfg, "use_phys_edge_features", False)),
+        explicit_h_small_molecules=bool(getattr(cfg, "explicit_h_small_molecules", False)),
+        explicit_h_max_heavy_atoms=int(getattr(cfg, "explicit_h_max_heavy_atoms", 3)),
     )
     if solute_graph is None:
         raise ValueError(f"Cannot build graph for solute SMILES: {solute_smiles}")
@@ -124,13 +129,26 @@ def build_single_system_inputs(
             targets["solvent_descriptor_prior_features"] = torch.tensor(
                 slv_desc_prior, device=dev, dtype=torch.float32
             ).unsqueeze(0)
-        if getattr(cfg, "use_group_priors", False):
+        if getattr(cfg, "requires_group_prior_features", False):
             sol_group = smiles_to_group_prior_features(solute_smiles)
             slv_group = smiles_to_group_prior_features(solvent_smiles)
             if sol_group is None or slv_group is None:
                 raise ValueError("Failed to compute group-prior features.")
             targets["solute_group_prior_features"] = torch.tensor(sol_group, device=dev, dtype=torch.float32).unsqueeze(0)
             targets["solvent_group_prior_features"] = torch.tensor(slv_group, device=dev, dtype=torch.float32).unsqueeze(0)
+        if getattr(cfg, "use_unifac_gamma_prior", False):
+            lng = modified_unifac_lngamma_inf(solute_smiles, solvent_smiles, float(T))
+            has_unifac = lng is not None
+            targets["unifac_ln_gamma_inf"] = torch.tensor(
+                [float(lng) if has_unifac else 0.0],
+                device=dev,
+                dtype=torch.float32,
+            )
+            targets["unifac_gamma_mask"] = torch.tensor(
+                [has_unifac],
+                device=dev,
+                dtype=torch.bool,
+            )
         if getattr(cfg, "use_gc_priors_crystal", False):
             priors = compute_gc_priors(solute_smiles)
             if any(priors[key] is None for key in ("T_m_gc", "dH_fus_gc", "dCp_fus_gc")):

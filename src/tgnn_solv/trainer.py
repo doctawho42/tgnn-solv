@@ -53,11 +53,15 @@ DEFAULT_PHASE_WEIGHTS = {
         "mono": 0.0, "res": 0.0, "bridge": 0.0, "tau_reg": 0.0,
         "phys_pref": 0.0, "direct_reg": 0.0, "direct_nll": 0.0,
         "pair_temp_rank": 0.0, "vant_hoff_local": 0.0,
+        "pair_temp_delta": 0.0, "vant_hoff_slope": 0.0,
+        "vant_hoff_intercept": 0.0,
+        "vh_anchor": 0.0,
         "moe_balance": 0.0, "descriptor_prior": 0.0, "group_prior": 0.0,
         "hansen_contrastive_mol": 0.0,
         "hansen_contrastive_channel": 0.0,
         "hansen_contrastive_pair": 0.0,
         "hansen_channel_orth": 0.0,
+        "hansen_delta": 0.0,
         "aux_direct_sol": 0.0,
     },
     2: {
@@ -71,6 +75,10 @@ DEFAULT_PHASE_WEIGHTS = {
         "direct_nll": 0.01,
         "pair_temp_rank": 0.005,
         "vant_hoff_local": 0.001,
+        "pair_temp_delta": 0.0,
+        "vant_hoff_slope": 0.0,
+        "vant_hoff_intercept": 0.0,
+        "vh_anchor": 0.0,
         "moe_balance": 0.005,
         "descriptor_prior": 0.0,
         "group_prior": 0.0,
@@ -78,6 +86,7 @@ DEFAULT_PHASE_WEIGHTS = {
         "hansen_contrastive_channel": 0.0,
         "hansen_contrastive_pair": 0.0,
         "hansen_channel_orth": 0.0,
+        "hansen_delta": 0.0,
         "aux_direct_sol": 0.0,
     },
     3: {
@@ -91,6 +100,10 @@ DEFAULT_PHASE_WEIGHTS = {
         "direct_nll": 0.02,
         "pair_temp_rank": 0.01,
         "vant_hoff_local": 0.001,
+        "pair_temp_delta": 0.0,
+        "vant_hoff_slope": 0.0,
+        "vant_hoff_intercept": 0.0,
+        "vh_anchor": 0.0,
         "moe_balance": 0.01,
         "descriptor_prior": 0.0,
         "group_prior": 0.0,
@@ -98,6 +111,7 @@ DEFAULT_PHASE_WEIGHTS = {
         "hansen_contrastive_channel": 0.0,
         "hansen_contrastive_pair": 0.0,
         "hansen_channel_orth": 0.0,
+        "hansen_delta": 0.0,
         "aux_direct_sol": 0.0,
     },
 }
@@ -153,7 +167,11 @@ class TGNNSolvTrainer:
     ) -> float:
         """Resolve the effective scalar weight for a loss component."""
         if loss_name == "walden":
-            if self.cfg.use_walden_check and self.cfg.walden_weight > 0:
+            if not self.cfg.use_walden_check:
+                return 0.0
+            if "walden" in weights:
+                return float(weights["walden"])
+            if self.cfg.walden_weight > 0:
                 return float(self.cfg.walden_weight)
             return 0.0
         return float(weights.get(loss_name, 0.0))
@@ -210,6 +228,12 @@ class TGNNSolvTrainer:
                     defaults[key] = value
             if "hansen_channel_orth" not in override_keys:
                 defaults["hansen_channel_orth"] = self.cfg.hansen_contrastive_orth_weight
+        if self.cfg.use_hansen_delta_loss and "hansen_delta" not in override_keys:
+            defaults["hansen_delta"] = {
+                1: self.cfg.hansen_delta_loss_phase1_weight,
+                2: self.cfg.hansen_delta_loss_phase2_weight,
+                3: self.cfg.hansen_delta_loss_phase3_weight,
+            }[phase]
         if self.cfg.use_aux_direct_sol_loss and "aux_direct_sol" not in override_keys:
             defaults["aux_direct_sol"] = {
                 1: 0.0,
@@ -326,6 +350,92 @@ class TGNNSolvTrainer:
                 return True
         return False
 
+    def _idac_aux_weight(self, phase: int) -> float:
+        """Resolve the gamma-only auxiliary IDAC loss weight for a phase."""
+        configured = {
+            1: self.cfg.idac_aux_phase1_weight,
+            2: self.cfg.idac_aux_phase2_weight,
+            3: self.cfg.idac_aux_phase3_weight,
+        }[phase]
+        if configured is not None:
+            return float(configured)
+        return float(self.phase_weights[phase].get("gamma_inf", 0.0))
+
+    def _move_batch_to_device(
+        self,
+        batch: tuple[Batch, Batch, dict[str, object]],
+    ) -> tuple[Batch, Batch, dict[str, object]]:
+        """Move a standard TGNN batch tuple to the trainer device."""
+        sol_batch, slv_batch, targets = batch
+        sol_batch = sol_batch.to(self.device)
+        slv_batch = slv_batch.to(self.device)
+        targets = {
+            k: v.to(self.device) if isinstance(v, torch.Tensor) else v
+            for k, v in targets.items()
+        }
+        return sol_batch, slv_batch, targets
+
+    def _train_idac_aux_batch(
+        self,
+        batch: tuple[Batch, Batch, dict[str, object]],
+        optimizer: AdamW,
+        phase: int,
+    ) -> tuple[float | None, dict[str, float]]:
+        """Train one gamma-only auxiliary IDAC batch via the fast NRTL path."""
+        gamma_weight = self._idac_aux_weight(phase)
+        if gamma_weight <= 0.0:
+            return None, {}
+
+        sol_batch, slv_batch, targets = self._move_batch_to_device(batch)
+        gamma_mask = targets.get("gamma_mask")
+        if not isinstance(gamma_mask, Tensor) or not bool(gamma_mask.any().item()):
+            return None, {}
+
+        T = targets["T"]
+        optimizer.zero_grad()
+        output = self.model(
+            sol_batch,
+            slv_batch,
+            T,
+            solvent_type=targets.get("solvent_type"),
+            solute_morgan_fp=targets.get("solute_morgan_fp"),
+            solvent_morgan_fp=targets.get("solvent_morgan_fp"),
+            solute_descriptors=targets.get("solute_descriptors"),
+            solvent_descriptors=targets.get("solvent_descriptors"),
+            solute_descriptor_prior_features=targets.get(
+                "solute_descriptor_prior_features"
+            ),
+            solvent_descriptor_prior_features=targets.get(
+                "solvent_descriptor_prior_features"
+            ),
+            solute_group_prior_features=targets.get("solute_group_prior_features"),
+            solvent_group_prior_features=targets.get("solvent_group_prior_features"),
+            T_m_gc=targets.get("T_m_gc"),
+            dH_fus_gc=targets.get("dH_fus_gc"),
+            dCp_fus_gc=targets.get("dCp_fus_gc"),
+            targets=targets,
+            detach_crystal_from_encoder=(
+                self.cfg.detach_crystal_from_encoder and phase == 2
+            ),
+            gamma_only=True,
+        )
+
+        aux_weights = {key: 0.0 for key in self.phase_weights[phase]}
+        aux_weights["gamma_inf"] = gamma_weight
+        aux_weights["walden"] = 0.0
+        loss, loss_dict = self.loss_fn(output, targets, weights=aux_weights, T=T)
+        if not torch.isfinite(loss):
+            LOGGER.warning("Skipping non-finite IDAC auxiliary loss: %s", loss)
+            return None, {}
+        loss.backward()
+        grad_params = list(self.model.parameters())
+        if self.cfg.use_hansen_contrastive:
+            grad_params.extend(self.loss_fn.parameters())
+        torch.nn.utils.clip_grad_norm_(grad_params, self.cfg.grad_clip)
+        optimizer.step()
+        self._maybe_release_device_cache()
+        return float(loss.item()), loss_dict
+
     def _clone_model_state(self) -> dict[str, Tensor]:
         """Clone the current model weights onto CPU for best-state restore."""
         return {
@@ -428,6 +538,8 @@ class TGNNSolvTrainer:
         solvent_descriptor_prior_features: Tensor | None = None,
         solute_group_prior_features: Tensor | None = None,
         solvent_group_prior_features: Tensor | None = None,
+        unifac_ln_gamma_inf: Tensor | None = None,
+        unifac_gamma_mask: Tensor | None = None,
         T_m_gc: Tensor | None = None,
         dH_fus_gc: Tensor | None = None,
         dCp_fus_gc: Tensor | None = None,
@@ -467,6 +579,10 @@ class TGNNSolvTrainer:
             g_slv_payload["value"] = g_slv
         sol_prior = None
         slv_prior = None
+        sol_group_for_nrtl = None
+        slv_group_for_nrtl = None
+        unifac_ln_gamma_for_nrtl = None
+        unifac_gamma_mask_for_nrtl = None
         if model.cfg.use_descriptor_priors:
             sol_prior, slv_prior = model._require_descriptor_prior_features(
                 solute_descriptor_prior_features,
@@ -474,13 +590,21 @@ class TGNNSolvTrainer:
             )
             sol_prior = sol_prior.to(g_sol)
             slv_prior = slv_prior.to(g_slv)
-        elif model.cfg.use_group_priors:
-            sol_prior, slv_prior = model._require_group_prior_features(
+        if model.cfg.requires_group_prior_features:
+            sol_group_for_nrtl, slv_group_for_nrtl = model._require_group_prior_features(
                 solute_group_prior_features,
                 solvent_group_prior_features,
             )
-            sol_prior = sol_prior.to(g_sol)
-            slv_prior = slv_prior.to(g_slv)
+            sol_group_for_nrtl = sol_group_for_nrtl.to(g_sol)
+            slv_group_for_nrtl = slv_group_for_nrtl.to(g_slv)
+            if model.cfg.use_group_priors:
+                sol_prior = sol_group_for_nrtl
+                slv_prior = slv_group_for_nrtl
+        if model.cfg.use_unifac_gamma_prior:
+            if unifac_ln_gamma_inf is not None:
+                unifac_ln_gamma_for_nrtl = unifac_ln_gamma_inf.to(g_sol)
+            if unifac_gamma_mask is not None:
+                unifac_gamma_mask_for_nrtl = unifac_gamma_mask.to(g_sol.device)
         if model.cfg.use_gc_priors_crystal:
             T_m_gc, dH_fus_gc, dCp_fus_gc = model._require_crystal_gc_priors(
                 T_m_gc,
@@ -518,7 +642,14 @@ class TGNNSolvTrainer:
             dH_fus_gc=dH_fus_gc,
             dCp_fus_gc=dCp_fus_gc,
         )
-        nrtl_params = model.head_nrtl(g_pair, temp_feat=nrtl_t_feat)
+        nrtl_params = model.head_nrtl(
+            g_pair,
+            temp_feat=nrtl_t_feat,
+            solute_group_prior_features=sol_group_for_nrtl,
+            solvent_group_prior_features=slv_group_for_nrtl,
+            unifac_ln_gamma_inf=unifac_ln_gamma_for_nrtl,
+            unifac_gamma_mask=unifac_gamma_mask_for_nrtl,
+        )
         hansen_sol_parts = model.head_hansen(
             g_sol,
             prior_features=sol_prior,
@@ -628,6 +759,7 @@ class TGNNSolvTrainer:
         phase: int,
         epoch: int,
         compute_mono: bool = False,
+        idac_loader: DataLoader | None = None,
     ) -> tuple[float, TrainEpochStats]:
         """Train for one epoch and summarize raw/weighted loss components."""
         self.model.train()
@@ -640,6 +772,11 @@ class TGNNSolvTrainer:
         sol_fraction_min: float | None = None
         regularizer_domination_count = 0
         max_regularizer_ratio: float | None = None
+        idac_aux_loss_accum = 0.0
+        idac_aux_steps = 0
+        idac_aux_raw_accum: dict[str, float] = {}
+        idac_steps_target = max(int(self.cfg.idac_aux_steps_per_epoch), 0)
+        idac_iter = iter(idac_loader) if idac_loader is not None and idac_steps_target > 0 else None
 
         weights = self.phase_weights[phase].copy()
 
@@ -655,12 +792,9 @@ class TGNNSolvTrainer:
             ),
             start=1,
         ):
-            sol_batch = sol_batch.to(self.device)
-            slv_batch = slv_batch.to(self.device)
-            targets = {
-                k: v.to(self.device) if isinstance(v, torch.Tensor) else v
-                for k, v in targets.items()
-            }
+            sol_batch, slv_batch, targets = self._move_batch_to_device(
+                (sol_batch, slv_batch, targets)
+            )
             T = targets["T"]
             solvent_type = targets.get("solvent_type")
             solute_morgan_fp = targets.get("solute_morgan_fp")
@@ -679,11 +813,29 @@ class TGNNSolvTrainer:
             solvent_group_prior_features = targets.get(
                 "solvent_group_prior_features"
             )
+            unifac_ln_gamma_inf = targets.get("unifac_ln_gamma_inf")
+            unifac_gamma_mask = targets.get("unifac_gamma_mask")
             T_m_gc = targets.get("T_m_gc")
             dH_fus_gc = targets.get("dH_fus_gc")
             dCp_fus_gc = targets.get("dCp_fus_gc")
 
             if phase == 1 and not self._has_phase1_supervision(targets):
+                if idac_iter is not None and idac_aux_steps < idac_steps_target:
+                    try:
+                        idac_batch = next(idac_iter)
+                    except StopIteration:
+                        idac_iter = iter(idac_loader)
+                        idac_batch = next(idac_iter)
+                    aux_loss, aux_dict = self._train_idac_aux_batch(
+                        idac_batch,
+                        optimizer,
+                        phase,
+                    )
+                    if aux_loss is not None:
+                        idac_aux_loss_accum += aux_loss
+                        idac_aux_steps += 1
+                        for k, v in aux_dict.items():
+                            idac_aux_raw_accum[k] = idac_aux_raw_accum.get(k, 0.0) + float(v)
                 continue
 
             optimizer.zero_grad()
@@ -702,6 +854,8 @@ class TGNNSolvTrainer:
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,
                     solvent_group_prior_features=solvent_group_prior_features,
+                    unifac_ln_gamma_inf=unifac_ln_gamma_inf,
+                    unifac_gamma_mask=unifac_gamma_mask,
                     T_m_gc=T_m_gc,
                     dH_fus_gc=dH_fus_gc,
                     dCp_fus_gc=dCp_fus_gc,
@@ -810,6 +964,23 @@ class TGNNSolvTrainer:
             elif hasattr(self.model.correction, "w0"):
                 self._last_confidence = self.model.correction.w0.item()
 
+            if idac_iter is not None and idac_aux_steps < idac_steps_target:
+                try:
+                    idac_batch = next(idac_iter)
+                except StopIteration:
+                    idac_iter = iter(idac_loader)
+                    idac_batch = next(idac_iter)
+                aux_loss, aux_dict = self._train_idac_aux_batch(
+                    idac_batch,
+                    optimizer,
+                    phase,
+                )
+                if aux_loss is not None:
+                    idac_aux_loss_accum += aux_loss
+                    idac_aux_steps += 1
+                    for k, v in aux_dict.items():
+                        idac_aux_raw_accum[k] = idac_aux_raw_accum.get(k, 0.0) + float(v)
+
         avg_loss = total_loss / max(n_batches, 1)
         avg_raw_components = {
             k: v / max(n_batches, 1) for k, v in loss_accum.items()
@@ -817,14 +988,35 @@ class TGNNSolvTrainer:
         avg_weighted_components = {
             k: v / max(n_batches, 1) for k, v in weighted_loss_accum.items()
         }
+        if idac_aux_steps > 0:
+            avg_raw_components["idac_aux_total"] = (
+                idac_aux_loss_accum / idac_aux_steps
+            )
+            avg_weighted_components["idac_aux_total"] = (
+                idac_aux_loss_accum / idac_aux_steps
+            )
+            for key, value in idac_aux_raw_accum.items():
+                component = f"idac_aux_{key}"
+                avg_raw_components[component] = value / idac_aux_steps
+                avg_weighted_components[component] = (
+                    self._idac_aux_weight(phase)
+                    * avg_raw_components[component]
+                    if key == "gamma_inf"
+                    else 0.0
+                )
         self._maybe_release_device_cache(force=True)
+        component_weights = {
+            key: self._effective_loss_weight(key, weights)
+            for key in avg_raw_components
+        }
+        if idac_aux_steps > 0:
+            component_weights["idac_aux_total"] = 1.0
+            component_weights["idac_aux_gamma_inf"] = self._idac_aux_weight(phase)
+
         return avg_loss, {
             "raw": avg_raw_components,
             "weighted": avg_weighted_components,
-            "weights": {
-                key: self._effective_loss_weight(key, weights)
-                for key in avg_raw_components
-            },
+            "weights": component_weights,
             "sol_fraction": (
                 sol_fraction_accum / sol_fraction_count
                 if sol_fraction_count > 0
@@ -965,6 +1157,7 @@ class TGNNSolvTrainer:
         val_loader: DataLoader,
         n_epochs: int,
         *,
+        idac_train_loader: DataLoader | None = None,
         start_epoch: int = 0,
         optimizer_state_dict: dict | None = None,
         scheduler_state_dict: dict | None = None,
@@ -1018,9 +1211,23 @@ class TGNNSolvTrainer:
             self._set_gc_prior_residual_freeze(phase, epoch)
             compute_mono = phase >= 2 and epoch % 5 == 0
 
-            train_loss, train_stats = self.train_epoch(
-                train_loader, optimizer, phase, epoch, compute_mono,
-            )
+            if idac_train_loader is not None:
+                train_loss, train_stats = self.train_epoch(
+                    train_loader,
+                    optimizer,
+                    phase,
+                    epoch,
+                    compute_mono,
+                    idac_loader=idac_train_loader,
+                )
+            else:
+                train_loss, train_stats = self.train_epoch(
+                    train_loader,
+                    optimizer,
+                    phase,
+                    epoch,
+                    compute_mono,
+                )
             val_metrics = self.validate(val_loader, phase)
             scheduler.step()
 
@@ -1176,6 +1383,7 @@ class TGNNSolvTrainer:
         train_loader: DataLoader,
         val_loader: DataLoader,
         *,
+        idac_train_loader: DataLoader | None = None,
         resume_state: ResumeStateDict | None = None,
         on_epoch_end: Callable[[ResumeStateDict], None] | None = None,
     ) -> None:
@@ -1218,6 +1426,7 @@ class TGNNSolvTrainer:
                 train_loader,
                 val_loader,
                 n_epochs,
+                idac_train_loader=idac_train_loader,
                 start_epoch=start_epoch,
                 optimizer_state_dict=optimizer_state_dict,
                 scheduler_state_dict=scheduler_state_dict,

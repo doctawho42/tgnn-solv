@@ -406,6 +406,10 @@ def _resolve_union_feature_flags(
             "use_descriptor_priors": False,
             "use_group_priors": False,
             "use_gc_priors_crystal": False,
+            "use_gasteiger_charges": False,
+            "use_phys_edge_features": False,
+            "explicit_h_small_molecules": False,
+            "explicit_h_max_heavy_atoms": 3,
         }
 
     first_cfg = configs[0]
@@ -413,6 +417,8 @@ def _resolve_union_feature_flags(
         raise ValueError("Selected variants disagree on morgan_radius.")
     if any(cfg.morgan_n_bits != first_cfg.morgan_n_bits for cfg in configs):
         raise ValueError("Selected variants disagree on morgan_n_bits.")
+    if any(cfg.explicit_h_max_heavy_atoms != first_cfg.explicit_h_max_heavy_atoms for cfg in configs):
+        raise ValueError("Selected variants disagree on explicit_h_max_heavy_atoms.")
 
     return {
         "use_morgan_features": any(cfg.use_morgan_features for cfg in configs),
@@ -424,10 +430,16 @@ def _resolve_union_feature_flags(
         "use_descriptor_priors": any(
             cfg.use_descriptor_priors for cfg in configs
         ),
-        "use_group_priors": any(cfg.use_group_priors for cfg in configs),
+        "use_group_priors": any(cfg.requires_group_prior_features for cfg in configs),
         "use_gc_priors_crystal": any(
             cfg.use_gc_priors_crystal for cfg in configs
         ),
+        "use_gasteiger_charges": any(cfg.use_gasteiger_charges for cfg in configs),
+        "use_phys_edge_features": any(cfg.use_phys_edge_features for cfg in configs),
+        "explicit_h_small_molecules": any(
+            cfg.explicit_h_small_molecules for cfg in configs
+        ),
+        "explicit_h_max_heavy_atoms": first_cfg.explicit_h_max_heavy_atoms,
     }
 
 
@@ -749,6 +761,10 @@ def main() -> None:
         use_descriptor_priors=feature_flags["use_descriptor_priors"],
         use_group_priors=feature_flags["use_group_priors"],
         use_gc_priors_crystal=feature_flags["use_gc_priors_crystal"],
+        use_gasteiger_charges=feature_flags["use_gasteiger_charges"],
+        use_phys_edge_features=feature_flags["use_phys_edge_features"],
+        explicit_h_small_molecules=feature_flags["explicit_h_small_molecules"],
+        explicit_h_max_heavy_atoms=feature_flags["explicit_h_max_heavy_atoms"],
         source_uncertainty_csv=(
             base_cfg.source_uncertainty_csv
             if base_cfg.use_source_uncertainty_weights
@@ -770,6 +786,10 @@ def main() -> None:
         use_descriptor_priors=feature_flags["use_descriptor_priors"],
         use_group_priors=feature_flags["use_group_priors"],
         use_gc_priors_crystal=feature_flags["use_gc_priors_crystal"],
+        use_gasteiger_charges=feature_flags["use_gasteiger_charges"],
+        use_phys_edge_features=feature_flags["use_phys_edge_features"],
+        explicit_h_small_molecules=feature_flags["explicit_h_small_molecules"],
+        explicit_h_max_heavy_atoms=feature_flags["explicit_h_max_heavy_atoms"],
         source_uncertainty_csv=(
             base_cfg.source_uncertainty_csv
             if base_cfg.use_source_uncertainty_weights
@@ -791,6 +811,10 @@ def main() -> None:
         use_descriptor_priors=feature_flags["use_descriptor_priors"],
         use_group_priors=feature_flags["use_group_priors"],
         use_gc_priors_crystal=feature_flags["use_gc_priors_crystal"],
+        use_gasteiger_charges=feature_flags["use_gasteiger_charges"],
+        use_phys_edge_features=feature_flags["use_phys_edge_features"],
+        explicit_h_small_molecules=feature_flags["explicit_h_small_molecules"],
+        explicit_h_max_heavy_atoms=feature_flags["explicit_h_max_heavy_atoms"],
         source_uncertainty_csv=(
             base_cfg.source_uncertainty_csv
             if base_cfg.use_source_uncertainty_weights

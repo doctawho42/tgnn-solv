@@ -40,6 +40,7 @@ from tgnn_solv.features import (
 )
 from tgnn_solv.group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from tgnn_solv.model import TGNNSolv
+from tgnn_solv.unifac import modified_unifac_lngamma_inf
 
 
 ERROR_RETURN_INTERMEDIATES = (
@@ -232,8 +233,12 @@ def make_test_loader(
         morgan_radius=cfg.morgan_radius,
         morgan_n_bits=cfg.morgan_n_bits,
         use_descriptor_priors=cfg.use_descriptor_priors,
-        use_group_priors=cfg.use_group_priors,
+        use_group_priors=cfg.requires_group_prior_features,
         use_gc_priors_crystal=cfg.use_gc_priors_crystal,
+        use_gasteiger_charges=cfg.use_gasteiger_charges,
+        use_phys_edge_features=cfg.use_phys_edge_features,
+        explicit_h_small_molecules=cfg.explicit_h_small_molecules,
+        explicit_h_max_heavy_atoms=cfg.explicit_h_max_heavy_atoms,
     )
     loader = DataLoader(
         dataset,
@@ -258,6 +263,8 @@ def invoke_model(
     solvent_descriptor_prior_features: torch.Tensor | None = None,
     solute_group_prior_features: torch.Tensor | None = None,
     solvent_group_prior_features: torch.Tensor | None = None,
+    unifac_ln_gamma_inf: torch.Tensor | None = None,
+    unifac_gamma_mask: torch.Tensor | None = None,
     T_m_gc: torch.Tensor | None = None,
     dH_fus_gc: torch.Tensor | None = None,
     dCp_fus_gc: torch.Tensor | None = None,
@@ -275,6 +282,8 @@ def invoke_model(
             solvent_descriptor_prior_features=solvent_descriptor_prior_features,
             solute_group_prior_features=solute_group_prior_features,
             solvent_group_prior_features=solvent_group_prior_features,
+            unifac_ln_gamma_inf=unifac_ln_gamma_inf,
+            unifac_gamma_mask=unifac_gamma_mask,
             T_m_gc=T_m_gc,
             dH_fus_gc=dH_fus_gc,
             dCp_fus_gc=dCp_fus_gc,
@@ -298,6 +307,8 @@ def invoke_model(
         solvent_descriptor_prior_features=solvent_descriptor_prior_features,
         solute_group_prior_features=solute_group_prior_features,
         solvent_group_prior_features=solvent_group_prior_features,
+        unifac_ln_gamma_inf=unifac_ln_gamma_inf,
+        unifac_gamma_mask=unifac_gamma_mask,
         T_m_gc=T_m_gc,
         dH_fus_gc=dH_fus_gc,
         dCp_fus_gc=dCp_fus_gc,
@@ -340,6 +351,8 @@ def collect_intermediates(
             solvent_group_prior_features = targets.get(
                 "solvent_group_prior_features"
             )
+            unifac_ln_gamma_inf = targets.get("unifac_ln_gamma_inf")
+            unifac_gamma_mask = targets.get("unifac_gamma_mask")
             T_m_gc = targets.get("T_m_gc")
             dH_fus_gc = targets.get("dH_fus_gc")
             dCp_fus_gc = targets.get("dCp_fus_gc")
@@ -382,6 +395,16 @@ def collect_intermediates(
                 solvent_group_prior_features=(
                     solvent_group_prior_features.to(device)
                     if isinstance(solvent_group_prior_features, torch.Tensor)
+                    else None
+                ),
+                unifac_ln_gamma_inf=(
+                    unifac_ln_gamma_inf.to(device)
+                    if isinstance(unifac_ln_gamma_inf, torch.Tensor)
+                    else None
+                ),
+                unifac_gamma_mask=(
+                    unifac_gamma_mask.to(device)
+                    if isinstance(unifac_gamma_mask, torch.Tensor)
                     else None
                 ),
                 T_m_gc=(
@@ -505,11 +528,15 @@ def predict_pair_temperatures(
         solute_smiles,
         use_gasteiger_charges=bool(getattr(model.cfg, "use_gasteiger_charges", False)),
         use_phys_edge_features=bool(getattr(model.cfg, "use_phys_edge_features", False)),
+        explicit_h_small_molecules=bool(getattr(model.cfg, "explicit_h_small_molecules", False)),
+        explicit_h_max_heavy_atoms=int(getattr(model.cfg, "explicit_h_max_heavy_atoms", 3)),
     )
     slv_graph = smiles_to_graph(
         solvent_smiles,
         use_gasteiger_charges=bool(getattr(model.cfg, "use_gasteiger_charges", False)),
         use_phys_edge_features=bool(getattr(model.cfg, "use_phys_edge_features", False)),
+        explicit_h_small_molecules=bool(getattr(model.cfg, "explicit_h_small_molecules", False)),
+        explicit_h_max_heavy_atoms=int(getattr(model.cfg, "explicit_h_max_heavy_atoms", 3)),
     )
     if sol_graph is None or slv_graph is None:
         raise ValueError("Invalid SMILES for van't Hoff analysis.")
@@ -528,6 +555,8 @@ def predict_pair_temperatures(
     solvent_descriptor_prior_features = None
     solute_group_prior_features = None
     solvent_group_prior_features = None
+    unifac_ln_gamma_inf = None
+    unifac_gamma_mask = None
     T_m_gc = None
     dH_fus_gc = None
     dCp_fus_gc = None
@@ -561,7 +590,7 @@ def predict_pair_temperatures(
             dtype=torch.float32,
             device=device,
         ).repeat(len(temperatures), 1)
-    if model.cfg.use_group_priors:
+    if model.cfg.requires_group_prior_features:
         sol_group = smiles_to_group_prior_features(solute_smiles)
         slv_group = smiles_to_group_prior_features(solvent_smiles)
         if sol_group is None or slv_group is None:
@@ -576,6 +605,27 @@ def predict_pair_temperatures(
             dtype=torch.float32,
             device=device,
         ).repeat(len(temperatures), 1)
+    if model.cfg.use_unifac_gamma_prior:
+        values = []
+        masks = []
+        for temp in temperatures:
+            lng = modified_unifac_lngamma_inf(
+                solute_smiles,
+                solvent_smiles,
+                float(temp),
+            )
+            values.append(float(lng) if lng is not None else 0.0)
+            masks.append(lng is not None)
+        unifac_ln_gamma_inf = torch.tensor(
+            values,
+            dtype=torch.float32,
+            device=device,
+        )
+        unifac_gamma_mask = torch.tensor(
+            masks,
+            dtype=torch.bool,
+            device=device,
+        )
     if model.cfg.use_gc_priors_crystal:
         gc_priors = compute_gc_priors(solute_smiles)
         if any(gc_priors[key] is None for key in ("T_m_gc", "dH_fus_gc", "dCp_fus_gc")):
@@ -609,6 +659,8 @@ def predict_pair_temperatures(
             solvent_descriptor_prior_features=solvent_descriptor_prior_features,
             solute_group_prior_features=solute_group_prior_features,
             solvent_group_prior_features=solvent_group_prior_features,
+            unifac_ln_gamma_inf=unifac_ln_gamma_inf,
+            unifac_gamma_mask=unifac_gamma_mask,
             T_m_gc=T_m_gc,
             dH_fus_gc=dH_fus_gc,
             dCp_fus_gc=dCp_fus_gc,

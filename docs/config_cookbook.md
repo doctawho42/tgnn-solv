@@ -153,6 +153,28 @@ Trade-off:
 - richest maintained TIMP path
 - adds one more interaction-time inductive bias beyond the encoder itself
 
+### `paper_config_tuned_explicit_h_small.yaml`
+
+Use this when:
+
+- you want the tuned TGNN baseline with explicit hydrogens for small molecules
+- you are testing whether water/simple-solvent graph topology is limiting
+  aqueous predictions
+
+Key properties:
+
+- `explicit_h_small_molecules=true`
+- `explicit_h_max_heavy_atoms=3`
+- water changes from a one-node self-loop graph to a 3-node O-H graph
+- node and edge feature dimensions are unchanged, so the model architecture does
+  not need shape changes
+
+Use `paper_config_directgnn_tuned_explicit_h_small.yaml` as the matched
+DirectGNN control for the same representation ablation. If you want the
+combined "explicit H + RDKit descriptors" variant, use
+`paper_config_tuned_tgnn_descriptors_explicit_h_small.yaml` with
+`paper_config_directgnn_descriptors_explicit_h_small.yaml`.
+
 ### `paper_config_hansen_contrastive.yaml`
 
 Use this when:
@@ -202,6 +224,31 @@ Key properties:
 - intended for `--pretrain` / `--pretrain-checkpoint` workflows
 - useful when Stage 0 and pair-level descriptor fusion are being tested
   together against the same downstream scaffold split
+
+### `paper_config_tuned_entropy_fusion.yaml`
+
+Use this when:
+
+- you want to test the thermodynamic identity `T_m = dH_fus / dS_fus`
+  directly in the crystal branch
+- you want `FusionHead` to predict `dH_fus` and `dS_fus` rather than
+  independent `T_m` and `dH_fus`
+- you are running a controlled physics-bottleneck ablation, not changing the
+  maintained default
+
+Key properties:
+
+- starts from `paper_config_tuned.yaml`
+- `fusion_output_mode="entropy_coupled"`
+- `fusion_entropy_min=20`, `fusion_entropy_max=150`
+- `use_walden_check=true`
+
+Trade-off:
+
+- enforces a physically coupled crystal representation
+- current processed scaffold split has dense `T_m` labels but sparse
+  `dH_fus` labels, so this is a regularization experiment rather than a
+  substitute for collecting more fusion-enthalpy supervision
 
 ### `paper_config_gc_priors.yaml`
 

@@ -32,6 +32,8 @@ class TGNNSolvConfig:
     gps_pe_dim: int = 16
     use_gasteiger_charges: bool = False
     use_phys_edge_features: bool = False
+    explicit_h_small_molecules: bool = False
+    explicit_h_max_heavy_atoms: int = 3
     n_cross_attn_layers: int = 3
     n_attn_heads: int = 8
     dropout: float = 0.1
@@ -66,6 +68,13 @@ class TGNNSolvConfig:
     group_prior_hansen_residual_max: float = 5.0
     group_prior_vm_residual_max: float = 30.0
     group_prior_reg_weight: float = 0.0
+    use_nrtl_group_prior: bool = False
+    nrtl_group_prior_tau_scale: float = 0.35
+    nrtl_group_prior_tau_clamp: float = 1.5
+    nrtl_group_prior_ra_scale: float = 20.0
+    use_unifac_gamma_prior: bool = False
+    unifac_gamma_prior_tau_scale: float = 1.0
+    unifac_gamma_prior_tau_clamp: float = 3.0
     use_gc_priors_crystal: bool = False
     gc_prior_Tm_residual_max: float = 50.0
     gc_prior_dH_residual_factor: tuple[float, float] = (0.3, 3.0)
@@ -89,6 +98,10 @@ class TGNNSolvConfig:
     use_pseudo_hansen: bool = True
     pseudo_hansen_weight_discount: float = 0.3
     hansen_contrastive_temperature: float = 0.1
+    use_hansen_delta_loss: bool = False
+    hansen_delta_loss_phase1_weight: float = 0.0
+    hansen_delta_loss_phase2_weight: float = 0.0
+    hansen_delta_loss_phase3_weight: float = 0.0
     use_aux_direct_sol_loss: bool = False
     aux_direct_sol_loss_weight: float = 0.1
     aux_direct_sol_loss_phase3_weight: float = 0.01
@@ -103,6 +116,11 @@ class TGNNSolvConfig:
     T_m_max: float = 700.0    # Max melting point, K
     alpha_min: float = 0.1    # Min NRTL non-randomness
     alpha_max: float = 0.6    # Max NRTL non-randomness
+    fusion_output_mode: str = "direct"  # "direct" or "entropy_coupled"
+    fusion_entropy_min: float = 20.0    # J/(mol*K)
+    fusion_entropy_max: float = 150.0   # J/(mol*K)
+    fusion_entropy_init: float = 56.5   # Walden-like starting point, J/(mol*K)
+    fusion_enthalpy_init: float = 20_000.0  # J/mol
 
     # --- Scale factors for prediction heads ---
     S_H: float = 5000.0       # dH_fus scale, J/mol
@@ -144,6 +162,13 @@ class TGNNSolvConfig:
     use_pair_temperature_batching: bool = True
     pair_temperature_min_group_size: int = 2
     pair_temperature_group_chunk_size: int = 4
+    idac_aux_steps_per_epoch: int = 0
+    idac_aux_phase1_weight: Optional[float] = None
+    idac_aux_phase2_weight: Optional[float] = None
+    idac_aux_phase3_weight: Optional[float] = None
+    vant_hoff_slope_scale: float = 5000.0
+    vant_hoff_intercept_scale: float = 10.0
+    vh_anchor_default_weight: float = 1.0
     use_source_uncertainty_weights: bool = False
     source_uncertainty_csv: str = (
         "results/source_uncertainty_audit_reviewed/"
@@ -178,6 +203,11 @@ class TGNNSolvConfig:
         if self.descriptor_augmentation_hidden_dim is not None:
             return int(self.descriptor_augmentation_hidden_dim)
         return int(self.descriptor_hidden_dim)
+
+    @property
+    def requires_group_prior_features(self) -> bool:
+        """Return True when any active path needs fixed group-count features."""
+        return bool(self.use_group_priors or self.use_nrtl_group_prior)
 
     @classmethod
     def from_yaml(cls, path: str) -> "TGNNSolvConfig":

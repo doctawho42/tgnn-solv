@@ -167,10 +167,14 @@ def _sanitize_scalar(value: float | str | object, default: float = 0.0) -> float
     return scalar
 
 
-def _compute_gasteiger_charges(mol: object) -> list[float]:
-    """Compute heavy-atom charges, folding attached hydrogen charges back in."""
+def _compute_gasteiger_charges(
+    mol: object,
+    *,
+    fold_hydrogens: bool = True,
+) -> list[float]:
+    """Compute atom charges, optionally folding attached H charge into heavy atoms."""
     try:
-        mol_with_h = Chem.AddHs(Chem.Mol(mol))
+        mol_with_h = Chem.AddHs(Chem.Mol(mol)) if fold_hydrogens else Chem.Mol(mol)
     except Exception:
         mol_with_h = mol
     try:
@@ -187,7 +191,7 @@ def _compute_gasteiger_charges(mol: object) -> list[float]:
             except RuntimeError:
                 value = atom.GetProp("_GasteigerCharge")
         charge = _sanitize_scalar(value, default=0.0)
-        if atom.GetAtomicNum() == 1 and atom.GetDegree() == 1:
+        if fold_hydrogens and atom.GetAtomicNum() == 1 and atom.GetDegree() == 1:
             neighbor = atom.GetNeighbors()[0]
             charges[neighbor.GetIdx()] += charge
         elif atom.GetIdx() < len(charges):
@@ -294,6 +298,8 @@ def smiles_to_graph(
     *,
     use_gasteiger_charges: bool = False,
     use_phys_edge_features: bool = False,
+    explicit_h_small_molecules: bool = False,
+    explicit_h_max_heavy_atoms: int = 3,
 ) -> Data | None:
     """
     Convert a SMILES string into a PyTorch-Geometric ``Data`` object.
@@ -310,28 +316,46 @@ def smiles_to_graph(
     Data or None
         ``None`` when SMILES is invalid or molecule has no atoms.
     """
-    mol = Chem.MolFromSmiles(smiles)
-    if mol is None:
+    raw_mol = Chem.MolFromSmiles(smiles)
+    if raw_mol is None:
         return None
+
+    heavy_atom_count = raw_mol.GetNumHeavyAtoms()
+    keep_explicit_h = (
+        bool(explicit_h_small_molecules)
+        and heavy_atom_count <= max(0, int(explicit_h_max_heavy_atoms))
+    )
+    mol = Chem.AddHs(raw_mol) if keep_explicit_h else Chem.RemoveHs(raw_mol)
 
     # Optional 3-D conformer (on the H-added molecule)
     pos = None
     if compute_3d:
         try:
-            mol_3d = Chem.AddHs(mol)
+            mol_3d = Chem.AddHs(raw_mol)
             AllChem.EmbedMolecule(mol_3d, AllChem.ETKDGv3())
             AllChem.MMFFOptimizeMolecule(mol_3d, maxIters=200)
             conf = mol_3d.GetConformer()
-            # Keep only heavy-atom positions
-            pos = torch.tensor(
-                [list(conf.GetAtomPosition(i))
-                 for i in range(mol.GetNumAtoms())],
-                dtype=torch.float,
-            )
+            if keep_explicit_h:
+                pos = torch.tensor(
+                    [
+                        list(conf.GetAtomPosition(i))
+                        for i in range(mol_3d.GetNumAtoms())
+                    ],
+                    dtype=torch.float,
+                )
+            else:
+                heavy_indices = [
+                    atom.GetIdx()
+                    for atom in mol_3d.GetAtoms()
+                    if atom.GetAtomicNum() != 1
+                ]
+                pos = torch.tensor(
+                    [list(conf.GetAtomPosition(i)) for i in heavy_indices],
+                    dtype=torch.float,
+                )
         except Exception:
             pos = None
 
-    mol = Chem.RemoveHs(mol)
     if mol.GetNumAtoms() == 0:
         return None
 
@@ -340,7 +364,9 @@ def smiles_to_graph(
         use_phys_edge_features=use_phys_edge_features,
     )
     gasteiger_charges = (
-        _compute_gasteiger_charges(mol) if use_gasteiger_charges else None
+        _compute_gasteiger_charges(mol, fold_hydrogens=not keep_explicit_h)
+        if use_gasteiger_charges
+        else None
     )
 
     # Node features
@@ -384,6 +410,8 @@ def smiles_to_graph(
         data.pos = pos
     data.smiles = smiles
     data.num_atoms = mol.GetNumAtoms()
+    data.num_heavy_atoms = heavy_atom_count
+    data.explicit_h_small_molecule = keep_explicit_h
     data.graph_feature_node_dim = spec.node_dim
     data.graph_feature_edge_dim = spec.edge_dim
     return data
@@ -404,6 +432,12 @@ def smiles_to_graph_with_config(
         ),
         use_phys_edge_features=bool(
             getattr(cfg, "use_phys_edge_features", False)
+        ),
+        explicit_h_small_molecules=bool(
+            getattr(cfg, "explicit_h_small_molecules", False)
+        ),
+        explicit_h_max_heavy_atoms=int(
+            getattr(cfg, "explicit_h_max_heavy_atoms", 3)
         ),
     )
 

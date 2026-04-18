@@ -32,6 +32,7 @@ Usage::
 from __future__ import annotations
 
 import random
+from pathlib import Path
 from typing import TypeAlias
 
 import numpy as np
@@ -75,6 +76,20 @@ PretrainBatch: TypeAlias = tuple[
     torch.Tensor,
     Batch,
     Batch,
+]
+PairwiseContrastiveSample: TypeAlias = tuple[
+    Data,
+    Data,
+    Data,
+    torch.Tensor,
+    torch.Tensor,
+]
+PairwiseContrastiveBatch: TypeAlias = tuple[
+    Batch,
+    Batch,
+    Batch,
+    torch.Tensor,
+    torch.Tensor,
 ]
 
 
@@ -226,6 +241,8 @@ class PretrainDataset(Dataset):
         cache: bool = True,
         use_gasteiger_charges: bool = False,
         use_phys_edge_features: bool = False,
+        explicit_h_small_molecules: bool = False,
+        explicit_h_max_heavy_atoms: int = 3,
     ) -> None:
         self.mask_ratio = mask_ratio
         self.mask_hops = mask_hops
@@ -235,6 +252,8 @@ class PretrainDataset(Dataset):
         self.cache = {} if cache else None
         self.use_gasteiger_charges = use_gasteiger_charges
         self.use_phys_edge_features = use_phys_edge_features
+        self.explicit_h_small_molecules = explicit_h_small_molecules
+        self.explicit_h_max_heavy_atoms = int(explicit_h_max_heavy_atoms)
 
         # Filter valid SMILES
         valid = []
@@ -256,6 +275,8 @@ class PretrainDataset(Dataset):
                 smi,
                 use_gasteiger_charges=self.use_gasteiger_charges,
                 use_phys_edge_features=self.use_phys_edge_features,
+                explicit_h_small_molecules=self.explicit_h_small_molecules,
+                explicit_h_max_heavy_atoms=self.explicit_h_max_heavy_atoms,
             )
         except TypeError:
             g = smiles_to_graph(smi)
@@ -440,6 +461,119 @@ def pretrain_collate(batch: list[PretrainSample]) -> PretrainBatch:
     )
 
 
+class PairwiseContrastiveDataset(Dataset):
+    """
+    Same-solvent solute-pair compatibility dataset.
+
+    Rows are produced by `scripts/data/build_pairwise_contrastive_pretrain.py`.
+    Each sample contains `(solute_A, solute_B, solvent, label, weight)`, where
+    label=1 means similar solubility in that solvent and label=0 means a
+    solubility cliff or easy negative.
+    """
+
+    REQUIRED_COLUMNS = {
+        "solute_a_smiles",
+        "solute_b_smiles",
+        "solvent_smiles",
+        "contrastive_label",
+    }
+
+    def __init__(
+        self,
+        csv_path: str | Path,
+        *,
+        cache: bool = True,
+        use_gasteiger_charges: bool = False,
+        use_phys_edge_features: bool = False,
+        explicit_h_small_molecules: bool = False,
+        explicit_h_max_heavy_atoms: int = 3,
+    ) -> None:
+        self.csv_path = Path(csv_path).expanduser().resolve()
+        df = pd.read_csv(self.csv_path, low_memory=False)
+        missing = self.REQUIRED_COLUMNS - set(df.columns)
+        if missing:
+            raise ValueError(
+                f"{self.csv_path} is missing columns: {sorted(missing)}"
+            )
+
+        self.cache = {} if cache else None
+        self.use_gasteiger_charges = use_gasteiger_charges
+        self.use_phys_edge_features = use_phys_edge_features
+        self.explicit_h_small_molecules = explicit_h_small_molecules
+        self.explicit_h_max_heavy_atoms = int(explicit_h_max_heavy_atoms)
+
+        if "sample_weight" not in df.columns:
+            df["sample_weight"] = 1.0
+        rows: list[tuple[str, str, str, float, float]] = []
+        for row in df.itertuples(index=False):
+            solute_a = str(row.solute_a_smiles)
+            solute_b = str(row.solute_b_smiles)
+            solvent = str(row.solvent_smiles)
+            if (
+                self._get_graph(solute_a) is None
+                or self._get_graph(solute_b) is None
+                or self._get_graph(solvent) is None
+            ):
+                continue
+            rows.append(
+                (
+                    solute_a,
+                    solute_b,
+                    solvent,
+                    float(row.contrastive_label),
+                    float(row.sample_weight),
+                )
+            )
+        self.data = rows
+        print(
+            "  PairwiseContrastiveDataset: "
+            f"{len(self.data):,} rows from {self.csv_path}"
+        )
+
+    def _get_graph(self, smi: str) -> Data | None:
+        if self.cache is not None and smi in self.cache:
+            return self.cache[smi]
+        try:
+            g = smiles_to_graph(
+                smi,
+                use_gasteiger_charges=self.use_gasteiger_charges,
+                use_phys_edge_features=self.use_phys_edge_features,
+                explicit_h_small_molecules=self.explicit_h_small_molecules,
+                explicit_h_max_heavy_atoms=self.explicit_h_max_heavy_atoms,
+            )
+        except TypeError:
+            g = smiles_to_graph(smi)
+        if self.cache is not None and g is not None:
+            self.cache[smi] = g
+        return g
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __getitem__(self, idx: int) -> PairwiseContrastiveSample:
+        solute_a, solute_b, solvent, label, weight = self.data[idx]
+        return (
+            self._get_graph(solute_a).clone(),
+            self._get_graph(solute_b).clone(),
+            self._get_graph(solvent).clone(),
+            torch.tensor(label, dtype=torch.float),
+            torch.tensor(weight, dtype=torch.float),
+        )
+
+
+def pairwise_contrastive_collate(
+    batch: list[PairwiseContrastiveSample],
+) -> PairwiseContrastiveBatch:
+    solute_a, solute_b, solvent, labels, weights = zip(*batch)
+    return (
+        Batch.from_data_list(list(solute_a)),
+        Batch.from_data_list(list(solute_b)),
+        Batch.from_data_list(list(solvent)),
+        torch.stack(labels),
+        torch.stack(weights),
+    )
+
+
 # ================================================================== #
 #  Pretraining heads                                                  #
 # ================================================================== #
@@ -505,6 +639,34 @@ class ProjectionHead(nn.Module):
         return self.mlp(g)
 
 
+class PairwiseCompatibilityProjectionHead(nn.Module):
+    """Project solvent-conditioned pair states for contrastive compatibility."""
+
+    def __init__(self, readout_dim: int, proj_dim: int = 128) -> None:
+        super().__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(readout_dim * 4, readout_dim),
+            nn.SiLU(),
+            nn.Linear(readout_dim, proj_dim),
+        )
+
+    def forward(
+        self,
+        g_solute: torch.Tensor,
+        g_solvent: torch.Tensor,
+    ) -> torch.Tensor:
+        pair_state = torch.cat(
+            [
+                g_solute,
+                g_solvent,
+                torch.abs(g_solute - g_solvent),
+                g_solute * g_solvent,
+            ],
+            dim=-1,
+        )
+        return self.mlp(pair_state)
+
+
 # ================================================================== #
 #  Pretrainer                                                         #
 # ================================================================== #
@@ -565,6 +727,9 @@ class Pretrainer:
         self.proj_head = ProjectionHead(
             readout.output_dim, proj_dim=128
         ).to(self.device)
+        self.pairwise_proj_head = PairwiseCompatibilityProjectionHead(
+            readout.output_dim, proj_dim=128
+        ).to(self.device)
 
     @staticmethod
     def _contrastive_loss(
@@ -594,6 +759,10 @@ class Pretrainer:
         prop_loss_weight: float = 1.0,
         contrastive_weight: float = 0.5,
         contrastive_temp: float = 0.1,
+        pairwise_contrastive_csv: str | Path | None = None,
+        pairwise_contrastive_weight: float = 0.0,
+        pairwise_contrastive_batch_size: int | None = None,
+        pairwise_contrastive_temp: float = 0.07,
     ) -> dict[str, list[float]]:
         """
         Run pretraining.
@@ -617,9 +786,14 @@ class Pretrainer:
         print("=" * 60)
         print(f"  Molecules: {len(smiles_list):,}")
         print(f"  Epochs: {n_epochs}")
-        print(
-            "  Tasks: masked subgraph + bond prediction + properties + contrastive"
+        use_pairwise = (
+            pairwise_contrastive_csv is not None
+            and float(pairwise_contrastive_weight) > 0
         )
+        task_text = "masked subgraph + bond prediction + properties + contrastive"
+        if use_pairwise:
+            task_text += " + pairwise compatibility"
+        print(f"  Tasks: {task_text}")
 
         # Build dataset
         dataset = PretrainDataset(
@@ -631,6 +805,8 @@ class Pretrainer:
             aug_edge_mask_ratio=aug_edge_mask_ratio,
             use_gasteiger_charges=self.cfg.use_gasteiger_charges,
             use_phys_edge_features=self.cfg.use_phys_edge_features,
+            explicit_h_small_molecules=self.cfg.explicit_h_small_molecules,
+            explicit_h_max_heavy_atoms=self.cfg.explicit_h_max_heavy_atoms,
         )
         loader = DataLoader(
             dataset,
@@ -640,6 +816,28 @@ class Pretrainer:
             num_workers=0,
             drop_last=len(dataset) > batch_size,
         )
+        pairwise_loader = None
+        if use_pairwise:
+            pairwise_dataset = PairwiseContrastiveDataset(
+                pairwise_contrastive_csv,
+                use_gasteiger_charges=self.cfg.use_gasteiger_charges,
+                use_phys_edge_features=self.cfg.use_phys_edge_features,
+                explicit_h_small_molecules=self.cfg.explicit_h_small_molecules,
+                explicit_h_max_heavy_atoms=self.cfg.explicit_h_max_heavy_atoms,
+            )
+            if len(pairwise_dataset) == 0:
+                raise ValueError(
+                    "Pairwise contrastive pretraining was requested, but "
+                    f"{pairwise_contrastive_csv} yielded no valid graph rows."
+                )
+            pairwise_loader = DataLoader(
+                pairwise_dataset,
+                batch_size=int(pairwise_contrastive_batch_size or batch_size),
+                shuffle=True,
+                collate_fn=pairwise_contrastive_collate,
+                num_workers=0,
+                drop_last=False,
+            )
 
         # Optimizer for GNN + readout + heads
         params = (
@@ -649,6 +847,7 @@ class Pretrainer:
             + list(self.prop_head.parameters())
             + list(self.bond_head.parameters())
             + list(self.proj_head.parameters())
+            + list(self.pairwise_proj_head.parameters())
         )
         optimizer = torch.optim.AdamW(params, lr=lr, weight_decay=1e-5)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -662,6 +861,8 @@ class Pretrainer:
             "prop": [],
             "contrastive": [],
         }
+        if use_pairwise:
+            history["pairwise"] = []
 
         for epoch in trange(n_epochs, desc="Pretrain epochs"):
             self.gnn.train()
@@ -670,6 +871,7 @@ class Pretrainer:
             self.prop_head.train()
             self.bond_head.train()
             self.proj_head.train()
+            self.pairwise_proj_head.train()
 
             epoch_loss = {
                 "total": 0,
@@ -678,7 +880,10 @@ class Pretrainer:
                 "prop": 0,
                 "contrastive": 0,
             }
+            if use_pairwise:
+                epoch_loss["pairwise"] = 0
             n_batches = 0
+            pairwise_iter = iter(pairwise_loader) if pairwise_loader is not None else None
 
             for (
                 batch_graph,
@@ -754,12 +959,102 @@ class Pretrainer:
                     z1, z2, temperature=contrastive_temp
                 )
 
+                if use_pairwise and pairwise_iter is not None:
+                    try:
+                        (
+                            pair_solute_a,
+                            pair_solute_b,
+                            pair_solvent,
+                            pair_labels,
+                            pair_weights,
+                        ) = next(pairwise_iter)
+                    except StopIteration:
+                        pairwise_iter = iter(pairwise_loader)
+                        (
+                            pair_solute_a,
+                            pair_solute_b,
+                            pair_solvent,
+                            pair_labels,
+                            pair_weights,
+                        ) = next(pairwise_iter)
+                    pair_solute_a = pair_solute_a.to(self.device)
+                    pair_solute_b = pair_solute_b.to(self.device)
+                    pair_solvent = pair_solvent.to(self.device)
+                    pair_labels = pair_labels.to(self.device)
+                    pair_weights = pair_weights.to(self.device).clamp_min(0.0)
+
+                    h_pair_solute_a = self.gnn(
+                        pair_solute_a.x,
+                        pair_solute_a.edge_index,
+                        pair_solute_a.edge_attr,
+                        role="solute",
+                        batch=pair_solute_a.batch,
+                    )
+                    h_pair_solute_b = self.gnn(
+                        pair_solute_b.x,
+                        pair_solute_b.edge_index,
+                        pair_solute_b.edge_attr,
+                        role="solute",
+                        batch=pair_solute_b.batch,
+                    )
+                    h_pair_solvent = self.gnn(
+                        pair_solvent.x,
+                        pair_solvent.edge_index,
+                        pair_solvent.edge_attr,
+                        role="solvent",
+                        batch=pair_solvent.batch,
+                    )
+                    g_pair_solute_a = self.readout(
+                        h_pair_solute_a,
+                        pair_solute_a.batch,
+                    )
+                    g_pair_solute_b = self.readout(
+                        h_pair_solute_b,
+                        pair_solute_b.batch,
+                    )
+                    g_pair_solvent = self.readout(
+                        h_pair_solvent,
+                        pair_solvent.batch,
+                    )
+                    z_pair_a = F.normalize(
+                        self.pairwise_proj_head(
+                            g_pair_solute_a,
+                            g_pair_solvent,
+                        ),
+                        dim=-1,
+                    )
+                    z_pair_b = F.normalize(
+                        self.pairwise_proj_head(
+                            g_pair_solute_b,
+                            g_pair_solvent,
+                        ),
+                        dim=-1,
+                    )
+                    pair_logits = (
+                        (z_pair_a * z_pair_b).sum(dim=-1)
+                        / max(float(pairwise_contrastive_temp), 1e-6)
+                    )
+                    pair_loss_raw = F.binary_cross_entropy_with_logits(
+                        pair_logits,
+                        pair_labels,
+                        reduction="none",
+                    )
+                    if pair_weights.sum() > 0:
+                        loss_pairwise = (
+                            pair_loss_raw * pair_weights
+                        ).sum() / pair_weights.sum()
+                    else:
+                        loss_pairwise = pair_loss_raw.mean()
+                else:
+                    loss_pairwise = torch.tensor(0.0, device=self.device)
+
                 # Combined loss
                 loss = (
                     atom_loss_weight * loss_atom
                     + bond_loss_weight * loss_bond
                     + prop_loss_weight * loss_prop
                     + contrastive_weight * loss_ctr
+                    + pairwise_contrastive_weight * loss_pairwise
                 )
 
                 loss.backward()
@@ -771,6 +1066,8 @@ class Pretrainer:
                 epoch_loss["bond"] += loss_bond.item()
                 epoch_loss["prop"] += loss_prop.item()
                 epoch_loss["contrastive"] += loss_ctr.item()
+                if use_pairwise:
+                    epoch_loss["pairwise"] += loss_pairwise.item()
                 n_batches += 1
 
             scheduler.step()
@@ -787,6 +1084,11 @@ class Pretrainer:
                     f"bond={epoch_loss['bond']:.4f}, "
                     f"prop={epoch_loss['prop']:.4f}, "
                     f"ctr={epoch_loss['contrastive']:.4f}"
+                    + (
+                        f", pair={epoch_loss['pairwise']:.4f}"
+                        if use_pairwise
+                        else ""
+                    )
                 )
 
         # Discard pretraining heads (not needed for fine-tuning)
@@ -794,6 +1096,7 @@ class Pretrainer:
         del self.prop_head
         del self.bond_head
         del self.proj_head
+        del self.pairwise_proj_head
 
         print("\n  Pretraining complete.")
         print("  GNN and Readout weights updated in-place.")

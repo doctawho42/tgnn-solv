@@ -456,11 +456,24 @@ class TGNNSolv(nn.Module):
             T_m = T_m_raw.clamp(self.cfg.T_m_min, self.cfg.T_m_max)
         dH_scale = 1.0 + param_deltas["delta_dH_fraction"]
         dH_fus = (fusion_params["dH_fus"] * dH_scale).clamp(min=self.cfg.eps)
-        return {
+        return self._attach_fusion_entropy({
             "T_m": T_m,
             "dH_fus": dH_fus,
             "dCp_fus": fusion_params["dCp_fus"],
-        }
+        })
+
+    def _attach_fusion_entropy(
+        self,
+        fusion_params: dict[str, torch.Tensor],
+    ) -> dict[str, torch.Tensor]:
+        """Keep dS_fus diagnostics consistent with the active T_m/dH_fus values."""
+        fusion_params = dict(fusion_params)
+        fusion_params["dS_fus"] = (
+            fusion_params["dH_fus"] / fusion_params["T_m"].clamp_min(self.cfg.eps)
+        )
+        fusion_params.setdefault("T_m_unclamped", fusion_params["T_m"])
+        fusion_params.setdefault("dH_fus_raw", fusion_params["dH_fus"])
+        return fusion_params
 
     def _calibrate_gc_tm_prior(self, T_m_gc: torch.Tensor) -> torch.Tensor:
         """Apply the train-set affine calibration to the GC melting-point prior."""
@@ -652,7 +665,7 @@ class TGNNSolv(nn.Module):
         force_oracle_injection: bool = False,
     ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
         """Substitute oracle crystal targets into the solver path when enabled."""
-        solver_fusion_params = dict(fusion_params)
+        solver_fusion_params = self._attach_fusion_entropy(fusion_params)
         zero_mask = torch.zeros_like(fusion_params["T_m"], dtype=torch.bool)
         oracle_masks = {
             "T_m": zero_mask,
@@ -719,7 +732,9 @@ class TGNNSolv(nn.Module):
             ).detach(),
             fusion_params["dH_fus"],
         )
-        return solver_fusion_params, oracle_masks
+        solver_fusion_params.pop("T_m_unclamped", None)
+        solver_fusion_params.pop("dH_fus_raw", None)
+        return self._attach_fusion_entropy(solver_fusion_params), oracle_masks
 
     def forward(
             self,
@@ -735,12 +750,15 @@ class TGNNSolv(nn.Module):
             solvent_descriptor_prior_features: Optional[torch.Tensor] = None,
             solute_group_prior_features: Optional[torch.Tensor] = None,
             solvent_group_prior_features: Optional[torch.Tensor] = None,
+            unifac_ln_gamma_inf: Optional[torch.Tensor] = None,
+            unifac_gamma_mask: Optional[torch.Tensor] = None,
             T_m_gc: Optional[torch.Tensor] = None,
             dH_fus_gc: Optional[torch.Tensor] = None,
             dCp_fus_gc: Optional[torch.Tensor] = None,
             targets: Optional[Dict[str, torch.Tensor | object]] = None,
             force_oracle_injection: bool = False,
             detach_crystal_from_encoder: Optional[bool] = None,
+            gamma_only: bool = False,
             return_intermediates: bool = False,  # ✦ NEW
     ) -> Dict[str, torch.Tensor]:
         """
@@ -800,6 +818,10 @@ class TGNNSolv(nn.Module):
             g_slv_pre = g_slv_pre + self.fp_pre_scale * slv_fp_emb
         sol_prior = None
         slv_prior = None
+        sol_group_for_nrtl = None
+        slv_group_for_nrtl = None
+        unifac_ln_gamma_for_nrtl = None
+        unifac_gamma_mask_for_nrtl = None
         if self.cfg.use_descriptor_priors:
             sol_prior, slv_prior = self._require_descriptor_prior_features(
                 solute_descriptor_prior_features,
@@ -807,13 +829,29 @@ class TGNNSolv(nn.Module):
             )
             sol_prior = sol_prior.to(g_sol_pre)
             slv_prior = slv_prior.to(g_slv_pre)
-        elif self.cfg.use_group_priors:
-            sol_prior, slv_prior = self._require_group_prior_features(
+        if self.cfg.requires_group_prior_features:
+            sol_group_for_nrtl, slv_group_for_nrtl = self._require_group_prior_features(
                 solute_group_prior_features,
                 solvent_group_prior_features,
             )
-            sol_prior = sol_prior.to(g_sol_pre)
-            slv_prior = slv_prior.to(g_slv_pre)
+            sol_group_for_nrtl = sol_group_for_nrtl.to(g_sol_pre)
+            slv_group_for_nrtl = slv_group_for_nrtl.to(g_slv_pre)
+            if self.cfg.use_group_priors:
+                sol_prior = sol_group_for_nrtl
+                slv_prior = slv_group_for_nrtl
+        if self.cfg.use_unifac_gamma_prior:
+            if unifac_ln_gamma_inf is None and targets is not None:
+                maybe_unifac = targets.get("unifac_ln_gamma_inf")
+                if isinstance(maybe_unifac, torch.Tensor):
+                    unifac_ln_gamma_inf = maybe_unifac
+            if unifac_gamma_mask is None and targets is not None:
+                maybe_mask = targets.get("unifac_gamma_mask")
+                if isinstance(maybe_mask, torch.Tensor):
+                    unifac_gamma_mask = maybe_mask
+            if unifac_ln_gamma_inf is not None:
+                unifac_ln_gamma_for_nrtl = unifac_ln_gamma_inf.to(g_sol_pre)
+            if unifac_gamma_mask is not None:
+                unifac_gamma_mask_for_nrtl = unifac_gamma_mask.to(g_sol_pre.device)
         solute_T_m_gc = None
         solute_dH_fus_gc = None
         solute_dCp_fus_gc = None
@@ -992,10 +1030,93 @@ class TGNNSolv(nn.Module):
                 force_oracle_injection=force_oracle_injection,
             )
         )
-        nrtl_params = self.head_nrtl(g_pair, temp_feat=nrtl_t_feat)
+        nrtl_params = self.head_nrtl(
+            g_pair,
+            temp_feat=nrtl_t_feat,
+            solute_group_prior_features=sol_group_for_nrtl,
+            solvent_group_prior_features=slv_group_for_nrtl,
+            unifac_ln_gamma_inf=unifac_ln_gamma_for_nrtl,
+            unifac_gamma_mask=unifac_gamma_mask_for_nrtl,
+        )
         ln_x2_aux = None
         if self.aux_direct_sol_head is not None:
             ln_x2_aux = self.aux_direct_sol_head(g_pair).squeeze(-1)
+
+        if gamma_only:
+            nrtl = self.sle_solver.nrtl_layer
+            tau_12, tau_21, G_12, G_21 = nrtl.compute_tau_G_from_params(
+                nrtl_params,
+                T,
+            )
+            ln_gamma_inf = nrtl.ln_gamma_inf(tau_12, tau_21, G_21)
+            dummy = torch.zeros_like(T)
+            output = {
+                "ln_x2": dummy,
+                "x2": torch.exp(dummy).clamp(0, 1),
+                "physics": {
+                    "ln_gamma_inf": ln_gamma_inf,
+                    "tau_12": tau_12,
+                    "tau_21": tau_21,
+                    "G_12": G_12,
+                    "G_21": G_21,
+                },
+                "fusion_params": fusion_params,
+                "solver_fusion_params": solver_fusion_params,
+                "nrtl_params": nrtl_params,
+                "hansen_sol": hansen_sol,
+                "hansen_slv": hansen_slv,
+                "aux_sol": aux_sol,
+                "aux_slv": aux_slv,
+                "Ra": self.sle_solver.hansen_layer(hansen_sol, hansen_slv),
+                "confidence": torch.ones_like(T),
+                "correction": dummy,
+                "gate": torch.tensor(1.0, device=T.device, dtype=T.dtype),
+                "moe_gate": moe_gate,
+                "attn_maps": attn_maps,
+                "representations": {
+                    "g_sol_pre": g_sol_pre,
+                    "g_slv_pre": g_slv_pre,
+                    "g_sol_post": g_sol_post,
+                    "g_slv_post": g_slv_post,
+                    "g_pair": g_pair,
+                },
+            }
+            if ln_x2_aux is not None:
+                output["ln_x2_aux"] = ln_x2_aux
+            if (
+                self.is_timp
+                and g_sol_pre_parts["disp"] is not None
+                and g_sol_pre_parts["polar"] is not None
+                and g_slv_pre_parts["disp"] is not None
+                and g_slv_pre_parts["polar"] is not None
+            ):
+                output["timp_channels"] = {
+                    "solute_disp": g_sol_pre_parts["disp"],
+                    "solute_polar": g_sol_pre_parts["polar"],
+                    "solute_combined": g_sol_pre_parts["combined"],
+                    "solvent_disp": g_slv_pre_parts["disp"],
+                    "solvent_polar": g_slv_pre_parts["polar"],
+                    "solvent_combined": g_slv_pre_parts["combined"],
+                }
+            if self.cfg.use_oracle_injection:
+                output["oracle_injection_masks"] = oracle_injection_masks
+            if self.cfg.use_gc_priors_crystal:
+                output["fusion_gc_priors"] = {
+                    "T_m_gc": solute_T_m_gc,
+                    "dH_fus_gc": solute_dH_fus_gc,
+                    "dCp_fus_gc": solute_dCp_fus_gc,
+                }
+            if isinstance(hansen_sol_parts, dict):
+                output["hansen_sol_prior"] = hansen_sol_parts["prior"]
+                output["hansen_slv_prior"] = hansen_slv_parts["prior"]
+                output["hansen_sol_residual"] = hansen_sol_parts["residual"]
+                output["hansen_slv_residual"] = hansen_slv_parts["residual"]
+            if "V_m_prior" in aux_sol_parts:
+                output["aux_sol_prior"] = {"V_m": aux_sol_parts["V_m_prior"]}
+                output["aux_slv_prior"] = {"V_m": aux_slv_parts["V_m_prior"]}
+                output["aux_sol_residual"] = {"V_m": aux_sol_parts["V_m_residual"]}
+                output["aux_slv_residual"] = {"V_m": aux_slv_parts["V_m_residual"]}
+            return output
 
         # ---- 7. SLE solver (float32 for numerical stability) ----
         with torch.amp.autocast(device_type='cpu', enabled=False):
@@ -1151,9 +1272,11 @@ class TGNNSolv(nn.Module):
                 # Crystal / fusion properties
                 "T_m": fusion_params["T_m"],
                 "dH_fus": fusion_params["dH_fus"],
+                "dS_fus": fusion_params["dS_fus"],
                 "dCp_fus": fusion_params["dCp_fus"],
                 "T_m_solver": solver_fusion_params["T_m"],
                 "dH_fus_solver": solver_fusion_params["dH_fus"],
+                "dS_fus_solver": solver_fusion_params["dS_fus"],
                 "dCp_fus_solver": solver_fusion_params["dCp_fus"],
                 "T_m_gc": (
                     solute_T_m_gc
@@ -1172,6 +1295,7 @@ class TGNNSolv(nn.Module):
                 ),
                 "T_m_corrected": corrected_fusion_params["T_m"],
                 "dH_fus_corrected": corrected_fusion_params["dH_fus"],
+                "dS_fus_corrected": corrected_fusion_params["dS_fus"],
                 "dCp_fus_corrected": corrected_fusion_params["dCp_fus"],
                 # NRTL binary interaction (all mode-dependent keys)
                 "alpha_12": nrtl_params["alpha_12"],

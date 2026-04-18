@@ -7,6 +7,8 @@ parameters. Constrained activations keep outputs in valid ranges.
 
 from __future__ import annotations
 
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -319,15 +321,27 @@ class FusionHead(nn.Module):
       dH_fus  : enthalpy of fusion [J/mol]
       dCp_fus : heat capacity change [J/(mol·K)]
 
-    Default mode predicts absolute values from scratch. When
-    ``use_gc_priors_crystal=True``, the head predicts only a bounded residual
-    around fixed GC priors for ``T_m`` and ``dH_fus`` and passes through a
-    fixed per-molecule ``dCp_fus_gc``.
+    Default mode predicts absolute values from scratch. With
+    ``fusion_output_mode="entropy_coupled"``, the absolute head predicts
+    ``dH_fus`` and ``dS_fus`` and derives ``T_m = dH_fus / dS_fus`` before
+    applying the configured solver-safe melting-point bounds.
+
+    When ``use_gc_priors_crystal=True``, the head predicts only a bounded
+    residual around fixed GC priors for ``T_m`` and ``dH_fus`` and passes
+    through a fixed per-molecule ``dCp_fus_gc``.
     """
 
     def __init__(self, input_dim: int, cfg: TGNNSolvConfig) -> None:
         super().__init__()
         self.cfg = cfg
+        if cfg.fusion_output_mode not in {"direct", "entropy_coupled"}:
+            raise ValueError(
+                "fusion_output_mode must be either 'direct' or 'entropy_coupled'."
+            )
+        if cfg.fusion_entropy_min <= 0.0:
+            raise ValueError("fusion_entropy_min must be positive.")
+        if cfg.fusion_entropy_max <= cfg.fusion_entropy_min:
+            raise ValueError("fusion_entropy_max must exceed fusion_entropy_min.")
         if cfg.use_gc_priors_crystal and cfg.predict_dCp_fus:
             raise ValueError(
                 "use_gc_priors_crystal=True requires predict_dCp_fus=False because "
@@ -350,6 +364,8 @@ class FusionHead(nn.Module):
                 nn.SiLU(),
                 nn.Linear(128, output_dim),
             )
+            if cfg.fusion_output_mode == "entropy_coupled":
+                self._init_entropy_coupled_head(self.mlp)
 
     @staticmethod
     def _make_residual_mlp(input_dim: int) -> nn.Sequential:
@@ -370,6 +386,56 @@ class FusionHead(nn.Module):
             raise TypeError("Expected residual head to end with nn.Linear.")
         nn.init.zeros_(final.weight)
         nn.init.zeros_(final.bias)
+
+    @staticmethod
+    def _inverse_softplus(value: float) -> float:
+        """Numerically stable inverse of softplus for positive scalar values."""
+        if value <= 0.0:
+            raise ValueError("inverse softplus requires a positive value.")
+        if value > 20.0:
+            return value
+        return math.log(math.expm1(value))
+
+    @staticmethod
+    def _logit(probability: float) -> float:
+        """Return logit for a probability clipped away from 0 and 1."""
+        p = min(max(probability, 1.0e-6), 1.0 - 1.0e-6)
+        return math.log(p / (1.0 - p))
+
+    def _init_entropy_coupled_head(self, head: nn.Sequential) -> None:
+        """Initialize the entropy-coupled head near a Walden-like crystal prior."""
+        final = head[-1]
+        if not isinstance(final, nn.Linear):
+            raise TypeError("Expected fusion head to end with nn.Linear.")
+        with torch.no_grad():
+            final.bias[0] = self._inverse_softplus(
+                float(self.cfg.fusion_enthalpy_init) / float(self.cfg.S_H)
+            )
+            entropy_span = (
+                float(self.cfg.fusion_entropy_max)
+                - float(self.cfg.fusion_entropy_min)
+            )
+            entropy_frac = (
+                float(self.cfg.fusion_entropy_init)
+                - float(self.cfg.fusion_entropy_min)
+            ) / entropy_span
+            final.bias[1] = self._logit(entropy_frac)
+
+    def _add_entropy_diagnostics(
+        self,
+        params: dict[str, Tensor],
+        *,
+        T_m_unclamped: Tensor | None = None,
+        dH_fus_raw: Tensor | None = None,
+    ) -> dict[str, Tensor]:
+        """Attach entropy-of-fusion diagnostics to a fusion parameter dict."""
+        T_m = params["T_m"]
+        dH_fus = params["dH_fus"]
+        dS_fus = dH_fus / T_m.clamp_min(self.cfg.eps)
+        params["dS_fus"] = dS_fus
+        params["T_m_unclamped"] = T_m if T_m_unclamped is None else T_m_unclamped
+        params["dH_fus_raw"] = dH_fus if dH_fus_raw is None else dH_fus_raw
+        return params
 
     def set_residual_frozen(self, frozen: bool) -> None:
         """Freeze or unfreeze the GC residual branches."""
@@ -404,6 +470,8 @@ class FusionHead(nn.Module):
         dH_fus_gc: Tensor | None = None,
         dCp_fus_gc: Tensor | None = None,
     ) -> dict[str, Tensor]:
+        T_m_unclamped: Tensor | None = None
+        dH_fus_raw: Tensor | None = None
         if self.cfg.use_gc_priors_crystal:
             if T_m_gc is None or dH_fus_gc is None or dCp_fus_gc is None:
                 raise ValueError(
@@ -436,14 +504,30 @@ class FusionHead(nn.Module):
             if self.mlp is None:
                 raise ValueError("Absolute fusion MLP is not initialized.")
             z = self.mlp(g_solute)
-            T_m = self.cfg.T_m_min + (
-                (self.cfg.T_m_max - self.cfg.T_m_min) * torch.sigmoid(z[:, 0])
-            )
-            dH_fus = F.softplus(z[:, 1]) * self.cfg.S_H
+            if self.cfg.fusion_output_mode == "entropy_coupled":
+                dH_fus_raw = F.softplus(z[:, 0]) * self.cfg.S_H
+                dS_fus = self.cfg.fusion_entropy_min + (
+                    (self.cfg.fusion_entropy_max - self.cfg.fusion_entropy_min)
+                    * torch.sigmoid(z[:, 1])
+                )
+                T_m_unclamped = dH_fus_raw / dS_fus.clamp_min(self.cfg.eps)
+                T_m = T_m_unclamped.clamp(self.cfg.T_m_min, self.cfg.T_m_max)
+                dH_fus = T_m * dS_fus
+            else:
+                T_m = self.cfg.T_m_min + (
+                    (self.cfg.T_m_max - self.cfg.T_m_min) * torch.sigmoid(z[:, 0])
+                )
+                dH_fus = F.softplus(z[:, 1]) * self.cfg.S_H
+                dH_fus_raw = dH_fus
+                T_m_unclamped = T_m
             dCp_fus = torch.full_like(T_m, self.cfg.fixed_dCp_fus)
         if self.cfg.predict_dCp_fus and not self.cfg.use_gc_priors_crystal:
             dCp_fus = z[:, 2] * self.cfg.S_Cp
-        return {"T_m": T_m, "dH_fus": dH_fus, "dCp_fus": dCp_fus}
+        return self._add_entropy_diagnostics(
+            {"T_m": T_m, "dH_fus": dH_fus, "dCp_fus": dCp_fus},
+            T_m_unclamped=T_m_unclamped,
+            dH_fus_raw=dH_fus_raw,
+        )
 
 
 # ================================================================== #
@@ -477,6 +561,11 @@ class NRTLHead(nn.Module):
     def __init__(self, input_dim: int, cfg: TGNNSolvConfig) -> None:
         super().__init__()
         self.cfg = cfg
+        if cfg.use_nrtl_group_prior and cfg.nrtl_tau_mode != "ref_invT":
+            raise ValueError(
+                "use_nrtl_group_prior currently supports only "
+                "nrtl_tau_mode='ref_invT'."
+            )
         self.use_temperature_features = cfg.use_temperature_in_nrtl_head
         backbone_input_dim = input_dim + (3 if self.use_temperature_features else 0)
 
@@ -499,6 +588,9 @@ class NRTLHead(nn.Module):
         if output_dim is None:
             raise ValueError(f"Unsupported nrtl_tau_mode: {cfg.nrtl_tau_mode}")
         self.output = nn.Linear(128, output_dim)
+        self.group_prior = (
+            FixedGroupContributionPrior() if cfg.use_nrtl_group_prior else None
+        )
 
         # Careful initialization: start near ideal (γ ≈ 1)
         with torch.no_grad():
@@ -511,10 +603,92 @@ class NRTLHead(nn.Module):
             else:
                 self.output.bias[6] = -0.405   # alpha index in abc mode
 
+    def _group_tau_prior(
+        self,
+        solute_group_prior_features: Tensor | None,
+        solvent_group_prior_features: Tensor | None,
+        reference: Tensor,
+    ) -> tuple[Tensor, Tensor] | None:
+        """Map fixed group-count features to a weak deterministic tau prior.
+
+        This is deliberately not marketed as UNIFAC. It is a cheap
+        Hansen/group-contribution surrogate that gives the NRTL head a
+        physically sensible starting offset on structurally novel molecules.
+        """
+        if self.group_prior is None:
+            return None
+        if solute_group_prior_features is None or solvent_group_prior_features is None:
+            raise ValueError(
+                "NRTL group prior is enabled but group prior features were not "
+                "provided. Build loaders with use_group_priors=True."
+            )
+
+        sol = solute_group_prior_features.to(reference)
+        slv = solvent_group_prior_features.to(reference)
+        hansen_sol = self.group_prior.hansen(sol)
+        hansen_slv = self.group_prior.hansen(slv)
+        vm_sol = self.group_prior.vm(sol).clamp_min(1e-6)
+        vm_slv = self.group_prior.vm(slv).clamp_min(1e-6)
+
+        diff = hansen_sol - hansen_slv
+        ra = torch.sqrt(
+            4.0 * diff[:, 0].pow(2)
+            + diff[:, 1].pow(2)
+            + diff[:, 2].pow(2)
+            + 1e-8
+        )
+        mismatch = torch.tanh(ra / max(float(self.cfg.nrtl_group_prior_ra_scale), 1e-6))
+        polarity = torch.tanh(
+            (
+                hansen_sol[:, 1]
+                + hansen_sol[:, 2]
+                - hansen_slv[:, 1]
+                - hansen_slv[:, 2]
+            )
+            / 20.0
+        )
+        volume = torch.tanh(torch.log(vm_sol / vm_slv))
+
+        scale = float(self.cfg.nrtl_group_prior_tau_scale)
+        tau_12 = scale * (0.65 * mismatch + 0.20 * polarity + 0.15 * volume)
+        tau_21 = scale * (0.65 * mismatch - 0.20 * polarity - 0.15 * volume)
+        clamp = float(self.cfg.nrtl_group_prior_tau_clamp)
+        return tau_12.clamp(-clamp, clamp), tau_21.clamp(-clamp, clamp)
+
+    def _unifac_gamma_tau_prior(
+        self,
+        unifac_ln_gamma_inf: Tensor | None,
+        unifac_gamma_mask: Tensor | None,
+        reference: Tensor,
+    ) -> tuple[Tensor, Tensor] | None:
+        """Convert precomputed UNIFAC ln(gamma_inf) to a weak tau offset."""
+        if not self.cfg.use_unifac_gamma_prior:
+            return None
+        if unifac_ln_gamma_inf is None:
+            return None
+
+        ln_gamma = unifac_ln_gamma_inf.to(reference)
+        if unifac_gamma_mask is None:
+            mask = torch.isfinite(ln_gamma)
+        else:
+            mask = unifac_gamma_mask.to(reference.device).bool() & torch.isfinite(ln_gamma)
+
+        # Symmetric NRTL small-tau approximation:
+        # ln(gamma_inf) = tau21 + tau12*exp(-alpha*tau12) ≈ 2*tau.
+        scale = float(self.cfg.unifac_gamma_prior_tau_scale)
+        clamp = float(self.cfg.unifac_gamma_prior_tau_clamp)
+        tau = (0.5 * scale * ln_gamma).clamp(-clamp, clamp)
+        tau = torch.where(mask, tau, torch.zeros_like(tau))
+        return tau, tau
+
     def forward(
         self,
         g_pair: Tensor,
         temp_feat: Tensor | None = None,
+        solute_group_prior_features: Tensor | None = None,
+        solvent_group_prior_features: Tensor | None = None,
+        unifac_ln_gamma_inf: Tensor | None = None,
+        unifac_gamma_mask: Tensor | None = None,
     ) -> dict[str, Tensor]:
         if self.use_temperature_features:
             if temp_feat is None:
@@ -536,13 +710,36 @@ class NRTLHead(nn.Module):
                 (self.cfg.alpha_max - self.cfg.alpha_min)
                 * torch.sigmoid(z[:, 4])
             )
-            return {
+            params = {
                 "tau_ref_12": tau_ref_12,
                 "tau_ref_21": tau_ref_21,
                 "tau_inv_12": tau_inv_12,
                 "tau_inv_21": tau_inv_21,
                 "alpha_12": alpha_12,
             }
+            prior = self._group_tau_prior(
+                solute_group_prior_features,
+                solvent_group_prior_features,
+                reference=tau_ref_12,
+            )
+            if prior is not None:
+                prior_12, prior_21 = prior
+                params["tau_ref_12"] = params["tau_ref_12"] + prior_12
+                params["tau_ref_21"] = params["tau_ref_21"] + prior_21
+                params["nrtl_group_tau_prior_12"] = prior_12
+                params["nrtl_group_tau_prior_21"] = prior_21
+            unifac_prior = self._unifac_gamma_tau_prior(
+                unifac_ln_gamma_inf,
+                unifac_gamma_mask,
+                reference=tau_ref_12,
+            )
+            if unifac_prior is not None:
+                prior_12, prior_21 = unifac_prior
+                params["tau_ref_12"] = params["tau_ref_12"] + prior_12
+                params["tau_ref_21"] = params["tau_ref_21"] + prior_21
+                params["unifac_gamma_tau_prior_12"] = prior_12
+                params["unifac_gamma_tau_prior_21"] = prior_21
+            return params
 
         if self.cfg.nrtl_tau_mode == "legacy":
             dg_12 = z[:, 0] * self.cfg.S_g

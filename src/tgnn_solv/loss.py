@@ -6,6 +6,7 @@ Components:
   T_m        : MSE on melting point (masked)
   dH         : MSE on fusion enthalpy (masked)
   hansen     : MSE on Hansen parameters (masked)
+  hansen_delta : MSE on pairwise Hansen parameter deltas
   gamma_inf  : MSE on ln(γ∞) (masked)
   mono       : Monotonicity penalty (dx₂/dT ≥ 0)
   res        : L2 on effective correction (ln_x2 - ln_x2_physics)
@@ -16,6 +17,10 @@ Components:
   direct_nll : Heteroskedastic NLL on residual proposal
   pair_temp_rank : Same-pair temperature ranking consistency
   vant_hoff_local : Local linearity in ln(x₂) vs 1/T for same-pair batches
+  pair_temp_delta : Supervised same-pair adjacent Δln(x₂) consistency
+  vant_hoff_slope : Supervised same-pair Van't Hoff slope consistency
+  vant_hoff_intercept : Supervised same-pair Van't Hoff intercept consistency
+  vh_anchor : Pseudo high-T Van't Hoff anchor distillation
   moe_balance: Encourage balanced MoE expert usage
   walden    : Walden-rule entropy-of-fusion consistency for unsupervised samples
   hansen_contrastive_* : Align molecular / TIMP-channel / pair latent distances
@@ -76,6 +81,10 @@ class TGNNSolvLoss(nn.Module):
             "direct_nll": 0.2,
             "pair_temp_rank": 0.0,
             "vant_hoff_local": 0.0,
+            "pair_temp_delta": 0.0,
+            "vant_hoff_slope": 0.0,
+            "vant_hoff_intercept": 0.0,
+            "vh_anchor": 0.0,
             "moe_balance": 0.02,
             "descriptor_prior": 0.0,
             "group_prior": 0.0,
@@ -83,6 +92,7 @@ class TGNNSolvLoss(nn.Module):
             "hansen_contrastive_channel": 0.0,
             "hansen_contrastive_pair": 0.0,
             "hansen_channel_orth": 0.0,
+            "hansen_delta": 0.0,
             "aux_direct_sol": 0.0,
         }
         if weights is not None:
@@ -254,6 +264,25 @@ class TGNNSolvLoss(nn.Module):
                 weight=sol_sample_weight,
             )
 
+        vh_anchor_mask = targets.get("vh_anchor_mask")
+        if (
+            w.get("vh_anchor", 0) > 0
+            and isinstance(vh_anchor_mask, Tensor)
+            and bool(vh_anchor_mask.to(dev).any().item())
+        ):
+            mask = vh_anchor_mask.to(dev).bool()
+            anchor_weight = targets.get("vh_anchor_weight")
+            sample_weight = (
+                anchor_weight.to(dev)[mask]
+                if isinstance(anchor_weight, Tensor)
+                else None
+            )
+            losses["vh_anchor"] = self.weighted_huber_loss(
+                output["ln_x2"][mask],
+                targets["vh_anchor_ln_x2"].to(dev)[mask],
+                weight=sample_weight,
+            )
+
         # ============================================================
         # 2. Melting point
         # ============================================================
@@ -313,6 +342,46 @@ class TGNNSolvLoss(nn.Module):
                         + ((pred_delta_h - true_delta_h) / self.S_hansen).pow(2).mean()
                     )
 
+        if (
+            w.get("hansen_delta", 0) > 0
+            and isinstance(output.get("hansen_sol"), Tensor)
+            and isinstance(output.get("hansen_slv"), Tensor)
+        ):
+            target_sol = targets.get(
+                "hansen_sol_effective",
+                targets.get("hansen_sol"),
+            )
+            target_slv = targets.get(
+                "hansen_slv_effective",
+                targets.get("hansen_slv"),
+            )
+            pair_mask = targets.get("pair_hansen_mask")
+            if (
+                isinstance(target_sol, Tensor)
+                and isinstance(target_slv, Tensor)
+                and isinstance(pair_mask, Tensor)
+            ):
+                mask = pair_mask.to(dev).bool()
+                if mask.sum() > 0:
+                    pred_delta = output["hansen_sol"] - output["hansen_slv"]
+                    true_delta = target_sol.to(dev) - target_slv.to(dev)
+                    per_sample = (
+                        (pred_delta[mask] - true_delta[mask]) / self.S_hansen
+                    ).pow(2).mean(dim=-1)
+                    pair_weight = targets.get("pair_hansen_weight")
+                    sample_weight = (
+                        pair_weight.to(dev)[mask].clamp_min(0.0)
+                        if isinstance(pair_weight, Tensor)
+                        else None
+                    )
+                    if sample_weight is not None and sample_weight.sum() > 0:
+                        losses["hansen_delta"] = self.weighted_mean(
+                            per_sample,
+                            weight=sample_weight,
+                        )
+                    else:
+                        losses["hansen_delta"] = per_sample.mean()
+
         # ============================================================
         # 5. Infinite dilution activity coefficient
         # ============================================================
@@ -320,10 +389,19 @@ class TGNNSolvLoss(nn.Module):
             if w.get("gamma_inf", 0) > 0:
                 mask = targets["gamma_mask"].to(dev)
                 if mask.sum() > 0:
-                    losses["gamma_inf"] = (
-                        output["physics"]["ln_gamma_inf"][mask]
-                        - targets["ln_gamma_inf"].to(dev)[mask]
-                    ).pow(2).mean()
+                    gamma_weight = targets.get("gamma_weight")
+                    sample_weight = (
+                        gamma_weight.to(dev)[mask]
+                        if isinstance(gamma_weight, Tensor)
+                        else None
+                    )
+                    losses["gamma_inf"] = self.weighted_mean(
+                        (
+                            output["physics"]["ln_gamma_inf"][mask]
+                            - targets["ln_gamma_inf"].to(dev)[mask]
+                        ).pow(2),
+                        weight=sample_weight,
+                    )
 
         # ============================================================
         # 6. Monotonicity penalty (dx₂/dT ≥ 0)
@@ -399,16 +477,30 @@ class TGNNSolvLoss(nn.Module):
         # ============================================================
         pair_keys = targets.get("pair_key")
         if pair_keys is not None and T is not None:
-            if w.get("pair_temp_rank", 0) > 0 or w.get("vant_hoff_local", 0) > 0:
+            if (
+                w.get("pair_temp_rank", 0) > 0
+                or w.get("vant_hoff_local", 0) > 0
+                or w.get("pair_temp_delta", 0) > 0
+                or w.get("vant_hoff_slope", 0) > 0
+                or w.get("vant_hoff_intercept", 0) > 0
+            ):
                 pair_losses = self._pair_temperature_losses(
                     output["ln_x2"],
                     T.to(dev),
                     pair_keys,
+                    true_ln_x2=targets.get("ln_x2"),
+                    sol_mask=sol_mask,
                 )
                 if w.get("pair_temp_rank", 0) > 0:
                     losses["pair_temp_rank"] = pair_losses["pair_temp_rank"]
                 if w.get("vant_hoff_local", 0) > 0:
                     losses["vant_hoff_local"] = pair_losses["vant_hoff_local"]
+                if w.get("pair_temp_delta", 0) > 0:
+                    losses["pair_temp_delta"] = pair_losses["pair_temp_delta"]
+                if w.get("vant_hoff_slope", 0) > 0:
+                    losses["vant_hoff_slope"] = pair_losses["vant_hoff_slope"]
+                if w.get("vant_hoff_intercept", 0) > 0:
+                    losses["vant_hoff_intercept"] = pair_losses["vant_hoff_intercept"]
 
         # ============================================================
         # 13. MoE balance (expert usage)
@@ -525,7 +617,8 @@ class TGNNSolvLoss(nn.Module):
                     ),
                 )
 
-        if self.cfg.use_walden_check and self.cfg.walden_weight > 0:
+        walden_weight = w.get("walden", self.cfg.walden_weight)
+        if self.cfg.use_walden_check and walden_weight > 0:
             losses["walden"] = self._walden_loss(output, targets, dev)
 
         # ============================================================
@@ -540,8 +633,8 @@ class TGNNSolvLoss(nn.Module):
             wt = w.get(key, 0.0)
             if wt > 0:
                 total = total + wt * val
-        if self.cfg.use_walden_check and self.cfg.walden_weight > 0:
-            total = total + self.cfg.walden_weight * losses["walden"]
+        if self.cfg.use_walden_check and walden_weight > 0:
+            total = total + walden_weight * losses["walden"]
 
         return total, {k: v.item() for k, v in losses.items()}
 
@@ -569,7 +662,11 @@ class TGNNSolvLoss(nn.Module):
         fusion_params = output.get("fusion_params", {})
         T_m_pred = fusion_params.get("T_m")
         dH_fus_pred = fusion_params.get("dH_fus")
-        if not isinstance(T_m_pred, Tensor) or not isinstance(dH_fus_pred, Tensor):
+        dS_fus_pred = fusion_params.get("dS_fus")
+        if (
+            not isinstance(T_m_pred, Tensor)
+            or not isinstance(dH_fus_pred, Tensor)
+        ):
             return torch.zeros((), device=dev)
 
         T_m_mask = targets.get("T_m_mask")
@@ -587,7 +684,10 @@ class TGNNSolvLoss(nn.Module):
         if not mask_unsup.any():
             return torch.zeros((), device=dev)
 
-        dS_fus = dH_fus_pred / T_m_pred.clamp_min(self.cfg.eps)
+        if isinstance(dS_fus_pred, Tensor):
+            dS_fus = dS_fus_pred.to(device=dev, dtype=T_m_pred.dtype)
+        else:
+            dS_fus = dH_fus_pred / T_m_pred.clamp_min(self.cfg.eps)
         deviation = (dS_fus - self.cfg.walden_target).abs()
         walden_penalty = (
             torch.clamp(deviation - self.cfg.walden_tolerance, min=0.0) ** 2
@@ -600,16 +700,28 @@ class TGNNSolvLoss(nn.Module):
         pred_ln_x2: Tensor,
         T: Tensor,
         pair_keys: list[str] | tuple[str, ...],
+        true_ln_x2: object | None = None,
+        sol_mask: Tensor | None = None,
     ) -> dict[str, Tensor]:
-        """Same-pair temperature ranking and local van't Hoff consistency."""
+        """Same-pair temperature ranking and Van't Hoff curve consistency."""
         groups: dict[str, list[int]] = {}
         for idx, key in enumerate(pair_keys):
             groups.setdefault(str(key), []).append(idx)
 
         rank_losses = []
         vant_hoff_losses = []
+        delta_losses = []
+        slope_losses = []
+        intercept_losses = []
+        true_tensor = true_ln_x2 if isinstance(true_ln_x2, Tensor) else None
+        usable_mask = sol_mask.bool() if isinstance(sol_mask, Tensor) else None
 
         for indices in groups.values():
+            if usable_mask is not None:
+                indices = [
+                    idx for idx in indices
+                    if bool(usable_mask[idx].detach().cpu().item())
+                ]
             if len(indices) < 2:
                 continue
 
@@ -645,11 +757,49 @@ class TGNNSolvLoss(nn.Module):
                 )
                 vant_hoff_losses.append(per_pair_vh.mean())
 
+            if true_tensor is None:
+                continue
+
+            true_group = true_tensor.to(pred_ln_x2.device, dtype=pred_ln_x2.dtype)[
+                idx_tensor
+            ][order]
+            true_delta = true_group[1:] - true_group[:-1]
+            delta_losses.append(F.huber_loss(delta_pred, true_delta, delta=1.0))
+
+            inv_T = 1.0 / T_sorted.clamp(min=self.cfg.eps)
+            x_center = inv_T - inv_T.mean()
+            denom = x_center.pow(2).sum().clamp_min(self.cfg.eps)
+            pred_center = pred_sorted - pred_sorted.mean()
+            true_center = true_group - true_group.mean()
+            pred_slope = (x_center * pred_center).sum() / denom
+            true_slope = (x_center * true_center).sum() / denom
+            pred_intercept = pred_sorted.mean() - pred_slope * inv_T.mean()
+            true_intercept = true_group.mean() - true_slope * inv_T.mean()
+
+            slope_scale = max(float(self.cfg.vant_hoff_slope_scale), self.cfg.eps)
+            intercept_scale = max(
+                float(self.cfg.vant_hoff_intercept_scale),
+                self.cfg.eps,
+            )
+            slope_losses.append(((pred_slope - true_slope) / slope_scale).pow(2))
+            intercept_losses.append(
+                ((pred_intercept - true_intercept) / intercept_scale).pow(2)
+            )
+
         zero = pred_ln_x2.new_zeros(())
         return {
             "pair_temp_rank": torch.stack(rank_losses).mean() if rank_losses else zero,
             "vant_hoff_local": (
                 torch.stack(vant_hoff_losses).mean() if vant_hoff_losses else zero
+            ),
+            "pair_temp_delta": (
+                torch.stack(delta_losses).mean() if delta_losses else zero
+            ),
+            "vant_hoff_slope": (
+                torch.stack(slope_losses).mean() if slope_losses else zero
+            ),
+            "vant_hoff_intercept": (
+                torch.stack(intercept_losses).mean() if intercept_losses else zero
             ),
         }
 

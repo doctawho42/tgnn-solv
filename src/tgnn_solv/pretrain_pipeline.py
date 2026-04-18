@@ -89,6 +89,8 @@ def build_pretrain_checkpoint_payload(
     pretrain_batch_size: int,
     pretrain_lr: float,
     smiles_count: int,
+    pairwise_contrastive_csv: str | None = None,
+    pairwise_contrastive_weight: float = 0.0,
 ) -> dict[str, Any]:
     """Serialize the Stage 0 artifacts needed to warm-start a new model."""
     return {
@@ -103,6 +105,8 @@ def build_pretrain_checkpoint_payload(
             "batch_size": int(pretrain_batch_size),
             "lr": float(pretrain_lr),
             "smiles_count": int(smiles_count),
+            "pairwise_contrastive_csv": pairwise_contrastive_csv,
+            "pairwise_contrastive_weight": float(pairwise_contrastive_weight),
         },
     }
 
@@ -118,6 +122,8 @@ def save_pretrained_encoder_checkpoint(
     pretrain_batch_size: int,
     pretrain_lr: float,
     smiles_count: int,
+    pairwise_contrastive_csv: str | None = None,
+    pairwise_contrastive_weight: float = 0.0,
 ) -> Path:
     """Save the Stage 0-pretrained encoder/readout weights."""
     path = Path(output_path).expanduser().resolve()
@@ -130,6 +136,8 @@ def save_pretrained_encoder_checkpoint(
         pretrain_batch_size=pretrain_batch_size,
         pretrain_lr=pretrain_lr,
         smiles_count=smiles_count,
+        pairwise_contrastive_csv=pairwise_contrastive_csv,
+        pairwise_contrastive_weight=pairwise_contrastive_weight,
     )
     atomic_torch_save(payload, path)
     return path
@@ -186,6 +194,9 @@ def run_stage0_pretraining(
     pretrain_batch_size: int = 128,
     pretrain_lr: float = 3.0e-4,
     pretrain_max_molecules: int | None = None,
+    pairwise_contrastive_csv: str | Path | None = None,
+    pairwise_contrastive_weight: float = 0.0,
+    pairwise_contrastive_batch_size: int | None = None,
     save_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run Stage 0 pretraining and optionally save the encoder checkpoint."""
@@ -204,6 +215,9 @@ def run_stage0_pretraining(
         n_epochs=pretrain_epochs,
         batch_size=pretrain_batch_size,
         lr=pretrain_lr,
+        pairwise_contrastive_csv=pairwise_contrastive_csv,
+        pairwise_contrastive_weight=pairwise_contrastive_weight,
+        pairwise_contrastive_batch_size=pairwise_contrastive_batch_size,
     )
     metadata: dict[str, Any] = {
         "source": pretrain_source,
@@ -211,6 +225,12 @@ def run_stage0_pretraining(
         "batch_size": int(pretrain_batch_size),
         "lr": float(pretrain_lr),
         "smiles_count": int(len(smiles_list)),
+        "pairwise_contrastive_csv": (
+            str(Path(pairwise_contrastive_csv).expanduser().resolve())
+            if pairwise_contrastive_csv is not None
+            else None
+        ),
+        "pairwise_contrastive_weight": float(pairwise_contrastive_weight),
         "history": history,
         "checkpoint_path": None,
     }
@@ -225,6 +245,8 @@ def run_stage0_pretraining(
             pretrain_batch_size=pretrain_batch_size,
             pretrain_lr=pretrain_lr,
             smiles_count=len(smiles_list),
+            pairwise_contrastive_csv=metadata["pairwise_contrastive_csv"],
+            pairwise_contrastive_weight=pairwise_contrastive_weight,
         )
         metadata["checkpoint_path"] = str(checkpoint_path)
     return metadata

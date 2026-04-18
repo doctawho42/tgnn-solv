@@ -156,12 +156,14 @@ def load_data(
         morgan_n_bits=config.morgan_n_bits,
         use_descriptor_augmentation=config.use_descriptor_augmentation,
         use_descriptor_priors=config.use_descriptor_priors,
-        use_group_priors=config.use_group_priors,
+        use_group_priors=config.requires_group_prior_features,
         use_gc_priors_crystal=config.use_gc_priors_crystal,
         use_gasteiger_charges=config.use_gasteiger_charges,
         use_phys_edge_features=config.use_phys_edge_features,
+        explicit_h_small_molecules=config.explicit_h_small_molecules,
+        explicit_h_max_heavy_atoms=config.explicit_h_max_heavy_atoms,
         use_pseudo_hansen=(
-            config.use_hansen_contrastive and config.use_pseudo_hansen
+            (config.use_hansen_contrastive or config.use_hansen_delta_loss) and config.use_pseudo_hansen
         ),
         pseudo_hansen_weight_discount=config.pseudo_hansen_weight_discount,
         source_uncertainty_csv=(

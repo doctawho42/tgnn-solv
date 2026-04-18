@@ -792,8 +792,12 @@ def run_compare(args: argparse.Namespace) -> int:
         morgan_radius=cfg.morgan_radius,
         morgan_n_bits=cfg.morgan_n_bits,
         use_descriptor_priors=cfg.use_descriptor_priors,
-        use_group_priors=cfg.use_group_priors,
+        use_group_priors=cfg.requires_group_prior_features,
         use_gc_priors_crystal=cfg.use_gc_priors_crystal,
+        use_gasteiger_charges=cfg.use_gasteiger_charges,
+        use_phys_edge_features=cfg.use_phys_edge_features,
+        explicit_h_small_molecules=cfg.explicit_h_small_molecules,
+        explicit_h_max_heavy_atoms=cfg.explicit_h_max_heavy_atoms,
     )
     df = dataset.df.reset_index(drop=True)
     pred_tgnn, mask_tgnn = _tgnn_predict_ordered(

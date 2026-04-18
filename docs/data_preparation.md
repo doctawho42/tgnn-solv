@@ -66,6 +66,28 @@ or set the YAML config field:
 include_water_solubility: false
 ```
 
+Keeping water in the supervised corpus does not by itself change the graph
+representation. The default graph builder remains backward-compatible:
+single-heavy-atom molecules such as water are represented as one node with a
+self-loop. For water/small-solvent representation ablations, use the opt-in
+featurizer flags:
+
+```yaml
+explicit_h_small_molecules: true
+explicit_h_max_heavy_atoms: 3
+```
+
+With these flags, water (`O`) becomes a 3-node graph with directed O-H edges.
+This is especially relevant for TIMP runs, because the polar/physical edge
+channels otherwise receive no real O-H edge on water. The current CPU audit is:
+
+```bash
+python scripts/analysis/audit_water_small_molecule_graphs.py \
+    --processed-dir notebooks/data/processed \
+    --prediction-dir results/prediction_error_slices_latest \
+    --out-dir results/water_small_molecule_audit
+```
+
 ## What the Script Does
 
 `scripts/data/prepare_data.py` performs the same high-level workflow as
@@ -219,8 +241,66 @@ This helper:
 - derives SMILES from the standard InChI using RDKit
 - can be used to recreate or extend the published Zenodo starter release
 
-You can also pass `--doi-file path/to/dois.txt` or parse a local directory of
-ThermoML JSON files with `--json-dir path/to/json_archive`.
+You can also pass `--doi-file path/to/dois.txt`, parse a local directory of
+ThermoML JSON files with `--json-dir path/to/json_archive`, or discover DOI
+records directly from official NIST ThermoML archive pages:
+
+```bash
+python scripts/data/extract_idac_from_thermoml.py \
+    --nist-current-archive-pages \
+    --save-json-dir notebooks/data/raw/thermoml_json \
+    --output notebooks/data/raw/idac_from_current_nist_pages.csv \
+    --audit-output results/idac_thermoml/audit_current_pages.json
+```
+
+For broader crawls, the helper can reproduce the NIST issue-dropdown logic and
+expand a journal page into all indexed issue pages:
+
+```bash
+python scripts/data/extract_idac_from_thermoml.py \
+    --nist-current-archive-pages \
+    --expand-journal-issues \
+    --journal jced \
+    --year-min 2015 \
+    --year-max 2019 \
+    --save-json-dir notebooks/data/raw/thermoml_json \
+    --output notebooks/data/raw/idac_jced_2015_2019.csv \
+    --doi-output results/idac_thermoml/jced_2015_2019_dois.txt \
+    --audit-output results/idac_thermoml/jced_2015_2019_audit.json
+```
+
+Use `--max-archive-pages` or `--max-dois` for smoke tests before a full crawl.
+The script records per-DOI extraction counts and failures in the audit JSON so
+large jobs are restartable and debuggable.
+
+After a broad crawl, keep the original starter `idac.csv` intact and create an
+explicit expanded artifact:
+
+```bash
+python scripts/analysis/audit_idac_expansion.py \
+    --starter-idac notebooks/data/raw/idac.csv \
+    --extracted-idac notebooks/data/raw/idac_nist_2015_2019.csv \
+    --raw-output notebooks/data/raw/idac_expanded_raw.csv \
+    --training-output notebooks/data/raw/idac_expanded.csv \
+    --out-dir results/idac_expansion_audit
+```
+
+For fair model comparisons, do not add the expanded aux-only IDAC rows before
+running the scaffold split. That changes the supervised validation/test
+composition. Instead, attach new `gamma_inf` rows to the training split only
+while preserving the existing supervised rows:
+
+```bash
+python scripts/data/attach_idac_aux_to_fixed_splits.py \
+    --processed-dir notebooks/data/processed \
+    --idac-csv notebooks/data/raw/idac_expanded.csv \
+    --output-dir notebooks/data/processed_idac_expanded_train_aux
+```
+
+Use `notebooks/data/processed_idac_expanded_train_aux` for controlled IDAC
+ablation runs. A separately prepared `processed_idac_expanded` bundle is only a
+protocol-shift diagnostic unless its supervised split composition is explicitly
+accepted.
 
 The dataset layer will derive additional non-CSV fields at load time, such as:
 

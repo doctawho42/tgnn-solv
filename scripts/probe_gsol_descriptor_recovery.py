@@ -149,6 +149,8 @@ def extract_solute_embeddings(
                     smiles,
                     use_gasteiger_charges=bool(getattr(model.cfg, "use_gasteiger_charges", False)),
                     use_phys_edge_features=bool(getattr(model.cfg, "use_phys_edge_features", False)),
+                    explicit_h_small_molecules=bool(getattr(model.cfg, "explicit_h_small_molecules", False)),
+                    explicit_h_max_heavy_atoms=int(getattr(model.cfg, "explicit_h_max_heavy_atoms", 3)),
                 )
                 if graph is None:
                     continue

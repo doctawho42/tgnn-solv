@@ -259,11 +259,15 @@ class ApplicabilityDomain:
             solute_smiles,
             use_gasteiger_charges=bool(getattr(self.model.cfg, "use_gasteiger_charges", False)),
             use_phys_edge_features=bool(getattr(self.model.cfg, "use_phys_edge_features", False)),
+            explicit_h_small_molecules=bool(getattr(self.model.cfg, "explicit_h_small_molecules", False)),
+            explicit_h_max_heavy_atoms=int(getattr(self.model.cfg, "explicit_h_max_heavy_atoms", 3)),
         )
         slv_g = smiles_to_graph(
             solvent_smiles,
             use_gasteiger_charges=bool(getattr(self.model.cfg, "use_gasteiger_charges", False)),
             use_phys_edge_features=bool(getattr(self.model.cfg, "use_phys_edge_features", False)),
+            explicit_h_small_molecules=bool(getattr(self.model.cfg, "explicit_h_small_molecules", False)),
+            explicit_h_max_heavy_atoms=int(getattr(self.model.cfg, "explicit_h_max_heavy_atoms", 3)),
         )
         if sol_g is None or slv_g is None:
             raise ValueError("Invalid SMILES")

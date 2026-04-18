@@ -93,6 +93,16 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Path to test CSV file (optional; evaluate after training if provided)",
     )
+    parser.add_argument(
+        "--idac-train-data",
+        type=str,
+        default=None,
+        help=(
+            "Optional IDAC/gamma_inf auxiliary training CSV. "
+            "Batches from this file are trained through a gamma-only fast path "
+            "instead of being appended to the main SLE training CSV."
+        ),
+    )
     
     # Model checkpoint
     parser.add_argument(
@@ -186,6 +196,25 @@ def parse_args() -> argparse.Namespace:
         help="Override Phase 3 epoch count from config.",
     )
     parser.add_argument(
+        "--idac-steps-per-epoch",
+        type=int,
+        default=None,
+        help=(
+            "Number of gamma-only IDAC auxiliary batches per epoch. "
+            "Requires --idac-train-data; 0 disables the auxiliary stream."
+        ),
+    )
+    parser.add_argument(
+        "--idac-batch-size",
+        type=int,
+        default=None,
+        help=(
+            "Batch size for --idac-train-data. Defaults to the main batch size. "
+            "Use a smaller value on MPS because gamma-only cross-attention still "
+            "pads atom sequences across the batch."
+        ),
+    )
+    parser.add_argument(
         "--pretrain",
         action="store_true",
         help="Run Stage 0 pretraining on an external SMILES corpus before standard TGNN training.",
@@ -219,6 +248,30 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=None,
         help="Optional cap on the number of Stage 0 molecules to load.",
+    )
+    parser.add_argument(
+        "--pretrain-pairwise-contrastive-data",
+        type=str,
+        default=None,
+        help=(
+            "Optional pairwise solubility-contrastive CSV produced by "
+            "scripts/data/build_pairwise_contrastive_pretrain.py."
+        ),
+    )
+    parser.add_argument(
+        "--pretrain-pairwise-contrastive-weight",
+        type=float,
+        default=0.0,
+        help=(
+            "Stage 0 weight for pairwise compatibility BCE. "
+            "Requires --pretrain-pairwise-contrastive-data."
+        ),
+    )
+    parser.add_argument(
+        "--pretrain-pairwise-contrastive-batch-size",
+        type=int,
+        default=None,
+        help="Optional Stage 0 batch size for pairwise contrastive rows.",
     )
     parser.add_argument(
         "--pretrain-checkpoint",
@@ -608,6 +661,7 @@ def load_data(
     *,
     shuffle: bool,
     seed: int,
+    batch_size: int | None = None,
 ) -> DataLoader:
     """Load a CSV split and build the configured DataLoader."""
     import pandas as pd
@@ -616,7 +670,7 @@ def load_data(
 
     return make_loader(
         df,
-        batch_size=config.batch_size,
+        batch_size=int(batch_size or config.batch_size),
         shuffle=shuffle,
         num_workers=0,
         cache=True,
@@ -634,12 +688,15 @@ def load_data(
         morgan_n_bits=config.morgan_n_bits,
         use_descriptor_augmentation=config.use_descriptor_augmentation,
         use_descriptor_priors=config.use_descriptor_priors,
-        use_group_priors=config.use_group_priors,
+        use_group_priors=config.requires_group_prior_features,
         use_gc_priors_crystal=config.use_gc_priors_crystal,
         use_gasteiger_charges=config.use_gasteiger_charges,
         use_phys_edge_features=config.use_phys_edge_features,
+        explicit_h_small_molecules=config.explicit_h_small_molecules,
+        explicit_h_max_heavy_atoms=config.explicit_h_max_heavy_atoms,
         use_pseudo_hansen=(
-            config.use_hansen_contrastive and config.use_pseudo_hansen
+            (config.use_hansen_contrastive or config.use_hansen_delta_loss)
+            and config.use_pseudo_hansen
         ),
         pseudo_hansen_weight_discount=config.pseudo_hansen_weight_discount,
         source_uncertainty_csv=(
@@ -792,6 +849,8 @@ def main() -> None:
                 config.epochs_phase2 = int(args.epochs_phase2)
             if args.epochs_phase3 is not None:
                 config.epochs_phase3 = int(args.epochs_phase3)
+            if args.idac_steps_per_epoch is not None:
+                config.idac_aux_steps_per_epoch = int(args.idac_steps_per_epoch)
             if args.probe_every > 0:
                 config.probe_every = int(args.probe_every)
         elif any(
@@ -803,6 +862,8 @@ def main() -> None:
                 args.epochs_phase1,
                 args.epochs_phase2,
                 args.epochs_phase3,
+                args.idac_steps_per_epoch,
+                args.idac_batch_size,
             )
         ):
             print(
@@ -817,6 +878,12 @@ def main() -> None:
             )
         if resume_checkpoint is not None and args.probe_every > 0:
             config.probe_every = int(args.probe_every)
+        if resume_checkpoint is not None and args.idac_steps_per_epoch is not None:
+            config.idac_aux_steps_per_epoch = int(args.idac_steps_per_epoch)
+            print(
+                "   Applying resume-time IDAC auxiliary step override: "
+                f"{config.idac_aux_steps_per_epoch}"
+            )
 
         if resume_checkpoint is None:
             maybe_fit_gc_tm_calibration(args.train_data, config)
@@ -875,6 +942,22 @@ def main() -> None:
             shuffle=False,
             seed=args.seed,
         )
+        idac_train_loader = None
+        if args.idac_train_data is not None:
+            if config.idac_aux_steps_per_epoch <= 0:
+                print(
+                    "   IDAC auxiliary data was provided, but "
+                    "idac_aux_steps_per_epoch <= 0; auxiliary stream is disabled."
+                )
+            else:
+                print("   IDAC auxiliary train:")
+                idac_train_loader = load_data(
+                    args.idac_train_data,
+                    config,
+                    shuffle=True,
+                    seed=args.seed + 17,
+                    batch_size=args.idac_batch_size,
+                )
         
         # Initialize model
         print("\n5. Initializing model...")
@@ -937,6 +1020,13 @@ def main() -> None:
                     pretrain_batch_size=args.pretrain_batch_size,
                     pretrain_lr=args.pretrain_lr,
                     pretrain_max_molecules=args.pretrain_max_molecules,
+                    pairwise_contrastive_csv=args.pretrain_pairwise_contrastive_data,
+                    pairwise_contrastive_weight=(
+                        args.pretrain_pairwise_contrastive_weight
+                    ),
+                    pairwise_contrastive_batch_size=(
+                        args.pretrain_pairwise_contrastive_batch_size
+                    ),
                     save_path=pretrain_output,
                 )
                 print(
@@ -1042,6 +1132,7 @@ def main() -> None:
             trainer.train_full(
                 train_loader,
                 val_loader,
+                idac_train_loader=idac_train_loader,
                 resume_state=resume_state,
                 on_epoch_end=on_epoch_end,
             )
@@ -1102,6 +1193,7 @@ def main() -> None:
                 "train_data": args.train_data,
                 "val_data": args.val_data,
                 "test_data": args.test_data,
+                "idac_train_data": args.idac_train_data,
                 "resume_checkpoint": args.resume,
                 "pretrain_enabled": bool(args.pretrain),
                 "pretrain_checkpoint": args.pretrain_checkpoint,

@@ -72,13 +72,19 @@ def test_descriptor_hidden_dim_alias_prefers_new_config_field() -> None:
 
 def test_config_yaml_round_trip_preserves_water_supervision_flag(tmp_path: Path) -> None:
     """Data-prep compatibility flags should survive YAML round-trip."""
-    cfg = TGNNSolvConfig(include_water_solubility=False)
+    cfg = TGNNSolvConfig(
+        include_water_solubility=False,
+        explicit_h_small_molecules=True,
+        explicit_h_max_heavy_atoms=3,
+    )
     path = tmp_path / "config.yaml"
 
     cfg.to_yaml(str(path))
     loaded = TGNNSolvConfig.from_yaml(str(path))
 
     assert loaded.include_water_solubility is False
+    assert loaded.explicit_h_small_molecules is True
+    assert loaded.explicit_h_max_heavy_atoms == 3
 
 
 @pytest.mark.parametrize(

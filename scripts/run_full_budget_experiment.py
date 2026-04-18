@@ -253,11 +253,13 @@ def build_loader(
         morgan_n_bits=cfg.morgan_n_bits,
         use_descriptor_augmentation=cfg.use_descriptor_augmentation,
         use_descriptor_priors=cfg.use_descriptor_priors,
-        use_group_priors=cfg.use_group_priors,
+        use_group_priors=cfg.requires_group_prior_features,
         use_gc_priors_crystal=cfg.use_gc_priors_crystal,
         use_gasteiger_charges=cfg.use_gasteiger_charges,
         use_phys_edge_features=cfg.use_phys_edge_features,
-        use_pseudo_hansen=cfg.use_hansen_contrastive and cfg.use_pseudo_hansen,
+        explicit_h_small_molecules=cfg.explicit_h_small_molecules,
+        explicit_h_max_heavy_atoms=cfg.explicit_h_max_heavy_atoms,
+        use_pseudo_hansen=(cfg.use_hansen_contrastive or cfg.use_hansen_delta_loss) and cfg.use_pseudo_hansen,
         pseudo_hansen_weight_discount=cfg.pseudo_hansen_weight_discount,
         source_uncertainty_csv=(
             cfg.source_uncertainty_csv

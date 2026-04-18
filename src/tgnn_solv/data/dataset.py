@@ -193,6 +193,8 @@ class TGNNSolvDataset(Dataset):
         use_gc_priors_crystal: bool = False,
         use_gasteiger_charges: bool = False,
         use_phys_edge_features: bool = False,
+        explicit_h_small_molecules: bool = False,
+        explicit_h_max_heavy_atoms: int = 3,
         use_pseudo_hansen: bool = False,
         pseudo_hansen_weight_discount: float = 0.3,
         source_uncertainty_csv: str = "",
@@ -212,6 +214,8 @@ class TGNNSolvDataset(Dataset):
         self.use_gc_priors_crystal = use_gc_priors_crystal
         self.use_gasteiger_charges = use_gasteiger_charges
         self.use_phys_edge_features = use_phys_edge_features
+        self.explicit_h_small_molecules = explicit_h_small_molecules
+        self.explicit_h_max_heavy_atoms = int(explicit_h_max_heavy_atoms)
         self.use_pseudo_hansen = use_pseudo_hansen
         self.pseudo_hansen_weight_discount = float(pseudo_hansen_weight_discount)
         if str(source_uncertainty_csv).strip():
@@ -279,6 +283,8 @@ class TGNNSolvDataset(Dataset):
                 smi,
                 use_gasteiger_charges=self.use_gasteiger_charges,
                 use_phys_edge_features=self.use_phys_edge_features,
+                explicit_h_small_molecules=self.explicit_h_small_molecules,
+                explicit_h_max_heavy_atoms=self.explicit_h_max_heavy_atoms,
             )
         except TypeError:
             # Legacy tests and some external callers monkeypatch `smiles_to_graph`
@@ -582,6 +588,48 @@ class TGNNSolvDataset(Dataset):
             "gamma_mask": torch.tensor(
                 bool(r["has_gamma_inf"]), dtype=torch.bool
             ),
+            "gamma_weight": torch.tensor(
+                float(r["gamma_weight"])
+                if "gamma_weight" in r.index
+                and pd.notna(r["gamma_weight"])
+                else 1.0,
+                dtype=torch.float,
+            ),
+            "unifac_ln_gamma_inf": torch.tensor(
+                float(r["unifac_ln_gamma_inf"])
+                if "unifac_ln_gamma_inf" in r.index
+                and pd.notna(r["unifac_ln_gamma_inf"])
+                else 0.0,
+                dtype=torch.float,
+            ),
+            "unifac_gamma_mask": torch.tensor(
+                bool(r["has_unifac_gamma_inf"])
+                if "has_unifac_gamma_inf" in r.index
+                and pd.notna(r["has_unifac_gamma_inf"])
+                else False,
+                dtype=torch.bool,
+            ),
+            "vh_anchor_ln_x2": torch.tensor(
+                float(r["vh_anchor_ln_x2"])
+                if "vh_anchor_ln_x2" in r.index
+                and pd.notna(r["vh_anchor_ln_x2"])
+                else 0.0,
+                dtype=torch.float,
+            ),
+            "vh_anchor_mask": torch.tensor(
+                bool(r["has_vh_anchor"])
+                if "has_vh_anchor" in r.index
+                and pd.notna(r["has_vh_anchor"])
+                else False,
+                dtype=torch.bool,
+            ),
+            "vh_anchor_weight": torch.tensor(
+                float(r["vh_anchor_weight"])
+                if "vh_anchor_weight" in r.index
+                and pd.notna(r["vh_anchor_weight"])
+                else 1.0,
+                dtype=torch.float,
+            ),
             "pair_key": str(r["pair_key"]),
             "solute_smiles": str(r["solute_smiles"]),
             "solvent_smiles": str(r["solvent_smiles"]),
@@ -690,6 +738,8 @@ def make_loader(
     use_gc_priors_crystal: bool = False,
     use_gasteiger_charges: bool = False,
     use_phys_edge_features: bool = False,
+    explicit_h_small_molecules: bool = False,
+    explicit_h_max_heavy_atoms: int = 3,
     use_pseudo_hansen: bool = False,
     pseudo_hansen_weight_discount: float = 0.3,
     source_uncertainty_csv: str = "",
@@ -713,6 +763,8 @@ def make_loader(
         use_gc_priors_crystal=use_gc_priors_crystal,
         use_gasteiger_charges=use_gasteiger_charges,
         use_phys_edge_features=use_phys_edge_features,
+        explicit_h_small_molecules=explicit_h_small_molecules,
+        explicit_h_max_heavy_atoms=explicit_h_max_heavy_atoms,
         use_pseudo_hansen=use_pseudo_hansen,
         pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
         source_uncertainty_csv=source_uncertainty_csv,
@@ -770,6 +822,8 @@ def make_loaders(
     use_gc_priors_crystal: bool = False,
     use_gasteiger_charges: bool = False,
     use_phys_edge_features: bool = False,
+    explicit_h_small_molecules: bool = False,
+    explicit_h_max_heavy_atoms: int = 3,
     use_pseudo_hansen: bool = False,
     pseudo_hansen_weight_discount: float = 0.3,
     source_uncertainty_csv: str = "",
@@ -814,6 +868,8 @@ def make_loaders(
         use_gc_priors_crystal=use_gc_priors_crystal,
         use_gasteiger_charges=use_gasteiger_charges,
         use_phys_edge_features=use_phys_edge_features,
+        explicit_h_small_molecules=explicit_h_small_molecules,
+        explicit_h_max_heavy_atoms=explicit_h_max_heavy_atoms,
         use_pseudo_hansen=use_pseudo_hansen,
         pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
         source_uncertainty_csv=source_uncertainty_csv,
@@ -840,6 +896,8 @@ def make_loaders(
         use_gc_priors_crystal=use_gc_priors_crystal,
         use_gasteiger_charges=use_gasteiger_charges,
         use_phys_edge_features=use_phys_edge_features,
+        explicit_h_small_molecules=explicit_h_small_molecules,
+        explicit_h_max_heavy_atoms=explicit_h_max_heavy_atoms,
         use_pseudo_hansen=use_pseudo_hansen,
         pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
         source_uncertainty_csv=source_uncertainty_csv,
@@ -865,6 +923,8 @@ def make_loaders(
         use_gc_priors_crystal=use_gc_priors_crystal,
         use_gasteiger_charges=use_gasteiger_charges,
         use_phys_edge_features=use_phys_edge_features,
+        explicit_h_small_molecules=explicit_h_small_molecules,
+        explicit_h_max_heavy_atoms=explicit_h_max_heavy_atoms,
         use_pseudo_hansen=use_pseudo_hansen,
         pseudo_hansen_weight_discount=pseudo_hansen_weight_discount,
         source_uncertainty_csv=source_uncertainty_csv,
