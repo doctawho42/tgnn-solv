@@ -194,6 +194,8 @@ class TGNNSolv(nn.Module):
             self.fp_post_scale = nn.Parameter(torch.tensor(0.5))
         self.descriptor_mlp = None
         self.pair_desc_proj = None
+        self.ionic_feature_adapter = None
+        self.ionic_pair_scale = None
         self.register_buffer("descriptor_mean", torch.empty(0))
         self.register_buffer("descriptor_std", torch.empty(0))
         if cfg.use_descriptor_augmentation:
@@ -215,6 +217,18 @@ class TGNNSolv(nn.Module):
             )
             self.descriptor_mean = torch.zeros(cfg.descriptor_dim)
             self.descriptor_std = torch.ones(cfg.descriptor_dim)
+        if cfg.use_ionic_features:
+            if cfg.ionic_feature_dim <= 0:
+                raise ValueError(
+                    "ionic_feature_dim must be positive when ionic features are enabled."
+                )
+            self.ionic_feature_adapter = nn.Sequential(
+                nn.Linear(cfg.ionic_feature_dim, cfg.ionic_feature_hidden_dim),
+                nn.SiLU(),
+                nn.Dropout(cfg.dropout),
+                nn.Linear(cfg.ionic_feature_hidden_dim, cfg.pair_dim),
+            )
+            self.ionic_pair_scale = nn.Parameter(torch.tensor(0.1))
 
         # --- Physics solver (0 learnable params) ---
         self.sle_solver = SLESolver(cfg)
@@ -456,11 +470,16 @@ class TGNNSolv(nn.Module):
             T_m = T_m_raw.clamp(self.cfg.T_m_min, self.cfg.T_m_max)
         dH_scale = 1.0 + param_deltas["delta_dH_fraction"]
         dH_fus = (fusion_params["dH_fus"] * dH_scale).clamp(min=self.cfg.eps)
-        return self._attach_fusion_entropy({
+        corrected = self._attach_fusion_entropy({
             "T_m": T_m,
             "dH_fus": dH_fus,
             "dCp_fus": fusion_params["dCp_fus"],
         })
+        if "Phi_override" in fusion_params:
+            corrected["Phi_override"] = fusion_params["Phi_override"]
+        if "direct_phi_mask" in fusion_params:
+            corrected["direct_phi_mask"] = fusion_params["direct_phi_mask"]
+        return corrected
 
     def _attach_fusion_entropy(
         self,
@@ -609,6 +628,29 @@ class TGNNSolv(nn.Module):
         )
         return self.pair_desc_proj(torch.cat([g_pair_gnn, d_pair], dim=-1))
 
+    def _augment_pair_with_ionic_features(
+        self,
+        g_pair: torch.Tensor,
+        ionic_features: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """Add coarse ionic/dielectric context to the pair representation."""
+        if not self.cfg.use_ionic_features:
+            return g_pair
+        if ionic_features is None or self.ionic_feature_adapter is None:
+            return g_pair
+        if ionic_features.size(-1) != self.cfg.ionic_feature_dim:
+            raise ValueError(
+                f"Ionic feature tensor has dim {ionic_features.size(-1)}, "
+                f"expected {self.cfg.ionic_feature_dim}."
+            )
+        ionic_emb = self.ionic_feature_adapter(ionic_features.to(g_pair))
+        scale = (
+            torch.tanh(self.ionic_pair_scale)
+            if self.ionic_pair_scale is not None
+            else 1.0
+        )
+        return g_pair + scale * ionic_emb
+
     def _require_group_prior_features(
         self,
         solute_group_prior_features: Optional[torch.Tensor],
@@ -676,14 +718,22 @@ class TGNNSolv(nn.Module):
             or (not self.training and not force_oracle_injection)
             or targets is None
         ):
-            return solver_fusion_params, oracle_masks
+            return self._apply_direct_phi_override(
+                solver_fusion_params,
+                fusion_params,
+                targets,
+            ), oracle_masks
 
         T_m_target = targets.get("T_m")
         dH_fus_target = targets.get("dH_fus")
         if not isinstance(T_m_target, torch.Tensor) or not isinstance(
             dH_fus_target, torch.Tensor
         ):
-            return solver_fusion_params, oracle_masks
+            return self._apply_direct_phi_override(
+                solver_fusion_params,
+                fusion_params,
+                targets,
+            ), oracle_masks
 
         mask_Tm = self._resolve_oracle_mask(
             targets,
@@ -698,14 +748,22 @@ class TGNNSolv(nn.Module):
             fusion_params["dH_fus"],
         )
         if mask_Tm is None or mask_dH is None:
-            return solver_fusion_params, oracle_masks
+            return self._apply_direct_phi_override(
+                solver_fusion_params,
+                fusion_params,
+                targets,
+            ), oracle_masks
 
         if force_oracle_injection:
             prob = 1.0
         else:
             prob = min(max(float(self.cfg.oracle_injection_prob), 0.0), 1.0)
         if prob <= 0.0:
-            return solver_fusion_params, oracle_masks
+            return self._apply_direct_phi_override(
+                solver_fusion_params,
+                fusion_params,
+                targets,
+            ), oracle_masks
         if prob < 1.0:
             rand = torch.rand_like(fusion_params["T_m"])
             oracle_sample_mask = rand < prob
@@ -734,7 +792,56 @@ class TGNNSolv(nn.Module):
         )
         solver_fusion_params.pop("T_m_unclamped", None)
         solver_fusion_params.pop("dH_fus_raw", None)
-        return self._attach_fusion_entropy(solver_fusion_params), oracle_masks
+        solver_fusion_params = self._attach_fusion_entropy(solver_fusion_params)
+        return self._apply_direct_phi_override(
+            solver_fusion_params,
+            fusion_params,
+            targets,
+        ), oracle_masks
+
+    def _apply_direct_phi_override(
+        self,
+        solver_fusion_params: dict[str, torch.Tensor],
+        fusion_params: dict[str, torch.Tensor],
+        targets: Optional[Dict[str, torch.Tensor | object]],
+    ) -> dict[str, torch.Tensor]:
+        """Attach an effective Phi(T) override for configured no-melting rows."""
+        if (
+            not self.cfg.use_direct_phi_branch
+            or "Phi_intercept" not in fusion_params
+            or "Phi_slope" not in fusion_params
+            or targets is None
+        ):
+            return solver_fusion_params
+        T = targets.get("T")
+        if not isinstance(T, torch.Tensor):
+            return solver_fusion_params
+
+        ref = fusion_params["Phi_intercept"]
+        mask = torch.zeros_like(ref, dtype=torch.bool)
+        if self.cfg.direct_phi_for_decomposition:
+            decomp = targets.get("has_decomposition_T")
+            if isinstance(decomp, torch.Tensor):
+                mask = mask | decomp.to(device=ref.device).bool()
+        if self.cfg.direct_phi_for_missing_tm:
+            valid_tm = targets.get("has_valid_T_m", targets.get("has_T_m"))
+            if isinstance(valid_tm, torch.Tensor):
+                mask = mask | (~valid_tm.to(device=ref.device).bool())
+        if not bool(mask.any().item()):
+            return solver_fusion_params
+
+        T = T.to(device=ref.device, dtype=ref.dtype).clamp_min(self.cfg.eps)
+        phi_direct = fusion_params["Phi_intercept"] + fusion_params["Phi_slope"] / T
+        phi_standard = self.sle_solver.ideal_layer(
+            T,
+            solver_fusion_params["T_m"],
+            solver_fusion_params["dH_fus"],
+            solver_fusion_params["dCp_fus"],
+        )
+        solver_fusion_params = dict(solver_fusion_params)
+        solver_fusion_params["Phi_override"] = torch.where(mask, phi_direct, phi_standard)
+        solver_fusion_params["direct_phi_mask"] = mask
+        return solver_fusion_params
 
     def forward(
             self,
@@ -746,6 +853,7 @@ class TGNNSolv(nn.Module):
             solvent_morgan_fp: Optional[torch.Tensor] = None,
             solute_descriptors: Optional[torch.Tensor] = None,
             solvent_descriptors: Optional[torch.Tensor] = None,
+            ionic_features: Optional[torch.Tensor] = None,
             solute_descriptor_prior_features: Optional[torch.Tensor] = None,
             solvent_descriptor_prior_features: Optional[torch.Tensor] = None,
             solute_group_prior_features: Optional[torch.Tensor] = None,
@@ -997,6 +1105,7 @@ class TGNNSolv(nn.Module):
             solute_descriptors=solute_descriptors,
             solvent_descriptors=solvent_descriptors,
         )
+        g_pair = self._augment_pair_with_ionic_features(g_pair, ionic_features)
         moe_gate = None
         if self.solvent_moe is not None:
             if solvent_type is None:
@@ -1098,7 +1207,7 @@ class TGNNSolv(nn.Module):
                     "solvent_polar": g_slv_pre_parts["polar"],
                     "solvent_combined": g_slv_pre_parts["combined"],
                 }
-            if self.cfg.use_oracle_injection:
+            if self.cfg.use_oracle_injection or force_oracle_injection:
                 output["oracle_injection_masks"] = oracle_injection_masks
             if self.cfg.use_gc_priors_crystal:
                 output["fusion_gc_priors"] = {
@@ -1237,7 +1346,7 @@ class TGNNSolv(nn.Module):
             }
         if timp_channel_probes is not None:
             output["timp_channel_probes"] = timp_channel_probes
-        if self.cfg.use_oracle_injection:
+        if self.cfg.use_oracle_injection or force_oracle_injection:
             output["oracle_injection_masks"] = oracle_injection_masks
         if self.cfg.use_gc_priors_crystal:
             output["fusion_gc_priors"] = {
@@ -1278,6 +1387,18 @@ class TGNNSolv(nn.Module):
                 "dH_fus_solver": solver_fusion_params["dH_fus"],
                 "dS_fus_solver": solver_fusion_params["dS_fus"],
                 "dCp_fus_solver": solver_fusion_params["dCp_fus"],
+                "Phi_intercept": fusion_params.get(
+                    "Phi_intercept",
+                    torch.zeros_like(fusion_params["T_m"]),
+                ),
+                "Phi_slope": fusion_params.get(
+                    "Phi_slope",
+                    torch.zeros_like(fusion_params["T_m"]),
+                ),
+                "direct_phi_mask": solver_fusion_params.get(
+                    "direct_phi_mask",
+                    torch.zeros_like(fusion_params["T_m"], dtype=torch.bool),
+                ).to(dtype=torch.float32),
                 "T_m_gc": (
                     solute_T_m_gc
                     if solute_T_m_gc is not None

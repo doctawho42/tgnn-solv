@@ -28,6 +28,11 @@ from .features import (
     smiles_to_morgan_fp,
 )
 from .group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
+from .ionic_features import (
+    applicability_domain_flags,
+    compute_ionic_features,
+    flag_no_melting_point,
+)
 from .model import TGNNSolv
 from .baselines.direct_gnn import DirectGNN
 from .data.solvent_types import solvent_type_id_from_smiles
@@ -67,6 +72,7 @@ def predict_solubility(
     solvent_smiles: str,
     T: float = 298.15,
     device: torch.device = None,
+    has_T_m: bool | None = None,
 ) -> Dict:
     """
     Predict solubility for a single (solute, solvent, T) system.
@@ -92,6 +98,7 @@ def predict_solubility(
     solvent_morgan_fp = None
     solute_descriptors = None
     solvent_descriptors = None
+    ionic_features = None
     solute_descriptor_prior_features = None
     solvent_descriptor_prior_features = None
     solute_group_prior_features = None
@@ -123,6 +130,12 @@ def predict_solubility(
             raise ValueError("Failed to compute RDKit descriptors for inference.")
         solute_descriptors = torch.tensor(sol_desc, device=device).unsqueeze(0)
         solvent_descriptors = torch.tensor(slv_desc, device=device).unsqueeze(0)
+    if model.cfg.use_ionic_features:
+        ionic_features = torch.tensor(
+            compute_ionic_features(solute_smiles, solvent_smiles),
+            device=device,
+            dtype=torch.float32,
+        ).unsqueeze(0)
     if model.cfg.use_descriptor_priors:
         sol_desc = smiles_to_descriptor_prior_features(solute_smiles)
         slv_desc = smiles_to_descriptor_prior_features(solvent_smiles)
@@ -175,6 +188,19 @@ def predict_solubility(
         device=device,
         dtype=torch.long,
     )
+    decomposition_handling = flag_no_melting_point(solute_smiles)
+    has_decomposition_T = decomposition_handling != "standard"
+    has_valid_T_m = bool(has_T_m) and not has_decomposition_T
+    inference_targets = {
+        "T": T_tensor,
+        "has_T_m": torch.tensor([has_valid_T_m], device=device, dtype=torch.bool),
+        "has_valid_T_m": torch.tensor([has_valid_T_m], device=device, dtype=torch.bool),
+        "has_decomposition_T": torch.tensor(
+            [has_decomposition_T],
+            device=device,
+            dtype=torch.bool,
+        ),
+    }
     output = model(
         sol_batch,
         slv_batch,
@@ -184,6 +210,7 @@ def predict_solubility(
         solvent_morgan_fp=solvent_morgan_fp,
         solute_descriptors=solute_descriptors,
         solvent_descriptors=solvent_descriptors,
+        ionic_features=ionic_features,
         solute_descriptor_prior_features=solute_descriptor_prior_features,
         solvent_descriptor_prior_features=solvent_descriptor_prior_features,
         solute_group_prior_features=solute_group_prior_features,
@@ -193,6 +220,7 @@ def predict_solubility(
         T_m_gc=T_m_gc,
         dH_fus_gc=dH_fus_gc,
         dCp_fus_gc=dCp_fus_gc,
+        targets=inference_targets,
     )
 
     direct_sigma = None
@@ -228,12 +256,13 @@ def predict_solubility(
             "a_T21": nrtl_params["a_T21"].item(),
         }
 
+    ln_x2 = output["ln_x2"].item()
     return {
         "solute": solute_smiles,
         "solvent": solvent_smiles,
         "T": T,
         "x2": output["x2"].item(),
-        "ln_x2": output["ln_x2"].item(),
+        "ln_x2": ln_x2,
         "x_ideal": output["physics"]["x_ideal"].item(),
         "gamma_2": math.exp(output["physics"]["ln_gamma_2"].item()),
         "ln_gamma_2": output["physics"]["ln_gamma_2"].item(),
@@ -266,6 +295,24 @@ def predict_solubility(
         "gate": output["gate"].item(),
         "direct_sigma": direct_sigma,
         "direct_log_sigma": direct_log_sigma,
+        "direct_phi_mask": bool(
+            output.get("solver_fusion_params", {})
+            .get(
+                "direct_phi_mask",
+                torch.tensor([False], device=device),
+            )[0]
+            .detach()
+            .cpu()
+            .item()
+        )
+        if isinstance(output.get("solver_fusion_params"), dict)
+        else False,
+        "applicability_flags": applicability_domain_flags(
+            solute_smiles,
+            solvent_smiles,
+            has_T_m=has_valid_T_m,
+            predicted_ln_x2=ln_x2,
+        ),
         **nrtl_payload,
     }
 
@@ -356,6 +403,15 @@ def interpret_prediction(result: Dict) -> str:
             f"  WARNING: Large correction ({result['correction']:.3f}) - "
             f"NRTL may be inadequate"
         )
+    if result.get("direct_phi_mask"):
+        lines.append("  NOTE: effective direct Phi(T) branch was used.")
+
+    flags = result.get("applicability_flags") or []
+    if flags:
+        lines.append("")
+        lines.append("APPLICABILITY DOMAIN FLAGS:")
+        for flag in flags:
+            lines.append(f"  - {flag}")
 
     # Crystal properties
     lines.append("")
@@ -429,6 +485,7 @@ def predict_direct_solubility(
     solvent_smiles: str,
     T: float = 298.15,
     device: torch.device = None,
+    has_T_m: bool | None = None,
 ) -> Dict:
     """Predict solubility for a single system with DirectGNN."""
     if device is None:
@@ -467,6 +524,7 @@ def predict_direct_solubility(
 
     solute_descriptors = None
     solvent_descriptors = None
+    ionic_features = None
     if model.cfg.use_descriptor_augmentation:
         sol_desc = compute_molecular_descriptors(solute_smiles)
         slv_desc = compute_molecular_descriptors(solvent_smiles)
@@ -474,6 +532,12 @@ def predict_direct_solubility(
             raise ValueError("Failed to compute RDKit descriptors for DirectGNN inference.")
         solute_descriptors = torch.tensor(sol_desc, device=device).unsqueeze(0)
         solvent_descriptors = torch.tensor(slv_desc, device=device).unsqueeze(0)
+    if model.cfg.use_ionic_features:
+        ionic_features = torch.tensor(
+            compute_ionic_features(solute_smiles, solvent_smiles),
+            device=device,
+            dtype=torch.float32,
+        ).unsqueeze(0)
 
     output = model(
         sol_batch,
@@ -483,17 +547,26 @@ def predict_direct_solubility(
         solvent_morgan_fp=solvent_morgan_fp,
         solute_descriptors=solute_descriptors,
         solvent_descriptors=solvent_descriptors,
+        ionic_features=ionic_features,
     )
 
+    ln_x2 = output["ln_x2"].item()
     return {
         "solute": solute_smiles,
         "solvent": solvent_smiles,
         "T": T,
         "x2": output["x2"].item(),
-        "ln_x2": output["ln_x2"].item(),
+        "ln_x2": ln_x2,
         "model_family": "direct_gnn",
         "uses_morgan": bool(model.cfg.use_morgan_features),
         "uses_descriptors": bool(model.cfg.use_descriptor_augmentation),
+        "uses_ionic_features": bool(model.cfg.use_ionic_features),
+        "applicability_flags": applicability_domain_flags(
+            solute_smiles,
+            solvent_smiles,
+            has_T_m=bool(has_T_m) if has_T_m is not None else False,
+            predicted_ln_x2=ln_x2,
+        ),
     }
 
 
@@ -557,6 +630,16 @@ def interpret_direct_prediction(result: Dict) -> str:
     lines.append(
         f"  RDKit descriptor augmentation: {'on' if result.get('uses_descriptors') else 'off'}"
     )
+    lines.append(
+        f"  Ionic/context features: {'on' if result.get('uses_ionic_features') else 'off'}"
+    )
+
+    flags = result.get("applicability_flags") or []
+    if flags:
+        lines.append("")
+        lines.append("APPLICABILITY DOMAIN FLAGS:")
+        for flag in flags:
+            lines.append(f"  - {flag}")
 
     return "\n".join(lines)
 

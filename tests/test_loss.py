@@ -60,6 +60,57 @@ class TestPairTemperatureLosses:
         assert torch.isfinite(losses["vant_hoff_local"])
         assert losses["vant_hoff_local"].item() <= 100.0 + 1e-6
 
+    def test_explicit_vant_hoff_fit_targets_work_for_anchor_only_rows(self) -> None:
+        """Fit-table slope targets should not require has_solubility=True rows."""
+        loss_fn = TGNNSolvLoss(TGNNSolvConfig(vant_hoff_fit_r2_min=0.95))
+        T = torch.tensor([325.0, 355.0, 385.0], dtype=torch.float32)
+        slope = torch.tensor(-2600.0)
+        intercept = torch.tensor(4.0)
+        pred = slope * (1.0 / T) + intercept
+        pair_keys = ["pair_a", "pair_a", "pair_a"]
+        target_slope = torch.full((3,), float(slope))
+        target_intercept = torch.full((3,), float(intercept))
+        target_mask = torch.ones(3, dtype=torch.bool)
+        sol_mask = torch.zeros(3, dtype=torch.bool)
+
+        losses = loss_fn._pair_temperature_losses(
+            pred,
+            T,
+            pair_keys,
+            sol_mask=sol_mask,
+            target_slope=target_slope,
+            target_intercept=target_intercept,
+            target_mask=target_mask,
+            target_weight=torch.full((3,), 0.8),
+            target_r2=torch.full((3,), 0.99),
+        )
+
+        assert torch.allclose(
+            losses["vant_hoff_slope"],
+            torch.zeros_like(losses["vant_hoff_slope"]),
+            atol=1e-8,
+        )
+        assert torch.allclose(
+            losses["vant_hoff_intercept"],
+            torch.zeros_like(losses["vant_hoff_intercept"]),
+            atol=1e-8,
+        )
+
+        bad_losses = loss_fn._pair_temperature_losses(
+            pred + torch.tensor([0.0, 1.0, 0.0]),
+            T,
+            pair_keys,
+            sol_mask=sol_mask,
+            target_slope=target_slope,
+            target_intercept=target_intercept,
+            target_mask=target_mask,
+            target_weight=torch.full((3,), 0.8),
+            target_r2=torch.full((3,), 0.99),
+        )
+
+        assert bad_losses["vant_hoff_slope"].item() > 0.0
+        assert bad_losses["vant_hoff_intercept"].item() > 0.0
+
 
 class TestEmptySupervisionBatches:
     """Regression tests for batches without active supervision targets."""

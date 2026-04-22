@@ -37,6 +37,7 @@ if importlib.util.find_spec("torch") is None:
 from tgnn_solv.data.utils import canonicalize
 from tgnn_solv.data.split_registry import build_split_metadata
 from tgnn_solv.artifacts import build_benchmark_card, build_run_manifest, write_json
+from tgnn_solv.ionic_features import flag_no_melting_point, ionic_feature_summary
 from tgnn_solv.inference import load_directgnn_model, load_model, predict_solubility
 from tgnn_solv.reporting import build_report_payload
 
@@ -44,7 +45,6 @@ import torch
 
 from run_full_budget_experiment import (
     build_loader,
-    collect_direct_metrics,
     collect_tgnn_intermediates,
     regression_metrics as batch_regression_metrics,
 )
@@ -228,6 +228,102 @@ def solubility_range_metrics(df: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, 
     return results
 
 
+def _bool_series(df: pd.DataFrame, column: str, default: bool = False) -> np.ndarray:
+    """Parse a boolean dataframe column robustly."""
+    if column not in df.columns:
+        return np.full(len(df), default, dtype=bool)
+    series = df[column]
+    if pd.api.types.is_bool_dtype(series):
+        return series.fillna(default).to_numpy(dtype=bool)
+    normalized = series.fillna(default).astype(str).str.strip().str.lower()
+    return normalized.isin({"true", "1", "yes", "y", "t"}).to_numpy(dtype=bool)
+
+
+def system_class_metrics(df: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, Dict]:
+    """Compute metrics for ionic/no-melting applicability-domain classes."""
+    if len(df) != len(y_pred):
+        raise ValueError("Prediction array length must match dataframe length.")
+    y_true_column = "ln_x2_true" if "ln_x2_true" in df.columns else "ln_x2"
+    y_true = df[y_true_column].to_numpy(dtype=float)
+
+    has_valid_tm = _bool_series(
+        df,
+        "has_valid_T_m",
+        default=False,
+    )
+    if "has_valid_T_m" not in df.columns and "has_T_m" in df.columns:
+        has_valid_tm = _bool_series(df, "has_T_m", default=False)
+    has_decomposition = _bool_series(df, "has_decomposition_T", default=False)
+
+    explicit_salt_low_eps = []
+    possible_dissociation = []
+    zwitterion = []
+    charged = []
+    curated_no_melt = []
+    neutral_standard = []
+    for _, row in df.iterrows():
+        solute = str(row.get("solute_smiles", ""))
+        solvent = str(row.get("solvent_smiles", ""))
+        summary = ionic_feature_summary(solute, solvent)
+        no_melt = flag_no_melting_point(solute) != "standard"
+        explicit_salt_low_eps.append(summary.is_explicit_salt and summary.solvent_eps_r < 30.0)
+        possible_dissociation.append(summary.n_charged_atoms > 0 and summary.solvent_eps_r > 50.0)
+        zwitterion.append(summary.is_zwitterion)
+        charged.append(summary.n_charged_atoms > 0)
+        curated_no_melt.append(no_melt)
+        neutral_standard.append(summary.n_charged_atoms == 0 and not no_melt)
+
+    masks = {
+        "with_valid_T_m": has_valid_tm,
+        "without_valid_T_m": ~has_valid_tm,
+        "decomposition_or_no_melt": has_decomposition | np.asarray(curated_no_melt, dtype=bool),
+        "explicit_salt_low_eps": np.asarray(explicit_salt_low_eps, dtype=bool),
+        "possible_dissociation_high_eps": np.asarray(possible_dissociation, dtype=bool),
+        "zwitterion": np.asarray(zwitterion, dtype=bool),
+        "charged_any": np.asarray(charged, dtype=bool),
+        "neutral_standard": np.asarray(neutral_standard, dtype=bool),
+    }
+
+    results: Dict[str, Dict] = {}
+    valid = ~(np.isnan(y_true) | np.isnan(y_pred))
+    for name, mask in masks.items():
+        combined = mask & valid
+        if np.any(combined):
+            results[name] = compute_regression_metrics(y_true[combined], y_pred[combined])
+    return results
+
+
+@torch.no_grad()
+def collect_direct_predictions(
+    model: object,
+    loader: torch.utils.data.DataLoader,
+    device: torch.device,
+) -> np.ndarray:
+    """Collect DirectGNN predictions in loader/dataset order."""
+    model.eval()
+    predictions: list[np.ndarray] = []
+    for sol_batch, slv_batch, targets in loader:
+        sol_batch = sol_batch.to(device)
+        slv_batch = slv_batch.to(device)
+        targets_dev = {
+            key: value.to(device) if isinstance(value, torch.Tensor) else value
+            for key, value in targets.items()
+        }
+        output = model(
+            sol_batch,
+            slv_batch,
+            targets_dev["T"],
+            solvent_type=targets_dev.get("solvent_type"),
+            solute_morgan_fp=targets_dev.get("solute_morgan_fp"),
+            solvent_morgan_fp=targets_dev.get("solvent_morgan_fp"),
+            solute_descriptors=targets_dev.get("solute_descriptors"),
+            solvent_descriptors=targets_dev.get("solvent_descriptors"),
+            ionic_features=targets_dev.get("ionic_features"),
+        )
+        predictions.append(output["ln_x2"].detach().cpu().numpy())
+    return np.concatenate(predictions, axis=0) if predictions else np.array([], dtype=float)
+
+
 def solvent_metrics(df: pd.DataFrame, y_pred: np.ndarray) -> tuple[Dict[str, Dict], Dict[str, Dict]]:
     """Compute solvent-type and top-solvent metrics."""
     y_true = df["ln_x2"].values
@@ -256,8 +352,9 @@ def aux_data_metrics(df: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, Dict]:
     """Compute metrics stratified by auxiliary-label availability."""
     y_true = df["ln_x2"].values
     results: Dict[str, Dict] = {}
-    if "has_T_m" in df.columns:
-        has_tm = df["has_T_m"].fillna(False).astype(bool).values
+    tm_column = "has_valid_T_m" if "has_valid_T_m" in df.columns else "has_T_m"
+    if tm_column in df.columns:
+        has_tm = _bool_series(df, tm_column, default=False)
         if np.any(has_tm):
             results["with_T_m"] = compute_regression_metrics(y_true[has_tm], y_pred[has_tm])
         if np.any(~has_tm):
@@ -333,18 +430,30 @@ def main() -> None:
     print("\n[3/4] Running batch inference...")
     loader = build_loader(df, config, seed=args.seed)
     if args.directgnn_checkpoint is not None:
-        overall_metrics = normalize_overall_metrics(collect_direct_metrics(model, loader, device))
-        metric_df = df.loc[solubility_supervision_mask(df)].reset_index(drop=True)
-        metric_pred = np.array([], dtype=float)
+        direct_pred_all = collect_direct_predictions(model, loader, device)
+        loader_df = loader.dataset.df.reset_index(drop=True)
+        metric_df, metric_pred = supervised_eval_view(loader_df, direct_pred_all)
         y_true = metric_df["ln_x2"].to_numpy(dtype=float)
-        valid_mask = np.ones(len(y_true), dtype=bool)
-        temp_metrics = {}
-        solubility_metrics = {}
-        solvent_type_metrics = {}
-        by_solvent = {}
-        aux_metrics = {}
-        predictions_payload = {}
-        n_valid = overall_metrics.get("n_samples", overall_metrics.get("n", 0))
+        valid_mask = ~(np.isnan(y_true) | np.isnan(metric_pred))
+        overall_metrics = normalize_overall_metrics(
+            batch_regression_metrics(metric_pred[valid_mask], y_true[valid_mask])
+        )
+        temp_metrics = temperature_stratified_metrics(metric_df, metric_pred)
+        solubility_metrics = solubility_range_metrics(metric_df, metric_pred)
+        solvent_type_metrics, by_solvent = solvent_metrics(metric_df, metric_pred)
+        aux_metrics = aux_data_metrics(metric_df, metric_pred)
+        system_metrics = system_class_metrics(metric_df, metric_pred)
+        row_indices = (
+            metric_df["row_index"].astype(int).to_numpy()
+            if "row_index" in metric_df.columns
+            else metric_df.index.to_numpy(dtype=int)
+        )
+        predictions_payload = {
+            "true_ln_x2": y_true[valid_mask].tolist(),
+            "pred_ln_x2": metric_pred[valid_mask].tolist(),
+            "row_indices": row_indices[valid_mask].tolist(),
+        }
+        n_valid = int(valid_mask.sum())
     else:
         tgnn_df = collect_tgnn_intermediates(
             model,
@@ -368,6 +477,7 @@ def main() -> None:
         solubility_metrics = solubility_range_metrics(metric_df, metric_pred)
         solvent_type_metrics, by_solvent = solvent_metrics(metric_df, metric_pred)
         aux_metrics = aux_data_metrics(metric_df, metric_pred)
+        system_metrics = system_class_metrics(metric_df, metric_pred)
         row_indices = (
             metric_df["row_index"].astype(int).to_numpy()
             if "row_index" in metric_df.columns
@@ -419,6 +529,15 @@ def main() -> None:
             print(f"    R²:  {r2:.4f}" if isinstance(r2, (int, float)) else f"    R²:  {r2}")
         else:
             print("    Insufficient data")
+    if system_metrics:
+        print("\n[BY SYSTEM CLASS]")
+        for class_name, metrics in system_metrics.items():
+            mae = metrics.get("mae", "N/A")
+            n_samples = metrics.get("n_samples", 0)
+            if isinstance(mae, (int, float)):
+                print(f"  {class_name}: MAE={mae:.4f} ({n_samples} samples)")
+            else:
+                print(f"  {class_name}: insufficient data")
     
     # Save results
     results = build_report_payload(
@@ -451,6 +570,7 @@ def main() -> None:
             "solvent_type": solvent_type_metrics,
             "solvent": by_solvent,
             "aux_data": aux_metrics,
+            "system_class": system_metrics,
         },
         predictions=predictions_payload,
     )

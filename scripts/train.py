@@ -687,6 +687,7 @@ def load_data(
         morgan_radius=config.morgan_radius,
         morgan_n_bits=config.morgan_n_bits,
         use_descriptor_augmentation=config.use_descriptor_augmentation,
+        use_ionic_features=config.use_ionic_features,
         use_descriptor_priors=config.use_descriptor_priors,
         use_group_priors=config.requires_group_prior_features,
         use_gc_priors_crystal=config.use_gc_priors_crystal,

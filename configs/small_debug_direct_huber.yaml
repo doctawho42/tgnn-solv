@@ -1,0 +1,29 @@
+# Small DirectGNN diagnostic baseline matching small_debug_direct_weighted.yaml
+# except for the historical Huber solubility loss.
+
+model:
+  hidden_dim: 64
+  n_gnn_layers: 2
+  encoder_role_mode: "shared_residual"
+  encoder_role_specific_layers: 1
+  n_cross_attn_layers: 1
+  pair_dim: 128
+  interaction_mode: "cross_attn"
+  use_solvent_moe: true
+  set2set_steps: 3
+  use_ionic_features: true
+  ionic_feature_hidden_dim: 32
+
+training:
+  epochs_phase2: 5
+  batch_size: 16
+  lr_phase2: 1.0e-4
+  patience: 30
+  grad_clip: 1.0
+  sol_loss_type: "huber"
+  sol_bin_weight_mode: "none"
+  sol_variance_loss_weight: 0.0
+
+loss_weights:
+  phase2:
+    sol: 1.0

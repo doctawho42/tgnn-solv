@@ -29,6 +29,11 @@ from ..features import (
 )
 from ..group_contribution import GC_FALLBACK_PRIORS, compute_gc_priors
 from ..hansen_contrastive import pseudo_hansen_from_smiles
+from ..ionic_features import (
+    IONIC_FEATURE_DIM,
+    compute_ionic_features,
+    flag_no_melting_point,
+)
 from .source_uncertainty import attach_source_uncertainty
 from .solvent_types import solvent_type_id_from_smiles
 
@@ -188,6 +193,7 @@ class TGNNSolvDataset(Dataset):
         morgan_radius: int = 2,
         morgan_n_bits: int = 2048,
         use_descriptor_augmentation: bool = False,
+        use_ionic_features: bool = False,
         use_descriptor_priors: bool = False,
         use_group_priors: bool = False,
         use_gc_priors_crystal: bool = False,
@@ -209,6 +215,7 @@ class TGNNSolvDataset(Dataset):
         self.morgan_radius = morgan_radius
         self.morgan_n_bits = morgan_n_bits
         self.use_descriptor_augmentation = use_descriptor_augmentation
+        self.use_ionic_features = use_ionic_features
         self.use_descriptor_priors = use_descriptor_priors
         self.use_group_priors = use_group_priors
         self.use_gc_priors_crystal = use_gc_priors_crystal
@@ -232,6 +239,9 @@ class TGNNSolvDataset(Dataset):
         self.fp_cache: dict[str, torch.Tensor] | None = {} if cache and use_morgan_features else None
         self.descriptor_aug_cache: dict[str, torch.Tensor] | None = (
             {} if cache and use_descriptor_augmentation else None
+        )
+        self.ionic_feature_cache: dict[tuple[str, str], torch.Tensor] | None = (
+            {} if cache and use_ionic_features else None
         )
         self.descriptor_cache: dict[str, torch.Tensor] | None = (
             {} if cache and use_descriptor_priors else None
@@ -328,6 +338,21 @@ class TGNNSolvDataset(Dataset):
             self.descriptor_aug_cache[smi] = tensor
         return tensor
 
+    def _ionic_features(self, solute_smi: str, solvent_smi: str) -> torch.Tensor | None:
+        """Get cached ionic/contact-pair context features for one pair."""
+        if not self.use_ionic_features:
+            return None
+        key = (str(solute_smi), str(solvent_smi))
+        if self.ionic_feature_cache is not None and key in self.ionic_feature_cache:
+            return self.ionic_feature_cache[key]
+        features = compute_ionic_features(key[0], key[1])
+        tensor = torch.tensor(features, dtype=torch.float)
+        if tensor.numel() != IONIC_FEATURE_DIM:
+            raise ValueError("Unexpected ionic feature dimensionality.")
+        if self.ionic_feature_cache is not None:
+            self.ionic_feature_cache[key] = tensor
+        return tensor
+
     def _descriptor_prior_features(self, smi: str) -> torch.Tensor | None:
         """Get cached fixed descriptor features for prior-conditioned heads."""
         if not self.use_descriptor_priors:
@@ -406,8 +431,74 @@ class TGNNSolvDataset(Dataset):
     def _row_bool(r: pd.Series, names: Sequence[str]) -> bool | None:
         for name in names:
             if name in r.index and pd.notna(r[name]):
-                return bool(r[name])
+                value = r[name]
+                if isinstance(value, str):
+                    normalized = value.strip().lower()
+                    if normalized in {"true", "1", "yes", "y", "t"}:
+                        return True
+                    if normalized in {"false", "0", "no", "n", "f", ""}:
+                        return False
+                return bool(value)
         return None
+
+    def _crystal_validity_flags(self, r: pd.Series) -> dict[str, object]:
+        """Resolve valid-fusion vs decomposition flags from columns and curation."""
+        raw_has_tm = bool(self._row_bool(r, ("has_T_m",)) or False)
+        raw_has_dh = bool(self._row_bool(r, ("has_dH_fus",)) or False)
+        known_handling = flag_no_melting_point(str(r["solute_smiles"]))
+        known_decomposition = known_handling != "standard"
+
+        column_decomposition = self._row_bool(
+            r,
+            (
+                "has_decomposition_T",
+                "has_decomposition_temperature",
+                "T_m_is_decomposition",
+                "is_decomposition_temperature",
+            ),
+        )
+        text_decomposition = False
+        for name in ("T_m_type", "melting_point_type", "crystal_status", "phase_change_type"):
+            if name in r.index and pd.notna(r[name]):
+                text = str(r[name]).strip().lower()
+                if "decomp" in text or "degrad" in text:
+                    text_decomposition = True
+                    break
+
+        has_decomposition = bool(
+            known_decomposition
+            or (column_decomposition is True)
+            or text_decomposition
+        )
+        explicit_valid_tm = self._row_bool(
+            r,
+            ("has_valid_T_m", "has_valid_tm", "valid_T_m", "T_m_valid"),
+        )
+        explicit_valid_dh = self._row_bool(
+            r,
+            (
+                "has_valid_dH_fus",
+                "has_valid_dh_fus",
+                "valid_dH_fus",
+                "dH_fus_valid",
+            ),
+        )
+
+        has_valid_tm = raw_has_tm and not has_decomposition
+        has_valid_dh = raw_has_dh and not has_decomposition
+        if explicit_valid_tm is not None:
+            has_valid_tm = bool(explicit_valid_tm) and not has_decomposition
+        if explicit_valid_dh is not None:
+            has_valid_dh = bool(explicit_valid_dh) and not has_decomposition
+
+        return {
+            "has_raw_T_m": raw_has_tm,
+            "has_raw_dH_fus": raw_has_dh,
+            "has_valid_T_m": has_valid_tm,
+            "has_valid_dH_fus": has_valid_dh,
+            "has_decomposition_T": has_decomposition,
+            "crystal_handling": known_handling,
+        }
 
     def _row_hansen_triplet(
         self,
@@ -463,6 +554,7 @@ class TGNNSolvDataset(Dataset):
         slv_fp = self._morgan_fp(r["solvent_smiles"])
         sol_aug_desc = self._descriptor_features(r["solute_smiles"])
         slv_aug_desc = self._descriptor_features(r["solvent_smiles"])
+        ionic_features = self._ionic_features(r["solute_smiles"], r["solvent_smiles"])
         sol_desc = self._descriptor_prior_features(r["solute_smiles"])
         slv_desc = self._descriptor_prior_features(r["solvent_smiles"])
         sol_group = self._group_prior_features(r["solute_smiles"])
@@ -529,6 +621,9 @@ class TGNNSolvDataset(Dataset):
         else:
             pair_Ra = torch.tensor(0.0, dtype=torch.float)
             pair_weight = torch.tensor(0.0, dtype=torch.float)
+        crystal_flags = self._crystal_validity_flags(r)
+        has_valid_T_m = bool(crystal_flags["has_valid_T_m"])
+        has_valid_dH_fus = bool(crystal_flags["has_valid_dH_fus"])
 
         t = {
             "T": torch.tensor(float(r["temperature"]), dtype=torch.float),
@@ -543,22 +638,33 @@ class TGNNSolvDataset(Dataset):
                 int(r["solvent_type"]), dtype=torch.long
             ),
             "T_m": torch.tensor(
-                float(r["T_m"]) if r["has_T_m"] else 0.0,
+                float(r["T_m"]) if has_valid_T_m else 0.0,
                 dtype=torch.float,
             ),
             "T_m_mask": torch.tensor(
-                bool(r["has_T_m"]), dtype=torch.bool
+                has_valid_T_m, dtype=torch.bool
             ),
             "has_T_m": torch.tensor(
-                bool(r["has_T_m"]), dtype=torch.bool
+                has_valid_T_m, dtype=torch.bool
+            ),
+            "has_raw_T_m": torch.tensor(
+                bool(crystal_flags["has_raw_T_m"]), dtype=torch.bool
+            ),
+            "has_valid_T_m": torch.tensor(has_valid_T_m, dtype=torch.bool),
+            "has_decomposition_T": torch.tensor(
+                bool(crystal_flags["has_decomposition_T"]), dtype=torch.bool
             ),
             "dH_fus": torch.tensor(float(r["dH_fus"]), dtype=torch.float),
             "dH_mask": torch.tensor(
-                bool(r["has_dH_fus"]), dtype=torch.bool
+                has_valid_dH_fus, dtype=torch.bool
             ),
             "has_dH_fus": torch.tensor(
-                bool(r["has_dH_fus"]), dtype=torch.bool
+                has_valid_dH_fus, dtype=torch.bool
             ),
+            "has_raw_dH_fus": torch.tensor(
+                bool(crystal_flags["has_raw_dH_fus"]), dtype=torch.bool
+            ),
+            "has_valid_dH_fus": torch.tensor(has_valid_dH_fus, dtype=torch.bool),
             "hansen_sol": hansen_sol_real,
             "hansen_mask": hansen_sol_mask,
             "hansen_slv": hansen_slv_real,
@@ -630,6 +736,78 @@ class TGNNSolvDataset(Dataset):
                 else 1.0,
                 dtype=torch.float,
             ),
+            "vh_fit_slope": torch.tensor(
+                float(r["vh_fit_slope"])
+                if "vh_fit_slope" in r.index
+                and pd.notna(r["vh_fit_slope"])
+                else (
+                    float(r["vh_anchor_slope"])
+                    if "vh_anchor_slope" in r.index
+                    and pd.notna(r["vh_anchor_slope"])
+                    else 0.0
+                ),
+                dtype=torch.float,
+            ),
+            "vh_fit_intercept": torch.tensor(
+                float(r["vh_fit_intercept"])
+                if "vh_fit_intercept" in r.index
+                and pd.notna(r["vh_fit_intercept"])
+                else (
+                    float(r["vh_anchor_intercept"])
+                    if "vh_anchor_intercept" in r.index
+                    and pd.notna(r["vh_anchor_intercept"])
+                    else 0.0
+                ),
+                dtype=torch.float,
+            ),
+            "vh_fit_r2": torch.tensor(
+                float(r["vh_fit_r2"])
+                if "vh_fit_r2" in r.index
+                and pd.notna(r["vh_fit_r2"])
+                else (
+                    float(r["vh_anchor_fit_r2"])
+                    if "vh_anchor_fit_r2" in r.index
+                    and pd.notna(r["vh_anchor_fit_r2"])
+                    else 0.0
+                ),
+                dtype=torch.float,
+            ),
+            "vh_fit_rmse": torch.tensor(
+                float(r["vh_fit_rmse"])
+                if "vh_fit_rmse" in r.index
+                and pd.notna(r["vh_fit_rmse"])
+                else (
+                    float(r["vh_anchor_fit_rmse"])
+                    if "vh_anchor_fit_rmse" in r.index
+                    and pd.notna(r["vh_anchor_fit_rmse"])
+                    else 0.0
+                ),
+                dtype=torch.float,
+            ),
+            "vh_fit_mask": torch.tensor(
+                bool(r["has_vh_fit"])
+                if "has_vh_fit" in r.index
+                and pd.notna(r["has_vh_fit"])
+                else (
+                    "vh_fit_slope" in r.index
+                    and pd.notna(r["vh_fit_slope"])
+                    or "vh_anchor_slope" in r.index
+                    and pd.notna(r["vh_anchor_slope"])
+                ),
+                dtype=torch.bool,
+            ),
+            "vh_fit_weight": torch.tensor(
+                float(r["vh_fit_weight"])
+                if "vh_fit_weight" in r.index
+                and pd.notna(r["vh_fit_weight"])
+                else (
+                    float(r["vh_anchor_weight"])
+                    if "vh_anchor_weight" in r.index
+                    and pd.notna(r["vh_anchor_weight"])
+                    else 1.0
+                ),
+                dtype=torch.float,
+            ),
             "pair_key": str(r["pair_key"]),
             "solute_smiles": str(r["solute_smiles"]),
             "solvent_smiles": str(r["solvent_smiles"]),
@@ -643,6 +821,7 @@ class TGNNSolvDataset(Dataset):
                 if "source_detail" in r.index and pd.notna(r["source_detail"])
                 else ""
             ),
+            "crystal_handling": str(crystal_flags["crystal_handling"]),
             "source_sigma_ln_x2": torch.tensor(
                 float(r["source_sigma_ln_x2"])
                 if "source_sigma_ln_x2" in r.index and pd.notna(r["source_sigma_ln_x2"])
@@ -678,6 +857,12 @@ class TGNNSolvDataset(Dataset):
                 )
             t["solute_descriptors"] = sol_aug_desc
             t["solvent_descriptors"] = slv_aug_desc
+        if self.use_ionic_features:
+            if ionic_features is None:
+                raise ValueError(
+                    "Ionic feature computation failed for a supposedly valid sample."
+                )
+            t["ionic_features"] = ionic_features
         if self.use_descriptor_priors:
             if sol_desc is None or slv_desc is None:
                 raise ValueError(
@@ -733,6 +918,7 @@ def make_loader(
     morgan_radius: int = 2,
     morgan_n_bits: int = 2048,
     use_descriptor_augmentation: bool = False,
+    use_ionic_features: bool = False,
     use_descriptor_priors: bool = False,
     use_group_priors: bool = False,
     use_gc_priors_crystal: bool = False,
@@ -758,6 +944,7 @@ def make_loader(
         morgan_radius=morgan_radius,
         morgan_n_bits=morgan_n_bits,
         use_descriptor_augmentation=use_descriptor_augmentation,
+        use_ionic_features=use_ionic_features,
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
         use_gc_priors_crystal=use_gc_priors_crystal,
@@ -817,6 +1004,7 @@ def make_loaders(
     morgan_radius: int = 2,
     morgan_n_bits: int = 2048,
     use_descriptor_augmentation: bool = False,
+    use_ionic_features: bool = False,
     use_descriptor_priors: bool = False,
     use_group_priors: bool = False,
     use_gc_priors_crystal: bool = False,
@@ -863,6 +1051,7 @@ def make_loaders(
         morgan_radius=morgan_radius,
         morgan_n_bits=morgan_n_bits,
         use_descriptor_augmentation=use_descriptor_augmentation,
+        use_ionic_features=use_ionic_features,
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
         use_gc_priors_crystal=use_gc_priors_crystal,
@@ -891,6 +1080,7 @@ def make_loaders(
         morgan_radius=morgan_radius,
         morgan_n_bits=morgan_n_bits,
         use_descriptor_augmentation=use_descriptor_augmentation,
+        use_ionic_features=use_ionic_features,
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
         use_gc_priors_crystal=use_gc_priors_crystal,
@@ -918,6 +1108,7 @@ def make_loaders(
         morgan_radius=morgan_radius,
         morgan_n_bits=morgan_n_bits,
         use_descriptor_augmentation=use_descriptor_augmentation,
+        use_ionic_features=use_ionic_features,
         use_descriptor_priors=use_descriptor_priors,
         use_group_priors=use_group_priors,
         use_gc_priors_crystal=use_gc_priors_crystal,

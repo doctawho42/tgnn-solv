@@ -59,6 +59,9 @@ class TGNNSolvConfig:
     descriptor_dim: int = 200
     descriptor_hidden_dim: int = 128
     descriptor_augmentation_hidden_dim: Optional[int] = None
+    use_ionic_features: bool = False
+    ionic_feature_dim: int = 10
+    ionic_feature_hidden_dim: int = 64
     use_descriptor_priors: bool = False
     descriptor_prior_hidden_dim: int = 128
     descriptor_prior_hansen_residual_max: float = 5.0
@@ -85,6 +88,12 @@ class TGNNSolvConfig:
     oracle_injection_prob: float = 1.0
     predict_dCp_fus: bool = False
     fixed_dCp_fus: float = 0.0
+    use_direct_phi_branch: bool = False
+    direct_phi_for_missing_tm: bool = False
+    direct_phi_for_decomposition: bool = True
+    direct_phi_intercept_scale: float = 20.0
+    direct_phi_slope_scale: float = 5000.0
+    direct_phi_slope_init: float = 2500.0
     bridge_loss_weight: float = 0.0
     use_walden_check: bool = False
     walden_target: float = 56.5
@@ -168,7 +177,9 @@ class TGNNSolvConfig:
     idac_aux_phase3_weight: Optional[float] = None
     vant_hoff_slope_scale: float = 5000.0
     vant_hoff_intercept_scale: float = 10.0
+    vant_hoff_fit_r2_min: float = 0.95
     vh_anchor_default_weight: float = 1.0
+    temperature_rescue_ramp_epochs: int = 0
     use_source_uncertainty_weights: bool = False
     source_uncertainty_csv: str = (
         "results/source_uncertainty_audit_reviewed/"
@@ -179,6 +190,13 @@ class TGNNSolvConfig:
     source_uncertainty_min_sigma_ln_x2: float = 0.20
     source_uncertainty_min_weight: float = 0.25
     source_uncertainty_max_weight: float = 4.0
+    sol_loss_type: str = "huber"  # "huber", "mae", "weighted_huber", "weighted_mae"
+    sol_bin_weight_mode: str = "none"  # "none" or "inverse_frequency"
+    sol_bin_edges: tuple[float, ...] = (-25.0, -15.0, -12.0, -9.0, -6.0, -3.0, 0.0)
+    sol_bin_weight_min: float = 0.25
+    sol_bin_weight_max: float = 8.0
+    sol_variance_loss_weight: float = 0.0
+    sol_variance_eps: float = 1.0e-6
     lr_phase1: float = 3e-4
     lr_phase2: float = 1e-4
     lr_phase3: float = 1e-6

@@ -17,6 +17,7 @@ from tgnn_solv.features import (
 )
 from tgnn_solv.group_contribution import compute_gc_priors
 from tgnn_solv.heads import FusionHead
+from tgnn_solv.ionic_features import compute_ionic_features
 from tgnn_solv.model import TGNNSolv
 
 
@@ -368,6 +369,47 @@ class TestForwardPass:
         assert "ln_x2_aux" in out
         assert out["ln_x2_aux"].shape == out["ln_x2"].shape
         assert torch.isfinite(out["ln_x2_aux"]).all()
+
+    def test_direct_phi_branch_overrides_missing_tm_rows(self) -> None:
+        """No-melting rows can use the effective Phi(T) branch instead of T_m/dH."""
+        cfg = make_small_config()
+        cfg.use_ionic_features = True
+        cfg.use_direct_phi_branch = True
+        cfg.direct_phi_for_missing_tm = True
+        model = TGNNSolv(cfg=cfg)
+        model.eval()
+
+        solute = "Oc1cc(O)c2cc(O)c(-c3cc(O)c(O)c(O)c3)[o+]c2c1.[Cl-]"
+        solvent = "CC(C)=O"
+        batch = make_test_batch([(solute, solvent, 298.15)])
+        solute_batch, solvent_batch, temperature, solvent_type, _ = batch
+        ionic_features = torch.tensor(
+            compute_ionic_features(solute, solvent),
+            dtype=torch.float32,
+        ).unsqueeze(0)
+        targets = {
+            "T": temperature,
+            "has_valid_T_m": torch.tensor([False], dtype=torch.bool),
+            "has_decomposition_T": torch.tensor([True], dtype=torch.bool),
+        }
+
+        output, intermediates = model(
+            solute_batch,
+            solvent_batch,
+            temperature,
+            solvent_type=solvent_type,
+            ionic_features=ionic_features,
+            targets=targets,
+            return_intermediates=True,
+        )
+
+        assert bool(intermediates["direct_phi_mask"][0].item())
+        assert "Phi_override" in output["solver_fusion_params"]
+        assert torch.allclose(
+            output["physics"]["Phi"],
+            output["solver_fusion_params"]["Phi_override"],
+        )
+        assert torch.isfinite(output["ln_x2"]).all()
 
     def test_nrtl_group_prior_forward(self) -> None:
         """Optional group prior offsets NRTL tau_ref without enabling Hansen priors."""

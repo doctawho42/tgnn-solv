@@ -25,6 +25,7 @@ dev = [
     "jupyter",
     "matplotlib",
     "scikit-learn",
+    "umap-learn",
     "pytest",
     "optuna",
 ]

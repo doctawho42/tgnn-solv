@@ -306,11 +306,15 @@ class SLESolver(nn.Module):
         dict with x2, ln_x2, ln_gamma_2, ln_gamma_inf, Phi, x_ideal,
              tau_12, tau_21, G_12, G_21
         """
-        # Ideal contribution
-        Phi = self.ideal_layer(
-            T, fusion_params["T_m"],
-            fusion_params["dH_fus"], fusion_params["dCp_fus"],
-        )
+        # Ideal contribution. Some decomposition-prone / no-melting systems
+        # can supply an effective Van't Hoff Phi(T) directly.
+        if "Phi_override" in fusion_params:
+            Phi = fusion_params["Phi_override"].to(T)
+        else:
+            Phi = self.ideal_layer(
+                T, fusion_params["T_m"],
+                fusion_params["dH_fus"], fusion_params["dCp_fus"],
+            )
 
         n_iter = self.cfg.n_iter_train if self.training else self.cfg.n_iter_eval
         damping = self.cfg.damping

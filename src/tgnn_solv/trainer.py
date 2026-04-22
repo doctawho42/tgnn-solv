@@ -402,6 +402,7 @@ class TGNNSolvTrainer:
             solvent_morgan_fp=targets.get("solvent_morgan_fp"),
             solute_descriptors=targets.get("solute_descriptors"),
             solvent_descriptors=targets.get("solvent_descriptors"),
+            ionic_features=targets.get("ionic_features"),
             solute_descriptor_prior_features=targets.get(
                 "solute_descriptor_prior_features"
             ),
@@ -534,6 +535,7 @@ class TGNNSolvTrainer:
         solvent_morgan_fp: Tensor | None = None,
         solute_descriptors: Tensor | None = None,
         solvent_descriptors: Tensor | None = None,
+        ionic_features: Tensor | None = None,
         solute_descriptor_prior_features: Tensor | None = None,
         solvent_descriptor_prior_features: Tensor | None = None,
         solute_group_prior_features: Tensor | None = None,
@@ -623,6 +625,7 @@ class TGNNSolvTrainer:
             solute_descriptors=solute_descriptors,
             solvent_descriptors=solvent_descriptors,
         )
+        g_pair = model._augment_pair_with_ionic_features(g_pair, ionic_features)
         if model.solvent_moe is not None:
             if solvent_type is None:
                 solvent_type = torch.full(
@@ -779,6 +782,18 @@ class TGNNSolvTrainer:
         idac_iter = iter(idac_loader) if idac_loader is not None and idac_steps_target > 0 else None
 
         weights = self.phase_weights[phase].copy()
+        ramp_epochs = max(int(self.cfg.temperature_rescue_ramp_epochs), 0)
+        if phase == 2 and ramp_epochs > 0:
+            ramp = min(1.0, float(epoch + 1) / float(ramp_epochs))
+            for key in (
+                "aux_direct_sol",
+                "pair_temp_delta",
+                "vant_hoff_slope",
+                "vant_hoff_intercept",
+                "vh_anchor",
+            ):
+                if key in weights:
+                    weights[key] = float(weights[key]) * ramp
 
         # Unfreeze correction mid-Phase 2
         if phase == 2 and epoch >= self.cfg.phase2_correction_unfreeze_epoch:
@@ -801,6 +816,7 @@ class TGNNSolvTrainer:
             solvent_morgan_fp = targets.get("solvent_morgan_fp")
             solute_descriptors = targets.get("solute_descriptors")
             solvent_descriptors = targets.get("solvent_descriptors")
+            ionic_features = targets.get("ionic_features")
             solute_descriptor_prior_features = targets.get(
                 "solute_descriptor_prior_features"
             )
@@ -850,6 +866,7 @@ class TGNNSolvTrainer:
                     solvent_morgan_fp=solvent_morgan_fp,
                     solute_descriptors=solute_descriptors,
                     solvent_descriptors=solvent_descriptors,
+                    ionic_features=ionic_features,
                     solute_descriptor_prior_features=solute_descriptor_prior_features,
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,
@@ -870,6 +887,7 @@ class TGNNSolvTrainer:
                     solvent_morgan_fp=solvent_morgan_fp,
                     solute_descriptors=solute_descriptors,
                     solvent_descriptors=solvent_descriptors,
+                    ionic_features=ionic_features,
                     solute_descriptor_prior_features=solute_descriptor_prior_features,
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,
@@ -895,6 +913,7 @@ class TGNNSolvTrainer:
                 solvent_morgan_fp=solvent_morgan_fp,
                 solute_descriptors=solute_descriptors,
                 solvent_descriptors=solvent_descriptors,
+                ionic_features=ionic_features,
                 solute_descriptor_prior_features=solute_descriptor_prior_features,
                 solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                 solute_group_prior_features=solute_group_prior_features,
@@ -1060,6 +1079,7 @@ class TGNNSolvTrainer:
             solvent_morgan_fp = targets.get("solvent_morgan_fp")
             solute_descriptors = targets.get("solute_descriptors")
             solvent_descriptors = targets.get("solvent_descriptors")
+            ionic_features = targets.get("ionic_features")
             solute_descriptor_prior_features = targets.get(
                 "solute_descriptor_prior_features"
             )
@@ -1089,6 +1109,7 @@ class TGNNSolvTrainer:
                     solvent_morgan_fp=solvent_morgan_fp,
                     solute_descriptors=solute_descriptors,
                     solvent_descriptors=solvent_descriptors,
+                    ionic_features=ionic_features,
                     solute_descriptor_prior_features=solute_descriptor_prior_features,
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,
@@ -1107,6 +1128,7 @@ class TGNNSolvTrainer:
                     solvent_morgan_fp=solvent_morgan_fp,
                     solute_descriptors=solute_descriptors,
                     solvent_descriptors=solvent_descriptors,
+                    ionic_features=ionic_features,
                     solute_descriptor_prior_features=solute_descriptor_prior_features,
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,

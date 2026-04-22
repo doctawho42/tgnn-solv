@@ -252,6 +252,7 @@ def build_loader(
         morgan_radius=cfg.morgan_radius,
         morgan_n_bits=cfg.morgan_n_bits,
         use_descriptor_augmentation=cfg.use_descriptor_augmentation,
+        use_ionic_features=cfg.use_ionic_features,
         use_descriptor_priors=cfg.use_descriptor_priors,
         use_group_priors=cfg.requires_group_prior_features,
         use_gc_priors_crystal=cfg.use_gc_priors_crystal,
@@ -406,6 +407,7 @@ def _invoke_tgnn(
         solvent_morgan_fp=targets.get("solvent_morgan_fp"),
         solute_descriptors=targets.get("solute_descriptors"),
         solvent_descriptors=targets.get("solvent_descriptors"),
+        ionic_features=targets.get("ionic_features"),
         solute_descriptor_prior_features=targets.get("solute_descriptor_prior_features"),
         solvent_descriptor_prior_features=targets.get("solvent_descriptor_prior_features"),
         solute_group_prior_features=targets.get("solute_group_prior_features"),
@@ -455,13 +457,36 @@ def collect_tgnn_intermediates(
             batch_df = dataset_df.iloc[cursor:cursor + batch_size].copy().reset_index(drop=True)
             cursor += batch_size
 
+            for column in (
+                "has_raw_T_m",
+                "has_valid_T_m",
+                "has_decomposition_T",
+                "has_raw_dH_fus",
+                "has_valid_dH_fus",
+            ):
+                value = targets_dev.get(column)
+                if isinstance(value, torch.Tensor):
+                    batch_df[column] = value.detach().cpu().numpy().astype(bool)
+            if "crystal_handling" in targets_dev:
+                batch_df["crystal_handling"] = targets_dev["crystal_handling"]
+
             batch_df["ln_x2_true"] = batch_df["ln_x2"].astype(float)
-            batch_df["T_m_true"] = batch_df["T_m"].where(batch_df["has_T_m"].astype(bool), np.nan)
-            batch_df["dH_fus_true"] = batch_df["dH_fus"].where(batch_df["has_dH_fus"].astype(bool), np.nan)
+            tm_mask_col = "has_valid_T_m" if "has_valid_T_m" in batch_df.columns else "has_T_m"
+            dh_mask_col = "has_valid_dH_fus" if "has_valid_dH_fus" in batch_df.columns else "has_dH_fus"
+            batch_df["T_m_true"] = batch_df["T_m"].where(batch_df[tm_mask_col].astype(bool), np.nan)
+            batch_df["dH_fus_true"] = batch_df["dH_fus"].where(batch_df[dh_mask_col].astype(bool), np.nan)
             batch_df["T_m_gc"] = intermediates["T_m_gc"].detach().cpu().numpy()
             batch_df["dH_fus_gc"] = intermediates["dH_fus_gc"].detach().cpu().numpy()
             batch_df["T_m_pred"] = output["fusion_params"]["T_m"].detach().cpu().numpy()
             batch_df["dH_fus_pred"] = output["fusion_params"]["dH_fus"].detach().cpu().numpy()
+            if "Phi_intercept" in intermediates:
+                batch_df["Phi_intercept_pred"] = intermediates["Phi_intercept"].detach().cpu().numpy()
+            if "Phi_slope" in intermediates:
+                batch_df["Phi_slope_pred"] = intermediates["Phi_slope"].detach().cpu().numpy()
+            if "direct_phi_mask" in intermediates:
+                batch_df["direct_phi_mask"] = (
+                    intermediates["direct_phi_mask"].detach().cpu().numpy().astype(bool)
+                )
             batch_df["T_m_solver"] = output["solver_fusion_params"]["T_m"].detach().cpu().numpy()
             batch_df["dH_fus_solver"] = output["solver_fusion_params"]["dH_fus"].detach().cpu().numpy()
             batch_df["tau_12_pred"] = intermediates["tau_12"].detach().cpu().numpy()
@@ -522,8 +547,10 @@ def build_diagnostics(
     oracle_metrics: dict[str, Any],
 ) -> dict[str, Any]:
     """Build the requested diagnostics payload from TGNN intermediates."""
-    tm_mask = df["has_T_m"].astype(bool).to_numpy()
-    dh_mask = df["has_dH_fus"].astype(bool).to_numpy()
+    tm_mask_col = "has_valid_T_m" if "has_valid_T_m" in df.columns else "has_T_m"
+    dh_mask_col = "has_valid_dH_fus" if "has_valid_dH_fus" in df.columns else "has_dH_fus"
+    tm_mask = df[tm_mask_col].astype(bool).to_numpy()
+    dh_mask = df[dh_mask_col].astype(bool).to_numpy()
     sol_mask = df["has_solubility"].astype(bool).to_numpy()
 
     tm_pred = df.loc[tm_mask, "T_m_pred"].to_numpy(dtype=float)

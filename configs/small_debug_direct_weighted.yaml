@@ -1,0 +1,32 @@
+# Small DirectGNN diagnostic config for CPU/MPS loss-shape experiments.
+# It keeps the debug backbone small and changes only the solubility loss.
+
+model:
+  hidden_dim: 64
+  n_gnn_layers: 2
+  encoder_role_mode: "shared_residual"
+  encoder_role_specific_layers: 1
+  n_cross_attn_layers: 1
+  pair_dim: 128
+  interaction_mode: "cross_attn"
+  use_solvent_moe: true
+  set2set_steps: 3
+  use_ionic_features: true
+  ionic_feature_hidden_dim: 32
+
+training:
+  epochs_phase2: 5
+  batch_size: 16
+  lr_phase2: 1.0e-4
+  patience: 30
+  grad_clip: 1.0
+  sol_loss_type: "weighted_mae"
+  sol_bin_weight_mode: "inverse_frequency"
+  sol_bin_edges: [-25.0, -15.0, -12.0, -9.0, -6.0, -3.0, 0.0]
+  sol_bin_weight_min: 0.25
+  sol_bin_weight_max: 8.0
+  sol_variance_loss_weight: 0.05
+
+loss_weights:
+  phase2:
+    sol: 1.0

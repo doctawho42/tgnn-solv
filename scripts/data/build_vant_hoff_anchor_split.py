@@ -84,6 +84,10 @@ def _fit_pair(group: pd.DataFrame) -> dict[str, float] | None:
     }
 
 
+def _pair_key_frame(df: pd.DataFrame) -> pd.Series:
+    return df["solute_smiles"].astype(str) + ">>" + df["solvent_smiles"].astype(str)
+
+
 def main() -> None:
     args = parse_args()
     train_path = Path(args.train_data)
@@ -108,6 +112,16 @@ def main() -> None:
         df["vh_anchor_ln_x2"] = np.nan
     if "vh_anchor_weight" not in df.columns:
         df["vh_anchor_weight"] = 0.0
+    for col in (
+        "has_vh_fit",
+        "vh_fit_slope",
+        "vh_fit_intercept",
+        "vh_fit_r2",
+        "vh_fit_rmse",
+        "vh_fit_weight",
+    ):
+        if col in df.columns:
+            df = df.drop(columns=[col])
 
     supervised = df[df["has_solubility"].astype(bool)].copy()
     anchor_rows: list[dict] = []
@@ -127,6 +141,7 @@ def main() -> None:
         fit_records.append({
             "solute_smiles": solute,
             "solvent_smiles": solvent,
+            "pair_key": f"{solute}>>{solvent}",
             "n_points": int(len(group)),
             "T_min": float(group["temperature"].min()),
             "T_max": float(group["temperature"].max()),
@@ -156,14 +171,38 @@ def main() -> None:
             row["vh_anchor_intercept"] = float(fit["intercept"])
             row["vh_anchor_fit_r2"] = float(fit["r2"])
             row["vh_anchor_fit_rmse"] = float(fit["rmse"])
+            row["has_vh_fit"] = True
+            row["vh_fit_slope"] = float(fit["slope"])
+            row["vh_fit_intercept"] = float(fit["intercept"])
+            row["vh_fit_r2"] = float(fit["r2"])
+            row["vh_fit_rmse"] = float(fit["rmse"])
+            row["vh_fit_weight"] = float(args.weight)
             anchor_rows.append(row.to_dict())
+
+    fits = pd.DataFrame(fit_records)
+    df["__pair_key"] = _pair_key_frame(df)
+    df["has_vh_fit"] = False
+    df["vh_fit_slope"] = np.nan
+    df["vh_fit_intercept"] = np.nan
+    df["vh_fit_r2"] = np.nan
+    df["vh_fit_rmse"] = np.nan
+    df["vh_fit_weight"] = 0.0
+    if not fits.empty:
+        fit_lookup = fits.set_index("pair_key")
+        matched = df["__pair_key"].isin(fit_lookup.index)
+        df.loc[matched, "has_vh_fit"] = True
+        df.loc[matched, "vh_fit_slope"] = df.loc[matched, "__pair_key"].map(fit_lookup["slope"])
+        df.loc[matched, "vh_fit_intercept"] = df.loc[matched, "__pair_key"].map(fit_lookup["intercept"])
+        df.loc[matched, "vh_fit_r2"] = df.loc[matched, "__pair_key"].map(fit_lookup["r2"])
+        df.loc[matched, "vh_fit_rmse"] = df.loc[matched, "__pair_key"].map(fit_lookup["rmse"])
+        df.loc[matched, "vh_fit_weight"] = float(args.weight)
+    df = df.drop(columns=["__pair_key"])
 
     anchors = pd.DataFrame(anchor_rows)
     out = pd.concat([df, anchors], ignore_index=True, sort=False) if anchor_rows else df
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(out_path, index=False)
 
-    fits = pd.DataFrame(fit_records)
     if not fits.empty:
         fits_path = out_path.with_suffix(out_path.suffix + ".fits.csv")
         fits.to_csv(fits_path, index=False)

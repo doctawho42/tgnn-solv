@@ -21,6 +21,7 @@ Components:
   vant_hoff_slope : Supervised same-pair Van't Hoff slope consistency
   vant_hoff_intercept : Supervised same-pair Van't Hoff intercept consistency
   vh_anchor : Pseudo high-T Van't Hoff anchor distillation
+  sol_variance : Batch-level penalty against prediction-range collapse
   moe_balance: Encourage balanced MoE expert usage
   walden    : Walden-rule entropy-of-fusion consistency for unsupervised samples
   hansen_contrastive_* : Align molecular / TIMP-channel / pair latent distances
@@ -85,6 +86,7 @@ class TGNNSolvLoss(nn.Module):
             "vant_hoff_slope": 0.0,
             "vant_hoff_intercept": 0.0,
             "vh_anchor": 0.0,
+            "sol_variance": cfg.sol_variance_loss_weight,
             "moe_balance": 0.02,
             "descriptor_prior": 0.0,
             "group_prior": 0.0,
@@ -145,6 +147,87 @@ class TGNNSolvLoss(nn.Module):
         weight = weight.to(pred.device, dtype=pred.dtype).clamp_min(self.cfg.eps)
         return (weight * huber).sum() / weight.sum().clamp_min(self.cfg.eps)
 
+    def weighted_mae_loss(
+        self,
+        pred: Tensor,
+        target: Tensor,
+        weight: Tensor | None = None,
+    ) -> Tensor:
+        abs_error = (pred - target).abs()
+        return self.weighted_mean(abs_error, weight=weight)
+
+    def _solubility_bin_weights(self, target: Tensor) -> Tensor | None:
+        """Build per-batch inverse-frequency weights over true ln(x2) bins."""
+        if str(self.cfg.sol_bin_weight_mode).lower() in {"", "none", "off", "false"}:
+            return None
+        if str(self.cfg.sol_bin_weight_mode).lower() != "inverse_frequency":
+            raise ValueError(
+                "sol_bin_weight_mode must be 'none' or 'inverse_frequency', "
+                f"got {self.cfg.sol_bin_weight_mode!r}."
+            )
+        edges = torch.as_tensor(
+            tuple(float(x) for x in self.cfg.sol_bin_edges),
+            device=target.device,
+            dtype=target.dtype,
+        )
+        if edges.numel() < 2:
+            return None
+        # bucketize against inner edges; out-of-range values go to end buckets.
+        bucket = torch.bucketize(target.detach(), edges[1:-1], right=False)
+        counts = torch.bincount(bucket, minlength=int(edges.numel() - 1)).to(
+            device=target.device,
+            dtype=target.dtype,
+        )
+        raw_weight = target.new_zeros(target.shape)
+        valid_counts = counts.clamp_min(1.0)
+        raw_weight = 1.0 / valid_counts[bucket]
+        raw_weight = raw_weight / raw_weight.mean().clamp_min(self.cfg.eps)
+        return raw_weight.clamp(
+            min=float(self.cfg.sol_bin_weight_min),
+            max=float(self.cfg.sol_bin_weight_max),
+        )
+
+    def solubility_loss(
+        self,
+        pred: Tensor,
+        target: Tensor,
+        weight: Tensor | None = None,
+    ) -> Tensor:
+        loss_type = str(self.cfg.sol_loss_type).lower()
+        bin_weight = self._solubility_bin_weights(target)
+        if weight is None:
+            effective_weight = bin_weight
+        elif bin_weight is None:
+            effective_weight = weight
+        else:
+            effective_weight = weight.to(pred.device, dtype=pred.dtype) * bin_weight
+            effective_weight = effective_weight / effective_weight.mean().clamp_min(self.cfg.eps)
+
+        if loss_type == "huber":
+            return self.weighted_huber_loss(pred, target, weight=effective_weight)
+        if loss_type == "weighted_huber":
+            if effective_weight is None:
+                effective_weight = torch.ones_like(target)
+            return self.weighted_huber_loss(pred, target, weight=effective_weight)
+        if loss_type == "mae":
+            return self.weighted_mae_loss(pred, target, weight=effective_weight)
+        if loss_type == "weighted_mae":
+            if effective_weight is None:
+                effective_weight = torch.ones_like(target)
+            return self.weighted_mae_loss(pred, target, weight=effective_weight)
+        raise ValueError(
+            "sol_loss_type must be one of 'huber', 'mae', 'weighted_huber', "
+            f"'weighted_mae'; got {self.cfg.sol_loss_type!r}."
+        )
+
+    def solubility_variance_loss(self, pred: Tensor, target: Tensor) -> Tensor:
+        if pred.numel() < 2:
+            return pred.new_zeros(())
+        pred_std = pred.std(unbiased=False)
+        target_std = target.std(unbiased=False)
+        denom = target_std.clamp_min(float(self.cfg.sol_variance_eps))
+        return ((pred_std - target_std) / denom).pow(2)
+
     def weighted_mean(
         self,
         value: Tensor,
@@ -198,6 +281,7 @@ class TGNNSolvLoss(nn.Module):
         solvent_morgan_fp: Tensor | None = None,
         solute_descriptors: Tensor | None = None,
         solvent_descriptors: Tensor | None = None,
+        ionic_features: Tensor | None = None,
         solute_descriptor_prior_features: Tensor | None = None,
         solvent_descriptor_prior_features: Tensor | None = None,
         solute_group_prior_features: Tensor | None = None,
@@ -228,11 +312,16 @@ class TGNNSolvLoss(nn.Module):
                 sol_sample_weight = maybe_weight.to(dev)[sol_mask]
 
         if w.get("sol", 0) > 0 and sol_mask.any():
-            losses["sol"] = self.weighted_huber_loss(
+            losses["sol"] = self.solubility_loss(
                 output["ln_x2"][sol_mask],
                 targets["ln_x2"].to(dev)[sol_mask],
                 weight=sol_sample_weight,
             )
+            if w.get("sol_variance", 0) > 0:
+                losses["sol_variance"] = self.solubility_variance_loss(
+                    output["ln_x2"][sol_mask],
+                    targets["ln_x2"].to(dev)[sol_mask],
+                )
 
         if (
             w.get("aux_direct_sol", 0) > 0
@@ -419,6 +508,7 @@ class TGNNSolvLoss(nn.Module):
                     solvent_morgan_fp=solvent_morgan_fp,
                     solute_descriptors=solute_descriptors,
                     solvent_descriptors=solvent_descriptors,
+                    ionic_features=ionic_features,
                     solute_descriptor_prior_features=solute_descriptor_prior_features,
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,
@@ -490,6 +580,11 @@ class TGNNSolvLoss(nn.Module):
                     pair_keys,
                     true_ln_x2=targets.get("ln_x2"),
                     sol_mask=sol_mask,
+                    target_slope=targets.get("vh_fit_slope"),
+                    target_intercept=targets.get("vh_fit_intercept"),
+                    target_mask=targets.get("vh_fit_mask"),
+                    target_weight=targets.get("vh_fit_weight"),
+                    target_r2=targets.get("vh_fit_r2"),
                 )
                 if w.get("pair_temp_rank", 0) > 0:
                     losses["pair_temp_rank"] = pair_losses["pair_temp_rank"]
@@ -702,6 +797,11 @@ class TGNNSolvLoss(nn.Module):
         pair_keys: list[str] | tuple[str, ...],
         true_ln_x2: object | None = None,
         sol_mask: Tensor | None = None,
+        target_slope: object | None = None,
+        target_intercept: object | None = None,
+        target_mask: object | None = None,
+        target_weight: object | None = None,
+        target_r2: object | None = None,
     ) -> dict[str, Tensor]:
         """Same-pair temperature ranking and Van't Hoff curve consistency."""
         groups: dict[str, list[int]] = {}
@@ -715,76 +815,147 @@ class TGNNSolvLoss(nn.Module):
         intercept_losses = []
         true_tensor = true_ln_x2 if isinstance(true_ln_x2, Tensor) else None
         usable_mask = sol_mask.bool() if isinstance(sol_mask, Tensor) else None
+        slope_target_tensor = target_slope if isinstance(target_slope, Tensor) else None
+        intercept_target_tensor = (
+            target_intercept if isinstance(target_intercept, Tensor) else None
+        )
+        target_mask_tensor = target_mask.bool() if isinstance(target_mask, Tensor) else None
+        target_weight_tensor = target_weight if isinstance(target_weight, Tensor) else None
+        target_r2_tensor = target_r2 if isinstance(target_r2, Tensor) else None
 
-        for indices in groups.values():
+        for raw_indices in groups.values():
+            indices = list(raw_indices)
             if usable_mask is not None:
                 indices = [
                     idx for idx in indices
                     if bool(usable_mask[idx].detach().cpu().item())
                 ]
-            if len(indices) < 2:
+            if len(indices) >= 2:
+                idx_tensor = torch.tensor(indices, device=pred_ln_x2.device, dtype=torch.long)
+                T_group = T[idx_tensor]
+                pred_group = pred_ln_x2[idx_tensor]
+                order = torch.argsort(T_group)
+                T_sorted = T_group[order]
+                pred_sorted = pred_group[order]
+
+                delta_pred = pred_sorted[1:] - pred_sorted[:-1]
+                rank_losses.append(F.relu(-delta_pred).mean())
+
+                if len(indices) >= 3:
+                    inv_T = 1.0 / T_sorted.clamp(min=self.cfg.eps)
+                    inv_T_diff = inv_T[1:] - inv_T[:-1]
+                    inv_T_sign = torch.where(
+                        inv_T_diff < 0,
+                        -torch.ones_like(inv_T_diff),
+                        torch.ones_like(inv_T_diff),
+                    )
+                    inv_T_diff_safe = inv_T_sign * torch.clamp(
+                        inv_T_diff.abs(),
+                        min=MIN_VANT_HOFF_INV_T_DIFF,
+                    )
+                    local_slopes = (
+                        pred_sorted[1:] - pred_sorted[:-1]
+                    ) / inv_T_diff_safe
+                    per_pair_vh = (local_slopes[1:] - local_slopes[:-1]).pow(2)
+                    per_pair_vh = torch.clamp(
+                        per_pair_vh,
+                        max=MAX_VANT_HOFF_PAIR_LOSS,
+                    )
+                    vant_hoff_losses.append(per_pair_vh.mean())
+
+                if true_tensor is not None:
+                    true_group = true_tensor.to(pred_ln_x2.device, dtype=pred_ln_x2.dtype)[
+                        idx_tensor
+                    ][order]
+                    true_delta = true_group[1:] - true_group[:-1]
+                    delta_losses.append(F.huber_loss(delta_pred, true_delta, delta=1.0))
+
+                    inv_T = 1.0 / T_sorted.clamp(min=self.cfg.eps)
+                    x_center = inv_T - inv_T.mean()
+                    denom = x_center.pow(2).sum().clamp_min(self.cfg.eps)
+                    pred_center = pred_sorted - pred_sorted.mean()
+                    true_center = true_group - true_group.mean()
+                    pred_slope = (x_center * pred_center).sum() / denom
+                    true_slope = (x_center * true_center).sum() / denom
+                    pred_intercept = pred_sorted.mean() - pred_slope * inv_T.mean()
+                    true_intercept = true_group.mean() - true_slope * inv_T.mean()
+
+                    slope_scale = max(float(self.cfg.vant_hoff_slope_scale), self.cfg.eps)
+                    intercept_scale = max(
+                        float(self.cfg.vant_hoff_intercept_scale),
+                        self.cfg.eps,
+                    )
+                    slope_losses.append(((pred_slope - true_slope) / slope_scale).pow(2))
+                    intercept_losses.append(
+                        ((pred_intercept - true_intercept) / intercept_scale).pow(2)
+                    )
+
+            if slope_target_tensor is None and intercept_target_tensor is None:
+                continue
+            if target_mask_tensor is None:
                 continue
 
-            idx_tensor = torch.tensor(indices, device=pred_ln_x2.device, dtype=torch.long)
-            T_group = T[idx_tensor]
-            pred_group = pred_ln_x2[idx_tensor]
-            order = torch.argsort(T_group)
-            T_sorted = T_group[order]
-            pred_sorted = pred_group[order]
-
-            delta_pred = pred_sorted[1:] - pred_sorted[:-1]
-            rank_losses.append(F.relu(-delta_pred).mean())
-
-            if len(indices) >= 3:
-                inv_T = 1.0 / T_sorted.clamp(min=self.cfg.eps)
-                inv_T_diff = inv_T[1:] - inv_T[:-1]
-                inv_T_sign = torch.where(
-                    inv_T_diff < 0,
-                    -torch.ones_like(inv_T_diff),
-                    torch.ones_like(inv_T_diff),
-                )
-                inv_T_diff_safe = inv_T_sign * torch.clamp(
-                    inv_T_diff.abs(),
-                    min=MIN_VANT_HOFF_INV_T_DIFF,
-                )
-                local_slopes = (
-                    pred_sorted[1:] - pred_sorted[:-1]
-                ) / inv_T_diff_safe
-                per_pair_vh = (local_slopes[1:] - local_slopes[:-1]).pow(2)
-                per_pair_vh = torch.clamp(
-                    per_pair_vh,
-                    max=MAX_VANT_HOFF_PAIR_LOSS,
-                )
-                vant_hoff_losses.append(per_pair_vh.mean())
-
-            if true_tensor is None:
+            fit_indices = [
+                idx for idx in raw_indices
+                if bool(target_mask_tensor[idx].detach().cpu().item())
+            ]
+            if len(fit_indices) < 2:
                 continue
 
-            true_group = true_tensor.to(pred_ln_x2.device, dtype=pred_ln_x2.dtype)[
-                idx_tensor
-            ][order]
-            true_delta = true_group[1:] - true_group[:-1]
-            delta_losses.append(F.huber_loss(delta_pred, true_delta, delta=1.0))
+            fit_idx_tensor = torch.tensor(
+                fit_indices,
+                device=pred_ln_x2.device,
+                dtype=torch.long,
+            )
+            if target_r2_tensor is not None:
+                fit_r2 = target_r2_tensor.to(
+                    pred_ln_x2.device,
+                    dtype=pred_ln_x2.dtype,
+                )[fit_idx_tensor]
+                if bool((fit_r2 < float(self.cfg.vant_hoff_fit_r2_min)).all().item()):
+                    continue
 
-            inv_T = 1.0 / T_sorted.clamp(min=self.cfg.eps)
-            x_center = inv_T - inv_T.mean()
-            denom = x_center.pow(2).sum().clamp_min(self.cfg.eps)
-            pred_center = pred_sorted - pred_sorted.mean()
-            true_center = true_group - true_group.mean()
-            pred_slope = (x_center * pred_center).sum() / denom
-            true_slope = (x_center * true_center).sum() / denom
-            pred_intercept = pred_sorted.mean() - pred_slope * inv_T.mean()
-            true_intercept = true_group.mean() - true_slope * inv_T.mean()
+            T_fit = T[fit_idx_tensor]
+            pred_fit = pred_ln_x2[fit_idx_tensor]
+            fit_order = torch.argsort(T_fit)
+            T_fit = T_fit[fit_order]
+            pred_fit = pred_fit[fit_order]
+            inv_T_fit = 1.0 / T_fit.clamp(min=self.cfg.eps)
+            x_fit_center = inv_T_fit - inv_T_fit.mean()
+            fit_denom = x_fit_center.pow(2).sum().clamp_min(self.cfg.eps)
+            pred_fit_center = pred_fit - pred_fit.mean()
+            pred_fit_slope = (x_fit_center * pred_fit_center).sum() / fit_denom
+            pred_fit_intercept = pred_fit.mean() - pred_fit_slope * inv_T_fit.mean()
+
+            fit_weight = pred_ln_x2.new_tensor(1.0)
+            if target_weight_tensor is not None:
+                fit_weight = target_weight_tensor.to(
+                    pred_ln_x2.device,
+                    dtype=pred_ln_x2.dtype,
+                )[fit_idx_tensor].mean().clamp_min(self.cfg.eps)
 
             slope_scale = max(float(self.cfg.vant_hoff_slope_scale), self.cfg.eps)
             intercept_scale = max(
                 float(self.cfg.vant_hoff_intercept_scale),
                 self.cfg.eps,
             )
-            slope_losses.append(((pred_slope - true_slope) / slope_scale).pow(2))
-            intercept_losses.append(
-                ((pred_intercept - true_intercept) / intercept_scale).pow(2)
-            )
+            if slope_target_tensor is not None:
+                slope_target = slope_target_tensor.to(
+                    pred_ln_x2.device,
+                    dtype=pred_ln_x2.dtype,
+                )[fit_idx_tensor].mean()
+                slope_losses.append(
+                    fit_weight * ((pred_fit_slope - slope_target) / slope_scale).pow(2)
+                )
+            if intercept_target_tensor is not None:
+                intercept_target = intercept_target_tensor.to(
+                    pred_ln_x2.device,
+                    dtype=pred_ln_x2.dtype,
+                )[fit_idx_tensor].mean()
+                intercept_losses.append(
+                    fit_weight
+                    * ((pred_fit_intercept - intercept_target) / intercept_scale).pow(2)
+                )
 
         zero = pred_ln_x2.new_zeros(())
         return {
@@ -815,6 +986,7 @@ class TGNNSolvLoss(nn.Module):
         solvent_morgan_fp: Tensor | None = None,
         solute_descriptors: Tensor | None = None,
         solvent_descriptors: Tensor | None = None,
+        ionic_features: Tensor | None = None,
         solute_descriptor_prior_features: Tensor | None = None,
         solvent_descriptor_prior_features: Tensor | None = None,
         solute_group_prior_features: Tensor | None = None,
@@ -841,6 +1013,7 @@ class TGNNSolvLoss(nn.Module):
                     solvent_morgan_fp=solvent_morgan_fp,
                     solute_descriptors=solute_descriptors,
                     solvent_descriptors=solvent_descriptors,
+                    ionic_features=ionic_features,
                     solute_descriptor_prior_features=solute_descriptor_prior_features,
                     solvent_descriptor_prior_features=solvent_descriptor_prior_features,
                     solute_group_prior_features=solute_group_prior_features,

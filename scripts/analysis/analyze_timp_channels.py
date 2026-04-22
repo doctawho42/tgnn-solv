@@ -85,6 +85,7 @@ def _loader(df: pd.DataFrame, cfg, batch_size: int, seed: int):
             morgan_radius=cfg.morgan_radius,
             morgan_n_bits=cfg.morgan_n_bits,
             use_descriptor_augmentation=cfg.use_descriptor_augmentation,
+            use_ionic_features=cfg.use_ionic_features,
             use_descriptor_priors=cfg.use_descriptor_priors,
             use_group_priors=cfg.requires_group_prior_features,
             use_gc_priors_crystal=cfg.use_gc_priors_crystal,

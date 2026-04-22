@@ -350,6 +350,16 @@ class FusionHead(nn.Module):
         self.mlp: nn.Sequential | None = None
         self.residual_mlp_Tm: nn.Sequential | None = None
         self.residual_mlp_dH: nn.Sequential | None = None
+        self.direct_phi_mlp: nn.Sequential | None = None
+        if cfg.use_direct_phi_branch:
+            self.direct_phi_mlp = nn.Sequential(
+                nn.Linear(input_dim, 256),
+                nn.SiLU(),
+                nn.Linear(256, 128),
+                nn.SiLU(),
+                nn.Linear(128, 2),
+            )
+            self._init_direct_phi_head(self.direct_phi_mlp)
         if cfg.use_gc_priors_crystal:
             self.residual_mlp_Tm = self._make_residual_mlp(input_dim)
             self.residual_mlp_dH = self._make_residual_mlp(input_dim)
@@ -420,6 +430,22 @@ class FusionHead(nn.Module):
                 - float(self.cfg.fusion_entropy_min)
             ) / entropy_span
             final.bias[1] = self._logit(entropy_frac)
+
+    def _init_direct_phi_head(self, head: nn.Sequential) -> None:
+        """Initialize direct Phi near a mild Van't Hoff slope."""
+        final = head[-1]
+        if not isinstance(final, nn.Linear):
+            raise TypeError("Expected direct-Phi head to end with nn.Linear.")
+        with torch.no_grad():
+            final.weight.zero_()
+            final.bias.zero_()
+            init_slope = max(
+                float(self.cfg.direct_phi_slope_init),
+                self.cfg.eps,
+            )
+            final.bias[1] = self._inverse_softplus(
+                init_slope / max(float(self.cfg.direct_phi_slope_scale), self.cfg.eps)
+            )
 
     def _add_entropy_diagnostics(
         self,
@@ -523,11 +549,20 @@ class FusionHead(nn.Module):
             dCp_fus = torch.full_like(T_m, self.cfg.fixed_dCp_fus)
         if self.cfg.predict_dCp_fus and not self.cfg.use_gc_priors_crystal:
             dCp_fus = z[:, 2] * self.cfg.S_Cp
-        return self._add_entropy_diagnostics(
+        params = self._add_entropy_diagnostics(
             {"T_m": T_m, "dH_fus": dH_fus, "dCp_fus": dCp_fus},
             T_m_unclamped=T_m_unclamped,
             dH_fus_raw=dH_fus_raw,
         )
+        if self.direct_phi_mlp is not None:
+            phi_raw = self.direct_phi_mlp(g_solute)
+            params["Phi_intercept"] = (
+                torch.tanh(phi_raw[:, 0]) * self.cfg.direct_phi_intercept_scale
+            )
+            params["Phi_slope"] = (
+                F.softplus(phi_raw[:, 1]) * self.cfg.direct_phi_slope_scale
+            )
+        return params
 
 
 # ================================================================== #

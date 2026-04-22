@@ -19,6 +19,15 @@ The key maintained comparison is:
 The main research question is whether the explicit physics bottleneck helps
 relative to the same graph backbone trained directly on solubility.
 
+For a full conceptual and mathematical orientation before research-heavy work,
+read:
+
+- `PROJECT_DESCRIPTION.md`
+
+It summarizes the problem, thermodynamic derivation, architecture, training
+scheme, current empirical state, and roadmap. `PROJECT_MEMORY.md` remains the
+source of truth for changing facts and recent incidents.
+
 ## Project Memory
 
 Canonical cross-agent project memory lives in:

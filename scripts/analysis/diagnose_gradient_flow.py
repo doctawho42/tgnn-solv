@@ -98,6 +98,7 @@ def _loader_for_config(
         morgan_radius=cfg.morgan_radius,
         morgan_n_bits=cfg.morgan_n_bits,
         use_descriptor_augmentation=cfg.use_descriptor_augmentation,
+        use_ionic_features=cfg.use_ionic_features,
         use_descriptor_priors=cfg.use_descriptor_priors,
         use_group_priors=cfg.requires_group_prior_features,
         use_gc_priors_crystal=cfg.use_gc_priors_crystal,
@@ -134,10 +135,12 @@ def _forward_loss(
     if not bool(mask.any()):
         return None
     common = {
+        "solvent_type": _optional_tensor(targets, "solvent_type"),
         "solute_morgan_fp": _optional_tensor(targets, "solute_morgan_fp"),
         "solvent_morgan_fp": _optional_tensor(targets, "solvent_morgan_fp"),
         "solute_descriptors": _optional_tensor(targets, "solute_descriptors"),
         "solvent_descriptors": _optional_tensor(targets, "solvent_descriptors"),
+        "ionic_features": _optional_tensor(targets, "ionic_features"),
     }
     if isinstance(model, DirectGNN):
         output = model(solute_batch, solvent_batch, T, **common)
@@ -146,7 +149,6 @@ def _forward_loss(
             solute_batch,
             solvent_batch,
             T,
-            solvent_type=_optional_tensor(targets, "solvent_type"),
             solute_descriptor_prior_features=_optional_tensor(targets, "solute_descriptor_prior_features"),
             solvent_descriptor_prior_features=_optional_tensor(targets, "solvent_descriptor_prior_features"),
             solute_group_prior_features=_optional_tensor(targets, "solute_group_prior_features"),

@@ -160,6 +160,7 @@ class DirectGNN(nn.Module):
             self.fp_post_scale = nn.Parameter(torch.tensor(0.5))
 
         self.descriptor_adapter = None
+        self.ionic_feature_adapter = None
         self.register_buffer("descriptor_mean", torch.empty(0))
         self.register_buffer("descriptor_std", torch.empty(0))
         if cfg.use_descriptor_augmentation:
@@ -175,6 +176,16 @@ class DirectGNN(nn.Module):
             )
             self.descriptor_mean = torch.zeros(cfg.descriptor_dim)
             self.descriptor_std = torch.ones(cfg.descriptor_dim)
+        if cfg.use_ionic_features:
+            if cfg.ionic_feature_dim <= 0:
+                raise ValueError("ionic_feature_dim must be positive when ionic features are enabled.")
+            self.ionic_feature_adapter = nn.Sequential(
+                nn.Linear(cfg.ionic_feature_dim, cfg.ionic_feature_hidden_dim),
+                nn.SiLU(),
+                nn.Dropout(cfg.dropout),
+                nn.Linear(cfg.ionic_feature_hidden_dim, cfg.ionic_feature_hidden_dim),
+                nn.SiLU(),
+            )
 
         # --- Pair + temperature → prediction ---
         # Input: g_sol(D_r) + g_slv(D_r) + g_sol*g_slv(D_r) +
@@ -182,6 +193,8 @@ class DirectGNN(nn.Module):
         pair_input_dim = D_r * 4 + n_temp_bins
         if cfg.use_descriptor_augmentation:
             pair_input_dim += cfg.resolved_descriptor_hidden_dim * 4
+        if cfg.use_ionic_features:
+            pair_input_dim += cfg.ionic_feature_hidden_dim
 
         self.prediction_head = nn.Sequential(
             nn.Linear(pair_input_dim, 1024),
@@ -344,6 +357,7 @@ class DirectGNN(nn.Module):
         solvent_morgan_fp: Tensor | None = None,
         solute_descriptors: Tensor | None = None,
         solvent_descriptors: Tensor | None = None,
+        ionic_features: Tensor | None = None,
         return_debug_tensors: bool = False,
     ) -> dict[str, Tensor | dict[str, Tensor]]:
         """
@@ -472,6 +486,20 @@ class DirectGNN(nn.Module):
                 ],
                 dim=-1,
             )
+        ionic_emb = None
+        if self.cfg.use_ionic_features:
+            if ionic_features is None or self.ionic_feature_adapter is None:
+                raise ValueError(
+                    "Ionic features are enabled in the config, but ionic_features "
+                    "was not provided."
+                )
+            if ionic_features.size(-1) != self.cfg.ionic_feature_dim:
+                raise ValueError(
+                    f"Ionic feature tensor has dim {ionic_features.size(-1)}, "
+                    f"expected {self.cfg.ionic_feature_dim}."
+                )
+            ionic_emb = self.ionic_feature_adapter(ionic_features.to(g_sol_post))
+            pair_input = torch.cat([pair_input, ionic_emb], dim=-1)
 
         # --- Direct prediction ---
         ln_x2 = self.prediction_head(pair_input).squeeze(-1)  # (B,)
@@ -489,9 +517,15 @@ class DirectGNN(nn.Module):
                         "descriptor_embedding_solute": sol_desc.detach(),
                         "descriptor_embedding_solvent": slv_desc.detach(),
                         "pair_representation": pair_input.detach(),
+                        **(
+                            {"ionic_embedding": ionic_emb.detach()}
+                            if ionic_emb is not None
+                            else {}
+                        ),
                     }
                 }
-                if return_debug_tensors and self.cfg.use_descriptor_augmentation
+                if return_debug_tensors
+                and (self.cfg.use_descriptor_augmentation or self.cfg.use_ionic_features)
                 else {}
             ),
         }
@@ -505,7 +539,7 @@ class DirectGNNTrainer:
     """
     Trainer for DirectGNN baseline.
 
-    Uses Huber loss on ln(x₂), same as TGNN-Solv primary loss.
+    Uses the configured solubility loss on ln(x₂), matching TGNN-Solv.
     Cosine annealing LR schedule. Early stopping on val MAE.
     """
 
@@ -546,6 +580,86 @@ class DirectGNNTrainer:
         )
         weight = weight.to(pred.device, dtype=pred.dtype).clamp_min(1.0e-8)
         return (weight * huber).sum() / weight.sum().clamp_min(1.0e-8)
+
+    def _weighted_mae_loss(
+        self,
+        pred: Tensor,
+        true: Tensor,
+        weight: Tensor | None = None,
+    ) -> Tensor:
+        abs_error = (pred - true).abs()
+        if weight is None:
+            return abs_error.mean()
+        weight = weight.to(pred.device, dtype=pred.dtype).clamp_min(1.0e-8)
+        return (weight * abs_error).sum() / weight.sum().clamp_min(1.0e-8)
+
+    def _bin_weights(self, true: Tensor) -> Tensor | None:
+        mode = str(self.model.cfg.sol_bin_weight_mode).lower()
+        if mode in {"", "none", "off", "false"}:
+            return None
+        if mode != "inverse_frequency":
+            raise ValueError(
+                "sol_bin_weight_mode must be 'none' or 'inverse_frequency', "
+                f"got {self.model.cfg.sol_bin_weight_mode!r}."
+            )
+        edges = torch.as_tensor(
+            tuple(float(x) for x in self.model.cfg.sol_bin_edges),
+            device=true.device,
+            dtype=true.dtype,
+        )
+        if edges.numel() < 2:
+            return None
+        bucket = torch.bucketize(true.detach(), edges[1:-1], right=False)
+        counts = torch.bincount(bucket, minlength=int(edges.numel() - 1)).to(
+            device=true.device,
+            dtype=true.dtype,
+        )
+        weight = 1.0 / counts.clamp_min(1.0)[bucket]
+        weight = weight / weight.mean().clamp_min(1.0e-8)
+        return weight.clamp(
+            min=float(self.model.cfg.sol_bin_weight_min),
+            max=float(self.model.cfg.sol_bin_weight_max),
+        )
+
+    def _solubility_loss(
+        self,
+        pred: Tensor,
+        true: Tensor,
+        weight: Tensor | None = None,
+    ) -> Tensor:
+        bin_weight = self._bin_weights(true)
+        if weight is None:
+            effective_weight = bin_weight
+        elif bin_weight is None:
+            effective_weight = weight
+        else:
+            effective_weight = weight.to(pred.device, dtype=pred.dtype) * bin_weight
+            effective_weight = effective_weight / effective_weight.mean().clamp_min(1.0e-8)
+
+        loss_type = str(self.model.cfg.sol_loss_type).lower()
+        if loss_type == "huber":
+            return self._weighted_huber_loss(pred, true, weight=effective_weight, delta=1.0)
+        if loss_type == "weighted_huber":
+            if effective_weight is None:
+                effective_weight = torch.ones_like(true)
+            return self._weighted_huber_loss(pred, true, weight=effective_weight, delta=1.0)
+        if loss_type == "mae":
+            return self._weighted_mae_loss(pred, true, weight=effective_weight)
+        if loss_type == "weighted_mae":
+            if effective_weight is None:
+                effective_weight = torch.ones_like(true)
+            return self._weighted_mae_loss(pred, true, weight=effective_weight)
+        raise ValueError(
+            "sol_loss_type must be one of 'huber', 'mae', 'weighted_huber', "
+            f"'weighted_mae'; got {self.model.cfg.sol_loss_type!r}."
+        )
+
+    def _variance_loss(self, pred: Tensor, true: Tensor) -> Tensor:
+        if pred.numel() < 2:
+            return pred.new_zeros(())
+        pred_std = pred.std(unbiased=False)
+        true_std = true.std(unbiased=False)
+        return ((pred_std - true_std) / true_std.clamp_min(float(self.model.cfg.sol_variance_eps))).pow(2)
 
     def _maybe_release_device_cache(self, *, force: bool = False) -> None:
         """Periodically release MPS cached memory to reduce fragmentation."""
@@ -658,6 +772,7 @@ class DirectGNNTrainer:
                 solvent_morgan_fp = tgt.get("solvent_morgan_fp")
                 solute_descriptors = tgt.get("solute_descriptors")
                 solvent_descriptors = tgt.get("solvent_descriptors")
+                ionic_features = tgt.get("ionic_features")
                 mask = tgt["has_solubility"].to(self.device)
 
                 if not mask.any():
@@ -689,6 +804,11 @@ class DirectGNNTrainer:
                         if isinstance(solvent_descriptors, Tensor)
                         else None
                     ),
+                    ionic_features=(
+                        ionic_features.to(self.device)
+                        if isinstance(ionic_features, Tensor)
+                        else None
+                    ),
                 )
 
                 pred = out["ln_x2"][mask]
@@ -698,12 +818,9 @@ class DirectGNNTrainer:
                     maybe_weight = tgt.get("source_solubility_weight")
                     if isinstance(maybe_weight, Tensor):
                         sol_weight = maybe_weight.to(self.device)[mask]
-                loss = self._weighted_huber_loss(
-                    pred,
-                    true,
-                    weight=sol_weight,
-                    delta=1.0,
-                )
+                loss = self._solubility_loss(pred, true, weight=sol_weight)
+                if float(self.model.cfg.sol_variance_loss_weight) > 0.0:
+                    loss = loss + float(self.model.cfg.sol_variance_loss_weight) * self._variance_loss(pred, true)
 
                 loss.backward()
                 nn.utils.clip_grad_norm_(
@@ -785,6 +902,7 @@ class DirectGNNTrainer:
             solvent_morgan_fp = tgt.get("solvent_morgan_fp")
             solute_descriptors = tgt.get("solute_descriptors")
             solvent_descriptors = tgt.get("solvent_descriptors")
+            ionic_features = tgt.get("ionic_features")
             mask = tgt["has_solubility"]  # keep on CPU
 
             if not mask.any():
@@ -813,6 +931,11 @@ class DirectGNNTrainer:
                 solvent_descriptors=(
                     solvent_descriptors.to(self.device)
                     if isinstance(solvent_descriptors, Tensor)
+                    else None
+                ),
+                ionic_features=(
+                    ionic_features.to(self.device)
+                    if isinstance(ionic_features, Tensor)
                     else None
                 ),
             )
