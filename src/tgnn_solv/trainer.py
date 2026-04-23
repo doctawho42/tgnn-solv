@@ -242,6 +242,44 @@ class TGNNSolvTrainer:
             }[phase]
         return defaults
 
+    def _weights_for_epoch(
+        self,
+        phase: int,
+        *,
+        epoch: int | None = None,
+        n_epochs: int | None = None,
+    ) -> dict[str, float]:
+        """Return phase weights, optionally with a smooth Phase 2 schedule."""
+        weights = self.phase_weights[phase].copy()
+        if not self.cfg.use_smooth_phase2_curriculum or phase != 2:
+            return weights
+
+        if epoch is None or n_epochs is None:
+            progress = 1.0
+        else:
+            progress = float(epoch) / float(max(int(n_epochs) - 1, 1))
+            progress = min(max(progress, 0.0), 1.0)
+
+        crystal_weight = (
+            self.cfg.smooth_phase2_crystal_start
+            + (self.cfg.smooth_phase2_crystal_end - self.cfg.smooth_phase2_crystal_start)
+            * progress
+        )
+        pair_weight = (
+            self.cfg.smooth_phase2_pair_start
+            + (self.cfg.smooth_phase2_pair_end - self.cfg.smooth_phase2_pair_start)
+            * progress
+        )
+
+        for key in ("T_m", "dH", "hansen"):
+            if key in weights:
+                weights[key] = float(crystal_weight)
+        if "sol" in weights:
+            weights["sol"] = float(pair_weight)
+        if "gamma_inf" in weights:
+            weights["gamma_inf"] = float(self.cfg.smooth_phase2_idac_weight)
+        return weights
+
     def state_dict(self) -> TrainerStateDict:
         """Serialize trainer state required for checkpointed resume."""
         return {
@@ -763,6 +801,7 @@ class TGNNSolvTrainer:
         epoch: int,
         compute_mono: bool = False,
         idac_loader: DataLoader | None = None,
+        n_phase_epochs: int | None = None,
     ) -> tuple[float, TrainEpochStats]:
         """Train for one epoch and summarize raw/weighted loss components."""
         self.model.train()
@@ -781,7 +820,11 @@ class TGNNSolvTrainer:
         idac_steps_target = max(int(self.cfg.idac_aux_steps_per_epoch), 0)
         idac_iter = iter(idac_loader) if idac_loader is not None and idac_steps_target > 0 else None
 
-        weights = self.phase_weights[phase].copy()
+        weights = self._weights_for_epoch(
+            phase,
+            epoch=epoch,
+            n_epochs=n_phase_epochs,
+        )
         ramp_epochs = max(int(self.cfg.temperature_rescue_ramp_epochs), 0)
         if phase == 2 and ramp_epochs > 0:
             ramp = min(1.0, float(epoch + 1) / float(ramp_epochs))
@@ -1052,7 +1095,12 @@ class TGNNSolvTrainer:
 
     @torch.no_grad()
     def validate(
-        self, loader: DataLoader, phase: int
+        self,
+        loader: DataLoader,
+        phase: int,
+        *,
+        epoch: int | None = None,
+        n_phase_epochs: int | None = None,
     ) -> MetricDict:
         """Validate and return metrics dict."""
         self.model.eval()
@@ -1060,7 +1108,11 @@ class TGNNSolvTrainer:
         all_pred, all_true = [], []
         n_batches = 0
 
-        weights = self.phase_weights[phase]
+        weights = self._weights_for_epoch(
+            phase,
+            epoch=epoch,
+            n_epochs=n_phase_epochs,
+        )
 
         for sol_batch, slv_batch, targets in progress(
             loader,
@@ -1241,6 +1293,7 @@ class TGNNSolvTrainer:
                     epoch,
                     compute_mono,
                     idac_loader=idac_train_loader,
+                    n_phase_epochs=n_epochs,
                 )
             else:
                 train_loss, train_stats = self.train_epoch(
@@ -1249,8 +1302,14 @@ class TGNNSolvTrainer:
                     phase,
                     epoch,
                     compute_mono,
+                    n_phase_epochs=n_epochs,
                 )
-            val_metrics = self.validate(val_loader, phase)
+            val_metrics = self.validate(
+                val_loader,
+                phase,
+                epoch=epoch,
+                n_phase_epochs=n_epochs,
+            )
             scheduler.step()
 
             # Record history

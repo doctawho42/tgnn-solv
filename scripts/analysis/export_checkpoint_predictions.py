@@ -116,6 +116,7 @@ def forward_batch(model_type: str, model: Any, sol_b: Any, slv_b: Any, targets: 
         dCp_fus_gc=moved.get("dCp_fus_gc"),
         targets=moved,
         return_intermediates=True,
+        force_oracle_injection=targets.get("__force_oracle_injection__", False),
     )
     return out, intermediates
 
@@ -130,6 +131,11 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--summary", default=None)
+    parser.add_argument(
+        "--oracle",
+        action="store_true",
+        help="For TGNN-Solv, force oracle crystal-target substitution where labels exist.",
+    )
     args = parser.parse_args()
 
     device = resolve_device(args.device)
@@ -145,6 +151,8 @@ def main() -> None:
     rows: list[dict[str, Any]] = []
     with torch.no_grad():
         for sol_b, slv_b, targets in loader:
+            if args.oracle:
+                targets["__force_oracle_injection__"] = True
             out, intermediates = forward_batch(args.model_type, model, sol_b, slv_b, targets, device)
             pred = tensor_to_numpy(out["ln_x2"]).astype(float)
             true = tensor_to_numpy(targets["ln_x2"]).astype(float)
@@ -170,7 +178,13 @@ def main() -> None:
                     "ln_gamma_2", "ln_gamma_inf", "tau_12", "tau_21",
                     "ln_x2_physics", "ln_x2_final", "ln_x2_direct",
                     "T_m_solver", "dH_fus_solver", "dCp_fus_solver",
+                    "T_m_corrected", "dH_fus_corrected", "dCp_fus_corrected",
+                    "tau_12_corrected", "tau_21_corrected",
+                    "ln_gamma_2_corrected", "ln_gamma_inf_corrected",
                     "correction_gate", "correction_magnitude",
+                    "correction_raw_residual",
+                    "delta_T_m", "delta_dH_fraction",
+                    "delta_tau_12", "delta_tau_21",
                 }
             }
             for i in range(n):

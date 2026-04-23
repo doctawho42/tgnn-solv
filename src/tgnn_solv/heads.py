@@ -587,6 +587,10 @@ class NRTLHead(nn.Module):
         dg_12, dg_21 : energy parameters [J/mol]
         alpha_12     : non-randomness, sigmoid-bounded [α_min, α_max]
         a_T12, a_T21 : temperature-dependence coefficients
+      If cfg.nrtl_tau_mode == "gamma_inf":
+        ln_gamma_inf_ref : effective ln(gamma_2^inf) at T_ref
+        ln_gamma_inf_inv : inverse-temperature slope for ln(gamma_2^inf)(T)
+        alpha_12         : fixed compatibility tensor, not a learned parameter
 
     Initialization:
       - tau outputs zero-initialized → near-ideal starting point
@@ -619,10 +623,18 @@ class NRTLHead(nn.Module):
             "ref_invT": 5,
             "abc": 7,
             "legacy": 7,
+            "gamma_inf": 2,
         }.get(cfg.nrtl_tau_mode)
         if output_dim is None:
             raise ValueError(f"Unsupported nrtl_tau_mode: {cfg.nrtl_tau_mode}")
         self.output = nn.Linear(128, output_dim)
+        self.activity_global_bias = (
+            nn.Parameter(
+                torch.tensor(float(cfg.activity_global_bias_init), dtype=torch.float32)
+            )
+            if cfg.nrtl_tau_mode == "gamma_inf" and cfg.use_activity_global_bias
+            else None
+        )
         self.group_prior = (
             FixedGroupContributionPrior() if cfg.use_nrtl_group_prior else None
         )
@@ -635,7 +647,7 @@ class NRTLHead(nn.Module):
                 self.output.bias[4] = -0.405
             elif cfg.nrtl_tau_mode == "legacy":
                 self.output.bias[2] = -0.405   # alpha index in legacy mode
-            else:
+            elif cfg.nrtl_tau_mode == "abc":
                 self.output.bias[6] = -0.405   # alpha index in abc mode
 
     def _group_tau_prior(
@@ -734,7 +746,32 @@ class NRTLHead(nn.Module):
             h = self.backbone(torch.cat([g_pair, temp_feat], dim=-1))
         else:
             h = self.backbone(g_pair)
-        z = self.output(h)  # (B, 7)
+        z = self.output(h)
+
+        if self.cfg.nrtl_tau_mode == "gamma_inf":
+            ln_gamma_inf_ref = z[:, 0] * self.cfg.S_gamma_inf_ref
+            ln_gamma_inf_inv = z[:, 1] * self.cfg.S_gamma_inf_inv
+            if self.activity_global_bias is not None:
+                ln_gamma_inf_ref = ln_gamma_inf_ref + self.activity_global_bias.to(
+                    ln_gamma_inf_ref
+                )
+            alpha_12 = torch.full_like(ln_gamma_inf_ref, 0.3)
+            if self.cfg.use_unifac_gamma_prior and unifac_ln_gamma_inf is not None:
+                ln_gamma = unifac_ln_gamma_inf.to(ln_gamma_inf_ref)
+                if unifac_gamma_mask is None:
+                    mask = torch.isfinite(ln_gamma)
+                else:
+                    mask = (
+                        unifac_gamma_mask.to(ln_gamma_inf_ref.device).bool()
+                        & torch.isfinite(ln_gamma)
+                    )
+                prior = torch.where(mask, ln_gamma, torch.zeros_like(ln_gamma))
+                ln_gamma_inf_ref = ln_gamma_inf_ref + prior
+            return {
+                "ln_gamma_inf_ref": ln_gamma_inf_ref,
+                "ln_gamma_inf_inv": ln_gamma_inf_inv,
+                "alpha_12": alpha_12,
+            }
 
         if self.cfg.nrtl_tau_mode == "ref_invT":
             tau_ref_12 = z[:, 0] * self.cfg.S_tau_ref

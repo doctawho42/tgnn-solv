@@ -42,7 +42,7 @@ class TGNNSolvConfig:
     use_thermo_cross_attention: bool = False
     thermo_cross_attention_beta_init: float = 0.1
     activity_model: str = "nrtl"  # "nrtl", "wilson", or "uniquac"
-    nrtl_tau_mode: str = "ref_invT"  # "ref_invT", "legacy", or "abc"
+    nrtl_tau_mode: str = "ref_invT"  # "ref_invT", "legacy", "abc", or "gamma_inf"
     set2set_steps: int = 3
     use_solvent_moe: bool = True
     solvent_moe_experts: int = 6
@@ -115,6 +115,13 @@ class TGNNSolvConfig:
     aux_direct_sol_loss_weight: float = 0.1
     aux_direct_sol_loss_phase3_weight: float = 0.01
     detach_crystal_from_encoder: bool = False
+    detach_crystal_params_in_sle: bool = False
+    use_smooth_phase2_curriculum: bool = False
+    smooth_phase2_crystal_start: float = 1.0
+    smooth_phase2_crystal_end: float = 0.3
+    smooth_phase2_pair_start: float = 0.1
+    smooth_phase2_pair_end: float = 1.0
+    smooth_phase2_idac_weight: float = 0.5
 
     # --- Physics constants (NOT learnable) ---
     R: float = 8.314          # Gas constant, J/(mol·K)
@@ -141,6 +148,10 @@ class TGNNSolvConfig:
     S_tau_c: float = 1.0      # NRTL tau log(T/T_ref) scale (dimensionless)
     S_tau_ref: float = 1.0    # NRTL tau(T_ref) scale (dimensionless)
     S_tau_inv: float = 1.0    # NRTL inverse-temperature slope scale (dimensionless)
+    S_gamma_inf_ref: float = 5.0  # Direct ln(gamma_inf)(T_ref) scale
+    S_gamma_inf_inv: float = 5.0  # Direct ln(gamma_inf) inverse-T slope scale
+    use_activity_global_bias: bool = False
+    activity_global_bias_init: float = 0.0
     S_delta: float = 10.0     # Hansen parameter scale, MPa^0.5
 
     # --- SLE solver ---
@@ -163,6 +174,8 @@ class TGNNSolvConfig:
     correction_Tm_max_delta: float = 60.0
     correction_dH_fraction: float = 0.25
     correction_tau_max_delta: float = 2.0
+    correction_output_mode: str = "parameter"  # "parameter" or "ln_x2_residual"
+    correction_ln_x2_max_delta: float = 1.0
     monotonicity_force_explicit: bool = False
 
     # --- Training ---
@@ -191,8 +204,9 @@ class TGNNSolvConfig:
     source_uncertainty_min_weight: float = 0.25
     source_uncertainty_max_weight: float = 4.0
     sol_loss_type: str = "huber"  # "huber", "mae", "weighted_huber", "weighted_mae"
-    sol_bin_weight_mode: str = "none"  # "none" or "inverse_frequency"
+    sol_bin_weight_mode: str = "none"  # "none", "inverse_frequency", or "fixed"
     sol_bin_edges: tuple[float, ...] = (-25.0, -15.0, -12.0, -9.0, -6.0, -3.0, 0.0)
+    sol_bin_weights: tuple[float, ...] = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
     sol_bin_weight_min: float = 0.25
     sol_bin_weight_max: float = 8.0
     sol_variance_loss_weight: float = 0.0

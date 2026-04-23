@@ -1330,6 +1330,28 @@ class NRTLLayer(nn.Module):
         T: Tensor,
     ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         """Compute tau(T) and G(T) from any supported NRTL parameter layout."""
+        if "ln_gamma_inf" in nrtl_params:
+            tau_12 = torch.clamp(
+                nrtl_params["ln_gamma_inf"], -self.tau_clamp, self.tau_clamp
+            )
+            tau_21 = torch.zeros_like(tau_12)
+            G_12 = torch.ones_like(tau_12)
+            G_21 = torch.ones_like(tau_12)
+            return tau_12, tau_21, G_12, G_21
+
+        if "ln_gamma_inf_ref" in nrtl_params:
+            inv_ratio = (self.T_ref / T) - 1.0
+            tau_12 = torch.clamp(
+                nrtl_params["ln_gamma_inf_ref"]
+                + nrtl_params["ln_gamma_inf_inv"] * inv_ratio,
+                -self.tau_clamp,
+                self.tau_clamp,
+            )
+            tau_21 = torch.zeros_like(tau_12)
+            G_12 = torch.ones_like(tau_12)
+            G_21 = torch.ones_like(tau_12)
+            return tau_12, tau_21, G_12, G_21
+
         if "tau_12" in nrtl_params and "tau_21" in nrtl_params:
             tau_12 = torch.clamp(
                 nrtl_params["tau_12"], -self.tau_clamp, self.tau_clamp

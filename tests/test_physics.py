@@ -167,6 +167,27 @@ class TestNRTL:
         for ref_value, abc_value in zip(tau_ref, tau_abc):
             assert torch.allclose(ref_value, abc_value, atol=1e-6, rtol=0.0)
 
+    def test_gamma_inf_params_are_one_parameter_dilute_activity(
+        self, nrtl: NRTLLayer
+    ) -> None:
+        """Direct ln(gamma_inf) mode maps to one effective activity parameter."""
+        T = torch.tensor([298.15, 320.0])
+        params = {
+            "ln_gamma_inf_ref": torch.tensor([1.2, -0.4]),
+            "ln_gamma_inf_inv": torch.tensor([0.0, 0.0]),
+            "alpha_12": torch.tensor([0.3, 0.3]),
+        }
+
+        tau_12, tau_21, G_12, G_21 = nrtl.compute_tau_G_from_params(params, T)
+
+        assert torch.allclose(tau_12, params["ln_gamma_inf_ref"])
+        assert torch.allclose(tau_21, torch.zeros_like(tau_12))
+        assert torch.allclose(G_12, torch.ones_like(tau_12))
+        assert torch.allclose(G_21, torch.ones_like(tau_12))
+
+        lng_inf = nrtl.ln_gamma_inf(tau_12, tau_21, G_21)
+        assert torch.allclose(lng_inf, params["ln_gamma_inf_ref"])
+
 
 # ------------------------------------------------------------------ #
 #  Hansen distance                                                    #
@@ -245,6 +266,31 @@ class TestSLESolver:
 
         assert out["x2"].item() < out["x_ideal"].item()
         assert out["ln_gamma_2"].item() > 0  # positive deviation
+
+    def test_gamma_inf_solver_uses_observed_dilute_activity(self) -> None:
+        """The direct activity mode solves with lnγ₂=lnγ∞(1-x₂)²."""
+        cfg = TGNNSolvConfig(nrtl_tau_mode="gamma_inf", n_iter_eval=30)
+        solver = SLESolver(cfg)
+        solver.eval()
+        T = torch.tensor([298.15])
+        fus = {
+            "T_m": torch.tensor([400.0]),
+            "dH_fus": torch.tensor([25000.0]),
+            "dCp_fus": torch.tensor([0.0]),
+        }
+        nrtl_p = {
+            "ln_gamma_inf_ref": torch.tensor([1.2]),
+            "ln_gamma_inf_inv": torch.tensor([0.0]),
+            "alpha_12": torch.tensor([0.3]),
+        }
+
+        with torch.no_grad():
+            out = solver(T, fus, nrtl_p, use_implicit=False)
+
+        expected_lngamma = out["ln_gamma_inf"] * (1.0 - out["x2"]).pow(2)
+        assert torch.allclose(out["ln_gamma_inf"], torch.tensor([1.2]))
+        assert torch.allclose(out["ln_gamma_2"], expected_lngamma, atol=1e-6)
+        assert out["x2"].item() < out["x_ideal"].item()
 
     def test_gradient_flow(self, solver: SLESolver) -> None:
         """Gradients must flow through the solver to NRTL params."""

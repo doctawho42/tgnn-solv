@@ -73,6 +73,64 @@ def _iterate_fixed_point(
     return x2, lng2
 
 
+def _effective_lngamma_inf_from_params(
+    nrtl_params: TensorDict,
+    T: Tensor,
+    *,
+    T_ref: float,
+    clamp: float,
+) -> Tensor | None:
+    """Return direct ln(gamma_inf)(T) when the simplified activity mode is used."""
+    if "ln_gamma_inf" in nrtl_params:
+        return nrtl_params["ln_gamma_inf"].to(T).clamp(-clamp, clamp)
+    if "ln_gamma_inf_ref" in nrtl_params:
+        inv_ratio = (T_ref / T) - 1.0
+        return (
+            nrtl_params["ln_gamma_inf_ref"].to(T)
+            + nrtl_params["ln_gamma_inf_inv"].to(T) * inv_ratio
+        ).clamp(-clamp, clamp)
+    return None
+
+
+def _iterate_gamma_inf_fixed_point(
+    Phi: Tensor,
+    lngamma_inf: Tensor,
+    *,
+    n_iter: int,
+    damping: float,
+    min_damping: float,
+    tol: float,
+    adaptive_damping: bool,
+) -> tuple[Tensor, Tensor]:
+    """Solve SLE with ln(gamma_2)=ln(gamma_inf)*(1-x_2)^2."""
+    x2 = torch.exp(-Phi).clamp(1e-10, 1.0 - 1e-10)
+    lng2 = torch.zeros_like(x2)
+    damping_tensor = torch.full_like(x2, damping)
+    prev_residual = torch.full_like(x2, float("inf"))
+
+    for _ in range(n_iter):
+        x1 = 1.0 - x2
+        lng2 = lngamma_inf * x1.pow(2)
+        x2_candidate = torch.exp(-Phi - lng2).clamp(1e-10, 1.0 - 1e-10)
+        residual = (torch.log(x2_candidate) - torch.log(x2)).abs()
+
+        if adaptive_damping:
+            damping_tensor = torch.where(
+                residual > prev_residual,
+                torch.clamp(damping_tensor * 0.5, min=min_damping),
+                torch.clamp(damping_tensor * 1.05, max=1.0),
+            )
+
+        x2 = damping_tensor * x2_candidate + (1.0 - damping_tensor) * x2
+        prev_residual = residual
+
+        if residual.max().item() < tol:
+            break
+
+    lng2 = lngamma_inf * (1.0 - x2).pow(2)
+    return x2, lng2
+
+
 # ================================================================== #
 #  Implicit-differentiation autograd Function                         #
 # ================================================================== #
@@ -322,6 +380,39 @@ class SLESolver(nn.Module):
         tol = self.cfg.solver_tol_train if self.training else self.cfg.solver_tol_eval
         adaptive_damping = self.cfg.solver_adaptive_damping
         use_impl = use_implicit if use_implicit is not None else self.cfg.use_implicit_diff
+
+        lngamma_inf_direct = _effective_lngamma_inf_from_params(
+            nrtl_params,
+            T,
+            T_ref=self.cfg.T_ref,
+            clamp=self.cfg.tau_clamp,
+        )
+        if lngamma_inf_direct is not None:
+            x2, lng2 = _iterate_gamma_inf_fixed_point(
+                Phi,
+                lngamma_inf_direct,
+                n_iter=n_iter,
+                damping=damping,
+                min_damping=min_damping,
+                tol=tol,
+                adaptive_damping=adaptive_damping,
+            )
+            ln_x2 = torch.log(x2 + self.cfg.eps)
+            x_ideal = torch.exp(-Phi)
+            zeros = torch.zeros_like(lngamma_inf_direct)
+            ones = torch.ones_like(lngamma_inf_direct)
+            return {
+                "x2": x2,
+                "ln_x2": ln_x2,
+                "ln_gamma_2": lng2,
+                "ln_gamma_inf": lngamma_inf_direct,
+                "Phi": Phi,
+                "x_ideal": x_ideal.clamp(0, 1),
+                "tau_12": lngamma_inf_direct,
+                "tau_21": zeros,
+                "G_12": ones,
+                "G_21": ones,
+            }
 
         if "tau_12" in nrtl_params and "tau_21" in nrtl_params:
             tau_12, tau_21, G_12, G_21 = self.nrtl_layer.compute_tau_G_from_params(

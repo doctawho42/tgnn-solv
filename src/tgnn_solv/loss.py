@@ -157,12 +157,13 @@ class TGNNSolvLoss(nn.Module):
         return self.weighted_mean(abs_error, weight=weight)
 
     def _solubility_bin_weights(self, target: Tensor) -> Tensor | None:
-        """Build per-batch inverse-frequency weights over true ln(x2) bins."""
-        if str(self.cfg.sol_bin_weight_mode).lower() in {"", "none", "off", "false"}:
+        """Build per-row weights over true ln(x2) bins."""
+        mode = str(self.cfg.sol_bin_weight_mode).lower()
+        if mode in {"", "none", "off", "false"}:
             return None
-        if str(self.cfg.sol_bin_weight_mode).lower() != "inverse_frequency":
+        if mode not in {"inverse_frequency", "fixed"}:
             raise ValueError(
-                "sol_bin_weight_mode must be 'none' or 'inverse_frequency', "
+                "sol_bin_weight_mode must be 'none', 'inverse_frequency', or 'fixed', "
                 f"got {self.cfg.sol_bin_weight_mode!r}."
             )
         edges = torch.as_tensor(
@@ -174,13 +175,27 @@ class TGNNSolvLoss(nn.Module):
             return None
         # bucketize against inner edges; out-of-range values go to end buckets.
         bucket = torch.bucketize(target.detach(), edges[1:-1], right=False)
-        counts = torch.bincount(bucket, minlength=int(edges.numel() - 1)).to(
-            device=target.device,
-            dtype=target.dtype,
-        )
-        raw_weight = target.new_zeros(target.shape)
-        valid_counts = counts.clamp_min(1.0)
-        raw_weight = 1.0 / valid_counts[bucket]
+        if mode == "fixed":
+            configured = tuple(float(x) for x in self.cfg.sol_bin_weights)
+            expected = int(edges.numel() - 1)
+            if len(configured) != expected:
+                raise ValueError(
+                    "sol_bin_weights length must equal len(sol_bin_edges) - 1 "
+                    f"for fixed bin weights; got {len(configured)} and expected {expected}."
+                )
+            bin_weights = torch.as_tensor(
+                configured,
+                device=target.device,
+                dtype=target.dtype,
+            )
+            raw_weight = bin_weights[bucket]
+        else:
+            counts = torch.bincount(bucket, minlength=int(edges.numel() - 1)).to(
+                device=target.device,
+                dtype=target.dtype,
+            )
+            valid_counts = counts.clamp_min(1.0)
+            raw_weight = 1.0 / valid_counts[bucket]
         raw_weight = raw_weight / raw_weight.mean().clamp_min(self.cfg.eps)
         return raw_weight.clamp(
             min=float(self.cfg.sol_bin_weight_min),

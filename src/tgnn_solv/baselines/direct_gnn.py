@@ -597,9 +597,9 @@ class DirectGNNTrainer:
         mode = str(self.model.cfg.sol_bin_weight_mode).lower()
         if mode in {"", "none", "off", "false"}:
             return None
-        if mode != "inverse_frequency":
+        if mode not in {"inverse_frequency", "fixed"}:
             raise ValueError(
-                "sol_bin_weight_mode must be 'none' or 'inverse_frequency', "
+                "sol_bin_weight_mode must be 'none', 'inverse_frequency', or 'fixed', "
                 f"got {self.model.cfg.sol_bin_weight_mode!r}."
             )
         edges = torch.as_tensor(
@@ -610,11 +610,24 @@ class DirectGNNTrainer:
         if edges.numel() < 2:
             return None
         bucket = torch.bucketize(true.detach(), edges[1:-1], right=False)
-        counts = torch.bincount(bucket, minlength=int(edges.numel() - 1)).to(
-            device=true.device,
-            dtype=true.dtype,
-        )
-        weight = 1.0 / counts.clamp_min(1.0)[bucket]
+        if mode == "fixed":
+            raw_weights = tuple(float(x) for x in self.model.cfg.sol_bin_weights)
+            if len(raw_weights) != int(edges.numel() - 1):
+                raise ValueError(
+                    "sol_bin_weights length must match len(sol_bin_edges) - 1; "
+                    f"got {len(raw_weights)} and {int(edges.numel() - 1)}."
+                )
+            weight = torch.as_tensor(
+                raw_weights,
+                device=true.device,
+                dtype=true.dtype,
+            )[bucket]
+        else:
+            counts = torch.bincount(bucket, minlength=int(edges.numel() - 1)).to(
+                device=true.device,
+                dtype=true.dtype,
+            )
+            weight = 1.0 / counts.clamp_min(1.0)[bucket]
         weight = weight / weight.mean().clamp_min(1.0e-8)
         return weight.clamp(
             min=float(self.model.cfg.sol_bin_weight_min),

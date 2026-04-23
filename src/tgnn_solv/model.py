@@ -509,6 +509,14 @@ class TGNNSolv(nn.Module):
         param_deltas: dict[str, torch.Tensor],
     ) -> dict[str, torch.Tensor]:
         """Build a corrected solver-space NRTL state for the proposal path."""
+        if "ln_gamma_inf_ref" in nrtl_params or "ln_gamma_inf" in nrtl_params:
+            return {
+                "ln_gamma_inf": (
+                    physics_out["ln_gamma_inf"] + param_deltas["delta_tau_12"]
+                ).clamp(-self.cfg.tau_clamp, self.cfg.tau_clamp),
+                "alpha_12": nrtl_params["alpha_12"],
+            }
+
         return {
             "tau_12": (
                 physics_out["tau_12"] + param_deltas["delta_tau_12"]
@@ -1139,6 +1147,13 @@ class TGNNSolv(nn.Module):
                 force_oracle_injection=force_oracle_injection,
             )
         )
+        if getattr(self.cfg, "detach_crystal_params_in_sle", False):
+            # Diagnostic mode: crystal heads still learn from auxiliary labels,
+            # but the SLE loss cannot route gradients through Phi(T).
+            solver_fusion_params = {
+                k: (v.detach() if torch.is_tensor(v) and v.is_floating_point() else v)
+                for k, v in solver_fusion_params.items()
+            }
         nrtl_params = self.head_nrtl(
             g_pair,
             temp_feat=nrtl_t_feat,
@@ -1254,25 +1269,49 @@ class TGNNSolv(nn.Module):
             param_summary,
         )
 
-        corrected_fusion_params = self._build_corrected_fusion_params(
-            solver_fusion_params,
-            param_deltas,
+        correction_output_mode = getattr(
+            self.cfg,
+            "correction_output_mode",
+            "parameter",
         )
-        corrected_nrtl_state = self._build_corrected_nrtl_state(
-            nrtl_params=nrtl_params,
-            physics_out=physics_out,
-            param_deltas=param_deltas,
-        )
-
-        with torch.amp.autocast(device_type="cpu", enabled=False):
-            proposal_out = self.sle_solver(
-                T.float(),
-                {k: v.float() for k, v in corrected_fusion_params.items()},
-                {k: v.float() for k, v in corrected_nrtl_state.items()},
-                use_implicit=False,
+        if correction_output_mode == "ln_x2_residual":
+            corrected_fusion_params = solver_fusion_params
+            corrected_nrtl_state = {
+                "tau_12": physics_out["tau_12"],
+                "tau_21": physics_out["tau_21"],
+                "alpha_12": nrtl_params["alpha_12"],
+            }
+            tau_limit = max(float(self.cfg.correction_tau_max_delta), self.cfg.eps)
+            raw_residual = (
+                float(getattr(self.cfg, "correction_ln_x2_max_delta", 1.0))
+                * torch.tanh(param_deltas["delta_tau_12"] / tau_limit)
+            )
+            proposal_ln_x2 = ln_x2_physics + raw_residual
+            proposal_out = {
+                **physics_out,
+                "ln_x2": proposal_ln_x2,
+                "x2": torch.exp(proposal_ln_x2).clamp(0, 1),
+            }
+        else:
+            corrected_fusion_params = self._build_corrected_fusion_params(
+                solver_fusion_params,
+                param_deltas,
+            )
+            corrected_nrtl_state = self._build_corrected_nrtl_state(
+                nrtl_params=nrtl_params,
+                physics_out=physics_out,
+                param_deltas=param_deltas,
             )
 
-        raw_residual = proposal_out["ln_x2"].to(T.dtype) - ln_x2_physics
+            with torch.amp.autocast(device_type="cpu", enabled=False):
+                proposal_out = self.sle_solver(
+                    T.float(),
+                    {k: v.float() for k, v in corrected_fusion_params.items()},
+                    {k: v.float() for k, v in corrected_nrtl_state.items()},
+                    use_implicit=False,
+                )
+
+            raw_residual = proposal_out["ln_x2"].to(T.dtype) - ln_x2_physics
         bounded_residual = raw_residual.clamp(
             min=-self.cfg.correction_max_abs,
             max=self.cfg.correction_max_abs,
@@ -1422,8 +1461,8 @@ class TGNNSolv(nn.Module):
                 "alpha_12": nrtl_params["alpha_12"],
                 "tau_12": physics_out["tau_12"],
                 "tau_21": physics_out["tau_21"],
-                "tau_12_corrected": corrected_nrtl_state["tau_12"],
-                "tau_21_corrected": corrected_nrtl_state["tau_21"],
+                "tau_12_corrected": proposal_out["tau_12"],
+                "tau_21_corrected": proposal_out["tau_21"],
                 "G_12": physics_out["G_12"],
                 "G_21": physics_out["G_21"],
                 # Activity coefficients
@@ -1448,6 +1487,7 @@ class TGNNSolv(nn.Module):
                 ),
                 "ln_x2_final": ln_x2,
                 "ln_x2_proposal": proposal_out["ln_x2"],
+                "correction_raw_residual": raw_residual,
                 # Correction gate: σ(w) per sample
                 "correction_gate": confidence,
                 "correction_magnitude": ln_x2 - physics_out["ln_x2"],
