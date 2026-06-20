@@ -2,6 +2,7 @@
 
 import sys
 
+import pytest
 import torch
 
 sys.path.insert(0, "src")
@@ -177,6 +178,39 @@ class TestEmptySupervisionBatches:
         loss.backward()
         assert output["fusion_params"]["T_m"].grad is not None
 
+    def test_finite_activity_gamma2_loss_respects_mask(self) -> None:
+        """Finite-composition ln(gamma_2) supervision should use its own mask."""
+        loss_fn = TGNNSolvLoss(TGNNSolvConfig())
+        output = {
+            "ln_x2": torch.zeros(2),
+            "fusion_params": {
+                "T_m": torch.tensor([300.0, 310.0], requires_grad=True),
+                "dH_fus": torch.tensor([10_000.0, 11_000.0], requires_grad=True),
+            },
+            "physics": {
+                "ln_gamma_inf": torch.tensor([0.0, 0.0], requires_grad=True),
+                "ln_gamma_2": torch.tensor([1.5, -0.5], requires_grad=True),
+                "tau_12": torch.tensor([0.0, 0.0], requires_grad=True),
+                "tau_21": torch.tensor([0.0, 0.0], requires_grad=True),
+            },
+            "correction": torch.zeros(2),
+            "gate": torch.tensor(0.0),
+        }
+        targets = {
+            "ln_x2": torch.tensor([-5.0, -4.0]),
+            "has_solubility": torch.zeros(2, dtype=torch.bool),
+            "ln_gamma_2_target": torch.tensor([1.0, 99.0]),
+            "gamma2_mask": torch.tensor([True, False], dtype=torch.bool),
+            "gamma2_weight": torch.tensor([1.0, 1.0]),
+        }
+        weights = {key: 0.0 for key in loss_fn.default_weights}
+        weights["gamma_2"] = 1.0
+
+        loss, loss_dict = loss_fn(output, targets, weights=weights)
+
+        assert loss_dict["gamma_2"] == pytest.approx(0.25)
+        assert loss.item() == pytest.approx(0.25)
+
 
 class TestBridgeAndWaldenControls:
     """Regression tests for new bridge and Walden loss controls."""
@@ -344,6 +378,51 @@ class TestBridgeAndWaldenControls:
         assert trainer.phase_weights[2]["aux_direct_sol"] == 0.1
         assert trainer.phase_weights[3]["aux_direct_sol"] == 0.01
 
+    def test_idac_aux_component_scale_preserves_constant_csv_weights(self) -> None:
+        """Constant aux CSV weights should scale aux-only activity batches."""
+        cfg = TGNNSolvConfig(
+            hidden_dim=32,
+            n_gnn_layers=2,
+            n_cross_attn_layers=1,
+            n_attn_heads=4,
+            pair_dim=64,
+            solvent_moe_hidden=64,
+            solvent_type_emb_dim=8,
+            n_iter_train=2,
+            n_iter_eval=2,
+            set2set_steps=2,
+        )
+        trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+
+        mask = torch.tensor([True, True, False])
+        weight = torch.tensor([0.25, 0.25, 0.25], dtype=torch.float32)
+
+        scale = trainer._idac_aux_component_scale(mask, weight)
+
+        assert scale == pytest.approx(0.25)
+
+    def test_idac_aux_component_scale_defaults_to_one_without_weights(self) -> None:
+        """Missing aux CSV weights should preserve the historical behavior."""
+        cfg = TGNNSolvConfig(
+            hidden_dim=32,
+            n_gnn_layers=2,
+            n_cross_attn_layers=1,
+            n_attn_heads=4,
+            pair_dim=64,
+            solvent_moe_hidden=64,
+            solvent_type_emb_dim=8,
+            n_iter_train=2,
+            n_iter_eval=2,
+            set2set_steps=2,
+        )
+        trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+
+        mask = torch.tensor([True, False, True])
+
+        scale = trainer._idac_aux_component_scale(mask, None)
+
+        assert scale == pytest.approx(1.0)
+
     def test_oracle_injection_probability_anneals_over_phase2(self) -> None:
         """Phase 2 should ramp oracle injection down over the last 50 epochs."""
         cfg = TGNNSolvConfig(
@@ -452,3 +531,121 @@ class TestHansenDeltaLoss:
         assert trainer.phase_weights[1]["hansen_delta"] == 0.05
         assert trainer.phase_weights[2]["hansen_delta"] == 0.02
         assert trainer.phase_weights[3]["hansen_delta"] == 0.01
+
+
+class TestCrystalActivityDecorrelationLoss:
+    """Regression tests for the crystal/activity decorrelation penalty."""
+
+    def _joint_targets(self, n_rows: int) -> dict[str, torch.Tensor]:
+        return {
+            "ln_x2": torch.zeros(n_rows),
+            "has_solubility": torch.ones(n_rows, dtype=torch.bool),
+            "T_m": torch.full((n_rows,), 350.0),
+            "T_m_mask": torch.ones(n_rows, dtype=torch.bool),
+            "dH_fus": torch.full((n_rows,), 10_000.0),
+            "dH_mask": torch.ones(n_rows, dtype=torch.bool),
+        }
+
+    def test_decorr_penalty_hits_perfect_anticorrelation(self) -> None:
+        """Perfectly compensating branch errors should produce corr^2 ~= 1."""
+        cfg = TGNNSolvConfig(decorr_min_samples=3)
+        loss_fn = TGNNSolvLoss(cfg)
+        weights = {key: 0.0 for key in loss_fn.default_weights}
+        weights["decorr"] = 1.0
+
+        T = torch.tensor([300.0, 310.0, 320.0, 330.0], dtype=torch.float32)
+        targets = self._joint_targets(n_rows=4)
+        phi_true = (targets["dH_fus"] / cfg.R) * (1.0 / T - 1.0 / targets["T_m"])
+        delta_phi = torch.tensor([1.0, 2.0, 3.0, 4.0], dtype=torch.float32)
+        gamma_required = -targets["ln_x2"] - phi_true
+
+        output = {
+            "ln_x2": torch.zeros(4),
+            "physics": {
+                "Phi": (phi_true + delta_phi).clone().detach().requires_grad_(True),
+                "ln_gamma_2": (
+                    gamma_required - delta_phi
+                ).clone().detach().requires_grad_(True),
+            },
+        }
+
+        loss, loss_dict = loss_fn(
+            output,
+            targets,
+            weights=weights,
+            T=T,
+        )
+
+        assert torch.isclose(loss.detach(), torch.tensor(1.0), atol=1e-6)
+        assert loss_dict["decorr"] == pytest.approx(1.0, abs=1e-6)
+        assert loss_dict["decorr_corr"] == pytest.approx(-1.0, abs=1e-6)
+        assert loss_dict["decorr_joint_rows"] == pytest.approx(4.0)
+
+        loss.backward()
+        assert output["physics"]["Phi"].grad is not None
+        assert output["physics"]["ln_gamma_2"].grad is not None
+
+    def test_decorr_penalty_skips_small_joint_batches(self) -> None:
+        """The penalty should stay inactive when too few joint labels are present."""
+        cfg = TGNNSolvConfig(decorr_min_samples=3)
+        loss_fn = TGNNSolvLoss(cfg)
+        weights = {key: 0.0 for key in loss_fn.default_weights}
+        weights["decorr"] = 1.0
+
+        T = torch.tensor([300.0, 310.0], dtype=torch.float32)
+        targets = self._joint_targets(n_rows=2)
+        phi_true = (targets["dH_fus"] / cfg.R) * (1.0 / T - 1.0 / targets["T_m"])
+
+        output = {
+            "ln_x2": torch.zeros(2),
+            "physics": {
+                "Phi": (phi_true + 1.0).clone().detach().requires_grad_(True),
+                "ln_gamma_2": (-phi_true - 1.0).clone().detach().requires_grad_(True),
+            },
+        }
+
+        loss, loss_dict = loss_fn(
+            output,
+            targets,
+            weights=weights,
+            T=T,
+        )
+
+        assert torch.isclose(loss.detach(), torch.tensor(0.0), atol=1e-8)
+        assert loss_dict["decorr"] == 0.0
+        assert loss_dict["decorr_corr"] == 0.0
+        assert loss_dict["decorr_joint_rows"] == pytest.approx(2.0)
+
+    def test_decorr_penalty_skips_zero_variance_errors(self) -> None:
+        """Constant branch errors should not create unstable correlation penalties."""
+        cfg = TGNNSolvConfig(decorr_min_samples=3)
+        loss_fn = TGNNSolvLoss(cfg)
+        weights = {key: 0.0 for key in loss_fn.default_weights}
+        weights["decorr"] = 1.0
+
+        T = torch.tensor([300.0, 310.0, 320.0, 330.0], dtype=torch.float32)
+        targets = self._joint_targets(n_rows=4)
+        phi_true = (targets["dH_fus"] / cfg.R) * (1.0 / T - 1.0 / targets["T_m"])
+        gamma_required = -targets["ln_x2"] - phi_true
+
+        output = {
+            "ln_x2": torch.zeros(4),
+            "physics": {
+                "Phi": (phi_true + 2.0).clone().detach().requires_grad_(True),
+                "ln_gamma_2": (
+                    gamma_required - 1.0
+                ).clone().detach().requires_grad_(True),
+            },
+        }
+
+        loss, loss_dict = loss_fn(
+            output,
+            targets,
+            weights=weights,
+            T=T,
+        )
+
+        assert torch.isclose(loss.detach(), torch.tensor(0.0), atol=1e-8)
+        assert loss_dict["decorr"] == 0.0
+        assert loss_dict["decorr_corr"] == 0.0
+        assert loss_dict["decorr_joint_rows"] == pytest.approx(4.0)

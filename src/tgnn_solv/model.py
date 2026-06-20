@@ -29,6 +29,7 @@ from .heads import (
     MorganFeatureAdapter,
     NRTLHead,
     PairRepresentation,
+    SigmaProfileHead,
     SolventTypeMoE,
 )
 from .heads import AdaptivePhysicsCorrection
@@ -162,7 +163,11 @@ class TGNNSolv(nn.Module):
         # --- Prediction heads ---
         self.head_fusion = FusionHead(D_r, cfg)
         self.fusion_head = self.head_fusion
-        self.head_nrtl = NRTLHead(cfg.pair_dim, cfg)
+        self.is_cosmo_sac = cfg.activity_model == "cosmo_sac"
+        # Activity model: NRTL head on the pair vector, or a per-molecule
+        # sigma-profile head feeding the differentiable COSMO-SAC layer.
+        self.head_nrtl = None if self.is_cosmo_sac else NRTLHead(cfg.pair_dim, cfg)
+        self.head_sigma = SigmaProfileHead(D_r, cfg) if self.is_cosmo_sac else None
         self.aux_direct_sol_head = None
         if cfg.use_aux_direct_sol_loss:
             self.aux_direct_sol_head = nn.Sequential(
@@ -501,6 +506,32 @@ class TGNNSolv(nn.Module):
             + float(self.cfg.gc_prior_tm_bias)
         )
 
+    def _build_sigma_activity_params(
+        self,
+        g_solute: torch.Tensor,
+        g_solvent: torch.Tensor,
+    ) -> dict[str, torch.Tensor]:
+        """Build the COSMO-SAC activity-param dict from per-molecule sigma-profiles.
+
+        Volume is passed as None (residual-only COSMO-SAC) to avoid the molar-volume
+        unit ambiguity of the auxiliary V_m head; the combinatorial term remains
+        available at the layer level. ``alpha_12`` is a compatibility placeholder
+        for the correction param-summary.
+        """
+        sol = self.head_sigma(g_solute)
+        slv = self.head_sigma(g_solvent)
+        return {
+            "p_solute": sol["p_sigma"],
+            "A_solute": sol["area"],
+            "p_solvent": slv["p_sigma"],
+            "A_solvent": slv["area"],
+            "V_solute": None,
+            "V_solvent": None,
+            "alpha_12": torch.full_like(sol["area"], 0.3),
+            "sigma_shape_solute": sol["p_shape"],
+            "sigma_shape_solvent": slv["p_shape"],
+        }
+
     def _build_corrected_nrtl_state(
         self,
         *,
@@ -509,6 +540,10 @@ class TGNNSolv(nn.Module):
         param_deltas: dict[str, torch.Tensor],
     ) -> dict[str, torch.Tensor]:
         """Build a corrected solver-space NRTL state for the proposal path."""
+        if "p_solute" in nrtl_params:
+            # COSMO-SAC: activity is not corrected (only the crystal side is);
+            # pass the sigma-profile activity params through unchanged.
+            return nrtl_params
         if "ln_gamma_inf_ref" in nrtl_params or "ln_gamma_inf" in nrtl_params:
             return {
                 "ln_gamma_inf": (
@@ -1154,18 +1189,26 @@ class TGNNSolv(nn.Module):
                 k: (v.detach() if torch.is_tensor(v) and v.is_floating_point() else v)
                 for k, v in solver_fusion_params.items()
             }
-        nrtl_params = self.head_nrtl(
-            g_pair,
-            temp_feat=nrtl_t_feat,
-            solute_group_prior_features=sol_group_for_nrtl,
-            solvent_group_prior_features=slv_group_for_nrtl,
-            unifac_ln_gamma_inf=unifac_ln_gamma_for_nrtl,
-            unifac_gamma_mask=unifac_gamma_mask_for_nrtl,
-        )
+        if self.is_cosmo_sac:
+            nrtl_params = self._build_sigma_activity_params(g_sol_pre, g_slv_pre)
+        else:
+            nrtl_params = self.head_nrtl(
+                g_pair,
+                temp_feat=nrtl_t_feat,
+                solute_group_prior_features=sol_group_for_nrtl,
+                solvent_group_prior_features=slv_group_for_nrtl,
+                unifac_ln_gamma_inf=unifac_ln_gamma_for_nrtl,
+                unifac_gamma_mask=unifac_gamma_mask_for_nrtl,
+            )
         ln_x2_aux = None
         if self.aux_direct_sol_head is not None:
             ln_x2_aux = self.aux_direct_sol_head(g_pair).squeeze(-1)
 
+        if gamma_only and self.is_cosmo_sac:
+            raise NotImplementedError(
+                "gamma_only forward is not supported with activity_model='cosmo_sac'; "
+                "supervise the activity via the sigma-profile aux stream instead."
+            )
         if gamma_only:
             nrtl = self.sle_solver.nrtl_layer
             tau_12, tau_21, G_12, G_21 = nrtl.compute_tau_G_from_params(
@@ -1173,12 +1216,43 @@ class TGNNSolv(nn.Module):
                 T,
             )
             ln_gamma_inf = nrtl.ln_gamma_inf(tau_12, tau_21, G_21)
-            dummy = torch.zeros_like(T)
+            activity_x2 = None
+            activity_mask = None
+            if targets is not None:
+                maybe_activity_x2 = targets.get("activity_x2")
+                if isinstance(maybe_activity_x2, torch.Tensor):
+                    activity_x2 = maybe_activity_x2.to(T)
+                maybe_activity_mask = targets.get("gamma2_mask")
+                if isinstance(maybe_activity_mask, torch.Tensor):
+                    activity_mask = maybe_activity_mask.to(T.device).bool()
+
+            ln_gamma_2 = torch.zeros_like(T)
+            gamma_2 = torch.ones_like(T)
+            x2_out = torch.exp(torch.zeros_like(T)).clamp(0, 1)
+            ln_x2_out = torch.zeros_like(T)
+            if activity_x2 is not None:
+                x2_eval = activity_x2.clamp(1.0e-8, 1.0 - 1.0e-8)
+                x1_eval = (1.0 - x2_eval).clamp(1.0e-8, 1.0 - 1.0e-8)
+                ln_gamma_2_eval = nrtl.ln_gamma_2(x1_eval, x2_eval, tau_12, tau_21, G_12, G_21)
+                gamma_2_eval = torch.exp(ln_gamma_2_eval)
+                if activity_mask is not None:
+                    if bool(activity_mask.any().item()):
+                        ln_gamma_2 = torch.where(activity_mask, ln_gamma_2_eval, ln_gamma_2)
+                        gamma_2 = torch.where(activity_mask, gamma_2_eval, gamma_2)
+                        x2_out = torch.where(activity_mask, x2_eval, x2_out)
+                        ln_x2_out = torch.where(activity_mask, torch.log(x2_eval), ln_x2_out)
+                else:
+                    ln_gamma_2 = ln_gamma_2_eval
+                    gamma_2 = gamma_2_eval
+                    x2_out = x2_eval
+                    ln_x2_out = torch.log(x2_eval)
             output = {
-                "ln_x2": dummy,
-                "x2": torch.exp(dummy).clamp(0, 1),
+                "ln_x2": ln_x2_out,
+                "x2": x2_out,
                 "physics": {
                     "ln_gamma_inf": ln_gamma_inf,
+                    "ln_gamma_2": ln_gamma_2,
+                    "gamma_2": gamma_2,
                     "tau_12": tau_12,
                     "tau_21": tau_21,
                     "G_12": G_12,
@@ -1193,7 +1267,7 @@ class TGNNSolv(nn.Module):
                 "aux_slv": aux_slv,
                 "Ra": self.sle_solver.hansen_layer(hansen_sol, hansen_slv),
                 "confidence": torch.ones_like(T),
-                "correction": dummy,
+                "correction": torch.zeros_like(T),
                 "gate": torch.tensor(1.0, device=T.device, dtype=T.dtype),
                 "moe_gate": moe_gate,
                 "attn_maps": attn_maps,
@@ -1246,7 +1320,10 @@ class TGNNSolv(nn.Module):
         with torch.amp.autocast(device_type='cpu', enabled=False):
             T_f32 = T.float()
             fus_f32 = {k: v.float() for k, v in solver_fusion_params.items()}
-            nrtl_f32 = {k: v.float() for k, v in nrtl_params.items()}
+            nrtl_f32 = {
+                k: (v.float() if torch.is_tensor(v) else v)
+                for k, v in nrtl_params.items()
+            }
             physics_out = self.sle_solver(T_f32, fus_f32, nrtl_f32)
 
         # ---- 8. Hansen distance ----
@@ -1307,7 +1384,10 @@ class TGNNSolv(nn.Module):
                 proposal_out = self.sle_solver(
                     T.float(),
                     {k: v.float() for k, v in corrected_fusion_params.items()},
-                    {k: v.float() for k, v in corrected_nrtl_state.items()},
+                    {
+                        k: (v.float() if torch.is_tensor(v) else v)
+                        for k, v in corrected_nrtl_state.items()
+                    },
                     use_implicit=False,
                 )
 

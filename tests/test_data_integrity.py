@@ -149,3 +149,21 @@ class TestDataQuality:
         assert 0.7 < train_frac < 0.9, f"Train fraction: {train_frac:.2%}"
         assert 0.05 < val_frac < 0.2, f"Val fraction: {val_frac:.2%}"
         assert 0.05 < test_frac < 0.2, f"Test fraction: {test_frac:.2%}"
+
+
+def test_melting_point_celsius_kelvin_autodetect() -> None:
+    """The melting-point loader must not double-convert an already-Kelvin column.
+
+    Regression for a data-integrity bug: raw ``bradley_mp.csv`` ships ``Tm`` in
+    Kelvin (saccharin ~502 K), but ``load_bradley_melting_points`` added 273.15
+    unconditionally, putting EVERY Bradley T_m ~273 K too high (saccharin -> 775 K)
+    and corrupting the crystal-label supervision.
+    """
+    from tgnn_solv.data.sources import _melting_points_to_kelvin
+
+    # Already-Kelvin column (median > 250) is left unchanged.
+    kelvin = _melting_points_to_kelvin(pd.Series([350.0, 502.0, 450.0]))
+    assert kelvin.tolist() == [350.0, 502.0, 450.0]
+    # Celsius column (median < 250) is converted exactly once.
+    celsius = _melting_points_to_kelvin(pd.Series([80.0, 100.0, 120.0]))
+    assert celsius.tolist() == pytest.approx([353.15, 373.15, 393.15])

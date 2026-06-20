@@ -370,6 +370,40 @@ class TestForwardPass:
         assert out["ln_x2_aux"].shape == out["ln_x2"].shape
         assert torch.isfinite(out["ln_x2_aux"]).all()
 
+    def test_gamma_only_forward_supports_finite_activity_targets(self) -> None:
+        """Fast activity-only forward should emit ln(gamma_2) for supplied x2 states."""
+        cfg = make_small_config()
+        cfg.nrtl_tau_mode = "gamma_inf"
+        model = TGNNSolv(cfg=cfg)
+        model.eval()
+        solute_batch, solvent_batch, temperature, solvent_type, extras = make_test_batch(
+            [("CCO", "O", 298.15)]
+        )
+        targets = {
+            "activity_x2": torch.tensor([0.1], dtype=torch.float32),
+            "gamma2_mask": torch.tensor([True], dtype=torch.bool),
+        }
+
+        out = model(
+            solute_batch,
+            solvent_batch,
+            temperature,
+            solvent_type=solvent_type,
+            targets=targets,
+            gamma_only=True,
+        )
+
+        assert "ln_gamma_2" in out["physics"]
+        assert torch.isfinite(out["physics"]["ln_gamma_2"]).all()
+        assert torch.allclose(out["x2"], torch.tensor([0.1]), atol=1.0e-6, rtol=0.0)
+        expected = out["physics"]["ln_gamma_inf"] * (1.0 - out["x2"]).pow(2)
+        assert torch.allclose(
+            out["physics"]["ln_gamma_2"],
+            expected,
+            atol=1.0e-6,
+            rtol=0.0,
+        )
+
     def test_direct_phi_branch_overrides_missing_tm_rows(self) -> None:
         """No-melting rows can use the effective Phi(T) branch instead of T_m/dH."""
         cfg = make_small_config()

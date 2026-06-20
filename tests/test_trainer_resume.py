@@ -108,7 +108,15 @@ def test_phase1_gc_residual_freeze_schedule_unfreezes_after_configured_epochs() 
     trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
     frozen_states: list[tuple[bool, bool]] = []
 
-    def fake_train_epoch(self, loader, optimizer, phase, epoch, compute_mono=False):
+    def fake_train_epoch(
+        self,
+        loader,
+        optimizer,
+        phase,
+        epoch,
+        compute_mono=False,
+        **_kwargs,
+    ):
         frozen_states.append(
             (
                 all(
@@ -123,7 +131,7 @@ def test_phase1_gc_residual_freeze_schedule_unfreezes_after_configured_epochs() 
         )
         return 0.0, {}
 
-    def fake_validate(self, loader, phase):
+    def fake_validate(self, loader, phase, **_kwargs):
         return {"val_loss": 0.0}
 
     trainer.train_epoch = types.MethodType(fake_train_epoch, trainer)
@@ -156,10 +164,18 @@ def test_phase2_early_stopping_restores_best_state() -> None:
     snapshot_sequence = iter([100.0, 200.0])
     restored_markers: list[float] = []
 
-    def fake_validate(self, loader, phase):
+    def fake_validate(self, loader, phase, **_kwargs):
         return next(validation_sequence)
 
-    def fake_train_epoch(self, loader, optimizer, phase, epoch, compute_mono=False):
+    def fake_train_epoch(
+        self,
+        loader,
+        optimizer,
+        phase,
+        epoch,
+        compute_mono=False,
+        **_kwargs,
+    ):
         return 0.0, {"raw": {}, "weighted": {}, "weights": {}}
 
     def fake_clone_model_state(self):
@@ -179,3 +195,77 @@ def test_phase2_early_stopping_restores_best_state() -> None:
     assert trainer.best_val_loss == 0.40
     assert trainer.best_epoch == 0
     assert restored_markers[-1] == 200.0
+
+
+def test_coordinate_descent_phase2_freezes_crystal_branch_and_keeps_activity_live() -> None:
+    cfg = make_small_config()
+    cfg.branch_training_mode = "coordinate_descent"
+    cfg.use_aux_direct_sol_loss = True
+    trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+
+    trainer._configure_phase_branch_training(2)
+    weights = trainer._weights_for_epoch(2, epoch=0, n_epochs=cfg.epochs_phase2)
+
+    assert all(not p.requires_grad for p in trainer.model.gnn.parameters())
+    assert all(not p.requires_grad for p in trainer.model.head_fusion.parameters())
+    assert any(p.requires_grad for p in trainer.model.pair_repr.parameters())
+    assert any(p.requires_grad for p in trainer.model.head_nrtl.parameters())
+    assert trainer.cfg.detach_crystal_from_encoder is True
+    assert trainer.cfg.detach_crystal_params_in_sle is True
+    assert weights["sol"] > 0.0
+    assert weights["gamma_inf"] > 0.0
+    assert weights["T_m"] == 0.0
+    assert weights["dH"] == 0.0
+    assert weights["hansen"] == 0.0
+
+
+def test_coordinate_descent_phase3_freezes_activity_branch_and_restores_crystal_gradients() -> None:
+    cfg = make_small_config()
+    cfg.branch_training_mode = "coordinate_descent"
+    trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+
+    trainer._configure_phase_branch_training(3)
+    weights = trainer._weights_for_epoch(3, epoch=0, n_epochs=cfg.epochs_phase3)
+
+    assert any(p.requires_grad for p in trainer.model.gnn.parameters())
+    assert any(p.requires_grad for p in trainer.model.head_fusion.parameters())
+    assert all(not p.requires_grad for p in trainer.model.pair_repr.parameters())
+    assert all(not p.requires_grad for p in trainer.model.head_nrtl.parameters())
+    assert all(not p.requires_grad for p in trainer.model.correction.parameters())
+    assert trainer.cfg.detach_crystal_from_encoder is False
+    assert trainer.cfg.detach_crystal_params_in_sle is False
+    assert weights["sol"] > 0.0
+    assert weights["T_m"] > 0.0
+    assert weights["gamma_inf"] == 0.0
+    assert weights["gamma_2"] == 0.0
+
+
+def test_coordinate_descent_phase3_keeps_correction_frozen_during_training() -> None:
+    cfg = make_small_config()
+    cfg.branch_training_mode = "coordinate_descent"
+    trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+    correction_frozen_states: list[bool] = []
+
+    def fake_train_epoch(
+        self,
+        loader,
+        optimizer,
+        phase,
+        epoch,
+        compute_mono=False,
+        **_kwargs,
+    ):
+        correction_frozen_states.append(
+            all(not param.requires_grad for param in self.model.correction.parameters())
+        )
+        return 0.0, {"raw": {}, "weighted": {}, "weights": {}}
+
+    def fake_validate(self, loader, phase, **_kwargs):
+        return {"val_loss": 0.0, "mae": 0.0, "r2": 0.0}
+
+    trainer.train_epoch = types.MethodType(fake_train_epoch, trainer)
+    trainer.validate = types.MethodType(fake_validate, trainer)
+
+    trainer.train_phase(3, None, None, n_epochs=1)
+
+    assert correction_frozen_states == [True]

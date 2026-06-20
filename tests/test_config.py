@@ -87,6 +87,68 @@ def test_config_yaml_round_trip_preserves_water_supervision_flag(tmp_path: Path)
     assert loaded.explicit_h_max_heavy_atoms == 3
 
 
+def _load_train_module():
+    import importlib.util
+    import sys
+
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root / "scripts"))  # train.py imports `_bootstrap`
+    spec = importlib.util.spec_from_file_location(
+        "train_for_test", repo_root / "scripts" / "train.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_set_override_coerces_by_declared_type_including_optional_fields() -> None:
+    """`--set` must coerce by the DECLARED field type, not the current value.
+
+    Optional[...] fields default to None, so the old value-based coercion stored
+    them as raw strings (a latent type bug). This guards the type-aware fix.
+    """
+    train = _load_train_module()
+    cfg = TGNNSolvConfig()
+    train.apply_set_overrides(
+        cfg,
+        [
+            "sigma_aux_phase1_weight=0.3",       # Optional[float], default None
+            "early_stopping_patience=15",         # Optional[int], default None
+            "use_temperature_in_encoder=false",   # bool
+            "activity_model=cosmo_sac",           # str
+            "hidden_dim=64",                      # int
+        ],
+    )
+
+    assert cfg.sigma_aux_phase1_weight == 0.3
+    assert isinstance(cfg.sigma_aux_phase1_weight, float)
+    assert cfg.early_stopping_patience == 15
+    assert isinstance(cfg.early_stopping_patience, int)
+    assert cfg.use_temperature_in_encoder is False
+    assert cfg.activity_model == "cosmo_sac"
+    assert cfg.hidden_dim == 64 and isinstance(cfg.hidden_dim, int)
+
+    with pytest.raises(ValueError):
+        train.apply_set_overrides(cfg, ["nonexistent_field=1"])
+
+
+def test_config_yaml_round_trip_preserves_branch_training_mode(tmp_path: Path) -> None:
+    """Branch-aware training mode should survive config serialization."""
+    cfg = TGNNSolvConfig(
+        branch_training_mode="coordinate_descent",
+        detach_crystal_from_encoder=True,
+        detach_crystal_params_in_sle=True,
+    )
+    path = tmp_path / "config.yaml"
+
+    cfg.to_yaml(str(path))
+    loaded = TGNNSolvConfig.from_yaml(str(path))
+
+    assert loaded.branch_training_mode == "coordinate_descent"
+    assert loaded.detach_crystal_from_encoder is True
+    assert loaded.detach_crystal_params_in_sle is True
+
+
 @pytest.mark.parametrize(
     ("path", "expected_flags"),
     [

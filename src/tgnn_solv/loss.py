@@ -8,6 +8,7 @@ Components:
   hansen     : MSE on Hansen parameters (masked)
   hansen_delta : MSE on pairwise Hansen parameter deltas
   gamma_inf  : MSE on ln(γ∞) (masked)
+  gamma_2    : MSE on finite-composition ln(γ₂) at supplied activity states
   mono       : Monotonicity penalty (dx₂/dT ≥ 0)
   res        : L2 on effective correction (ln_x2 - ln_x2_physics)
   bridge     : Consistency between Hansen and NRTL γ∞
@@ -15,6 +16,7 @@ Components:
   phys_pref  : Encourage high physics confidence
   direct_reg : Keep residual proposal close to physics
   direct_nll : Heteroskedastic NLL on residual proposal
+  decorr     : Penalize coupled crystal/activity decomposition errors
   pair_temp_rank : Same-pair temperature ranking consistency
   vant_hoff_local : Local linearity in ln(x₂) vs 1/T for same-pair batches
   pair_temp_delta : Supervised same-pair adjacent Δln(x₂) consistency
@@ -54,6 +56,38 @@ MIN_VANT_HOFF_INV_T_DIFF = 1.0e-4
 MAX_VANT_HOFF_PAIR_LOSS = 100.0
 
 
+def sigma_profile_emd_loss(
+    pred_shape: Tensor,
+    target_shape: Tensor,
+    pred_area: Tensor,
+    target_area: Tensor,
+    mask: Tensor,
+    *,
+    mode: str = "emd",
+    area_scale: float = 200.0,
+    eps: float = 1e-8,
+) -> Tensor:
+    """Masked sigma-profile supervision loss (shape + cavity area).
+
+    The shape term is the 1-D Wasserstein/EMD distance on the ordered sigma grid
+    (``mean|cumsum(pred) - cumsum(target)|``), which tolerates small bin shifts
+    far better than per-bin MSE; ``mode="mse"`` falls back to per-bin MSE. The
+    area term is a scaled MSE on the cavity surface area. Both are averaged over
+    the masked single-component rows.
+    """
+    m = mask.bool()
+    if not bool(m.any()):
+        return pred_shape.sum() * 0.0
+    ps = pred_shape[m]
+    ts = target_shape[m]
+    if mode == "mse":
+        shape_loss = ((ps - ts) ** 2).sum(dim=-1).mean()
+    else:
+        shape_loss = (torch.cumsum(ps, dim=-1) - torch.cumsum(ts, dim=-1)).abs().mean(dim=-1).mean()
+    area_loss = (((pred_area[m] - target_area[m]) / area_scale) ** 2).mean()
+    return shape_loss + area_loss
+
+
 class TGNNSolvLoss(nn.Module):
     """Multi-component loss with adaptive physics correction support."""
 
@@ -73,6 +107,7 @@ class TGNNSolvLoss(nn.Module):
             "timp_disp_hansen": 0.0,
             "timp_polar_hansen": 0.0,
             "gamma_inf": 0.5,
+            "gamma_2": 0.5,
             "mono": 0.1,
             "res": 0.01,
             "bridge": cfg.bridge_loss_weight,
@@ -80,6 +115,7 @@ class TGNNSolvLoss(nn.Module):
             "phys_pref": 0.1,
             "direct_reg": 0.05,
             "direct_nll": 0.2,
+            "decorr": 0.0,
             "pair_temp_rank": 0.0,
             "vant_hoff_local": 0.0,
             "pair_temp_delta": 0.0,
@@ -264,6 +300,92 @@ class TGNNSolvLoss(nn.Module):
             return torch.tensor(0.0, device=pred.device)
         return ((pred[mask] - target[mask]) / scale).pow(2).mean()
 
+    def _crystal_activity_decorrelation_loss(
+        self,
+        output: dict[str, object],
+        targets: dict[str, object],
+        T: Tensor,
+        sol_mask: Tensor,
+        dev: torch.device,
+    ) -> dict[str, Tensor]:
+        """Penalize correlation between crystal and activity decomposition errors."""
+        zero = torch.zeros((), device=dev)
+        stats = {
+            "decorr": zero,
+            "decorr_corr": zero,
+            "decorr_joint_rows": zero,
+        }
+
+        physics = output.get("physics")
+        if not isinstance(physics, dict):
+            return stats
+
+        phi_pred = physics.get("Phi")
+        gamma_pred = physics.get("ln_gamma_2")
+        T_m_target = targets.get("T_m")
+        dH_target = targets.get("dH_fus")
+        ln_x2_target = targets.get("ln_x2")
+        T_m_mask = targets.get("T_m_mask")
+        dH_mask = targets.get("dH_mask")
+        required = (
+            phi_pred,
+            gamma_pred,
+            T_m_target,
+            dH_target,
+            ln_x2_target,
+            T_m_mask,
+            dH_mask,
+        )
+        if not all(isinstance(value, Tensor) for value in required):
+            return stats
+
+        joint_mask = sol_mask & T_m_mask.to(dev).bool() & dH_mask.to(dev).bool()
+        stats["decorr_joint_rows"] = joint_mask.sum().to(
+            device=dev,
+            dtype=phi_pred.dtype,
+        )
+        min_samples = max(int(self.cfg.decorr_min_samples), 2)
+        if int(joint_mask.sum().item()) < min_samples:
+            return stats
+
+        dtype = phi_pred.dtype
+        T_joint = T.to(dev, dtype=dtype)[joint_mask]
+        T_m_joint = T_m_target.to(dev, dtype=dtype)[joint_mask]
+        dH_joint = dH_target.to(dev, dtype=dtype)[joint_mask]
+        phi_pred_joint = phi_pred[joint_mask]
+        gamma_pred_joint = gamma_pred.to(dev, dtype=dtype)[joint_mask]
+        ln_x2_joint = ln_x2_target.to(dev, dtype=dtype)[joint_mask]
+
+        phi_true = (dH_joint / float(self.cfg.R)) * (
+            1.0 / T_joint - 1.0 / T_m_joint
+        )
+        delta_phi = phi_pred_joint - phi_true
+        gamma_required = -ln_x2_joint - phi_true
+        delta_gamma = gamma_pred_joint - gamma_required
+
+        finite_mask = torch.isfinite(delta_phi) & torch.isfinite(delta_gamma)
+        if int(finite_mask.sum().item()) < min_samples:
+            return stats
+
+        delta_phi = delta_phi[finite_mask]
+        delta_gamma = delta_gamma[finite_mask]
+        centered_phi = delta_phi - delta_phi.mean()
+        centered_gamma = delta_gamma - delta_gamma.mean()
+        phi_var = centered_phi.pow(2).mean()
+        gamma_var = centered_gamma.pow(2).mean()
+        if (
+            phi_var <= float(self.cfg.decorr_eps)
+            or gamma_var <= float(self.cfg.decorr_eps)
+        ):
+            return stats
+
+        corr = (centered_phi * centered_gamma).mean() / torch.sqrt(
+            phi_var * gamma_var
+        ).clamp_min(float(self.cfg.decorr_eps))
+        stats["decorr_corr"] = corr.clamp(-1.0, 1.0)
+        stats["decorr"] = stats["decorr_corr"].pow(2)
+        return stats
+
     def _find_grad_anchor(self, value: object) -> Tensor | None:
         """Find a tensor with autograd history inside a nested output structure."""
         if isinstance(value, Tensor):
@@ -309,6 +431,7 @@ class TGNNSolvLoss(nn.Module):
         w = weights if weights is not None else self.default_weights
         losses = {}
         dev = output["ln_x2"].device
+        physics = output.get("physics", {})
 
         # ============================================================
         # 1. Solubility loss (masked by has_solubility)
@@ -507,6 +630,25 @@ class TGNNSolvLoss(nn.Module):
                         weight=sample_weight,
                     )
 
+        if "ln_gamma_2_target" in targets and targets.get("gamma2_mask") is not None:
+            if w.get("gamma_2", 0) > 0:
+                gamma2_pred = physics.get("ln_gamma_2")
+                mask = targets["gamma2_mask"].to(dev)
+                if isinstance(gamma2_pred, Tensor) and mask.sum() > 0:
+                    gamma2_weight = targets.get("gamma2_weight")
+                    sample_weight = (
+                        gamma2_weight.to(dev)[mask]
+                        if isinstance(gamma2_weight, Tensor)
+                        else None
+                    )
+                    losses["gamma_2"] = self.weighted_mean(
+                        (
+                            gamma2_pred[mask]
+                            - targets["ln_gamma_2_target"].to(dev)[mask]
+                        ).pow(2),
+                        weight=sample_weight,
+                    )
+
         # ============================================================
         # 6. Monotonicity penalty (dx₂/dT ≥ 0)
         # ============================================================
@@ -552,7 +694,6 @@ class TGNNSolvLoss(nn.Module):
         # ============================================================
         # 9. τ regularization
         # ============================================================
-        physics = output.get("physics", {})
         if "tau_12" in physics:
             if w.get("tau_reg", 0) > 0:
                 losses["tau_reg"] = (
@@ -578,7 +719,22 @@ class TGNNSolvLoss(nn.Module):
                 ).pow(2).mean()
 
         # ============================================================
-        # 12. Same-pair temperature consistency
+        # 12. Crystal/activity decorrelation on jointly labeled rows
+        # ============================================================
+        if T is not None and w.get("decorr", 0) > 0:
+            decorr_losses = self._crystal_activity_decorrelation_loss(
+                output,
+                targets,
+                T=T,
+                sol_mask=sol_mask,
+                dev=dev,
+            )
+            losses["decorr"] = decorr_losses["decorr"]
+            losses["decorr_corr"] = decorr_losses["decorr_corr"]
+            losses["decorr_joint_rows"] = decorr_losses["decorr_joint_rows"]
+
+        # ============================================================
+        # 13. Same-pair temperature consistency
         # ============================================================
         pair_keys = targets.get("pair_key")
         if pair_keys is not None and T is not None:
@@ -613,7 +769,7 @@ class TGNNSolvLoss(nn.Module):
                     losses["vant_hoff_intercept"] = pair_losses["vant_hoff_intercept"]
 
         # ============================================================
-        # 13. MoE balance (expert usage)
+        # 14. MoE balance (expert usage)
         # ============================================================
         moe_gate = output.get("moe_gate")
         if moe_gate is not None and w.get("moe_balance", 0) > 0:

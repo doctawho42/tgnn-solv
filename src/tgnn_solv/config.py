@@ -41,7 +41,7 @@ class TGNNSolvConfig:
     interaction_mode: str = "cross_attn"  # "cross_attn" or "bipartite"
     use_thermo_cross_attention: bool = False
     thermo_cross_attention_beta_init: float = 0.1
-    activity_model: str = "nrtl"  # "nrtl", "wilson", or "uniquac"
+    activity_model: str = "nrtl"  # "nrtl" or "cosmo_sac" (wilson/uniquac are phantom)
     nrtl_tau_mode: str = "ref_invT"  # "ref_invT", "legacy", "abc", or "gamma_inf"
     set2set_steps: int = 3
     use_solvent_moe: bool = True
@@ -114,6 +114,7 @@ class TGNNSolvConfig:
     use_aux_direct_sol_loss: bool = False
     aux_direct_sol_loss_weight: float = 0.1
     aux_direct_sol_loss_phase3_weight: float = 0.01
+    branch_training_mode: str = "standard"  # "standard" or "coordinate_descent"
     detach_crystal_from_encoder: bool = False
     detach_crystal_params_in_sle: bool = False
     use_smooth_phase2_curriculum: bool = False
@@ -164,6 +165,34 @@ class TGNNSolvConfig:
     solver_adaptive_damping: bool = True
     use_implicit_diff: bool = True
 
+    # --- COSMO-SAC activity model (activity_model="cosmo_sac") ---
+    # Neural sigma-profile head -> differentiable COSMO-SAC layer. Mirrors the
+    # crystal grounding: the sigma-profile is a single-component transferable
+    # object supervised by an external sigma-profile database.
+    cosmo_sac_n_bins: int = 51
+    cosmo_sac_sigma_min: float = -0.025
+    cosmo_sac_sigma_max: float = 0.025
+    cosmo_sac_a_eff: float = 7.5
+    cosmo_sac_alpha_prime: float = 16466.72
+    cosmo_sac_c_hb: float = 85580.0
+    cosmo_sac_sigma_hb: float = 0.0084
+    cosmo_sac_R_kcal: float = 1.987204e-3
+    cosmo_sac_coord_z: float = 10.0
+    cosmo_sac_q0: float = 79.53
+    cosmo_sac_r0: float = 66.69
+    cosmo_sac_use_combinatorial: bool = True
+    cosmo_sac_gamma_iter_train: int = 8
+    cosmo_sac_gamma_iter_eval: int = 30
+    # Sigma-profile head output scaling (cavity surface area, Å²).
+    sigma_area_scale: float = 200.0
+    sigma_area_min: float = 20.0
+    # Sigma-profile external aux supervision stream.
+    sigma_aux_steps_per_epoch: int = 0
+    sigma_aux_phase1_weight: Optional[float] = None
+    sigma_aux_phase2_weight: Optional[float] = None
+    sigma_aux_phase3_weight: Optional[float] = None
+    sigma_profile_loss: str = "emd"  # "emd" (1-D Wasserstein) or "mse"
+
     # --- Numerical stability ---
     eps: float = 1e-10
     tau_clamp: float = 30.0
@@ -188,6 +217,14 @@ class TGNNSolvConfig:
     idac_aux_phase1_weight: Optional[float] = None
     idac_aux_phase2_weight: Optional[float] = None
     idac_aux_phase3_weight: Optional[float] = None
+    # External single-component crystal auxiliary stream (T_m / dH_fus pool).
+    # Grounds the crystal branch with a much larger pure-component label pool than
+    # the solubility pairs, enabling scaffold transfer of Phi(T). Mirrors the IDAC
+    # aux stream above. 0 disables it.
+    crystal_aux_steps_per_epoch: int = 0
+    crystal_aux_phase1_weight: Optional[float] = None
+    crystal_aux_phase2_weight: Optional[float] = None
+    crystal_aux_phase3_weight: Optional[float] = None
     vant_hoff_slope_scale: float = 5000.0
     vant_hoff_intercept_scale: float = 10.0
     vant_hoff_fit_r2_min: float = 0.95
@@ -211,6 +248,8 @@ class TGNNSolvConfig:
     sol_bin_weight_max: float = 8.0
     sol_variance_loss_weight: float = 0.0
     sol_variance_eps: float = 1.0e-6
+    decorr_min_samples: int = 3
+    decorr_eps: float = 1.0e-8
     lr_phase1: float = 3e-4
     lr_phase2: float = 1e-4
     lr_phase3: float = 1e-6

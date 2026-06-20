@@ -569,6 +569,48 @@ class FusionHead(nn.Module):
 #  NRTL Head — binary interaction parameters                          #
 # ================================================================== #
 
+class SigmaProfileHead(nn.Module):
+    """
+    Predict a COSMO-SAC sigma-profile from a single-molecule representation.
+
+    Like FusionHead, this consumes the per-molecule readout (NOT the pair vector),
+    so the *same* head produces the profile for solute and solvent and external
+    single-component sigma-profile labels can supervise it directly.
+
+    Outputs (per sample):
+      p_shape : (B, n_bins) non-negative, sums to 1 (a proper sigma-profile shape)
+      area    : (B,) cavity surface area [Å²], strictly positive
+      p_sigma : (B, n_bins) = p_shape * area (area-weighted segment counts)
+    """
+
+    def __init__(self, input_dim: int, cfg: TGNNSolvConfig) -> None:
+        super().__init__()
+        self.cfg = cfg
+        self.n_bins = int(cfg.cosmo_sac_n_bins)
+        self.area_scale = float(cfg.sigma_area_scale)
+        self.area_min = float(cfg.sigma_area_min)
+        self.backbone = nn.Sequential(
+            nn.Linear(input_dim, 256),
+            nn.SiLU(),
+            nn.Dropout(cfg.dropout),
+            nn.Linear(256, 128),
+            nn.SiLU(),
+        )
+        self.shape_head = nn.Linear(128, self.n_bins)
+        self.area_head = nn.Linear(128, 1)
+
+    def forward(self, g_mol: Tensor) -> dict[str, Tensor]:
+        h = self.backbone(g_mol)
+        p_shape = torch.softmax(self.shape_head(h), dim=-1)
+        area = nn.functional.softplus(self.area_head(h)).squeeze(-1)
+        area = area * self.area_scale + self.area_min
+        return {
+            "p_shape": p_shape,
+            "area": area,
+            "p_sigma": p_shape * area.unsqueeze(-1),
+        }
+
+
 class NRTLHead(nn.Module):
     """
     Predict NRTL parameters from the pair representation and temperature state.

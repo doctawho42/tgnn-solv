@@ -181,6 +181,7 @@ class TGNNSolvDataset(Dataset):
       hansen_sol (3,), hansen_mask
       hansen_*_effective, pair_Ra, pair_hansen_mask for Hansen contrastive
       ln_gamma_inf, gamma_mask
+      ln_gamma_2_target, gamma2_mask, activity_x2
       dG_solv, dG_mask
     """
 
@@ -701,6 +702,50 @@ class TGNNSolvDataset(Dataset):
                 else 1.0,
                 dtype=torch.float,
             ),
+            "ln_gamma_2_target": torch.tensor(
+                float(r["ln_gamma_2"])
+                if "ln_gamma_2" in r.index
+                and pd.notna(r["ln_gamma_2"])
+                else (
+                    float(r["ln_gamma_unifac"])
+                    if "ln_gamma_unifac" in r.index
+                    and pd.notna(r["ln_gamma_unifac"])
+                    else 0.0
+                ),
+                dtype=torch.float,
+            ),
+            "gamma2_mask": torch.tensor(
+                bool(r["has_gamma_2"])
+                if "has_gamma_2" in r.index
+                and pd.notna(r["has_gamma_2"])
+                else (
+                    ("ln_gamma_2" in r.index and pd.notna(r["ln_gamma_2"]))
+                    or (
+                        "ln_gamma_unifac" in r.index
+                        and pd.notna(r["ln_gamma_unifac"])
+                    )
+                ),
+                dtype=torch.bool,
+            ),
+            "gamma2_weight": torch.tensor(
+                float(r["gamma2_weight"])
+                if "gamma2_weight" in r.index
+                and pd.notna(r["gamma2_weight"])
+                else 1.0,
+                dtype=torch.float,
+            ),
+            "activity_x2": torch.tensor(
+                float(r["activity_x2"])
+                if "activity_x2" in r.index
+                and pd.notna(r["activity_x2"])
+                else (
+                    float(r["solute_mole_fraction"])
+                    if "solute_mole_fraction" in r.index
+                    and pd.notna(r["solute_mole_fraction"])
+                    else 0.0
+                ),
+                dtype=torch.float,
+            ),
             "unifac_ln_gamma_inf": torch.tensor(
                 float(r["unifac_ln_gamma_inf"])
                 if "unifac_ln_gamma_inf" in r.index
@@ -843,6 +888,23 @@ class TGNNSolvDataset(Dataset):
             t["T_m_gc"] = sol_gc[0]
             t["dH_fus_gc"] = sol_gc[1]
             t["dCp_fus_gc"] = sol_gc[2]
+        # External single-component sigma-profile labels (present only in the
+        # sigma aux stream CSV). Bin count is inferred from the columns.
+        sig_cols = sorted(
+            (c for c in r.index if str(c).startswith("sigma_p_")),
+            key=lambda c: int(str(c).rsplit("_", 1)[-1]),
+        )
+        if sig_cols:
+            t["sigma_profile_target"] = torch.tensor(
+                [float(r[c]) for c in sig_cols], dtype=torch.float
+            )
+            t["sigma_area_target"] = torch.tensor(
+                float(r["sigma_area"]) if "sigma_area" in r.index and pd.notna(r["sigma_area"]) else 0.0,
+                dtype=torch.float,
+            )
+            t["sigma_profile_mask"] = torch.tensor(
+                bool(self._row_bool(r, ("has_sigma_profile",)) or False), dtype=torch.bool
+            )
         if self.use_morgan_features:
             if sol_fp is None or slv_fp is None:
                 raise ValueError(

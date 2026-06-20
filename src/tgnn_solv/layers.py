@@ -1444,6 +1444,169 @@ class NRTLLayer(nn.Module):
         }
 
 
+class CosmoSacLayer(nn.Module):
+    """
+    Differentiable COSMO-SAC activity-coefficient model (Lin & Sandler 2002 /
+    VT-2005 conventions).
+
+    The molecule is represented by a sigma-profile ``p(sigma)`` — area (Å²) per
+    screening-charge-density bin, summing to the cavity surface area ``A``. Given
+    solute & solvent profiles the residual (restoring) activity coefficient comes
+    from a segment-activity-coefficient fixed point Gamma(sigma) — the same kind
+    of damped fixed point as the SLE solver, fully differentiable. An optional
+    Staverman–Guggenheim combinatorial term uses molecular volume/area.
+
+    Zero learnable parameters. All math runs in float32.
+    """
+
+    def __init__(self, cfg=None) -> None:
+        super().__init__()
+        g = (lambda name, default: float(getattr(cfg, name, default)) if cfg is not None else default)
+        gi = (lambda name, default: int(getattr(cfg, name, default)) if cfg is not None else default)
+        gb = (lambda name, default: bool(getattr(cfg, name, default)) if cfg is not None else default)
+        n_bins = gi("cosmo_sac_n_bins", 51)
+        sigma_min = g("cosmo_sac_sigma_min", -0.025)
+        sigma_max = g("cosmo_sac_sigma_max", 0.025)
+        self.a_eff = g("cosmo_sac_a_eff", 7.5)            # Å² effective segment area
+        self.alpha_prime = g("cosmo_sac_alpha_prime", 16466.72)  # kcal·Å⁴/mol/e²
+        self.c_hb = g("cosmo_sac_c_hb", 85580.0)
+        self.sigma_hb = g("cosmo_sac_sigma_hb", 0.0084)
+        self.R_kcal = g("cosmo_sac_R_kcal", 1.987204e-3)  # kcal/mol/K
+        self.coord_z = g("cosmo_sac_coord_z", 10.0)
+        self.q0 = g("cosmo_sac_q0", 79.53)                # Å² SG area normalizer
+        self.r0 = g("cosmo_sac_r0", 66.69)                # Å³ SG volume normalizer
+        self.use_combinatorial = gb("cosmo_sac_use_combinatorial", True)
+        self.n_iter_train = gi("cosmo_sac_gamma_iter_train", 8)
+        self.n_iter_eval = gi("cosmo_sac_gamma_iter_eval", 30)
+        self.damping = g("damping", 0.7)
+        self.exp_clamp = g("tau_clamp", 30.0)
+        self.eps = g("eps", 1e-10)
+
+        sigma_grid = torch.linspace(sigma_min, sigma_max, n_bins)
+        self.register_buffer("sigma_grid", sigma_grid, persistent=False)
+        # Exchange-energy matrix delta_w(sigma_m, sigma_n) depends only on the
+        # fixed grid -> precompute once (kcal/mol).
+        sm = sigma_grid.view(-1, 1)
+        sn = sigma_grid.view(1, -1)
+        misfit = 0.5 * self.alpha_prime * (sm + sn) ** 2
+        sigma_acc = torch.maximum(sm, sn)
+        sigma_don = torch.minimum(sm, sn)
+        hb = self.c_hb * torch.clamp(sigma_acc - self.sigma_hb, min=0.0) * torch.clamp(
+            sigma_don + self.sigma_hb, max=0.0
+        )
+        self.register_buffer("delta_w", misfit + hb, persistent=False)
+        self.n_bins = n_bins
+
+    def _segment_ln_gamma(self, p_norm: Tensor, E: Tensor, n_iter: int) -> Tensor:
+        """Solve the segment activity-coefficient fixed point; return ln Gamma (B,51).
+
+        Gamma(sigma_m) = 1 / sum_n p_norm(sigma_n) Gamma(sigma_n) exp(-dW/RT).
+        ``p_norm`` (B,51) sums to 1; ``E`` (B,51,51) = exp(-delta_w/RT).
+        """
+        gamma = torch.ones_like(p_norm)
+        for _ in range(n_iter):
+            # sum_n E[m,n] * p_norm[n] * gamma[n]
+            denom = torch.bmm(E, (p_norm * gamma).unsqueeze(-1)).squeeze(-1)
+            gamma_new = 1.0 / (denom + self.eps)
+            gamma = self.damping * gamma_new + (1.0 - self.damping) * gamma
+            gamma = gamma.clamp(1e-8, 1e8)
+        return torch.log(gamma + self.eps)
+
+    def _E_matrix(self, T: Tensor) -> Tensor:
+        """Boltzmann matrix exp(-delta_w/(R T)) per sample. Returns (B,51,51)."""
+        rt = (self.R_kcal * T).clamp_min(self.eps).view(-1, 1, 1)
+        arg = (-self.delta_w.unsqueeze(0) / rt).clamp(-self.exp_clamp, self.exp_clamp)
+        return torch.exp(arg)
+
+    def _residual_ln_gamma2(
+        self,
+        p2: Tensor,
+        p1: Tensor,
+        A2: Tensor,
+        A1: Tensor,
+        x2: Tensor,
+        T: Tensor,
+        *,
+        n_iter: int,
+    ) -> Tensor:
+        """Restoring ln gamma2 of solute (2) in solvent (1) at mole fraction x2."""
+        x1 = 1.0 - x2
+        E = self._E_matrix(T)
+        # Mixture area-fraction profile (sums to 1 over bins).
+        A_mix = (x2 * A2 + x1 * A1).clamp_min(self.eps)
+        p_mix = (x2.unsqueeze(-1) * p2 + x1.unsqueeze(-1) * p1) / A_mix.unsqueeze(-1)
+        p2_pure = p2 / A2.clamp_min(self.eps).unsqueeze(-1)
+        ln_gamma_mix = self._segment_ln_gamma(p_mix, E, n_iter)
+        ln_gamma_2pure = self._segment_ln_gamma(p2_pure, E, n_iter)
+        # ln gamma2_res = (A2/a_eff) * sum_m p2_pure(m) (ln Gamma_mix - ln Gamma_2pure)
+        contrib = p2_pure * (ln_gamma_mix - ln_gamma_2pure)
+        return (A2 / self.a_eff) * contrib.sum(dim=-1)
+
+    def _combinatorial_ln_gamma2(
+        self, A2: Tensor, A1: Tensor, V2: Tensor, V1: Tensor, x2: Tensor
+    ) -> Tensor:
+        """Staverman–Guggenheim combinatorial ln gamma2 (component 2)."""
+        x1 = 1.0 - x2
+        r2 = V2 / self.r0
+        r1 = V1 / self.r0
+        q2 = A2 / self.q0
+        q1 = A1 / self.q0
+        r_bar = (x1 * r1 + x2 * r2).clamp_min(self.eps)
+        q_bar = (x1 * q1 + x2 * q2).clamp_min(self.eps)
+        z = self.coord_z
+        l1 = (z / 2.0) * (r1 - q1) - (r1 - 1.0)
+        l2 = (z / 2.0) * (r2 - q2) - (r2 - 1.0)
+        # x2-cancelled ratios so the term stays finite at infinite dilution (x2->0):
+        #   phi2/x2 = r2/r_bar ;  theta2/phi2 = (q2 r_bar)/(r2 q_bar)
+        phi2_over_x2 = r2 / r_bar
+        theta2_over_phi2 = (q2 * r_bar) / (r2 * q_bar).clamp_min(self.eps)
+        ln_gamma_c = (
+            torch.log(phi2_over_x2.clamp_min(self.eps))
+            + (z / 2.0) * q2 * torch.log(theta2_over_phi2.clamp_min(self.eps))
+            + l2
+            - phi2_over_x2 * (x1 * l1 + x2 * l2)
+        )
+        return ln_gamma_c
+
+    def ln_gamma_2(
+        self,
+        x1: Tensor,
+        x2: Tensor,
+        p2: Tensor,
+        p1: Tensor,
+        A2: Tensor,
+        A1: Tensor,
+        V2: Tensor | None,
+        V1: Tensor | None,
+        T: Tensor,
+    ) -> Tensor:
+        """Total ln gamma2 (residual + optional combinatorial) at composition x2."""
+        n_iter = self.n_iter_train if self.training else self.n_iter_eval
+        lng_res = self._residual_ln_gamma2(p2, p1, A2, A1, x2, T, n_iter=n_iter)
+        if self.use_combinatorial and V2 is not None and V1 is not None:
+            lng_res = lng_res + self._combinatorial_ln_gamma2(A2, A1, V2, V1, x2)
+        # Safety rail: physical ln γ is O(±10); the residual prefactor A2/a_eff can
+        # be ~30 and each segment ln Γ is bounded only to ±18, so a strongly
+        # mismatched profile can produce ±hundreds. Bound to ±50 so it cannot
+        # inject pathological magnitudes into the SLE exponent or the activity loss
+        # (defense-in-depth behind the solver's exp-argument clamp).
+        return lng_res.clamp(-50.0, 50.0)
+
+    def ln_gamma_inf(
+        self,
+        p2: Tensor,
+        p1: Tensor,
+        A2: Tensor,
+        A1: Tensor,
+        V2: Tensor | None,
+        V1: Tensor | None,
+        T: Tensor,
+    ) -> Tensor:
+        """Infinite-dilution ln gamma2 (x2 -> 0): mixture profile == pure solvent."""
+        x2 = torch.zeros_like(A2)
+        return self.ln_gamma_2(1.0 - x2, x2, p2, p1, A2, A1, V2, V1, T)
+
+
 class HansenDistanceLayer(nn.Module):
     """
     Hansen distance Ra between two molecules.

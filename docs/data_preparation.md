@@ -13,6 +13,12 @@ Main sources used by `src/tgnn_solv/data/sources.py`:
   - broad `T_m` coverage
 - curated NIST-like overrides and fusion-property sources
   - used for `T_m` and `dH_fus` enrichment
+- open crystal sidecar artifact
+  - reproducible `ThermoML + curated + Bradley` consolidation with explicit
+    source priority under `results/open_crystal_artifact/`
+- open finite-composition activity sidecar artifact
+  - reproducible ThermoML extraction of finite-composition direct-activity and
+    excess-mixing signals under `results/thermoml_activity/`
 - Hansen parameters
   - `hansen_d`, `hansen_p`, `hansen_h`
 - IDAC / infinite-dilution activity coefficients
@@ -301,6 +307,313 @@ Use `notebooks/data/processed_idac_expanded_train_aux` for controlled IDAC
 ablation runs. A separately prepared `processed_idac_expanded` bundle is only a
 protocol-shift diagnostic unless its supervised split composition is explicitly
 accepted.
+
+## Open Crystal Data Path
+
+The repository now also keeps the open pure-component crystal-data path as a
+separate reproducible contour rather than silently folding it into the
+canonical `prepare_data.py` output.
+
+Step 1: extract pure-component `T_m` / `dH_fus` from local or fetched ThermoML
+JSON:
+
+```bash
+python scripts/data/extract_crystal_from_thermoml.py \
+    --json-dir notebooks/data/raw/thermoml_json \
+    --output-raw results/thermoml_crystal/thermoml_crystal_measurements.csv \
+    --output-aggregated results/thermoml_crystal/thermoml_crystal_aggregated.csv \
+    --audit-output results/thermoml_crystal/summary.json
+```
+
+This writes:
+
+- per-measurement ThermoML rows with DOI/method/phase provenance
+- an aggregated solute-level ThermoML artifact
+- a summary JSON with row, DOI, and solute counts
+
+On the current maintained local ThermoML cache (`3721` JSON files), this path
+produces:
+
+- `1679` raw crystal measurements
+- `701` aggregated solutes with `T_m`
+- `473` aggregated solutes with `dH_fus`
+- `473` aggregated solutes with both `T_m` and `dH_fus`
+
+Step 2: merge ThermoML with the existing open crystal sources and record
+explicit source priority:
+
+```bash
+python scripts/data/build_open_crystal_artifact.py \
+    --thermoml-aggregated results/thermoml_crystal/thermoml_crystal_aggregated.csv \
+    --processed-dir notebooks/data/processed \
+    --out-dir results/open_crystal_artifact
+```
+
+The current priority order is:
+
+- `T_m`: `curated_nist_webbook > thermoml > bradley`
+- `dH_fus`: `curated_nist_webbook > thermoml`
+
+This builder writes:
+
+- `results/open_crystal_artifact/open_crystal_solute.csv`
+  - one solute-level artifact with source-level columns and selected values
+- `results/open_crystal_artifact/coverage_by_split.csv`
+  - overlap and gain versus the canonical processed splits
+- `results/open_crystal_artifact/pairwise_source_agreement.csv`
+  - source-overlap delta audit
+- `results/open_crystal_artifact/summary.json`
+- `results/open_crystal_artifact/summary.md`
+
+Current artifact stats:
+
+- final `T_m` coverage: `19,436` solutes
+- final `dH_fus` coverage: `495` solutes
+- final joint `T_m + dH_fus` coverage: `495` solutes
+
+Current gain relative to the canonical supervised scaffold split contract:
+
+- train joint-label rows: `1080 -> 14401`
+- val joint-label rows: `0 -> 288`
+- test joint-label rows: `0 -> 221`
+- full supervised joint-label rows: `1080 -> 14910`
+- full supervised unique `(solute, solvent)` pairs with both labels:
+  `146 -> 1497`
+
+The conflict audit matters. Current overlaps show:
+
+- curated `T_m` vs ThermoML `T_m`
+  - `13` overlaps, median absolute delta `0.275 K`
+- ThermoML `T_m` vs Bradley `T_m`
+  - `307` overlaps, median absolute delta `273.45 K`
+- curated `dH_fus` vs ThermoML `dH_fus`
+  - `9` overlaps, median absolute delta `930 J/mol`
+
+Interpretation:
+
+- curated values are close enough to stay highest priority
+- ThermoML is useful and broadly expands `dH_fus`
+- Bradley remains valuable for broad `T_m` coverage, but should stay
+  lowest-priority because its overlaps with ThermoML are often large
+
+This open crystal contour is intentionally a sidecar today. It is not wired
+into the canonical `prepare_data.py` output by default yet, because the
+expanded crystal path still needs explicit downstream protocol decisions
+(for example whether to regenerate the maintained processed splits or keep the
+open artifact as a separate diagnostic resource first).
+
+## Open Finite-Composition Activity Path
+
+The repository now also keeps the next missing activity-side data contour as a
+separate reproducible artifact rather than mixing it silently into the
+canonical SLE corpus.
+
+This path intentionally excludes infinite-dilution `Activity coefficient`
+rows, because those already belong to the maintained ThermoML `IDAC` route.
+Its purpose is different: collect finite-composition pair-level signals that do
+not pass through the crystal term.
+
+Build the ThermoML activity artifact from the local JSON cache:
+
+```bash
+python scripts/data/extract_activity_from_thermoml.py \
+    --json-dir notebooks/data/raw/thermoml_json \
+    --processed-dir notebooks/data/processed \
+    --output-raw results/thermoml_activity/thermoml_activity_measurements.csv \
+    --output-aggregated results/thermoml_activity/thermoml_activity_aggregated.csv \
+    --audit-output results/thermoml_activity/summary.json \
+    --summary-md results/thermoml_activity/SUMMARY.md \
+    --parse-audit-csv results/thermoml_activity/parse_audit.csv
+```
+
+This writes:
+
+- `thermoml_activity_measurements.csv`
+  - raw per-measurement rows with DOI/method/phase/standard-state provenance
+- `thermoml_activity_aggregated.csv`
+  - exact-state aggregated rows keyed by pair, targeted component,
+    composition, temperature, and pressure
+- `summary.json` / `SUMMARY.md`
+  - property counts, composition-basis counts, temperature-span summaries, and
+    overlap against the canonical scaffold SLE splits
+- `parse_audit.csv`
+  - one parse row per cached ThermoML JSON file
+
+On the current maintained ThermoML cache (`3721` JSON files), this activity
+path produces:
+
+- `8821` raw rows
+- `8683` aggregated exact-state rows
+- `102` DOI sources
+- `295` unordered binary pairs
+- `109` targeted direct-activity pairs
+
+Current property breakdown:
+
+- `3491` direct finite-composition activity rows
+  - `345` `Activity coefficient`
+  - `3146` `(Relative) activity`
+- `5192` excess-mixing rows
+  - `Excess molar enthalpy (molar enthalpy of mixing)`
+
+Current composition basis breakdown:
+
+- `6376` `mole_fraction`
+- `2249` `molality_mol_per_kg`
+- `58` `mass_fraction`
+
+Current wide-composition direct-activity subset:
+
+- mole-fraction `>= 0.10`: `1161` rows across `27` targeted pairs
+- mole-fraction `>= 0.20`: `1087` rows across `25` targeted pairs
+
+Current temperature-span summary:
+
+- direct `Activity coefficient`
+  - `11` targeted groups, `4` with span `>= 20 K`, max span `60 K`
+- direct `(Relative) activity`
+  - `98` targeted groups, `35` with span `>= 20 K`, max span `273.3 K`
+- excess enthalpy
+  - `196` pair groups, `63` with span `>= 20 K`, max span `380 K`
+
+The overlap audit is the key scientific limitation:
+
+- unordered overlap with the canonical supervised scaffold corpus:
+  - only `6` train pairs, `0` val pairs, `0` test pairs
+- direct target-as-solute overlap:
+  - `0` train, `0` val, `0` test
+- direct target-as-solvent overlap:
+  - `6` train pairs, `0` val, `0` test
+- direct target components in the extracted ThermoML contour:
+  - only `7` unique components total
+  - `0` of them appear as SLE solutes
+  - `4` of them appear as SLE solvents
+
+Interpretation:
+
+- ThermoML already contains a real open finite-composition activity contour
+- that contour is large enough to justify dedicated extractors and future
+  auxiliary objectives
+- but on the current maintained scaffold benchmark it does not yet break the
+  compensation bottleneck on the same pairs, because its exact overlap is tiny
+  and all current exact overlaps supervise the solvent side rather than the
+  dissolved solute
+
+This activity contour is therefore a sidecar today, like the open crystal
+artifact. It is a data asset and protocol input for the next supervision path,
+not a silent change to `prepare_data.py` or to the maintained benchmark split
+contract.
+
+For targeted data collection, use the exact-pair coverage collector:
+
+```bash
+python scripts/data/collect_targeted_thermoml_coverage.py \
+    --processed-dir notebooks/data/processed \
+    --json-dir notebooks/data/raw/thermoml_json \
+    --out-dir results/thermoml_targeted_coverage
+```
+
+This writes:
+
+- `thermoml_binary_pair_matches.csv`
+  - raw exact unordered binary ThermoML matches against canonical SLE pairs
+- `sle_pair_matches.csv`
+  - the same matches expanded to directed `solute -> solvent` SLE pairs with
+    `property_target_role`
+- `thermoml_targeted_measurements.csv`
+  - raw measurement-level harvest for exact-matched binary pairs with
+    DOI/method/phase/standard-state/state-variable provenance
+- `thermoml_targeted_measurements_aggregated.csv`
+  - exact-state aggregation of the same measurement rows
+- `sle_targeted_measurements_aggregated.csv`
+  - exact-state aggregates expanded to directed SLE pairs
+- `candidate_sle_targeted_measurements_aggregated.csv`
+  - measurement-backed candidate-family exact states only
+- `coverage_by_split.csv`, `coverage_by_family.csv`, `coverage_by_property.csv`
+  - exact-pair coverage summaries by split and ThermoML property family
+- `candidate_covered_sle_pairs.csv`
+  - directed SLE pairs with at least one activity-signal candidate family
+    (`direct_activity`, `solution_thermo`, `excess_thermo`, `vle_like`)
+- `candidate_missing_sle_pairs.csv`
+  - the complementary gap list for targeted ThermoML expansion
+- `candidate_measurement_covered_sle_pairs.csv`
+  - directed SLE pairs with at least one usable candidate-family measurement
+- `candidate_measurement_missing_sle_pairs.csv`
+  - the stricter measurement-backed gap list for targeted collection
+
+On the current maintained local cache (`3721` JSON files), the key result is
+more specific than the earlier direct-activity audit:
+
+- generic exact binary ThermoML overlap exists for `2353 / 12129` maintained
+  SLE pairs (`2029` train, `151` val, `173` test)
+- the exact-pair harvest now contains the actual numeric data:
+  - `30,903` raw measurement rows
+  - `30,336` exact-state aggregates
+- but activity-signal candidate coverage remains tiny:
+  - property-level candidate overlap: `14` train, `0` val, `2` test
+  - measurement-backed candidate overlap: `13` train, `0` val, `2` test
+  - candidate-family exact-state aggregates: `698`
+- direct finite-composition activity remains solvent-targeted only:
+  - `7` train pairs
+  - `0` direct target-as-solute pairs
+- exact `H^E` overlap remains `0`
+- one apparent extra train `Activity coefficient` pair is IDAC-like and is
+  filtered out of the measurement-backed artifact, so the measurement-backed
+  gap list is intentionally stricter than the property-label view
+
+This is the maintained artifact for the next collection step because it turns
+the problem from “find more ThermoML” into “close the candidate-family gap on
+these exact missing SLE pairs.”
+
+As a synthetic exact-pair expansion path, the repository now also supports
+finite-composition Modified-UNIFAC pseudo coverage on the same SLE pairs:
+
+```bash
+python scripts/data/build_unifac_finite_activity_coverage.py \
+    --processed-dir notebooks/data/processed \
+    --out-dir results/unifac_finite_activity_coverage
+```
+
+By default this targets
+`results/thermoml_targeted_coverage/candidate_measurement_missing_sle_pairs.csv`
+and evaluates a dilute composition grid (`0.01,0.02,0.05,0.10,0.20`) at one
+representative median temperature per missing directed pair.
+
+This writes:
+
+- `unifac_finite_activity_pseudo.csv`
+  - finite-composition pseudo activity rows with `ln(gamma)` on the selected
+    composition grid
+- `pair_status.csv`
+  - one row per directed pair with group-availability status
+- `missing_pairs.csv`
+  - the remaining uncovered pairs after the UNIFAC check
+- `evaluation_failures.csv`
+  - any states where group assignments existed but UNIFAC still failed
+- `coverage_by_split.csv`, `summary.json`, `SUMMARY.md`
+  - pair/state coverage summaries for the synthetic path
+
+On the current maintained gap set, this synthetic path covers:
+
+- `2756 / 12114` missing directed pairs (`22.75%`)
+- `25180 / 108148` observed pair-temperature states on those missing pairs
+  (`23.28%`) when expanded back to the full source temperatures
+- split-wise pair coverage:
+  - train: `2648 / 10547` (`25.11%`)
+  - val: `50 / 746` (`6.70%`)
+  - test: `58 / 821` (`7.06%`)
+
+The main remaining blocker is not numerical failure inside UNIFAC but missing
+group assignments:
+
+- `9297` pairs are missing solute groups
+- `14` pairs are missing solvent groups
+- `47` pairs are missing both
+- `0` ready pairs failed during finite-composition evaluation
+
+This makes the next synthetic-data question concrete: whether it is worth
+adding broader fragment/group coverage or a COSMO-style fallback for the
+remaining `~77%` of measurement-backed exact-pair gaps.
 
 The dataset layer will derive additional non-CSV fields at load time, such as:
 

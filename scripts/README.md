@@ -40,6 +40,22 @@ They delegate to the legacy entry points, so behavior stays identical.
     `--nist-current-archive-pages`
   - can expand NIST journal issue indexes with `--expand-journal-issues`
   - writes optional DOI and audit sidecars for large IDAC crawls
+- `extract_crystal_from_thermoml.py`
+  - extracts pure-component `T_m` / `dH_fus` rows from ThermoML JSON
+  - writes both per-measurement provenance rows and aggregated solute-level
+    crystal artifacts
+- `extract_activity_from_thermoml.py`
+  - extracts finite-composition `Activity coefficient`, `(Relative) activity`,
+    and excess-mixing enthalpy rows from ThermoML JSON
+  - excludes infinite-dilution `gamma_inf` rows already covered by the
+    dedicated IDAC path
+  - writes raw rows, exact-state aggregates, overlap audits, temperature-span
+    summaries, and per-file parse audit CSVs
+- `build_open_crystal_artifact.py`
+  - merges curated crystal values, ThermoML aggregates, and Bradley melting
+    points with explicit source priority
+  - writes overlap and source-agreement audits against the canonical processed
+    splits
 - `attach_idac_aux_to_fixed_splits.py`
   - preserves existing supervised split CSVs and appends expanded IDAC rows to
     train only
@@ -142,7 +158,30 @@ The newer infrastructure scripts worth knowing about are:
     slice diagnostics into one operational report
 - `scripts/analysis/scan_thermoml_property_inventory.py`
   - inventories cached ThermoML JSON property labels before implementing GE,
-    VLE, heat-capacity, or other auxiliary tasks
+  VLE, heat-capacity, or other auxiliary tasks
+- `scripts/data/extract_activity_from_thermoml.py`
+  - reproducible finite-composition ThermoML activity-side artifact builder
+  - current output shows that open direct-activity data exists, but exact
+    overlap with the maintained scaffold SLE benchmark is still tiny and
+    currently solvent-targeted only
+- `scripts/data/collect_targeted_thermoml_coverage.py`
+  - exact-pair ThermoML coverage collector for the maintained SLE benchmark
+  - audits all binary ThermoML property labels against canonical SLE pairs,
+    expands unordered ThermoML matches to directed `solute -> solvent` pairs,
+    writes measurement-level exact-state harvests, and emits both
+    `candidate_covered_sle_pairs.csv` / `candidate_missing_sle_pairs.csv` and
+    measurement-backed candidate gap lists for targeted data collection
+- `scripts/data/build_unifac_finite_activity_coverage.py`
+  - finite-composition Modified-UNIFAC pseudo-coverage builder for the same
+    SLE pairs
+  - targets the current measurement-backed ThermoML gap by default, evaluates
+    `ln(gamma)` on a composition grid, and reports both pair/state coverage and
+    missing-group reasons
+- `scripts/data/extract_crystal_from_thermoml.py`
+  - reproducible pure-component `T_m` / `dH_fus` extractor for the current
+    ThermoML cache
+- `scripts/data/build_open_crystal_artifact.py`
+  - source-aware open crystal consolidation and processed-split gain audit
 - `scripts/analysis/audit_water_small_molecule_graphs.py`
   - audits water/simple-solvent coverage, current water error slices, and the
     graph-topology difference between legacy self-loop and opt-in explicit-H

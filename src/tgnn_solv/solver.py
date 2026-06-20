@@ -23,10 +23,21 @@ from torch import Tensor
 from torch.autograd.function import FunctionCtx
 
 from .config import TGNNSolvConfig
-from .layers import HansenDistanceLayer, IdealSolubilityLayer, NRTLLayer
+from .layers import CosmoSacLayer, HansenDistanceLayer, IdealSolubilityLayer, NRTLLayer
 
 TensorDict: TypeAlias = dict[str, Tensor]
 AutogradGradients: TypeAlias = tuple[Tensor | None, ...]
+
+# Bound the SLE exponent BEFORE exp() in the unrolled fixed-point iterations.
+# These loops are fully back-propagated (the gamma_inf and cosmo_sac paths do not
+# go through the no-grad implicit-diff SLESolverFunction), so a large positive
+# exponent -Φ-lnγ₂ (e.g. a strongly mismatched COSMO-SAC residual reaching
+# magnitudes of hundreds) overflows float32 exp() to +inf. Clamping the *value*
+# after exp() masks the forward but leaves inf in the graph, poisoning the whole
+# batch's backward with NaN gradients (the FASTSOLV-class failure). max=0.0 keeps
+# x₂ ≤ 1; the finite min keeps gradients alive instead of an inf/NaN.
+_SLE_EXP_ARG_MIN = -50.0
+_SLE_EXP_ARG_MAX = 0.0
 
 
 def _iterate_fixed_point(
@@ -44,7 +55,9 @@ def _iterate_fixed_point(
     nrtl_layer: NRTLLayer,
 ) -> tuple[Tensor, Tensor]:
     """Solve the SLE fixed point with residual-based stopping."""
-    x2 = torch.exp(-Phi).clamp(1e-10, 1.0 - 1e-10)
+    x2 = torch.exp((-Phi).clamp(_SLE_EXP_ARG_MIN, _SLE_EXP_ARG_MAX)).clamp(
+        1e-10, 1.0 - 1e-10
+    )
     lng2 = torch.zeros_like(x2)
     damping_tensor = torch.full_like(x2, damping)
     prev_residual = torch.full_like(x2, float("inf"))
@@ -52,7 +65,9 @@ def _iterate_fixed_point(
     for _ in range(n_iter):
         x1 = 1.0 - x2
         lng2 = nrtl_layer.ln_gamma_2(x1, x2, tau_12, tau_21, G_12, G_21)
-        x2_candidate = torch.exp(-Phi - lng2).clamp(1e-10, 1.0 - 1e-10)
+        x2_candidate = torch.exp(
+            (-Phi - lng2).clamp(_SLE_EXP_ARG_MIN, _SLE_EXP_ARG_MAX)
+        ).clamp(1e-10, 1.0 - 1e-10)
         residual = (torch.log(x2_candidate) - torch.log(x2)).abs()
 
         if adaptive_damping:
@@ -103,7 +118,9 @@ def _iterate_gamma_inf_fixed_point(
     adaptive_damping: bool,
 ) -> tuple[Tensor, Tensor]:
     """Solve SLE with ln(gamma_2)=ln(gamma_inf)*(1-x_2)^2."""
-    x2 = torch.exp(-Phi).clamp(1e-10, 1.0 - 1e-10)
+    x2 = torch.exp((-Phi).clamp(_SLE_EXP_ARG_MIN, _SLE_EXP_ARG_MAX)).clamp(
+        1e-10, 1.0 - 1e-10
+    )
     lng2 = torch.zeros_like(x2)
     damping_tensor = torch.full_like(x2, damping)
     prev_residual = torch.full_like(x2, float("inf"))
@@ -111,7 +128,9 @@ def _iterate_gamma_inf_fixed_point(
     for _ in range(n_iter):
         x1 = 1.0 - x2
         lng2 = lngamma_inf * x1.pow(2)
-        x2_candidate = torch.exp(-Phi - lng2).clamp(1e-10, 1.0 - 1e-10)
+        x2_candidate = torch.exp(
+            (-Phi - lng2).clamp(_SLE_EXP_ARG_MIN, _SLE_EXP_ARG_MAX)
+        ).clamp(1e-10, 1.0 - 1e-10)
         residual = (torch.log(x2_candidate) - torch.log(x2)).abs()
 
         if adaptive_damping:
@@ -128,6 +147,57 @@ def _iterate_gamma_inf_fixed_point(
             break
 
     lng2 = lngamma_inf * (1.0 - x2).pow(2)
+    return x2, lng2
+
+
+def _iterate_cosmo_sac_fixed_point(
+    Phi: Tensor,
+    cosmo_layer: CosmoSacLayer,
+    p2: Tensor,
+    p1: Tensor,
+    A2: Tensor,
+    A1: Tensor,
+    V2: Tensor | None,
+    V1: Tensor | None,
+    T: Tensor,
+    *,
+    n_iter: int,
+    damping: float,
+    min_damping: float,
+    tol: float,
+    adaptive_damping: bool,
+) -> tuple[Tensor, Tensor]:
+    """Solve the SLE fixed point with a COSMO-SAC activity coefficient."""
+    x2 = torch.exp((-Phi).clamp(_SLE_EXP_ARG_MIN, _SLE_EXP_ARG_MAX)).clamp(
+        1e-10, 1.0 - 1e-10
+    )
+    lng2 = torch.zeros_like(x2)
+    damping_tensor = torch.full_like(x2, damping)
+    prev_residual = torch.full_like(x2, float("inf"))
+
+    for _ in range(n_iter):
+        x1 = 1.0 - x2
+        lng2 = cosmo_layer.ln_gamma_2(x1, x2, p2, p1, A2, A1, V2, V1, T)
+        x2_candidate = torch.exp(
+            (-Phi - lng2).clamp(_SLE_EXP_ARG_MIN, _SLE_EXP_ARG_MAX)
+        ).clamp(1e-10, 1.0 - 1e-10)
+        residual = (torch.log(x2_candidate) - torch.log(x2)).abs()
+
+        if adaptive_damping:
+            damping_tensor = torch.where(
+                residual > prev_residual,
+                torch.clamp(damping_tensor * 0.5, min=min_damping),
+                torch.clamp(damping_tensor * 1.05, max=1.0),
+            )
+
+        x2 = damping_tensor * x2_candidate + (1.0 - damping_tensor) * x2
+        prev_residual = residual
+
+        if residual.max().item() < tol:
+            break
+
+    x1 = 1.0 - x2
+    lng2 = cosmo_layer.ln_gamma_2(x1, x2, p2, p1, A2, A1, V2, V1, T)
     return x2, lng2
 
 
@@ -340,6 +410,10 @@ class SLESolver(nn.Module):
             tau_clamp=cfg.tau_clamp, eps=cfg.eps,
         )
         self.hansen_layer = HansenDistanceLayer()
+        self.cosmo_sac_layer = (
+            CosmoSacLayer(cfg) if getattr(cfg, "activity_model", "nrtl") == "cosmo_sac"
+            else None
+        )
         self.cfg = cfg
 
     def forward(
@@ -380,6 +454,37 @@ class SLESolver(nn.Module):
         tol = self.cfg.solver_tol_train if self.training else self.cfg.solver_tol_eval
         adaptive_damping = self.cfg.solver_adaptive_damping
         use_impl = use_implicit if use_implicit is not None else self.cfg.use_implicit_diff
+
+        # COSMO-SAC activity path (sigma-profiles instead of NRTL params).
+        if self.cosmo_sac_layer is not None and "p_solute" in nrtl_params:
+            p2 = nrtl_params["p_solute"]
+            p1 = nrtl_params["p_solvent"]
+            A2 = nrtl_params["A_solute"]
+            A1 = nrtl_params["A_solvent"]
+            V2 = nrtl_params.get("V_solute")
+            V1 = nrtl_params.get("V_solvent")
+            x2, lng2 = _iterate_cosmo_sac_fixed_point(
+                Phi, self.cosmo_sac_layer, p2, p1, A2, A1, V2, V1, T,
+                n_iter=n_iter, damping=damping, min_damping=min_damping,
+                tol=tol, adaptive_damping=adaptive_damping,
+            )
+            ln_x2 = torch.log(x2 + self.cfg.eps)
+            x_ideal = torch.exp(-Phi)
+            lng2_inf = self.cosmo_sac_layer.ln_gamma_inf(p2, p1, A2, A1, V2, V1, T)
+            zeros = torch.zeros_like(x2)
+            ones = torch.ones_like(x2)
+            return {
+                "x2": x2,
+                "ln_x2": ln_x2,
+                "ln_gamma_2": lng2,
+                "ln_gamma_inf": lng2_inf,
+                "Phi": Phi,
+                "x_ideal": x_ideal.clamp(0, 1),
+                "tau_12": lng2_inf,
+                "tau_21": zeros,
+                "G_12": ones,
+                "G_21": ones,
+            }
 
         lngamma_inf_direct = _effective_lngamma_inf_from_params(
             nrtl_params,

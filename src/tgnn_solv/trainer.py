@@ -2,7 +2,7 @@
 Three-phase curriculum trainer for TGNN-Solv.
 
 Phase 1 — Property pretraining (no solubility loss):
-  Train heads to predict T_m, ΔH_fus, Hansen, γ∞.
+  Train heads to predict T_m, ΔH_fus, Hansen, γ∞, and optional finite γ₂.
   Correction gate frozen at 0.
 
 Phase 2 — Full SLE training:
@@ -33,7 +33,7 @@ from .config import TGNNSolvConfig
 from .data.solvent_types import SOLVENT_TYPE_OTHER_ID
 from .layers import make_temperature_features
 from .model import TGNNSolv
-from .loss import TGNNSolvLoss
+from .loss import TGNNSolvLoss, sigma_profile_emd_loss
 from .progress import progress
 
 HistoryDict: TypeAlias = dict[str, list[float | int]]
@@ -50,8 +50,10 @@ DEFAULT_PHASE_WEIGHTS = {
         "sol": 0.0, "T_m": 1.0, "dH": 1.0, "hansen": 1.0,
         "timp_disp_hansen": 0.0, "timp_polar_hansen": 0.0,
         "gamma_inf": 1.0,
+        "gamma_2": 1.0,
         "mono": 0.0, "res": 0.0, "bridge": 0.0, "tau_reg": 0.0,
         "phys_pref": 0.0, "direct_reg": 0.0, "direct_nll": 0.0,
+        "decorr": 0.0,
         "pair_temp_rank": 0.0, "vant_hoff_local": 0.0,
         "pair_temp_delta": 0.0, "vant_hoff_slope": 0.0,
         "vant_hoff_intercept": 0.0,
@@ -68,11 +70,13 @@ DEFAULT_PHASE_WEIGHTS = {
         "sol": 1.0, "T_m": 0.05, "dH": 0.05, "hansen": 0.05,
         "timp_disp_hansen": 0.0, "timp_polar_hansen": 0.0,
         "gamma_inf": 0.1,
+        "gamma_2": 0.1,
         "mono": 0.0, "res": 0.01, "bridge": 0.0,
         "tau_reg": 0.002,
         "phys_pref": 0.01,
         "direct_reg": 0.01,
         "direct_nll": 0.01,
+        "decorr": 0.0,
         "pair_temp_rank": 0.005,
         "vant_hoff_local": 0.001,
         "pair_temp_delta": 0.0,
@@ -93,11 +97,13 @@ DEFAULT_PHASE_WEIGHTS = {
         "sol": 1.0, "T_m": 0.03, "dH": 0.03, "hansen": 0.03,
         "timp_disp_hansen": 0.0, "timp_polar_hansen": 0.0,
         "gamma_inf": 0.05,
+        "gamma_2": 0.05,
         "mono": 0.1, "res": 0.02, "bridge": 0.0,
         "tau_reg": 0.002,
         "phys_pref": 0.01,
         "direct_reg": 0.02,
         "direct_nll": 0.02,
+        "decorr": 0.0,
         "pair_temp_rank": 0.01,
         "vant_hoff_local": 0.001,
         "pair_temp_delta": 0.0,
@@ -116,6 +122,56 @@ DEFAULT_PHASE_WEIGHTS = {
     },
 }
 
+STANDARD_BRANCH_TRAINING_MODES = {"", "standard", "joint", "default"}
+COORDINATE_DESCENT_BRANCH_TRAINING_MODES = {
+    "coordinate_descent",
+    "crystal_activity_crystal",
+    "two_stage_crystal_activity",
+}
+COORDINATE_DESCENT_ALLOWED_LOSSES = {
+    1: {
+        "T_m",
+        "dH",
+        "hansen",
+        "timp_disp_hansen",
+        "timp_polar_hansen",
+        "descriptor_prior",
+        "group_prior",
+        "hansen_delta",
+    },
+    2: {
+        "sol",
+        "gamma_inf",
+        "gamma_2",
+        "mono",
+        "res",
+        "tau_reg",
+        "phys_pref",
+        "direct_reg",
+        "direct_nll",
+        "decorr",
+        "pair_temp_rank",
+        "vant_hoff_local",
+        "pair_temp_delta",
+        "vant_hoff_slope",
+        "vant_hoff_intercept",
+        "vh_anchor",
+        "moe_balance",
+        "aux_direct_sol",
+    },
+    3: {
+        "sol",
+        "T_m",
+        "dH",
+        "hansen",
+        "timp_disp_hansen",
+        "timp_polar_hansen",
+        "descriptor_prior",
+        "group_prior",
+        "hansen_delta",
+    },
+}
+
 class TGNNSolvTrainer:
     """Curriculum trainer with three phases."""
 
@@ -126,6 +182,10 @@ class TGNNSolvTrainer:
         self.device = next(model.parameters()).device
         self.loss_fn.to(self.device)
         self._base_oracle_injection_prob = cfg.oracle_injection_prob
+        self._base_detach_crystal_from_encoder = bool(cfg.detach_crystal_from_encoder)
+        self._base_detach_crystal_params_in_sle = bool(
+            cfg.detach_crystal_params_in_sle
+        )
 
         self.phase_weights = {
             phase: self._get_phase_weights(phase)
@@ -148,6 +208,7 @@ class TGNNSolvTrainer:
         self.patience_counter = 0
         self._last_confidence = 0.0
         self._cache_release_counter = 0
+        self._correction_frozen: bool | None = None
 
     def _maybe_release_device_cache(self, *, force: bool = False) -> None:
         """Periodically release MPS cached memory to reduce fragmentation."""
@@ -159,6 +220,146 @@ class TGNNSolvTrainer:
         gc.collect()
         if hasattr(torch, "mps") and hasattr(torch.mps, "empty_cache"):
             torch.mps.empty_cache()
+
+    def _resolved_branch_training_mode(self) -> str:
+        """Normalize branch-training aliases to a small supported set."""
+        mode = str(getattr(self.cfg, "branch_training_mode", "standard")).strip().lower()
+        if mode in STANDARD_BRANCH_TRAINING_MODES:
+            return "standard"
+        if mode in COORDINATE_DESCENT_BRANCH_TRAINING_MODES:
+            return "coordinate_descent"
+        raise ValueError(
+            "branch_training_mode must be 'standard' or 'coordinate_descent', "
+            f"got {self.cfg.branch_training_mode!r}."
+        )
+
+    def _set_requires_grad(self, target: object | None, requires_grad: bool) -> None:
+        """Toggle gradients on a module or standalone parameter."""
+        if target is None:
+            return
+        if isinstance(target, torch.nn.Parameter):
+            target.requires_grad = requires_grad
+            return
+        parameters = getattr(target, "parameters", None)
+        if callable(parameters):
+            for param in target.parameters():
+                param.requires_grad = requires_grad
+
+    def _crystal_branch_targets(self) -> tuple[object | None, ...]:
+        """Return modules that define the crystal / pre-interaction property branch."""
+        return (
+            self.model.gnn,
+            self.model.readout,
+            self.model.head_fusion,
+            self.model.head_hansen,
+            self.model.head_aux,
+            self.model.solute_fp_adapter,
+            self.model.solvent_fp_adapter,
+            self.model.timp_disp_probe,
+            self.model.timp_polar_probe,
+            self.model.fp_pre_scale,
+        )
+
+    def _activity_branch_targets(self) -> tuple[object | None, ...]:
+        """Return modules that define the interaction / activity branch."""
+        return (
+            self.model.cross_attn_layers,
+            self.model.bipartite_layers,
+            self.model.pair_repr,
+            self.model.timp_pair_repr_combined,
+            self.model.timp_pair_repr_disp,
+            self.model.timp_pair_repr_polar,
+            self.model.timp_pair_proj,
+            self.model.solvent_moe,
+            self.model.head_nrtl,
+            self.model.aux_direct_sol_head,
+            self.model.descriptor_mlp,
+            self.model.pair_desc_proj,
+            self.model.ionic_feature_adapter,
+            self.model.ionic_pair_scale,
+            self.model.correction,
+            self.model.sol_token,
+            self.model.slv_token,
+            self.model.token_proj,
+            self.model.sol_token_gate,
+            self.model.slv_token_gate,
+            self.model.fp_post_scale,
+        )
+
+    def _set_runtime_detach_flags(
+        self,
+        *,
+        detach_crystal_from_encoder: bool,
+        detach_crystal_params_in_sle: bool,
+    ) -> None:
+        """Set phase-effective detach flags on both config handles."""
+        self.cfg.detach_crystal_from_encoder = bool(detach_crystal_from_encoder)
+        self.cfg.detach_crystal_params_in_sle = bool(detach_crystal_params_in_sle)
+        self.model.cfg.detach_crystal_from_encoder = bool(detach_crystal_from_encoder)
+        self.model.cfg.detach_crystal_params_in_sle = bool(detach_crystal_params_in_sle)
+
+    def _configure_phase_branch_training(self, phase: int) -> None:
+        """Apply phase-specific freezing for branch-aware training modes."""
+        self._set_runtime_detach_flags(
+            detach_crystal_from_encoder=self._base_detach_crystal_from_encoder,
+            detach_crystal_params_in_sle=self._base_detach_crystal_params_in_sle,
+        )
+        for param in self.model.parameters():
+            param.requires_grad = True
+        for param in self.loss_fn.parameters():
+            param.requires_grad = True
+        self._correction_frozen = None
+
+        if self._resolved_branch_training_mode() != "coordinate_descent":
+            return
+
+        if phase == 1:
+            for target in self._activity_branch_targets():
+                self._set_requires_grad(target, False)
+            return
+        if phase == 2:
+            for target in self._crystal_branch_targets():
+                self._set_requires_grad(target, False)
+            self._set_runtime_detach_flags(
+                detach_crystal_from_encoder=True,
+                detach_crystal_params_in_sle=True,
+            )
+            return
+        if phase == 3:
+            for target in self._activity_branch_targets():
+                self._set_requires_grad(target, False)
+            return
+        raise ValueError(f"Unsupported training phase: {phase}")
+
+    def _apply_branch_training_mode_to_weights(
+        self,
+        phase: int,
+        weights: dict[str, float],
+    ) -> dict[str, float]:
+        """Zero loss components that conflict with the active branch schedule."""
+        if self._resolved_branch_training_mode() != "coordinate_descent":
+            return weights
+        allowed = COORDINATE_DESCENT_ALLOWED_LOSSES[phase]
+        filtered = {
+            key: (float(value) if key in allowed else 0.0)
+            for key, value in weights.items()
+        }
+        filtered["walden"] = 0.0
+        return filtered
+
+    def _set_correction_freeze_for_phase(self, phase: int, epoch: int) -> None:
+        """Apply the correction-gate freeze schedule after branch freezing."""
+        if self._resolved_branch_training_mode() == "coordinate_descent" and phase != 2:
+            self._freeze_correction(True)
+            return
+        if phase == 1:
+            self._freeze_correction(True)
+        elif phase == 2:
+            self._freeze_correction(
+                epoch < self.cfg.phase2_correction_unfreeze_epoch
+            )
+        else:
+            self._freeze_correction(False)
 
     def _effective_loss_weight(
         self,
@@ -251,34 +452,36 @@ class TGNNSolvTrainer:
     ) -> dict[str, float]:
         """Return phase weights, optionally with a smooth Phase 2 schedule."""
         weights = self.phase_weights[phase].copy()
-        if not self.cfg.use_smooth_phase2_curriculum or phase != 2:
-            return weights
+        if self.cfg.use_smooth_phase2_curriculum and phase == 2:
+            if epoch is None or n_epochs is None:
+                progress = 1.0
+            else:
+                progress = float(epoch) / float(max(int(n_epochs) - 1, 1))
+                progress = min(max(progress, 0.0), 1.0)
 
-        if epoch is None or n_epochs is None:
-            progress = 1.0
-        else:
-            progress = float(epoch) / float(max(int(n_epochs) - 1, 1))
-            progress = min(max(progress, 0.0), 1.0)
+            crystal_weight = (
+                self.cfg.smooth_phase2_crystal_start
+                + (
+                    self.cfg.smooth_phase2_crystal_end
+                    - self.cfg.smooth_phase2_crystal_start
+                )
+                * progress
+            )
+            pair_weight = (
+                self.cfg.smooth_phase2_pair_start
+                + (self.cfg.smooth_phase2_pair_end - self.cfg.smooth_phase2_pair_start)
+                * progress
+            )
 
-        crystal_weight = (
-            self.cfg.smooth_phase2_crystal_start
-            + (self.cfg.smooth_phase2_crystal_end - self.cfg.smooth_phase2_crystal_start)
-            * progress
-        )
-        pair_weight = (
-            self.cfg.smooth_phase2_pair_start
-            + (self.cfg.smooth_phase2_pair_end - self.cfg.smooth_phase2_pair_start)
-            * progress
-        )
+            for key in ("T_m", "dH", "hansen"):
+                if key in weights:
+                    weights[key] = float(crystal_weight)
+            if "sol" in weights:
+                weights["sol"] = float(pair_weight)
+            if "gamma_inf" in weights:
+                weights["gamma_inf"] = float(self.cfg.smooth_phase2_idac_weight)
 
-        for key in ("T_m", "dH", "hansen"):
-            if key in weights:
-                weights[key] = float(crystal_weight)
-        if "sol" in weights:
-            weights["sol"] = float(pair_weight)
-        if "gamma_inf" in weights:
-            weights["gamma_inf"] = float(self.cfg.smooth_phase2_idac_weight)
-        return weights
+        return self._apply_branch_training_mode_to_weights(phase, weights)
 
     def state_dict(self) -> TrainerStateDict:
         """Serialize trainer state required for checkpointed resume."""
@@ -359,7 +562,11 @@ class TGNNSolvTrainer:
 
         def lr_lambda(epoch: int) -> float:
             if epoch < warmup:
-                return epoch / max(warmup, 1)
+                # +1 so epoch 0 gets a nonzero LR. LambdaLR's construction consumes
+                # lr_lambda(0) before the first optimizer.step(), so `epoch / warmup`
+                # made the first epoch of EVERY phase train at LR exactly 0 — a
+                # wasted epoch per phase under the 3-phase curriculum.
+                return (epoch + 1) / max(warmup, 1)
             progress = (epoch - warmup) / max(n_epochs - warmup, 1)
             return 0.5 * (1.0 + math.cos(math.pi * progress))
 
@@ -371,25 +578,28 @@ class TGNNSolvTrainer:
 
     def _freeze_correction(self, freeze: bool) -> None:
         """Freeze or unfreeze the adaptive correction."""
+        if self._correction_frozen is freeze:
+            return
         for p in self.model.correction.parameters():
             p.requires_grad = not freeze
         if freeze:
             # Reset confidence to high (physics-first)
             with torch.no_grad():
                 self.model.correction.confidence_net[-1].bias.fill_(2.2)
+        self._correction_frozen = freeze
 
     def _has_phase1_supervision(
         self, targets: dict[str, Tensor | object]
     ) -> bool:
         """Return whether a batch contains any Phase 1 auxiliary labels."""
-        for key in ("T_m_mask", "dH_mask", "hansen_mask", "gamma_mask"):
+        for key in ("T_m_mask", "dH_mask", "hansen_mask", "gamma_mask", "gamma2_mask"):
             mask = targets.get(key)
             if isinstance(mask, Tensor) and bool(mask.any().item()):
                 return True
         return False
 
     def _idac_aux_weight(self, phase: int) -> float:
-        """Resolve the gamma-only auxiliary IDAC loss weight for a phase."""
+        """Resolve the activity-only auxiliary loss weight for a phase."""
         configured = {
             1: self.cfg.idac_aux_phase1_weight,
             2: self.cfg.idac_aux_phase2_weight,
@@ -398,6 +608,57 @@ class TGNNSolvTrainer:
         if configured is not None:
             return float(configured)
         return float(self.phase_weights[phase].get("gamma_inf", 0.0))
+
+    def _crystal_aux_weight(self, phase: int) -> float:
+        """Resolve the external-crystal auxiliary loss weight for a phase."""
+        configured = {
+            1: self.cfg.crystal_aux_phase1_weight,
+            2: self.cfg.crystal_aux_phase2_weight,
+            3: self.cfg.crystal_aux_phase3_weight,
+        }[phase]
+        if configured is not None:
+            return float(configured)
+        # Default to the phase's melting-point weight so the external pool is
+        # scaled consistently with the in-corpus crystal supervision.
+        return float(self.phase_weights[phase].get("T_m", 0.0))
+
+    def _sigma_aux_weight(self, phase: int) -> float:
+        """Resolve the external sigma-profile auxiliary loss weight for a phase."""
+        configured = {
+            1: self.cfg.sigma_aux_phase1_weight,
+            2: self.cfg.sigma_aux_phase2_weight,
+            3: self.cfg.sigma_aux_phase3_weight,
+        }[phase]
+        if configured is not None:
+            return float(configured)
+        # Default: scale like the crystal grounding (the melting-point weight),
+        # so both single-component groundings ramp together across phases.
+        return float(self.phase_weights[phase].get("T_m", 0.0))
+
+    def _idac_aux_component_scale(
+        self,
+        mask: object,
+        sample_weight: object,
+    ) -> float:
+        """Return an absolute scale for an aux-only activity component.
+
+        The loss layer uses normalized weighted means, which is appropriate for
+        relative per-row weighting but makes a constant CSV weight a no-op.
+        Aux-only streams intentionally use a constant `gamma_weight` or
+        `gamma2_weight` to scale the whole sidecar contribution, so the trainer
+        folds the mean sample weight into the component loss weight here.
+        """
+        if not isinstance(mask, Tensor) or not bool(mask.any().item()):
+            return 1.0
+        if not isinstance(sample_weight, Tensor):
+            return 1.0
+        active = sample_weight[mask.bool()]
+        if active.numel() == 0:
+            return 1.0
+        active = active[torch.isfinite(active)]
+        if active.numel() == 0:
+            return 1.0
+        return max(float(active.to(dtype=torch.float32).mean().item()), 0.0)
 
     def _move_batch_to_device(
         self,
@@ -419,14 +680,19 @@ class TGNNSolvTrainer:
         optimizer: AdamW,
         phase: int,
     ) -> tuple[float | None, dict[str, float]]:
-        """Train one gamma-only auxiliary IDAC batch via the fast NRTL path."""
-        gamma_weight = self._idac_aux_weight(phase)
-        if gamma_weight <= 0.0:
+        """Train one activity-only auxiliary batch via the fast NRTL path."""
+        if self._resolved_branch_training_mode() == "coordinate_descent" and phase != 2:
+            return None, {}
+        phase_gamma_weight = self._idac_aux_weight(phase)
+        if phase_gamma_weight <= 0.0:
             return None, {}
 
         sol_batch, slv_batch, targets = self._move_batch_to_device(batch)
         gamma_mask = targets.get("gamma_mask")
-        if not isinstance(gamma_mask, Tensor) or not bool(gamma_mask.any().item()):
+        gamma2_mask = targets.get("gamma2_mask")
+        has_gamma_inf = isinstance(gamma_mask, Tensor) and bool(gamma_mask.any().item())
+        has_gamma2 = isinstance(gamma2_mask, Tensor) and bool(gamma2_mask.any().item())
+        if not has_gamma_inf and not has_gamma2:
             return None, {}
 
         T = targets["T"]
@@ -460,7 +726,20 @@ class TGNNSolvTrainer:
         )
 
         aux_weights = {key: 0.0 for key in self.phase_weights[phase]}
-        aux_weights["gamma_inf"] = gamma_weight
+        gamma_inf_scale = self._idac_aux_component_scale(
+            gamma_mask,
+            targets.get("gamma_weight"),
+        )
+        gamma2_scale = self._idac_aux_component_scale(
+            gamma2_mask,
+            targets.get("gamma2_weight"),
+        )
+        aux_weights["gamma_inf"] = (
+            phase_gamma_weight * gamma_inf_scale if has_gamma_inf else 0.0
+        )
+        aux_weights["gamma_2"] = (
+            phase_gamma_weight * gamma2_scale if has_gamma2 else 0.0
+        )
         aux_weights["walden"] = 0.0
         loss, loss_dict = self.loss_fn(output, targets, weights=aux_weights, T=T)
         if not torch.isfinite(loss):
@@ -474,6 +753,138 @@ class TGNNSolvTrainer:
         optimizer.step()
         self._maybe_release_device_cache()
         return float(loss.item()), loss_dict
+
+    def _train_crystal_aux_batch(
+        self,
+        batch: tuple[Batch, Batch, dict[str, object]],
+        optimizer: AdamW,
+        phase: int,
+    ) -> tuple[float | None, dict[str, float]]:
+        """Train one external single-component crystal batch (T_m / dH_fus only).
+
+        Grounds the crystal branch on a large pure-component label pool. Uses the
+        lightweight Phase-1 forward (encoder + heads, no SLE solver) and applies
+        only the T_m / dH loss weights, so gradients flow into the crystal head
+        and shared encoder. Under coordinate descent the crystal branch trains in
+        phases 1 and 3 (not 2), matching the main schedule.
+        """
+        if self._resolved_branch_training_mode() == "coordinate_descent" and phase == 2:
+            return None, {}
+        weight = self._crystal_aux_weight(phase)
+        if weight <= 0.0:
+            return None, {}
+
+        sol_batch, slv_batch, targets = self._move_batch_to_device(batch)
+        tm_mask = targets.get("T_m_mask")
+        dh_mask = targets.get("dH_mask")
+        has_tm = isinstance(tm_mask, Tensor) and bool(tm_mask.any().item())
+        has_dh = isinstance(dh_mask, Tensor) and bool(dh_mask.any().item())
+        if not has_tm and not has_dh:
+            return None, {}
+
+        T = targets["T"]
+        optimizer.zero_grad()
+        output = self._forward_phase1(
+            sol_batch,
+            slv_batch,
+            T,
+            targets.get("solvent_type"),
+            solute_morgan_fp=targets.get("solute_morgan_fp"),
+            solvent_morgan_fp=targets.get("solvent_morgan_fp"),
+            solute_descriptors=targets.get("solute_descriptors"),
+            solvent_descriptors=targets.get("solvent_descriptors"),
+            ionic_features=targets.get("ionic_features"),
+            solute_descriptor_prior_features=targets.get(
+                "solute_descriptor_prior_features"
+            ),
+            solvent_descriptor_prior_features=targets.get(
+                "solvent_descriptor_prior_features"
+            ),
+            solute_group_prior_features=targets.get("solute_group_prior_features"),
+            solvent_group_prior_features=targets.get("solvent_group_prior_features"),
+            unifac_ln_gamma_inf=targets.get("unifac_ln_gamma_inf"),
+            unifac_gamma_mask=targets.get("unifac_gamma_mask"),
+            T_m_gc=targets.get("T_m_gc"),
+            dH_fus_gc=targets.get("dH_fus_gc"),
+            dCp_fus_gc=targets.get("dCp_fus_gc"),
+        )
+
+        aux_weights = {key: 0.0 for key in self.phase_weights[phase]}
+        aux_weights["T_m"] = weight if has_tm else 0.0
+        aux_weights["dH"] = weight if has_dh else 0.0
+        aux_weights["walden"] = 0.0
+        loss, loss_dict = self.loss_fn(output, targets, weights=aux_weights, T=T)
+        if not torch.isfinite(loss):
+            LOGGER.warning("Skipping non-finite crystal auxiliary loss: %s", loss)
+            return None, {}
+        loss.backward()
+        grad_params = list(self.model.parameters())
+        if self.cfg.use_hansen_contrastive:
+            grad_params.extend(self.loss_fn.parameters())
+        torch.nn.utils.clip_grad_norm_(grad_params, self.cfg.grad_clip)
+        optimizer.step()
+        self._maybe_release_device_cache()
+        return float(loss.item()), loss_dict
+
+    def _train_sigma_aux_batch(
+        self,
+        batch: tuple[Batch, Batch, dict[str, object]],
+        optimizer: AdamW,
+        phase: int,
+    ) -> tuple[float | None, dict[str, float]]:
+        """Train one external single-component sigma-profile batch (COSMO-SAC only).
+
+        Grounds the activity branch: encodes the solute, predicts its sigma-profile
+        via the shared SigmaProfileHead, and supervises it against the external DB
+        label with an EMD shape loss + area loss. Gradients flow into the sigma
+        head and the shared encoder. Runs in the crystal phases (1/3) under
+        coordinate descent so it co-grounds the encoder before SLE training.
+        """
+        model = self.model
+        if getattr(model, "head_sigma", None) is None:
+            return None, {}
+        if self._resolved_branch_training_mode() == "coordinate_descent" and phase == 2:
+            return None, {}
+        weight = self._sigma_aux_weight(phase)
+        if weight <= 0.0:
+            return None, {}
+
+        sol_batch, slv_batch, targets = self._move_batch_to_device(batch)
+        mask = targets.get("sigma_profile_mask")
+        if not isinstance(mask, Tensor) or not bool(mask.any().item()):
+            return None, {}
+        target_shape = targets.get("sigma_profile_target")
+        target_area = targets.get("sigma_area_target")
+        if not isinstance(target_shape, Tensor) or not isinstance(target_area, Tensor):
+            return None, {}
+
+        optimizer.zero_grad()
+        # Mirror the main forward: when the encoder is temperature-conditioned,
+        # ground the sigma head on the SAME temperature-aware solute embedding it
+        # receives at SLE/inference time. _encoder_temp_features returns None when
+        # use_temperature_in_encoder is off, so the default path is unchanged.
+        enc_t_feat = model._encoder_temp_features(make_temperature_features(targets["T"]))
+        _, g_payload, _, _ = model._encode_and_readout(
+            sol_batch, "solute", temp_feat=enc_t_feat
+        )
+        g_sol = g_payload["value"]
+        if model.cfg.use_morgan_features:
+            fp = targets.get("solute_morgan_fp")
+            if isinstance(fp, Tensor):
+                g_sol = g_sol + model.fp_pre_scale * model.solute_fp_adapter(fp.to(g_sol))
+        sig = model.head_sigma(g_sol)
+        loss = weight * sigma_profile_emd_loss(
+            sig["p_shape"], target_shape, sig["area"], target_area, mask,
+            mode=self.cfg.sigma_profile_loss, area_scale=self.cfg.sigma_area_scale,
+        )
+        if not torch.isfinite(loss):
+            LOGGER.warning("Skipping non-finite sigma-profile auxiliary loss: %s", loss)
+            return None, {}
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(list(self.model.parameters()), self.cfg.grad_clip)
+        optimizer.step()
+        self._maybe_release_device_cache()
+        return float(loss.item()), {"sigma_profile": float(loss.item())}
 
     def _clone_model_state(self) -> dict[str, Tensor]:
         """Clone the current model weights onto CPU for best-state restore."""
@@ -683,14 +1094,17 @@ class TGNNSolvTrainer:
             dH_fus_gc=dH_fus_gc,
             dCp_fus_gc=dCp_fus_gc,
         )
-        nrtl_params = model.head_nrtl(
-            g_pair,
-            temp_feat=nrtl_t_feat,
-            solute_group_prior_features=sol_group_for_nrtl,
-            solvent_group_prior_features=slv_group_for_nrtl,
-            unifac_ln_gamma_inf=unifac_ln_gamma_for_nrtl,
-            unifac_gamma_mask=unifac_gamma_mask_for_nrtl,
-        )
+        if model.is_cosmo_sac:
+            nrtl_params = model._build_sigma_activity_params(g_sol, g_slv)
+        else:
+            nrtl_params = model.head_nrtl(
+                g_pair,
+                temp_feat=nrtl_t_feat,
+                solute_group_prior_features=sol_group_for_nrtl,
+                solvent_group_prior_features=slv_group_for_nrtl,
+                unifac_ln_gamma_inf=unifac_ln_gamma_for_nrtl,
+                unifac_gamma_mask=unifac_gamma_mask_for_nrtl,
+            )
         hansen_sol_parts = model.head_hansen(
             g_sol,
             prior_features=sol_prior,
@@ -722,13 +1136,23 @@ class TGNNSolvTrainer:
             else hansen_slv_parts
         )
 
-        # ln(γ∞) from NRTL params directly
-        nrtl = model.sle_solver.nrtl_layer
-        tau_12, tau_21, G_12, G_21 = nrtl.compute_tau_G_from_params(
-            nrtl_params,
-            T,
-        )
-        lng_inf = nrtl.ln_gamma_inf(tau_12, tau_21, G_21)
+        # ln(γ∞): COSMO-SAC from sigma-profiles, or NRTL params directly.
+        if model.is_cosmo_sac:
+            cosmo = model.sle_solver.cosmo_sac_layer
+            lng_inf = cosmo.ln_gamma_inf(
+                nrtl_params["p_solute"], nrtl_params["p_solvent"],
+                nrtl_params["A_solute"], nrtl_params["A_solvent"],
+                None, None, T,
+            )
+            tau_12 = lng_inf
+            tau_21 = torch.zeros_like(lng_inf)
+        else:
+            nrtl = model.sle_solver.nrtl_layer
+            tau_12, tau_21, G_12, G_21 = nrtl.compute_tau_G_from_params(
+                nrtl_params,
+                T,
+            )
+            lng_inf = nrtl.ln_gamma_inf(tau_12, tau_21, G_21)
 
         B = T.shape[0]
         dummy = torch.zeros(B, device=T.device)
@@ -801,6 +1225,8 @@ class TGNNSolvTrainer:
         epoch: int,
         compute_mono: bool = False,
         idac_loader: DataLoader | None = None,
+        crystal_loader: DataLoader | None = None,
+        sigma_loader: DataLoader | None = None,
         n_phase_epochs: int | None = None,
     ) -> tuple[float, TrainEpochStats]:
         """Train for one epoch and summarize raw/weighted loss components."""
@@ -819,6 +1245,23 @@ class TGNNSolvTrainer:
         idac_aux_raw_accum: dict[str, float] = {}
         idac_steps_target = max(int(self.cfg.idac_aux_steps_per_epoch), 0)
         idac_iter = iter(idac_loader) if idac_loader is not None and idac_steps_target > 0 else None
+        crystal_aux_loss_accum = 0.0
+        crystal_aux_steps = 0
+        crystal_aux_raw_accum: dict[str, float] = {}
+        crystal_steps_target = max(int(self.cfg.crystal_aux_steps_per_epoch), 0)
+        crystal_iter = (
+            iter(crystal_loader)
+            if crystal_loader is not None and crystal_steps_target > 0
+            else None
+        )
+        sigma_aux_loss_accum = 0.0
+        sigma_aux_steps = 0
+        sigma_steps_target = max(int(self.cfg.sigma_aux_steps_per_epoch), 0)
+        sigma_iter = (
+            iter(sigma_loader)
+            if sigma_loader is not None and sigma_steps_target > 0
+            else None
+        )
 
         weights = self._weights_for_epoch(
             phase,
@@ -838,9 +1281,7 @@ class TGNNSolvTrainer:
                 if key in weights:
                     weights[key] = float(weights[key]) * ramp
 
-        # Unfreeze correction mid-Phase 2
-        if phase == 2 and epoch >= self.cfg.phase2_correction_unfreeze_epoch:
-            self._freeze_correction(False)
+        self._set_correction_freeze_for_phase(phase, epoch)
 
         for batch_idx, (sol_batch, slv_batch, targets) in enumerate(
             progress(
@@ -1043,6 +1484,36 @@ class TGNNSolvTrainer:
                     for k, v in aux_dict.items():
                         idac_aux_raw_accum[k] = idac_aux_raw_accum.get(k, 0.0) + float(v)
 
+            if crystal_iter is not None and crystal_aux_steps < crystal_steps_target:
+                try:
+                    crystal_batch = next(crystal_iter)
+                except StopIteration:
+                    crystal_iter = iter(crystal_loader)
+                    crystal_batch = next(crystal_iter)
+                aux_loss, aux_dict = self._train_crystal_aux_batch(
+                    crystal_batch,
+                    optimizer,
+                    phase,
+                )
+                if aux_loss is not None:
+                    crystal_aux_loss_accum += aux_loss
+                    crystal_aux_steps += 1
+                    for k, v in aux_dict.items():
+                        crystal_aux_raw_accum[k] = (
+                            crystal_aux_raw_accum.get(k, 0.0) + float(v)
+                        )
+
+            if sigma_iter is not None and sigma_aux_steps < sigma_steps_target:
+                try:
+                    sigma_batch = next(sigma_iter)
+                except StopIteration:
+                    sigma_iter = iter(sigma_loader)
+                    sigma_batch = next(sigma_iter)
+                aux_loss, _ = self._train_sigma_aux_batch(sigma_batch, optimizer, phase)
+                if aux_loss is not None:
+                    sigma_aux_loss_accum += aux_loss
+                    sigma_aux_steps += 1
+
         avg_loss = total_loss / max(n_batches, 1)
         avg_raw_components = {
             k: v / max(n_batches, 1) for k, v in loss_accum.items()
@@ -1063,9 +1534,30 @@ class TGNNSolvTrainer:
                 avg_weighted_components[component] = (
                     self._idac_aux_weight(phase)
                     * avg_raw_components[component]
-                    if key == "gamma_inf"
+                    if key in {"gamma_inf", "gamma_2"}
                     else 0.0
                 )
+        if crystal_aux_steps > 0:
+            avg_raw_components["crystal_aux_total"] = (
+                crystal_aux_loss_accum / crystal_aux_steps
+            )
+            avg_weighted_components["crystal_aux_total"] = (
+                crystal_aux_loss_accum / crystal_aux_steps
+            )
+            for key, value in crystal_aux_raw_accum.items():
+                component = f"crystal_aux_{key}"
+                avg_raw_components[component] = value / crystal_aux_steps
+                avg_weighted_components[component] = (
+                    self._crystal_aux_weight(phase)
+                    * avg_raw_components[component]
+                    if key in {"T_m", "dH"}
+                    else 0.0
+                )
+        if sigma_aux_steps > 0:
+            avg_raw_components["sigma_aux_total"] = sigma_aux_loss_accum / sigma_aux_steps
+            avg_weighted_components["sigma_aux_total"] = (
+                sigma_aux_loss_accum / sigma_aux_steps
+            )
         self._maybe_release_device_cache(force=True)
         component_weights = {
             key: self._effective_loss_weight(key, weights)
@@ -1074,6 +1566,13 @@ class TGNNSolvTrainer:
         if idac_aux_steps > 0:
             component_weights["idac_aux_total"] = 1.0
             component_weights["idac_aux_gamma_inf"] = self._idac_aux_weight(phase)
+            component_weights["idac_aux_gamma_2"] = self._idac_aux_weight(phase)
+        if crystal_aux_steps > 0:
+            component_weights["crystal_aux_total"] = 1.0
+            component_weights["crystal_aux_T_m"] = self._crystal_aux_weight(phase)
+            component_weights["crystal_aux_dH"] = self._crystal_aux_weight(phase)
+        if sigma_aux_steps > 0:
+            component_weights["sigma_aux_total"] = 1.0
 
         return avg_loss, {
             "raw": avg_raw_components,
@@ -1232,29 +1731,29 @@ class TGNNSolvTrainer:
         n_epochs: int,
         *,
         idac_train_loader: DataLoader | None = None,
+        crystal_train_loader: DataLoader | None = None,
+        sigma_train_loader: DataLoader | None = None,
         start_epoch: int = 0,
         optimizer_state_dict: dict | None = None,
         scheduler_state_dict: dict | None = None,
         on_epoch_end: Callable[[ResumeStateDict], None] | None = None,
     ) -> None:
         """Run a single training phase."""
+        self._configure_phase_branch_training(phase)
+        initial_weights = self._weights_for_epoch(
+            phase,
+            epoch=start_epoch,
+            n_epochs=n_epochs,
+        )
         print(f"\n{'=' * 60}")
         print(f"Phase {phase}: {n_epochs} epochs")
-        active = {k: v for k, v in self.phase_weights[phase].items() if v > 0}
+        active = {k: v for k, v in initial_weights.items() if v > 0}
         print(f"Active losses: {active}")
         if start_epoch > 0:
             print(f"Resuming from epoch {start_epoch}/{n_epochs}")
         print(f"{'=' * 60}")
 
-        # Freeze correction in Phase 1 and early Phase 2.
-        if phase == 1:
-            self._freeze_correction(True)
-        elif phase == 2:
-            self._freeze_correction(
-                start_epoch < self.cfg.phase2_correction_unfreeze_epoch
-            )
-        else:
-            self._freeze_correction(False)
+        self._set_correction_freeze_for_phase(phase, start_epoch)
         self._set_gc_prior_residual_freeze(phase, start_epoch)
 
         optimizer = self._build_optimizer(phase)
@@ -1285,25 +1784,17 @@ class TGNNSolvTrainer:
             self._set_gc_prior_residual_freeze(phase, epoch)
             compute_mono = phase >= 2 and epoch % 5 == 0
 
-            if idac_train_loader is not None:
-                train_loss, train_stats = self.train_epoch(
-                    train_loader,
-                    optimizer,
-                    phase,
-                    epoch,
-                    compute_mono,
-                    idac_loader=idac_train_loader,
-                    n_phase_epochs=n_epochs,
-                )
-            else:
-                train_loss, train_stats = self.train_epoch(
-                    train_loader,
-                    optimizer,
-                    phase,
-                    epoch,
-                    compute_mono,
-                    n_phase_epochs=n_epochs,
-                )
+            train_loss, train_stats = self.train_epoch(
+                train_loader,
+                optimizer,
+                phase,
+                epoch,
+                compute_mono,
+                idac_loader=idac_train_loader,
+                crystal_loader=crystal_train_loader,
+                sigma_loader=sigma_train_loader,
+                n_phase_epochs=n_epochs,
+            )
             val_metrics = self.validate(
                 val_loader,
                 phase,
@@ -1465,6 +1956,8 @@ class TGNNSolvTrainer:
         val_loader: DataLoader,
         *,
         idac_train_loader: DataLoader | None = None,
+        crystal_train_loader: DataLoader | None = None,
+        sigma_train_loader: DataLoader | None = None,
         resume_state: ResumeStateDict | None = None,
         on_epoch_end: Callable[[ResumeStateDict], None] | None = None,
     ) -> None:
@@ -1508,6 +2001,8 @@ class TGNNSolvTrainer:
                 val_loader,
                 n_epochs,
                 idac_train_loader=idac_train_loader,
+                crystal_train_loader=crystal_train_loader,
+                sigma_train_loader=sigma_train_loader,
                 start_epoch=start_epoch,
                 optimizer_state_dict=optimizer_state_dict,
                 scheduler_state_dict=scheduler_state_dict,

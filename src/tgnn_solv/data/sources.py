@@ -572,6 +572,163 @@ BRADLEY_MP_URL = (
     "https://zenodo.org/records/19012778/files/Bradley_Melting_Point_Dataset.csv"
 )
 
+CURATED_MELTING_POINTS_K_RAW = {
+    "CC(=O)Nc1ccc(O)cc1": 442.0,
+    "c1ccc2ccccc2c1": 353.4,
+    "OC(=O)c1ccccc1": 395.5,
+    "c1ccccc1": 278.6,
+    "Oc1ccccc1": 314.1,
+    "CC(=O)Oc1ccccc1C(=O)O": 408.2,
+    "O": 273.15,
+    "CCO": 159.0,
+    "CO": 175.5,
+    "CC(=O)C": 178.2,
+    "CCCCCC": 177.8,
+    "CCCCCCC": 182.6,
+    "CCCCCCCC": 216.4,
+    "C1CCCCC1": 279.7,
+    "c1ccncc1": 231.5,
+    "Cc1ccccc1": 178.2,
+    "CC#N": 227.2,
+    "ClC(Cl)Cl": 209.6,
+    "ClCCl": 176.0,
+    "CS(=O)C": 291.7,
+    "Nc1ccccc1": 267.1,
+    "CC(=O)O": 289.8,
+    "O=Cc1ccccc1": 247.2,
+    "c1ccc(-c2ccccc2)cc1": 342.4,
+    "c1ccc2cc3ccccc3cc2c1": 489.7,
+    "c1ccc2c(c1)ccc1ccccc12": 372.4,
+    "O=C(O)/C=C/c1ccccc1": 406.2,
+    "OC(=O)c1cc(O)c(O)c(O)c1": 523.2,
+    "O=C(O)C(O)(CC(=O)O)CC(=O)O": 426.2,
+    "Clc1ccccc1": 228.0,
+    "CC(=O)c1ccccc1": 293.2,
+    "CCOC(=O)c1ccccc1": 238.5,
+}
+
+CURATED_FUSION_ENTHALPIES_J_MOL_RAW = {
+    "CC(=O)Nc1ccc(O)cc1": 26400,
+    "c1ccc2ccccc2c1": 19060,
+    "OC(=O)c1ccccc1": 18020,
+    "c1ccccc1": 9866,
+    "Oc1ccccc1": 11290,
+    "CC(=O)Oc1ccccc1C(=O)O": 29800,
+    "O": 6010,
+    "CCO": 4810,
+    "CO": 3180,
+    "CC(=O)C": 5770,
+    "CCCCCC": 13080,
+    "CCCCCCC": 14160,
+    "CCCCCCCC": 20730,
+    "C1CCCCC1": 2630,
+    "c1ccncc1": 8280,
+    "Cc1ccccc1": 6640,
+    "CC#N": 8167,
+    "O=Cc1ccccc1": 11300,
+    "Nc1ccccc1": 10590,
+    "CC(=O)O": 11540,
+    "Clc1ccccc1": 9560,
+    "c1ccc(-c2ccccc2)cc1": 18580,
+    "c1ccc2cc3ccccc3cc2c1": 19200,
+    "c1ccc2c(c1)ccc1ccccc12": 19300,
+    "O=C(O)/C=C/c1ccccc1": 22400,
+    "O=C(O)C(O)(CC(=O)O)CC(=O)O": 28700,
+    "CCCO": 5200,
+    "CC(O)C": 5370,
+    "CCCCO": 9280,
+    "OCCO": 9960,
+    "ClC(Cl)Cl": 9500,
+}
+
+
+def _canonicalized_mapping_frame(
+    mapping: dict[str, float],
+    *,
+    value_column: str,
+) -> pd.DataFrame:
+    rows = []
+    for smi, value in mapping.items():
+        can = canonicalize(smi)
+        if can is None:
+            continue
+        rows.append({"solute_smiles": can, value_column: float(value)})
+    if not rows:
+        return pd.DataFrame(columns=["solute_smiles", value_column])
+    return pd.DataFrame(rows).drop_duplicates(subset=["solute_smiles"]).reset_index(
+        drop=True
+    )
+
+
+def _melting_points_to_kelvin(values: pd.Series) -> pd.Series:
+    """Coerce a melting-point column to Kelvin, auto-detecting Celsius vs Kelvin.
+
+    The raw column may be Celsius (legacy ``mpC``) or ALREADY Kelvin (the current
+    ``bradley_mp.csv`` ships a ``Tm`` column in Kelvin, e.g. saccharin = 502 K).
+    Decide by the column median: a melting-point dataset whose median already
+    exceeds ~250 is in Kelvin (a 250 C median is unphysical for a broad organic
+    set); otherwise it is Celsius and needs +273.15. This prevents the double
+    C->K conversion that previously put every Bradley T_m ~273 K too high
+    (saccharin -> 775 K) and corrupted the crystal-label supervision.
+    """
+    numeric = pd.to_numeric(values, errors="coerce")
+    median = float(numeric.median(skipna=True))
+    if np.isfinite(median) and median > 250.0:
+        return numeric  # already Kelvin
+    return numeric + 273.15
+
+
+def load_bradley_melting_points() -> pd.DataFrame:
+    """Load the Bradley melting-point table only, converted to Kelvin."""
+    bradley_mp = {}
+    mp_path = RAW_DIR / "bradley_mp.csv"
+    download_file(BRADLEY_MP_URL, mp_path, "Bradley Melting Points")
+
+    if mp_path.exists() and verify_csv(mp_path):
+        df = pd.read_csv(mp_path)
+        smi_col = next(
+            (c for c in df.columns if "smiles" in c.lower()),
+            df.columns[0],
+        )
+        mp_col = next(
+            (
+                c
+                for c in df.columns
+                if any(x in c.lower() for x in ["mpc", "mp", "melting", "tm"])
+            ),
+            None,
+        )
+        if mp_col is None:
+            num_cols = df.select_dtypes(include=[np.number]).columns
+            mp_col = num_cols[0] if len(num_cols) > 0 else df.columns[-1]
+
+        kelvin = _melting_points_to_kelvin(df[mp_col])
+        for idx, smi_raw in df[smi_col].items():
+            smi = canonicalize(str(smi_raw))
+            if smi is None:
+                continue
+            val_k = kelvin.loc[idx]
+            if pd.notna(val_k) and 80 < float(val_k) < 800:
+                bradley_mp[smi] = float(val_k)
+
+    return _canonicalized_mapping_frame(bradley_mp, value_column="T_m")
+
+
+def load_curated_melting_points() -> pd.DataFrame:
+    """Load the small curated melting-point table in Kelvin."""
+    return _canonicalized_mapping_frame(
+        CURATED_MELTING_POINTS_K_RAW,
+        value_column="T_m",
+    )
+
+
+def load_curated_fusion_enthalpies() -> pd.DataFrame:
+    """Load the curated fusion-enthalpy table in J/mol."""
+    return _canonicalized_mapping_frame(
+        CURATED_FUSION_ENTHALPIES_J_MOL_RAW,
+        value_column="dH_fus",
+    )
+
 
 def load_melting_points() -> pd.DataFrame:
     """
@@ -586,96 +743,24 @@ def load_melting_points() -> pd.DataFrame:
     print("Loading Melting Points")
     print("=" * 60)
 
-    bradley_mp = {}
-    curated_mp = {}
+    bradley_df = load_bradley_melting_points()
+    curated_df = load_curated_melting_points()
+    n_override = len(
+        set(bradley_df["solute_smiles"].tolist())
+        & set(curated_df["solute_smiles"].tolist())
+    )
 
-    # --- Bradley (always in °C) ---
-    mp_path = RAW_DIR / "bradley_mp.csv"
-    download_file(BRADLEY_MP_URL, mp_path, "Bradley Melting Points")
+    result = pd.concat([bradley_df, curated_df], ignore_index=True)
+    result = result.drop_duplicates(subset=["solute_smiles"], keep="last").reset_index(
+        drop=True
+    )
 
-    if mp_path.exists() and verify_csv(mp_path):
-        try:
-            df = pd.read_csv(mp_path)
-            smi_col = next(
-                (c for c in df.columns if "smiles" in c.lower()),
-                df.columns[0],
-            )
-            mp_col = next(
-                (c for c in df.columns
-                 if any(x in c.lower() for x in ["mpc", "mp", "melting", 'tm'])),
-                None,
-            )
-            if mp_col is None:
-                num_cols = df.select_dtypes(include=[np.number]).columns
-                mp_col = num_cols[0] if len(num_cols) > 0 else df.columns[-1]
-
-            for _, row in df.iterrows():
-                smi = canonicalize(str(row[smi_col]))
-                if smi is None:
-                    continue
-                try:
-                    val_c = float(row[mp_col])
-                except (ValueError, TypeError):
-                    continue
-                # Bradley is ALWAYS in °C
-                val_k = val_c + 273.15
-                if 80 < val_k < 800:
-                    bradley_mp[smi] = val_k
-
-            print(f"  Bradley valid: {len(bradley_mp):,}")
-        except Exception as e:
-            print(f"  Bradley error: {e}")
-
-    # --- Curated NIST (in K, higher priority) ---
-    curated_raw = {
-        "CC(=O)Nc1ccc(O)cc1": 442.0,
-        "c1ccc2ccccc2c1": 353.4,
-        "OC(=O)c1ccccc1": 395.5,
-        "c1ccccc1": 278.6,
-        "Oc1ccccc1": 314.1,
-        "CC(=O)Oc1ccccc1C(=O)O": 408.2,
-        "O": 273.15,
-        "CCO": 159.0,
-        "CO": 175.5,
-        "CC(=O)C": 178.2,
-        "CCCCCC": 177.8,
-        "CCCCCCC": 182.6,
-        "CCCCCCCC": 216.4,
-        "C1CCCCC1": 279.7,
-        "c1ccncc1": 231.5,
-        "Cc1ccccc1": 178.2,
-        "CC#N": 227.2,
-        "ClC(Cl)Cl": 209.6,
-        "ClCCl": 176.0,
-        "CS(=O)C": 291.7,
-        "Nc1ccccc1": 267.1,
-        "CC(=O)O": 289.8,
-        "O=Cc1ccccc1": 247.2,
-        "c1ccc(-c2ccccc2)cc1": 342.4,
-        "c1ccc2cc3ccccc3cc2c1": 489.7,
-        "c1ccc2c(c1)ccc1ccccc12": 372.4,
-        "O=C(O)/C=C/c1ccccc1": 406.2,
-        "OC(=O)c1cc(O)c(O)c(O)c1": 523.2,
-        "O=C(O)C(O)(CC(=O)O)CC(=O)O": 426.2,
-        "Clc1ccccc1": 228.0,
-        "CC(=O)c1ccccc1": 293.2,
-        "CCOC(=O)c1ccccc1": 238.5,
-    }
-    for smi, tm in curated_raw.items():
-        can = canonicalize(smi)
-        if can:
-            curated_mp[can] = tm
-
-    # Merge: curated overrides Bradley
-    all_mp = {**bradley_mp, **curated_mp}
-    n_override = len(set(bradley_mp) & set(curated_mp))
-    print(f"  Curated: {len(curated_mp)}, overrides: {n_override}")
-    print(f"  Total: {len(all_mp):,}")
-
-    rows = [{"solute_smiles": s, "T_m": t} for s, t in all_mp.items()]
-    result = pd.DataFrame(rows)
-    print(f"  T_m range: [{result['T_m'].min():.0f}, "
-          f"{result['T_m'].max():.0f}] K")
+    print(f"  Bradley valid: {len(bradley_df):,}")
+    print(f"  Curated: {len(curated_df):,}, overrides: {n_override}")
+    print(f"  Total: {len(result):,}")
+    if not result.empty:
+        print(f"  T_m range: [{result['T_m'].min():.0f}, "
+              f"{result['T_m'].max():.0f}] K")
     return result
 
 
@@ -688,31 +773,7 @@ def load_fusion_enthalpies() -> pd.DataFrame:
     print("\n" + "=" * 60)
     print("Loading ΔH_fus data")
     print("=" * 60)
-
-    data = {
-        "CC(=O)Nc1ccc(O)cc1": 26400, "c1ccc2ccccc2c1": 19060,
-        "OC(=O)c1ccccc1": 18020, "c1ccccc1": 9866,
-        "Oc1ccccc1": 11290, "CC(=O)Oc1ccccc1C(=O)O": 29800,
-        "O": 6010, "CCO": 4810, "CO": 3180, "CC(=O)C": 5770,
-        "CCCCCC": 13080, "CCCCCCC": 14160, "CCCCCCCC": 20730,
-        "C1CCCCC1": 2630, "c1ccncc1": 8280, "Cc1ccccc1": 6640,
-        "CC#N": 8167, "O=Cc1ccccc1": 11300, "Nc1ccccc1": 10590,
-        "CC(=O)O": 11540, "Clc1ccccc1": 9560,
-        "c1ccc(-c2ccccc2)cc1": 18580, "c1ccc2cc3ccccc3cc2c1": 19200,
-        "c1ccc2c(c1)ccc1ccccc12": 19300,
-        "O=C(O)/C=C/c1ccccc1": 22400,
-        "O=C(O)C(O)(CC(=O)O)CC(=O)O": 28700,
-        "CCCO": 5200, "CC(O)C": 5370, "CCCCO": 9280,
-        "OCCO": 9960, "ClC(Cl)Cl": 9500,
-    }
-
-    rows = []
-    for smi, dh in data.items():
-        can = canonicalize(smi)
-        if can:
-            rows.append({"solute_smiles": can, "dH_fus": float(dh)})
-
-    df = pd.DataFrame(rows).drop_duplicates(subset=["solute_smiles"])
+    df = load_curated_fusion_enthalpies()
     print(f"  Records: {len(df)}")
     return df
 

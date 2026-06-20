@@ -98,9 +98,10 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         help=(
-            "Optional IDAC/gamma_inf auxiliary training CSV. "
-            "Batches from this file are trained through a gamma-only fast path "
-            "instead of being appended to the main SLE training CSV."
+            "Optional activity auxiliary training CSV. "
+            "Compatible with gamma_inf and finite-composition ln_gamma_2 rows. "
+            "Batches from this file are trained through a fast activity-only "
+            "path instead of being appended to the main SLE training CSV."
         ),
     )
     
@@ -196,11 +197,20 @@ def parse_args() -> argparse.Namespace:
         help="Override Phase 3 epoch count from config.",
     )
     parser.add_argument(
+        "--branch-training-mode",
+        type=str,
+        default=None,
+        help=(
+            "Override branch training mode from config. "
+            "Supported values: standard, coordinate_descent."
+        ),
+    )
+    parser.add_argument(
         "--idac-steps-per-epoch",
         type=int,
         default=None,
         help=(
-            "Number of gamma-only IDAC auxiliary batches per epoch. "
+            "Number of activity-only auxiliary batches per epoch. "
             "Requires --idac-train-data; 0 disables the auxiliary stream."
         ),
     )
@@ -212,6 +222,66 @@ def parse_args() -> argparse.Namespace:
             "Batch size for --idac-train-data. Defaults to the main batch size. "
             "Use a smaller value on MPS because gamma-only cross-attention still "
             "pads atom sequences across the batch."
+        ),
+    )
+    parser.add_argument(
+        "--crystal-train-data",
+        type=str,
+        default=None,
+        help=(
+            "Optional external single-component crystal auxiliary CSV "
+            "(T_m / dH_fus pool), built by scripts/data/build_crystal_aux_stream.py. "
+            "Grounds the crystal branch on a much larger pure-component label pool "
+            "than the solubility pairs, enabling scaffold transfer of Phi(T)."
+        ),
+    )
+    parser.add_argument(
+        "--crystal-steps-per-epoch",
+        type=int,
+        default=None,
+        help=(
+            "Number of external-crystal auxiliary batches per epoch. "
+            "Requires --crystal-train-data; 0 disables the auxiliary stream."
+        ),
+    )
+    parser.add_argument(
+        "--crystal-batch-size",
+        type=int,
+        default=None,
+        help="Batch size for --crystal-train-data. Defaults to the main batch size.",
+    )
+    parser.add_argument(
+        "--sigma-train-data",
+        type=str,
+        default=None,
+        help=(
+            "Optional external sigma-profile auxiliary CSV (COSMO-SAC activity "
+            "grounding), built by scripts/data/build_sigma_profile_aux_stream.py. "
+            "Grounds the sigma-profile head on a single-component label pool."
+        ),
+    )
+    parser.add_argument(
+        "--sigma-steps-per-epoch",
+        type=int,
+        default=None,
+        help="Number of sigma-profile auxiliary batches per epoch (0 disables).",
+    )
+    parser.add_argument(
+        "--sigma-batch-size",
+        type=int,
+        default=None,
+        help="Batch size for --sigma-train-data. Defaults to the main batch size.",
+    )
+    parser.add_argument(
+        "--set",
+        dest="set_overrides",
+        nargs="*",
+        default=None,
+        metavar="KEY=VALUE",
+        help=(
+            "Generic config overrides applied after the YAML/checkpoint config, "
+            "e.g. --set use_gc_priors_crystal=false detach_crystal_params_in_sle=false. "
+            "Values are coerced to the dataclass field type. Used by ablation runners."
         ),
     )
     parser.add_argument(
@@ -714,6 +784,49 @@ def load_data(
     )
 
 
+def _base_scalar_type(ftype: object) -> object:
+    """Base scalar of a field annotation, unwrapping ``Optional[X]``/``X | None``.
+
+    ``f.type`` is a real typing object here (config.py does not use PEP 563), so
+    ``Optional[float].__args__ == (float, NoneType)``. Returns the non-None member
+    (e.g. ``float``) so coercion keys off the DECLARED type rather than the current
+    value -- the latter is ``None`` for every ``Optional`` field, which previously
+    made ``--set`` store such fields as raw strings.
+    """
+    args = getattr(ftype, "__args__", ())
+    non_none = [a for a in args if a is not type(None)]
+    return non_none[0] if non_none else ftype
+
+
+def apply_set_overrides(
+    config: TGNNSolvConfig,
+    set_overrides: list[str] | None,
+) -> None:
+    """Apply generic ``--set key=value`` overrides, coercing to field types."""
+    if not set_overrides:
+        return
+    field_types = {f.name: f.type for f in dataclasses.fields(config)}
+    for item in set_overrides:
+        if "=" not in item:
+            raise ValueError(f"--set expects KEY=VALUE, got: {item!r}")
+        key, raw = item.split("=", 1)
+        key = key.strip()
+        raw = raw.strip()
+        if key not in field_types:
+            raise ValueError(f"--set unknown config field: {key!r}")
+        base = _base_scalar_type(field_types[key])
+        if base is bool:
+            value: object = raw.lower() in {"true", "1", "yes", "on"}
+        elif base is int:
+            value = int(raw)
+        elif base is float:
+            value = float(raw)
+        else:
+            value = raw
+        setattr(config, key, value)
+        print(f"   --set override: {key} = {value!r}")
+
+
 def maybe_fit_gc_tm_calibration(
     train_csv_path: str,
     config: TGNNSolvConfig,
@@ -850,8 +963,14 @@ def main() -> None:
                 config.epochs_phase2 = int(args.epochs_phase2)
             if args.epochs_phase3 is not None:
                 config.epochs_phase3 = int(args.epochs_phase3)
+            if args.branch_training_mode is not None:
+                config.branch_training_mode = str(args.branch_training_mode)
             if args.idac_steps_per_epoch is not None:
                 config.idac_aux_steps_per_epoch = int(args.idac_steps_per_epoch)
+            if args.crystal_steps_per_epoch is not None:
+                config.crystal_aux_steps_per_epoch = int(args.crystal_steps_per_epoch)
+            if args.sigma_steps_per_epoch is not None:
+                config.sigma_aux_steps_per_epoch = int(args.sigma_steps_per_epoch)
             if args.probe_every > 0:
                 config.probe_every = int(args.probe_every)
         elif any(
@@ -863,6 +982,7 @@ def main() -> None:
                 args.epochs_phase1,
                 args.epochs_phase2,
                 args.epochs_phase3,
+                args.branch_training_mode,
                 args.idac_steps_per_epoch,
                 args.idac_batch_size,
             )
@@ -879,12 +999,18 @@ def main() -> None:
             )
         if resume_checkpoint is not None and args.probe_every > 0:
             config.probe_every = int(args.probe_every)
+        if resume_checkpoint is not None and args.sigma_steps_per_epoch is not None:
+            config.sigma_aux_steps_per_epoch = int(args.sigma_steps_per_epoch)
+        if resume_checkpoint is not None and args.crystal_steps_per_epoch is not None:
+            config.crystal_aux_steps_per_epoch = int(args.crystal_steps_per_epoch)
         if resume_checkpoint is not None and args.idac_steps_per_epoch is not None:
             config.idac_aux_steps_per_epoch = int(args.idac_steps_per_epoch)
             print(
                 "   Applying resume-time IDAC auxiliary step override: "
                 f"{config.idac_aux_steps_per_epoch}"
             )
+
+        apply_set_overrides(config, args.set_overrides)
 
         if resume_checkpoint is None:
             maybe_fit_gc_tm_calibration(args.train_data, config)
@@ -895,6 +1021,7 @@ def main() -> None:
             "   Epoch budget: "
             f"{config.epochs_phase1}/{config.epochs_phase2}/{config.epochs_phase3}"
         )
+        print(f"   Branch training mode: {config.branch_training_mode}")
         
         # Set random seed
         print("\n2. Setting random seed...")
@@ -959,7 +1086,41 @@ def main() -> None:
                     seed=args.seed + 17,
                     batch_size=args.idac_batch_size,
                 )
-        
+
+        crystal_train_loader = None
+        if args.crystal_train_data is not None:
+            if config.crystal_aux_steps_per_epoch <= 0:
+                print(
+                    "   Crystal auxiliary data was provided, but "
+                    "crystal_aux_steps_per_epoch <= 0; auxiliary stream is disabled."
+                )
+            else:
+                print("   External crystal auxiliary train:")
+                crystal_train_loader = load_data(
+                    args.crystal_train_data,
+                    config,
+                    shuffle=True,
+                    seed=args.seed + 23,
+                    batch_size=args.crystal_batch_size,
+                )
+
+        sigma_train_loader = None
+        if args.sigma_train_data is not None:
+            if config.sigma_aux_steps_per_epoch <= 0:
+                print(
+                    "   Sigma-profile auxiliary data was provided, but "
+                    "sigma_aux_steps_per_epoch <= 0; auxiliary stream is disabled."
+                )
+            else:
+                print("   External sigma-profile auxiliary train:")
+                sigma_train_loader = load_data(
+                    args.sigma_train_data,
+                    config,
+                    shuffle=True,
+                    seed=args.seed + 29,
+                    batch_size=args.sigma_batch_size,
+                )
+
         # Initialize model
         print("\n5. Initializing model...")
         model = TGNNSolv(cfg=config).to(device)
@@ -1134,6 +1295,8 @@ def main() -> None:
                 train_loader,
                 val_loader,
                 idac_train_loader=idac_train_loader,
+                crystal_train_loader=crystal_train_loader,
+                sigma_train_loader=sigma_train_loader,
                 resume_state=resume_state,
                 on_epoch_end=on_epoch_end,
             )
@@ -1168,7 +1331,13 @@ def main() -> None:
                 shuffle=False,
                 seed=args.seed,
             )
-            test_metrics = trainer.validate(test_loader, phase=2)
+            eval_phase = (
+                int(trainer.best_phase)
+                if trainer.best_phase is not None
+                else (3 if int(config.epochs_phase3) > 0 else 2)
+            )
+            print(f"   Using validation phase weights from Phase {eval_phase}.")
+            test_metrics = trainer.validate(test_loader, phase=eval_phase)
             
             print("\n   Test Metrics:")
             print(json.dumps(test_metrics, indent=2))
@@ -1195,6 +1364,8 @@ def main() -> None:
                 "val_data": args.val_data,
                 "test_data": args.test_data,
                 "idac_train_data": args.idac_train_data,
+                "crystal_train_data": args.crystal_train_data,
+                "sigma_train_data": args.sigma_train_data,
                 "resume_checkpoint": args.resume,
                 "pretrain_enabled": bool(args.pretrain),
                 "pretrain_checkpoint": args.pretrain_checkpoint,
