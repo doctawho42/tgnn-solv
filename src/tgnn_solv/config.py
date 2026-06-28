@@ -181,6 +181,7 @@ class TGNNSolvConfig:
     cosmo_sac_q0: float = 79.53
     cosmo_sac_r0: float = 66.69
     cosmo_sac_use_combinatorial: bool = True
+    cosmo_sac_wire_volume: bool = False  # feed (detached) molar volume so the SG combinatorial term is active
     cosmo_sac_gamma_iter_train: int = 16  # bumped from 8: n=8 failed convergence test (gap 5.86 ln-units at 273K); n=16 converges to within 6e-5 of n=30
     cosmo_sac_gamma_iter_eval: int = 30
     # Sigma-profile head output scaling (cavity surface area, Å²).

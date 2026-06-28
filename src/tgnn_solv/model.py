@@ -44,6 +44,9 @@ from .layers import (
 )
 from .solver import SLESolver
 
+# Molar volume unit conversion: 1 cm^3/mol = (1e24 / N_A) A^3 per molecule.
+_CM3_PER_MOL_TO_A3 = 1.0e24 / 6.02214076e23  # ~= 1.660539
+
 
 class TGNNSolv(nn.Module):
     """
@@ -513,20 +516,32 @@ class TGNNSolv(nn.Module):
     ) -> dict[str, torch.Tensor]:
         """Build the COSMO-SAC activity-param dict from per-molecule sigma-profiles.
 
-        Volume is passed as None (residual-only COSMO-SAC) to avoid the molar-volume
-        unit ambiguity of the auxiliary V_m head; the combinatorial term remains
-        available at the layer level. ``alpha_12`` is a compatibility placeholder
+        When ``cosmo_sac_wire_volume`` is False (default), volume is passed as None
+        (residual-only COSMO-SAC). When True, the aux-head molar volume (cm^3/mol) is
+        converted to A^3/molecule via ``_CM3_PER_MOL_TO_A3`` and passed detached so
+        the Staverman-Guggenheim combinatorial size term is active but cannot be
+        trained by the solubility loss. ``alpha_12`` is a compatibility placeholder
         for the correction param-summary.
         """
         sol = self.head_sigma(g_solute)
         slv = self.head_sigma(g_solvent)
+        if getattr(self.cfg, "cosmo_sac_wire_volume", False):
+            # Grounded size factor: use the aux-head molar volume (cm^3/mol),
+            # converted to A^3/molecule, DETACHED so the combinatorial term cannot
+            # be trained by the solubility loss (it is grounded by head_aux, mirroring
+            # the P1 sigma-head freeze rationale).
+            v_solute = self.head_aux(g_solute)["V_m"].detach() * _CM3_PER_MOL_TO_A3
+            v_solvent = self.head_aux(g_solvent)["V_m"].detach() * _CM3_PER_MOL_TO_A3
+        else:
+            v_solute = None
+            v_solvent = None
         return {
             "p_solute": sol["p_sigma"],
             "A_solute": sol["area"],
             "p_solvent": slv["p_sigma"],
             "A_solvent": slv["area"],
-            "V_solute": None,
-            "V_solvent": None,
+            "V_solute": v_solute,
+            "V_solvent": v_solvent,
             "alpha_12": torch.full_like(sol["area"], 0.3),
             "sigma_shape_solute": sol["p_shape"],
             "sigma_shape_solvent": slv["p_shape"],
