@@ -1778,6 +1778,38 @@ class TGNNSolvTrainer:
         self._maybe_release_device_cache(force=True)
         return metrics
 
+    @torch.no_grad()
+    def validate_sigma(self, loader) -> dict[str, float]:
+        """Aggregate sigma EMD + raw-Å² area MAE over a sigma loader (for warmup
+        early-stop and the area-anchor gate). No-grad; head_sigma must exist."""
+        if getattr(self.model, "head_sigma", None) is None:
+            return {"sigma_profile": 0.0, "sigma_shape": 0.0, "sigma_area": 0.0, "sigma_area_mae": 0.0}
+        self.model.eval()
+        tot = {"sigma_profile": 0.0, "sigma_shape": 0.0, "sigma_area": 0.0}
+        area_abs, n_area, n = 0.0, 0, 0
+        for batch in loader:
+            loss_val, comps = self._sigma_forward_loss(batch, role="solute")
+            if self.cfg.sigma_aux_symmetrize:
+                _, comps_slv = self._sigma_forward_loss(batch, role="solvent")
+                comps = {k: 0.5 * (comps[k] + comps_slv[k]) for k in comps}
+            for k in tot:
+                tot[k] += comps[k]
+            n += 1
+            # raw area MAE for the anchor gate
+            sol_batch, _s, targets = self._move_batch_to_device(batch)
+            mask = targets.get("sigma_profile_mask")
+            if isinstance(mask, Tensor) and bool(mask.any().item()):
+                enc_t = self.model._encoder_temp_features(
+                    make_temperature_features(targets["T"]))
+                _, gp, _, _ = self.model._encode_and_readout(sol_batch, "solute", temp_feat=enc_t)
+                pred_area = self.model.head_sigma(gp["value"])["area"][mask.bool()]
+                tgt_area = targets["sigma_area_target"][mask.bool()]
+                area_abs += float((pred_area - tgt_area).abs().sum().item())
+                n_area += int(mask.sum().item())
+        out = {k: v / max(n, 1) for k, v in tot.items()}
+        out["sigma_area_mae"] = area_abs / max(n_area, 1)
+        return out
+
     # -------------------------------------------------------------- #
     #  Train one phase                                                #
     # -------------------------------------------------------------- #
@@ -1792,6 +1824,7 @@ class TGNNSolvTrainer:
         idac_train_loader: DataLoader | None = None,
         crystal_train_loader: DataLoader | None = None,
         sigma_train_loader: DataLoader | None = None,
+        sigma_val_loader: DataLoader | None = None,
         start_epoch: int = 0,
         optimizer_state_dict: dict | None = None,
         scheduler_state_dict: dict | None = None,
@@ -2017,10 +2050,12 @@ class TGNNSolvTrainer:
         idac_train_loader: DataLoader | None = None,
         crystal_train_loader: DataLoader | None = None,
         sigma_train_loader: DataLoader | None = None,
+        sigma_val_loader: DataLoader | None = None,
         resume_state: ResumeStateDict | None = None,
         on_epoch_end: Callable[[ResumeStateDict], None] | None = None,
     ) -> None:
         """Run all three training phases sequentially."""
+        self._sigma_val_loader = sigma_val_loader
         phase_epochs = {
             1: self.cfg.epochs_phase1,
             2: self.cfg.epochs_phase2,
@@ -2062,6 +2097,7 @@ class TGNNSolvTrainer:
                 idac_train_loader=idac_train_loader,
                 crystal_train_loader=crystal_train_loader,
                 sigma_train_loader=sigma_train_loader,
+                sigma_val_loader=sigma_val_loader,
                 start_epoch=start_epoch,
                 optimizer_state_dict=optimizer_state_dict,
                 scheduler_state_dict=scheduler_state_dict,

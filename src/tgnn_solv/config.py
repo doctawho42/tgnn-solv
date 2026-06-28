@@ -194,6 +194,7 @@ class TGNNSolvConfig:
     sigma_aux_phase3_weight: Optional[float] = None
     sigma_aux_symmetrize: bool = True  # ground solute AND solvent role embeddings
     sigma_profile_loss: str = "emd"  # "emd" (1-D Wasserstein) or "mse"
+    sigma_val_data: Optional[str] = None  # path to sigma-profile val set for warmup early-stop
 
     # --- Numerical stability ---
     eps: float = 1e-10
