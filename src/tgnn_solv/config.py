@@ -192,6 +192,7 @@ class TGNNSolvConfig:
     sigma_aux_phase1_weight: Optional[float] = None
     sigma_aux_phase2_weight: Optional[float] = None
     sigma_aux_phase3_weight: Optional[float] = None
+    sigma_aux_symmetrize: bool = True  # ground solute AND solvent role embeddings
     sigma_profile_loss: str = "emd"  # "emd" (1-D Wasserstein) or "mse"
 
     # --- Numerical stability ---

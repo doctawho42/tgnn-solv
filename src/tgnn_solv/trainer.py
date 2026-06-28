@@ -905,7 +905,13 @@ class TGNNSolvTrainer:
         if weight <= 0.0:
             return None, {}
         optimizer.zero_grad()
-        loss_val, comps = self._sigma_forward_loss(batch, role="solute")
+        loss_sol, comps = self._sigma_forward_loss(batch, role="solute")
+        if self.cfg.sigma_aux_symmetrize:
+            loss_slv, comps_slv = self._sigma_forward_loss(batch, role="solvent")
+            loss_val = 0.5 * (loss_sol + loss_slv)
+            comps = {k: 0.5 * (comps[k] + comps_slv[k]) for k in comps}
+        else:
+            loss_val = loss_sol
         loss = weight * loss_val
         # Empty-mask path: _sigma_forward_loss returns a non-grad zero. Skip the
         # backward/step entirely (matches the original P0 empty-mask early-return)
