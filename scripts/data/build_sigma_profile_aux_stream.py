@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 
 from tgnn_solv.config import TGNNSolvConfig
-from tgnn_solv.data.utils import get_scaffold, scaffold_key
+from tgnn_solv.data.utils import scaffold_key
 
 
 def grid_metadata(n_bins: int) -> dict:
