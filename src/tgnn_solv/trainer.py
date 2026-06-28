@@ -844,6 +844,44 @@ class TGNNSolvTrainer:
         self._maybe_release_device_cache()
         return float(loss.item()), loss_dict
 
+    def _sigma_forward_loss(
+        self, batch, *, role: str = "solute"
+    ) -> tuple[Tensor, dict[str, float]]:
+        """Encode the pure component (in sol_batch) under ``role`` and score its
+        predicted sigma-profile against the external label. Returns the unscaled
+        EMD loss tensor (grad-bearing) and a component dict. Empty mask -> zero."""
+        model = self.model
+        sol_batch, _slv_batch, targets = self._move_batch_to_device(batch)
+        mask = targets.get("sigma_profile_mask")
+        target_shape = targets.get("sigma_profile_target")
+        target_area = targets.get("sigma_area_target")
+        if (not isinstance(mask, Tensor) or not bool(mask.any().item())
+                or not isinstance(target_shape, Tensor)
+                or not isinstance(target_area, Tensor)):
+            zero = torch.zeros((), device=self.device)
+            return zero, {"sigma_profile": 0.0, "sigma_shape": 0.0, "sigma_area": 0.0}
+        # Mirror the main forward: when the encoder is temperature-conditioned,
+        # ground the sigma head on the SAME temperature-aware solute embedding it
+        # receives at SLE/inference time. _encoder_temp_features returns None when
+        # use_temperature_in_encoder is off, so the default path is unchanged.
+        enc_t_feat = model._encoder_temp_features(make_temperature_features(targets["T"]))
+        _, g_payload, _, _ = model._encode_and_readout(sol_batch, role, temp_feat=enc_t_feat)
+        g = g_payload["value"]
+        if model.cfg.use_morgan_features:
+            fp = targets.get("solute_morgan_fp")
+            if isinstance(fp, Tensor):
+                adapter = model.solute_fp_adapter if role == "solute" else model.solvent_fp_adapter
+                g = g + model.fp_pre_scale * adapter(fp.to(g))
+        sig = model.head_sigma(g)
+        loss_val, comps = sigma_profile_emd_loss(
+            sig["p_shape"], target_shape, sig["area"], target_area, mask,
+            mode=self.cfg.sigma_profile_loss, area_scale=self.cfg.sigma_area_scale,
+            shape_weight=self.cfg.sigma_shape_weight, return_components=True,
+        )
+        # Add the aggregate sigma_profile key so callers don't have to re-derive it.
+        comps = {**comps, "sigma_profile": float(loss_val.item())}
+        return loss_val, comps
+
     def _train_sigma_aux_batch(
         self,
         batch: tuple[Batch, Batch, dict[str, object]],
@@ -866,36 +904,8 @@ class TGNNSolvTrainer:
         weight = self._sigma_aux_weight(phase)
         if weight <= 0.0:
             return None, {}
-
-        sol_batch, slv_batch, targets = self._move_batch_to_device(batch)
-        mask = targets.get("sigma_profile_mask")
-        if not isinstance(mask, Tensor) or not bool(mask.any().item()):
-            return None, {}
-        target_shape = targets.get("sigma_profile_target")
-        target_area = targets.get("sigma_area_target")
-        if not isinstance(target_shape, Tensor) or not isinstance(target_area, Tensor):
-            return None, {}
-
         optimizer.zero_grad()
-        # Mirror the main forward: when the encoder is temperature-conditioned,
-        # ground the sigma head on the SAME temperature-aware solute embedding it
-        # receives at SLE/inference time. _encoder_temp_features returns None when
-        # use_temperature_in_encoder is off, so the default path is unchanged.
-        enc_t_feat = model._encoder_temp_features(make_temperature_features(targets["T"]))
-        _, g_payload, _, _ = model._encode_and_readout(
-            sol_batch, "solute", temp_feat=enc_t_feat
-        )
-        g_sol = g_payload["value"]
-        if model.cfg.use_morgan_features:
-            fp = targets.get("solute_morgan_fp")
-            if isinstance(fp, Tensor):
-                g_sol = g_sol + model.fp_pre_scale * model.solute_fp_adapter(fp.to(g_sol))
-        sig = model.head_sigma(g_sol)
-        loss_val, comps = sigma_profile_emd_loss(
-            sig["p_shape"], target_shape, sig["area"], target_area, mask,
-            mode=self.cfg.sigma_profile_loss, area_scale=self.cfg.sigma_area_scale,
-            shape_weight=self.cfg.sigma_shape_weight, return_components=True,
-        )
+        loss_val, comps = self._sigma_forward_loss(batch, role="solute")
         loss = weight * loss_val
         if not torch.isfinite(loss):
             LOGGER.warning("Skipping non-finite sigma-profile auxiliary loss: %s", loss)
