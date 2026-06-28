@@ -69,6 +69,10 @@ def parse_args() -> argparse.Namespace:
         help="Override the fail-closed scaffold-leak guard. Only for pools that are "
         "intentionally NOT used in a scaffold-split evaluation.",
     )
+    p.add_argument("--val-fraction", type=float, default=0.0)
+    p.add_argument("--split-seed", type=int, default=0)
+    p.add_argument("--output-val-csv",
+                   default="notebooks/data/processed_sigma_aux_stream/sigma_val.csv")
     return p.parse_args()
 
 
@@ -119,6 +123,36 @@ def _excluded_scaffolds(paths: list[str], *, allow_missing: bool = False) -> set
             )
         scaffolds |= path_scaffolds
     return scaffolds
+
+
+def split_by_scaffold(
+    df: pd.DataFrame, val_fraction: float, seed: int
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Whole-scaffold-group TRAIN/VAL split so the two sides share no scaffold_key.
+
+    Groups by the acyclic-safe ``scaffold_key`` (Murcko, or canonical SMILES for
+    acyclic molecules) and assigns entire groups to VAL until ``val_fraction`` of
+    rows is reached. Deterministic under ``seed``. ``val_fraction<=0`` -> empty VAL.
+    """
+    if val_fraction <= 0.0 or len(df) == 0:
+        return df.copy(), df.iloc[0:0].copy()
+    keys = df["solute_smiles"].astype(str).map(scaffold_key)
+    groups: dict[str, list[int]] = {}
+    for idx, k in zip(df.index, keys):
+        groups.setdefault(str(k), []).append(idx)
+    unique = sorted(groups)  # stable base order before the seeded shuffle
+    rng = np.random.RandomState(seed)
+    rng.shuffle(unique)
+    target = val_fraction * len(df)
+    val_idx: list[int] = []
+    for k in unique:
+        if len(val_idx) >= target:
+            break
+        val_idx.extend(groups[k])
+    val_set = set(val_idx)
+    val = df.loc[df.index.isin(val_set)].copy()
+    train = df.loc[~df.index.isin(val_set)].copy()
+    return train, val
 
 
 def _empty_row_template(columns: list[str], temperature: float) -> dict[str, Any]:
@@ -190,9 +224,18 @@ def main() -> None:
         rows.append(row)
 
     out = pd.DataFrame(rows, columns=out_cols)
+    train_out, val_out = split_by_scaffold(out, args.val_fraction, args.split_seed)
     Path(args.output_csv).parent.mkdir(parents=True, exist_ok=True)
     Path(args.summary_json).parent.mkdir(parents=True, exist_ok=True)
-    out.to_csv(args.output_csv, index=False)
+    train_out.to_csv(args.output_csv, index=False)
+    if len(val_out) > 0:
+        Path(args.output_val_csv).parent.mkdir(parents=True, exist_ok=True)
+        val_out.to_csv(args.output_val_csv, index=False)
+        # fail-closed disjointness guard (mirrors _excluded_scaffolds style)
+        tr = {scaffold_key(s) for s in train_out["solute_smiles"]}
+        va = {scaffold_key(s) for s in val_out["solute_smiles"]}
+        if not tr.isdisjoint(va):
+            raise SystemExit("sigma TRAIN/VAL scaffold leak detected; aborting.")
 
     summary = {
         "sigma_csv": args.sigma_csv, "template_csv": args.template_csv,
@@ -201,6 +244,8 @@ def main() -> None:
         "n_rows": int(len(out)), "n_bins": int(args.n_bins),
         "exclude_scaffolds_from": list(args.exclude_scaffolds_from or []),
         "grid": grid_metadata(args.n_bins),
+        "n_train": int(len(train_out)), "n_val": int(len(val_out)),
+        "val_fraction_actual": (len(val_out) / max(len(out), 1)),
     }
     Path(args.summary_json).write_text(json.dumps(_json_safe(summary), indent=2, sort_keys=True))
     print(json.dumps(_json_safe(summary), indent=2, sort_keys=True))
