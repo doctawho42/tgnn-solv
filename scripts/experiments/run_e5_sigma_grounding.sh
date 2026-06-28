@@ -5,10 +5,18 @@
 #
 # Usage (GPU):
 #   DEVICE=cuda bash scripts/experiments/run_e5_sigma_grounding.sh
+# 1-seed pilot (validate pipeline + read ungrounded std(lng) to calibrate --lngamma-band):
+#   DEVICE=cuda SEEDS=42 bash scripts/experiments/run_e5_sigma_grounding.sh
 # CPU smoke (no meaningful metrics — just checks the wiring):
 #   DEVICE=cpu SEEDS=42 WARMUP_EPOCHS=1 SIGMA_STEPS=2 \
 #     EXTRA_TRAIN_ARGS="--epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1" \
 #     bash scripts/experiments/run_e5_sigma_grounding.sh
+#
+# PREEMPTION-SAFE (Colab / Studio Lab): re-running resumes automatically —
+#   * an arm whose predictions.csv already exists is SKIPPED;
+#   * an arm with a partial checkpoint RESUMES mid-training (--checkpoint-every/--resume).
+# Point CKPT_DIR and OUT_DIR at a persistent location (e.g. mounted Drive) so progress
+# survives a disconnect.
 #
 # Env overrides (defaults):
 #   PY               $HOME/anaconda3/envs/tgnn-solv/bin/python
@@ -20,7 +28,9 @@
 #   SEEDS            "42 43 44"      space-separated list of random seeds
 #   SIGMA_STEPS      21              sigma aux steps per epoch
 #   WARMUP_EPOCHS    40              sigma warmup epochs before SLE
+#   CHECKPOINT_EVERY 5               save a resumable training checkpoint every N epochs
 #   EXTRA_TRAIN_ARGS ""              passed verbatim to TGNN train.py calls
+#   SIGMA_ARTIFACT   results/sigma_profile_artifact/sigma_profiles.csv
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 export KMP_DUPLICATE_LIB_OK=TRUE   # rdkit/torch/sklearn libomp clash on macOS
@@ -34,6 +44,7 @@ CKPT_DIR="${CKPT_DIR:-checkpoints/e5}"
 SEEDS="${SEEDS:-42 43 44}"
 SIGMA_STEPS="${SIGMA_STEPS:-21}"
 WARMUP_EPOCHS="${WARMUP_EPOCHS:-40}"
+CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-5}"
 EXTRA_TRAIN_ARGS="${EXTRA_TRAIN_ARGS:-}"   # e.g. --epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1 for CPU smoke
 SIGMA_ARTIFACT="${SIGMA_ARTIFACT:-results/sigma_profile_artifact/sigma_profiles.csv}"
 
@@ -43,7 +54,7 @@ mkdir -p "${OUT_DIR}" "${CKPT_DIR}"
 echo "================================================================"
 echo " run_e5: sigma-grounding decisive comparison"
 echo "   device=${DEVICE}  data=${DATA_DIR}  sigma=${SIGMA_DIR}"
-echo "   seeds=${SEEDS}  out=${OUT_DIR}  ckpt=${CKPT_DIR}"
+echo "   seeds=${SEEDS}  out=${OUT_DIR}  ckpt=${CKPT_DIR}  checkpoint_every=${CHECKPOINT_EVERY}"
 echo "================================================================"
 
 # --- 0. Guard: refuse to run on corrupted (+273 K) T_m labels ---
@@ -91,25 +102,38 @@ for SEED in ${SEEDS}; do
     pred="${SOUT}/${arm}_predictions.csv"
     echo "-- seed=${SEED}  arm=${arm}"
 
+    # Arm-level resume: a finished arm (predictions written) is never retrained.
+    if [ -f "${pred}" ]; then
+      echo "   skip (predictions already exist: ${pred})"
+      RUN_ARGS+=("--run" "${arm}=${pred}")
+      continue
+    fi
+
+    # Mid-arm resume: continue a partial training checkpoint if present. Training args
+    # for the heavy (TGNN/DirectGNN) arms; oracle is eval-only and ignores these.
+    RESUME=()
+    if [ -f "${ckpt}" ]; then echo "   resuming training from ${ckpt}"; RESUME=(--resume "${ckpt}"); fi
+    CKPT_ARGS=(--checkpoint "${ckpt}" --checkpoint-every "${CHECKPOINT_EVERY}" "${RESUME[@]}")
+
     case "${arm}" in
       nrtl)
         "${PY}" scripts/train.py --config configs/paper_config_tuned.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" --checkpoint "${ckpt}" ${EXTRA_TRAIN_ARGS}
+          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" ${EXTRA_TRAIN_ARGS}
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
           --model-type tgnn --device "${DEVICE}" ;;
       directgnn)
         "${PY}" scripts/train_directgnn.py --config configs/paper_config_directgnn_h64L3.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" --checkpoint "${ckpt}"
+          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}"
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
           --model-type direct --device "${DEVICE}" ;;
       ungrounded)
         "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" --checkpoint "${ckpt}" \
+          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
           --sigma-steps-per-epoch 0 --sigma-warmup-epochs 0 ${EXTRA_TRAIN_ARGS}
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
@@ -117,7 +141,7 @@ for SEED in ${SEEDS}; do
       grounded_a)
         "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" --checkpoint "${ckpt}" \
+          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
           "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS}
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
@@ -126,7 +150,7 @@ for SEED in ${SEEDS}; do
         # --set cosmo_sac_wire_volume=true must be LAST (argparse nargs='*' is greedy)
         "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" --checkpoint "${ckpt}" \
+          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
           "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} --set cosmo_sac_wire_volume=true
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
@@ -135,6 +159,8 @@ for SEED in ${SEEDS}; do
         # Reuse the grounded_a checkpoint; only the eval path changes (oracle sigma injection).
         # Measures the ceiling if the COSMO-SAC head had perfect sigma profiles.
         # Coverage ~5% of test rows (molecules with oracle profiles); rest are masked.
+        # NOTE: comparison.json["per_arm"]["oracle"] is DILUTED (~grounded_a); the true
+        # ceiling is the masked-subset block in this arm's *_predictions.summary.json.
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${CKPT_DIR}/grounded_a_seed${SEED}.pt" \
           --data "${TEST}" --output "${pred}" \
