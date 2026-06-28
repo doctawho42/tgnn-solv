@@ -196,6 +196,14 @@ class TGNNSolvConfig:
     sigma_profile_loss: str = "emd"  # "emd" (1-D Wasserstein) or "mse"
     sigma_val_data: Optional[str] = None  # path to sigma-profile val set for warmup early-stop
     freeze_sigma_head_during_sle: bool = False  # freeze head_sigma in SLE phases 2/3 to hold the σ-manifold
+    # Sigma-profile warmup pretraining (run_sigma_warmup_pretraining).
+    # Pretrain head_sigma + encoder on the σ pool BEFORE the SLE curriculum.
+    sigma_warmup_epochs: int = 0               # 0 = skip warmup
+    sigma_warmup_lr: float = 3e-4
+    sigma_warmup_patience: int = 20
+    sigma_warmup_min_epochs: int = 5
+    sigma_area_anchor_mae_tol: float = 30.0    # raw Å² mean abs area error gate
+    sigma_area_anchor_strict: bool = False     # raise (vs warn) if gate fails
 
     # --- Numerical stability ---
     eps: float = 1e-10

@@ -93,7 +93,7 @@ def build_pretrain_checkpoint_payload(
     pairwise_contrastive_weight: float = 0.0,
 ) -> dict[str, Any]:
     """Serialize the Stage 0 artifacts needed to warm-start a new model."""
-    return {
+    payload: dict[str, Any] = {
         "format": "tgnn_solv_stage0_pretrain",
         "config": asdict(config),
         "gnn_state_dict": model.gnn.state_dict(),
@@ -109,6 +109,9 @@ def build_pretrain_checkpoint_payload(
             "pairwise_contrastive_weight": float(pairwise_contrastive_weight),
         },
     }
+    if getattr(model, "head_sigma", None) is not None:
+        payload["sigma_head_state_dict"] = model.head_sigma.state_dict()
+    return payload
 
 
 def save_pretrained_encoder_checkpoint(
@@ -175,6 +178,9 @@ def apply_pretrained_encoder_checkpoint(
         checkpoint["readout_state_dict"],
         strict=strict,
     )
+    if (getattr(model, "head_sigma", None) is not None
+            and "sigma_head_state_dict" in checkpoint):
+        model.head_sigma.load_state_dict(checkpoint["sigma_head_state_dict"])
     metadata = dict(checkpoint.get("pretrain_metadata") or {})
     metadata["gnn_missing_keys"] = list(gnn_load.missing_keys)
     metadata["gnn_unexpected_keys"] = list(gnn_load.unexpected_keys)
@@ -182,6 +188,135 @@ def apply_pretrained_encoder_checkpoint(
     metadata["readout_unexpected_keys"] = list(readout_load.unexpected_keys)
     metadata["history"] = checkpoint.get("pretrain_history")
     return metadata
+
+
+def run_sigma_warmup_pretraining(
+    model: TGNNSolv,
+    config: TGNNSolvConfig,
+    *,
+    device: torch.device,
+    sigma_train_loader,
+    sigma_val_loader=None,
+    save_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Pretrain head_sigma (+ encoder) on the sigma pool with aux-VAL early-stop
+    and an area-anchor gate, BEFORE the SLE curriculum.
+
+    Guards ``head_sigma is None`` (returns ``{"skipped": True}`` for non-COSMO
+    models). Trains with its OWN AdamW over head_sigma + gnn + readout params.
+    Early-stopping is LOCAL to this routine (independent of the main trainer's
+    best_state / patience). Returns metadata dict with keys:
+    ``{"history", "best_val", "area_mae", "area_gate_passed", "epochs_run"}``.
+    """
+    import logging
+
+    from .trainer import TGNNSolvTrainer
+
+    log = logging.getLogger(__name__)
+
+    if getattr(model, "head_sigma", None) is None:
+        log.warning("sigma-warmup skipped: model has no head_sigma (non-cosmo).")
+        return {"skipped": True}
+
+    if int(config.sigma_warmup_epochs) == 0:
+        log.info("sigma-warmup skipped: sigma_warmup_epochs=0.")
+        return {"skipped": True}
+
+    # Move model to device first; trainer infers device from model.parameters().
+    model.to(device)
+    trainer = TGNNSolvTrainer(model, config)
+
+    params = (
+        list(model.head_sigma.parameters())
+        + list(model.gnn.parameters())
+        + list(model.readout.parameters())
+    )
+    opt = torch.optim.AdamW(
+        params,
+        lr=float(config.sigma_warmup_lr),
+        weight_decay=float(config.weight_decay),
+    )
+
+    best_val: float = float("inf")
+    best_state: dict | None = None
+    patience: int = 0
+    history: list[float] = []
+    val_loader = sigma_val_loader if sigma_val_loader is not None else sigma_train_loader
+
+    for epoch in range(int(config.sigma_warmup_epochs)):
+        model.train()
+        for batch in sigma_train_loader:
+            opt.zero_grad()
+            loss_sol, _ = trainer._sigma_forward_loss(batch, role="solute")
+            if getattr(config, "sigma_aux_symmetrize", True):
+                loss_slv, _ = trainer._sigma_forward_loss(batch, role="solvent")
+                loss = 0.5 * (loss_sol + loss_slv)
+            else:
+                loss = loss_sol
+            # Empty-mask guard: matches the Task 2/4 pattern in _train_sigma_aux_batch
+            if not loss.requires_grad or not torch.isfinite(loss):
+                continue
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(params, float(config.grad_clip))
+            opt.step()
+
+        vmetrics = trainer.validate_sigma(val_loader)
+        v: float = vmetrics["sigma_profile"]
+        history.append(v)
+
+        if v < best_val:
+            best_val = v
+            best_state = trainer._clone_model_state()
+            patience = 0
+        else:
+            patience += 1
+
+        if (
+            (epoch + 1) >= int(config.sigma_warmup_min_epochs)
+            and patience >= int(config.sigma_warmup_patience)
+        ):
+            log.info(
+                "sigma-warmup early-stopped at epoch %d (patience=%d)", epoch + 1, patience
+            )
+            break
+
+    if best_state is not None:
+        model.load_state_dict(best_state)
+
+    area_mae: float = trainer.validate_sigma(val_loader)["sigma_area_mae"]
+    passed: bool = area_mae <= float(config.sigma_area_anchor_mae_tol)
+    if not passed:
+        msg = (
+            f"sigma area-anchor gate FAILED: area MAE {area_mae:.1f} Å² > "
+            f"tol {config.sigma_area_anchor_mae_tol} Å²"
+        )
+        if getattr(config, "sigma_area_anchor_strict", False):
+            raise RuntimeError(msg)
+        log.warning(msg)
+
+    meta: dict[str, Any] = {
+        "history": history,
+        "best_val": best_val,
+        "area_mae": area_mae,
+        "area_gate_passed": bool(passed),
+        "epochs_run": len(history),
+    }
+
+    if save_path is not None:
+        payload = build_pretrain_checkpoint_payload(
+            model=model,
+            config=config,
+            pretrain_history={"sigma_warmup": history},
+            pretrain_source="sigma_warmup",
+            pretrain_epochs=len(history),
+            pretrain_batch_size=0,
+            pretrain_lr=float(config.sigma_warmup_lr),
+            smiles_count=0,
+        )
+        payload["sigma_warmup_meta"] = meta
+        atomic_torch_save(payload, Path(save_path))
+
+    return meta
 
 
 def run_stage0_pretraining(
