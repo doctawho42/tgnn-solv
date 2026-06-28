@@ -1,0 +1,105 @@
+"""Aggregate run_e5 arms: lock metrics to the cross-arm n_supervised intersection,
+compute pre-registered criteria (rescue, keeps-constraint), and stratify by aux regime."""
+from __future__ import annotations
+
+import argparse
+import json
+
+import numpy as np
+import pandas as pd
+from rdkit import Chem
+
+_KEY = ["solute_smiles", "solvent_smiles", "T"]
+
+
+def _supervised_finite(df: pd.DataFrame) -> pd.DataFrame:
+    sup = df["has_solubility"].fillna(False).astype(bool)
+    fin = np.isfinite(df["ln_x2_pred"].to_numpy(dtype=float))
+    return df[sup & fin]
+
+
+def intersection_keys(frames: dict[str, pd.DataFrame]):
+    """Keys (solute,solvent,T) supervised AND finite-pred in EVERY arm."""
+    common = None
+    for df in frames.values():
+        keys = set(map(tuple, _supervised_finite(df)[_KEY].itertuples(index=False, name=None)))
+        common = keys if common is None else (common & keys)
+    return sorted(common or set())
+
+
+def r2(true: np.ndarray, pred: np.ndarray) -> float:
+    true = np.asarray(true, float)
+    pred = np.asarray(pred, float)
+    ss_res = float(np.sum((true - pred) ** 2))
+    ss_tot = float(np.sum((true - true.mean()) ** 2))
+    return float(1.0 - ss_res / (ss_tot + 1e-12))
+
+
+def is_ring_bearing(smiles: str) -> bool:
+    mol = Chem.MolFromSmiles(str(smiles))
+    return bool(mol is not None and mol.GetRingInfo().NumRings() > 0)
+
+
+def _metrics_on_keys(df: pd.DataFrame, keys) -> dict:
+    idx = df.set_index(_KEY)
+    sub = idx.loc[[k for k in keys if k in idx.index]]
+    true = sub["ln_x2_true"].to_numpy(float)
+    pred = sub["ln_x2_pred"].to_numpy(float)
+    lng = sub["ln_gamma2_pred"].to_numpy(float) if "ln_gamma2_pred" in sub else np.array([np.nan])
+    lng = lng[np.isfinite(lng)]
+    return {
+        "r2": r2(true, pred),
+        "mae": float(np.mean(np.abs(true - pred))),
+        "lngamma_std": float(np.std(lng, ddof=1)) if lng.size > 1 else float("nan"),
+        "n": int(len(true)),
+    }
+
+
+def evaluate_criteria(per_arm: dict, *, direct_label: str, lngamma_band) -> dict:
+    lo, hi = lngamma_band
+    direct_r2 = per_arm.get(direct_label, {}).get("r2", float("nan"))
+    rescue, keeps = {}, {}
+    for label, mtr in per_arm.items():
+        rescue[label] = bool(np.isfinite(direct_r2) and mtr["r2"] >= direct_r2)
+        std = mtr.get("lngamma_std", float("nan"))
+        keeps[label] = bool(np.isfinite(std) and lo <= std <= hi)
+    return {"rescue": rescue, "keeps_constraint": keeps,
+            "matched_direct_r2": direct_r2}
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--run", action="append", required=True, help="LABEL=predictions.csv")
+    ap.add_argument("--direct-label", default="directgnn")
+    ap.add_argument("--lngamma-band", nargs=2, type=float, default=[1.0, 2.0])
+    ap.add_argument("--out-json", required=True)
+    args = ap.parse_args()
+
+    frames = {}
+    for spec in args.run:
+        label, path = spec.split("=", 1)
+        frames[label] = pd.read_csv(path)
+    keys = intersection_keys(frames)
+    per_arm = {label: _metrics_on_keys(df, keys) for label, df in frames.items()}
+    # ring/acyclic stratification of the locked key set
+    ring_keys = [k for k in keys if is_ring_bearing(k[0])]
+    acyc_keys = [k for k in keys if not is_ring_bearing(k[0])]
+    strat = {
+        label: {
+            "ring_bearing": _metrics_on_keys(df, ring_keys),
+            "acyclic": _metrics_on_keys(df, acyc_keys),
+        } for label, df in frames.items()
+    }
+    criteria = evaluate_criteria(per_arm, direct_label=args.direct_label,
+                                 lngamma_band=tuple(args.lngamma_band))
+    out = {"n_locked": len(keys), "n_ring_bearing": len(ring_keys),
+           "n_acyclic": len(acyc_keys), "per_arm": per_arm,
+           "stratified": strat, "criteria": criteria,
+           "lngamma_band": list(args.lngamma_band)}
+    with open(args.out_json, "w") as f:
+        json.dump(out, f, indent=2)
+    print(json.dumps(criteria, indent=2))
+
+
+if __name__ == "__main__":
+    main()
