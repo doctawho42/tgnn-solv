@@ -545,6 +545,24 @@ surface:
   - direct uncertainty and calibration paths
   - no synthetic solver-term reporting
 
+## COSMO-SAC combinatorial (size) ablation
+
+The differentiable COSMO-SAC activity model can run with or without the
+Staverman–Guggenheim combinatorial (size/shape) term:
+
+- **Arm A — residual-only (default):** `cosmo_sac_wire_volume: false`. Activity is
+  the restoring/residual term only; molar volume is not used.
+- **Arm B — residual + combinatorial:** `cosmo_sac_wire_volume: true` (with
+  `cosmo_sac_use_combinatorial: true`, the default). The size term is fed by the
+  `AuxPropsHead` molar volume (cm³/mol), converted to Å³/molecule
+  (×1e24/N_A ≈ 1.66054) and passed **detached**, so the size factor is grounded
+  by the volume head, not fit by the solubility loss.
+
+Caveat: `AuxPropsHead` predicts a real molar volume, not a COSMO cavity volume,
+so the `r = V/r0` normalization (r0 = 66.69 Å³) is approximate; arm B tests
+whether a grounded size correction helps, not an exact COSMO cavity model.
+Run both arms in the experiment harness (P3) to ablate the size term.
+
 ## Related Pages
 
 - [Training](training.md)
