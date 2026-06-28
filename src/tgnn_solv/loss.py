@@ -64,28 +64,44 @@ def sigma_profile_emd_loss(
     mask: Tensor,
     *,
     mode: str = "emd",
-    area_scale: float = 200.0,
+    area_scale: float = 75.0,
+    shape_weight: float = 1.0,
     eps: float = 1e-8,
-) -> Tensor:
+    return_components: bool = False,
+) -> Tensor | tuple[Tensor, dict[str, float]]:
     """Masked sigma-profile supervision loss (shape + cavity area).
 
-    The shape term is the 1-D Wasserstein/EMD distance on the ordered sigma grid
-    (``mean|cumsum(pred) - cumsum(target)|``), which tolerates small bin shifts
-    far better than per-bin MSE; ``mode="mse"`` falls back to per-bin MSE. The
-    area term is a scaled MSE on the cavity surface area. Both are averaged over
-    the masked single-component rows.
+    The shape term is the 1-D Wasserstein/EMD distance on the ordered sigma grid,
+    SUMMED over bins (``sum|cumsum(pred) - cumsum(target)|``) so the 51-dim shape
+    that defines the activity manifold is not crushed by a per-bin mean and cannot
+    be dominated by the single area scalar; ``mode="mse"`` falls back to per-bin
+    MSE. The area term is a scaled MSE on the cavity surface area; ``area_scale``
+    should track the pool's sigma_area std (~75 Å²). Both are averaged over the
+    masked single-component rows. With ``return_components=True`` also returns the
+    detached scalar shape/area terms for logging.
     """
     m = mask.bool()
     if not bool(m.any()):
-        return pred_shape.sum() * 0.0
+        zero = pred_shape.sum() * 0.0
+        if return_components:
+            return zero, {"sigma_shape": 0.0, "sigma_area": 0.0}
+        return zero
     ps = pred_shape[m]
     ts = target_shape[m]
     if mode == "mse":
         shape_loss = ((ps - ts) ** 2).sum(dim=-1).mean()
     else:
-        shape_loss = (torch.cumsum(ps, dim=-1) - torch.cumsum(ts, dim=-1)).abs().mean(dim=-1).mean()
+        shape_loss = (
+            torch.cumsum(ps, dim=-1) - torch.cumsum(ts, dim=-1)
+        ).abs().sum(dim=-1).mean()
     area_loss = (((pred_area[m] - target_area[m]) / area_scale) ** 2).mean()
-    return shape_loss + area_loss
+    total = shape_weight * shape_loss + area_loss
+    if return_components:
+        return total, {
+            "sigma_shape": float(shape_loss.item()),
+            "sigma_area": float(area_loss.item()),
+        }
+    return total
 
 
 class TGNNSolvLoss(nn.Module):

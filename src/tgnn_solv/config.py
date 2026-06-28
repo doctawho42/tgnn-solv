@@ -184,8 +184,9 @@ class TGNNSolvConfig:
     cosmo_sac_gamma_iter_train: int = 8
     cosmo_sac_gamma_iter_eval: int = 30
     # Sigma-profile head output scaling (cavity surface area, Å²).
-    sigma_area_scale: float = 200.0
+    sigma_area_scale: float = 75.0  # ~pool sigma_area std; see P0 loss rebalance
     sigma_area_min: float = 20.0
+    sigma_shape_weight: float = 1.0  # weight on the SUM-EMD shape term
     # Sigma-profile external aux supervision stream.
     sigma_aux_steps_per_epoch: int = 0
     sigma_aux_phase1_weight: Optional[float] = None

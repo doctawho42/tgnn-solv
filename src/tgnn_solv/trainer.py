@@ -873,10 +873,12 @@ class TGNNSolvTrainer:
             if isinstance(fp, Tensor):
                 g_sol = g_sol + model.fp_pre_scale * model.solute_fp_adapter(fp.to(g_sol))
         sig = model.head_sigma(g_sol)
-        loss = weight * sigma_profile_emd_loss(
+        loss_val, comps = sigma_profile_emd_loss(
             sig["p_shape"], target_shape, sig["area"], target_area, mask,
             mode=self.cfg.sigma_profile_loss, area_scale=self.cfg.sigma_area_scale,
+            shape_weight=self.cfg.sigma_shape_weight, return_components=True,
         )
+        loss = weight * loss_val
         if not torch.isfinite(loss):
             LOGGER.warning("Skipping non-finite sigma-profile auxiliary loss: %s", loss)
             return None, {}
@@ -884,7 +886,11 @@ class TGNNSolvTrainer:
         torch.nn.utils.clip_grad_norm_(list(self.model.parameters()), self.cfg.grad_clip)
         optimizer.step()
         self._maybe_release_device_cache()
-        return float(loss.item()), {"sigma_profile": float(loss.item())}
+        return float(loss.item()), {
+            "sigma_profile": float(loss.item()),
+            "sigma_shape": comps["sigma_shape"],
+            "sigma_area": comps["sigma_area"],
+        }
 
     def _clone_model_state(self) -> dict[str, Tensor]:
         """Clone the current model weights onto CPU for best-state restore."""
