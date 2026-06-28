@@ -95,8 +95,16 @@ grounded arm "keeps the constraint" if its std stays in a similar window (not co
 to ~0, not blown up). Sanity-check the pilot R²/MAE look like real numbers (not MAE 3+ /
 R²~0, which would mean the run didn't actually use the GPU or didn't converge).
 
-The **oracle ceiling** is NOT `per_arm.oracle` (diluted ≈ grounded_a). Read it from the
-masked-subset block of the oracle arm's summary json:
+**Reading the oracle ceiling correctly (important).** `run_e5` uses
+`--sigma-oracle-side both`, whose mask is an **OR**: a row gets the solute oracle where
+the solute has a VT-2005 entry (~5% of rows) OR the solvent oracle where the solvent
+matches (~99%). So `sigma_oracle_applied` ≈ 99% and `per_arm.oracle` measures a mostly
+*solvent-grounded* ceiling — NOT strict "both profiles perfect". For the strict lever-C
+ceiling (both solute+solvent perfect) the relevant rows are the ~5% where the solute
+ALSO matches; for a clean *solute-only* ceiling re-export an arm with
+`--sigma-oracle-side solute` and read its masked subset. In all cases the oracle ceiling
+is NOT `per_arm.oracle` in comparison.json (diluted ≈ grounded_a) — read the masked-subset
+block of the oracle arm's summary json:
 
 ```python
 # cell 5b — true oracle ceiling on the ~5% covered rows
