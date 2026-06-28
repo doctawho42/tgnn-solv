@@ -38,16 +38,16 @@ import os; os.makedirs(PERSIST, exist_ok=True)
 ```bash
 # cell 2
 %cd /content
-!git clone --branch sigma-grounded-cosmosac <YOUR_REMOTE_OR_UPLOAD> tgnn-solv || true
+!git clone --branch sigma-grounded-cosmosac https://github.com/doctawho42/tgnn-solv.git tgnn-solv
 %cd /content/tgnn-solv
 !pip -q install -e .
 # If torch_geometric / rdkit aren't pulled in by the editable install, add them explicitly:
 #   !pip -q install torch_geometric rdkit
 ```
 
-> The branch is local-only (not pushed). Either push it to a remote first, or upload the
-> repo as a zip and `unzip` it under `/content/tgnn-solv`. The src/ is what matters; the
-> data comes from Step 3.
+> The branch is already on GitHub (`origin/sigma-grounded-cosmosac`). If the repo is
+> private, add a token to the URL: `https://<USER>:<TOKEN>@github.com/doctawho42/tgnn-solv.git`.
+> The data is NOT in git — it comes from the bundle in Step 3.
 
 ## Step 3 — restore the data bundle into the repo
 
