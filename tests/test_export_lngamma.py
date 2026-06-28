@@ -28,5 +28,5 @@ def test_forward_exposes_ln_gamma_2():
 
 def test_oracle_tensors_match_only_known_smiles():
     table = {"CCO": (np.zeros(51), 88.0)}
-    p, A, mask = build_oracle_tensors(["CCO", "CCCCCC"], table, n_bins=51)
+    _p, _A, mask = build_oracle_tensors(["CCO", "CCCCCC"], table, n_bins=51)
     assert bool(mask[0]) and not bool(mask[1])

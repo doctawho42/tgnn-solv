@@ -167,8 +167,9 @@ def main() -> None:
     loader = build_loader(df, cfg, args.batch_size, args.seed)
 
     sigma_table: dict | None = None
+    sigma_n_bins = getattr(cfg, "cosmo_sac_n_bins", 51)
     if args.sigma_oracle:
-        sigma_table = load_sigma_profiles(args.sigma_artifact, n_bins=cfg.cosmo_sac_n_bins)
+        sigma_table = load_sigma_profiles(args.sigma_artifact, n_bins=sigma_n_bins)
 
     rows: list[dict[str, Any]] = []
     with torch.no_grad():
@@ -180,7 +181,7 @@ def main() -> None:
             mask_solvent: torch.Tensor | None = None
             if sigma_table is not None:
                 side = args.sigma_oracle_side
-                n_bins = cfg.cosmo_sac_n_bins
+                n_bins = sigma_n_bins
                 if side in {"solute", "both"}:
                     p_sol, a_sol, mask_solute = build_oracle_tensors(
                         targets["solute_smiles"], sigma_table, n_bins=n_bins
@@ -308,7 +309,7 @@ def main() -> None:
         "pred_std": float(pred.std(ddof=0)) if len(pred) else None,
         "pred_std_ratio": float(pred.std(ddof=0) / (y.std(ddof=0) + 1e-12)) if len(pred) else None,
     }
-    if "sigma_oracle_applied" in out_df.columns:
+    if args.sigma_oracle:
         oracle_subset = out_df[out_df["sigma_oracle_applied"] & out_df["has_solubility"]].copy()
         n_oracle = int(len(oracle_subset))
         if n_oracle > 0:
