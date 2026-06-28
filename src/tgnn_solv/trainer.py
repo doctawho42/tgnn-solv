@@ -172,6 +172,24 @@ COORDINATE_DESCENT_ALLOWED_LOSSES = {
     },
 }
 
+
+def _sigma_step_due(
+    batch_idx: int, n_batches: int, steps_done: int, steps_target: int
+) -> bool:
+    """Whether to run a sigma-aux step at this batch, interleaved across the epoch.
+
+    Spreads ``steps_target`` steps evenly over ``n_batches`` (stride = n//target)
+    rather than front-loading the first ``steps_target`` batches, so SLE steps do
+    not un-ground the head within the same epoch.
+    """
+    if steps_target <= 0 or steps_done >= steps_target or n_batches <= 0:
+        return False
+    if steps_target >= n_batches:
+        return True
+    stride = n_batches // steps_target
+    return batch_idx % stride == 0
+
+
 class TGNNSolvTrainer:
     """Curriculum trainer with three phases."""
 
@@ -1289,6 +1307,7 @@ class TGNNSolvTrainer:
 
         self._set_correction_freeze_for_phase(phase, epoch)
 
+        n_epoch_batches = len(loader)
         for batch_idx, (sol_batch, slv_batch, targets) in enumerate(
             progress(
                 loader,
@@ -1509,7 +1528,9 @@ class TGNNSolvTrainer:
                             crystal_aux_raw_accum.get(k, 0.0) + float(v)
                         )
 
-            if sigma_iter is not None and sigma_aux_steps < sigma_steps_target:
+            if sigma_iter is not None and _sigma_step_due(
+                batch_idx, n_epoch_batches, sigma_aux_steps, sigma_steps_target
+            ):
                 try:
                     sigma_batch = next(sigma_iter)
                 except StopIteration:
