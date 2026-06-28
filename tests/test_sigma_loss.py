@@ -44,5 +44,5 @@ def test_empty_mask_returns_zero_with_components():
         z, z.detach(), torch.zeros(1), torch.zeros(1), torch.tensor([False]),
         return_components=True,
     )
-    assert float(total) == 0.0
+    assert total.item() == 0.0
     assert comps == {"sigma_shape": 0.0, "sigma_area": 0.0}

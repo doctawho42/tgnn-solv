@@ -98,8 +98,8 @@ def sigma_profile_emd_loss(
     total = shape_weight * shape_loss + area_loss
     if return_components:
         return total, {
-            "sigma_shape": float(shape_loss.item()),
-            "sigma_area": float(area_loss.item()),
+            "sigma_shape": shape_loss.item(),
+            "sigma_area": area_loss.item(),
         }
     return total
 

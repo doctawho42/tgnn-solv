@@ -1280,6 +1280,7 @@ class TGNNSolvTrainer:
         )
         sigma_aux_loss_accum = 0.0
         sigma_aux_steps = 0
+        sigma_aux_raw_accum: dict[str, float] = {}
         sigma_steps_target = max(int(self.cfg.sigma_aux_steps_per_epoch), 0)
         sigma_iter = (
             iter(sigma_loader)
@@ -1536,10 +1537,14 @@ class TGNNSolvTrainer:
                 except StopIteration:
                     sigma_iter = iter(sigma_loader)
                     sigma_batch = next(sigma_iter)
-                aux_loss, _ = self._train_sigma_aux_batch(sigma_batch, optimizer, phase)
+                aux_loss, aux_dict = self._train_sigma_aux_batch(sigma_batch, optimizer, phase)
                 if aux_loss is not None:
                     sigma_aux_loss_accum += aux_loss
                     sigma_aux_steps += 1
+                    for k, v in aux_dict.items():
+                        sigma_aux_raw_accum[k] = (
+                            sigma_aux_raw_accum.get(k, 0.0) + float(v)
+                        )
 
         avg_loss = total_loss / max(n_batches, 1)
         avg_raw_components = {
@@ -1585,6 +1590,10 @@ class TGNNSolvTrainer:
             avg_weighted_components["sigma_aux_total"] = (
                 sigma_aux_loss_accum / sigma_aux_steps
             )
+            for key, value in sigma_aux_raw_accum.items():
+                component = f"sigma_aux_{key}"
+                avg_raw_components[component] = value / sigma_aux_steps
+                avg_weighted_components[component] = 0.0
         self._maybe_release_device_cache(force=True)
         component_weights = {
             key: self._effective_loss_weight(key, weights)
@@ -1600,6 +1609,8 @@ class TGNNSolvTrainer:
             component_weights["crystal_aux_dH"] = self._crystal_aux_weight(phase)
         if sigma_aux_steps > 0:
             component_weights["sigma_aux_total"] = 1.0
+            component_weights["sigma_aux_sigma_shape"] = self._sigma_aux_weight(phase)
+            component_weights["sigma_aux_sigma_area"] = self._sigma_aux_weight(phase)
 
         return avg_loss, {
             "raw": avg_raw_components,

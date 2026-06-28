@@ -10,11 +10,12 @@ separate CSV in processed-dataset format, consumed via
 
 Each row is a single-component sigma-profile label row: the solute is paired with
 itself as the "solvent" (valid graph, no pair signal), ``has_solubility=False``,
-all other masks off, ``has_sigma_profile=True``, plus the normalized 51-bin
-profile (``sigma_p_0..sigma_p_50``, sums to 1) and cavity area ``sigma_area``.
+all other masks off, ``has_sigma_profile=True``, plus the normalized n-bin
+profile (``sigma_p_0..sigma_p_{n-1}``, sums to 1, n controlled by ``--n-bins``)
+and cavity area ``sigma_area``.
 
 Input artifact columns: ``smiles`` (or ``solute_smiles``), ``sigma_area``, and
-either 51 ``sigma_p_*`` columns (already a shape or area-weighted profile) — they
+either n ``sigma_p_*`` columns (already a shape or area-weighted profile) — they
 are renormalized to a shape here.
 
 CRITICAL GUARD: exclude pool solutes whose Bemis-Murcko scaffold appears in a
