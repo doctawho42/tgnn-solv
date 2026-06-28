@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 
 from tgnn_solv.config import TGNNSolvConfig
-from tgnn_solv.data.utils import get_scaffold
+from tgnn_solv.data.utils import get_scaffold, scaffold_key
 
 
 def grid_metadata(n_bins: int) -> dict:
@@ -108,7 +108,7 @@ def _excluded_scaffolds(paths: list[str], *, allow_missing: bool = False) -> set
         path_scaffolds = {
             scaf
             for smi in df["solute_smiles"].dropna().astype(str).unique()
-            if (scaf := get_scaffold(smi))
+            if (scaf := scaffold_key(smi))
         }
         if not path_scaffolds and not allow_missing:
             raise ValueError(
@@ -157,7 +157,7 @@ def main() -> None:
             "of held-out scaffolds into the sigma-profile aux pool."
         )
     if excluded:
-        sigma = sigma[~sigma[smiles_col].astype(str).map(lambda s: get_scaffold(s) in excluded)]
+        sigma = sigma[~sigma[smiles_col].astype(str).map(lambda s: scaffold_key(s) in excluded)]
     n_after = len(sigma)
 
     template = pd.read_csv(args.template_csv, nrows=1, low_memory=False)

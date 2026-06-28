@@ -76,6 +76,23 @@ def get_scaffold(smi: str) -> Optional[str]:
         return None
 
 
+def scaffold_key(smi: str) -> Optional[str]:
+    """Leak-guard key: Murcko scaffold, or canonical SMILES for acyclic molecules.
+
+    ``get_scaffold`` returns an empty string for acyclic molecules (no ring
+    system), which silently bypasses scaffold-exclusion. This returns a non-empty
+    key for every parseable molecule so acyclic-vs-acyclic leakage is still
+    caught; ``None`` only when RDKit cannot parse the SMILES.
+    """
+    scaf = get_scaffold(smi)
+    if scaf:
+        return scaf
+    mol = Chem.MolFromSmiles(smi)
+    if mol is None:
+        return None
+    return Chem.MolToSmiles(mol, canonical=True)
+
+
 # ------------------------------------------------------------------ #
 #  File download                                                      #
 # ------------------------------------------------------------------ #
