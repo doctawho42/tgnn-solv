@@ -1,5 +1,4 @@
-# Pinned grounded COSMO-SAC recipe for the decisive lever-C run (P3).
-# Matched capacity h64/3L; sigma-warmup + freeze; converged solver (n_iter 16/30).
+# NRTL milestone arm for run_e5 (P3): matched-capacity h64/3L + matched budget (30/70/10=110).
 
 model:
   hidden_dim: 64
@@ -9,10 +8,11 @@ model:
   n_cross_attn_layers: 3
   pair_dim: 512
   interaction_mode: "cross_attn"
-  activity_model: "cosmo_sac"
+  activity_model: "nrtl"
   dropout: 0.012430793241475136
   use_implicit_diff: true
   use_solvent_moe: true
+  nrtl_tau_mode: "ref_invT"
   use_temperature_in_encoder: false
   use_temperature_in_interaction: false
   use_temperature_in_nrtl_head: true
@@ -31,16 +31,6 @@ model:
   correction_dH_fraction: 0.25
   correction_tau_max_delta: 2.0
   monotonicity_force_explicit: false
-  cosmo_sac_gamma_iter_train: 16
-  cosmo_sac_gamma_iter_eval: 30
-  cosmo_sac_wire_volume: false        # arm A (residual-only); arm B flips via --set
-  cosmo_sac_use_combinatorial: true
-  sigma_aux_symmetrize: true
-  freeze_sigma_head_during_sle: true
-  sigma_warmup_epochs: 40
-  sigma_warmup_min_epochs: 5
-  sigma_aux_steps_per_epoch: 21       # >= one full pass over the ~1319-row pool at batch 64
-  sigma_area_anchor_mae_tol: 30.0
 
 training:
   epochs_phase1: 30

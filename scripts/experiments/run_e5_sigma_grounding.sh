@@ -117,7 +117,7 @@ for SEED in ${SEEDS}; do
 
     case "${arm}" in
       nrtl)
-        "${PY}" scripts/train.py --config configs/paper_config_tuned.yaml \
+        "${PY}" scripts/train.py --config configs/paper_config_nrtl_h64L3.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
           --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" ${EXTRA_TRAIN_ARGS}
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
