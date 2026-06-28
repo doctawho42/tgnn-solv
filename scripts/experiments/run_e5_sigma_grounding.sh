@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# P3 run_e5: decisive lever-C comparison — NRTL / DirectGNN-h64 / cosmo {ungrounded,
+# grounded-A residual-only, grounded-B +SG} / oracle — on the corrected split, >=3 seeds,
+# metrics intersection-locked by run_e5_comparison.py. REAL metrics need GPU; CPU = smoke.
+#
+# Usage (GPU):
+#   DEVICE=cuda bash scripts/experiments/run_e5_sigma_grounding.sh
+# CPU smoke (no meaningful metrics — just checks the wiring):
+#   DEVICE=cpu SEEDS=42 WARMUP_EPOCHS=1 SIGMA_STEPS=2 \
+#     EXTRA_TRAIN_ARGS="--epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1" \
+#     bash scripts/experiments/run_e5_sigma_grounding.sh
+#
+# Env overrides (defaults):
+#   PY               $HOME/anaconda3/envs/tgnn-solv/bin/python
+#   DEVICE           cuda            torch device for training/export
+#   DATA_DIR         notebooks/data/processed       (the CORRECTED split)
+#   SIGMA_DIR        notebooks/data/processed_sigma_aux_stream
+#   OUT_DIR          results/e5_sigma_grounding
+#   CKPT_DIR         checkpoints/e5
+#   SEEDS            "42 43 44"      space-separated list of random seeds
+#   SIGMA_STEPS      21              sigma aux steps per epoch
+#   WARMUP_EPOCHS    40              sigma warmup epochs before SLE
+#   EXTRA_TRAIN_ARGS ""              passed verbatim to TGNN train.py calls
+set -euo pipefail
+cd "$(dirname "$0")/../.."
+export KMP_DUPLICATE_LIB_OK=TRUE   # rdkit/torch/sklearn libomp clash on macOS
+
+PY="${PY:-$HOME/anaconda3/envs/tgnn-solv/bin/python}"
+DEVICE="${DEVICE:-cuda}"
+DATA_DIR="${DATA_DIR:-notebooks/data/processed}"
+SIGMA_DIR="${SIGMA_DIR:-notebooks/data/processed_sigma_aux_stream}"
+OUT_DIR="${OUT_DIR:-results/e5_sigma_grounding}"
+CKPT_DIR="${CKPT_DIR:-checkpoints/e5}"
+SEEDS="${SEEDS:-42 43 44}"
+SIGMA_STEPS="${SIGMA_STEPS:-21}"
+WARMUP_EPOCHS="${WARMUP_EPOCHS:-40}"
+EXTRA_TRAIN_ARGS="${EXTRA_TRAIN_ARGS:-}"   # e.g. --epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1 for CPU smoke
+
+TRAIN="${DATA_DIR}/train.csv"; VAL="${DATA_DIR}/val.csv"; TEST="${DATA_DIR}/test.csv"
+mkdir -p "${OUT_DIR}" "${CKPT_DIR}"
+
+echo "================================================================"
+echo " run_e5: sigma-grounding decisive comparison"
+echo "   device=${DEVICE}  data=${DATA_DIR}  sigma=${SIGMA_DIR}"
+echo "   seeds=${SEEDS}  out=${OUT_DIR}  ckpt=${CKPT_DIR}"
+echo "================================================================"
+
+# --- 0. Guard: refuse to run on corrupted (+273 K) T_m labels ---
+"${PY}" - "$TEST" <<'PYG'
+import sys, pandas as pd
+df = pd.read_csv(sys.argv[1], low_memory=False)
+if "T_m" in df.columns:
+    tm = pd.to_numeric(df["T_m"], errors="coerce")
+    if "has_T_m" in df.columns:
+        tm = tm[df["has_T_m"].astype(str).str.lower().isin({"true", "1", "1.0"})]
+    med = float(tm.median())
+    print(f"   test T_m median = {med:.1f} K", "(corrected)" if med < 560 else "(!! CORRUPTED)")
+    assert med < 560, f"T_m median {med} looks +273 K corrupted -- run prepare_data with the fixed loader first."
+print("T_m guard ok")
+PYG
+
+# --- Prereq: build the scaffold-disjoint sigma-VAL split if missing ---
+if [ ! -f "${SIGMA_DIR}/sigma_val.csv" ]; then
+  echo "== building sigma-VAL split (scaffold-disjoint from test+val) =="
+  "${PY}" scripts/data/build_sigma_profile_aux_stream.py \
+    --output-csv "${SIGMA_DIR}/sigma_train.csv" --output-val-csv "${SIGMA_DIR}/sigma_val.csv" \
+    --val-fraction 0.1 --split-seed 0 \
+    --exclude-scaffolds-from "${TEST}" "${VAL}"
+fi
+
+# --- Shared grounding args for the two grounded TGNN arms ---
+# NOTE: any --set ... group must be LAST in the calling command (argparse nargs='*' is greedy).
+COSMO_GROUND=(--sigma-train-data "${SIGMA_DIR}/sigma_train.csv" --sigma-val-data "${SIGMA_DIR}/sigma_val.csv" \
+              --sigma-steps-per-epoch "${SIGMA_STEPS}" --sigma-warmup-epochs "${WARMUP_EPOCHS}" \
+              --freeze-sigma-head-during-sle)
+
+# --- Per-seed × per-arm loop ---
+for SEED in ${SEEDS}; do
+  SOUT="${OUT_DIR}/seed_${SEED}"; mkdir -p "${SOUT}"
+  declare -a RUN_ARGS=()
+
+  for arm in nrtl directgnn ungrounded grounded_a grounded_b oracle; do
+    ckpt="${CKPT_DIR}/${arm}_seed${SEED}.pt"
+    pred="${SOUT}/${arm}_predictions.csv"
+    echo "-- seed=${SEED}  arm=${arm}"
+
+    case "${arm}" in
+      nrtl)
+        "${PY}" scripts/train.py --config configs/paper_config_tuned.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" --device "${DEVICE}" --checkpoint "${ckpt}" ${EXTRA_TRAIN_ARGS}
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn --device "${DEVICE}" ;;
+      directgnn)
+        "${PY}" scripts/train_directgnn.py --config configs/paper_config_directgnn_h64L3.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" --device "${DEVICE}" --checkpoint "${ckpt}"
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type direct --device "${DEVICE}" ;;
+      ungrounded)
+        "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" --device "${DEVICE}" --checkpoint "${ckpt}" \
+          --sigma-steps-per-epoch 0 --sigma-warmup-epochs 0 ${EXTRA_TRAIN_ARGS}
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn --device "${DEVICE}" ;;
+      grounded_a)
+        "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" --device "${DEVICE}" --checkpoint "${ckpt}" \
+          "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS}
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn --device "${DEVICE}" ;;
+      grounded_b)
+        # --set cosmo_sac_wire_volume=true must be LAST (argparse nargs='*' is greedy)
+        "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" --device "${DEVICE}" --checkpoint "${ckpt}" \
+          "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} --set cosmo_sac_wire_volume=true
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn --device "${DEVICE}" ;;
+      oracle)
+        # Reuse the grounded_a checkpoint; only the eval path changes (oracle sigma injection).
+        # Measures the ceiling if the COSMO-SAC head had perfect sigma profiles.
+        # Coverage ~5% of test rows (molecules with oracle profiles); rest are masked.
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${CKPT_DIR}/grounded_a_seed${SEED}.pt" \
+          --data "${TEST}" --output "${pred}" \
+          --model-type tgnn --device "${DEVICE}" \
+          --sigma-oracle --sigma-oracle-side both ;;
+    esac
+
+    RUN_ARGS+=("--run" "${arm}=${pred}")
+  done
+
+  echo "== seed ${SEED}: running aggregator =="
+  "${PY}" scripts/analysis/run_e5_comparison.py "${RUN_ARGS[@]}" \
+    --direct-label directgnn --out-json "${SOUT}/comparison.json"
+done
+
+echo ""
+echo "================================================================"
+echo " run_e5 complete -> ${OUT_DIR}"
+echo " Per-seed comparison.json written to seed_*/comparison.json."
+echo " Aggregate across seeds for the decisive verdict."
+echo "================================================================"

@@ -291,6 +291,81 @@ python scripts/evaluation/run_thermo_stress_suite.py ...
 For checkpoint- or intermediate-level interpretation after training, use the
 analysis surfaces under `scripts/analysis/`.
 
+## run\_e5 — Decisive Lever-C Comparison (σ-Grounding)
+
+`scripts/experiments/run_e5_sigma_grounding.sh` is the P3 orchestrator for the
+decisive σ-grounding experiment. It trains six arms across ≥ 3 seeds on the
+corrected scaffold split, exports per-row predictions (including γ), and calls
+`run_e5_comparison.py` to produce an intersection-locked metric table per seed.
+
+### Six arms
+
+| Arm | Model | Training recipe |
+| --- | --- | --- |
+| `nrtl` | TGNNSolv | standard NRTL proxy (`paper_config_tuned.yaml`) |
+| `directgnn` | DirectGNN h64-L3 | direct end-to-end (`paper_config_directgnn_h64L3.yaml`) |
+| `ungrounded` | TGNNSolv + COSMO-SAC | COSMO-SAC head, zero σ-aux steps (`cosmo_sac.yaml`, `--sigma-steps-per-epoch 0`) |
+| `grounded_a` | TGNNSolv + COSMO-SAC | residual-only grounding: σ-aux stream, SLE warmup, frozen σ-head during SLE |
+| `grounded_b` | TGNNSolv + COSMO-SAC | same as A + `--set cosmo_sac_wire_volume=true` (volume-coupled SG) |
+| `oracle` | grounded\_a ckpt | oracle σ-profile injection at export time (`--sigma-oracle --sigma-oracle-side both`); reuses `grounded_a` checkpoint, no retraining |
+
+### GPU command (≥ 3 seeds, ~6 h per seed)
+
+```bash
+DEVICE=cuda bash scripts/experiments/run_e5_sigma_grounding.sh
+```
+
+Override env vars as needed (all have defaults):
+
+```bash
+DEVICE=cuda SEEDS="42 43 44" DATA_DIR=notebooks/data/processed \
+  SIGMA_DIR=notebooks/data/processed_sigma_aux_stream \
+  OUT_DIR=results/e5_sigma_grounding CKPT_DIR=checkpoints/e5 \
+  bash scripts/experiments/run_e5_sigma_grounding.sh
+```
+
+CPU smoke (checks wiring only; no meaningful metrics):
+
+```bash
+DEVICE=cpu SEEDS=42 WARMUP_EPOCHS=1 SIGMA_STEPS=2 \
+  EXTRA_TRAIN_ARGS="--epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1" \
+  bash scripts/experiments/run_e5_sigma_grounding.sh
+```
+
+### Pre-registered criteria (evaluated by `run_e5_comparison.py`)
+
+- **Rescue criterion:** `grounded_a` (or `grounded_b`) achieves lower ln x₂ MAE
+  than `directgnn` on the intersection of molecules with valid σ profiles.
+- **Keeps-constraint:** `std(ln γ_pred)` stays within the calibrated band
+  `[--lngamma-band lo hi]` (calibrate `lo`/`hi` from the `ungrounded` run before
+  declaring the keeps-constraint met; default band 1.0–2.0 is a placeholder).
+- **Stratified rescue:** ring-bearing vs acyclic subsets reported separately.
+
+### Outputs
+
+```
+results/e5_sigma_grounding/
+  seed_42/comparison.json        # per-seed aggregated metrics + criteria flags
+  seed_43/comparison.json
+  seed_44/comparison.json
+  seed_42/<arm>_predictions.csv  # per-arm row-level predictions (ln x2, ln γ, ...)
+  ...
+```
+
+Aggregate across seeds (mean ± std of key metrics from each `comparison.json`)
+for the decisive verdict.
+
+### Caveats
+
+- **Oracle coverage ~5%:** the oracle arm only has σ profiles for a small fraction
+  of test molecules; the oracle metric is an upper bound on a filtered subset, not
+  a representative score. Interpret separately from the grounded-arm metrics.
+- **Real metrics need GPU:** the CPU smoke verifies the wiring but produces
+  meaningless numbers due to the severely truncated training budget.
+- **Calibrate `--lngamma-band` before claiming keeps-constraint:** run the
+  `ungrounded` arm first, extract `std(ln γ_pred)` from its predictions, and use
+  that as the reference band. The default `[1.0, 2.0]` is a conservative prior.
+
 <div class="tgnn-page-nav" markdown="1">
 
 ## Related Pages
