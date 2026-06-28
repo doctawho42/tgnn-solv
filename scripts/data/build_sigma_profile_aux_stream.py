@@ -227,15 +227,18 @@ def main() -> None:
     train_out, val_out = split_by_scaffold(out, args.val_fraction, args.split_seed)
     Path(args.output_csv).parent.mkdir(parents=True, exist_ok=True)
     Path(args.summary_json).parent.mkdir(parents=True, exist_ok=True)
-    train_out.to_csv(args.output_csv, index=False)
     if len(val_out) > 0:
-        Path(args.output_val_csv).parent.mkdir(parents=True, exist_ok=True)
-        val_out.to_csv(args.output_val_csv, index=False)
-        # fail-closed disjointness guard (mirrors _excluded_scaffolds style)
+        # fail-closed disjointness guard (mirrors _excluded_scaffolds style):
+        # verify BEFORE writing so a leak leaves no partial CSVs on disk.
         tr = {scaffold_key(s) for s in train_out["solute_smiles"]}
         va = {scaffold_key(s) for s in val_out["solute_smiles"]}
         if not tr.isdisjoint(va):
             raise SystemExit("sigma TRAIN/VAL scaffold leak detected; aborting.")
+        train_out.to_csv(args.output_csv, index=False)
+        Path(args.output_val_csv).parent.mkdir(parents=True, exist_ok=True)
+        val_out.to_csv(args.output_val_csv, index=False)
+    else:
+        train_out.to_csv(args.output_csv, index=False)
 
     summary = {
         "sigma_csv": args.sigma_csv, "template_csv": args.template_csv,
