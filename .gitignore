@@ -37,3 +37,6 @@ figures/*
 # OS
 .DS_Store
 Thumbs.db
+
+# Superpowers SDD scratch (ledger, briefs, reports)
+.superpowers/
