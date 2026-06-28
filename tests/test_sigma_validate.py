@@ -1,5 +1,3 @@
-import torch
-
 from sigma_fixtures import make_tiny_cosmo_trainer_and_loader
 
 

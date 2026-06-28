@@ -1334,22 +1334,25 @@ def main() -> None:
             print("   Resume checkpoint already marks training as completed; skipping fit.")
         else:
             if getattr(config, "sigma_warmup_epochs", 0) > 0 and sigma_train_loader is not None:
-                from tgnn_solv.pretrain_pipeline import run_sigma_warmup_pretraining
-                print("\n6a. Running sigma-warmup pretraining (head_sigma grounding)...")
-                warm_meta = run_sigma_warmup_pretraining(
-                    model, config, device=device,
-                    sigma_train_loader=sigma_train_loader,
-                    sigma_val_loader=sigma_val_loader,
-                )
-                if not warm_meta.get("skipped"):
-                    print(
-                        f"    sigma-warmup: {warm_meta['epochs_run']} epochs, "
-                        f"best_val={warm_meta['best_val']:.4f}, "
-                        f"area_mae={warm_meta['area_mae']:.2f} Å², "
-                        f"gate_passed={warm_meta['area_gate_passed']}"
-                    )
+                if resume_checkpoint is not None:
+                    print("Skipping sigma-warmup on resume (already grounded).")
                 else:
-                    print(f"    sigma-warmup skipped: {warm_meta}")
+                    from tgnn_solv.pretrain_pipeline import run_sigma_warmup_pretraining
+                    print("\n6a. Running sigma-warmup pretraining (head_sigma grounding)...")
+                    warm_meta = run_sigma_warmup_pretraining(
+                        model, config, device=device,
+                        sigma_train_loader=sigma_train_loader,
+                        sigma_val_loader=sigma_val_loader,
+                    )
+                    if not warm_meta.get("skipped"):
+                        print(
+                            f"    sigma-warmup: {warm_meta['epochs_run']} epochs, "
+                            f"best_val={warm_meta['best_val']:.4f}, "
+                            f"area_mae={warm_meta['area_mae']:.2f} Å², "
+                            f"gate_passed={warm_meta['area_gate_passed']}"
+                        )
+                    else:
+                        print(f"    sigma-warmup skipped: {warm_meta}")
             trainer.train_full(
                 train_loader,
                 val_loader,

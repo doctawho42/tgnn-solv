@@ -14,7 +14,6 @@ sys.path.insert(0, "src")
 
 import numpy as np
 import pandas as pd
-import torch
 
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import make_loader

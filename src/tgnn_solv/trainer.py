@@ -1788,7 +1788,9 @@ class TGNNSolvTrainer:
     def validate_sigma(self, loader) -> dict[str, float]:
         """Aggregate sigma EMD + raw-Å² area MAE over a sigma loader (for warmup
         early-stop and the area-anchor gate). No-grad; head_sigma must exist."""
+        was_training = self.model.training
         if getattr(self.model, "head_sigma", None) is None:
+            self.model.train(was_training)
             return {"sigma_profile": 0.0, "sigma_shape": 0.0, "sigma_area": 0.0, "sigma_area_mae": 0.0}
         self.model.eval()
         tot = {"sigma_profile": 0.0, "sigma_shape": 0.0, "sigma_area": 0.0}
@@ -1814,6 +1816,7 @@ class TGNNSolvTrainer:
                 n_area += int(mask.sum().item())
         out = {k: v / max(n, 1) for k, v in tot.items()}
         out["sigma_area_mae"] = area_abs / max(n_area, 1)
+        self.model.train(was_training)
         return out
 
     # -------------------------------------------------------------- #

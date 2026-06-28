@@ -2,9 +2,9 @@ import importlib
 
 import numpy as np
 import pandas as pd
+from tgnn_solv.data.utils import scaffold_key
 
 mod = importlib.import_module("scripts.data.build_sigma_profile_aux_stream")
-from tgnn_solv.data.utils import scaffold_key
 
 
 def _pool(n_bins=51):

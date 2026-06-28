@@ -47,9 +47,6 @@ def test_warmup_skips_when_no_head_sigma():
     """Non-cosmo models (no head_sigma) should get skipped gracefully."""
     from tgnn_solv.config import TGNNSolvConfig
     from tgnn_solv.model import TGNNSolv
-    from tgnn_solv.data.dataset import make_loader
-    import pandas as pd
-    import numpy as np
 
     cfg = TGNNSolvConfig(activity_model="nrtl", hidden_dim=32, n_gnn_layers=2,
                          n_cross_attn_layers=1, n_attn_heads=4, pair_dim=64,

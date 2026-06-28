@@ -33,7 +33,6 @@ def test_train_sigma_aux_batch_still_works_after_refactor():
 
 
 def _grad_norm(module):
-    import torch
     g = [p.grad.detach().abs().sum() for p in module.parameters() if p.grad is not None]
     return float(torch.stack(g).sum()) if g else 0.0
 
