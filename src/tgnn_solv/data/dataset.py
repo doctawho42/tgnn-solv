@@ -210,6 +210,7 @@ class TGNNSolvDataset(Dataset):
         source_uncertainty_min_sigma_ln_x2: float = 0.20,
         source_uncertainty_min_weight: float = 0.25,
         source_uncertainty_max_weight: float = 4.0,
+        expected_sigma_bins: int | None = None,
     ) -> None:
         self.cache: dict[str, Data] | None = {} if cache else None
         self.use_morgan_features = use_morgan_features
@@ -226,6 +227,7 @@ class TGNNSolvDataset(Dataset):
         self.explicit_h_max_heavy_atoms = int(explicit_h_max_heavy_atoms)
         self.use_pseudo_hansen = use_pseudo_hansen
         self.pseudo_hansen_weight_discount = float(pseudo_hansen_weight_discount)
+        self.expected_sigma_bins = expected_sigma_bins
         if str(source_uncertainty_csv).strip():
             df = attach_source_uncertainty(
                 df,
@@ -548,6 +550,30 @@ class TGNNSolvDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Sample:
         r = self.df.iloc[idx]
+
+        # Early preflight: validate sigma-profile columns before any other work.
+        _sig_cols_early = sorted(
+            (c for c in r.index if str(c).startswith("sigma_p_")),
+            key=lambda c: int(str(c).rsplit("_", 1)[-1]),
+        )
+        if _sig_cols_early:
+            if (
+                self.expected_sigma_bins is not None
+                and len(_sig_cols_early) != self.expected_sigma_bins
+            ):
+                raise ValueError(
+                    f"sigma-profile row has {len(_sig_cols_early)} sigma_p_* columns but "
+                    f"cfg.cosmo_sac_n_bins={self.expected_sigma_bins}; the profile "
+                    f"grid is mis-registered against the COSMO-SAC layer grid."
+                )
+            _has_sig_early = bool(self._row_bool(r, ("has_sigma_profile",)) or False)
+            if _has_sig_early and not (
+                "sigma_area" in r.index and pd.notna(r["sigma_area"])
+            ):
+                raise ValueError(
+                    "sigma-profile row has has_sigma_profile=True but is missing a "
+                    "valid 'sigma_area'; refusing to default it to 0.0."
+                )
 
         sol_g = self._graph(r["solute_smiles"]).clone()
         slv_g = self._graph(r["solvent_smiles"]).clone()
@@ -895,16 +921,31 @@ class TGNNSolvDataset(Dataset):
             key=lambda c: int(str(c).rsplit("_", 1)[-1]),
         )
         if sig_cols:
+            if (
+                self.expected_sigma_bins is not None
+                and len(sig_cols) != self.expected_sigma_bins
+            ):
+                raise ValueError(
+                    f"sigma-profile row has {len(sig_cols)} sigma_p_* columns but "
+                    f"cfg.cosmo_sac_n_bins={self.expected_sigma_bins}; the profile "
+                    f"grid is mis-registered against the COSMO-SAC layer grid."
+                )
+            has_sig = bool(self._row_bool(r, ("has_sigma_profile",)) or False)
+            if has_sig and not (
+                "sigma_area" in r.index and pd.notna(r["sigma_area"])
+            ):
+                raise ValueError(
+                    "sigma-profile row has has_sigma_profile=True but is missing a "
+                    "valid 'sigma_area'; refusing to default it to 0.0."
+                )
             t["sigma_profile_target"] = torch.tensor(
                 [float(r[c]) for c in sig_cols], dtype=torch.float
             )
             t["sigma_area_target"] = torch.tensor(
-                float(r["sigma_area"]) if "sigma_area" in r.index and pd.notna(r["sigma_area"]) else 0.0,
+                float(r["sigma_area"]) if has_sig else 0.0,
                 dtype=torch.float,
             )
-            t["sigma_profile_mask"] = torch.tensor(
-                bool(self._row_bool(r, ("has_sigma_profile",)) or False), dtype=torch.bool
-            )
+            t["sigma_profile_mask"] = torch.tensor(has_sig, dtype=torch.bool)
         if self.use_morgan_features:
             if sol_fp is None or slv_fp is None:
                 raise ValueError(
@@ -996,6 +1037,7 @@ def make_loader(
     source_uncertainty_min_sigma_ln_x2: float = 0.20,
     source_uncertainty_min_weight: float = 0.25,
     source_uncertainty_max_weight: float = 4.0,
+    expected_sigma_bins: int | None = None,
     seed: int = 42,
 ) -> DataLoader:
     """Create a single DataLoader with optional same-pair temperature batching."""
@@ -1022,6 +1064,7 @@ def make_loader(
         source_uncertainty_min_sigma_ln_x2=source_uncertainty_min_sigma_ln_x2,
         source_uncertainty_min_weight=source_uncertainty_min_weight,
         source_uncertainty_max_weight=source_uncertainty_max_weight,
+        expected_sigma_bins=expected_sigma_bins,
     )
 
     if drop_last is None:

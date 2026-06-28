@@ -780,6 +780,7 @@ def load_data(
         source_uncertainty_min_sigma_ln_x2=config.source_uncertainty_min_sigma_ln_x2,
         source_uncertainty_min_weight=config.source_uncertainty_min_weight,
         source_uncertainty_max_weight=config.source_uncertainty_max_weight,
+        expected_sigma_bins=getattr(config, "cosmo_sac_n_bins", None),
         seed=seed,
     )
 
