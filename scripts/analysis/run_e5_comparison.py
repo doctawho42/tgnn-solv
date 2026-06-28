@@ -12,8 +12,19 @@ from rdkit import Chem
 _KEY = ["solute_smiles", "solvent_smiles", "T"]
 
 
+def _round_key(df: pd.DataFrame) -> pd.DataFrame:
+    """Round float `T` to 6 dp so bit-identical-float drift can't silently drop rows."""
+    df = df.copy()
+    df["T"] = df["T"].round(6)
+    return df
+
+
 def _supervised_finite(df: pd.DataFrame) -> pd.DataFrame:
-    sup = df["has_solubility"].fillna(False).astype(bool)
+    df = df.drop_duplicates(_KEY, keep="first")
+    if df["has_solubility"].dtype == object:
+        sup = df["has_solubility"].map(lambda v: str(v).strip().lower() in ("true", "1"))
+    else:
+        sup = df["has_solubility"].fillna(False).astype(bool)
     fin = np.isfinite(df["ln_x2_pred"].to_numpy(dtype=float))
     return df[sup & fin]
 
@@ -22,7 +33,8 @@ def intersection_keys(frames: dict[str, pd.DataFrame]):
     """Keys (solute,solvent,T) supervised AND finite-pred in EVERY arm."""
     common = None
     for df in frames.values():
-        keys = set(map(tuple, _supervised_finite(df)[_KEY].itertuples(index=False, name=None)))
+        elig = _supervised_finite(_round_key(df))
+        keys = set(map(tuple, elig[_KEY].itertuples(index=False, name=None)))
         common = keys if common is None else (common & keys)
     return sorted(common or set())
 
@@ -30,6 +42,8 @@ def intersection_keys(frames: dict[str, pd.DataFrame]):
 def r2(true: np.ndarray, pred: np.ndarray) -> float:
     true = np.asarray(true, float)
     pred = np.asarray(pred, float)
+    if true.size < 2:  # <2-row set has ss_tot ~ 0; R2 undefined, avoid false 1.0
+        return float("nan")
     ss_res = float(np.sum((true - pred) ** 2))
     ss_tot = float(np.sum((true - true.mean()) ** 2))
     return float(1.0 - ss_res / (ss_tot + 1e-12))
@@ -41,7 +55,7 @@ def is_ring_bearing(smiles: str) -> bool:
 
 
 def _metrics_on_keys(df: pd.DataFrame, keys) -> dict:
-    idx = df.set_index(_KEY)
+    idx = _round_key(df).drop_duplicates(_KEY, keep="first").set_index(_KEY)
     sub = idx.loc[[k for k in keys if k in idx.index]]
     true = sub["ln_x2_true"].to_numpy(float)
     pred = sub["ln_x2_pred"].to_numpy(float)
@@ -60,7 +74,9 @@ def evaluate_criteria(per_arm: dict, *, direct_label: str, lngamma_band) -> dict
     direct_r2 = per_arm.get(direct_label, {}).get("r2", float("nan"))
     rescue, keeps = {}, {}
     for label, mtr in per_arm.items():
-        rescue[label] = bool(np.isfinite(direct_r2) and mtr["r2"] >= direct_r2)
+        rescue[label] = bool(
+            np.isfinite(direct_r2) and np.isfinite(mtr["r2"]) and mtr["r2"] >= direct_r2
+        )
         std = mtr.get("lngamma_std", float("nan"))
         keeps[label] = bool(np.isfinite(std) and lo <= std <= hi)
     return {"rescue": rescue, "keeps_constraint": keeps,
@@ -80,6 +96,11 @@ def main() -> None:
         label, path = spec.split("=", 1)
         frames[label] = pd.read_csv(path)
     keys = intersection_keys(frames)
+    if len(keys) == 0:
+        raise SystemExit(
+            "run_e5_comparison: empty cross-arm intersection (n_locked=0) — check "
+            "--direct-label and that all arms share supervised, finite-prediction rows."
+        )
     per_arm = {label: _metrics_on_keys(df, keys) for label, df in frames.items()}
     # ring/acyclic stratification of the locked key set
     ring_keys = [k for k in keys if is_ring_bearing(k[0])]
