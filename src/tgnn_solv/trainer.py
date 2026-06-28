@@ -328,6 +328,10 @@ class TGNNSolvTrainer:
             param.requires_grad = True
         self._correction_frozen = None
 
+        if (getattr(self.cfg, "freeze_sigma_head_during_sle", False)
+                and phase >= 2 and self.model.head_sigma is not None):
+            self._set_requires_grad(self.model.head_sigma, False)
+
         if self._resolved_branch_training_mode() != "coordinate_descent":
             return
 
@@ -900,6 +904,8 @@ class TGNNSolvTrainer:
         if getattr(model, "head_sigma", None) is None:
             return None, {}
         if self._resolved_branch_training_mode() == "coordinate_descent" and phase == 2:
+            return None, {}
+        if getattr(self.cfg, "freeze_sigma_head_during_sle", False) and phase >= 2:
             return None, {}
         weight = self._sigma_aux_weight(phase)
         if weight <= 0.0:
