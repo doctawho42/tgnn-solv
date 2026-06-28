@@ -57,6 +57,8 @@ def is_ring_bearing(smiles: str) -> bool:
 def _metrics_on_keys(df: pd.DataFrame, keys) -> dict:
     idx = _round_key(df).drop_duplicates(_KEY, keep="first").set_index(_KEY)
     sub = idx.loc[[k for k in keys if k in idx.index]]
+    if not keys or len(sub) == 0:
+        return {"r2": float("nan"), "mae": float("nan"), "lngamma_std": float("nan"), "n": 0}
     true = sub["ln_x2_true"].to_numpy(float)
     pred = sub["ln_x2_pred"].to_numpy(float)
     lng = sub["ln_gamma2_pred"].to_numpy(float) if "ln_gamma2_pred" in sub else np.array([np.nan])

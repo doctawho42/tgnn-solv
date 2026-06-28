@@ -33,7 +33,8 @@ def test_forward_uses_oracle_profile_for_matched_rows():
     assert B >= 2  # fixture yields batch_size 2; need a mixed mask
     n = model.cfg.cosmo_sac_n_bins
     # craft a distinctive oracle profile, MIXED mask: only row 0 matched
-    oracle_p = torch.zeros(B, n); oracle_p[:, 0] = 100.0  # mass entirely in bin 0
+    oracle_p = torch.zeros(B, n)
+    oracle_p[:, 0] = 100.0  # mass entirely in bin 0
     oracle_A = torch.full((B,), 100.0)
     mask = torch.tensor([True] + [False] * (B - 1))
     targets["sigma_oracle_p_solute"] = oracle_p

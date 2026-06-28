@@ -35,6 +35,7 @@ SEEDS="${SEEDS:-42 43 44}"
 SIGMA_STEPS="${SIGMA_STEPS:-21}"
 WARMUP_EPOCHS="${WARMUP_EPOCHS:-40}"
 EXTRA_TRAIN_ARGS="${EXTRA_TRAIN_ARGS:-}"   # e.g. --epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1 for CPU smoke
+SIGMA_ARTIFACT="${SIGMA_ARTIFACT:-results/sigma_profile_artifact/sigma_profiles.csv}"
 
 TRAIN="${DATA_DIR}/train.csv"; VAL="${DATA_DIR}/val.csv"; TEST="${DATA_DIR}/test.csv"
 mkdir -p "${OUT_DIR}" "${CKPT_DIR}"
@@ -66,6 +67,12 @@ if [ ! -f "${SIGMA_DIR}/sigma_val.csv" ]; then
     --output-csv "${SIGMA_DIR}/sigma_train.csv" --output-val-csv "${SIGMA_DIR}/sigma_val.csv" \
     --val-fraction 0.1 --split-seed 0 \
     --exclude-scaffolds-from "${TEST}" "${VAL}"
+fi
+
+# --- Guard: oracle arm needs the VT-2005 sigma-profile artifact ---
+if [ ! -f "${SIGMA_ARTIFACT}" ]; then
+  echo "run_e5: missing VT-2005 oracle artifact ${SIGMA_ARTIFACT} — run scripts/data/ingest_vt2005_sigma_profiles.py first" >&2
+  exit 1
 fi
 
 # --- Shared grounding args for the two grounded TGNN arms ---
@@ -132,7 +139,8 @@ for SEED in ${SEEDS}; do
           --checkpoint "${CKPT_DIR}/grounded_a_seed${SEED}.pt" \
           --data "${TEST}" --output "${pred}" \
           --model-type tgnn --device "${DEVICE}" \
-          --sigma-oracle --sigma-oracle-side both ;;
+          --sigma-oracle --sigma-oracle-side both \
+          --sigma-artifact "${SIGMA_ARTIFACT}" ;;
     esac
 
     RUN_ARGS+=("--run" "${arm}=${pred}")

@@ -334,8 +334,9 @@ DEVICE=cpu SEEDS=42 WARMUP_EPOCHS=1 SIGMA_STEPS=2 \
 
 ### Pre-registered criteria (evaluated by `run_e5_comparison.py`)
 
-- **Rescue criterion:** `grounded_a` (or `grounded_b`) achieves lower ln x₂ MAE
-  than `directgnn` on the intersection of molecules with valid σ profiles.
+- **Rescue criterion:** `grounded_a` (or `grounded_b`) achieves R² ≥ matched
+  DirectGNN-h64 R², evaluated on the n\_supervised intersection (rows supervised
+  and finite-prediction across all arms; NOT σ-profile-gated).
 - **Keeps-constraint:** `std(ln γ_pred)` stays within the calibrated band
   `[--lngamma-band lo hi]` (calibrate `lo`/`hi` from the `ungrounded` run before
   declaring the keeps-constraint met; default band 1.0–2.0 is a placeholder).
@@ -360,6 +361,12 @@ for the decisive verdict.
 - **Oracle coverage ~5%:** the oracle arm only has σ profiles for a small fraction
   of test molecules; the oracle metric is an upper bound on a filtered subset, not
   a representative score. Interpret separately from the grounded-arm metrics.
+  The oracle arm reuses the `grounded_a` checkpoint and injects true profiles on
+  only the ~5% of rows with a VT-2005 entry, so
+  `comparison.json["per_arm"]["oracle"]` is ≈ grounded\_a (diluted), NOT the
+  lever-C ceiling; the true oracle ceiling is the masked-subset block (the
+  `sigma_oracle`/`n_oracle` metrics) in the oracle arm's
+  `*_predictions.summary.json`.
 - **Real metrics need GPU:** the CPU smoke verifies the wiring but produces
   meaningless numbers due to the severely truncated training budget.
 - **Calibrate `--lngamma-band` before claiming keeps-constraint:** run the
