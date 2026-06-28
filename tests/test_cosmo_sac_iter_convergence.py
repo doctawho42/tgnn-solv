@@ -14,11 +14,7 @@ at T=273.15K; n=16 converges to within 6e-5 of n=30.
 
 from __future__ import annotations
 
-import sys
-
 import torch
-
-sys.path.insert(0, "src")
 
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.layers import CosmoSacLayer
@@ -73,6 +69,7 @@ def test_segment_fixed_point_converged_at_train_iters() -> None:
 
     TEMPERATURES = (273.15, 298.15, 373.15)
     gaps: list[float] = []
+    eval_self_gaps: list[float] = []
 
     for T_val in TEMPERATURES:
         T = torch.tensor([float(T_val)])
@@ -84,6 +81,9 @@ def test_segment_fixed_point_converged_at_train_iters() -> None:
         g_eval_pn  = layer._residual_ln_gamma2(
             polar, nonpolar, A_polar, A_nonpolar, x2, T, n_iter=n_eval
         )
+        g_more_pn  = layer._residual_ln_gamma2(
+            polar, nonpolar, A_polar, A_nonpolar, x2, T, n_iter=n_eval + 20
+        )
 
         # nonpolar solute in polar solvent (complementary case)
         g_train_np = layer._residual_ln_gamma2(
@@ -92,6 +92,9 @@ def test_segment_fixed_point_converged_at_train_iters() -> None:
         g_eval_np  = layer._residual_ln_gamma2(
             nonpolar, polar, A_nonpolar, A_polar, x2, T, n_iter=n_eval
         )
+        g_more_np  = layer._residual_ln_gamma2(
+            nonpolar, polar, A_nonpolar, A_polar, x2, T, n_iter=n_eval + 20
+        )
 
         gap = max(
             float((g_train_pn - g_eval_pn).abs().max()),
@@ -99,10 +102,72 @@ def test_segment_fixed_point_converged_at_train_iters() -> None:
         )
         gaps.append(gap)
 
+        # eval must itself be converged: n_eval vs n_eval+20
+        eval_self_gaps.append(max(
+            float((g_eval_pn - g_more_pn).abs().max()),
+            float((g_eval_np - g_more_np).abs().max()),
+        ))
+
     max_gap = max(gaps)
     assert max_gap < TOL, (
         f"Segment fixed-point gap too large: {max_gap:.4f} ln-units "
         f"(n_train={n_train}, n_eval={n_eval}, TOL={TOL}). Per-T gaps: "
         + ", ".join(f"T={T}K→{g:.4f}" for T, g in zip(TEMPERATURES, gaps))
         + ". Bump cosmo_sac_gamma_iter_train in config.py:184."
+    )
+
+    max_eval_self = max(eval_self_gaps)
+    assert max_eval_self < TOL, (
+        f"Eval operator not self-converged: {max_eval_self:.4f} ln-units between "
+        f"n_iter={n_eval} and n_iter={n_eval + 20} (TOL={TOL}). Per-T gaps: "
+        + ", ".join(f"T={T}K→{g:.4f}" for T, g in zip(TEMPERATURES, eval_self_gaps))
+        + ". Bump cosmo_sac_gamma_iter_eval in config.py:185."
+    )
+
+
+def test_segment_converged_for_stiff_water_solvent() -> None:
+    """Sharp bimodal (water-like) solvent is the stiffest fixed point.
+
+    Smooth Gaussians under-represent the hardest convergence regime; a real
+    water σ-profile has two narrow HB donor/acceptor peaks that make the
+    segment fixed point stiffest at low T.  This pins that n_iter_train matches
+    n_iter_eval *and* that eval itself is converged for such an input, at the
+    coldest experimental temperature (273.15 K).
+    """
+    cfg = TGNNSolvConfig()
+    layer = CosmoSacLayer(cfg)
+    g = layer.sigma_grid
+
+    # Bimodal water-like solvent: sharp HB donor (-) / acceptor (+) peaks,
+    # total area ~43 Å² (close to a real water cavity).  _gauss returns
+    # shape (1, n_bins); summing two keeps that shape.
+    water = _gauss(g, -0.0155, 0.0020, 21.5) + _gauss(g, 0.0155, 0.0020, 21.5)
+    nonpolar = _gauss(g, 0.0, 0.004, 150.0)
+    A_w = water.sum(-1)        # ~43 Å²
+    A_np = nonpolar.sum(-1)    # ~150 Å²
+    x2 = torch.tensor([1e-4])  # near infinite dilution
+    T = torch.tensor([273.15])
+
+    g_train = layer._residual_ln_gamma2(
+        nonpolar, water, A_np, A_w, x2, T, n_iter=layer.n_iter_train
+    )
+    g_eval = layer._residual_ln_gamma2(
+        nonpolar, water, A_np, A_w, x2, T, n_iter=layer.n_iter_eval
+    )
+    g_more = layer._residual_ln_gamma2(
+        nonpolar, water, A_np, A_w, x2, T, n_iter=layer.n_iter_eval + 20
+    )
+
+    train_eval_gap = float((g_train - g_eval).abs().max())
+    eval_self_gap = float((g_eval - g_more).abs().max())
+
+    # train(n_train) vs eval(n_eval): operators equivalent for stiff in-dist input
+    assert train_eval_gap < TOL, (
+        f"Stiff-water train/eval gap {train_eval_gap:.4f} >= TOL={TOL} "
+        f"(n_train={layer.n_iter_train}, n_eval={layer.n_iter_eval})."
+    )
+    # eval must itself be converged: n_eval vs n_eval+20
+    assert eval_self_gap < TOL, (
+        f"Stiff-water eval not self-converged: {eval_self_gap:.4f} >= TOL={TOL} "
+        f"(n_iter={layer.n_iter_eval} vs {layer.n_iter_eval + 20})."
     )
