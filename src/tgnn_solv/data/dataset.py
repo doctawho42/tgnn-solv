@@ -921,23 +921,9 @@ class TGNNSolvDataset(Dataset):
             key=lambda c: int(str(c).rsplit("_", 1)[-1]),
         )
         if sig_cols:
-            if (
-                self.expected_sigma_bins is not None
-                and len(sig_cols) != self.expected_sigma_bins
-            ):
-                raise ValueError(
-                    f"sigma-profile row has {len(sig_cols)} sigma_p_* columns but "
-                    f"cfg.cosmo_sac_n_bins={self.expected_sigma_bins}; the profile "
-                    f"grid is mis-registered against the COSMO-SAC layer grid."
-                )
+            # Contract (bin count + sigma_area presence) is validated in the
+            # early preflight at the top of __getitem__; do not duplicate it here.
             has_sig = bool(self._row_bool(r, ("has_sigma_profile",)) or False)
-            if has_sig and not (
-                "sigma_area" in r.index and pd.notna(r["sigma_area"])
-            ):
-                raise ValueError(
-                    "sigma-profile row has has_sigma_profile=True but is missing a "
-                    "valid 'sigma_area'; refusing to default it to 0.0."
-                )
             t["sigma_profile_target"] = torch.tensor(
                 [float(r[c]) for c in sig_cols], dtype=torch.float
             )

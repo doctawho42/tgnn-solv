@@ -42,6 +42,8 @@ def test_correct_bin_count_ok():
     ds = TGNNSolvDataset(_sigma_row(51), cache=False, expected_sigma_bins=51)
     sample = ds[0]
     assert sample[2]["sigma_profile_target"].shape[0] == 51
+    assert sample[2]["sigma_area_target"].item() == 88.0
+    assert bool(sample[2]["sigma_profile_mask"].item()) is True
 
 
 def test_missing_area_raises_when_profile_present():
