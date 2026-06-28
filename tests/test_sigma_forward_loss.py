@@ -9,7 +9,6 @@ from __future__ import annotations
 import sys
 sys.path.insert(0, "src")
 
-import numpy as np
 import torch
 
 from sigma_fixtures import make_tiny_cosmo_trainer_and_loader, first_batch
@@ -30,3 +29,4 @@ def test_train_sigma_aux_batch_still_works_after_refactor():
     trainer.cfg.sigma_aux_phase1_weight = 1.0  # ensure weight > 0 so it runs
     loss_val, d = trainer._train_sigma_aux_batch(batch, trainer._build_optimizer(1), phase=1)
     assert loss_val is None or (isinstance(loss_val, float) and loss_val >= 0.0)
+    assert d == {} or set(d) >= {"sigma_profile", "sigma_shape", "sigma_area"}

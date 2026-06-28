@@ -907,8 +907,13 @@ class TGNNSolvTrainer:
         optimizer.zero_grad()
         loss_val, comps = self._sigma_forward_loss(batch, role="solute")
         loss = weight * loss_val
-        if not torch.isfinite(loss):
-            LOGGER.warning("Skipping non-finite sigma-profile auxiliary loss: %s", loss)
+        # Empty-mask path: _sigma_forward_loss returns a non-grad zero. Skip the
+        # backward/step entirely (matches the original P0 empty-mask early-return)
+        # so no spurious momentum-only AdamW update is applied. A zero loss is
+        # finite, so the isfinite check alone would not catch this case.
+        if not loss.requires_grad or not torch.isfinite(loss):
+            if loss.requires_grad:  # grad-bearing but non-finite: worth a warning
+                LOGGER.warning("Skipping non-finite sigma-profile auxiliary loss: %s", loss)
             return None, {}
         loss.backward()
         torch.nn.utils.clip_grad_norm_(list(self.model.parameters()), self.cfg.grad_clip)
