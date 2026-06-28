@@ -539,14 +539,22 @@ class TGNNSolv(nn.Module):
             op = targets.get("sigma_oracle_p_solute")
             oa = targets.get("sigma_oracle_area_solute")
             om = targets.get("sigma_oracle_mask_solute")
-            if isinstance(op, torch.Tensor) and isinstance(om, torch.Tensor):
+            if (
+                isinstance(op, torch.Tensor)
+                and isinstance(oa, torch.Tensor)
+                and isinstance(om, torch.Tensor)
+            ):
                 m = om.to(p_sol.device).bool()
                 p_sol = torch.where(m.unsqueeze(-1), op.to(p_sol), p_sol)
                 a_sol = torch.where(m, oa.to(a_sol), a_sol)
             sp = targets.get("sigma_oracle_p_solvent")
             sa = targets.get("sigma_oracle_area_solvent")
             sm = targets.get("sigma_oracle_mask_solvent")
-            if isinstance(sp, torch.Tensor) and isinstance(sm, torch.Tensor):
+            if (
+                isinstance(sp, torch.Tensor)
+                and isinstance(sa, torch.Tensor)
+                and isinstance(sm, torch.Tensor)
+            ):
                 m = sm.to(p_slv.device).bool()
                 p_slv = torch.where(m.unsqueeze(-1), sp.to(p_slv), p_slv)
                 a_slv = torch.where(m, sa.to(a_slv), a_slv)
