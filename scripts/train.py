@@ -273,6 +273,32 @@ def parse_args() -> argparse.Namespace:
         help="Batch size for --sigma-train-data. Defaults to the main batch size.",
     )
     parser.add_argument(
+        "--sigma-val-data",
+        type=str,
+        default=None,
+        help=(
+            "Optional sigma-profile validation CSV for warmup early-stop "
+            "(mirrors --sigma-train-data format). Used by sigma-warmup pretraining."
+        ),
+    )
+    parser.add_argument(
+        "--sigma-warmup-epochs",
+        type=int,
+        default=None,
+        help=(
+            "Number of sigma-warmup pretraining epochs before the SLE curriculum "
+            "(overrides config.sigma_warmup_epochs; 0 disables)."
+        ),
+    )
+    parser.add_argument(
+        "--freeze-sigma-head-during-sle",
+        action="store_true",
+        help=(
+            "Freeze head_sigma during SLE phases 2/3 to hold the σ-manifold "
+            "established by warmup (sets config.freeze_sigma_head_during_sle=True)."
+        ),
+    )
+    parser.add_argument(
         "--set",
         dest="set_overrides",
         nargs="*",
@@ -972,6 +998,10 @@ def main() -> None:
                 config.crystal_aux_steps_per_epoch = int(args.crystal_steps_per_epoch)
             if args.sigma_steps_per_epoch is not None:
                 config.sigma_aux_steps_per_epoch = int(args.sigma_steps_per_epoch)
+            if args.sigma_warmup_epochs is not None:
+                config.sigma_warmup_epochs = args.sigma_warmup_epochs
+            if args.freeze_sigma_head_during_sle:
+                config.freeze_sigma_head_during_sle = True
             if args.probe_every > 0:
                 config.probe_every = int(args.probe_every)
         elif any(
@@ -1121,6 +1151,17 @@ def main() -> None:
                     seed=args.seed + 29,
                     batch_size=args.sigma_batch_size,
                 )
+
+        sigma_val_loader = None
+        if args.sigma_val_data:
+            print("   External sigma-profile auxiliary val:")
+            sigma_val_loader = load_data(
+                args.sigma_val_data,
+                config,
+                shuffle=False,
+                seed=args.seed + 31,
+                batch_size=args.sigma_batch_size,
+            )
 
         # Initialize model
         print("\n5. Initializing model...")
@@ -1292,12 +1333,30 @@ def main() -> None:
         if resume_state and resume_state.get("status") == "completed":
             print("   Resume checkpoint already marks training as completed; skipping fit.")
         else:
+            if getattr(config, "sigma_warmup_epochs", 0) > 0 and sigma_train_loader is not None:
+                from tgnn_solv.pretrain_pipeline import run_sigma_warmup_pretraining
+                print("\n6a. Running sigma-warmup pretraining (head_sigma grounding)...")
+                warm_meta = run_sigma_warmup_pretraining(
+                    model, config, device=device,
+                    sigma_train_loader=sigma_train_loader,
+                    sigma_val_loader=sigma_val_loader,
+                )
+                if not warm_meta.get("skipped"):
+                    print(
+                        f"    sigma-warmup: {warm_meta['epochs_run']} epochs, "
+                        f"best_val={warm_meta['best_val']:.4f}, "
+                        f"area_mae={warm_meta['area_mae']:.2f} Å², "
+                        f"gate_passed={warm_meta['area_gate_passed']}"
+                    )
+                else:
+                    print(f"    sigma-warmup skipped: {warm_meta}")
             trainer.train_full(
                 train_loader,
                 val_loader,
                 idac_train_loader=idac_train_loader,
                 crystal_train_loader=crystal_train_loader,
                 sigma_train_loader=sigma_train_loader,
+                sigma_val_loader=sigma_val_loader,
                 resume_state=resume_state,
                 on_epoch_end=on_epoch_end,
             )
