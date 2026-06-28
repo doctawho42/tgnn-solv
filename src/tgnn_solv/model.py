@@ -513,6 +513,9 @@ class TGNNSolv(nn.Module):
         self,
         g_solute: torch.Tensor,
         g_solvent: torch.Tensor,
+        *,
+        targets=None,
+        force_sigma_oracle: bool = False,
     ) -> dict[str, torch.Tensor]:
         """Build the COSMO-SAC activity-param dict from per-molecule sigma-profiles.
 
@@ -522,9 +525,31 @@ class TGNNSolv(nn.Module):
         the Staverman-Guggenheim combinatorial size term is active but cannot be
         trained by the solubility loss. ``alpha_12`` is a compatibility placeholder
         for the correction param-summary.
+
+        When ``force_sigma_oracle`` is True and the model is in eval mode and
+        ``targets`` is not None, the predicted sigma-profile is overridden with the
+        oracle values (from VT-2005 or similar) for matched rows, identified by the
+        boolean mask in ``targets["sigma_oracle_mask_solute"]``.
         """
         sol = self.head_sigma(g_solute)
         slv = self.head_sigma(g_solvent)
+        p_sol, a_sol = sol["p_sigma"], sol["area"]
+        p_slv, a_slv = slv["p_sigma"], slv["area"]
+        if force_sigma_oracle and not self.training and targets is not None:
+            op = targets.get("sigma_oracle_p_solute")
+            oa = targets.get("sigma_oracle_area_solute")
+            om = targets.get("sigma_oracle_mask_solute")
+            if isinstance(op, torch.Tensor) and isinstance(om, torch.Tensor):
+                m = om.to(p_sol.device).bool()
+                p_sol = torch.where(m.unsqueeze(-1), op.to(p_sol), p_sol)
+                a_sol = torch.where(m, oa.to(a_sol), a_sol)
+            sp = targets.get("sigma_oracle_p_solvent")
+            sa = targets.get("sigma_oracle_area_solvent")
+            sm = targets.get("sigma_oracle_mask_solvent")
+            if isinstance(sp, torch.Tensor) and isinstance(sm, torch.Tensor):
+                m = sm.to(p_slv.device).bool()
+                p_slv = torch.where(m.unsqueeze(-1), sp.to(p_slv), p_slv)
+                a_slv = torch.where(m, sa.to(a_slv), a_slv)
         if getattr(self.cfg, "cosmo_sac_wire_volume", False):
             # Grounded size factor: use the aux-head molar volume (cm^3/mol),
             # converted to A^3/molecule, DETACHED so the combinatorial term cannot
@@ -536,10 +561,10 @@ class TGNNSolv(nn.Module):
             v_solute = None
             v_solvent = None
         return {
-            "p_solute": sol["p_sigma"],
-            "A_solute": sol["area"],
-            "p_solvent": slv["p_sigma"],
-            "A_solvent": slv["area"],
+            "p_solute": p_sol,
+            "A_solute": a_sol,
+            "p_solvent": p_slv,
+            "A_solvent": a_slv,
             "V_solute": v_solute,
             "V_solvent": v_solvent,
             "alpha_12": torch.full_like(sol["area"], 0.3),
@@ -923,6 +948,7 @@ class TGNNSolv(nn.Module):
             dCp_fus_gc: Optional[torch.Tensor] = None,
             targets: Optional[Dict[str, torch.Tensor | object]] = None,
             force_oracle_injection: bool = False,
+            force_sigma_oracle: bool = False,
             detach_crystal_from_encoder: Optional[bool] = None,
             gamma_only: bool = False,
             return_intermediates: bool = False,  # ✦ NEW
@@ -1205,7 +1231,8 @@ class TGNNSolv(nn.Module):
                 for k, v in solver_fusion_params.items()
             }
         if self.is_cosmo_sac:
-            nrtl_params = self._build_sigma_activity_params(g_sol_pre, g_slv_pre)
+            nrtl_params = self._build_sigma_activity_params(
+                g_sol_pre, g_slv_pre, targets=targets, force_sigma_oracle=force_sigma_oracle)
         else:
             nrtl_params = self.head_nrtl(
                 g_pair,
