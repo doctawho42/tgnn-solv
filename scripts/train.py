@@ -12,6 +12,7 @@ Supports:
 import argparse
 import dataclasses
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -56,7 +57,18 @@ def resolve_device(device_str: str) -> torch.device:
     if requested == "mps" and not torch.backends.mps.is_available():
         print("WARNING: MPS requested but unavailable; falling back to CPU.")
         return torch.device("cpu")
-    return torch.device(device_str)
+    dev = torch.device(device_str)
+    if dev.type == "cuda" and os.environ.get("TGNN_MATMUL_TF32", "").lower() in (
+        "1", "true", "high", "yes", "on"
+    ):
+        # TF32 matmul: large speedup on Ampere+/Blackwell (a no-op on T4, which has
+        # no TF32), numerically negligible for training. Opt-in so default FP32 runs
+        # stay bit-comparable across seeds.
+        torch.set_float32_matmul_precision("high")
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        print("   TF32 matmul enabled (TGNN_MATMUL_TF32).")
+    return dev
 
 
 def parse_args() -> argparse.Namespace:
