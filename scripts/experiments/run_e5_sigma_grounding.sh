@@ -26,6 +26,7 @@
 #   OUT_DIR          results/e5_sigma_grounding
 #   CKPT_DIR         checkpoints/e5
 #   SEEDS            "42 43 44"      space-separated list of random seeds
+#   ARMS             all six         space-separated arm subset (smoke: ARMS="ungrounded")
 #   SIGMA_STEPS      21              sigma aux steps per epoch
 #   WARMUP_EPOCHS    40              sigma warmup epochs before SLE
 #   CHECKPOINT_EVERY 5               save a resumable training checkpoint every N epochs
@@ -42,6 +43,7 @@ SIGMA_DIR="${SIGMA_DIR:-notebooks/data/processed_sigma_aux_stream}"
 OUT_DIR="${OUT_DIR:-results/e5_sigma_grounding}"
 CKPT_DIR="${CKPT_DIR:-checkpoints/e5}"
 SEEDS="${SEEDS:-42 43 44}"
+ARMS="${ARMS:-nrtl directgnn ungrounded grounded_a grounded_b oracle}"  # subset for smoke/targeting
 SIGMA_STEPS="${SIGMA_STEPS:-21}"
 WARMUP_EPOCHS="${WARMUP_EPOCHS:-40}"
 CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-5}"
@@ -97,7 +99,7 @@ for SEED in ${SEEDS}; do
   SOUT="${OUT_DIR}/seed_${SEED}"; mkdir -p "${SOUT}"
   declare -a RUN_ARGS=()
 
-  for arm in nrtl directgnn ungrounded grounded_a grounded_b oracle; do
+  for arm in ${ARMS}; do
     ckpt="${CKPT_DIR}/${arm}_seed${SEED}.pt"
     pred="${SOUT}/${arm}_predictions.csv"
     echo "-- seed=${SEED}  arm=${arm}"
