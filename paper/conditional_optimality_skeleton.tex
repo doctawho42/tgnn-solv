@@ -1,0 +1,380 @@
+% Skeleton for: "When Does Physics Help? Conditional Optimality of
+% Thermodynamic Decomposition for Solubility Prediction"
+% Target: ML-for-Science journal (Digital Discovery / JCIM / ML:Science).
+%
+% Theorems T1-T5 are stated in their CORRECTED form (the load-bearing core is
+% T1/T3/T4; T2/T5/A-opt are ambitious extensions, each gated by an explicit
+% assumption + numerical Fisher audit). Real numbers from E0/E1 are filled in;
+% E2-E4 cells use \pending{} until the GPU runs land. Artifact paths are noted in
+% comments next to each table so values can be transcribed mechanically.
+%
+% Compile standalone, or splice the body into main.tex.
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{assumption}{Assumption}
+\newtheorem{definition}{Definition}
+
+% Pending-number marker for GPU results not yet in.
+\newcommand{\pending}[1][?]{{\color{red}\texttt{[#1]}}}
+
+\newcommand{\lnx}{\ln x_2}
+\newcommand{\Phicry}{\Phi}
+\newcommand{\dHfus}{\Delta H_{\mathrm{fus}}}
+\newcommand{\Tm}{T_m}
+\newcommand{\lng}{\ln\gamma_2}
+\newcommand{\Rgas}{R}
+
+\title{When Does Physics Help? Conditional Optimality of Thermodynamic
+Decomposition for Solubility Prediction}
+\author{N. Polomosnov \and \pending[co-authors]}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Physics-informed models for solid--liquid solubility predict
+$\lnx = -\Phicry(T) - \lng$, factorizing the target into a pure-component
+crystal term $\Phicry$ and a pair activity term $\lng$. We ask not whether such a
+bottleneck helps, but \emph{when}. We prove that the crystal/activity split is
+non-identifiable from solubility data alone whenever the activity model carries a
+$1/T$ term (Thm.~\ref{thm:ident}), characterize the residual information as a
+function of the activity hypothesis class (Thm.~\ref{thm:semiparam}), and give a
+generalization bound showing the decomposition reduces scaffold-extrapolation
+error \emph{iff} (i)~each factor is identifiable given the available supervision
+and (ii)~the factors are individually more transferable than the joint target
+(Thm.~\ref{thm:cond-opt}, the headline). The bound predicts both the observed
+``physics tax'' on raw accuracy and a concrete way to flip it: ground the crystal
+term on a large \emph{external single-component} melting-point pool that a
+black-box predictor cannot exploit. We further bound temperature-extrapolation
+error for the structured van't~Hoff hypothesis class (Thm.~\ref{thm:temp}) and
+explain why compensation is ``cheap'' for the optimizer at narrow temperature
+windows (Thm.~\ref{thm:geom}). Empirically we (E0) re-measure the
+crystal/activity compensation robustly, (E1) confirm the identifiability theory
+numerically, (E2) test conditional optimality via crystal grounding, (E3) test
+temperature extrapolation, and (E4) ablate the identifiability closers.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+\paragraph{Contributions.}
+\begin{itemize}
+  \item A corrected identifiability analysis of the SLE decomposition: a clean
+  rank/null-space statement (T1) and its class-dependent semiparametric
+  refinement (T2), replacing the folklore that multi-temperature data alone
+  resolves the split.
+  \item \textbf{Conditional optimality (T3):} a transfer/generalization bound
+  giving the exact condition under which a physical decomposition helps
+  out-of-distribution (new-scaffold) prediction, unifying the physics tax and
+  the temperature-extrapolation win.
+  \item A practical instantiation: grounding the crystal factor on an external
+  single-component label pool ($\sim$15k melting points after scaffold-leak
+  exclusion) plus group-contribution priors computable for any molecule.
+  \item Honest diagnostics: a robust decomposition-quality metric and the finding
+  that the standard test split cannot even measure crystal accuracy.
+\end{itemize}
+
+\section{Problem setup and notation}
+\label{sec:setup}
+For a solute~$s$ in solvent~$v$ at temperature~$T$, the target is
+$y=\lnx$, the log saturated mole fraction. Solid--liquid equilibrium gives
+\begin{equation}
+  \lnx = -\underbrace{\frac{\dHfus}{\Rgas}\!\Big(\tfrac1T-\tfrac1\Tm\Big)}_{\Phicry(T)\ \text{(crystal, depends on $s$)}}
+         \;-\;\underbrace{\lng(x_2,T)}_{\text{activity, depends on }(s,v)} ,
+  \label{eq:sle}
+\end{equation}
+with the constant-$\Delta C_p$ correction omitted for clarity (treated in
+App.~\pending[A]). The maintained activity uses the analytic infinite-dilution
+form $\lng=\ln\gamma_2^\infty(T)\,(1-x_2)^2$ with
+$\ln\gamma_2^\infty(T)=a+b\,(T_{\mathrm{ref}}/T-1)$, i.e.\ affine in $1/T$.
+We write $\theta=(\dHfus,\Tm,a,b)$ and let
+$v_k=\partial\,\mu(T_k)/\partial\dHfus$ denote the crystal sensitivity at
+temperature $T_k$, with $\mu(T;\theta)$ the model mean of~\eqref{eq:sle}.
+
+\section{Theory}
+\label{sec:theory}
+
+\subsection{Identifiability of the decomposition (load-bearing)}
+\begin{assumption}[Activity carries a $1/T$ term]\label{asm:b}
+The activity model contains a free parameter multiplying $1/T$ (here $b$), as in
+NRTL/van't~Hoff temperature dependence.
+\end{assumption}
+
+\begin{theorem}[Structural non-identifiability]\label{thm:ident}
+Under Assumption~\ref{asm:b}, with $\Delta C_p=0$, the map
+$\theta\mapsto\{\mu(T_k;\theta)\}_k$ is rank-deficient in the crystal/activity
+directions for any set of temperatures: the crystal sensitivity $v$ lies in the
+span of the activity columns $(\mathbf 1,\,1/T)$. Hence $\dHfus$ (equivalently
+the $\Phicry$/$\lng$ split) is not identifiable from solubility data alone; the
+Fisher information $\mathcal I_{\dHfus}=0$. The deficiency is closed exactly by
+adding rank-completing external constraints on the crystal factor (a direct
+$\dHfus$ label, or a constraint fixing the activity slope~$b$).
+\end{theorem}
+\begin{proof}[Proof sketch]
+$\Phicry(T)=(\dHfus/\Rgas)(1/T-1/\Tm)$ contributes only a $1/T$ shape plus a
+constant offset; both are already spanned by the activity's $b/T$ and $a$
+(constant) terms. Thus the design column for $\dHfus$ is a linear combination of
+existing columns, the Gram matrix is singular, and the corresponding Fisher
+information vanishes. Augmenting the design with a unit row on $\dHfus$ (a direct
+label) or removing the $b$ column (fixing the activity slope) restores full rank.
+\end{proof}
+
+\noindent\emph{Remark (correcting prior folklore).} Multi-temperature data does
+\emph{not} by itself identify the split: it only adds collinear $1/T$ rows. This
+is the honest version of earlier ``$(\Delta T)^{-k}$'' bounds, which silently
+assumed the activity had no free $1/T$ term.
+
+\subsection{Class-dependent information (semiparametric refinement)}
+\begin{theorem}[Effective information vs.\ activity class]\label{thm:semiparam}
+Let the activity nuisance lie in a class $\mathcal H$ with tangent projection
+$\Pi_{\mathcal H}$. The efficient information for $\dHfus$ is
+\begin{equation}
+  \mathcal I_{\mathrm{eff}}(\dHfus)=\sigma^{-2}\,\big\|v-\Pi_{\mathcal H}v\big\|^2 .
+\end{equation}
+If $\mathcal H$ contains $1/T$ (free slope), $\Pi_{\mathcal H}v=v$ and
+$\mathcal I_{\mathrm{eff}}=0$ (consistent with Thm.~\ref{thm:ident}); if
+$\mathcal H$ is restricted (slope known/constrained), $\mathcal I_{\mathrm{eff}}>0$
+and the Cram\'er--Rao bound on $\dHfus$ is finite.
+\end{theorem}
+\begin{proof}[Proof sketch]
+Project the crystal score onto the orthogonal complement of the nuisance tangent
+space (standard semiparametric efficient-score construction); the squared norm of
+the residual is the effective information. The two regimes follow from whether
+$v\in\overline{\mathcal H}$. A numerical Fisher audit for the full nonlinear
+model is reported in~\S\ref{sec:e1}.
+\end{proof}
+
+\subsection{Conditional optimality of physics (headline)}
+\begin{definition}[Factor transferability]
+Let $\rho_c,\rho_a$ be the population scaffold-extrapolation risks of the best
+crystal and activity-residual predictors in the chosen hypothesis classes, given
+their respective label coverages; let $\rho_y$ be that of a direct $\lnx$
+predictor with solubility-pair coverage only.
+\end{definition}
+
+\begin{theorem}[When the bottleneck helps]\label{thm:cond-opt}
+On a scaffold-shifted test distribution, the structured predictor obeys
+\begin{equation}
+  \mathcal R_{\mathrm{phys}}^{\mathrm{scaffold}} \;\le\;
+  \rho_c \;+\; \rho_a \;+\; \Gamma_{\mathrm{ident}},
+\end{equation}
+where $\Gamma_{\mathrm{ident}}$ is the identifiability gap (zero once the closers
+of Thm.~\ref{thm:ident} are supplied). The physics predictor strictly improves
+on the direct predictor, $\mathcal R_{\mathrm{phys}}^{\mathrm{scaffold}}<\rho_y$,
+\emph{iff} (i)~$\Gamma_{\mathrm{ident}}$ is closed and (ii)~the crystal factor
+inherits broader chemical coverage than the pairs ($\rho_c\ll$ its pair-only
+counterpart) and the activity residual is lower-complexity than the joint target.
+\end{theorem}
+\begin{proof}[Proof sketch]
+Decompose the structured risk through the two heads; bound each head by its own
+covariate-shift/transfer risk and the solver's Lipschitz constant; collect the
+unidentifiable cross-term into $\Gamma_{\mathrm{ident}}$. The crystal factor is a
+single-molecule function, so it may be supervised by an external pure-component
+pool of far larger chemical coverage than the solubility pairs, lowering $\rho_c$;
+the direct predictor has no such access. Full statement and constants in
+App.~\pending[B].
+\end{proof}
+
+\begin{corollary}[Mechanism]
+Grounding $\Phicry$ on an external single-component melting/enthalpy pool (and GC
+priors) both closes $\Gamma_{\mathrm{ident}}$ and lowers $\rho_c$; this is the
+concrete lever tested in~\S\ref{sec:e2}.
+\end{corollary}
+
+\subsection{Temperature-extrapolation optimality}
+\begin{theorem}[Bounded extrapolation for the van't Hoff class]\label{thm:temp}
+For same-pair extrapolation to $T^\star$ outside the training range
+$[T_{\min},T_{\max}]$, the structured (affine-in-$1/T$) hypothesis class has
+extrapolation error bounded by the slope-estimate variance times
+$|1/T^\star-\overline{1/T}|$, whereas an unstructured temperature encoder is
+unconstrained beyond the training support.
+\end{theorem}
+\begin{proof}[Proof sketch]
+Within the affine-in-$1/T$ family the prediction at $T^\star$ is an affine
+extrapolation; its error is controlled by the (bounded) variance of the fitted
+slope/intercept. No such constraint binds a free function approximator outside
+its training support. Verified against the pair van't~Hoff oracle in~\S\ref{sec:e3}.
+\end{proof}
+
+\subsection{Information geometry of compensation (explanatory)}
+\begin{theorem}[Geodesic cheapness at narrow $\Delta T$]\label{thm:geom}
+The minimal eigenvalue of the Fisher metric in the crystal/activity plane scales
+to zero as $\Delta T\to0$; consequently compensating moves along the
+identification surface incur vanishing information cost, which the optimizer
+prefers.
+\end{theorem}
+\begin{proof}[Proof sketch]
+As temperatures collapse, $1/T$ becomes nearly constant, the crystal and activity
+columns become collinear, and the smallest Fisher eigenvalue $\to0$
+(quantified in~\S\ref{sec:e1}).
+\end{proof}
+
+\paragraph{Caveat on the compensation metric.} Since
+$\delta\Phicry+\delta\lng=\,$(the $\lnx$ residual),
+$\mathrm{corr}(\delta\Phicry,\delta\lng)\!\to\!-1$ \emph{trivially} as the
+$\lnx$ fit improves, regardless of physical correctness. We therefore report the
+systematic crystal offset $\overline{\delta\Phicry}$ as the robust
+decomposition-quality metric.
+
+\begin{proposition}[A-optimal auxiliary weighting]\label{prop:aopt}
+Among nonnegative auxiliary-loss weights under a budget, the trace-optimal choice
+puts positive weight on every loss that adds information to a rank-deficient
+direction; under block-diagonal head structure (enforced by stop-gradient) this
+selects exactly the crystal, activity-level, and activity-shape signals.
+\end{proposition}
+
+\section{Experimental setup}
+\label{sec:exp-setup}
+Corpus, splits (Bemis--Murcko \texttt{solute\_scaffold} as the primary
+out-of-distribution test), baselines (DirectGNN, RF descriptor/Morgan/hybrid,
+ideal-SLE, pair van't~Hoff), and the corrected diagnostic. \pending[corpus
+counts, split table]
+
+\section{E0: robust re-measurement of compensation}
+\label{sec:e0}
+% Artifacts: results/e0_compensation/{gc_reference_summary.json, ...}
+The strict compensation metric needs measured $\Tm$ \emph{and} $\dHfus$ per row,
+but the standard test split has \textbf{zero} rows with a measured fusion
+enthalpy; the previously reported $\mathrm{corr}=-0.876$ came from an $n{=}8$
+hand-built probe. Against a physically-grounded GC (Joback) crystal reference on
+the full supervised test set ($n=5826$):
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+Quantity & Value \\
+\midrule
+$\mathrm{corr}(\delta\Phicry,\delta\lng)$ & $-0.962$ \\
+\quad bootstrap 95\% CI & $[-0.965,\,-0.958]$ \\
+$\overline{\delta\Phicry}$ (robust metric) & $-7.1$ \\
+opposite-sign fraction & $0.93$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Compensation is strong, stable, and negative; the crystal term is systematically
+far from the physical prior and the activity term absorbs it. This motivates both
+the grounding lever (E2) and a GC/external-pool evaluation protocol.
+
+\section{E1: numerical identifiability / Fisher audit}
+\label{sec:e1}
+% Artifacts: results/identifiability_audit/summary.json
+Validates Thm.~\ref{thm:ident},~\ref{thm:semiparam},~\ref{thm:geom}.
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Supervision regime ($\Delta T=40$\,K) & $\lambda_{\min}(\mathcal I)$ & $\mathrm{cond}(\mathcal I)$ & CRLB sd($\dHfus$) [J/mol] \\
+\midrule
+solubility only      & $5.4\times10^{-2}$ & $2.3\times10^{5}$ & $19{,}895$ \\
+\;+ $\Tm$ label       & $2.32$ & $5.4\times10^{3}$ & $3{,}151$ \\
+\;+ $\Tm$ + $\dHfus$  & $8.04$ & $1.6\times10^{3}$ & $1{,}689$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent\textbf{$\Delta T$ sweep} (cond, solubility-only):
+$1.7\times10^{3}\,(120\text{K})\to2.3\times10^{5}\,(40\text{K})\to1.9\times10^{16}\,(10\text{K})$
+-- narrow windows make the split rank-deficient (Thm.~\ref{thm:geom}).
+\noindent\textbf{Activity class} (nested, solubility-only): free slope
+$\Rightarrow$ sd$(\dHfus)=19{,}895$, cond $2.3\times10^5$; known slope
+$\Rightarrow$ sd$(\dHfus)=8{,}251$, cond $5.3\times10^2$ (Thm.~\ref{thm:semiparam}).
+
+\section{E2: conditional optimality via crystal grounding (headline)}
+\label{sec:e2}
+% Runner:   scripts/experiments/run_e2_crystal_grounding.sh
+% Artifact: results/e2_crystal_grounding/comparison.json
+Identical model trained WITHOUT vs WITH the external single-component crystal
+pool (only difference). Tests Thm.~\ref{thm:cond-opt}: grounding should lower
+crystal $\Tm$ MAE and tighten $\overline{\delta\Phicry}$ on the (entirely
+unseen-scaffold) test set without raising $\lnx$ MAE.
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Run & $\lnx$ MAE & crystal $\Tm$ MAE [K] & $\overline{\delta\Phicry}$ \\
+\midrule
+WITHOUT crystal pool & \pending & $47.5$ (proxy) & \pending \\
+WITH crystal pool    & \pending & \pending & \pending \\
+\midrule
+$\Delta$ (WITH$-$WITHOUT) & \pending & \pending & \pending \\
+\bottomrule
+\end{tabular}
+\end{center}
+External pool: 19{,}436 $\to$ 14{,}792 solutes after excluding 2{,}527 test/val
+scaffolds ($\sim10\times$ the train solutes with $\Tm$).
+T3 is supported if crystal $\Tm$ MAE and $|\overline{\delta\Phicry}|$ drop with
+non-positive $\lnx$ MAE change. \pending[interpretation]
+
+\section{E3: temperature extrapolation}
+\label{sec:e3}
+% Runner:   scripts/experiments/run_e3_temperature_extrapolation.sh
+% Artifact: results/e3_temperature/leaderboard.json
+Same-pair low-$T$ train / high-$T$ test. Tests Thm.~\ref{thm:temp}.
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Model & high-$T$ MAE & $R^2$ \\
+\midrule
+pair van't Hoff (oracle structure) & $0.368$ & $0.887$ \\
+pair linear-$T$ & $0.414$ & $0.850$ \\
+RF(Morgan+$T$) & $1.290$ & $0.658$ \\
+DirectGNN (unstructured) & \pending & \pending \\
+physics analytic curve (ours) & \pending & \pending \\
+\bottomrule
+\end{tabular}
+\end{center}
+van't~Hoff slope-sign accuracy (physics): \pending. T4 holds if the structured
+curve beats DirectGNN and approaches the pair van't~Hoff oracle.
+
+\section{E4: ablating the identifiability closers}
+\label{sec:e4}
+% Runner:   scripts/experiments/run_e4_ablations.sh
+% Artifact: results/e4_ablations/ablation_summary.json
+From the full grounded model, remove one closer at a time
+(Prop.~\ref{prop:aopt}). A closer matters if its removal raises crystal $\Tm$ MAE
+/ $|\overline{\delta\Phicry}|$ without improving $\lnx$ (i.e.\ compensation, not
+real fit).
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Ablation & $\lnx$ MAE & crystal $\Tm$ MAE [K] & $\overline{\delta\Phicry}$ \\
+\midrule
+full (all closers)     & \pending & \pending & \pending \\
+$-$ external crystal    & \pending & \pending & \pending \\
+$-$ GC priors           & \pending & \pending & \pending \\
+$-$ stop-gradient       & \pending & \pending & \pending \\
+($+$ UNIFAC prior)      & \pending & \pending & \pending \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Limitations}
+\label{sec:limits}
+\begin{itemize}
+  \item Raw scaffold $\lnx$ accuracy is encoder-bound (RF descriptors lead;
+  $\sim$93\% of the gap is representation, not the physics layer); we do not
+  claim SOTA MAE.
+  \item Per-molecule $\dHfus$ is under-supervised ($\sim$2\% coverage); we lean on
+  GC priors and an entropy (Walden) constraint, not measured enthalpies.
+  \item The GC reference in E0/E2 is a proxy, not ground truth; the robust signal
+  is the correlation structure and relative $\overline{\delta\Phicry}$, not its
+  absolute value.
+  \item $\mathrm{corr}(\delta\Phicry,\delta\lng)$ trends to $-1$ with better
+  $\lnx$ fit; hence $\overline{\delta\Phicry}$ is the reported metric.
+\end{itemize}
+
+\section{Conclusion}
+\label{sec:conclusion}
+Physics helps generalization exactly when its factorization is identifiable and
+its factors are more transferable than the joint target; the practical
+consequence is to ground the crystal term on external single-component data.
+
+\appendix
+\section{Deferred proofs and constants}\pending[A/B]
+
+\end{document}

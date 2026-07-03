@@ -47,3 +47,20 @@ docs/assets/javascripts/*.bundle.js
 
 # Codebase-memory index artifact (regenerable; large binary)
 .codebase-memory/
+
+# Vendored / generated / scratch (repo-hygiene 2026-07)
+node_modules/
+**/node_modules/
+tmp/
+checkpoints/
+.agents/
+.claude/
+.pytest_cache/
+.ruff_cache/
+test-results/
+notebooks/data/processed_*/
+.tmp_ann_*.txt
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
