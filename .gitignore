@@ -40,3 +40,10 @@ Thumbs.db
 
 # Superpowers SDD scratch (ledger, briefs, reports)
 .superpowers/
+
+# Generated docs site (mkdocs build) & compiled JS bundles
+site/
+docs/assets/javascripts/*.bundle.js
+
+# Codebase-memory index artifact (regenerable; large binary)
+.codebase-memory/
