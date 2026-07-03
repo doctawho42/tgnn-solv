@@ -71,6 +71,24 @@ def resolve_device(device_str: str) -> torch.device:
     return dev
 
 
+def maybe_compile_model(
+    model: torch.nn.Module, device: torch.device
+) -> torch.nn.Module:
+    """Opt-in torch.compile (env TGNN_COMPILE) to cut kernel-launch overhead: the small
+    GNN + iterative SLE/COSMO-SAC solver forward is launch-bound on big GPUs. Uses
+    in-place model.compile(dynamic=True) so state_dict keys are unchanged (preemption-
+    resume safe). The custom IFT-autograd solver may graph-break and stay eager, which
+    is safe (the encoder still compiles). Override mode via TGNN_COMPILE_MODE."""
+    if device.type != "cuda" or os.environ.get("TGNN_COMPILE", "").lower() not in (
+        "1", "true", "yes", "on"
+    ):
+        return model
+    mode = os.environ.get("TGNN_COMPILE_MODE") or "default"
+    model.compile(mode=mode, dynamic=True)
+    print(f"   torch.compile enabled in-place (mode={mode}, dynamic=True).")
+    return model
+
+
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
@@ -1187,6 +1205,7 @@ def main() -> None:
         # Initialize model
         print("\n5. Initializing model...")
         model = TGNNSolv(cfg=config).to(device)
+        model = maybe_compile_model(model, device)
         if resume_checkpoint is not None:
             if args.pretrain or args.pretrain_checkpoint is not None:
                 print(

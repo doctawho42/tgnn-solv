@@ -152,6 +152,23 @@ def resolve_device(device_str: str) -> torch.device:
     return dev
 
 
+def maybe_compile_model(
+    model: torch.nn.Module, device: torch.device
+) -> torch.nn.Module:
+    """Opt-in torch.compile (env TGNN_COMPILE) to cut kernel-launch overhead: the small
+    GNN forward is launch-bound on big GPUs. Uses in-place model.compile(dynamic=True)
+    so state_dict keys are unchanged (preemption-resume safe). Override mode via
+    TGNN_COMPILE_MODE."""
+    if device.type != "cuda" or os.environ.get("TGNN_COMPILE", "").lower() not in (
+        "1", "true", "yes", "on"
+    ):
+        return model
+    mode = os.environ.get("TGNN_COMPILE_MODE") or "default"
+    model.compile(mode=mode, dynamic=True)
+    print(f"   torch.compile enabled in-place (mode={mode}, dynamic=True).")
+    return model
+
+
 def load_data(
     df: pd.DataFrame,
     config: TGNNSolvConfig,
@@ -467,6 +484,7 @@ def main() -> None:
 
         print("\n6. Initializing DirectGNN...")
         model = DirectGNN(cfg=config).to(device)
+        model = maybe_compile_model(model, device)
         if resume_checkpoint is not None:
             state = resume_checkpoint.get(
                 "model_state_dict",
