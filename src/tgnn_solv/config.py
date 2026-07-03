@@ -222,6 +222,7 @@ class TGNNSolvConfig:
 
     # --- Training ---
     batch_size: int = 64
+    num_workers: int = 0  # DataLoader workers; 0 = featurize in main process (see make_loader)
     include_water_solubility: bool = True
     use_pair_temperature_batching: bool = True
     pair_temperature_min_group_size: int = 2

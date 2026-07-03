@@ -1061,6 +1061,12 @@ def make_loader(
         num_workers=num_workers,
         pin_memory=torch.cuda.is_available(),
     )
+    # The per-SMILES featurization cache (self.cache) lives on the dataset in each
+    # worker process. Without persistent workers, workers are respawned every epoch
+    # and their cache is discarded -> re-featurize every epoch (slower than num_workers=0,
+    # which caches after epoch 1). Keep workers alive so the cache warms once and persists.
+    if num_workers > 0:
+        kwargs["persistent_workers"] = True
 
     if shuffle and use_pair_temperature_batching:
         batch_sampler = PairTemperatureBatchSampler(

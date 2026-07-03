@@ -108,6 +108,13 @@ def parse_args() -> argparse.Namespace:
         help="Optional batch-size override for data loading.",
     )
     parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=None,
+        help="DataLoader workers (0 = main process); >0 parallelizes featurization "
+             "(persistent workers keep the cache warm across epochs).",
+    )
+    parser.add_argument(
         "--epochs",
         type=int,
         default=None,
@@ -144,7 +151,7 @@ def load_data(
         df,
         batch_size=config.batch_size,
         shuffle=shuffle,
-        num_workers=0,
+        num_workers=config.num_workers,
         cache=True,
         use_pair_temperature_batching=(
             shuffle and config.use_pair_temperature_batching
@@ -378,6 +385,9 @@ def main() -> None:
         if args.batch_size is not None:
             config.batch_size = int(args.batch_size)
             print(f"   Applying batch_size override: {config.batch_size}")
+        if args.num_workers is not None:
+            config.num_workers = int(args.num_workers)
+            print(f"   Applying num_workers override: {config.num_workers}")
         if args.epochs is not None:
             config.epochs_phase2 = int(args.epochs)
             print(f"   Applying epochs override: {config.epochs_phase2}")

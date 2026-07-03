@@ -173,6 +173,13 @@ def parse_args() -> argparse.Namespace:
         help="Override batch_size from config",
     )
     parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=None,
+        help="DataLoader workers (0 = main process). >0 parallelizes featurization; "
+             "persistent workers keep the per-SMILES cache warm across epochs.",
+    )
+    parser.add_argument(
         "--lr",
         type=float,
         default=None,
@@ -768,7 +775,7 @@ def load_data(
         df,
         batch_size=int(batch_size or config.batch_size),
         shuffle=shuffle,
-        num_workers=0,
+        num_workers=config.num_workers,
         cache=True,
         use_pair_temperature_batching=(
             shuffle and config.use_pair_temperature_batching
@@ -982,6 +989,8 @@ def main() -> None:
                 config.n_gnn_layers = args.n_gnn_layers
             if args.batch_size is not None:
                 config.batch_size = args.batch_size
+            if args.num_workers is not None:
+                config.num_workers = int(args.num_workers)
             if args.lr is not None:
                 config.lr_phase2 = args.lr
             if args.epochs_phase1 is not None:

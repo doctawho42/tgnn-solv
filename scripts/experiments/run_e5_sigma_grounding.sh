@@ -29,6 +29,7 @@
 #   ARMS             all six         space-separated arm subset (smoke: ARMS="ungrounded")
 #   DIRECT_EPOCHS    "" (config 110) directgnn --epochs override; smoke: DIRECT_EPOCHS=1
 #                                    (EXTRA_TRAIN_ARGS is TGNN phase-epochs — directgnn ignores it)
+#   NUM_WORKERS      "" (0)          DataLoader workers for every training arm (e.g. 8 on a many-core box)
 #   SIGMA_STEPS      21              sigma aux steps per epoch
 #   WARMUP_EPOCHS    40              sigma warmup epochs before SLE
 #   CHECKPOINT_EVERY 5               save a resumable training checkpoint every N epochs
@@ -51,6 +52,8 @@ WARMUP_EPOCHS="${WARMUP_EPOCHS:-40}"
 CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-5}"
 EXTRA_TRAIN_ARGS="${EXTRA_TRAIN_ARGS:-}"   # e.g. --epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1 for CPU smoke
 DIRECT_EPOCHS="${DIRECT_EPOCHS:-}"         # directgnn --epochs override; empty = config's matched 110 (smoke: 1)
+NUM_WORKERS="${NUM_WORKERS:-}"             # DataLoader workers for all training arms; empty = 0 (main process)
+NW_ARGS=(); [ -n "${NUM_WORKERS}" ] && NW_ARGS=(--num-workers "${NUM_WORKERS}")
 SIGMA_ARTIFACT="${SIGMA_ARTIFACT:-results/sigma_profile_artifact/sigma_profiles.csv}"
 
 TRAIN="${DATA_DIR}/train.csv"; VAL="${DATA_DIR}/val.csv"; TEST="${DATA_DIR}/test.csv"
@@ -118,7 +121,8 @@ for SEED in ${SEEDS}; do
     # for the heavy (TGNN/DirectGNN) arms; oracle is eval-only and ignores these.
     RESUME=()
     if [ -f "${ckpt}" ]; then echo "   resuming training from ${ckpt}"; RESUME=(--resume "${ckpt}"); fi
-    CKPT_ARGS=(--checkpoint "${ckpt}" --checkpoint-every "${CHECKPOINT_EVERY}" "${RESUME[@]}")
+    # NW_ARGS (--num-workers) rides along here so it reaches all 5 training arms but not eval-only oracle.
+    CKPT_ARGS=(--checkpoint "${ckpt}" --checkpoint-every "${CHECKPOINT_EVERY}" "${RESUME[@]}" "${NW_ARGS[@]}")
 
     case "${arm}" in
       nrtl)
