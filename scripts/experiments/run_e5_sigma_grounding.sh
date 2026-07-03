@@ -27,6 +27,8 @@
 #   CKPT_DIR         checkpoints/e5
 #   SEEDS            "42 43 44"      space-separated list of random seeds
 #   ARMS             all six         space-separated arm subset (smoke: ARMS="ungrounded")
+#   DIRECT_EPOCHS    "" (config 110) directgnn --epochs override; smoke: DIRECT_EPOCHS=1
+#                                    (EXTRA_TRAIN_ARGS is TGNN phase-epochs — directgnn ignores it)
 #   SIGMA_STEPS      21              sigma aux steps per epoch
 #   WARMUP_EPOCHS    40              sigma warmup epochs before SLE
 #   CHECKPOINT_EVERY 5               save a resumable training checkpoint every N epochs
@@ -48,6 +50,7 @@ SIGMA_STEPS="${SIGMA_STEPS:-21}"
 WARMUP_EPOCHS="${WARMUP_EPOCHS:-40}"
 CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-5}"
 EXTRA_TRAIN_ARGS="${EXTRA_TRAIN_ARGS:-}"   # e.g. --epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1 for CPU smoke
+DIRECT_EPOCHS="${DIRECT_EPOCHS:-}"         # directgnn --epochs override; empty = config's matched 110 (smoke: 1)
 SIGMA_ARTIFACT="${SIGMA_ARTIFACT:-results/sigma_profile_artifact/sigma_profiles.csv}"
 
 TRAIN="${DATA_DIR}/train.csv"; VAL="${DATA_DIR}/val.csv"; TEST="${DATA_DIR}/test.csv"
@@ -128,7 +131,7 @@ for SEED in ${SEEDS}; do
       directgnn)
         "${PY}" scripts/train_directgnn.py --config configs/paper_config_directgnn_h64L3.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}"
+          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" ${DIRECT_EPOCHS:+--epochs ${DIRECT_EPOCHS}}
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
           --model-type direct --device "${DEVICE}" ;;
