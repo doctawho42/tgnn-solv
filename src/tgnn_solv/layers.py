@@ -67,7 +67,10 @@ def scatter_add(
     if dim_size is None:
         dim_size = int(index.max().item()) + 1
     if src.dim() > 1 and index.dim() == 1:
-        idx = index.unsqueeze(-1).expand_as(src)
+        # .contiguous() materializes the broadcast: expand_as() yields a
+        # zero-stride view that CPU scatter tolerates but the CUDA kernel
+        # reads as illegal memory (zero-stride expanded idx).
+        idx = index.unsqueeze(-1).expand_as(src).contiguous()
     else:
         idx = index
     out = torch.zeros(dim_size, *src.shape[1:],
@@ -85,7 +88,9 @@ def scatter_mean(
     if dim_size is None:
         dim_size = int(index.max().item()) + 1
     if src.dim() > 1 and index.dim() == 1:
-        idx = index.unsqueeze(-1).expand_as(src)
+        # See scatter_add: expand_as() is a zero-stride view; .contiguous()
+        # is required for the CUDA scatter kernel (no-op cost on CPU).
+        idx = index.unsqueeze(-1).expand_as(src).contiguous()
     else:
         idx = index
     out_sum = torch.zeros(dim_size, *src.shape[1:],
