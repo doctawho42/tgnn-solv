@@ -64,3 +64,6 @@ notebooks/data/processed_*/
 *.fdb_latexmk
 *.fls
 *.synctex.gz
+
+# GSD planning layer (local-only)
+.planning/
