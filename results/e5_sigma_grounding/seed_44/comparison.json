@@ -1,0 +1,152 @@
+{
+  "n_locked": 5608,
+  "n_ring_bearing": 5608,
+  "n_acyclic": 0,
+  "per_arm": {
+    "nrtl": {
+      "r2": 0.29815425099477366,
+      "mae": 1.8937702472481117,
+      "lngamma_std": 1.8561722016424647,
+      "n": 5608
+    },
+    "directgnn": {
+      "r2": 0.4205708652551502,
+      "mae": 1.683868049016188,
+      "lngamma_std": NaN,
+      "n": 5608
+    },
+    "ungrounded": {
+      "r2": 0.1719033875457996,
+      "mae": 2.0934550944041344,
+      "lngamma_std": 1.4570319294179241,
+      "n": 5608
+    },
+    "grounded_a": {
+      "r2": 0.35693110275157336,
+      "mae": 1.8125832886448376,
+      "lngamma_std": 1.7571965302361061,
+      "n": 5608
+    },
+    "grounded_b": {
+      "r2": 0.33459598363137033,
+      "mae": 1.8241670673756931,
+      "lngamma_std": 1.6373301832347829,
+      "n": 5608
+    },
+    "oracle": {
+      "r2": 0.017682736011353506,
+      "mae": 2.2419879234438436,
+      "lngamma_std": 2.8829472030445795,
+      "n": 5608
+    }
+  },
+  "stratified": {
+    "nrtl": {
+      "ring_bearing": {
+        "r2": 0.29815425099477366,
+        "mae": 1.8937702472481117,
+        "lngamma_std": 1.8561722016424647,
+        "n": 5608
+      },
+      "acyclic": {
+        "r2": NaN,
+        "mae": NaN,
+        "lngamma_std": NaN,
+        "n": 0
+      }
+    },
+    "directgnn": {
+      "ring_bearing": {
+        "r2": 0.4205708652551502,
+        "mae": 1.683868049016188,
+        "lngamma_std": NaN,
+        "n": 5608
+      },
+      "acyclic": {
+        "r2": NaN,
+        "mae": NaN,
+        "lngamma_std": NaN,
+        "n": 0
+      }
+    },
+    "ungrounded": {
+      "ring_bearing": {
+        "r2": 0.1719033875457996,
+        "mae": 2.0934550944041344,
+        "lngamma_std": 1.4570319294179241,
+        "n": 5608
+      },
+      "acyclic": {
+        "r2": NaN,
+        "mae": NaN,
+        "lngamma_std": NaN,
+        "n": 0
+      }
+    },
+    "grounded_a": {
+      "ring_bearing": {
+        "r2": 0.35693110275157336,
+        "mae": 1.8125832886448376,
+        "lngamma_std": 1.7571965302361061,
+        "n": 5608
+      },
+      "acyclic": {
+        "r2": NaN,
+        "mae": NaN,
+        "lngamma_std": NaN,
+        "n": 0
+      }
+    },
+    "grounded_b": {
+      "ring_bearing": {
+        "r2": 0.33459598363137033,
+        "mae": 1.8241670673756931,
+        "lngamma_std": 1.6373301832347829,
+        "n": 5608
+      },
+      "acyclic": {
+        "r2": NaN,
+        "mae": NaN,
+        "lngamma_std": NaN,
+        "n": 0
+      }
+    },
+    "oracle": {
+      "ring_bearing": {
+        "r2": 0.017682736011353506,
+        "mae": 2.2419879234438436,
+        "lngamma_std": 2.8829472030445795,
+        "n": 5608
+      },
+      "acyclic": {
+        "r2": NaN,
+        "mae": NaN,
+        "lngamma_std": NaN,
+        "n": 0
+      }
+    }
+  },
+  "criteria": {
+    "rescue": {
+      "nrtl": false,
+      "directgnn": true,
+      "ungrounded": false,
+      "grounded_a": false,
+      "grounded_b": false,
+      "oracle": false
+    },
+    "keeps_constraint": {
+      "nrtl": true,
+      "directgnn": false,
+      "ungrounded": true,
+      "grounded_a": true,
+      "grounded_b": true,
+      "oracle": false
+    },
+    "matched_direct_r2": 0.4205708652551502
+  },
+  "lngamma_band": [
+    1.0,
+    2.0
+  ]
+}

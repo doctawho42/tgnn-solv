@@ -1,0 +1,87 @@
+{
+  "provenance": {
+    "sigma_profiles": "results/sigma_profile_artifact/sigma_profiles.csv",
+    "idac": "notebooks/data/raw/idac.csv",
+    "temperature_K": 298.15,
+    "temperature_tol_K": 1.0,
+    "match_rule": "RDKit canonical SMILES on solute and solvent (deployed sigma-oracle rule)",
+    "seed": 0
+  },
+  "n_pairs": 60,
+  "n_solutes": 41,
+  "n_solvents": 17,
+  "n_pairs_inchikey_match": 85,
+  "n_solutes_inchikey": 46,
+  "n_solvents_inchikey": 19,
+  "mean_m": 0.7481771196583977,
+  "b_insuff_convention_independent": {
+    "rf_oof_upper": 0.5714926877280424,
+    "ridge_oof_upper": 0.6244962147391496,
+    "knn_in_zstar_biased_up": 0.40002904956287405,
+    "knn_k": 1
+  },
+  "lotv_bins": 8,
+  "conventions": {
+    "full": {
+      "mse_total": 1.7928826434436336,
+      "b_closure_jensen_lower": 0.7132349267247508,
+      "b_insuff_lotv_upper": 0.529511646728612,
+      "b_closure_via_mse_minus_rf": 1.2213899557155912,
+      "mean_g": -0.09635525196790695
+    },
+    "res": {
+      "mse_total": 1.4722677458787485,
+      "b_closure_jensen_lower": 0.4264393864090039,
+      "b_insuff_lotv_upper": 0.6180355877826827,
+      "b_closure_via_mse_minus_rf": 0.9007750581507061,
+      "mean_g": 0.09515385329723358
+    }
+  },
+  "hedges": {
+    "hedge2_between_solvent_confound": {
+      "full": {
+        "mse_total": 1.7928826434436336,
+        "between_solvent_plugin": 1.1459115310002508,
+        "within_solvent": 0.6469711124433829,
+        "between_solvent_share": 0.6391447511585423,
+        "solvent_conditional_jensen_lower": 0.8901322539877505,
+        "largest_solvent": "c1ccncc1",
+        "largest_solvent_n": 20,
+        "largest_solvent_stratum_mse": 0.07252245047765601
+      },
+      "res": {
+        "mse_total": 1.4722677458787485,
+        "between_solvent_plugin": 0.8201564614059814,
+        "within_solvent": 0.6521112844727671,
+        "between_solvent_share": 0.5570701821742735,
+        "solvent_conditional_jensen_lower": 0.5623450233586084,
+        "largest_solvent": "c1ccncc1",
+        "largest_solvent_n": 20,
+        "largest_solvent_stratum_mse": 0.04669838345791323
+      }
+    },
+    "hedge3_ordering_confidence": {
+      "convention": "full",
+      "n_boot": 2000,
+      "b_closure_jensen_lower_point": 0.7132349267247508,
+      "b_insuff_rf_point": 0.5714926877280424,
+      "b_insuff_lotv_point": 0.529511646728612,
+      "cluster_bootstrap_by_solvent": {
+        "P_jensen_gt_rf": 0.8075,
+        "P_jensen_gt_lotv": 0.8825
+      },
+      "iid_pair_bootstrap": {
+        "P_jensen_gt_rf": 0.7325,
+        "P_jensen_gt_lotv": 0.9135
+      }
+    }
+  },
+  "label_noise_sigma_eta": {
+    "available": true,
+    "n_pairs_with_replicates": 0,
+    "n_pairs_total": 60,
+    "sigma_eta_sq_mean_var": 0.0,
+    "replicate_sd_mean": 0.0,
+    "replicate_sd_median": 0.0
+  }
+}

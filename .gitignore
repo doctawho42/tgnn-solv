@@ -27,6 +27,11 @@ checkpoints/*.pt
 logs/
 results/*
 !results/.gitkeep
+# Keystone reproducibility artifact (paper Table 2 / sec:measure); tracked on purpose.
+!results/b_insuff
+results/b_insuff/*
+!results/b_insuff/matched_pairs.csv
+!results/b_insuff/decomposition.json
 figures/*
 !figures/.gitkeep
 
@@ -67,3 +72,9 @@ notebooks/data/processed_*/
 
 # GSD planning layer (local-only)
 .planning/
+
+# LaTeX build aux (paper/)
+*.bbl
+*.blg
+paper/*.log
+*.out

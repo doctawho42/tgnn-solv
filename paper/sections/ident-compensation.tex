@@ -1,0 +1,22 @@
+\subsection{Identifiability and compensation} \label{sec:ident}
+
+Proposition~\ref{prop:ident} asserts that the crystal/activity split is not recoverable from solubility data alone. Two diagnostics make this concrete. The first is a numerical Fisher audit of the SLE design, computed on synthetic data and independent of any particular activity closure. We evaluate the Fisher information matrix $I$ of the observation model at a reference operating point and read off the conditioning $\mathrm{cond}(I)$ and the Cram\'er--Rao lower bound on the standard deviation of $\dHfus$ under three supervision regimes. Table~\ref{tab:fisher} reports the result at a temperature window of $\Delta T = 40$~K. With solubility measurements only, the design is severely ill-conditioned and the CRLB on $\dHfus$ is roughly $20{,}000$~J/mol, comparable to the quantity being estimated. Adding a direct $\Tm$ label drops the conditioning by nearly two orders of magnitude and cuts the bound to about $3{,}200$~J/mol; supplying $\Tm$ and $\dHfus$ together brings it to about $1{,}700$~J/mol. The ill-conditioning is a property of the design rather than of noise level, and it is closed only by external single-component supervision, which is the mechanism the aux-stream pattern supplies.
+
+\begin{table}[t]
+\centering
+\caption{Fisher audit of the SLE design at $\Delta T=40$\,K (synthetic,
+closure-independent). Solubility alone leaves the crystal parameter
+near-unidentified; external single-component labels close the deficiency.}
+\label{tab:fisher}
+\begin{tabular}{lrr}
+\toprule
+Supervision regime & $\mathrm{cond}(I)$ & CRLB $\mathrm{sd}(\dHfus)$ [J/mol] \\
+\midrule
+Solubility only & $2.3\times10^{5}$ & $19{,}895$ \\
+\quad $+\ \Tm$ label & $5.4\times10^{3}$ & $3{,}151$ \\
+\quad $+\ \Tm + \dHfus$ & $1.6\times10^{3}$ & $1{,}689$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Widening or narrowing the temperature window does not rescue the solubility-only case. A $\Delta T$ sweep moves the solubility-only conditioning from $1.7\times10^{3}$ at a wide window to $2.3\times10^{5}$ at $40$~K and to $1.9\times10^{16}$ at $10$~K, so multi-temperature data alone does not resolve the split; the two parameters remain confounded along the ideal-term direction. Restricting the activity slope rather than adding labels helps, but only partially: it cuts $\mathrm{sd}(\dHfus)$ to $8{,}251$~J/mol, still well above the label-supervised regimes. The second diagnostic examines what happens to the learned decomposition on the supervised test set when a group-contribution (Joback) crystal reference is used as an external check. The crystal and activity residuals are strongly anti-correlated, $\mathrm{corr}(\delta\Phicry, \delta\lng) = -0.962$ with bootstrap 95\% CI $[-0.965, -0.958]$ and an opposite-sign fraction of $0.93$, and the systematic crystal offset is large, with mean $\delta\Phicry \approx -7.1$ (bootstrap 95\% CI $[-8.8, -5.6]$). This anti-correlation is not evidence that the model has learned the physical split. Because the two residuals sum to the $\lnx$ fit residual, their correlation tends to $-1$ trivially as the solubility fit improves, independently of whether either component is individually correct. We therefore report the systematic offset, the mean $\delta\Phicry$, as the decomposition-quality metric, and treat the correlation only as a consistency check consistent with Proposition~\ref{prop:ident}.

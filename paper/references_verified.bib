@@ -47,3 +47,216 @@
   archivePrefix = {arXiv},
   url     = {https://doi.org/10.1039/D2DD00142J}
 }
+
+
+% ============================================================================
+% Methodological + domain prior-art for the "grounding paradox" thesis.
+% Verified 2026-07-07 via web search (citation-verify workflow, 11/11 confirmed,
+% 0 fabricated). CAVEATS before submission:
+%  - damour2022: JMLR has no Crossref DOI; use the arXiv eprint / JMLR url (no doi field).
+%  - vermeire2022solprop: SolProp = JACS 2022 144(24):10785 (NOT Chem.Eng.J.).
+%  - krasnov2023bigsoldb: this is the 2023 ChemRxiv PREPRINT. The project uses
+%    BigSolDB v2.1 -> likely cite the PEER-REVIEWED BigSolDB 2.0 instead:
+%    Krasnov et al., Scientific Data 12 (2025), doi 10.1038/s41597-025-05559-8.
+%    DECIDE which version the data actually came from before submitting.
+%  - transtrum2015 selects the JCP "Perspective"; villaverde2016 over Chis2011 — both real.
+% ============================================================================
+
+@article{kennedy2001,
+  author  = {Kennedy, Marc C. and O'Hagan, Anthony},
+  title   = {Bayesian Calibration of Computer Models},
+  journal = {Journal of the Royal Statistical Society: Series B (Statistical Methodology)},
+  year    = {2001},
+  volume  = {63},
+  number  = {3},
+  pages   = {425--464},
+  doi     = {10.1111/1467-9868.00294},
+  publisher = {Oxford University Press},
+}
+
+@article{brynjarsdottir2014,
+  author  = {Brynjarsd{\'o}ttir, Jenny and O'Hagan, Anthony},
+  title   = {Learning about physical parameters: the importance of model discrepancy},
+  journal = {Inverse Problems},
+  year    = {2014},
+  volume  = {30},
+  number  = {11},
+  pages   = {114007},
+  doi     = {10.1088/0266-5611/30/11/114007},
+  publisher = {IOP Publishing}
+}
+
+@article{transtrum2015,
+  author  = {Transtrum, Mark K. and Machta, Benjamin B. and Brown, Kevin S. and Daniels, Bryan C. and Myers, Christopher R. and Sethna, James P.},
+  title   = {Perspective: Sloppiness and emergent theories in physics, biology, and beyond},
+  journal = {The Journal of Chemical Physics},
+  year    = {2015},
+  volume  = {143},
+  number  = {1},
+  pages   = {010901},
+  doi     = {10.1063/1.4923066},
+  eprint  = {1501.07668},
+  archivePrefix = {arXiv},
+  primaryClass  = {cond-mat.stat-mech}
+}
+
+@article{gutenkunst2007,
+  author  = {Gutenkunst, Ryan N. and Waterfall, Joshua J. and Casey, Fergal P. and Brown, Kevin S. and Myers, Christopher R. and Sethna, James P.},
+  title   = {Universally Sloppy Parameter Sensitivities in Systems Biology Models},
+  journal = {PLoS Computational Biology},
+  year    = {2007},
+  volume  = {3},
+  number  = {10},
+  pages   = {1871--1878},
+  eid     = {e189},
+  doi     = {10.1371/journal.pcbi.0030189},
+  eprint  = {q-bio/0701039},
+  archivePrefix = {arXiv},
+  primaryClass  = {q-bio.QM}
+}
+
+@article{raue2009,
+  author  = {Raue, A. and Kreutz, C. and Maiwald, T. and Bachmann, J. and Schilling, M. and Klingm{\"u}ller, U. and Timmer, J.},
+  title   = {Structural and practical identifiability analysis of partially observed dynamical models by exploiting the profile likelihood},
+  journal = {Bioinformatics},
+  year    = {2009},
+  volume  = {25},
+  number  = {15},
+  pages   = {1923--1929},
+  doi     = {10.1093/bioinformatics/btp358}
+}
+
+@article{villaverde2016,
+  author  = {Villaverde, Alejandro F. and Barreiro, Antonio and Papachristodoulou, Antonis},
+  title   = {Structural Identifiability of Dynamic Systems Biology Models},
+  journal = {PLoS Computational Biology},
+  year    = {2016},
+  volume  = {12},
+  number  = {10},
+  pages   = {e1005153},
+  doi     = {10.1371/journal.pcbi.1005153},
+  pmid    = {27792726},
+  pmcid   = {PMC5085250},
+  editor  = {Nie, Qing},
+  issn    = {1553-7358},
+  publisher = {Public Library of Science}
+}
+
+@article{damour2022,
+  title   = {Underspecification Presents Challenges for Credibility in Modern Machine Learning},
+  author  = {D'Amour, Alexander and Heller, Katherine and Moldovan, Dan and Adlam, Ben and Alipanahi, Babak and Beutel, Alex and Chen, Christina and Deaton, Jonathan and Eisenstein, Jacob and Hoffman, Matthew D. and Hormozdiari, Farhad and Houlsby, Neil and Hou, Shaobo and Jerfel, Ghassen and Karthikesalingam, Alan and Lucic, Mario and Ma, Yian and McLean, Cory and Mincu, Diana and Mitani, Akinori and Montanari, Andrea and Nado, Zachary and Natarajan, Vivek and Nielson, Christopher and Osborne, Thomas F. and Raman, Rajiv and Ramasamy, Kim and Sayres, Rory and Schrouff, Jessica and Seneviratne, Martin and Sequeira, Shannon and Suresh, Harini and Veitch, Victor and Vladymyrov, Max and Wang, Xuezhi and Webster, Kellie and Yadlowsky, Steve and Yun, Taedong and Zhai, Xiaohua and Sculley, D.},
+  journal = {Journal of Machine Learning Research},
+  year    = {2022},
+  volume  = {23},
+  number  = {226},
+  pages   = {1--61},
+  eprint  = {2011.03395},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url     = {https://www.jmlr.org/papers/v23/20-1335.html}
+}
+
+@article{kapoor2023,
+  author  = {Kapoor, Sayash and Narayanan, Arvind},
+  title   = {Leakage and the reproducibility crisis in machine-learning-based science},
+  journal = {Patterns},
+  year    = {2023},
+  volume  = {4},
+  number  = {9},
+  pages   = {100804},
+  doi     = {10.1016/j.patter.2023.100804},
+  issn    = {2666-3899},
+  publisher = {Elsevier (Cell Press)},
+  eprint  = {2207.07048},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@inproceedings{mahajan2025crm,
+  title     = {Compositional Risk Minimization},
+  author    = {Mahajan, Divyat and Pezeshki, Mohammad and Arnal, Charles and Mitliagkas, Ioannis and Ahuja, Kartik and Vincent, Pascal},
+  booktitle = {Proceedings of the 42nd International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {267},
+  pages     = {42503--42553},
+  year      = {2025},
+  publisher = {PMLR},
+  eprint    = {2410.06303},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@article{vermeire2022solprop,
+  author  = {Vermeire, Florence H. and Chung, Yunsie and Green, William H.},
+  title   = {Predicting Solubility Limits of Organic Solutes for a Wide Range of Solvents and Temperatures},
+  journal = {Journal of the American Chemical Society},
+  year    = {2022},
+  volume  = {144},
+  number  = {24},
+  pages   = {10785--10797},
+  doi     = {10.1021/jacs.2c01768}
+}
+
+@article{krasnov2023bigsoldb,
+  author  = {Krasnov, Lev and Mikhaylov, Simon and Fedorov, Maxim and Sosnin, Sergey},
+  title   = {{BigSolDB}: Solubility Dataset of Compounds in Organic Solvents and Water in a Wide Range of Temperatures},
+  year    = {2023},
+  journal = {ChemRxiv},
+  doi     = {10.26434/chemrxiv-2023-qqslt},
+  url     = {https://doi.org/10.26434/chemrxiv-2023-qqslt},
+  note    = {Preprint; superseded by the peer-reviewed BigSolDB 2.0 (krasnov2025bigsoldb)}
+}
+
+% ============================================================================
+% Closing additions 2026-07-08 (verified via web search): calibration refinement
+% (Murphy; DeGroot--Fienberg), QMLE under misspecification (White), and the
+% peer-reviewed BigSolDB 2.0 (the project's data source; v2.1 is a minor update
+% of this Scientific Data release, which is the citable version).
+% ============================================================================
+
+@article{murphy1973,
+  author    = {Murphy, Allan H.},
+  title     = {A New Vector Partition of the Probability Score},
+  journal   = {Journal of Applied Meteorology},
+  year      = {1973},
+  volume    = {12},
+  number    = {4},
+  pages     = {595--600},
+  doi       = {10.1175/1520-0450(1973)012<0595:ANVPOT>2.0.CO;2},
+  publisher = {American Meteorological Society}
+}
+
+@article{degroot1983,
+  author    = {DeGroot, Morris H. and Fienberg, Stephen E.},
+  title     = {The Comparison and Evaluation of Forecasters},
+  journal   = {Journal of the Royal Statistical Society: Series D (The Statistician)},
+  year      = {1983},
+  volume    = {32},
+  number    = {1--2},
+  pages     = {12--22},
+  doi       = {10.2307/2987588},
+  publisher = {Wiley}
+}
+
+@article{white1982,
+  author    = {White, Halbert},
+  title     = {Maximum Likelihood Estimation of Misspecified Models},
+  journal   = {Econometrica},
+  year      = {1982},
+  volume    = {50},
+  number    = {1},
+  pages     = {1--25},
+  doi       = {10.2307/1912526},
+  publisher = {The Econometric Society}
+}
+
+@article{krasnov2025bigsoldb,
+  author    = {Krasnov, Lev and Malikov, Dmitry and Kiseleva, Marina and Tatarin, Sergei and Sosnin, Sergey and Bezzubov, Stanislav},
+  title     = {{BigSolDB} 2.0, dataset of solubility values for organic compounds in different solvents at various temperatures},
+  journal   = {Scientific Data},
+  year      = {2025},
+  volume    = {12},
+  pages     = {1236},
+  doi       = {10.1038/s41597-025-05559-8},
+  publisher = {Nature Publishing Group}
+}
