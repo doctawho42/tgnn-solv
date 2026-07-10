@@ -17,7 +17,7 @@
 %                                   theory DEMOTED to cited props (Kennedy-O'Hagan, Brynjarsdottir,
 %                                   sloppy-models, White, Murphy/DeGroot-Fienberg)
 %   S4 Results .................... R1 the paradox (learned head ~4x better; more physics = worse)
-%                                   R2 the B measurement (Tier1 assumption-free + Tier2 robust + 4 hedges)  <- keystone
+%                                   R2 the B measurement (Tier1 convention-independent bound + Tier2 combinatorial + 4 hedges)  <- keystone
 %                                   R3 Gate B negative (recalibration -> calibration not accuracy)
 %                                   R4 supporting: Fisher audit, defensible wins, conformal  [transcribe+verify]
 %   S5 Discussion/Limitations ..... the 4 verified hedges + scope
@@ -59,8 +59,8 @@
 \newcommand{\Ex}{\ensuremath{\mathbb{E}}}
 \newcommand{\Var}{\ensuremath{\mathrm{Var}}}
 
-\title{The Grounding Paradox: When True Physical Inputs Make a\\
-Solubility Model Worse}
+\title{The Grounding Paradox: Why True Physical Inputs Make a\\
+Solubility Model Worse, and How to Measure It}
 \author{N.~L. Polomoshnov \and \pending[co-authors]}
 \date{\today}
 
@@ -81,14 +81,21 @@ measurement. Because the physical latent $\zstar$ has external ground truth, the
 true-input excess risk splits exactly, with no model fit, into a
 decoder-misspecification term $\Bclos$ and an input-insufficiency term $\Binsuf$
 ($B=\Bclos+\Binsuf$). On experimental infinite-dilution activity data, in the
-VT-2005-matchable low-$\gamma$ (298\,K) regime, the closure is the binding term:
-under the full COSMO-SAC convention an assumption-free lower bound $\Bclos\ge0.71$
-exceeds every upper bound on $\Binsuf$ ($\le0.62$), with solvent-clustered
-confidence $\approx0.85$ (the deployed residual-only default is a near-tie in the
-rigorous bounds), and measurement noise is negligible ($\sigma_\eta^2\!\approx\!0$). Two facts that do not depend on the bound
-arithmetic agree with this. The free learned head fits the activity target about
-$4\times$ better than the true-input closure, and restoring the physically more
-complete combinatorial term enlarges the error. The ceiling also resists a
+VT-2005-matchable low-$\gamma$ (298\,K) regime, the closure is the binding term.
+Because $\Binsuf$ is bounded from $(m,\zstar)$ alone---independently of the closure
+convention---the total error already forces
+$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}\approx0.9>0.62\ge\Binsuf$ under the
+model's \emph{deployed} residual-only convention; under the full COSMO-SAC
+convention this sharpens to an assumption-free constant-offset bound
+$\Bclos\ge0.72>\Binsuf$ ($\le0.62$), with solvent-clustered confidence
+$\approx0.85$. The convention-robust corroboration is that restoring the physically
+more complete combinatorial term \emph{enlarges} the error---what a misspecified map
+does, not what missing information would---an effect we verify is robust to the
+molecular-volume basis (recomputed on the true COSMO cavity volumes). Label noise is
+unestimable in this replicate-free set and assumed zero; the load-bearing bounds are
+invariant to zero-mean noise. A flexible regressor of the activity target on $\zstar$
+fits it about $4\times$ better than the fixed true-input closure, placing the closure
+well above the irreducible-variance floor. The ceiling also resists a
 downstream fix, since a post-hoc output-space recalibration restores
 \emph{calibration} without restoring \emph{accuracy}. We claim no new theory: the
 non-identifiability of the split and the closure/inputs decomposition are read
@@ -110,9 +117,11 @@ inputs are to the truth, the better it should predict. On the activity branch
 this expectation fails. We characterize the failure quantitatively, and it is the
 characterization, more than the failure itself, that this paper is about. That true
 $\sigma$-profiles can hurt a COSMO-SAC pipeline will not surprise a thermodynamics
-specialist who knows the model's limits; the contribution is not the failure but a
-general, externally grounded procedure that \emph{measures} where such a physics
-prior's ceiling lies and attributes it to the closure rather than the inputs.
+specialist who knows the model's limits; the contribution is not the failure but an
+externally grounded procedure---demonstrated here on one closure and one low-$\gamma$
+regime---that \emph{measures} where such a physics prior's ceiling lies and attributes
+it to the closure rather than the inputs. Whether the finding of closure-dominance
+generalizes beyond this regime we leave as a conjecture (\S\ref{sec:discussion}).
 
 \paragraph{Contributions.}
 \begin{itemize}
@@ -124,8 +133,11 @@ prior's ceiling lies and attributes it to the closure rather than the inputs.
   \item \textbf{A measurement affordance, not a theorem.} Because the physical
   latent $\zstar$ (the true $\sigma$-profile) has external ground truth, the
   true-input excess risk splits \emph{exactly} as $B=\Bclos+\Binsuf$ with no model
-  fit (Prop.~\ref{prop:decomp}). We measure that $\Bclos$ (misspecified decoder)
-  dominates $\Binsuf$ (input insufficiency): the ceiling is the closure
+  fit (Prop.~\ref{prop:decomp}). The decomposition and its estimators are textbook;
+  the new element is exploiting an externally measured latent to bound the split
+  empirically. On the convention-robust evidence---a convention-independent bound
+  and the more-physics-worse effect---$\Bclos$ (misspecified decoder) exceeds
+  $\Binsuf$ (input insufficiency): the ceiling is the closure
   (\S\ref{sec:measure}).
   \item \textbf{A negative actionability result (Gate B).} A post-hoc
   output-space residual placed on the physics prediction recovers calibration but
@@ -257,8 +269,10 @@ decomposition is invalid (we observe a spurious $-0.36$ cross term when
 $\Ex[m\mid\zstar]$ is replaced by a fitted estimate). We therefore report
 \emph{one-sided bounds}, not a point split:
 \begin{itemize}
-  \item $\Bclos \ge (\Ex[m]-\Ex[g])^2$, \emph{assumption-free} (Jensen; a
-  constant decoder offset, which cannot be input insufficiency).
+  \item $\Bclos \ge (\Ex[m]-\Ex[g])^2$, \emph{assumption-free in smoothness}
+  (Jensen; a constant decoder offset, which cannot be input insufficiency)---it does
+  assume $m$ and $g$ are on the same $\lngi$ reference state, which we check directly
+  (\S\ref{sec:measure}).
   \item $\Binsuf \le \Ex[\Var(m\mid \mathrm{bin}(g(\zstar)))]$, a valid
   \emph{upper} bound (law of total variance, since a binning of $g(\zstar)$
   coarsens $\zstar$).
@@ -303,8 +317,8 @@ selects exactly the crystal, activity-level, and activity-shape signals.
 \noindent This is the design rule behind the auxiliary single-component streams:
 each stream rank-completes a different deficient direction of
 Prop.~\ref{prop:ident}. The rule prescribes which streams to add; it does not
-promise that they improve end-task accuracy, and \S\ref{sec:e2} reports one that
-does not.
+promise that they improve end-task accuracy, and \S\ref{sec:e2} reports a
+dose-limited case where a stream did not.
 
 \subsection{What we do not claim}
 There is no ``optimal grounding'' theorem here, and in particular no
@@ -331,10 +345,11 @@ measurement-first.
 % Triple confirmation: eval-oracle / true-at-train / channel-swap.
 Feeding true $\sigma$-profiles into the closure degrades it rather than improving
 it, and it does so in both the activity and the solubility target. On the activity
-target ($\lngi$, $n{=}60$ pairs with both true profiles present), a \emph{free}
-learned activity head attains MSE $\approx0.40$, whereas the closure on \emph{true}
-profiles attains MSE $1.47$--$1.79$ depending on convention (\S\ref{sec:measure}):
-about $4\times$ \emph{worse} with the better inputs, and the true-input closure
+target ($\lngi$, $n{=}60$ pairs with both true profiles present), a flexible
+regressor of $\lngi$ on the true profiles---our irreducible-variance ($\Binsuf$)
+estimator---attains MSE $\approx0.40$, whereas the fixed closure on the \emph{same}
+true profiles attains MSE $1.47$--$1.80$ depending on convention (\S\ref{sec:measure}):
+about $4\times$ above the irreducible-variance floor, and the true-input closure
 under-predicts $\lngi$ with a systematic downward bias (Fig.~\ref{fig:parity}).
 In the solubility target the
 effect is large enough to erase any positive $R^2$
@@ -345,7 +360,7 @@ solubility \emph{better with its own learned $\sigma$-profile}
 mean; one of three seeds is marginally positive). The robust form of the effect is the
 MAE gap ($2.25$ vs $1.85$); the near-zero oracle $R^2$ shows the true input carries no
 usable solubility signal through this closure. Adding the physically \emph{more} complete Staverman--Guggenheim
-combinatorial term also increases error (activity MSE $1.47\!\to\!1.79$;
+combinatorial term also increases error (activity MSE $1.47\!\to\!1.80$;
 solubility MAE $1.85\!\to\!1.88$), which is what a misspecified map does and what
 missing information would not. We confirm the paradox three independent ways: the
 evaluation-time oracle above, injecting the true profile \emph{at training}
@@ -373,9 +388,11 @@ in the SI.}
 \includegraphics[width=0.72\linewidth]{figs/fig_parity.pdf}
 \caption{Activity-coefficient parity on the $n{=}60$ matched pairs. The true-$\sigma$
 COSMO-SAC closure $g(\zstar)$ (salmon) falls systematically below the diagonal at
-larger $\lngi$, under-predicting the activity coefficient (MSE $1.79$); the free
-learned head (teal) tracks the diagonal (MSE $\approx0.40$). The gap is a systematic
-decoder bias, the visible form of $\Bclos$ (\S\ref{sec:measure}).}
+larger $\lngi$, under-predicting the activity coefficient (MSE $1.80$, full
+convention). This systematic downward bias is the visible form of the decoder
+misspecification $\Bclos$; for reference a flexible regressor of $\lngi$ on the same
+true profiles reaches the irreducible-variance floor (MSE $\approx0.40$, our $\Binsuf$
+estimator; \S\ref{sec:measure}), so the closure's excess over that floor is $\Bclos$.}
 \label{fig:parity}
 \end{figure}
 
@@ -392,22 +409,28 @@ $\lngi$ (298\,K, IDAC). Table~\ref{tab:decomp} reports the bounds.
 \centering
 \caption{Closure--insufficiency decomposition on the true-input activity path.
 Bounds, not a point split (Prop.~\ref{prop:decomp}). Convention ``full'' =
-COSMO-SAC with the combinatorial term; ``res'' = residual-only (the deployed
-default). $\Binsuf$ upper bounds are convention-independent estimates of
+COSMO-SAC with the combinatorial term (size factor $r_i=V_i/r_0$ on the true
+COSMO cavity volume, VT-2005); ``res'' = residual-only (the deployed default).
+$\Binsuf$ upper bounds are convention-independent estimates of
 $\Ex[\Var(m\mid\zstar)]$; ``k\textsc{nn}'' is a direct high-dimensional estimate
-(biased upward), the others are law-of-total-variance / out-of-fold upper bounds.}
+(biased upward), the others are law-of-total-variance / out-of-fold upper bounds.
+The \emph{load-bearing} separation is the convention-independent
+$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ row, which exceeds $\Binsuf$ under
+\emph{both} conventions ($1.24$, $0.91>0.62$); the assumption-free constant-offset
+(Jensen) bound separates only under ``full'' ($0.72$) and inverts under the
+deployed ``res'' ($0.43<0.62$).}
 \label{tab:decomp}
 \begin{tabular}{lrr}
 \toprule
 Quantity & full & res \\
 \midrule
-MSE$_{\text{total}}=\Bclos+\Binsuf$ (exact)      & $1.79$ & $1.47$ \\
-$\Bclos$ lower bound (Jensen, offset$^2$; \emph{assumption-free}) & $0.71$ & $0.43$ \\
+MSE$_{\text{total}}=\Bclos+\Binsuf$ (exact)      & $1.80$ & $1.47$ \\
+$\Bclos$ lower via MSE$-\Binsuf^{\text{up}}$ (RF; \emph{$\Binsuf$ conv.-indep., load-bearing}) & $1.24$ & $0.91$ \\
+$\Bclos$ lower bound (Jensen, offset$^2$; assumption-free; \emph{full-only}) & $0.72$ & $0.43$ \\
 $\Binsuf$ upper (bin $g$; law of total variance)  & $0.53$ & $0.62$ \\
-$\Binsuf$ upper (RF / Ridge out-of-fold)          & $0.57/0.62$ & same \\
+$\Binsuf$ upper (RF / Ridge out-of-fold)          & $0.56/0.62$ & same \\
 $\Binsuf$ (k\textsc{nn}-in-$\zstar$, convention-indep., biased up) & $0.40$ & $0.40$ \\
-$\Bclos$ lower via MSE$-\Binsuf^{\text{up}}$ (RF) & $1.22$ & $0.90$ \\
-label noise $\sigma_\eta^2$ (IDAC inter-lab)      & \multicolumn{2}{c}{$\approx0$ (no replicates in matched set)} \\
+label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{assumed $0$ (no replicates in matched set)} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -417,52 +440,75 @@ label noise $\sigma_\eta^2$ (IDAC inter-lab)      & \multicolumn{2}{c}{$\approx0
 \includegraphics[width=\linewidth]{figs/fig_decomposition.pdf}
 \caption{One-sided bounds on the closure--insufficiency split (full COSMO-SAC
 convention). The assumption-free Jensen lower bound on the decoder
-misspecification, $\Bclos\ge0.71$, exceeds every valid upper bound on the input
+misspecification, $\Bclos\ge0.72$, exceeds every valid upper bound on the input
 insufficiency $\Binsuf\le0.62$ (four independent estimators cluster in the salmon
 region); the white gap is a separation that holds with no smoothness assumption.
-The teal region is the closure share of the total error (MSE $=1.79$).}
+The teal region is the closure share of the total error (MSE $=1.80$). This
+assumption-free separation is convention-specific; under the deployed residual-only
+default it rests instead on the convention-independent
+$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}\approx0.9>0.6$ bound (\S\ref{sec:measure}).}
 \label{fig:decomp}
 \end{figure}
 
-\paragraph{Assumption-free result (Tier~1).} A constant decoder offset already
-accounts for $\Bclos\ge0.71$ (full; Fig.~\ref{fig:decomp}), exceeding every valid upper bound on
-$\Binsuf$ ($\le0.62$ across binning, random forest, and ridge out-of-fold). A
-constant offset \emph{cannot} be input insufficiency, so with no smoothness
-assumption the closure error already exceeds the insufficiency; subtracting the
-insufficiency upper bound from the total sharpens this to $\Bclos\ge1.22>0.62$, a $\sim2\times$ margin.
-Measurement noise is negligible ($\sigma_\eta^2\!\approx\!0$), so the ceiling is
-not label noise either.
+\paragraph{The load-bearing separation (convention-independent, Tier~1).} Because
+$\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, its upper bound is the
+same in every closure convention; subtracting it from the total therefore lower-bounds
+$\Bclos$ even for the model's \emph{deployed} residual-only convention:
+$\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{up}}\approx1.47-0.62=0.85$ (and
+$0.91$ against the RF bound), well above $\Binsuf\le0.62$. This is the claim we lean
+on, and it needs no smoothness assumption beyond the validity of the $\Binsuf$ upper
+bound. Under the full COSMO-SAC convention the separation \emph{sharpens} to an
+assumption-free constant-offset bound: a constant decoder offset alone accounts for
+$\Bclos\ge0.72$ (Fig.~\ref{fig:decomp}), exceeding every $\Binsuf$ upper bound
+($\le0.62$), and subtracting the insufficiency bound gives $\Bclos\ge1.24>0.62$
+($\sim2\times$). That constant-offset bound is convention-specific and \emph{inverts}
+under the deployed residual-only default ($0.43<0.62$; hedge~1), which is exactly why
+we headline the convention-independent bound above rather than the constant offset.
+Label noise is unestimable in this replicate-free set and assumed zero; the bounds we
+rely on are invariant to zero-mean noise, so the ceiling is not label noise either.
 
-\paragraph{Convention-robust corroboration (Tier~2).} Two facts independent of
-the bound arithmetic: (i) the free learned head fits $m$ $\sim$4$\times$ better
-than either true-input convention (\S\ref{sec:paradox}); (ii) adding the
-physically-correct combinatorial term \emph{increases} error. Both point to a
-misspecified decoder, not to inputs that lack the needed information. The
-convention-independent k\textsc{nn} estimate places $\Binsuf\approx0.4$ under
-both conventions, giving $\Bclos\approx1.2$--$1.4$; because k\textsc{nn} variance is
-curse-of-dimensionality-biased \emph{upward} in this $n{=}60$, $102$-dimensional
-setting, this is conservative for our direction, and we lean on the dimension-robust
-random-forest/ridge out-of-fold and binning bounds, which agree that $\Bclos$ dominates.
+\paragraph{Convention-robust corroboration (Tier~2).} The genuinely
+convention-robust fact is that adding the physically \emph{more} complete
+Staverman--Guggenheim combinatorial term \emph{increases} error (activity MSE
+$1.47\to1.80$)---what a misspecified map does, not what missing information would.
+This is robust to the size-factor's volume basis: recomputing the combinatorial term
+on the true COSMO cavity volumes (VT-2005 $V_{\mathrm{cosmo}}$) rather than an RDKit
+molar volume leaves it essentially unchanged (Jensen $0.714\to0.717$, MSE
+$1.793\to1.800$), because the term depends on molecular-size \emph{ratios} in which a
+near-uniform volume rescaling cancels. A second observation is consistent but is
+\emph{not} independent of the decomposition: a flexible regressor of $m$ on $\zstar$
+fits the activity target $\sim$4$\times$ better than the fixed true-input closure---but
+that regressor is exactly our convention-independent $\Binsuf$ estimator
+($\approx0.4$), so ``$4\times$ better'' restates that the closure sits far above the
+irreducible-variance floor (that $\Bclos$ is large) rather than corroborating it by an
+independent route. We therefore lean on the dimension-robust random-forest / ridge
+out-of-fold and binning bounds and on the combinatorial effect, which agree that
+$\Bclos$ exceeds $\Binsuf$.
 
 \paragraph{Four hedges we disclose.} The adversarial audit (four independent
 recomputations) could not invert the verdict but sharpened its scope:
 \begin{enumerate}
-  \item \emph{Convention.} The deployed default is residual-only; under it the
-  two \emph{rigorous} bounds nearly tie ($0.80$ vs $0.78$). The $\sim2\times$
-  margin is the full-COSMO-SAC result; we report both, and the qualitative
-  headline rests on the convention-robust Tier~2 facts, not the arm-specific
-  bound arithmetic.
+  \item \emph{Convention.} The deployed default is residual-only. Under it the
+  \emph{constant-offset} (Jensen) lower bound inverts
+  ($\Bclos\ge0.43<\Binsuf\le0.62$), so that particular assumption-free bound does not
+  separate, and the $\sim2\times$ full-convention margin (the sharpened
+  $\mathrm{MSE}-\Binsuf$ bound, $1.24$ vs $0.62$) is a full-COSMO-SAC-only result. What separates under the deployed convention is the convention-independent
+  bound $\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{up}}\approx0.91>0.62$,
+  on which we headline, together with the combinatorial Tier~2 fact---so the headline
+  does not rest on the arm-specific constant-offset arithmetic.
   \item \emph{Confound.} The closure error is predominantly a \emph{between-solvent}
   systematic bias ($\sim$64\% of total error); within the largest single-solvent
   stratum (pyridine, $n{=}20$) the closure is nearly correct (stratum MSE $0.07$).
   Because solvent $\sigma$ is part of $\zstar$, these offsets are still decoder error
   and give an independent solvent-conditional lower bound $\Bclos\ge0.89$ (full)/$0.56$ (res).
-  \item \emph{Confidence.} Honest confidence is the solvent-clustered bootstrap
-  $P(\Bclos{>}\Binsuf)\approx0.85$ ($0.81$ against the random-forest upper bound,
-  $0.88$ against the law-of-total-variance bound); we report the solvent-clustered
-  scheme rather than the less conservative i.i.d.-pair one because solvent
-  dependence dominates. The decomposition is checkpoint/seed-independent (the closure
-  has zero learnable parameters).
+  \item \emph{Confidence.} Honest confidence on the full-convention constant-offset
+  separation is the solvent-clustered bootstrap $P(\Bclos{>}\Binsuf)\approx0.85$
+  ($0.83$ against the random-forest upper bound, $0.89$ against the
+  law-of-total-variance bound); we report the solvent-clustered scheme rather than
+  the less conservative i.i.d.-pair one because solvent dependence dominates. The
+  convention-independent margin ($0.91$ vs $0.62$) is reported as a point estimate
+  and is the direction we headline. The decomposition is checkpoint/seed-independent
+  (the closure has zero learnable parameters).
   \item \emph{Selection/scope.} The 60 matchable pairs are the low-to-moderate
   $\gamma$ corner (matched mean $\lngi=0.75$ vs $3.56$ for VT-2005-unmatchable
   pairs, $t=-7.44$; the strongly non-ideal amide-solvent regime is untested
@@ -516,23 +562,32 @@ The result is a cautionary measurement for physics-informed modeling: grounding 
 model on truer physical inputs is only as good as the closure that consumes them,
 and when that closure is a fixed, mildly misspecified map, better inputs surface
 its bias rather than help. The external latent does not make the physics path win. What it buys is
-\emph{attribution}: the ceiling here sits in the decoder ($\Bclos$), with the
-inputs ($\Binsuf$) and the labels ($\sigma_\eta^2\approx0$) ruled out as its
-source. For practice this relocates the lever. Within this closure family, effort
+\emph{attribution}: on the infinite-dilution, low-$\gamma$ subset we can measure, the
+ceiling sits in the decoder ($\Bclos$), with the inputs ($\Binsuf$) ruled out as its
+source and label noise unestimable but assumed zero (and unable to manufacture the
+constant offset the bounds rest on). We do not claim this numeric attribution transfers
+unchanged to the finite-composition, high-$\gamma$ regime the solubility paradox itself
+spans; that the solubility paradox shares the same closure-misspecification cause is a
+conjecture supported by in-regime signs---the more-physics-worse effect on the full
+$n{=}5608$ set and the chemistry map---not a measured fact. For practice this relocates the lever. Within this closure family, effort
 spent on richer inputs or a better encoder is mis-targeted; the payoff is in the
 closure itself, for example a corrected or learned residual on the map rather
 than on its output (which \S\ref{sec:gateb} shows is inert).
 
 \paragraph{Limitations.} (i)~$\Binsuf$ is bounded, never point-identified: there
-are no true replicate measurements at fixed $\zstar$, so every estimate leans on a
-smoothness assumption. The assumption-free Tier-1 bound is a constant decoder
-offset $(\Ex[m]-\Ex[g])^2$; an independent recomputation from the tracked
-$\sigma$-profiles and IDAC labels reproduces the full-convention MSE, confirming
-$g$ and $m$ share the $\lngi$ convention, so the offset is genuine decoder bias
-rather than a units or reference-state artifact. We report the assumption-free
-inequality as the load-bearing claim. (ii)~The decisive $\sim2\times$ margin is convention-specific (full
-COSMO-SAC); the residual-only default gives a near-tie in rigorous bounds and the
-headline there rests on the Tier~2 facts. (iii)~The measurement is at infinite
+are no true replicate measurements at fixed $\zstar$, so the insufficiency estimates
+lean on a smoothness assumption. The constant-offset (Jensen) bound is smoothness-free
+but assumes $m$ and $g$ share the $\lngi$ (mole-fraction, Lewis--Randall) reference
+state; we check this two ways---the closure is nearly exact within the largest
+single-solvent stratum (pyridine, MSE $0.07$), which a uniform reference-state offset
+could not produce, and an independent recomputation reproduces the closure output---so
+the mean offset is genuine decoder bias, not a units artifact. We headline the
+convention-independent bound (\S\ref{sec:measure}) as the load-bearing claim.
+(ii)~The assumption-free constant-offset margin is convention-specific (full COSMO-SAC)
+and \emph{inverts} under the deployed residual-only default; there the separation rests
+on the convention-independent bound $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ and
+the more-physics-worse effect (which we verified is robust to the molecular-volume
+basis). (iii)~The measurement is at infinite
 dilution and 298\,K on the VT-2005-matchable, low-$\gamma$ subset; the non-ideal
 amide-solvent regime is untested. (iv)~Absolute scaffold $\lnx$ accuracy is
 encoder-bound and near the aleatoric label-noise floor; this paper is not an
@@ -545,8 +600,9 @@ worse. What the paper contributes is a way to measure that failure: with an
 externally grounded latent, the true-input excess risk splits into a
 decoder-misspecification term and an input-insufficiency term, and on the
 infinite-dilution, low-$\gamma$ subset we can measure, the ceiling turns out to be
-the closure rather than the inputs or the labels. The practical implication is to fix the map itself,
-since neither better inputs nor an output-space correction moves the ceiling.
+the closure rather than the inputs (label noise unestimable and assumed zero). The
+practical implication is to fix the map itself, since within this closure truer
+inputs surface its bias and an output-space correction is inert.
 
 \section*{Data and code availability}
 All code and the intermediate result artifacts needed to regenerate every figure and
