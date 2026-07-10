@@ -271,6 +271,8 @@ def main() -> None:
                     "has_solubility": bool(has[i]),
                     "ln_gamma2_pred": float(gamma[i]) if gamma is not None else float("nan"),
                     "sigma_oracle_applied": bool(_oracle_mask_np[i]) if _oracle_mask_np is not None else False,
+                    "sigma_oracle_mask_solute": bool(mask_solute[i]) if mask_solute is not None else False,
+                    "sigma_oracle_mask_solvent": bool(mask_solvent[i]) if mask_solvent is not None else False,
                 }
                 for k, values in base_cols.items():
                     row[k] = values[i] if isinstance(values, list) else ""

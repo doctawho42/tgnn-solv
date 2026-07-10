@@ -197,6 +197,11 @@ class TGNNSolvConfig:
     sigma_profile_loss: str = "emd"  # "emd" (1-D Wasserstein) or "mse"
     sigma_val_data: Optional[str] = None  # path to sigma-profile val set for warmup early-stop
     freeze_sigma_head_during_sle: bool = False  # freeze head_sigma in SLE phases 2/3 to hold the σ-manifold
+    # Train-time TRUE-σ injection (disambiguates the eval-only oracle floor: does the
+    # crystal/correction branch co-adapt to correct σ, or is COSMO-SAC misspecified?).
+    train_sigma_oracle: bool = False            # inject VT-2005 σ during SLE phases 2/3 (not just eval)
+    sigma_oracle_artifact: Optional[str] = None  # sigma_profiles.csv for train-time injection
+    sigma_oracle_side: str = "both"             # "solute" | "solvent" | "both"
     # Sigma-profile warmup pretraining (run_sigma_warmup_pretraining).
     # Pretrain head_sigma + encoder on the σ pool BEFORE the SLE curriculum.
     sigma_warmup_epochs: int = 0               # 0 = skip warmup
@@ -218,6 +223,9 @@ class TGNNSolvConfig:
     correction_tau_max_delta: float = 2.0
     correction_output_mode: str = "parameter"  # "parameter" or "ln_x2_residual"
     correction_ln_x2_max_delta: float = 1.0
+    # v2 (Gate B): force the confidence gate fully open in ln_x2_residual mode so the output
+    # residual is NOT throttled by (1-confidence). Default off (v1 behavior preserved).
+    correction_force_open_gate: bool = False
     monotonicity_force_explicit: bool = False
 
     # --- Training ---

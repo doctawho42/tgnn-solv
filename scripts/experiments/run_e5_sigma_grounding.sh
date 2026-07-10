@@ -122,7 +122,7 @@ for SEED in ${SEEDS}; do
     RESUME=()
     if [ -f "${ckpt}" ]; then echo "   resuming training from ${ckpt}"; RESUME=(--resume "${ckpt}"); fi
     # NW_ARGS (--num-workers) rides along here so it reaches all 5 training arms but not eval-only oracle.
-    CKPT_ARGS=(--checkpoint "${ckpt}" --checkpoint-every "${CHECKPOINT_EVERY}" "${RESUME[@]}" "${NW_ARGS[@]}")
+    CKPT_ARGS=(--checkpoint "${ckpt}" --checkpoint-every "${CHECKPOINT_EVERY}" ${RESUME[@]+"${RESUME[@]}"} ${NW_ARGS[@]+"${NW_ARGS[@]}"})
 
     case "${arm}" in
       nrtl)
@@ -164,6 +164,69 @@ for SEED in ${SEEDS}; do
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
           --model-type tgnn --device "${DEVICE}" ;;
+      grounded_a_truetrain)
+        # DISAMBIGUATOR: inject TRUE (VT-2005) σ during TRAINING so the crystal/correction
+        # branches co-adapt to correct σ (not the σ-head's prediction). Export WITH oracle σ
+        # (true σ at test too) → does it now beat DirectGNN (co-adaptation artifact) or still
+        # trail (COSMO-SAC misspecification)? Coverage: solvent ~99%, solute ~5% (read the
+        # both-matched subset via sigma_oracle_mask_solute&solvent columns). --set must be LAST.
+        "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} \
+          --set train_sigma_oracle=true sigma_oracle_side=both sigma_oracle_artifact="${SIGMA_ARTIFACT}"
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn --device "${DEVICE}" \
+          --sigma-oracle --sigma-oracle-side both --sigma-artifact "${SIGMA_ARTIFACT}" ;;
+      grounded_a_truetrain_residual)
+        # GATE B v1 (moonshot actionability): train-time TRUE σ (as grounded_a_truetrain) BUT with
+        # an OUTPUT-SPACE residual escape valve enabled (correction_output_mode=ln_x2_residual →
+        # ln_x2 = ln_x2_physics + (1-confidence)*bounded_residual). Tests the "faithful bottleneck"
+        # claim: does giving physical σ a post-decoder residual to lean on make true-σ STOP hurting
+        # (R² recover from truetrain 0.283 toward grounded_a 0.370 / direct 0.385)? KILL if ≈ truetrain
+        # (residual can't rescue physical σ → the misspecified analytic closure is truly binding).
+        # Eval injects true σ too (apples-to-apples vs truetrain; ONLY difference = the residual valve).
+        # --set must be LAST (greedy nargs); the residual keys ride the same group as the oracle keys.
+        "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} \
+          --set train_sigma_oracle=true sigma_oracle_side=both sigma_oracle_artifact="${SIGMA_ARTIFACT}" correction_output_mode=ln_x2_residual correction_ln_x2_max_delta=3.0
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn --device "${DEVICE}" \
+          --sigma-oracle --sigma-oracle-side both --sigma-artifact "${SIGMA_ARTIFACT}" ;;
+      grounded_a_truetrain_residual_v2)
+        # GATE B v2: as _residual but FORCE the confidence gate fully open
+        # (correction_force_open_gate=true) so the output residual is applied at full strength.
+        # v1's residual stayed gated SHUT (confidence≈1 → applied residual ~0, R² 0.236); this
+        # genuinely tests the faithful-bottleneck fix — does an un-throttled output escape valve
+        # let true-σ stop hurting? GREEN if R² recovers toward grounded 0.370 / direct 0.385;
+        # NULL if ≈ truetrain 0.283 (closure binding even with an open valve). --set must be LAST.
+        "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} \
+          --set train_sigma_oracle=true sigma_oracle_side=both sigma_oracle_artifact="${SIGMA_ARTIFACT}" correction_output_mode=ln_x2_residual correction_ln_x2_max_delta=3.0 correction_force_open_gate=true
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn --device "${DEVICE}" \
+          --sigma-oracle --sigma-oracle-side both --sigma-artifact "${SIGMA_ARTIFACT}" ;;
+      channel_swap)
+        # CHANNEL-SWAP corroboration: coordinate_descent freezes Φ (crystal head + encoder)
+        # in phase 2 while phase 1 grounds Φ on crystal-aux — so only the activity/correction
+        # branch is refit, here against TRUE σ. Isolates whether the COSMO-SAC σ→γ map is the
+        # ceiling independent of the crystal branch. --set must be LAST (greedy nargs).
+        "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} \
+          --set train_sigma_oracle=true sigma_oracle_side=both sigma_oracle_artifact="${SIGMA_ARTIFACT}" branch_training_mode=coordinate_descent
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn --device "${DEVICE}" \
+          --sigma-oracle --sigma-oracle-side both --sigma-artifact "${SIGMA_ARTIFACT}" ;;
       oracle)
         # Reuse the grounded_a checkpoint; only the eval path changes (oracle sigma injection).
         # Measures the ceiling if the COSMO-SAC head had perfect sigma profiles.

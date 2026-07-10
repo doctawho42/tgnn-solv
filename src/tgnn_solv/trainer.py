@@ -204,6 +204,17 @@ class TGNNSolvTrainer:
         self._base_detach_crystal_params_in_sle = bool(
             cfg.detach_crystal_params_in_sle
         )
+        # Train-time TRUE-σ (oracle) injection table (disambiguation experiment).
+        self._sigma_oracle_table = None
+        self._oracle_row_cache: dict[str, tuple] = {}
+        if getattr(cfg, "train_sigma_oracle", False) and getattr(
+            cfg, "sigma_oracle_artifact", None
+        ):
+            from .sigma_oracle import load_sigma_profiles
+            self._sigma_oracle_table = load_sigma_profiles(
+                cfg.sigma_oracle_artifact,
+                n_bins=int(getattr(cfg, "cosmo_sac_n_bins", 51)),
+            )
 
         self.phase_weights = {
             phase: self._get_phase_weights(phase)
@@ -694,7 +705,46 @@ class TGNNSolvTrainer:
             k: v.to(self.device) if isinstance(v, torch.Tensor) else v
             for k, v in targets.items()
         }
+        if getattr(self, "_sigma_oracle_table", None) is not None:
+            self._inject_sigma_oracle(targets)
         return sol_batch, slv_batch, targets
+
+    def _inject_sigma_oracle(self, targets: dict[str, object]) -> None:
+        """Write TRUE (VT-2005) σ tensors into ``targets`` for train-time oracle
+        injection (disambiguates the eval-only oracle floor: does the crystal/correction
+        branch co-adapt to correct σ, or is COSMO-SAC misspecified?). Per-SMILES results
+        are cached so RDKit canonicalization runs once, not every epoch. No-op unless
+        ``cfg.train_sigma_oracle`` loaded a table. Sets ``__force_sigma_oracle__`` so the
+        SLE cosmo forward applies the override in train mode too."""
+        table = self._sigma_oracle_table
+        if table is None:
+            return
+        from .sigma_oracle import build_oracle_tensors
+        n_bins = int(getattr(self.cfg, "cosmo_sac_n_bins", 51))
+        side = getattr(self.cfg, "sigma_oracle_side", "both")
+        cache = self._oracle_row_cache
+
+        def assemble(smiles_list: list, prefix: str) -> None:
+            unseen = [s for s in dict.fromkeys(smiles_list) if s not in cache]
+            if unseen:
+                p, a, m = build_oracle_tensors(unseen, table, n_bins=n_bins)
+                for i, s in enumerate(unseen):
+                    cache[s] = (p[i].clone(), float(a[i]), bool(m[i]))
+            targets[f"sigma_oracle_p_{prefix}"] = torch.stack(
+                [cache[s][0] for s in smiles_list]
+            ).to(self.device)
+            targets[f"sigma_oracle_area_{prefix}"] = torch.tensor(
+                [cache[s][1] for s in smiles_list], dtype=torch.float32, device=self.device
+            )
+            targets[f"sigma_oracle_mask_{prefix}"] = torch.tensor(
+                [cache[s][2] for s in smiles_list], dtype=torch.bool, device=self.device
+            )
+
+        if side in {"solute", "both"} and isinstance(targets.get("solute_smiles"), list):
+            assemble(targets["solute_smiles"], "solute")
+        if side in {"solvent", "both"} and isinstance(targets.get("solvent_smiles"), list):
+            assemble(targets["solvent_smiles"], "solvent")
+        targets["__force_sigma_oracle__"] = True
 
     def _train_idac_aux_batch(
         self,
@@ -1689,6 +1739,8 @@ class TGNNSolvTrainer:
                 k: v.to(self.device) if isinstance(v, torch.Tensor) else v
                 for k, v in targets.items()
             }
+            if getattr(self, "_sigma_oracle_table", None) is not None:
+                self._inject_sigma_oracle(targets)
             T = targets["T"]
             solvent_type = targets.get("solvent_type")
             solute_morgan_fp = targets.get("solute_morgan_fp")

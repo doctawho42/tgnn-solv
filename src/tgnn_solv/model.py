@@ -526,7 +526,8 @@ class TGNNSolv(nn.Module):
         trained by the solubility loss. ``alpha_12`` is a compatibility placeholder
         for the correction param-summary.
 
-        When ``force_sigma_oracle`` is True and the model is in eval mode and
+        When ``force_sigma_oracle`` is True and (the model is in eval mode, OR
+        ``cfg.train_sigma_oracle`` is set for train-time co-adaptation) and
         ``targets`` is not None, the predicted sigma-profile is overridden with the
         oracle values (from VT-2005 or similar) for matched rows, identified by the
         boolean mask in ``targets["sigma_oracle_mask_solute"]``.
@@ -535,7 +536,8 @@ class TGNNSolv(nn.Module):
         slv = self.head_sigma(g_solvent)
         p_sol, a_sol = sol["p_sigma"], sol["area"]
         p_slv, a_slv = slv["p_sigma"], slv["area"]
-        if force_sigma_oracle and not self.training and targets is not None:
+        allow_oracle = (not self.training) or bool(getattr(self.cfg, "train_sigma_oracle", False))
+        if force_sigma_oracle and allow_oracle and targets is not None:
             op = targets.get("sigma_oracle_p_solute")
             oa = targets.get("sigma_oracle_area_solute")
             om = targets.get("sigma_oracle_mask_solute")
@@ -1239,8 +1241,12 @@ class TGNNSolv(nn.Module):
                 for k, v in solver_fusion_params.items()
             }
         if self.is_cosmo_sac:
+            _force_oracle = force_sigma_oracle or (
+                isinstance(targets, dict)
+                and bool(targets.get("__force_sigma_oracle__", False))
+            )
             nrtl_params = self._build_sigma_activity_params(
-                g_sol_pre, g_slv_pre, targets=targets, force_sigma_oracle=force_sigma_oracle)
+                g_sol_pre, g_slv_pre, targets=targets, force_sigma_oracle=_force_oracle)
         else:
             nrtl_params = self.head_nrtl(
                 g_pair,
@@ -1448,7 +1454,16 @@ class TGNNSolv(nn.Module):
         )
         ln_x2_direct = ln_x2_physics + bounded_residual
         ln_x2_direct_log_sigma = proposal_log_sigma
-        ln_x2 = ln_x2_physics + (1.0 - confidence) * bounded_residual
+        if (
+            getattr(self.cfg, "correction_force_open_gate", False)
+            and correction_output_mode == "ln_x2_residual"
+        ):
+            # v2 (Gate B): gate forced fully open — the residual is applied at full strength,
+            # not throttled by (1-confidence). Tests whether an un-gated output escape valve
+            # lets true-σ stop hurting (v1's confidence gate stayed ≈1 → residual ≈ 0).
+            ln_x2 = ln_x2_direct
+        else:
+            ln_x2 = ln_x2_physics + (1.0 - confidence) * bounded_residual
 
         timp_channel_probes = None
         if (
