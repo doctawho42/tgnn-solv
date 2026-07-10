@@ -21,12 +21,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from tgnn_solv.config import TGNNSolvConfig
+
+
+def _vt_index(fname: str) -> int | None:
+    """VT-2005 compound index from a profile filename, e.g. VT2005-0001-PROF.txt -> 1
+    (skip the '2005' catalogue prefix)."""
+    nums = re.findall(r"\d+", str(fname))
+    return next((int(t) for t in nums if t != "2005"), None)
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,6 +45,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--index-csv", required=True, help="CSV with columns: file, smiles.")
     p.add_argument("--out-csv", default="results/sigma_profile_artifact/sigma_profiles.csv")
     p.add_argument("--summary-json", default="results/sigma_profile_artifact/summary.json")
+    p.add_argument("--volume-index", default=None,
+                   help="Optional VT-2005 master index (tab-separated) with a 'Vcosmo, A3' "
+                        "column; when given, emit a 'v_cosmo' column (true COSMO cavity "
+                        "volume) for the Staverman-Guggenheim size factor.")
     return p.parse_args()
 
 
@@ -67,7 +79,14 @@ def main() -> None:
     if not {"file", "smiles"} <= set(index.columns):
         raise ValueError("--index-csv must have columns 'file' and 'smiles'.")
 
-    rows, n_fail = [], 0
+    vol_by_idx: dict[int, float] = {}
+    if args.volume_index:
+        v2 = pd.read_csv(args.volume_index, sep="\t")
+        vcol = next(c for c in v2.columns if "Vcosmo" in c)
+        icol = next(c for c in v2.columns if "Index" in c)
+        vol_by_idx = {int(r[icol]): float(r[vcol]) for _, r in v2.iterrows()}
+
+    rows, n_fail, n_vol = [], 0, 0
     pdir = Path(args.profiles_dir)
     for rec in index.itertuples(index=False):
         fpath = pdir / str(rec.file)
@@ -85,15 +104,21 @@ def main() -> None:
             continue
         row = {"smiles": str(rec.smiles), "sigma_area": float(prof.sum())}
         row.update({c: float(prof[i]) for i, c in enumerate(bin_cols)})
+        if vol_by_idx:
+            v = vol_by_idx.get(_vt_index(rec.file))
+            row["v_cosmo"] = float(v) if v is not None else float("nan")
+            n_vol += int(v is not None)
         rows.append(row)
 
-    out = pd.DataFrame(rows, columns=["smiles", "sigma_area", *bin_cols])
+    out_cols = ["smiles", "sigma_area", *bin_cols] + (["v_cosmo"] if vol_by_idx else [])
+    out = pd.DataFrame(rows, columns=out_cols)
     Path(args.out_csv).parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(args.out_csv, index=False)
     summary = {
         "profiles_dir": args.profiles_dir, "index_csv": args.index_csv,
         "out_csv": args.out_csv, "n_ingested": int(len(out)),
         "n_failed": int(n_fail), "n_bins": int(cfg.cosmo_sac_n_bins),
+        "volume_index": args.volume_index, "n_v_cosmo": int(n_vol),
     }
     Path(args.summary_json).parent.mkdir(parents=True, exist_ok=True)
     Path(args.summary_json).write_text(json.dumps(summary, indent=2))

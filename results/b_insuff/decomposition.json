@@ -15,39 +15,39 @@
   "n_solvents_inchikey": 19,
   "mean_m": 0.7481771196583977,
   "b_insuff_convention_independent": {
-    "rf_oof_upper": 0.5714926877280424,
-    "ridge_oof_upper": 0.6244962147391496,
+    "rf_oof_upper": 0.5645747528001114,
+    "ridge_oof_upper": 0.624496214739149,
     "knn_in_zstar_biased_up": 0.40002904956287405,
     "knn_k": 1
   },
   "lotv_bins": 8,
   "conventions": {
     "full": {
-      "mse_total": 1.7928826434436336,
-      "b_closure_jensen_lower": 0.7132349267247508,
+      "mse_total": 1.800407773418402,
+      "b_closure_jensen_lower": 0.7169260335676501,
       "b_insuff_lotv_upper": 0.529511646728612,
-      "b_closure_via_mse_minus_rf": 1.2213899557155912,
-      "mean_g": -0.09635525196790695
+      "b_closure_via_mse_minus_rf": 1.2358330206182906,
+      "mean_g": -0.09853772819042206
     },
     "res": {
       "mse_total": 1.4722677458787485,
       "b_closure_jensen_lower": 0.4264393864090039,
       "b_insuff_lotv_upper": 0.6180355877826827,
-      "b_closure_via_mse_minus_rf": 0.9007750581507061,
+      "b_closure_via_mse_minus_rf": 0.9076929930786372,
       "mean_g": 0.09515385329723358
     }
   },
   "hedges": {
     "hedge2_between_solvent_confound": {
       "full": {
-        "mse_total": 1.7928826434436336,
-        "between_solvent_plugin": 1.1459115310002508,
-        "within_solvent": 0.6469711124433829,
-        "between_solvent_share": 0.6391447511585423,
-        "solvent_conditional_jensen_lower": 0.8901322539877505,
+        "mse_total": 1.800407773418402,
+        "between_solvent_plugin": 1.1472481656379854,
+        "within_solvent": 0.6531596077804166,
+        "between_solvent_share": 0.637215736665992,
+        "solvent_conditional_jensen_lower": 0.8890222741899136,
         "largest_solvent": "c1ccncc1",
         "largest_solvent_n": 20,
-        "largest_solvent_stratum_mse": 0.07252245047765601
+        "largest_solvent_stratum_mse": 0.07399843909175638
       },
       "res": {
         "mse_total": 1.4722677458787485,
@@ -63,16 +63,16 @@
     "hedge3_ordering_confidence": {
       "convention": "full",
       "n_boot": 2000,
-      "b_closure_jensen_lower_point": 0.7132349267247508,
-      "b_insuff_rf_point": 0.5714926877280424,
+      "b_closure_jensen_lower_point": 0.7169260335676501,
+      "b_insuff_rf_point": 0.5645747528001114,
       "b_insuff_lotv_point": 0.529511646728612,
       "cluster_bootstrap_by_solvent": {
-        "P_jensen_gt_rf": 0.8075,
-        "P_jensen_gt_lotv": 0.8825
+        "P_jensen_gt_rf": 0.8275,
+        "P_jensen_gt_lotv": 0.885
       },
       "iid_pair_bootstrap": {
-        "P_jensen_gt_rf": 0.7325,
-        "P_jensen_gt_lotv": 0.9135
+        "P_jensen_gt_rf": 0.7495,
+        "P_jensen_gt_lotv": 0.9175
       }
     }
   },

@@ -20,8 +20,10 @@ term non-zero, we report ONE-SIDED BOUNDS, not a point split:
   * label noise sigma_eta^2 from IDAC inter-lab replicate spread.
 
 Two conventions for g are reported: ``full`` = COSMO-SAC WITH the
-Staverman-Guggenheim combinatorial term (a deterministic RDKit molar volume is
-used for the size factor), and ``res`` = residual-only (the deployed default,
+Staverman-Guggenheim combinatorial term (the size factor r_i = V_i/r0 uses the
+TRUE COSMO cavity volume ``v_cosmo`` from the VT-2005 artifact -- the same cavity
+as the profile area A_i -- with a deterministic RDKit molar-volume fallback only
+if the column is absent), and ``res`` = residual-only (the deployed default,
 combinatorial term off). B_insuff (= E[Var(m|z*)]) depends only on (m, z*), so
 the RF / Ridge / kNN estimates are convention-independent; MSE, Jensen and the
 LOTV binning depend on g and are reported per convention.
@@ -86,7 +88,11 @@ def load_sigma_profiles(csv_path: str):
         if key is None or key in table:
             continue
         p = np.array([float(d[c]) for c in cols], dtype=float)
-        table[key] = (p, float(d.get("sigma_area", p.sum())))
+        try:
+            v = float(d.get("v_cosmo", float("nan")))
+        except (TypeError, ValueError):
+            v = float("nan")
+        table[key] = (p, float(d.get("sigma_area", p.sum())), v)
     return table
 
 
@@ -143,9 +149,21 @@ def _mol_volume(smiles: str) -> float:
         return float("nan")
 
 
+def _volume(table, key: str) -> float:
+    """Size-factor volume for the SG combinatorial term: the TRUE COSMO cavity
+    volume (VT-2005 ``v_cosmo``) when the artifact carries it -- consistent with
+    the COSMO cavity area A_i -- else a deterministic RDKit molar-volume fallback."""
+    entry = table.get(key)
+    v = entry[2] if entry is not None and len(entry) > 2 else float("nan")
+    if v == v and v > 0:  # finite, positive
+        return float(v)
+    return _mol_volume(key)
+
+
 def evaluate_closure(pairs: pd.DataFrame, table, convention: str) -> np.ndarray:
     """g(z*) = CosmoSacLayer.ln_gamma_inf on the TRUE profiles, evaluated exactly
-    as the model deploys it (eval mode, V=None for 'res', RDKit volume for 'full')."""
+    as the model deploys it (eval mode, V=None for 'res', TRUE COSMO cavity volume
+    for 'full' with an RDKit fallback)."""
     layer = CosmoSacLayer(cfg=None)
     layer.eval()
     p2 = torch.tensor(np.stack([table[k][0] for k in pairs["solute_key"]]), dtype=torch.float)
@@ -154,8 +172,8 @@ def evaluate_closure(pairs: pd.DataFrame, table, convention: str) -> np.ndarray:
     A1 = torch.tensor([table[k][1] for k in pairs["solvent_key"]], dtype=torch.float)
     T = torch.full((len(pairs),), T_REF)
     if convention == "full":
-        V2 = torch.tensor([_mol_volume(k) for k in pairs["solute_key"]], dtype=torch.float)
-        V1 = torch.tensor([_mol_volume(k) for k in pairs["solvent_key"]], dtype=torch.float)
+        V2 = torch.tensor([_volume(table, k) for k in pairs["solute_key"]], dtype=torch.float)
+        V1 = torch.tensor([_volume(table, k) for k in pairs["solvent_key"]], dtype=torch.float)
     else:
         V2 = V1 = None
     with torch.no_grad():
