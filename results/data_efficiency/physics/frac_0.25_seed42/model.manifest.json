@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "run_type": "training_run",
+  "model_name": "model.pt",
+  "model_family": "tgnn_solv",
+  "command": null,
+  "runtime": {
+    "created_at": "2026-07-06T17:52:04+00:00",
+    "python": "/usr/local/bin/python",
+    "python_version": "3.11.12",
+    "platform": "Linux-4.19.0-gvisor-x86_64-with-glibc2.36",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": null,
+    "repo_root": "/root/repo"
+  },
+  "inputs": [
+    {
+      "role": "config",
+      "path": "/root/repo/configs/physics_grounded.yaml",
+      "relative_path": "configs/physics_grounded.yaml",
+      "sha256": "523f92718ace5698c98e1cb14e9d8efc5c0dcc9ec47191234e02b13a8cbb54e2",
+      "size_bytes": 3486,
+      "modified_at": "2026-07-05T23:01:44+00:00"
+    },
+    {
+      "role": "train_data",
+      "path": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/data_efficiency/physics/frac_0.25_seed42/train_sub.csv",
+      "relative_path": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/data_efficiency/physics/frac_0.25_seed42/train_sub.csv",
+      "sha256": "b27872ee42d1bacc4129ea1b7871d01652330329228970e0fd013fff59248411",
+      "size_bytes": 4401258,
+      "modified_at": "2026-07-06T15:37:52+00:00"
+    },
+    {
+      "role": "val_data",
+      "path": "/root/repo/notebooks/data/processed/val.csv",
+      "relative_path": "notebooks/data/processed/val.csv",
+      "sha256": "974ea451aace832e406b72751d85694ff1866643f657afad8c17b63781193610",
+      "size_bytes": 1404962,
+      "modified_at": "2026-06-19T00:05:45+00:00"
+    },
+    {
+      "role": "test_data",
+      "path": "/root/repo/notebooks/data/processed/test.csv",
+      "relative_path": "notebooks/data/processed/test.csv",
+      "sha256": "7871e8a9f4f92eab083f5517fb804b530a12bed43c199805974475453ab75117",
+      "size_bytes": 1385743,
+      "modified_at": "2026-06-19T00:05:45+00:00"
+    },
+    {
+      "role": "crystal_train_data",
+      "path": "/root/repo/notebooks/data/processed_crystal_aux_stream/crystal_train.csv",
+      "relative_path": "notebooks/data/processed_crystal_aux_stream/crystal_train.csv",
+      "sha256": "1c46e28573fae775afba62acfda79019f758cf9958f984064b5b0d727a0b6c13",
+      "size_bytes": 2393553,
+      "modified_at": "2026-07-06T15:37:50+00:00"
+    }
+  ],
+  "outputs": [
+    {
+      "role": "checkpoint",
+      "path": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/data_efficiency/physics/frac_0.25_seed42/model.pt",
+      "relative_path": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/data_efficiency/physics/frac_0.25_seed42/model.pt",
+      "sha256": "148de2375e428859ee5bc391697bfb20fdfe9c3da94ccbc4bf988988f2ea1fe2",
+      "size_bytes": 122910663,
+      "modified_at": "2026-07-06T17:51:44+00:00"
+    }
+  ],
+  "metadata": {
+    "experiment_name": "20260706_153758",
+    "log_dir": "logs/20260706_153758",
+    "seed": 42,
+    "device": "cuda",
+    "pretrain_info": null
+  }
+}

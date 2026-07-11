@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/data_efficiency/physics/frac_0.1_seed42/model.pt",
+  "data": "/root/repo/notebooks/data/processed/test.csv",
+  "output": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/data_efficiency/physics/frac_0.1_seed42/pred.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 2.442485409823662,
+  "rmse": 3.3381270359428923,
+  "r2": -0.24883138799191395,
+  "bias": 0.9742721369740461,
+  "target_std": 2.9871082226758108,
+  "pred_std": 1.9692977988590952,
+  "pred_std_ratio": 0.659265634873572
+}

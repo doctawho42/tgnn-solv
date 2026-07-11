@@ -1,0 +1,26 @@
+{
+  "best_solvent_top1_accuracy": {
+    "mean": 0.4176100628930818,
+    "median": 0.0,
+    "n": 795
+  },
+  "interpretation": "Ranking is the screening-relevant metric and is invariant to per-solute offsets/label noise; report alongside MAE. High Spearman / top-1 with mediocre MAE means the model still selects solvents correctly.",
+  "kendall_tau": {
+    "mean": 0.31438568132307393,
+    "median": 0.33333333333333337,
+    "n": 795
+  },
+  "mean_solvents_per_group": 6.023899371069183,
+  "n_groups_scored": 795,
+  "ndcg_at_3": {
+    "mean": 0.6758524609807403,
+    "median": 0.7632223358547978,
+    "n": 795
+  },
+  "predictions_csv": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/data_efficiency/physics/frac_0.05_seed42/pred.csv",
+  "spearman": {
+    "mean": 0.370884685433156,
+    "median": 0.4285714285714286,
+    "n": 795
+  }
+}

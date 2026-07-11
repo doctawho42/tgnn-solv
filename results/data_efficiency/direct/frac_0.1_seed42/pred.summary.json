@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/data_efficiency/direct/frac_0.1_seed42/model.pt",
+  "data": "/root/repo/notebooks/data/processed/test.csv",
+  "output": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/data_efficiency/direct/frac_0.1_seed42/pred.csv",
+  "model_type": "direct",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 2.068388503537076,
+  "rmse": 2.748386518903587,
+  "r2": 0.15344787432539786,
+  "bias": 0.44921732096788014,
+  "target_std": 2.9871082226758108,
+  "pred_std": 1.8724289865755406,
+  "pred_std_ratio": 0.6268366751364693
+}

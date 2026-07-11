@@ -1,0 +1,103 @@
+{
+  "curve": {
+    "direct": {
+      "0.05": {
+        "best_solvent_top1": 0.22600243013365734,
+        "mae": 2.1981803681867493,
+        "r2": 0.06948237823815195,
+        "spearman": 0.12470023021459668
+      },
+      "0.1": {
+        "best_solvent_top1": 0.44106925880923453,
+        "mae": 2.068388503537076,
+        "r2": 0.15344787432539786,
+        "spearman": 0.38094510027768874
+      },
+      "0.25": {
+        "best_solvent_top1": 0.4313487241798299,
+        "mae": 1.8120028675167148,
+        "r2": 0.38347979051529235,
+        "spearman": 0.46252804726040514
+      },
+      "0.5": {
+        "best_solvent_top1": 0.32563791008505466,
+        "mae": 1.9838091881285433,
+        "r2": 0.21863816838881323,
+        "spearman": 0.25433541549424565
+      },
+      "1.0": {
+        "best_solvent_top1": 0.393681652490887,
+        "mae": 1.9709407645662962,
+        "r2": 0.22154674680835795,
+        "spearman": 0.41075693157565746
+      }
+    },
+    "physics": {
+      "0.05": {
+        "best_solvent_top1": 0.4176100628930818,
+        "mae": 2.2770776652495015,
+        "r2": -0.09153175134281688,
+        "spearman": 0.370884685433156
+      },
+      "0.1": {
+        "best_solvent_top1": 0.32170542635658916,
+        "mae": 2.442485409823662,
+        "r2": -0.24883138799191395,
+        "spearman": 0.29344979808189947
+      },
+      "0.25": {
+        "best_solvent_top1": 0.42574257425742573,
+        "mae": 2.934333389322041,
+        "r2": -0.7495678058527202,
+        "spearman": 0.3699335897848335
+      },
+      "0.5": {
+        "best_solvent_top1": 0.4381679389312977,
+        "mae": 3.1198364269756156,
+        "r2": -0.9835325039048919,
+        "spearman": 0.3842265970340637
+      },
+      "1.0": {
+        "best_solvent_top1": 0.30779944289693595,
+        "mae": 2.978147778504347,
+        "r2": -0.7940249512904427,
+        "spearman": 0.29268212118721204
+      }
+    }
+  },
+  "fractions": [
+    0.05,
+    0.1,
+    0.25,
+    0.5,
+    1.0
+  ],
+  "interpretation": "Physics grounding wins on sample efficiency if mae_physics_minus_direct < 0 (and/or spearman delta > 0) at SMALL fractions, even if it ties/loses at fraction 1.0. That low-data advantage is the headline data-efficiency claim.",
+  "physics_minus_direct": [
+    {
+      "fraction": 0.05,
+      "mae_physics_minus_direct": 0.07889729706275217,
+      "spearman_physics_minus_direct": 0.2461844552185593
+    },
+    {
+      "fraction": 0.1,
+      "mae_physics_minus_direct": 0.374096906286586,
+      "spearman_physics_minus_direct": -0.08749530219578927
+    },
+    {
+      "fraction": 0.25,
+      "mae_physics_minus_direct": 1.122330521805326,
+      "spearman_physics_minus_direct": -0.09259445747557166
+    },
+    {
+      "fraction": 0.5,
+      "mae_physics_minus_direct": 1.1360272388470722,
+      "spearman_physics_minus_direct": 0.12989118153981805
+    },
+    {
+      "fraction": 1.0,
+      "mae_physics_minus_direct": 1.007207013938051,
+      "spearman_physics_minus_direct": -0.11807481038844542
+    }
+  ]
+}
