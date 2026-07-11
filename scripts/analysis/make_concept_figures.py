@@ -270,6 +270,53 @@ def fig_phase(out_dir: Path) -> None:
     _save(fig, out_dir, "fig_phase")
 
 
+def fig_arch(out_dir: Path) -> None:
+    fig, ax = plt.subplots(figsize=(11.0, 5.4))
+    ax.set_xlim(0, 12.4); ax.set_ylim(0, 6.2); ax.axis("off")
+
+    # inputs
+    _box(ax, (0.15, 4.35), 1.5, 0.7, "solute\ngraph", "white", fs=9)
+    _box(ax, (0.15, 3.05), 1.5, 0.7, "solvent\ngraph", "white", fs=9)
+    # shared encoder
+    _box(ax, (2.05, 3.05), 1.5, 2.0, "shared\nencoder $h$", TEAL, fs=10)
+    _arrow(ax, (1.65, 4.7), (2.05, 4.5)); _arrow(ax, (1.65, 3.4), (2.05, 3.6))
+    # heads
+    _box(ax, (3.95, 4.55), 1.55, 0.85, "crystal\nhead", BLUE, fs=9)
+    _box(ax, (3.95, 3.05), 1.55, 0.85, "$\\sigma$-profile\nhead", BLUE, fs=9)
+    _arrow(ax, (3.55, 4.55), (3.95, 4.75)); _arrow(ax, (3.55, 3.55), (3.95, 3.45))
+    # closure
+    _box(ax, (6.35, 3.05), 1.7, 0.85, "COSMO-SAC\nclosure $g$", SALMON, fs=9.5)
+    _arrow(ax, (5.5, 3.47), (6.35, 3.47))
+    ax.text(5.9, 3.68, "$\\hat z$", fontsize=9, color=INK, ha="center")
+    ax.text(5.9, 3.24, "$B_{\\mathrm{insuff}}$", fontsize=8.6, color=BLUE, ha="center", va="top")
+    ax.text(6.62, 2.80, "$B_{\\mathrm{closure}}$", fontsize=8.6, color="#C67A54", ha="center", va="top")
+    # sigma-oracle injection
+    _box(ax, (6.35, 1.35), 1.7, 0.75, "$\\sigma$-oracle $z^\\star$\n(true VT-2005)", "#F3D4C4", ec=SALMON, fs=8.4)
+    _arrow(ax, (7.6, 2.1), (7.6, 3.05), color=SALMON, ls=(0, (3, 2)))
+    ax.text(7.72, 2.5, "replaces $\\hat z$", fontsize=7.8, color="#C67A54", ha="left")
+    # SLE solver
+    _box(ax, (8.75, 3.5), 1.5, 1.25, "SLE\nsolver", PURPLE, fs=9.5)
+    _arrow(ax, (5.5, 4.95), (8.75, 4.55), rad=-0.12)     # Phi(T) from crystal head
+    ax.text(7.0, 5.02, "$\\Phi(T)$", fontsize=8.8, color=INK, ha="center")
+    _arrow(ax, (8.05, 3.47), (8.75, 3.9))                 # ln gamma from closure
+    ax.text(8.35, 3.5, "$\\ln\\gamma_2$", fontsize=8.6, color=INK, ha="center")
+    # output
+    _box(ax, (10.55, 3.75), 1.6, 0.8, "$\\ln x_2$", "white", fs=10)
+    _arrow(ax, (10.25, 4.12), (10.55, 4.15))
+    # DirectGNN control branch (solid)
+    _box(ax, (8.75, 1.15), 1.5, 0.8, "DirectGNN\n(no closure)", "white", ec=GRAY, tc=GRAY, fs=8.6)
+    _arrow(ax, (2.8, 3.05), (8.75, 1.55), color=GRAY, rad=-0.18, lw=1.8)
+    ax.text(5.4, 1.75, "matched control:\nshares $h$, drops $g$", fontsize=8.2, color=GRAY,
+            style="italic", ha="center")
+    _box(ax, (10.55, 1.15), 1.6, 0.8, "$\\ln x_2$\n(direct)", "white", ec=GRAY, tc=GRAY, fs=9)
+    _arrow(ax, (10.25, 1.55), (10.55, 1.55), color=GRAY)
+    ax.annotate("", xy=(11.35, 3.75), xytext=(11.35, 1.95),
+                arrowprops=dict(arrowstyle="<->", color=INK, lw=1.2))
+    ax.text(11.5, 2.85, "physics tax\n$R_{\\mathrm{phys}}-R_{\\mathrm{direct}}$", fontsize=8.2,
+            color=INK, ha="left", va="center")
+    _save(fig, out_dir, "fig_architecture")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out-dir", default="paper/figs")
@@ -280,7 +327,8 @@ def main() -> None:
     fig_decomp_concept(out)
     fig_ident(out)
     fig_phase(out)
-    print(f"wrote fig_composed/fig_decomp_concept/fig_ident/fig_phase (.pdf/.png) to {out}")
+    fig_arch(out)
+    print(f"wrote fig_composed/fig_decomp_concept/fig_ident/fig_phase/fig_architecture (.pdf/.png) to {out}")
 
 
 if __name__ == "__main__":

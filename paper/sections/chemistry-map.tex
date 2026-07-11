@@ -30,6 +30,30 @@ Amide & $-0.22 \pm 0.11$ \\
 \end{tabular}
 \end{table}
 
-The solute axis tells a compatible but weaker story in prose. Oxygenated solutes ($+0.32$), polyaromatics ($+0.27$), and heterocycles ($+0.17$) are where the closure costs the most, while halogenated-aromatic solutes are roughly neutral. An earlier hypothesis, that the physics path should hurt most on charged and high-$|\lng|$ solutes such as salts, did not replicate once the split was corrected: the charged/salt stratum is neutral at $-0.04 \pm 0.19$. The clean penalty falls instead on ordinary neutral organics, not on the ionic tail we had expected to be hardest.
+The solute axis tells a compatible but weaker story (Table~\ref{tab:solute-map}). The closure costs most on ordinary neutral organics---oxygenated solutes, polyaromatics, and heterocycles---while an earlier hypothesis, that it should hurt most on charged, high-$|\lng|$ solutes such as salts, did not replicate once the split was corrected: the charged/salt stratum is neutral. The clean penalty falls on neutral organics, not on the ionic tail we had expected to be hardest.
 
-The most suggestive pattern is a novelty inversion that runs opposite to the usual coverage intuition. Binning solutes into three pre-specified nearest-train Tanimoto-similarity strata, the physics arm is neutral on the most novel chemistry ($\leq 0.3$: $-0.04 \pm 0.18$) and hurts most on the most familiar chemistry ($>0.8$: $+0.51 \pm 0.09$). We flag this as exploratory, not a confirmed effect: the $\pm0.09$ is the spread across three training seeds on the fixed test split, not a within-bin sampling interval over which solutes fall in the stratum, and the Tanimoto binning is one of several strata families we examine (solvent class, solute class, similarity) without multiplicity control. Read as a direction rather than a tested quantity, it suggests the ceiling on the physics path is not coverage or extrapolation but the closure's systematic misfit---masked on novel solutes by the large errors both arms already incur there, and exposed on easy, well-covered solutes where the direct control is accurate enough for a structural bias in the closure to become the dominant residual---consistent with the same closure-misspecification reading as the rest of the paper. A multiplicity-controlled, within-bin-bootstrapped test is left to future work. Read together, the maps say the physics decomposition pays where the closure is misspecified relative to the solvent chemistry, and it can only turn into a win in the narrow acceptor-dominated regime the closure was built to describe.
+\begin{table}[t]
+\centering
+\caption{Per-solute-class and novelty-stratum physics tax
+$\Delta\mathrm{MAE}=\mathrm{MAE(physics)}-\mathrm{MAE(control)}$ on the scaffold split
+(positive means the closure adds cost). Solute-class entries are point estimates; the
+Tanimoto strata carry the 3-seed spread. Exploratory: no multiplicity control across the
+strata families (\S\ref{sec:map}).}
+\label{tab:solute-map}
+\begin{tabular}{lr}
+\toprule
+Solute stratum & $\Delta\mathrm{MAE}$ \\
+\midrule
+Oxygenated            & $+0.32$ \\
+Polyaromatic          & $+0.27$ \\
+Heterocycle           & $+0.17$ \\
+Halogenated-aromatic  & $\approx0$ \\
+Charged / salt        & $-0.04 \pm 0.19$ \\
+\midrule
+Tanimoto $\leq0.3$ (novel)    & $-0.04 \pm 0.18$ \\
+Tanimoto $>0.8$ (familiar)    & $+0.51 \pm 0.09$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The most suggestive pattern is a novelty inversion that runs opposite to the usual coverage intuition: the physics arm is neutral on the most novel chemistry (nearest-train Tanimoto $\leq0.3$) and hurts most on the most familiar ($>0.8$; Table~\ref{tab:solute-map}). We flag this as exploratory, not a confirmed effect: the seed spread is not a within-bin sampling interval over which solutes fall in the stratum, and the Tanimoto binning is one of several strata families we examine (solvent class, solute class, similarity) without multiplicity control. Read as a direction rather than a tested quantity, it suggests the ceiling on the physics path is not coverage or extrapolation but the closure's systematic misfit---masked on novel solutes by the large errors both arms already incur there, and exposed on easy, well-covered solutes where the direct control is accurate enough for a structural bias in the closure to become the dominant residual---consistent with the same closure-misspecification reading as the rest of the paper. A multiplicity-controlled, within-bin-bootstrapped test is left to future work. Read together, the maps say the physics decomposition pays where the closure is misspecified relative to the solvent chemistry, and it can only turn into a win in the narrow acceptor-dominated regime the closure was built to describe.

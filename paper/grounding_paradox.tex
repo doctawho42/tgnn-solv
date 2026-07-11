@@ -189,11 +189,14 @@ physics bottleneck costs'' (Fig.~\ref{fig:arch}).
 \centering
 \includegraphics[width=\linewidth]{figs/fig_architecture.pdf}
 \caption{The model and the grounding intervention. Solute and solvent graphs pass
-through a shared encoder to a crystal head (giving the ideal term $\Phi(T)$) and a
-$\sigma$-profile head; the predicted profile $\hat z$ feeds the COSMO-SAC closure
-$g$, which returns $\ln\gamma_2$, and an SLE solver combines the two into $\lnx$.
-The $\sigma$-oracle replaces $\hat z$ with the true VT-2005 profile $\zstar$
-(salmon). DirectGNN shares the encoder but bypasses the closure.}
+through a shared encoder to a crystal head (the ideal term $\Phi(T)$) and a
+$\sigma$-profile head; the predicted profile $\hat z$ feeds the fixed COSMO-SAC closure
+$g$, which returns $\ln\gamma_2$, and an SLE solver combines the two into $\lnx$. Input
+insufficiency $\Binsuf$ enters at the intermediate $\hat z$ and closure misspecification
+$\Bclos$ at $g$. The $\sigma$-oracle replaces $\hat z$ with the true VT-2005 profile
+$\zstar$ (salmon). DirectGNN (grey) is the matched control---it shares the encoder but
+drops the closure, so the gap to the physics path is the physics tax
+$R_{\mathrm{phys}}-R_{\mathrm{direct}}$.}
 \label{fig:arch}
 \end{figure}
 
@@ -291,7 +294,7 @@ $\mathcal I_{\mathrm{eff}}(\dHfus)=\sigma^{-2}\,\lVert v-\Pi_{\mathcal H}v\rVert
 If $\mathcal H$ contains the crystal score's span $\{1,1/T\}$ (a free intercept and slope) then
 $\Pi_{\mathcal H}v=v$ and $\mathcal I_{\mathrm{eff}}=0$, recovering
 Lemma~\ref{prop:ident}; if $\mathcal H$ is restricted (the slope is known or
-constrained) then $\mathcal I_{\mathrm{eff}}>0$ and the Cram\'er--Rao bound on
+constrained) then $\mathcal I_{\mathrm{eff}}>0$ and the Cram\'er--Rao lower bound (CRLB) on
 $\dHfus$ is finite.
 \end{lemma}
 \noindent In words: the efficient information is what the data can still pin down
@@ -357,10 +360,10 @@ decomposition is invalid (we observe a spurious $-0.36$ cross term when
 $\Ex[m\mid\zstar]$ is replaced by a fitted estimate). We therefore report
 \emph{one-sided bounds}, not a point split (each proved in App.~\ref{sec:si-proofs}):
 \begin{itemize}
-  \item $\Bclos \ge (\Ex[m]-\Ex[g])^2$, \emph{assumption-free in smoothness}
-  (Jensen; a constant decoder offset, which cannot be input insufficiency)---it does
-  assume $m$ and $g$ are on the same $\lngi$ reference state, which we check directly
-  (\S\ref{sec:measure}).
+  \item $\Bclos \ge (\Ex[m]-\Ex[g])^2$ by Jensen: a constant offset between the
+  decoder's mean output and the target is misspecification, not input insufficiency, and
+  this bound needs \emph{no smoothness assumption}. Its one requirement is that $m$ and $g$
+  share the $\lngi$ reference state, which we check directly (\S\ref{sec:measure}).
   \item $\Binsuf \le \Ex[\Var(m\mid \mathrm{bin}(g(\zstar)))]$, a valid
   \emph{upper} bound (law of total variance, since a binning of $g(\zstar)$
   coarsens $\zstar$).
@@ -598,6 +601,10 @@ $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}\approx0.9>0.6$ bound (\S\ref{sec:me
 \label{fig:decomp}
 \end{figure}
 
+We grade the evidence in two tiers: \emph{Tier~1} claims hold for \emph{any} COSMO-SAC
+configuration and are the load-bearing ones, while \emph{Tier~2} claims are
+configuration-robust corroboration that is not strictly independent of the model fit.
+
 \paragraph{The load-bearing separation (convention-independent, Tier~1).} Because
 $\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, its upper bound is the
 same in every closure convention; subtracting it from the total therefore lower-bounds
@@ -680,9 +687,9 @@ correction on top of the physics prediction should recover accuracy. It does not
 An additive bounded residual with a learned confidence gate
 ($\hat y=\hat y_{\text{phys}}+(1-c)\,r$, with $y=\lnx$) leaves the valve
 effectively shut (applied
-residual $\approx0$, $R^2=0.236$). Forcing the gate open removes the systematic
-\emph{bias} (from $+0.45$ to $+0.06$) but does \emph{not} recover \emph{accuracy}
-($R^2$ $0.283\!\to\!0.274$). This is the classical calibration-versus-accuracy
+residual $\approx0$). Forcing the gate open removes the systematic
+\emph{bias} ($+0.45\to+0.06$) but does \emph{not} recover \emph{accuracy}
+($R^2$ $0.283\to0.274$, essentially unchanged). This is the classical calibration-versus-accuracy
 separation: when the upstream map is misspecified, a monotone or affine post-hoc
 map can fix reliability but not resolution. Recalibration buys calibration
 without buying accuracy, which is what we expect if the closure, rather than the
