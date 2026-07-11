@@ -1,0 +1,145 @@
+% =====================================================================
+% Supplementary Information (skeleton — Option B roadmap item 5).
+% Sections are stubs with stable labels so the body's \ref's resolve;
+% each is filled by relocating already-run material (see ROADMAP_optionB).
+% =====================================================================
+\appendix
+\section*{Supplementary Information}
+
+\section{Supplementary methods}
+\label{sec:si-methods}
+Full graph featurisation and feature list; encoder/interaction hyperparameters;
+the three closures' exact parametrisations and COSMO-SAC constants
+($a_{\mathrm{eff}}$, $\alpha'$, hydrogen-bond cutoff, $r_0$, $q_0$); SLE solver
+iteration counts and the convergence audit; the complete per-phase loss taxonomy
+and weights. \emph{[To be populated from \texttt{src/tgnn\_solv/\{model,layers,solver,loss,config\}.py} and the training configs.]}
+
+\section{Proofs}
+\label{sec:si-proofs}
+
+\begin{proof}[Proof of Lemma~\ref{prop:ident} (non-identifiability)]
+Write $u=1/T$ and $h=\dHfus/\Rgas$, $u_m=1/\Tm$. At infinite dilution and with
+$\Delta C_p=0$ the observable is
+\[
+  \mu(u)=-\Phicry(u)-\lngi(u)=-h(u-u_m)-(c+d\,u)=-(h+d)\,u+(h u_m-c),
+\]
+using $\lngi(u)=c+d\,u$ (affine in $u$ by hypothesis). Thus $\mu$ depends on the
+parameters $\theta=(\dHfus,\Tm,c,d)$ only through the pair
+$(S,K)=(-(h+d),\,h u_m-c)\in\mathbb R^2$. The activity block spans this plane,
+$\partial(S,K)/\partial c=(0,-1)$ and $\partial(S,K)/\partial d=(-1,0)$; hence for
+\emph{any} crystal value $(h,u_m)$ and any target $(S,K)$ there is an activity pair
+$d=-S-h$, $c=h u_m-K$ reproducing it. The likelihood level set therefore contains the
+full two-dimensional family $\{(h,u_m)\}$, so $(\dHfus,\Tm)$ are unidentified.
+Equivalently, the crystal score $\partial(S,K)/\partial h=(-1,u_m)$ lies in the span
+of the activity columns, so profiling out $(c,d)$ annihilates it and
+$\mathcal I_{\mathrm{eff}}(\dHfus)=0$. At finite dilution
+$\lng(u)=\lngi(u)\,(1-x_2)^2$ adds $\lngi(u)\,(2x_2-x_2^2)=O(x_2)$, which is not
+affine in $u$ because $x_2=x_2(u)$; the crystal score then has a component outside the
+activity span of order $x_2$, so $\mathcal I_{\mathrm{eff}}(\dHfus)=O(x_2^2)>0$.
+\end{proof}
+
+\begin{proof}[Proof of Lemma~\ref{prop:semiparam} (class-dependent information)]
+This is the semiparametric efficient-score construction \cite{vandervaart1998}
+(here finite-dimensional and Gaussian, so equivalently the partitioned-information /
+Frisch--Waugh--Lovell identity). With
+Gaussian noise of variance $\sigma^2$, parameter-of-interest score
+$v=\partial\mu/\partial\dHfus$, and nuisance tangent space $\mathcal T_{\mathcal H}$
+(the $L^2$-closure of the span of nuisance scores), the efficient score is the
+residual $\tilde v=v-\Pi_{\mathcal H}v$ and the efficient information is
+$\mathcal I_{\mathrm{eff}}=\sigma^{-2}\lVert v-\Pi_{\mathcal H}v\rVert^2$. Here
+$v=\partial\mu/\partial\dHfus=-(u-u_m)/\Rgas\in\operatorname{span}\{1,u\}$. If
+$\mathcal T_{\mathcal H}\supseteq\operatorname{span}\{1,u\}$ then $\Pi_{\mathcal H}v=v$
+and $\mathcal I_{\mathrm{eff}}=0$, recovering Lemma~\ref{prop:ident}; if
+$\mathcal T_{\mathcal H}$ is a proper subspace not containing $v$ (e.g.\ a fixed
+slope, $\mathcal T_{\mathcal H}=\operatorname{span}\{1\}$) then
+$\Pi_{\mathcal H}v\neq v$ and $\mathcal I_{\mathrm{eff}}>0$, with a finite
+Cram\'er--Rao bound.
+\end{proof}
+
+\begin{proof}[Proof of Lemma~\ref{prop:decomp} (decomposition and bounds)]
+\emph{(a) Identity.} Split the residual as
+$m-g(\zstar)=[m-\Ex(m\mid\zstar)]+[\Ex(m\mid\zstar)-g(\zstar)]$, square, and take
+expectations. The squared terms give $\Ex[\Var(m\mid\zstar)]=\Binsuf$ and
+$\Ex[(\Ex(m\mid\zstar)-g(\zstar))^2]=\Bclos$. The cross term vanishes: since
+$\Ex(m\mid\zstar)-g(\zstar)$ is $\sigma(\zstar)$-measurable, the tower rule gives
+$\Ex\big[(m-\Ex(m\mid\zstar))(\Ex(m\mid\zstar)-g(\zstar))\big]
+=\Ex\big[(\Ex(m\mid\zstar)-g(\zstar))\,\Ex(m-\Ex(m\mid\zstar)\mid\zstar)\big]=0$.
+\emph{(b) Jensen lower bound.} With $\Delta(\zstar)=\Ex(m\mid\zstar)-g(\zstar)$,
+$\Bclos=\Ex[\Delta^2]\ge(\Ex[\Delta])^2=(\Ex[m]-\Ex[g])^2$ by Jensen, using
+$\Ex[\Ex(m\mid\zstar)]=\Ex[m]$; it requires only that $m$ and $g$ share a reference
+state, so that $\Ex[m]-\Ex[g]$ is a genuine mean discrepancy.
+\emph{(c) Law-of-total-variance upper bound.} For any binning
+$B=\mathrm{bin}(g(\zstar))$, $\sigma(B)\subseteq\sigma(\zstar)$, so conditioning on the
+coarser $\sigma$-algebra cannot reduce expected conditional variance:
+$\Ex[\Var(m\mid B)]\ge\Ex[\Var(m\mid\zstar)]=\Binsuf$.
+\emph{(d) Convention-independence.} $\Binsuf=\Ex[\Var(m\mid\zstar)]$ is a functional of
+the law of $(m,\zstar)$ alone and does not involve $g$; hence it is identical across
+closure conventions, and any $\mathrm{MSE}(g_1)-\mathrm{MSE}(g_2)$ is entirely
+$\Bclos(g_1)-\Bclos(g_2)$.
+\end{proof}
+
+\section{Per-arm tables and decomposition robustness}
+\label{sec:si-tables}
+Table~\ref{tab:si-arms} gives the exact per-arm metrics behind
+Fig.~\ref{fig:paradox}: three seeds (mean$\pm$sd) on the cross-arm intersection lock
+($n{=}5608$, rows supervised and finite in every arm). Both closure families---NRTL and
+COSMO-SAC over a learned $\sigma$-profile---trail the DirectGNN control (the physics
+tax); the $\sigma$-oracle (true VT-2005 profile) is the worst arm, and restoring the
+Staverman--Guggenheim combinatorial term makes it slightly worse still---the signature
+of a misspecified map (\S\ref{sec:measure}).
+
+\begin{table}[h]
+\centering
+\caption{Per-arm scaffold-split metrics (3 seeds, $n{=}5608$ cross-arm lock).
+Ordered by MAE; the physics closures trail DirectGNN and the true-$\sigma$ oracle is
+worst. Regenerated by \texttt{run\_e5\_comparison.py} over
+\texttt{results/e5\_sigma\_grounding/seed\_\{42,43,44\}/}.}
+\label{tab:si-arms}
+\begin{tabular}{lrr}
+\toprule
+Arm & MAE & $R^2$ \\
+\midrule
+DirectGNN (no closure)                         & $1.70\pm0.03$ & $+0.42\pm0.03$ \\
+NRTL closure                                   & $1.80\pm0.07$ & $+0.34\pm0.03$ \\
+COSMO-SAC, learned $\sigma$ (grounded)         & $1.85\pm0.05$ & $+0.33\pm0.05$ \\
+\quad $+$ Staverman--Guggenheim combinatorial  & $1.88\pm0.09$ & $+0.32\pm0.05$ \\
+COSMO-SAC, ungrounded $\sigma$                 & $2.04\pm0.04$ & $+0.19\pm0.01$ \\
+COSMO-SAC, true $\sigma$ ($\sigma$-oracle)     & $2.25\pm0.02$ & $-0.03\pm0.04$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The closure/insufficiency decomposition (full/res conventions; LOTV, RF, ridge, and
+k\textsc{nn} estimators; solvent-clustered bootstrap; the pyridine stratum; the four
+hedges) is tabulated in \S\ref{sec:measure} and regenerated by
+\texttt{run\_b\_insuff\_decomposition.py}.
+
+\section{External baselines and ablations}
+\label{sec:si-baselines}
+We retrained the direct SOTA (FastSolv \cite{osanloo2024}) and the physics-informed
+SOTA (SolProp \cite{vermeire2022solprop}) on our corpus and evaluated them on a
+by-solute test split (\texttt{test\_solute.csv}, $n\approx10$--$12$k). In $\lnx$ they
+reach MAE $1.94$ (FastSolv, $R^2\,0.23$) and $2.34$ (SolProp, calibrated,
+$R^2\,{-}0.18$); in $\log_{10}S$, $0.87$ and $1.04$. Neither beats our matched arms, and
+the physics-informed SolProp trails the direct FastSolv---the same ordering we find
+internally between the physics closures and DirectGNN. These runs use a different
+(by-solute) test file than the scaffold split of the headline comparison, so they bound
+the task's difficulty rather than rank directly against the scaffold numbers of
+Table~\ref{tab:si-arms}; a like-for-like scaffold evaluation of the external models is
+left to the deposited artifacts. The regime-level reading is that on this corpus no
+black box, ours or external, escapes the accuracy ceiling---consistent with the
+structural account of \S\ref{sec:discussion}. Per-arm ablations (NRTL vs COSMO-SAC,
+combinatorial on/off) are in Table~\ref{tab:si-arms}.
+
+\section{Supplementary mechanism results}
+\label{sec:si-mech}
+The corrupted-twin non-identifiability demonstration; crystal grounding on
+physical labels ($\Tm$ MAE $45$\,K); the omitted-heat-capacity ($\Delta C_p$)
+audit; fusion-supervision scarcity; the NRTL-branch internal-collapse forensics;
+the UMAP $\Delta\mathrm{MAE}$ cluster map.
+
+\section{Data provenance and reproducibility}
+\label{sec:si-repro}
+BigSolDB / VT-2005 / ThermoML provenance; split construction and the
+$^\circ$C/K trap; seeds; the proxy-versus-GPU compute ledger for every reported
+number.

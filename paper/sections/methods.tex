@@ -1,0 +1,180 @@
+\section{Methods}
+\label{sec:methods}
+The model is a controlled comparison: a shared graph backbone feeds either an
+explicit thermodynamic bottleneck (\emph{TGNNSolv}) or a direct regressor
+(\emph{DirectGNN}) that shares the backbone but emits \lnx\ with no physics. The
+gap between them measures what the bottleneck costs or buys. This section
+describes the shared backbone, the three interchangeable activity closures, the
+solid--liquid-equilibrium (SLE) solver and its implicit differentiation, the
+grounding intervention, and the training protocol. Exact hyperparameters, the
+full feature list, and the complete loss taxonomy are in the SI
+(\S\ref{sec:si-methods}).
+
+\subsection{Data, splits, and labels}
+Solubility measurements are drawn from BigSolDB~2.0 \cite{krasnov2025bigsoldb} and
+partitioned by Bemis--Murcko scaffold (\texttt{scripts/prepare\_data.py}) so that
+every test solute is unseen at training; row membership is set by a
+melting-point-independent miscibility/structure filter, and crystal $\Tm$,
+$\dHfus$, Hansen parameters, and infinite-dilution activity coefficients \lngi\
+are merged on as per-solute labels where available. Two data hazards are handled
+explicitly. Melting-point tables arrive in either $^\circ$C or Kelvin and are
+auto-detected by column median (a past double-conversion inflated every $\Tm$ by
+$273$\,K, which propagates directly into the ideal term); and the seeded scaffold
+split is not stable across pipeline versions, so every regeneration is treated as
+a new split with all downstream artifacts recomputed. Crystal supervision is
+scarce: the test and validation splits contain essentially no measured $\dHfus$,
+which is the quantitative backbone of the identifiability argument
+(\S\ref{sec:framework}). External single-component data used for grounding are an
+open crystal-property pool ($\sim$15{,}000 melting points), the VT-2005
+$\sigma$-profile database, and ThermoML infinite-dilution activity coefficients;
+each is filtered to exclude any molecule whose scaffold appears in the
+validation or test split.
+
+\subsection{Graph encoder and pair representation}
+Solute and solvent are encoded by a \emph{shared} graph network with three
+interchangeable backbones: a message-passing network (MPNN), a hybrid
+local-message/global-attention network (GPS), and a physics-channelled variant
+(TIMP) that splits messages into dispersive, polar, and hydrogen-bonding channels
+supervised toward Hansen parameters to prevent channel collapse. Small hydride
+solvents such as water are given explicit hydrogens so the polar and
+hydrogen-bond channels activate. Solute and solvent embeddings interact through a
+bipartite cross-attention/message-passing block and a physics-aware readout, and
+are combined into a pair representation
+$[\,g_s,\,g_v,\,g_s\!\odot g_v,\,|g_s-g_v|\,]$ passed through an MLP, optionally
+augmented with RDKit descriptors, Morgan fingerprints, and an ionic-context
+feature. All heads below consume this pair representation; the DirectGNN control
+consumes the identical representation.
+
+\subsection{Crystal head and the ideal term}
+A fusion head predicts the two crystal properties that define the ideal
+(activity-free) solubility, with physically bounded parametrisations
+$\Tm=100+600\,\sigma(\cdot)\in[100,700]\,\mathrm{K}$ and
+$\dHfus=S_H\,\mathrm{softplus}(\cdot)>0$; an optional entropy-coupled mode instead
+predicts a Walden-constrained fusion entropy and sets $\Tm=\dHfus/\Delta S$. When a
+group-contribution $\Tm$ prior is used it is affine-calibrated on the training
+set before entering the head. The crystal properties give the ideal term
+\begin{equation}
+  \Phicry(T)=\frac{\dHfus}{\Rgas}\!\left(\frac1T-\frac1\Tm\right),
+  \label{eq:phi}
+\end{equation}
+the constant-$\Delta C_p$ correction omitted (its magnitude is audited in the SI,
+\S\ref{sec:si-mech}).
+
+\subsection{Three interchangeable activity closures}
+The activity term \lng\ is produced by one of three closures, selected by
+configuration, all differentiable and all consuming the same pair representation.
+
+\paragraph{NRTL.} A head predicts the two interaction energies and a
+non-randomness factor, $\tau_{12}^{\mathrm{ref}},\beta_{12},
+\tau_{21}^{\mathrm{ref}},\beta_{21},\alpha\in[0.1,0.6]$, with a temperature law
+$\tau_{ij}(T)=\tau_{ij}^{\mathrm{ref}}+\beta_{ij}(1/T-1/T_{\mathrm{ref}})$; an
+optional UNIFAC group-contribution prior regularises the $\tau$'s. This is the
+default and the most expressive activity model.
+
+\paragraph{Single-parameter (\texttt{gamma\_inf}).} Collapsing the NRTL closure to
+a symmetric one-parameter form yields the analytic infinite-dilution law
+$\lng(x_2,T)=\lngi(T)\,(1-x_2)^2$, with $\lngi$ affine in $1/T$. This is the
+minimal activity model and the setting in which the identifiability analysis is
+cleanest (\S\ref{sec:framework}).
+
+\paragraph{Differentiable COSMO-SAC.} A $\sigma$-profile head emits, for each
+molecule, a $51$-bin screening-charge-density profile $p(\sigma)$ (area per bin,
+summing to the cavity area $A$). A parameter-free COSMO-SAC layer (Lin--Sandler /
+VT-2005 conventions) maps the pair of profiles to \lng\ by a damped fixed point
+for the segment activity coefficient,
+\begin{equation}
+  \Gamma(\sigma_m)=\Big[\textstyle\sum_n p_{\mathrm{norm}}(\sigma_n)\,\Gamma(\sigma_n)\,
+  \exp\!\big(-\Delta W(\sigma_m,\sigma_n)/RT\big)\Big]^{-1},
+  \label{eq:cosmo}
+\end{equation}
+with a precomputed exchange-energy matrix $\Delta W$ (electrostatic misfit plus a
+hydrogen-bonding term); the restoring contribution is
+$\lng^{\mathrm{res}}=(A_2/a_{\mathrm{eff}})\sum_m p_2^{\mathrm{pure}}(\sigma_m)
+[\ln\Gamma_{\mathrm{mix}}(\sigma_m)-\ln\Gamma_{2}^{\mathrm{pure}}(\sigma_m)]$, and
+an optional Staverman--Guggenheim combinatorial term uses the molecular cavity
+volume and area. The combinatorial size factor $r_i=V_i/r_0$ takes the
+\emph{true} COSMO cavity volume ($V_{\mathrm{cosmo}}$) so that it shares the cavity
+basis of the area $A_i$. This closure --- COSMO-SAC evaluated over a network-
+\emph{predicted} $\sigma$-profile, and the intervention that swaps that profile
+for the measured one --- is the object of study in the grounding analysis
+(\S\ref{sec:paradox}).
+
+\subsection{The SLE solver and implicit differentiation}
+Given $\Phicry(T)$ and a closure for \lng, the saturated mole fraction solves
+$\lnx=-\Phicry(T)-\lng(x_2,T)$, a fixed point in $x_2$ because \lng\ depends on
+composition. We iterate a damped map
+\begin{equation}
+  x_2^{(k+1)}=\lambda\,\exp\!\big(-\Phicry(T)-\lng(x_2^{(k)},T)\big)+(1-\lambda)\,x_2^{(k)},
+  \label{eq:sle-iter}
+\end{equation}
+with closure-specific kernels for the NRTL, \texttt{gamma\_inf}, and COSMO-SAC
+paths. Rather than backpropagating through the iterations, gradients use the
+implicit-function theorem at the converged $x_2^\star$,
+\begin{equation}
+  \frac{\partial \lnx^\star}{\partial\theta}
+  =-\,\frac{\partial(\Phicry+\lng)/\partial\theta}{\,1+x_2^\star\,\eta\,},
+  \qquad \eta=\frac{\partial\lng}{\partial x_2},
+  \label{eq:implicit}
+\end{equation}
+which is exact at the fixed point, memory-constant in the iteration count, and
+exposes an explicit stability criterion: the gradient is well conditioned unless
+$1+x_2^\star\eta\to0$. Iteration counts (train $16$, eval $30$) were set by a
+convergence audit --- a shorter $n{=}8$ schedule failed a $5.86$-\lnx\ convergence
+test on strongly non-ideal pairs (SI \S\ref{sec:si-methods}).
+
+\subsection{Adaptive correction and the grounding intervention}
+A bounded, gated ``adaptive physics correction'' perturbs the physical parameters
+($\Tm,\dHfus,\tau$) rather than the output, re-solves \eqref{eq:sle-iter}, and
+blends $\lnx^{\mathrm{final}}=\lnx^{\mathrm{phys}}+(1-w)\,\mathrm{clip}(\Delta)$;
+keeping the correction in parameter space preserves the physical decomposition.
+The \emph{grounding intervention} (a $\sigma$-oracle) replaces the predicted
+$\sigma$-profile $\hat z$ with the true VT-2005 profile $\zstar$ before the closure,
+matched by canonical SMILES. It is applied three ways to rule out wiring
+artifacts: at evaluation only, injected at training time so the rest of the model
+co-adapts, and as a channel-swap control; an analogous override substitutes true
+crystal targets. The activity target used for the closure/insufficiency
+decomposition (\S\ref{sec:measure}) is evaluated at infinite dilution,
+$\lngi=\lim_{x_2\to0}\lng$, at $298$\,K.
+
+\subsection{Training: three-phase curriculum and single-component grounding}
+Optimisation follows a fixed three-phase curriculum: (P1) auxiliary-property
+pretraining on crystal, Hansen, and \lngi\ targets with no SLE loss; (P2) full
+SLE training, with the adaptive correction unfrozen partway and an optional
+crystal$\to$pair weight ramp; (P3) low-learning-rate stabilisation with
+monotonicity and van't~Hoff regularisers. External single-component data enter
+through \emph{grounding streams}: each stream is a sidecar of \emph{self-solvent}
+rows ($\mathrm{solvent}=\mathrm{solute}$, no solubility label, only the target
+factor's mask active), interleaved into P1/P2 at a configurable step budget, with
+a mandatory scaffold-leak guard excluding any pool molecule whose scaffold is in
+validation or test. The reference streams ground the crystal factor (melting-point
+pool) and the activity factor ($\sigma$-profile database); this
+single-component-grounding pattern is the mechanism by which an otherwise
+non-identifiable factor (\S\ref{sec:framework}) is pinned by abundant external
+data a black-box predictor cannot use.
+
+\subsection{Objective}
+The training loss is a weighted sum with per-phase weights. Only a small set of
+terms is load-bearing for the claims in this paper: a bin-weighted Huber on \lnx;
+auxiliary losses on the $\sigma$-profile (an earth-mover distance), on crystal
+$\Tm/\dHfus$, on \lngi, and on Hansen parameters; and structural regularisers for
+temperature monotonicity and the van't~Hoff slope. The remaining terms (channel
+orthogonality, contrastive, mixture-of-experts balance, and various priors) are
+auxiliary; the complete taxonomy and weights are tabulated in the SI
+(\S\ref{sec:si-methods}).
+
+\subsection{The DirectGNN control}
+DirectGNN shares the encoder, interaction, readout, and pair representation, adds
+a thermometer temperature encoding, and maps directly to \lnx\ with a
+bin-weighted Huber loss and no heads, closure, or solver. Because it shares
+everything but the thermodynamic bottleneck, the TGNNSolv$-$DirectGNN gap is
+attributable to the bottleneck rather than to representation, and DirectGNN is the
+reference for every ``physics tax'' comparison in \S\ref{sec:results}.
+
+\subsection{Reproducibility}
+All controlled comparisons are run at three seeds and reported as mean$\pm$sd on a
+cross-arm intersection lock (rows supervised and finite in every arm). Solver
+iteration counts, COSMO-SAC constants, the exact feature list, per-phase loss
+weights, and the compute ledger (which results are full-corpus GPU runs versus
+CPU-reproducible proxies) are given in the SI (\S\ref{sec:si-methods},
+\S\ref{sec:si-repro}); the named analysis scripts regenerate every figure and
+table from committed artifacts.

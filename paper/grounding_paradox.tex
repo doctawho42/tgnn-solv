@@ -40,6 +40,7 @@
 \usepackage{hyperref}
 
 \newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
 \newtheorem{proposition}{Proposition}
 \newtheorem{corollary}{Corollary}
 \newtheorem{assumption}{Assumption}
@@ -69,39 +70,26 @@ Solubility Model Worse, and How to Measure It}
 
 \begin{abstract}
 Physics-informed models for solid--liquid solubility factor the target
-$\lnx=-\Phicry(T)-\lng$ into a pure-component crystal term $\Phicry$ and a pair
-activity term $\lng$. The activity term is increasingly computed by a
-\emph{differentiable thermodynamic closure}, here COSMO-SAC over a predicted
-$\sigma$-profile, on the premise that grounding the closure on true physical
-inputs improves it. We find that it does the opposite. Replacing the model's
-learned $\sigma$-profiles with the true, externally measured ones (VT-2005) makes
-both activity and solubility predictions \emph{worse} than a free learned head,
-an effect we confirm three independent ways. We then use the paradox as a
-measurement. Because the physical latent $\zstar$ has external ground truth, the
-true-input excess risk splits exactly, with no model fit, into a
-decoder-misspecification term $\Bclos$ and an input-insufficiency term $\Binsuf$
-($B=\Bclos+\Binsuf$). On experimental infinite-dilution activity data, in the
-VT-2005-matchable low-$\gamma$ (298\,K) regime, the closure is the binding term.
-Because $\Binsuf$ is bounded from $(m,\zstar)$ alone---independently of the closure
-convention---the total error already forces
-$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}\approx0.9>0.62\ge\Binsuf$ under the
-model's \emph{deployed} residual-only convention; under the full COSMO-SAC
-convention this sharpens to an assumption-free constant-offset bound
-$\Bclos\ge0.72>\Binsuf$ ($\le0.62$), with solvent-clustered confidence
-$\approx0.85$. The convention-robust corroboration is that restoring the physically
-more complete combinatorial term \emph{enlarges} the error---what a misspecified map
-does, not what missing information would---an effect we verify is robust to the
-molecular-volume basis (recomputed on the true COSMO cavity volumes). Label noise is
-unestimable in this replicate-free set and assumed zero; the load-bearing bounds are
-invariant to zero-mean noise. A flexible regressor of the activity target on $\zstar$
-fits it about $4\times$ better than the fixed true-input closure, placing the closure
-well above the irreducible-variance floor. The ceiling also resists a
-downstream fix, since a post-hoc output-space recalibration restores
-\emph{calibration} without restoring \emph{accuracy}. We claim no new theory: the
-non-identifiability of the split and the closure/inputs decomposition are read
-against existing results on model discrepancy, sloppiness, and calibration. What
-the paper offers is a reproducible way to \emph{measure where a physics prior's
-ceiling lies}, and for this system an account of why more physics did not help.
+$\lnx=-\Phicry(T)-\lng$ into a pure-component crystal term and a pair activity term,
+and increasingly compute the activity term with a \emph{differentiable thermodynamic
+closure}---here COSMO-SAC over a network-predicted $\sigma$-profile---on the premise
+that grounding the closure on true physical inputs improves it. It does the opposite:
+replacing the model's learned $\sigma$-profiles with the true, externally measured ones
+(VT-2005) makes both activity and solubility prediction \emph{worse} than a free
+learned head, an effect we confirm three ways. We turn this paradox into a measurement.
+Because the physical input has external ground truth, the true-input error splits---with
+no model fit---into a part the inputs cannot resolve and a part the fixed closure gets
+wrong; on infinite-dilution activity data the closure is the binding term, and a
+downstream recalibration recovers \emph{calibration} but not \emph{accuracy}. The
+failure is not incidental. The physics-informed model does not beat a matched black box
+on accuracy at \emph{any} training-data budget---including the low-data regime where an
+inductive bias should help most---nor on temperature extrapolation, and we prove why:
+the crystal/activity split is non-identifiable from solubility, and the closure is
+misspecified where we can measure it. The paper's contribution is therefore not
+accuracy but a reproducible, proved method for locating where a physics prior's ceiling
+lies, and---for this system---an account of why more physics does not help; what the
+prior does buy is an interpretable decomposition and calibrated uncertainty, not lower
+error.
 \end{abstract}
 
 \section{Introduction}
@@ -133,7 +121,7 @@ generalizes beyond this regime we leave as a conjecture (\S\ref{sec:discussion})
   \item \textbf{A measurement affordance, not a theorem.} Because the physical
   latent $\zstar$ (the true $\sigma$-profile) has external ground truth, the
   true-input excess risk splits \emph{exactly} as $B=\Bclos+\Binsuf$ with no model
-  fit (Prop.~\ref{prop:decomp}). The decomposition and its estimators are textbook;
+  fit (Lemma~\ref{prop:decomp}). The decomposition and its estimators are textbook;
   the new element is exploiting an externally measured latent to bound the split
   empirically. On the convention-robust evidence---a convention-independent bound
   and the more-physics-worse effect---$\Bclos$ (misspecified decoder) exceeds
@@ -143,10 +131,17 @@ generalizes beyond this regime we leave as a conjecture (\S\ref{sec:discussion})
   output-space residual placed on the physics prediction recovers calibration but
   not accuracy; the closure binding cannot be undone downstream
   (\S\ref{sec:gateb}).
-  \item \textbf{Framework and honest scoping.} We locate the split's structural
-  non-identifiability (why a free head compensates; Prop.~\ref{prop:ident}),
-  demote all theory to cited results on model discrepancy and calibration, and
-  ship reproducible diagnostics. No new theorem is claimed.
+  \item \textbf{An exhaustive, explained negative.} The physics prior does not beat a
+  matched black box on accuracy at any training-data budget---including the low-data
+  regime where an inductive bias should help most (\S\ref{sec:data-efficiency})---nor on
+  temperature, nor via crystal grounding; read against the lemmas and the closure
+  measurement, this locates the ceiling as \emph{structural}, not incidental
+  (\S\ref{sec:discussion}). We make no accuracy claim.
+  \item \textbf{Framework and honest scoping.} We prove three elementary structural
+  lemmas (non-identifiability, class-dependent information, and the closure/insufficiency
+  split; Lemmas~\ref{prop:ident}--\ref{prop:decomp}, App.~\ref{sec:si-proofs}), read the
+  deeper theory against cited results on model discrepancy and calibration, and ship
+  reproducible diagnostics.
 \end{itemize}
 
 \input{sections/related-work}
@@ -200,18 +195,26 @@ database.
 The crystal/activity split is not identifiable from solubility data alone, which
 is precisely why an unconstrained head can silently absorb crystal error into the
 activity term.
-\begin{proposition}[Structural non-identifiability of the SLE split]\label{prop:ident}
-If the activity model carries a free $1/T$ term (as NRTL / van't~Hoff
-temperature dependence does), then with $\Delta C_p=0$ the crystal sensitivity
-$\partial\mu/\partial\dHfus$ lies in the span of the activity design columns
-$(\mathbf 1,\,1/T)$; the map $\theta\mapsto\{\mu(T_k)\}_k$ is rank-deficient in the
-crystal/activity directions and the Fisher information for $\dHfus$ vanishes. The
-deficiency is closed only by rank-completing external constraints on a factor
-(a direct crystal label, or fixing the activity slope).
-\end{proposition}
+\begin{lemma}[Structural non-identifiability of the SLE split]\label{prop:ident}
+Consider the infinite-dilution SLE observable $\mu(T)=-\Phicry(T)-\lngi(T)$ with
+$\Delta C_p=0$, so that $\Phicry(T)=(\dHfus/\Rgas)(1/T-1/\Tm)$ is affine in $u=1/T$,
+and a symmetric two-suffix activity class ($\lng=\lngi\,(1-x_2)^2$) in which
+$\lngi(T)$ is affine in $u$. Then, for any design with at least two distinct
+temperatures, $\mu$ depends on the parameters only through the two-dimensional
+statistic (its slope and intercept in $u$), and the activity intercept and slope
+already span that plane;
+hence the crystal parameters $(\dHfus,\Tm)$ are unidentified, the profiled Fisher
+information for $\dHfus$ is exactly zero, and the indeterminacy set is
+two-dimensional. The deficiency is closed only by a rank-completing external
+constraint (a direct crystal label, or a fixed activity slope). At finite dilution
+the composition factor $(1-x_2)^2$ breaks the exact affinity, leaving a non-zero but
+near-degenerate information of order $x_2^2$ (numerically, condition number
+$2.3\times10^{5}$; \S\ref{sec:ident}).
+\end{lemma}
 \noindent This is the standard structural-identifiability picture for a
-collinear design \cite{raue2009,villaverde2016}; we state it in the SLE form and
-audit it numerically in \S\ref{sec:supporting}. It is \emph{enabling background},
+collinear design \cite{raue2009,villaverde2016}; we prove it in the SLE form
+(App.~\ref{sec:si-proofs}) and audit it numerically in \S\ref{sec:ident}. It is
+\emph{enabling background},
 not our headline: it explains why grounding an under-determined factor on
 external single-component data is necessary, and why compensation between the
 factors is expected. By itself it says nothing about whether grounding helps.
@@ -220,28 +223,32 @@ correctly specified, which is the question we make measurable next.
 
 The non-identifiability is not binary but graded by how much of the crystal
 direction the activity class can absorb.
-\begin{proposition}[Class-dependent information]\label{prop:semiparam}
+\begin{lemma}[Class-dependent efficient information]\label{prop:semiparam}
 Let the activity nuisance lie in a class $\mathcal H$ with tangent projection
 $\Pi_{\mathcal H}$, and let $v=\partial\mu/\partial\dHfus$ be the crystal score.
 The efficient information for $\dHfus$ is
 $\mathcal I_{\mathrm{eff}}(\dHfus)=\sigma^{-2}\,\lVert v-\Pi_{\mathcal H}v\rVert^2$.
 If $\mathcal H$ contains the crystal score's span $\{1,1/T\}$ (a free intercept and slope) then
 $\Pi_{\mathcal H}v=v$ and $\mathcal I_{\mathrm{eff}}=0$, recovering
-Prop.~\ref{prop:ident}; if $\mathcal H$ is restricted (the slope is known or
+Lemma~\ref{prop:ident}; if $\mathcal H$ is restricted (the slope is known or
 constrained) then $\mathcal I_{\mathrm{eff}}>0$ and the Cram\'er--Rao bound on
 $\dHfus$ is finite.
-\end{proposition}
-\noindent The proof is the efficient-score construction: project the crystal
-score onto the orthogonal complement of the nuisance tangent space; the squared
-norm of the residual is the effective information. The numerical audit of
-\S\ref{sec:ident} quantifies both regimes.
+\end{lemma}
+\noindent The proof is the efficient-score construction (App.~\ref{sec:si-proofs}):
+project the crystal score onto the orthogonal complement of the nuisance tangent
+space; the squared norm of the residual is the efficient information. The numerical
+audit of \S\ref{sec:ident} quantifies both regimes, and shows the honest corollary:
+merely \emph{restricting} the activity slope leaves $\mathrm{sd}(\dHfus)\approx8{,}251$\,J/mol
+--- finite but unusable --- whereas an \emph{external} crystal label, which
+contributes a score direction outside the activity tangent space, closes it to
+$\approx1{,}689$\,J/mol.
 
 \subsection{The closure--insufficiency decomposition}
 \label{sec:decomp}
 Let $m$ be the activity target (experimental $\lngi$) and $g(\zstar)$ the closure
 evaluated on the true latent. The excess risk of the true-input path over the
 Bayes predictor decomposes exactly.
-\begin{proposition}[Measurement affordance: $B=\Bclos+\Binsuf$]\label{prop:decomp}
+\begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
 For a \emph{fixed} (non-fitted) closure $g$,
 \begin{equation}
   \underbrace{\Ex\big[(m-g(\zstar))^2\big]}_{\text{MSE of the true-input path}}
@@ -255,7 +262,7 @@ The cross term vanishes identically because $\Ex[m\mid\zstar]-g(\zstar)$ is
 $\zstar$-measurable and $\Ex[(m-\Ex[m\mid\zstar])\mid\zstar]=0$. Both components
 are separately \emph{estimable from data with no model fit}, because $\zstar$ is
 externally observed.
-\end{proposition}
+\end{lemma}
 \noindent Equation~\eqref{eq:decomp} is a bias--variance split of model
 discrepancy in the sense of Kennedy--O'Hagan \cite{kennedy2001} and
 Brynjarsd\'ottir--O'Hagan \cite{brynjarsdottir2014}: $\Bclos$ is the systematic
@@ -267,7 +274,7 @@ assume it. \textbf{The exactness is contingent on $g$ being fixed}: for a
 \emph{fitted} decoder the cross term does not vanish and a plug-in point
 decomposition is invalid (we observe a spurious $-0.36$ cross term when
 $\Ex[m\mid\zstar]$ is replaced by a fitted estimate). We therefore report
-\emph{one-sided bounds}, not a point split:
+\emph{one-sided bounds}, not a point split (each proved in App.~\ref{sec:si-proofs}):
 \begin{itemize}
   \item $\Bclos \ge (\Ex[m]-\Ex[g])^2$, \emph{assumption-free in smoothness}
   (Jensen; a constant decoder offset, which cannot be input insufficiency)---it does
@@ -281,60 +288,45 @@ Because $\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, it is
 \emph{independent of the closure convention}: any disagreement between closure
 variants is decoder disagreement and lands in $\Bclos$.
 
-\subsection{Structured temperature extrapolation}
-\begin{proposition}[Bounded extrapolation for the van't Hoff class]\label{prop:temp}
-For same-pair extrapolation to a temperature $T^\star$ outside the training range
-$[T_{\min},T_{\max}]$, the structured activity class that is affine in $1/T$ has
-extrapolation error bounded by the fitted-slope variance times
-$\lvert 1/T^\star-\overline{1/T}\rvert$, whereas an unstructured temperature
-encoder is unconstrained beyond its training support.
-\end{proposition}
-\noindent Within the affine-in-$1/T$ family the prediction at $T^\star$ is an
-affine extrapolation whose error is controlled by the bounded variance of the
-fitted slope and intercept; no such constraint binds a free function approximator
-outside its support. This is the one place the physical structure is expected to
-help, and \S\ref{sec:supporting} reports the class-level margin.
+\subsection{Supporting structural facts}
+Three further consequences of the same collinear geometry are used informally and
+are not stated as theorems. \emph{(i)~Temperature extrapolation.} Within the
+affine-in-$1/T$ activity family, same-pair prediction at a temperature $T^\star$
+outside the training range is an affine extrapolation whose error is controlled by
+the fitted-slope variance times $|1/T^\star-\overline{1/T}|$, whereas an
+unstructured temperature encoder is unconstrained beyond its support. This is the
+one place the physical \emph{structure} is expected to help; \S\ref{sec:supporting}
+reports the class-level margin, which is a property of the hypothesis class and not
+an accuracy claim for the trained model (indeed the trained models trail the
+van't~Hoff baseline). \emph{(ii)~Geometry of compensation.} As the training window
+$\Delta T\to0$, $1/T$ becomes nearly constant, the crystal and activity design
+columns become collinear, and the smallest Fisher eigenvalue tends to zero (the
+$\Delta T$ sweep of \S\ref{sec:ident} reaches conditioning $10^{16}$ at
+$\Delta T=10$\,K), so an optimizer prefers to split error between the factors rather
+than fit either correctly. \emph{(iii)~Grounding design.} Each single-component
+stream rank-completes a different deficient direction of Lemma~\ref{prop:ident};
+this is the design rule behind the auxiliary streams, though (as \S\ref{sec:e2}
+shows for a dose-limited crystal run) it does not by itself promise an end-task gain.
 
-\subsection{The geometry of compensation}
-\begin{proposition}[Vanishing information cost at narrow $\Delta T$]\label{prop:geom}
-The smallest eigenvalue of the Fisher metric in the crystal/activity plane tends
-to zero as the training temperature window $\Delta T\to0$; compensating moves along
-the resulting near-flat direction incur vanishing information cost.
-\end{proposition}
-\noindent As the temperatures collapse, $1/T$ becomes nearly constant, the crystal
-and activity design columns become collinear, and the smallest Fisher eigenvalue
-tends to zero (the $\Delta T$ sweep of \S\ref{sec:ident} shows the conditioning
-reaching $10^{16}$ at $\Delta T=10$\,K). This is why an optimizer prefers to split
-error between the two factors rather than fit either one correctly.
-
-\subsection{A-optimal auxiliary weighting}
-\begin{proposition}[Trace-optimal auxiliary weights]\label{prop:aopt}
-Among nonnegative auxiliary-loss weights under a budget, the trace-optimal choice
-places positive weight on every loss that adds information to a rank-deficient
-direction; under the block-diagonal head structure enforced by stop-gradient this
-selects exactly the crystal, activity-level, and activity-shape signals.
-\end{proposition}
-\noindent This is the design rule behind the auxiliary single-component streams:
-each stream rank-completes a different deficient direction of
-Prop.~\ref{prop:ident}. The rule prescribes which streams to add; it does not
-promise that they improve end-task accuracy, and \S\ref{sec:e2} reports a
-dose-limited case where a stream did not.
-
-\subsection{What we do not claim}
-There is no ``optimal grounding'' theorem here, and in particular no
-necessary-and-sufficient condition for the decomposition to improve
-out-of-distribution accuracy: the honest empirical answer (\S\ref{sec:results})
-is that it does not, and the propositions above serve to locate why. A prior
-search over candidate theorems returned nothing not already subsumed by known
-results on model
-discrepancy \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
+\subsection{What we prove, and what we do not claim}
+We prove the three structural lemmas the measurement rests on --- the split's
+non-identifiability (Lemma~\ref{prop:ident}), its class-dependence
+(Lemma~\ref{prop:semiparam}), and the exact closure/insufficiency decomposition with
+its one-sided bounds (Lemma~\ref{prop:decomp}); the proofs are elementary and
+collected in App.~\ref{sec:si-proofs}. We claim no more. In particular there is no
+``optimal grounding'' theorem and no necessary-and-sufficient condition for the
+decomposition to improve out-of-distribution accuracy --- the honest empirical
+answer (\S\ref{sec:results}) is that it does not, and an earlier draft's
+conditional-optimality ``iff'' is refuted by exactly that. The lemmas are read
+against, not in competition with, known results on model discrepancy
+\cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
 \cite{transtrum2015,gutenkunst2007}, structural and practical identifiability
-\cite{raue2009,villaverde2016}, estimation under misspecification
-\cite{white1982}, and underspecification \cite{damour2022}. The
-calibration-versus-accuracy separation of \S\ref{sec:gateb} is the classical
-refinement decomposition of a probability forecast \cite{murphy1973,degroot1983}.
-We use these as the interpretive frame and keep the paper's own claims
-measurement-first.
+\cite{raue2009,villaverde2016}, estimation under misspecification \cite{white1982},
+and underspecification \cite{damour2022}; the calibration-versus-accuracy separation
+of \S\ref{sec:gateb} is the classical refinement decomposition of a probability
+forecast \cite{murphy1973,degroot1983}.
+
+\input{sections/methods}
 
 \section{Results}
 \label{sec:results}
@@ -408,7 +400,7 @@ $\lngi$ (298\,K, IDAC). Table~\ref{tab:decomp} reports the bounds.
 \begin{table}[t]
 \centering
 \caption{Closure--insufficiency decomposition on the true-input activity path.
-Bounds, not a point split (Prop.~\ref{prop:decomp}). Convention ``full'' =
+Bounds, not a point split (Lemma~\ref{prop:decomp}). Convention ``full'' =
 COSMO-SAC with the combinatorial term (size factor $r_i=V_i/r_0$ on the true
 COSMO cavity volume, VT-2005); ``res'' = residual-only (the deployed default).
 $\Binsuf$ upper bounds are convention-independent estimates of
@@ -552,6 +544,8 @@ estimate, is the binding constraint.
 
 \input{sections/crystal-null}
 
+\input{sections/data-efficiency}
+
 \input{sections/chemistry-map}
 
 \input{sections/supporting}
@@ -573,6 +567,23 @@ $n{=}5608$ set and the chemistry map---not a measured fact. For practice this re
 spent on richer inputs or a better encoder is mis-targeted; the payoff is in the
 closure itself, for example a corrected or learned residual on the map rather
 than on its output (which \S\ref{sec:gateb} shows is inert).
+
+\paragraph{The accuracy case is closed, exhaustively.} That the physics prior does not
+improve accuracy is not a single observation but a pattern with no exception we could
+find: the grounded model trails the matched black box on the full corpus, the
+structured temperature advantage is a property of the van't~Hoff hypothesis class
+rather than of the trained model, grounding the crystal factor on external labels does
+not move the ceiling (\S\ref{sec:e2}), and---in the case built to favour a physics
+prior---it loses at \emph{every} training-data fraction, including the low-data regime
+where an inductive bias should help most (\S\ref{sec:data-efficiency}). Read together
+these are not scattered nulls but evidence that the ceiling is \emph{structural}: the
+crystal/activity split is non-identifiable from solubility alone
+(Lemma~\ref{prop:ident}), and the activity closure is misspecified where we can measure
+it (\S\ref{sec:measure}), so no amount of better inputs, more data, or auxiliary
+grounding within this family recovers an accuracy the factorization cannot express. The
+contribution is accordingly not an accuracy result but a method---the externally
+grounded decomposition---for locating such a ceiling, and a proved account of why it
+sits where it does.
 
 \paragraph{Limitations.} (i)~$\Binsuf$ is bounded, never point-identified: there
 are no true replicate measurements at fixed $\zstar$, so the insufficiency estimates
@@ -626,6 +637,8 @@ Figs~\ref{fig:parity} and~\ref{fig:decomp}) is regenerated deterministically by
 The model checkpoints and the full per-arm prediction CSVs are large and are deposited
 at \pending[Zenodo DOI] rather than in git; the named scripts regenerate them from the
 raw sources. The manuscript compiles with \texttt{make} in \texttt{paper/}.
+
+\input{sections/SI}
 
 \bibliographystyle{plain}
 \bibliography{references_verified}

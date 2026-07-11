@@ -1,0 +1,45 @@
+\subsection{Grounding does not pay off in the low-data regime either}
+\label{sec:data-efficiency}
+% Artifact: results/data_efficiency/summary.json via run_data_efficiency_summary.py
+% over the Modal run (volume tgnn-e5, seed 42); ΔMAE = physics − DirectGNN.
+The strongest a-priori case for a physics prior is data scarcity: with few training
+molecules, an inductive bias toward the correct physical factorization should beat a
+data-hungry black box even when the two tie at full data. We test this directly.
+Subsampling the training set \emph{by solute} at fractions $0.05$--$1.0$ (the regime
+that governs scaffold transfer), we train the physics-grounded model and DirectGNN on
+the identical subsample and evaluate both on the fixed scaffold test
+(Table~\ref{tab:data-eff}; seed 42, full-corpus run). The physics arm is \emph{worse at
+every fraction}, and---against the hypothesis---the gap is \emph{smallest} at the least
+data ($\Delta\mathrm{MAE}=+0.08$ at $5\%$) and \emph{grows} with more
+($+1.0$ at full); its $R^2$ is negative throughout. Even in the regime built to favor
+it, grounding does not buy accuracy; if anything, more data lets the black box pull
+further ahead. The one metric that inverts is top-1 solvent ranking, higher for the
+physics arm at $5\%$ ($0.42$ vs $0.23$)---consistent with the ranking-versus-accuracy
+split of \S\ref{sec:supporting}---but that decision-quality signal does not translate
+into lower error. This is the last regime in which a physics prior should plausibly
+have helped; that it does not closes the accuracy case and leaves the structural
+account of \S\ref{sec:framework} and \S\ref{sec:measure}---a non-identifiable split fed
+through a misspecified closure---as the operative explanation.
+
+\begin{table}[t]
+\centering
+\caption{Data-efficiency sweep (train subsampled by solute, fixed scaffold test,
+seed 42). The physics-grounded arm trails DirectGNN at every fraction and the
+gap widens with data. $\Delta\mathrm{MAE}=\mathrm{MAE(physics)}-\mathrm{MAE(direct)}>0$
+means physics is worse. Absolute errors here exceed the headline runs (a lighter
+per-fraction budget); the valid signal is the within-budget physics$-$direct gap.}
+\label{tab:data-eff}
+\begin{tabular}{lrrrrr}
+\toprule
+train fraction & \multicolumn{2}{c}{MAE} & $\Delta\mathrm{MAE}$ & \multicolumn{2}{c}{$R^2$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){5-6}
+(by solute) & physics & direct & (phys$-$dir) & physics & direct \\
+\midrule
+$0.05$ & $2.28$ & $2.20$ & $+0.08$ & $-0.09$ & $+0.07$ \\
+$0.10$ & $2.44$ & $2.07$ & $+0.37$ & $-0.25$ & $+0.15$ \\
+$0.25$ & $2.93$ & $1.81$ & $+1.12$ & $-0.75$ & $+0.38$ \\
+$0.50$ & $3.12$ & $1.98$ & $+1.14$ & $-0.98$ & $+0.22$ \\
+$1.00$ & $2.98$ & $1.97$ & $+1.01$ & $-0.79$ & $+0.22$ \\
+\bottomrule
+\end{tabular}
+\end{table}
