@@ -60,8 +60,8 @@
 \newcommand{\Ex}{\ensuremath{\mathbb{E}}}
 \newcommand{\Var}{\ensuremath{\mathrm{Var}}}
 
-\title{The Grounding Paradox: Why True Physical Inputs Make a\\
-Solubility Model Worse, and How to Measure It}
+\title{The Grounding Paradox: When True Physical Inputs Make a\\
+Model Worse, and How to Locate a Physics Prior's Ceiling}
 \author{N.~L. Polomoshnov \and \pending[co-authors]}
 \date{\today}
 
@@ -69,27 +69,26 @@ Solubility Model Worse, and How to Measure It}
 \maketitle
 
 \begin{abstract}
-Physics-informed models for solid--liquid solubility factor the target
-$\lnx=-\Phicry(T)-\lng$ into a pure-component crystal term and a pair activity term,
-and increasingly compute the activity term with a \emph{differentiable thermodynamic
-closure}---here COSMO-SAC over a network-predicted $\sigma$-profile---on the premise
-that grounding the closure on true physical inputs improves it. It does the opposite:
-replacing the model's learned $\sigma$-profiles with the true, externally measured ones
-(VT-2005) makes both activity and solubility prediction \emph{worse} than a free
-learned head, an effect we confirm three ways. We turn this paradox into a measurement.
-Because the physical input has external ground truth, the true-input error splits---with
-no model fit---into a part the inputs cannot resolve and a part the fixed closure gets
-wrong; on infinite-dilution activity data the closure is the binding term, and a
-downstream recalibration recovers \emph{calibration} but not \emph{accuracy}. The
-failure is not incidental. The physics-informed model does not beat a matched black box
-on accuracy at \emph{any} training-data budget---including the low-data regime where an
-inductive bias should help most---nor on temperature extrapolation, and we prove why:
-the crystal/activity split is non-identifiable from solubility, and the closure is
-misspecified where we can measure it. The paper's contribution is therefore not
-accuracy but a reproducible, proved method for locating where a physics prior's ceiling
-lies, and---for this system---an account of why more physics does not help; what the
-prior does buy is an interpretable decomposition and calibrated uncertainty, not lower
-error.
+Physics-informed models increasingly route a prediction through a fixed, differentiable
+physical \emph{closure} fed by a learned intermediate---for solid--liquid solubility, a
+COSMO-SAC closure over a network-predicted $\sigma$-profile---on the premise that grounding
+the closure on true physical inputs improves it. We show it can do the opposite, and turn the
+anomaly into a general method for locating a physics prior's ceiling. Replacing a solubility
+model's learned $\sigma$-profiles with the true, externally measured ones (VT-2005) makes both
+activity and solubility prediction \emph{worse} than a free learned head. Because the physical
+input has external ground truth, the true-input error splits---with no model fit---into a part
+the inputs cannot resolve and a part the fixed closure gets wrong; on infinite-dilution activity
+data the closure is the binding term. We give the theory this measurement rests on: three
+structural lemmas (the crystal/activity split is non-identifiable, so a free head silently
+compensates) and, for composed predictors in general, a grounding-gap identity and a sign rule
+for the ``physics tax'' that predicts a critical data budget beyond which such a prior must lose.
+We are careful about reach: the grounding gap is a \emph{symptom} that conflates closure error
+with input insufficiency unless strong assumptions hold, so certification rests on the
+assumption-light decomposition, not the gap. The account is not idiosyncratic to one closure---it
+reproduces across synthetic closure families and a second chemical closure (pKa through a Hammett
+relationship), and it matches the observed failures: no accuracy gain at \emph{any} training
+budget, and a tax heaviest on the best-covered chemistry. What the prior buys is an interpretable
+decomposition and calibrated uncertainty, not lower error.
 \end{abstract}
 
 \section{Introduction}
@@ -106,10 +105,14 @@ this expectation fails. We characterize the failure quantitatively, and it is th
 characterization, more than the failure itself, that this paper is about. That true
 $\sigma$-profiles can hurt a COSMO-SAC pipeline will not surprise a thermodynamics
 specialist who knows the model's limits; the contribution is not the failure but an
-externally grounded procedure---demonstrated here on one closure and one low-$\gamma$
-regime---that \emph{measures} where such a physics prior's ceiling lies and attributes
-it to the closure rather than the inputs. Whether the finding of closure-dominance
-generalizes beyond this regime we leave as a conjecture (\S\ref{sec:discussion}).
+externally grounded procedure that \emph{measures} where such a physics prior's ceiling
+lies and attributes it to the closure rather than the inputs. The procedure is general---we
+state it for any composed predictor $\hat y=g(h(x))$ with a fixed closure over a learned
+intermediate, prove its core, and reproduce it on synthetic closure families
+(\S\ref{sec:dial}) and a second chemical closure (pKa through a Hammett relationship,
+\S\ref{sec:pka}). What stays regime-specific is the \emph{magnitude} of closure-dominance
+we measure for COSMO-SAC on low-$\gamma$ activity data; whether that particular ordering
+persists across solubility chemistries we scope honestly (\S\ref{sec:discussion}).
 
 \paragraph{Contributions.}
 \begin{itemize}
@@ -118,8 +121,8 @@ generalizes beyond this regime we leave as a conjecture (\S\ref{sec:discussion})
   closure degrades activity ($\lngi$) and solubility ($\lnx$) prediction relative
   to a free learned activity head, the opposite of the intended benefit
   (\S\ref{sec:paradox}).
-  \item \textbf{A measurement affordance, not a theorem.} Because the physical
-  latent $\zstar$ (the true $\sigma$-profile) has external ground truth, the
+  \item \textbf{A measurement affordance: the closure/insufficiency split.} Because the
+  physical latent $\zstar$ (the true $\sigma$-profile) has external ground truth, the
   true-input excess risk splits \emph{exactly} as $B=\Bclos+\Binsuf$ with no model
   fit (Lemma~\ref{prop:decomp}). The decomposition and its estimators are textbook;
   the new element is exploiting an externally measured latent to bound the split
@@ -138,11 +141,17 @@ generalizes beyond this regime we leave as a conjecture (\S\ref{sec:discussion})
   lemmas and the closure measurement, this locates the ceiling as \emph{structural}, not
   incidental
   (\S\ref{sec:discussion}). We make no accuracy claim.
-  \item \textbf{Framework and honest scoping.} We prove three elementary structural
-  lemmas (non-identifiability, class-dependent information, and the closure/insufficiency
-  split; Lemmas~\ref{prop:ident}--\ref{prop:decomp}, App.~\ref{sec:si-proofs}), read the
-  deeper theory against cited results on model discrepancy and calibration, and ship
-  reproducible diagnostics.
+  \item \textbf{A general account, and honest scoping.} The method is not tied to
+  COSMO-SAC: it is stated for any composed predictor $\hat y=g(h(x))$ with a fixed closure
+  $g$ over a learned intermediate. We prove three structural lemmas
+  (Lemmas~\ref{prop:ident}--\ref{prop:decomp}), a grounding-gap identity
+  (Theorem~\ref{thm:gap}) showing the gap is bounded by the closure bias---but only under
+  assumptions that fail here, so we use it as a symptom and let the decomposition
+  certify---and a sign rule for the physics tax (Prop.~\ref{prop:tax}) whose critical-budget
+  and aleatoric-floor corollaries predict the two negatives above. The account reproduces
+  on synthetic closure families (\S\ref{sec:dial}) and a second chemical closure, pKa
+  through a Hammett relationship (\S\ref{sec:pka}); all proofs are elementary
+  (App.~\ref{sec:si-proofs}).
 \end{itemize}
 
 \input{sections/related-work}
@@ -189,8 +198,20 @@ activity labels $m$ are experimental infinite-dilution coefficients $\lngi$
 compiled from ThermoML, and the true $\sigma$-profiles $\zstar$ are the VT-2005
 database.
 
-\section{Theory: locating a physics prior's ceiling}
+\section{Theory: locating a physics prior's ceiling in a composed predictor}
 \label{sec:framework}
+
+The results below are stated for a general \emph{composed predictor} $\hat y=g(h(x))$
+in which a fixed, non-fitted map $g$---the \emph{closure}---consumes a learned physical
+intermediate $z=h(x)$, and are compared against a matched free predictor that shares the
+encoder but drops $g$. Solubility, with $g$ the COSMO-SAC closure and $z$ the
+$\sigma$-profile, is one instance; \S\ref{sec:pka} gives a second (pKa through a fixed
+Hammett closure), and \S\ref{sec:dial} a controlled synthetic family. Nothing in
+Lemmas~\ref{prop:ident}--\ref{prop:decomp}, Theorem~\ref{thm:gap}, or
+Proposition~\ref{prop:tax} is specific to COSMO-SAC. Two quantities organize the section:
+the closure/insufficiency split $B=\Bclos+\Binsuf$, which is the assumption-light
+\emph{instrument}, and the observable grounding gap $\Gamma$, which is a \emph{symptom} of
+closure misspecification whose validity we characterize.
 
 \subsection{Why a free head can compensate: structural non-identifiability}
 The crystal/activity split is not identifiable from solubility data alone, which
@@ -289,6 +310,81 @@ Because $\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, it is
 \emph{independent of the closure convention}: any disagreement between closure
 variants is decoder disagreement and lands in $\Bclos$.
 
+\subsection{The grounding gap: a symptom of closure misspecification}
+\label{sec:gap}
+The paradox---true inputs hurting---is a measurable quantity, not a curiosity. Let
+$\mathcal E$ be the encoder class ($h:x\mapsto z$) and define three population risks of
+the activity target $m$: the oracle risk $R_{\mathrm{orc}}=\Ex[(m-g(\zstar))^2]$, the best
+end-to-end risk $R_{\mathrm{e2e}}=\inf_{h\in\mathcal E}\Ex[(m-g(h(x)))^2]$, and the
+free-predictor (black-box) risk $R_{\mathrm{free}}=\Ex[(m-\Ex[m\mid x])^2]$. The
+\emph{grounding gap} is $\Gamma:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$; the paradox is
+$\Gamma>0$ (a free learned head beats the true input pushed through the closure).
+\begin{theorem}[Grounding-gap sandwich]\label{thm:gap}
+Assume (A1) the true encoder is representable, $\phi^\star\in\mathcal E$ with
+$\zstar=\phi^\star(x)$, and (A2) the intermediate is a lossless bottleneck,
+$\Ex[m\mid x]=\Ex[m\mid\zstar]$. Then
+\begin{equation}
+0\;\le\;\Gamma\;\le\;\Bclos,\qquad
+\Gamma=\Bclos-\big(R_{\mathrm{e2e}}-R_{\mathrm{free}}\big),
+\label{eq:gap}
+\end{equation}
+with $\Gamma=\Bclos$ iff $R_{\mathrm{e2e}}=R_{\mathrm{free}}$ (the composed class realizes
+the Bayes predictor by distorting the intermediate). In particular a well-specified closure
+($\Bclos=0$) gives $\Gamma=0$; hence \emph{under A1--A2}, $\Gamma>0$ certifies $\Bclos>0$.
+\end{theorem}
+\noindent The proof is elementary (App.~\ref{sec:si-proofs}): $\Gamma\ge0$ because
+$\phi^\star$ is a feasible encoder; $R_{\mathrm{e2e}}\ge R_{\mathrm{free}}$ because every
+$g(h(x))$ is $\sigma(x)$-measurable; and $R_{\mathrm{free}}=\Binsuf$ under A2. Thus
+$\Gamma$ is exactly the closure bias the encoder can \emph{absorb} by feeding $g$ a
+wrong-but-useful intermediate---the formal content of Lemma~\ref{prop:ident}'s ``a free
+head silently compensates.''
+
+\paragraph{$\Gamma$ is a symptom, not a certificate.} Both assumptions are load-bearing and
+neither holds cleanly here. A1 is \emph{empirically false}: the encoder is transfer-limited
+(linear-probe test $R^2\approx0.45$), so $\phi^\star\notin\mathcal E$ and even $\Gamma\ge0$
+is not guaranteed. A2 is unverifiable without the oracle and physically dubious (the
+$\sigma$-profile is a lossy summary of the graph). When A2 fails, $\Gamma>0$ \emph{conflates}
+two causes: closure misspecification ($\Bclos>0$) and input insufficiency (a correct closure
+driven off-support to recover information the intermediate discarded). A controlled construction
+with a \emph{well-specified} closure and a lossy intermediate gives $\Bclos=0$ yet $\Gamma>0$
+(\S\ref{sec:dial}, and the pKa ortho sweep of \S\ref{sec:pka}). Certification of
+closure-dominance therefore rests on the convention-independent \emph{decomposition}
+(Lemma~\ref{prop:decomp}), which needs neither A1 nor A2: in solubility the Jensen bound and
+the insufficiency estimates place $\Bclos$ above $\Binsuf$ \emph{directly}
+(\S\ref{sec:measure}), and the grounding gap only corroborates it. This is the paper's method:
+\emph{the decomposition is the instrument, $\Gamma$ is the cheap symptom that motivates it, and
+separating its two causes is what an externally measured latent buys.}
+
+\subsection{The physics tax and the critical data budget}
+\label{sec:tax}
+The gap is a population statement; the deployed question is whether the \emph{trained} physics
+model beats the \emph{trained} black box at sample size $n$. Writing each expected risk as an
+asymptote plus estimation variance, $\Ex[\hat R_{\mathrm{phys}}(n)]\approx
+R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and $\Ex[\hat R_{\mathrm{direct}}(n)]\approx
+R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with $V(n)\downarrow0$, the \emph{physics tax}
+is
+\begin{equation}
+T(n)\approx\Delta_\infty+\big[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)\big],\qquad
+\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}.
+\end{equation}
+\begin{proposition}[Sign of the physics tax]\label{prop:tax}
+(i)~$T(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
+the variance a constrained prior saves must exceed its asymptotic bias. (ii)~If
+$\Delta_\infty>0$ and the variance gap vanishes ($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$),
+there is a critical budget $n^\star$ beyond which $T(n)>0$ for all $n>n^\star$. (iii)~Since
+$V_{\mathrm{direct}}-V_{\mathrm{phys}}\le V_{\mathrm{direct}}$, as the black box nears the
+aleatoric floor ($V_{\mathrm{direct}}\to0$) the tax tends to $\Delta_\infty\ge0$.
+\end{proposition}
+\noindent When the control is asymptotically Bayes and A2 holds, $\Delta_\infty=\Bclos-\Gamma$,
+tying the asymptotic tax to the \emph{un-compensatable} part of the closure bias; in general
+$\Delta_\infty$ is read off the large-$n$ asymptote. Both corollaries are borne out: the
+data-efficiency null---a positive tax at \emph{every} budget, growing with $n$
+(\S\ref{sec:data-efficiency})---is case~(ii) with $\Delta_\infty$ above the largest variance
+gap, and the novelty inversion---the tax heaviest on the \emph{best-covered} solutes
+(\S\ref{sec:map})---is case~(iii). We prove the structural parts (existence of $n^\star$ given
+$\Delta_\infty>0$ and a vanishing variance gap; the floor inequality); the shapes of $V(n)$ are
+empirical.
+
 \subsection{Supporting structural facts}
 Three further consequences of the same collinear geometry are used informally and
 are not stated as theorems. \emph{(i)~Temperature extrapolation.} Within the
@@ -313,12 +409,18 @@ shows for a dose-limited crystal run) it does not by itself promise an end-task 
 We prove the three structural lemmas the measurement rests on --- the split's
 non-identifiability (Lemma~\ref{prop:ident}), its class-dependence
 (Lemma~\ref{prop:semiparam}), and the exact closure/insufficiency decomposition with
-its one-sided bounds (Lemma~\ref{prop:decomp}); the proofs are elementary and
-collected in App.~\ref{sec:si-proofs}. We claim no more. In particular there is no
-``optimal grounding'' theorem and no necessary-and-sufficient condition for the
-decomposition to improve out-of-distribution accuracy --- the honest empirical
-answer (\S\ref{sec:results}) is that it does not, and an earlier draft's
-conditional-optimality ``iff'' is refuted by exactly that. The lemmas are read
+its one-sided bounds (Lemma~\ref{prop:decomp}) --- together with the grounding-gap
+sandwich (Theorem~\ref{thm:gap}) and the sign rule for the physics tax
+(Prop.~\ref{prop:tax}); all proofs are elementary (App.~\ref{sec:si-proofs}). We are
+deliberate about their reach, having once over-reached here already. Theorem~\ref{thm:gap}
+certifies closure misspecification \emph{only} under A1--A2, and both fail or are
+unverifiable in our setting (A1 empirically, A2 in principle); we therefore rest
+closure-dominance on the assumption-light decomposition and use $\Gamma$ as a corroborating
+symptom, not a certificate. Proposition~\ref{prop:tax} predicts the \emph{sign} of the tax
+from measurable quantities, not an optimum. In particular there is no ``optimal grounding''
+theorem and no necessary-and-sufficient condition for the decomposition to improve
+out-of-distribution accuracy --- the honest empirical answer (\S\ref{sec:results}) is that
+it does not, and an earlier draft's conditional-optimality ``iff'' is refuted by exactly that. The lemmas are read
 against, not in competition with, known results on model discrepancy
 \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
 \cite{transtrum2015,gutenkunst2007}, structural and practical identifiability
@@ -511,6 +613,8 @@ separation: when the upstream map is misspecified, a monotone or affine post-hoc
 map can fix reliability but not resolution. Recalibration buys calibration
 without buying accuracy, which is what we expect if the closure, rather than the
 estimate, is the binding constraint.
+
+\input{sections/pka-domain}
 
 \input{sections/ident-compensation}
 

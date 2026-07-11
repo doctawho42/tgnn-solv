@@ -92,6 +92,50 @@ closure conventions, and any $\mathrm{MSE}(g_1)-\mathrm{MSE}(g_2)$ is entirely
 $\Bclos(g_1)-\Bclos(g_2)$.
 \end{proof}
 
+\begin{proof}[Proof of Theorem~\ref{thm:gap} (grounding-gap sandwich)]
+Throughout assume $m,g(\zstar)\in L^2$ and $g$, every $h\in\mathcal E$ measurable.
+\emph{(a) $\Gamma\ge0$.} By A1, $\phi^\star\in\mathcal E$ is a feasible encoder with
+$g(\phi^\star(x))=g(\zstar)$, so $R_{\mathrm{e2e}}=\inf_{h}\Ex[(m-g(h(x)))^2]\le
+\Ex[(m-g(\zstar))^2]=R_{\mathrm{orc}}$; the infimum need not be attained. Hence
+$\Gamma=R_{\mathrm{orc}}-R_{\mathrm{e2e}}\ge0$.
+\emph{(b) $R_{\mathrm{e2e}}\ge R_{\mathrm{free}}$.} Every $g(h(x))$ is
+$\sigma(x)$-measurable, and $R_{\mathrm{free}}=\Ex[(m-\Ex(m\mid x))^2]$ is the infimum of
+$\Ex[(m-p)^2]$ over \emph{all} $\sigma(x)$-measurable $p$; an infimum over the subclass
+$\{g(h(\cdot)):h\in\mathcal E\}$ is no smaller.
+\emph{(c) $R_{\mathrm{free}}=\Binsuf$ under A2.} From
+$\Var(m)=\Ex[\Var(m\mid x)]+\Var(\Ex(m\mid x))=\Ex[\Var(m\mid\zstar)]+\Var(\Ex(m\mid\zstar))$
+and A2 ($\Ex(m\mid x)=\Ex(m\mid\zstar)$, so the two $\Var(\Ex(\cdot))$ terms agree), the two
+expected conditional variances agree: $R_{\mathrm{free}}=\Ex[\Var(m\mid x)]=\Binsuf$.
+\emph{(d) Sandwich and identity.} By Lemma~\ref{prop:decomp},
+$R_{\mathrm{orc}}=\Binsuf+\Bclos$. With (c),
+$\Gamma=R_{\mathrm{orc}}-R_{\mathrm{e2e}}=\Bclos-(R_{\mathrm{e2e}}-R_{\mathrm{free}})$, and (b)
+gives $R_{\mathrm{e2e}}-R_{\mathrm{free}}\ge0$, so $0\le\Gamma\le\Bclos$; equality
+$\Gamma=\Bclos$ holds iff $R_{\mathrm{e2e}}=R_{\mathrm{free}}$. Finally $\Bclos=0$ forces
+$0\le\Gamma\le0$, i.e.\ $\Gamma=0$; contrapositively, under A1--A2, $\Gamma>0\Rightarrow\Bclos>0$.
+\emph{(e) A2 is necessary for the certificate.} If A2 fails, take $x\in\{a,b\}$ equiprobable,
+$\zstar\equiv0$ (so A1 holds), $m(a)=+1,m(b)=-1$, and $g$ with $g(0)=0=\Ex(m\mid\zstar)$ so
+$\Bclos=0$; an encoder $h^\dagger(a)=1,h^\dagger(b)=-1$ with $g(\pm1)=\pm1$ gives
+$R_{\mathrm{e2e}}=0$ while $R_{\mathrm{orc}}=1$, hence $\Gamma=1>0=\Bclos$. So $\Gamma>0$ alone
+does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the physics tax)]
+Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$, so
+$T(n)=\Delta_\infty-D(n)$ with $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.
+\emph{(i)} $T(n)<0\iff D(n)>\Delta_\infty$, immediately.
+\emph{(ii)} If $\Delta_\infty>0$ and $D(n)\to0$, choose $n^\star$ with $|D(n)|<\Delta_\infty$
+for all $n>n^\star$ (possible since $D(n)\to0$); then $T(n)=\Delta_\infty-D(n)>0$. Monotonicity
+of $D$ is \emph{not} required for existence of $n^\star$; it is needed only for the stronger
+claim ``$T(n)>0$ at every $n$,'' which we treat as an empirical observation.
+\emph{(iii)} Since $V_{\mathrm{phys}}(n)\ge0$, $D(n)\le V_{\mathrm{direct}}(n)$: the variance a
+prior can save is bounded by the control's own estimation variance. As the black box approaches
+the aleatoric floor $V_{\mathrm{direct}}(n)\to0$, so $\limsup_n D(n)\le0$; with both estimators
+consistent ($V_{\mathrm{phys}},V_{\mathrm{direct}}\to0$) one has $D(n)\to0$ and
+$T(n)\to\Delta_\infty\ge0$. When the control is asymptotically Bayes ($R_{\mathrm{direct},\infty}
+=R_{\mathrm{free}}$) and A2 holds, $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{free}}=\Bclos-\Gamma$
+by \eqref{eq:gap}.
+\end{proof}
+
 \section{Per-arm tables and decomposition robustness}
 \label{sec:si-tables}
 Table~\ref{tab:si-arms} gives the exact per-arm metrics behind

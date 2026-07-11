@@ -1,0 +1,47 @@
+\subsection{A second chemical closure: pKa through a Hammett LFER}
+\label{sec:pka}
+The machinery above is not specific to COSMO-SAC. We instantiate it in a second real
+chemical domain---aqueous $\mathrm pK_a$ of substituted aromatics---where the fixed closure
+is a Hammett linear-free-energy relationship $g(\sigma)=\mathrm pK_{a,0}-\rho\,\sigma$ over the
+physical intermediate $\sigma$ (the electronic substituent effect), for which Hansch--Leo
+tabulated constants provide an external oracle $\zstar$. The analogy is tight: as with the
+$\sigma$-profile through COSMO-SAC, a learnable physical descriptor is pushed through a fixed,
+approximate, differentiable map. The two classic LFER failure modes fall cleanly onto the two
+error channels of Lemma~\ref{prop:decomp}: \emph{resonance saturation}---a curvature in
+$\sigma$ that the linear closure structurally cannot represent---is a mis-map of a function of
+$\zstar$ and lands in $\Bclos$; \emph{ortho/steric} field effects, absent from the tabulated
+constants, are information the intermediate lacks and land in $\Binsuf$. The chemical scope is a
+fidelity sweep: meta/para monosubstituted benzoic acids, phenols, and anilinium ions are the
+near-exact ($\Bclos\!\approx\!0$) regime, ortho and polyfunctional the misspecified one.
+
+This decomposition is directly visible before any training. Pushed through the fixed Hammett
+closure, $p$-nitrophenol reads $\mathrm pK_a\!\approx\!8.3$ against an experimental $\approx7.1$,
+and $p$-nitroaniline $\approx2.4$ against $\approx1.0$: the linear closure overshoots by
+$\sim1$ unit exactly where through-conjugation ($\sigma^-$) breaks it---$\Bclos$ in the wild.
+
+A controlled semi-synthetic construction on real tabulated $\sigma$ (known ground-truth
+channels) validates the estimator and reproduces the paper's central distinction in this second
+closure (Fig.~\ref{fig:pka}). Sweeping closure fidelity with a sufficient intermediate, the
+grounding gap $\Gamma$ tracks $\Bclos$ (the plug-in estimate recovers the truth to within a few
+percent, e.g.\ $0.20$ vs $0.21$, $0.81$ vs $0.81$), the case where Theorem~\ref{thm:gap}'s
+proxy is valid. Sweeping the ortho/steric channel with a \emph{well-specified} closure gives
+$\Bclos=0$ throughout yet $\Gamma>0$ and growing---the pKa realization of the conflation that
+makes $\Gamma$ a symptom rather than a certificate. The oracle-$\sigma$ pipeline
+(scaffold-resolved substituent$\to\sigma$ assignment) and this controlled validation are in
+place; the trained encoder-vs-DirectGNN comparison on experimental $\mathrm pK_a$, which places
+this closure's operating point on the fidelity axis alongside solubility, is the natural next
+measurement.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_pka_hammett.pdf}
+\caption{The diagnostic transfers to a second real closure (pKa through a Hammett LFER), on a
+controlled construction with known ground-truth channels. \emph{Left:} varying closure fidelity
+with a sufficient intermediate, the grounding gap $\Gamma$ tracks the closure bias $\Bclos$
+(the assumption-light Jensen bound is flat here because the misspecification carries no mean
+offset). \emph{Right:} varying an ortho/steric insufficiency channel with a \emph{well-specified}
+closure, $\Bclos=0$ throughout while $\Gamma>0$ grows---the pKa realization of the two-cause
+conflation of \S\ref{sec:gap}, and the reason certification rests on the decomposition, not on
+$\Gamma$.}
+\label{fig:pka}
+\end{figure}
