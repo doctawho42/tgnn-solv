@@ -81,8 +81,9 @@ input has external ground truth, the true-input error splits---with no model fit
 the inputs cannot resolve and a part the fixed closure gets wrong; on infinite-dilution activity
 data the closure is the binding term. We give the theory this measurement rests on: three
 structural lemmas (the crystal/activity split is non-identifiable, so a free head silently
-compensates) and, for composed predictors in general, a grounding-gap identity and a sign rule
-for the ``physics tax'' that predicts a critical data budget beyond which such a prior must lose.
+compensates) and, for composed predictors in general, two further results: a grounding-gap
+identity, and a sign rule for the ``physics tax''---the accuracy cost of routing through the
+closure. The sign rule predicts a critical data budget beyond which such a prior must lose.
 We are careful about reach: the grounding gap is a \emph{symptom} that conflates closure error
 with input insufficiency unless strong assumptions hold, so certification rests on the
 assumption-light decomposition, not the gap. The account is not idiosyncratic to one closure---it
@@ -202,10 +203,12 @@ well specified, $g(\zstar)$ should be the best available activity estimate. The
 paradox is that it is not.
 
 \paragraph{Data.} Solubility measurements are a Bemis--Murcko scaffold split of
-BigSolDB \cite{krasnov2025bigsoldb}, so test solutes are unseen at training; the
-activity labels $m$ are experimental infinite-dilution coefficients $\lngi$
-compiled from ThermoML, and the true $\sigma$-profiles $\zstar$ are the VT-2005
-database.
+BigSolDB \cite{krasnov2025bigsoldb} (grouping molecules by ring-system-plus-linker
+scaffold, side chains stripped), so test solutes share no scaffold with training;
+the activity labels $m$ are experimental infinite-dilution activity coefficients
+($\lngi$, IDAC) compiled from ThermoML (the NIST/IUPAC archive of experimental
+thermophysical data \cite{frenkel2011thermoml}), and the true $\sigma$-profiles
+$\zstar$ are the VT-2005 database.
 
 \section{Theory: locating a physics prior's ceiling in a composed predictor}
 \label{sec:framework}
@@ -544,11 +547,11 @@ estimator; \S\ref{sec:measure}), so the closure's excess over that floor is $\Bc
 \subsection{Measuring the ceiling: the closure dominates}
 \label{sec:measure}
 % Artifact: results/b_insuff/decomposition.json via scripts/analysis/run_b_insuff_decomposition.py.
-We apply the decomposition of \S\ref{sec:decomp} to the $n{=}60$ matchable pairs
-(41 solutes, 17 solvents; the two formamide solvents that the deployed
-canonical-SMILES matcher drops on a tautomer mismatch are excluded), with $\zstar$ the concatenated true
-solute/solvent $\sigma$-profiles ($102$ dimensions) and $m$ the experimental
-$\lngi$ (298\,K, IDAC). Table~\ref{tab:decomp} reports the bounds.
+We apply the decomposition of \S\ref{sec:decomp} to the $n{=}60$ matchable activity
+pairs (298\,K, infinite dilution), with $\zstar$ the true concatenated solute/solvent
+$\sigma$-profiles and $m$ the experimental $\lngi$; Table~\ref{tab:decomp} reports the
+bounds. The set spans 41 solutes and 17 solvents in $102$ profile dimensions, with two
+formamide pairs dropped on a canonical-SMILES tautomer mismatch.
 
 \begin{table}[t]
 \centering
@@ -598,9 +601,8 @@ $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}\approx0.9>0.6$ bound (\S\ref{sec:me
 \paragraph{The load-bearing separation (convention-independent, Tier~1).} Because
 $\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, its upper bound is the
 same in every closure convention; subtracting it from the total therefore lower-bounds
-$\Bclos$ even for the model's \emph{deployed} residual-only convention:
-$\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{up}}\approx1.47-0.62=0.85$ (and
-$0.91$ against the RF bound), well above $\Binsuf\le0.62$. This is the claim we lean
+$\Bclos$ even for the model's \emph{deployed} residual-only convention, giving
+$\Bclos\gtrsim0.9$, well above $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). This is the claim we lean
 on, and it needs no smoothness assumption beyond the validity of the $\Binsuf$ upper
 bound. Under the full COSMO-SAC convention the separation \emph{sharpens} to an
 assumption-free constant-offset bound: a constant decoder offset alone accounts for
@@ -717,7 +719,7 @@ closure itself, for example a corrected or learned residual on the map rather
 than on its output (which \S\ref{sec:gateb} shows is inert).
 
 \paragraph{The accuracy case is closed, exhaustively.} That the physics prior does not
-improve accuracy is not a single observation but a pattern with no confirmed exception: the grounded model trails the matched black box on the full corpus (and the external SOTA, FastSolv and SolProp retrained on our corpus, does no better; App.~\ref{sec:si-baselines}), the
+improve accuracy is not a single observation but a pattern with no confirmed exception: the grounded model trails the matched black box on the full corpus (and the external state-of-the-art (SOTA), FastSolv and SolProp retrained on our corpus, does no better; App.~\ref{sec:si-baselines}), the
 structured temperature advantage is a property of the van't~Hoff hypothesis class
 rather than of the trained model, a (dose-limited) attempt to ground the crystal factor
 on external labels did not move the ceiling (\S\ref{sec:e2}, inconclusive), and---in the

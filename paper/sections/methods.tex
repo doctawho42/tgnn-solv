@@ -57,7 +57,9 @@ A fusion head predicts the two crystal properties that define the ideal
 (activity-free) solubility, with physically bounded parametrisations
 $\Tm=100+600\,\sigma(\cdot)\in[100,700]\,\mathrm{K}$ and
 $\dHfus=S_H\,\mathrm{softplus}(\cdot)>0$; an optional entropy-coupled mode instead
-predicts a Walden-constrained fusion entropy and sets $\Tm=\dHfus/\Delta S$. When a
+predicts a Walden-constrained fusion entropy (Walden's rule: rigid organics have a
+near-constant entropy of fusion, ${\sim}57$\,J\,mol$^{-1}$\,K$^{-1}$) and sets
+$\Tm=\dHfus/\Delta S$. When a
 group-contribution $\Tm$ prior is used it is affine-calibrated on the training
 set before entering the head. The crystal properties give the ideal term
 \begin{equation}
@@ -71,11 +73,12 @@ the constant-$\Delta C_p$ correction omitted (its magnitude is audited in the SI
 The activity term \lng\ is produced by one of three closures, selected by
 configuration, all differentiable and all consuming the same pair representation.
 
-\paragraph{NRTL.} A head predicts the two interaction energies and a
-non-randomness factor, $\tau_{12}^{\mathrm{ref}},\beta_{12},
+\paragraph{NRTL (Non-Random Two-Liquid \cite{renon1968}).} A head predicts the two
+interaction energies and a non-randomness factor, $\tau_{12}^{\mathrm{ref}},\beta_{12},
 \tau_{21}^{\mathrm{ref}},\beta_{21},\alpha\in[0.1,0.6]$, with a temperature law
 $\tau_{ij}(T)=\tau_{ij}^{\mathrm{ref}}+\beta_{ij}(1/T-1/T_{\mathrm{ref}})$; an
-optional UNIFAC group-contribution prior regularises the $\tau$'s. This is the
+optional UNIFAC (UNIQUAC Functional-group Activity Coefficients \cite{fredenslund1975})
+group-contribution prior regularises the $\tau$'s. This is the
 default and the most expressive activity model.
 
 \paragraph{Single-parameter (\texttt{gamma\_inf}).} Collapsing the NRTL closure to

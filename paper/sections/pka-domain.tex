@@ -2,9 +2,10 @@
 \label{sec:pka}
 The machinery above is not specific to COSMO-SAC. We instantiate it in a second real
 chemical domain---aqueous $\mathrm pK_a$ of substituted aromatics---where the fixed closure
-is a Hammett linear-free-energy relationship $g(\sigma)=\mathrm pK_{a,0}-\rho\,\sigma$ over the
-physical intermediate $\sigma$ (the electronic substituent effect), for which Hansch--Leo
-tabulated constants provide an external oracle $\zstar$. The analogy is tight: as with the
+is a Hammett linear-free-energy relationship (LFER) $g(\sigma)=\mathrm pK_{a,0}-\rho\,\sigma$
+over the physical intermediate $\sigma$---here the Hammett substituent constant, \emph{not} the
+$\sigma$-profile of \S\ref{sec:setup}---for which Hansch--Leo tabulated constants provide an
+external oracle $\zstar$. The analogy is tight: as with the
 $\sigma$-profile through COSMO-SAC, a learnable physical descriptor is pushed through a fixed,
 approximate, differentiable map. The two classic LFER failure modes fall cleanly onto the two
 error channels of Lemma~\ref{prop:decomp}: \emph{resonance saturation}---a curvature in
