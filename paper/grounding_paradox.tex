@@ -134,8 +134,9 @@ generalizes beyond this regime we leave as a conjecture (\S\ref{sec:discussion})
   \item \textbf{An exhaustive, explained negative.} The physics prior does not beat a
   matched black box on accuracy at any training-data budget---including the low-data
   regime where an inductive bias should help most (\S\ref{sec:data-efficiency})---nor on
-  temperature, nor via crystal grounding; read against the lemmas and the closure
-  measurement, this locates the ceiling as \emph{structural}, not incidental
+  temperature (a hypothesis-class property, not a trained-model win); read against the
+  lemmas and the closure measurement, this locates the ceiling as \emph{structural}, not
+  incidental
   (\S\ref{sec:discussion}). We make no accuracy claim.
   \item \textbf{Framework and honest scoping.} We prove three elementary structural
   lemmas (non-identifiability, class-dependent information, and the closure/insufficiency
@@ -489,8 +490,9 @@ four hedges are stated in full in App.~\ref{sec:si-tables}.
 misspecified (fidelity $F$ decreasing from $1$), the true-input penalty
 $\Delta R^2=R^2_{\text{true}}-R^2_{\text{learned}}$ grows monotonically, and the
 same ordering holds across five misspecification functional forms (grey). The
-real COSMO-SAC closure sits at $F\approx0.49$ (salmon), well inside the
-misspecified regime.}
+real COSMO-SAC closure sits well inside the misspecified regime ($F\lesssim0.5$;
+salmon)---the sign and rough magnitude of the empirical paradox, not a precise
+fidelity value.}
 \label{fig:dial}
 \end{figure}
 
@@ -539,12 +541,12 @@ closure itself, for example a corrected or learned residual on the map rather
 than on its output (which \S\ref{sec:gateb} shows is inert).
 
 \paragraph{The accuracy case is closed, exhaustively.} That the physics prior does not
-improve accuracy is not a single observation but a pattern with no exception we could
-find: the grounded model trails the matched black box on the full corpus, the
+improve accuracy is not a single observation but a pattern with no confirmed exception: the grounded model trails the matched black box on the full corpus (and the external SOTA, FastSolv and SolProp retrained on our corpus, does no better; App.~\ref{sec:si-baselines}), the
 structured temperature advantage is a property of the van't~Hoff hypothesis class
-rather than of the trained model, grounding the crystal factor on external labels does
-not move the ceiling (\S\ref{sec:e2}), and---in the case built to favour a physics
-prior---it loses at \emph{every} training-data fraction, including the low-data regime
+rather than of the trained model, a (dose-limited) attempt to ground the crystal factor
+on external labels did not move the ceiling (\S\ref{sec:e2}, inconclusive), and---in the
+case built to favour a physics prior---it loses at \emph{every} training-data fraction,
+including the low-data regime
 where an inductive bias should help most (\S\ref{sec:data-efficiency}). Read together
 these are not scattered nulls but evidence that the ceiling is \emph{structural}: the
 crystal/activity split is non-identifiable from solubility alone

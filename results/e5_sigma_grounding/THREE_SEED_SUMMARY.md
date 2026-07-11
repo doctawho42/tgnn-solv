@@ -17,7 +17,6 @@ Intersection-locked to n=5608 rows supervised+finite in every arm. lngamma_band=
 - DirectGNN MAE 1.70±0.04  -> data 1.702±0.033  ✓
 - grounded (learned-sigma) MAE 1.85, R2 0.33  -> data grounded_a 1.846, +0.330  ✓
 - +Staverman-Guggenheim combinatorial (grounded_b) MAE 1.85->1.88  -> data 1.846->1.879  ✓
-- **sigma-oracle: paper says MAE 2.42, R2=-0.09  -> DATA gives 2.252±0.021, R2=-0.029±0.035  ✗ MISMATCH**
-  * 2.42 appears in NONE of the three seeds (all ~2.23-2.28); the paper's oracle number is stale/orphaned.
-  * R2=-0.029±0.035 crosses zero -> 'negative R2 / worse than the mean' is directional but NOT robust to seed spread;
-    the honest headline is 'R2 ~ 0, no better than predicting the mean', not a clearly-negative -0.09.
+- sigma-oracle MAE 2.25, R2~0  -> data 2.252±0.021, R2=-0.029±0.035  ✓ (paper corrected 2026-07-10;
+  the old stale "2.42 / R2=-0.09" was purged. R2=-0.029±0.035 crosses zero, so the paper's honest
+  headline is 'R2 ~ 0, no better than predicting the mean', not a clearly-negative value.)

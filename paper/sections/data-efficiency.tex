@@ -24,8 +24,8 @@ through a misspecified closure---as the operative explanation.
 \begin{table}[t]
 \centering
 \caption{Data-efficiency sweep (train subsampled by solute, fixed scaffold test,
-seed 42). The physics-grounded arm trails DirectGNN at every fraction and the
-gap widens with data. $\Delta\mathrm{MAE}=\mathrm{MAE(physics)}-\mathrm{MAE(direct)}>0$
+seed 42). The physics-grounded arm trails DirectGNN at every fraction; the gap is
+smallest at the least data and large thereafter. $\Delta\mathrm{MAE}=\mathrm{MAE(physics)}-\mathrm{MAE(direct)}>0$
 means physics is worse. Absolute errors here exceed the headline runs (a lighter
 per-fraction budget); the valid signal is the within-budget physics$-$direct gap.}
 \label{tab:data-eff}
@@ -48,7 +48,8 @@ $1.00$ & $2.98$ & $1.97$ & $+1.01$ & $-0.79$ & $+0.22$ \\
 \centering
 \includegraphics[width=0.7\linewidth]{figs/fig_data_efficiency.pdf}
 \caption{Data-efficiency curve. The physics-grounded arm (salmon) trails the DirectGNN
-black box (teal) at every training-data fraction, and the gap widens with data---the
-opposite of the low-data advantage a physics prior is supposed to provide.}
+black box (teal) at every training-data fraction; the gap is smallest at the least data
+and large thereafter---the opposite of the low-data advantage a physics prior is
+supposed to provide.}
 \label{fig:data-eff}
 \end{figure}
