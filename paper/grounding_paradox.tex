@@ -335,29 +335,22 @@ forecast \cite{murphy1973,degroot1983}.
 \label{sec:paradox}
 % Artifacts: results/e5_sigma_grounding/seed_{42,43,44}/comparison.json (3-seed e5 lock, n=5608); aggregate THREE_SEED_SUMMARY.md via run_e5_comparison.py.
 % Triple confirmation: eval-oracle / true-at-train / channel-swap.
-Feeding true $\sigma$-profiles into the closure degrades it rather than improving
-it, and it does so in both the activity and the solubility target. On the activity
-target ($\lngi$, $n{=}60$ pairs with both true profiles present), a flexible
-regressor of $\lngi$ on the true profiles---our irreducible-variance ($\Binsuf$)
-estimator---attains MSE $\approx0.40$, whereas the fixed closure on the \emph{same}
-true profiles attains MSE $1.47$--$1.80$ depending on convention (\S\ref{sec:measure}):
-about $4\times$ above the irreducible-variance floor, and the true-input closure
-under-predicts $\lngi$ with a systematic downward bias (Fig.~\ref{fig:parity}).
-In the solubility target the
-effect is large enough to erase any positive $R^2$
-(Fig.~\ref{fig:paradox}, three seeds, mean$\pm$sd, $n{=}5608$): the model predicts
-solubility \emph{better with its own learned $\sigma$-profile}
-(grounded MAE $1.85\pm0.05$, $R^2=0.33\pm0.05$) than when \emph{given the true measured one}
-(the $\sigma$-oracle, MAE $2.25\pm0.02$, $R^2=-0.03\pm0.04$, no better than predicting the
-mean; one of three seeds is marginally positive). The robust form of the effect is the
-MAE gap ($2.25$ vs $1.85$); the near-zero oracle $R^2$ shows the true input carries no
-usable solubility signal through this closure. Adding the physically \emph{more} complete Staverman--Guggenheim
-combinatorial term also increases error (activity MSE $1.47\!\to\!1.80$;
-solubility MAE $1.85\!\to\!1.88$), which is what a misspecified map does and what
-missing information would not. We confirm the paradox three independent ways: the
-evaluation-time oracle above, injecting the true profile \emph{at training}
-(single-seed MAE $1.98$, still worse than the learned-$\sigma$ $1.80$), and a
-channel-swap control (MAE $2.08$), ruling out a train/test wiring artifact.
+Feeding true $\sigma$-profiles into the closure degrades it rather than improving it,
+in both the activity and the solubility target, and it fails the way a \emph{misspecified
+map} does---not the way missing information would. In the solubility target the effect
+erases any positive $R^2$ (Fig.~\ref{fig:paradox}; three seeds, $n{=}5608$): the model
+predicts solubility better \emph{from its own learned $\sigma$-profile} than when
+\emph{given the true measured one} (MAE $1.85$ vs $2.25$; the $\sigma$-oracle's
+$R^2\approx0$ is no better than predicting the mean). Two facts pin the cause on the map.
+Restoring the physically \emph{more} complete Staverman--Guggenheim combinatorial term
+\emph{increases} error---what a wrong map does, not what a missing input would; and on
+the activity target ($\lngi$, $n{=}60$ matched pairs) the fixed true-input closure sits
+about $4\times$ above the irreducible-variance floor that a flexible regressor reaches
+(\S\ref{sec:measure}), under-predicting $\lngi$ with a systematic bias
+(Fig.~\ref{fig:parity}). The paradox survives three controls---the evaluation-time
+oracle, injection of the true profile \emph{at training} (MAE $1.98$), and a channel-swap
+($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring artifact.
+Per-arm values are in \S\ref{sec:si-tables}.
 
 \begin{figure}[t]
 \centering
@@ -477,38 +470,15 @@ independent route. We therefore lean on the dimension-robust random-forest / rid
 out-of-fold and binning bounds and on the combinatorial effect, which agree that
 $\Bclos$ exceeds $\Binsuf$.
 
-\paragraph{Four hedges we disclose.} The adversarial audit (four independent
-recomputations) could not invert the verdict but sharpened its scope:
-\begin{enumerate}
-  \item \emph{Convention.} The deployed default is residual-only. Under it the
-  \emph{constant-offset} (Jensen) lower bound inverts
-  ($\Bclos\ge0.43<\Binsuf\le0.62$), so that particular assumption-free bound does not
-  separate, and the $\sim2\times$ full-convention margin (the sharpened
-  $\mathrm{MSE}-\Binsuf$ bound, $1.24$ vs $0.62$) is a full-COSMO-SAC-only result. What separates under the deployed convention is the convention-independent
-  bound $\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{up}}\approx0.91>0.62$,
-  on which we headline, together with the combinatorial Tier~2 fact---so the headline
-  does not rest on the arm-specific constant-offset arithmetic.
-  \item \emph{Confound.} The closure error is predominantly a \emph{between-solvent}
-  systematic bias ($\sim$64\% of total error); within the largest single-solvent
-  stratum (pyridine, $n{=}20$) the closure is nearly correct (stratum MSE $0.07$).
-  Because solvent $\sigma$ is part of $\zstar$, these offsets are still decoder error
-  and give an independent solvent-conditional lower bound $\Bclos\ge0.89$ (full)/$0.56$ (res).
-  \item \emph{Confidence.} Honest confidence on the full-convention constant-offset
-  separation is the solvent-clustered bootstrap $P(\Bclos{>}\Binsuf)\approx0.85$
-  ($0.83$ against the random-forest upper bound, $0.89$ against the
-  law-of-total-variance bound); we report the solvent-clustered scheme rather than
-  the less conservative i.i.d.-pair one because solvent dependence dominates. The
-  convention-independent margin ($0.91$ vs $0.62$) is reported as a point estimate
-  and is the direction we headline. The decomposition is checkpoint/seed-independent
-  (the closure has zero learnable parameters).
-  \item \emph{Selection/scope.} The 60 matchable pairs are the low-to-moderate
-  $\gamma$ corner (matched mean $\lngi=0.75$ vs $3.56$ for VT-2005-unmatchable
-  pairs, $t=-7.44$; the strongly non-ideal amide-solvent regime is untested
-  because VT-2005 lacks those profiles). This narrows scope but is
-  \emph{conservative}, since the untested regime is a harder closure test. The
-  target is $\lngi$ at 298\,K, so the numeric ceiling is not claimed to transfer
-  unchanged to the finite-composition solubility regime.
-\end{enumerate}
+\paragraph{Scope and hedges.} An adversarial audit sharpened the scope without
+inverting the verdict. The constant-offset bound is convention-specific---it inverts
+under the deployed residual-only default, where the convention-independent bound
+($\Bclos\ge0.91>0.62$) and the combinatorial fact carry the claim instead; the closure
+error is chiefly a between-solvent bias (a solvent-conditional lower bound
+$\Bclos\ge0.89$); the solvent-clustered confidence is $P(\Bclos{>}\Binsuf)\approx0.85$;
+and the measurement is confined to the low-$\gamma$, $298$\,K, VT-2005-matchable corner,
+so the numeric ceiling is not claimed to transfer to the finite-composition regime. The
+four hedges are stated in full in App.~\ref{sec:si-tables}.
 
 \input{sections/synthetic-dial}
 
