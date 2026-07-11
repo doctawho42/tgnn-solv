@@ -220,12 +220,38 @@ Lemmas~\ref{prop:ident}--\ref{prop:decomp}, Theorem~\ref{thm:gap}, or
 Proposition~\ref{prop:tax} is specific to COSMO-SAC. Two quantities organize the section:
 the closure/insufficiency split $B=\Bclos+\Binsuf$, which is the assumption-light
 \emph{instrument}, and the observable grounding gap $\Gamma$, which is a \emph{symptom} of
-closure misspecification whose validity we characterize.
+closure misspecification whose validity we characterize (Fig.~\ref{fig:composed}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_composed.pdf}
+\caption{The general composed predictor $\hat y=g(h(x))$ and its matched control. A learned
+encoder $h$ produces a physical intermediate $z$; a \emph{fixed} closure $g$ maps it to the
+prediction. Input insufficiency $\Binsuf$ lives in $z$ (what the intermediate cannot resolve)
+and closure misspecification $\Bclos$ in $g$ (where the fixed map is wrong); an external oracle
+$\zstar$ lets us measure the split. The matched control (grey) shares $h$ but drops $g$, so the
+gap between them is the ``physics tax.'' The same abstraction instantiates as solubility, pKa,
+and the synthetic dial (table).}
+\label{fig:composed}
+\end{figure}
 
 \subsection{Why a free head can compensate: structural non-identifiability}
 The crystal/activity split is not identifiable from solubility data alone, which
 is precisely why an unconstrained head can silently absorb crystal error into the
-activity term.
+activity term (Fig.~\ref{fig:ident}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.94\linewidth]{figs/fig_ident.pdf}
+\caption{Why the crystal/activity split is non-identifiable from solubility.
+\emph{(a)}~As functions of $1/T$ the crystal direction $\Phi$ and the activity direction
+$\ln\gamma^\infty$ are nearly collinear, so a whole band of crystal/activity splits fits the
+data equally well (the profiled Fisher information for $\dHfus$ is zero, Lemma~\ref{prop:ident}).
+\emph{(b)}~An external single-component label points off that axis and collapses the band to a
+point, pinning the split---the mechanism behind the aux-stream grounding, with the measured
+Cram\'er--Rao drop on $\dHfus$.}
+\label{fig:ident}
+\end{figure}
 \begin{lemma}[Structural non-identifiability of the SLE split]\label{prop:ident}
 Consider the infinite-dilution SLE observable $\mu(T)=-\Phicry(T)-\lngi(T)$ with
 $\Delta C_p=0$, so that $\Phicry(T)=(\dHfus/\Rgas)(1/T-1/\Tm)$ is affine in $u=1/T$,
@@ -283,7 +309,23 @@ $\approx1{,}689$\,J/mol.
 \label{sec:decomp}
 Let $m$ be the activity target (experimental $\lngi$) and $g(\zstar)$ the closure
 evaluated on the true latent. The excess risk of the true-input path over the
-Bayes predictor decomposes exactly.
+best-possible predictor $\Ex[m\mid\cdot]$ (the Bayes predictor) decomposes
+exactly---into a part the intermediate cannot resolve and a part the fixed map gets
+wrong (Fig.~\ref{fig:decomp-concept}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{figs/fig_decomp_concept.pdf}
+\caption{What the closure/insufficiency split means. The activity target $m$ is scattered
+against a one-dimensional summary of the physical intermediate $\zstar$. The vertical spread
+of the conditional cloud is the input insufficiency $\Binsuf=\Ex\,\Var(m\mid\zstar)$---what no
+map of $\zstar$ can resolve---while the gap between the conditional mean $\Ex[m\mid\zstar]$ (the
+best any map reaches) and the fixed closure $g(\zstar)$ is the closure misspecification $\Bclos$.
+Feeding the true $\zstar$ through $g$ lands on the lower curve, off the conditional mean; that
+displacement is the paradox. Schematic; the measured bounds are Fig.~\ref{fig:decomp}.}
+\label{fig:decomp-concept}
+\end{figure}
+
 \begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
 For a \emph{fixed} (non-fitted) closure $g$,
 \begin{equation}
@@ -692,8 +734,8 @@ grounded decomposition---for locating such a ceiling, and a proved account of wh
 sits where it does.
 
 \paragraph{When a physics prior must lose.} The tax rule (Prop.~\ref{prop:tax}) turns these
-negatives into a phase picture rather than a single verdict, and says \emph{when} to expect
-them. A fixed-closure prior helps only when the estimation variance it saves exceeds its
+negatives into a phase picture rather than a single verdict (Fig.~\ref{fig:phase}), and says
+\emph{when} to expect them. A fixed-closure prior helps only when the estimation variance it saves exceeds its
 asymptotic bias $\Delta_\infty=\Bclos-\Gamma$; both are measurable. The variance benefit is
 largest at small $n$ and vanishes as data accumulate or as the black box nears the aleatoric
 floor, whereas $\Delta_\infty$ is set by the closure and does not. A prior is therefore
@@ -707,6 +749,20 @@ measure $\Bclos$ through the decomposition, read $\Delta_\infty$ off the large-$
 the sign of the physics tax follows. In this sense the failure is not idiosyncratic to
 solubility; it recurs whenever a misspecified closure is coupled to an expressive encoder on
 abundant, low-noise data.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{figs/fig_phase.pdf}
+\caption{When a physics prior helps versus hurts. The physics tax has sign
+$T=\Delta_\infty-(\text{variance saved})$: a fixed-closure prior helps only below the $T=0$
+diagonal, where the estimation variance it saves exceeds its asymptotic closure bias
+$\Delta_\infty=\Bclos-\Gamma$. The variance saving shrinks as $n$ grows, so systems drift
+left: solubility/COSMO-SAC sits deep in the ``hurts'' region and moves further in with more
+data, pKa through a Hammett closure sits near the boundary ($\Delta_\infty\approx0$), and the
+synthetic dial climbs out of ``helps'' as closure fidelity $F$ falls. Conceptual---only the
+sign is measured, not the boundary's exact shape.}
+\label{fig:phase}
+\end{figure}
 
 \paragraph{Limitations.} (i)~$\Binsuf$ is bounded, never point-identified: there
 are no true replicate measurements at fixed $\zstar$, so the insufficiency estimates
