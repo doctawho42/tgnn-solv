@@ -9,18 +9,17 @@
 %   differentiable COSMO-SAC closure makes activity/solubility prediction WORSE,
 %   and we MEASURE why: B = B_closure + B_insuff, closure dominates.
 %
-% SECTION MAP (what survives / demoted / new):
-%   Abstract + Contributions ...... reframed (paradox + B measurement + Gate B null)
+% SECTION MAP (general-theory reframe, 2026-07-11):
+%   Abstract + Contributions ...... general composed-predictor method (paradox + decomposition
+%                                   instrument + Gamma-symptom + physics-tax) ; solubility = instance
 %   S2 Setup ...................... SLE eq + sigma-profile closure + z* external latent   [reuse eq:sle]
-%   S3 Framework .................. Prop1 non-identifiability (ENABLING; was T1, verified)
-%                                   Prop2 B=B_closure+B_insuff decomposition (NEW keystone)
-%                                   theory DEMOTED to cited props (Kennedy-O'Hagan, Brynjarsdottir,
-%                                   sloppy-models, White, Murphy/DeGroot-Fienberg)
-%   S4 Results .................... R1 the paradox (learned head ~4x better; more physics = worse)
-%                                   R2 the B measurement (Tier1 convention-independent bound + Tier2 combinatorial + 4 hedges)  <- keystone
-%                                   R3 Gate B negative (recalibration -> calibration not accuracy)
-%                                   R4 supporting: Fisher audit, defensible wins, conformal  [transcribe+verify]
-%   S5 Discussion/Limitations ..... the 4 verified hedges + scope
+%   S3 Framework (general g(h(x))). Lemmas 1-3 (non-identifiability/efficient-info/B-decomposition);
+%                                   Theorem 1 grounding-gap sandwich 0<=Gamma<=B_clos (thm:gap, sec:gap);
+%                                   Proposition physics-tax sign rule (prop:tax, sec:tax);
+%                                   proofs in SI. Gamma = SYMPTOM, decomposition = certificate.
+%   S4 Results .................... R1 paradox; R2 B measurement (keystone); R3 Gate B null;
+%                                   synthetic dial (sec:dial) + pKa second closure (sec:pka); data-eff; maps
+%   S5 Discussion ................. phase picture / when a physics prior must lose + 4 hedges + scope
 %   S6 Conclusion
 %
 % NUMBER PROVENANCE: Fig-paradox / chemistry-map numbers regenerate from
@@ -320,7 +319,8 @@ free-predictor (black-box) risk $R_{\mathrm{free}}=\Ex[(m-\Ex[m\mid x])^2]$. The
 \emph{grounding gap} is $\Gamma:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$; the paradox is
 $\Gamma>0$ (a free learned head beats the true input pushed through the closure).
 \begin{theorem}[Grounding-gap sandwich]\label{thm:gap}
-Assume (A1) the true encoder is representable, $\phi^\star\in\mathcal E$ with
+Assume all risks are finite ($m,g(\zstar)\in L^2$; $g$ and each $h\in\mathcal E$
+measurable), (A1) the true encoder is representable, $\phi^\star\in\mathcal E$ with
 $\zstar=\phi^\star(x)$, and (A2) the intermediate is a lossless bottleneck,
 $\Ex[m\mid x]=\Ex[m\mid\zstar]$. Then
 \begin{equation}
@@ -453,7 +453,8 @@ about $4\times$ above the irreducible-variance floor that a flexible regressor r
 (Fig.~\ref{fig:parity}). The paradox survives three controls---the evaluation-time
 oracle, injection of the true profile \emph{at training} (MAE $1.98$), and a channel-swap
 ($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring artifact.
-Per-arm values are in \S\ref{sec:si-tables}.
+The $\sigma$-oracle per-arm values are in \S\ref{sec:si-tables}; the true-at-train and
+channel-swap figures are the inline values above.
 
 \begin{figure}[t]
 \centering
@@ -587,15 +588,30 @@ four hedges are stated in full in App.~\ref{sec:si-tables}.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.74\linewidth]{figs/fig_dial.pdf}
-\caption{Synthetic closure-fidelity dial. As the closure is made more
-misspecified (fidelity $F$ decreasing from $1$), the true-input penalty
-$\Delta R^2=R^2_{\text{true}}-R^2_{\text{learned}}$ grows monotonically, and the
-same ordering holds across five misspecification functional forms (grey). The
-real COSMO-SAC closure sits well inside the misspecified regime ($F\lesssim0.5$;
-salmon)---the sign and rough magnitude of the empirical paradox, not a precise
-fidelity value.}
+\includegraphics[width=0.78\linewidth]{figs/fig_fidelity_dial.pdf}
+\caption{Reproducible closure-fidelity dial (\texttt{run\_fidelity\_dial.py}). As the
+closure is made more misspecified (fidelity $F$ decreasing from $1$), the true-input
+penalty $\Delta R^2=R^2_{\text{oracle}}-R^2_{\text{head}}$ grows monotonically, and the
+same ordering holds across four non-chemistry teacher families (linear, monotone,
+kinetics-exponential, PDE-field) and six misspecification functional forms. The effect is
+a property of the fidelity magnitude, not of any one domain or deformation. The real
+COSMO-SAC closure sits well inside the misspecified regime ($F\lesssim0.4$)---the sign and
+rough magnitude of the empirical paradox, not a precise fidelity value.}
 \label{fig:dial}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_grounding_conflation.pdf}
+\caption{The grounding gap $\Gamma$ is a symptom, not a certificate (\S\ref{sec:gap};
+\texttt{run\_fidelity\_dial.py}). \emph{Left:} when the intermediate is sufficient (A2
+holds), $\Gamma$ tracks the closure bias $\Bclos$ as fidelity varies, so
+Theorem~\ref{thm:gap}'s proxy is valid. \emph{Right:} with a \emph{well-specified} closure
+($\Bclos=0$) but a lossy intermediate (A2 fails), $\Gamma>0$ and grows with the discarded
+variance---a positive grounding gap from pure input insufficiency (the worked
+Counterexample~A of App.~\ref{sec:si-proofs}). Hence certification of closure-dominance
+rests on the decomposition, which needs neither assumption.}
+\label{fig:conflation}
 \end{figure}
 
 \subsection{The ceiling is not fixable downstream (Gate B)}
@@ -660,6 +676,23 @@ grounding within this family recovers an accuracy the factorization cannot expre
 contribution is accordingly not an accuracy result but a method---the externally
 grounded decomposition---for locating such a ceiling, and a proved account of why it
 sits where it does.
+
+\paragraph{When a physics prior must lose.} The tax rule (Prop.~\ref{prop:tax}) turns these
+negatives into a phase picture rather than a single verdict, and says \emph{when} to expect
+them. A fixed-closure prior helps only when the estimation variance it saves exceeds its
+asymptotic bias $\Delta_\infty=\Bclos-\Gamma$; both are measurable. The variance benefit is
+largest at small $n$ and vanishes as data accumulate or as the black box nears the aleatoric
+floor, whereas $\Delta_\infty$ is set by the closure and does not. A prior is therefore
+predicted to hurt precisely in the mature-data, low-noise, well-covered regime---exactly where
+our data-efficiency null (a positive tax at every budget, \S\ref{sec:data-efficiency}) and the
+novelty inversion (the tax heaviest on the best-covered solutes, \S\ref{sec:map}) place this
+system, and where much of modern machine learning operates. The synthetic dial (\S\ref{sec:dial})
+and the pKa closure (\S\ref{sec:pka}) trace the two governing axes---closure fidelity and
+intermediate sufficiency---directly. We claim no universal boundary, only a reusable diagnostic:
+measure $\Bclos$ through the decomposition, read $\Delta_\infty$ off the large-$n$ asymptote, and
+the sign of the physics tax follows. In this sense the failure is not idiosyncratic to
+solubility; it recurs whenever a misspecified closure is coupled to an expressive encoder on
+abundant, low-noise data.
 
 \paragraph{Limitations.} (i)~$\Binsuf$ is bounded, never point-identified: there
 are no true replicate measurements at fixed $\zstar$, so the insufficiency estimates
