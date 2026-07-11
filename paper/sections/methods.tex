@@ -33,9 +33,16 @@ validation or test split.
 \subsection{Graph encoder and pair representation}
 Solute and solvent are encoded by a \emph{shared} graph network with three
 interchangeable backbones: a message-passing network (MPNN), a hybrid
-local-message/global-attention network (GPS), and a physics-channelled variant
-(TIMP) that splits messages into dispersive, polar, and hydrogen-bonding channels
-supervised toward Hansen parameters to prevent channel collapse. Small hydride
+local-message/global-attention graph transformer (GPS \cite{rampasek2022}), and a
+physics-channelled variant, Thermodynamically-Informed Message Passing (TIMP),
+that splits messages into dispersive, polar, and hydrogen-bonding channels
+supervised toward the Hansen solubility parameters (the dispersive, polar, and
+hydrogen-bonding components of a molecule's cohesive energy density) to prevent
+channel collapse.\footnote{TIMP is a physics-motivated backbone we introduced to
+test whether a thermodynamically structured encoder helps; across our runs it does
+not beat the plain MPNN, consistent with the encoder being transfer-limited rather
+than expressivity-limited (a linear probe reaches train $R^2\approx0.76$ but test
+$R^2\approx0.45$).} Small hydride
 solvents such as water are given explicit hydrogens so the polar and
 hydrogen-bond channels activate. Solute and solvent embeddings interact through a
 bipartite cross-attention/message-passing block and a physics-aware readout, and

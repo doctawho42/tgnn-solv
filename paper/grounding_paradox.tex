@@ -69,10 +69,12 @@ Model Worse, and How to Locate a Physics Prior's Ceiling}
 
 \begin{abstract}
 Physics-informed models increasingly route a prediction through a fixed, differentiable
-physical \emph{closure} fed by a learned intermediate---for solid--liquid solubility, a
-COSMO-SAC closure over a network-predicted $\sigma$-profile---on the premise that grounding
-the closure on true physical inputs improves it. We show it can do the opposite, and turn the
-anomaly into a general method for locating a physics prior's ceiling. Replacing a solubility
+physical \emph{closure}---a mechanistic map with no fitted parameters---fed by a learned
+intermediate. For solid--liquid solubility the closure is COSMO-SAC, a thermodynamic model
+that turns a molecule's surface-charge ($\sigma$-)profile into an activity coefficient, and
+the intermediate is that $\sigma$-profile, predicted by a network. The premise is that
+grounding the closure on truer physical inputs improves it. We show it can do the opposite,
+and turn the anomaly into a general method for locating a physics prior's ceiling. Replacing a solubility
 model's learned $\sigma$-profiles with the true, externally measured ones (VT-2005) makes both
 activity and solubility prediction \emph{worse} than a free learned head. Because the physical
 input has external ground truth, the true-input error splits---with no model fit---into a part
@@ -125,10 +127,10 @@ persists across solubility chemistries we scope honestly (\S\ref{sec:discussion}
   true-input excess risk splits \emph{exactly} as $B=\Bclos+\Binsuf$ with no model
   fit (Lemma~\ref{prop:decomp}). The decomposition and its estimators are textbook;
   the new element is exploiting an externally measured latent to bound the split
-  empirically. On the convention-robust evidence---a convention-independent bound
-  and the more-physics-worse effect---$\Bclos$ (misspecified decoder) exceeds
-  $\Binsuf$ (input insufficiency): the ceiling is the closure
-  (\S\ref{sec:measure}).
+  empirically. On the convention-robust evidence---a bound that holds however the
+  COSMO-SAC closure is configured, plus the more-physics-worse effect---$\Bclos$
+  (misspecified decoder) exceeds $\Binsuf$ (input insufficiency): the ceiling is the
+  closure (\S\ref{sec:measure}).
   \item \textbf{A negative actionability result (Gate B).} A post-hoc
   output-space residual placed on the physics prediction recovers calibration but
   not accuracy; the closure binding cannot be undone downstream
@@ -144,13 +146,13 @@ persists across solubility chemistries we scope honestly (\S\ref{sec:discussion}
   COSMO-SAC: it is stated for any composed predictor $\hat y=g(h(x))$ with a fixed closure
   $g$ over a learned intermediate. We prove three structural lemmas
   (Lemmas~\ref{prop:ident}--\ref{prop:decomp}), a grounding-gap identity
-  (Theorem~\ref{thm:gap}) showing the gap is bounded by the closure bias---but only under
-  assumptions that fail here, so we use it as a symptom and let the decomposition
-  certify---and a sign rule for the physics tax (Prop.~\ref{prop:tax}) whose critical-budget
-  and aleatoric-floor corollaries predict the two negatives above. The account reproduces
-  on synthetic closure families (\S\ref{sec:dial}) and a second chemical closure, pKa
-  through a Hammett relationship (\S\ref{sec:pka}); all proofs are elementary
-  (App.~\ref{sec:si-proofs}).
+  (Theorem~\ref{thm:gap}), and a sign rule for the physics tax (Prop.~\ref{prop:tax}).
+  The grounding-gap identity bounds the gap by the closure bias, but only under assumptions
+  that fail here; we therefore read the gap as a \emph{symptom} and let the assumption-light
+  decomposition do the certifying. The sign rule's critical-budget and aleatoric-floor
+  corollaries predict the two negatives above. The account reproduces on synthetic closure
+  families (\S\ref{sec:dial}) and a second chemical closure---pKa through a Hammett
+  relationship (\S\ref{sec:pka})---and all proofs are elementary (App.~\ref{sec:si-proofs}).
 \end{itemize}
 
 \input{sections/related-work}
@@ -158,21 +160,29 @@ persists across solubility chemistries we scope honestly (\S\ref{sec:discussion}
 \section{Problem setup and notation}
 \label{sec:setup}
 For a solute~$s$ in solvent~$v$ at temperature~$T$, the target is $y=\lnx$, the
-log saturated mole fraction. Solid--liquid equilibrium gives
+log saturated mole fraction. Dissolving a solid trades two costs against each
+other---breaking the crystal lattice ($\Phicry$) and mixing the freed molecules
+against non-ideal solute--solvent interactions ($\lng$)---and solid--liquid
+equilibrium (SLE) sets the log-solubility to their negative sum:
 \begin{equation}
   \lnx = -\underbrace{\frac{\dHfus}{\Rgas}\!\Big(\tfrac1T-\tfrac1\Tm\Big)}_{\Phicry(T)\ \text{(crystal, depends on $s$)}}
          \;-\;\underbrace{\lng(x_2,T)}_{\text{activity, depends on }(s,v)} ,
   \label{eq:sle}
 \end{equation}
-with the constant-$\Delta C_p$ correction omitted for clarity. The activity term
-is produced by a \emph{differentiable closure} $g$: a graph encoder predicts a
-$\sigma$-profile for each molecule, and COSMO-SAC maps the pair of profiles to
-$\lng$. Write $\zstar$ for the \emph{true} physical latent, the externally
-measured $\sigma$-profile (VT-2005 database), and $g(\zstar)$ for the closure's
-output when fed the true profile. The model's own head instead predicts a
-\emph{learned} profile $\hat z$ and evaluates $g(\hat z)$; a matched
-\emph{DirectGNN} control shares the encoder but emits $\lnx$ with no closure and
-is the reference for ``what the physics bottleneck costs'' (Fig.~\ref{fig:arch}).
+with the constant-$\Delta C_p$ (heat-capacity-of-fusion) correction omitted for
+clarity. The activity term is produced by a \emph{differentiable closure} $g$:
+a graph encoder predicts a $\sigma$-profile---the distribution of screening
+(surface) charge density over a molecule, the histogram a COSMO model
+consumes---for each molecule, and COSMO-SAC (the COnductor-like Screening
+Model--Segment Activity Coefficient \cite{lin2002}) maps the pair of profiles to
+$\lng$. Write $\zstar$ for the \emph{true} physical latent, the externally measured
+$\sigma$-profile from the VT-2005 database (the Virginia Tech 2005 compilation of
+quantum-chemically computed screening-charge profiles for ${\sim}1{,}400$
+compounds \cite{mullins2006}), and $g(\zstar)$ for the closure output when fed the
+true profile. The model's own head instead predicts a \emph{learned} profile
+$\hat z$ and evaluates $g(\hat z)$; a matched \emph{DirectGNN} control shares the
+encoder but emits $\lnx$ with no closure, and is the reference for ``what the
+physics bottleneck costs'' (Fig.~\ref{fig:arch}).
 
 \begin{figure}[t]
 \centering
@@ -255,7 +265,12 @@ Lemma~\ref{prop:ident}; if $\mathcal H$ is restricted (the slope is known or
 constrained) then $\mathcal I_{\mathrm{eff}}>0$ and the Cram\'er--Rao bound on
 $\dHfus$ is finite.
 \end{lemma}
-\noindent The proof is the efficient-score construction (App.~\ref{sec:si-proofs}):
+\noindent In words: the efficient information is what the data can still pin down
+about the crystal term \emph{after} the activity model has absorbed everything
+within its reach. If that model can fit a free intercept and slope in $1/T$, it
+absorbs the entire crystal direction and nothing identifies $\dHfus$
+($\mathcal I_{\mathrm{eff}}=0$); constraining the slope leaves a little information
+behind. The proof is the efficient-score construction (App.~\ref{sec:si-proofs}):
 project the crystal score onto the orthogonal complement of the nuisance tangent
 space; the squared norm of the residual is the efficient information. The numerical
 audit of \S\ref{sec:ident} quantifies both regimes, and shows the honest corollary:
@@ -441,16 +456,15 @@ forecast \cite{murphy1973,degroot1983}.
 Feeding true $\sigma$-profiles into the closure degrades it rather than improving it,
 in both the activity and the solubility target, and it fails the way a \emph{misspecified
 map} does---not the way missing information would. In the solubility target the effect
-erases any positive $R^2$ (Fig.~\ref{fig:paradox}; three seeds, $n{=}5608$): the model
-predicts solubility better \emph{from its own learned $\sigma$-profile} than when
-\emph{given the true measured one} (MAE $1.85$ vs $2.25$; the $\sigma$-oracle's
-$R^2\approx0$ is no better than predicting the mean). Two facts pin the cause on the map.
-Restoring the physically \emph{more} complete Staverman--Guggenheim combinatorial term
-\emph{increases} error---what a wrong map does, not what a missing input would; and on
-the activity target ($\lngi$, $n{=}60$ matched pairs) the fixed true-input closure sits
-about $4\times$ above the irreducible-variance floor that a flexible regressor reaches
-(\S\ref{sec:measure}), under-predicting $\lngi$ with a systematic bias
-(Fig.~\ref{fig:parity}). The paradox survives three controls---the evaluation-time
+erases any positive $R^2$ (Fig.~\ref{fig:paradox}): the model predicts solubility better
+\emph{from its own learned $\sigma$-profile} than when \emph{given the true measured one}
+(MAE $1.85$ vs $2.25$, in $\lnx$ units). Two facts pin the cause on the map. First,
+restoring the physically \emph{more} complete Staverman--Guggenheim combinatorial term
+(the entropic contribution from solute--solvent size and shape mismatch) \emph{increases}
+error---what a wrong map does, not what a missing input would. Second, on the activity
+target ($\lngi$, $n{=}60$ matched pairs) the fixed true-input closure sits about $4\times$
+above the irreducible-variance floor a flexible regressor reaches (\S\ref{sec:measure}),
+under-predicting $\lngi$ with a systematic bias (Fig.~\ref{fig:parity}). The paradox survives three controls---the evaluation-time
 oracle, injection of the true profile \emph{at training} (MAE $1.98$), and a channel-swap
 ($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring artifact.
 The $\sigma$-oracle per-arm values are in \S\ref{sec:si-tables}; the true-at-train and
