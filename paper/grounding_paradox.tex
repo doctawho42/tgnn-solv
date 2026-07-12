@@ -70,27 +70,23 @@ Model Worse, and How to Locate a Physics Prior's Ceiling}
 \begin{abstract}
 Physics-informed models increasingly route a prediction through a fixed, differentiable
 physical \emph{closure}---a mechanistic map with no fitted parameters---fed by a learned
-intermediate. For solid--liquid solubility the closure is COSMO-SAC, a thermodynamic model
-that turns a molecule's surface-charge ($\sigma$-)profile into an activity coefficient, and
-the intermediate is that $\sigma$-profile, predicted by a network. The premise is that
-grounding the closure on truer physical inputs improves it. We show it can do the opposite,
-and turn the anomaly into a general method for locating a physics prior's ceiling. Replacing a solubility
-model's learned $\sigma$-profiles with the true, externally measured ones (VT-2005) makes both
-activity and solubility prediction \emph{worse} than a free learned head. Because the physical
-input has external ground truth, the true-input error splits---with no model fit---into a part
-the inputs cannot resolve and a part the fixed closure gets wrong; on infinite-dilution activity
-data the closure is the binding term. We give the theory this measurement rests on: three
-structural lemmas (the crystal/activity split is non-identifiable, so a free head silently
-compensates) and, for composed predictors in general, two further results: a grounding-gap
-identity, and a sign rule for the ``physics tax''---the accuracy cost of routing through the
-closure. The sign rule predicts a critical data budget beyond which such a prior must lose.
-We are careful about reach: the grounding gap is a \emph{symptom} that conflates closure error
-with input insufficiency unless strong assumptions hold, so certification rests on the
-assumption-light decomposition, not the gap. The account is not idiosyncratic to one closure---it
-reproduces across synthetic closure families and a second chemical closure (pKa through a Hammett
-relationship), and it matches the observed failures: no accuracy gain at \emph{any} training
-budget, and a tax heaviest on the best-covered chemistry. What the prior buys is an interpretable
-decomposition and calibrated uncertainty, not lower error.
+intermediate. For solid--liquid solubility the closure is COSMO-SAC, which turns a molecule's
+surface-charge $\sigma$-profile into an activity coefficient; the $\sigma$-profile is predicted
+by a network. The premise is that grounding the closure on truer physical inputs improves it.
+We show it can do the opposite: replacing the model's learned $\sigma$-profiles with the true,
+externally measured ones (VT-2005) makes activity and solubility prediction \emph{worse} than a
+free learned head. We turn this anomaly into a general method for locating a physics prior's
+ceiling. Because the physical input has external ground truth, the true-input error splits---with
+no model fit---into a part the inputs cannot resolve and a part the fixed closure gets wrong; on
+our activity data the closure is the binding term. We give the supporting theory for any composed
+predictor: the crystal/activity split is non-identifiable (a free head silently compensates), a
+grounding-gap identity, and a sign rule for the ``physics tax'' that predicts a critical data
+budget beyond which such a prior must lose. We are careful about reach---the grounding gap only
+corroborates the decomposition, which does the certifying---and the account reproduces across
+synthetic closure families and a second chemical closure (pKa through a Hammett relationship).
+The failure is exhaustive: no accuracy gain at any training budget, heaviest on the best-covered
+chemistry. What the prior buys is an interpretable decomposition and calibrated uncertainty, not
+lower error.
 \end{abstract}
 
 \section{Introduction}
@@ -609,7 +605,7 @@ configuration-robust corroboration that is not strictly independent of the model
 $\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, its upper bound is the
 same in every closure convention; subtracting it from the total therefore lower-bounds
 $\Bclos$ even for the model's \emph{deployed} residual-only convention, giving
-$\Bclos\gtrsim0.9$, well above $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). This is the claim we lean
+$\Bclos\gtrsim0.91$, well above $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). This is the claim we lean
 on, and it needs no smoothness assumption beyond the validity of the $\Binsuf$ upper
 bound. Under the full COSMO-SAC convention the separation \emph{sharpens} to an
 assumption-free constant-offset bound: a constant decoder offset alone accounts for
@@ -767,8 +763,10 @@ $T=\Delta_\infty-(\text{variance saved})$: a fixed-closure prior helps only belo
 diagonal, where the estimation variance it saves exceeds its asymptotic closure bias
 $\Delta_\infty=\Bclos-\Gamma$. The variance saving shrinks as $n$ grows, so systems drift
 left: solubility/COSMO-SAC sits deep in the ``hurts'' region and moves further in with more
-data, pKa through a Hammett closure sits near the boundary ($\Delta_\infty\approx0$), and the
-synthetic dial climbs out of ``helps'' as closure fidelity $F$ falls. Conceptual---only the
+data, pKa through a Hammett closure sits near the boundary ($\Delta_\infty\approx0$) in its
+clean meta/para regime and moves into the tax region for ortho substituents (measured on
+experimental data, \S\ref{sec:pka}), and the synthetic dial climbs out of ``helps'' as closure
+fidelity $F$ falls. Conceptual---only the
 sign is measured, not the boundary's exact shape.}
 \label{fig:phase}
 \end{figure}
@@ -822,6 +820,15 @@ Figs~\ref{fig:parity} and~\ref{fig:decomp}) is regenerated deterministically by
 \texttt{scripts/analysis/run\_b\_insuff\_decomposition.py} $\rightarrow$
 \texttt{results/b\_insuff/decomposition.json} from the committed matched-pair table
 \texttt{results/b\_insuff/matched\_pairs.csv} (the $n{=}60$ VT-2005-matchable pairs).
+The second-domain pKa measurement (\S\ref{sec:pka}) uses the OPERA experimental compilation
+\cite{mansouri2019opera}: \texttt{scripts/data/build\_pka\_hammett\_subset.py} assigns the oracle
+Hammett $\sigma$ and \texttt{scripts/analysis/run\_pka\_real\_decomposition.py} produces the
+decomposition ($\rightarrow$\texttt{results/pka\_hammett/real\_decomposition.json}), with the
+controlled semi-synthetic validation in \texttt{scripts/analysis/run\_pka\_hammett\_probe.py}.
+The synthetic fidelity dial (Fig.~\ref{fig:dial}) is
+\texttt{scripts/analysis/run\_fidelity\_dial.py}, and the conceptual schematics
+(Figs~\ref{fig:composed}, \ref{fig:decomp-concept}, \ref{fig:ident}, \ref{fig:phase}) and the
+architecture figure (Fig.~\ref{fig:arch}) are \texttt{scripts/analysis/make\_concept\_figures.py}.
 The model checkpoints and the full per-arm prediction CSVs are large and are deposited
 at \pending[Zenodo DOI] rather than in git; the named scripts regenerate them from the
 raw sources. The manuscript compiles with \texttt{make} in \texttt{paper/}.
