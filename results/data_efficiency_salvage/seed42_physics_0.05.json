@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/__modal/volumes/vo-bIASnHi5rKRCnb3k6I2w7X/data_efficiency_seed42/ckpt/physics_f0.05.pt",
+  "data": "/root/tgnn/notebooks/data/processed/test.csv",
+  "output": "/__modal/volumes/vo-bIASnHi5rKRCnb3k6I2w7X/data_efficiency_seed42/physics/frac_0.05/pred.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 2.552829404774599,
+  "rmse": 3.408367000454944,
+  "r2": -0.30193945684001156,
+  "bias": 0.9426403681277336,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.653276559110857,
+  "pred_std_ratio": 0.8882425279969267
+}
