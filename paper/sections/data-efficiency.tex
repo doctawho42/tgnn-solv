@@ -11,8 +11,11 @@ the identical subsample and evaluate both on the fixed scaffold test
 (Table~\ref{tab:data-eff}; seed 42, full-corpus run). The physics arm is \emph{worse at
 every fraction}, and---against the hypothesis---the gap is \emph{smallest} at the least
 data ($\Delta\mathrm{MAE}=+0.08$ at $5\%$) and \emph{grows} with more
-($+1.0$ at full); its $R^2$ is negative throughout. Even in the regime built to favor
-it, grounding does not buy accuracy; if anything, more data lets the black box pull
+($+1.0$ at full); its $R^2$ is negative throughout. In the language of
+Prop.~\ref{prop:tax}, the critical budget $n^\star$ sits below our smallest fraction---the
+variance a physics prior saves never exceeds its asymptotic bias, even at $5\%$ of solutes,
+which is a stronger statement than the proposition's bare existence claim. Even in the regime
+built to favor it, grounding does not buy accuracy; if anything, more data lets the black box pull
 further ahead. The one metric that inverts is top-1 solvent ranking, higher for the
 physics arm at $5\%$ ($0.42$ vs $0.23$)---consistent with the ranking-versus-accuracy
 split of \S\ref{sec:supporting}---but that decision-quality signal does not translate

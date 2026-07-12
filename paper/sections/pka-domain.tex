@@ -13,7 +13,7 @@ $\sigma$ that the linear closure structurally cannot represent---is a mis-map of
 $\zstar$ and lands in $\Bclos$; \emph{ortho/steric} field effects, absent from the tabulated
 constants, are information the intermediate lacks and land in $\Binsuf$. The chemical scope is a
 fidelity sweep: meta/para monosubstituted benzoic acids, phenols, and anilinium ions are the
-near-exact ($\Bclos\!\approx\!0$) regime, ortho and polyfunctional the misspecified one.
+near-exact ($\Bclos\!\approx\!0$) regime, ortho (insufficiency-dominated) and polyfunctional the low-fidelity one.
 
 This decomposition is directly visible before any training. Pushed through the fixed Hammett
 closure, $p$-nitrophenol reads $\mathrm pK_a\!\approx\!8.3$ against an experimental $\approx7.1$
@@ -34,9 +34,10 @@ compounds), applying the same decomposition to the fixed Hammett closure yields 
 fidelity sweep: on the clean meta/para series ($n{=}161$) the closure predicts experimental
 $\mathrm pK_a$ to RMSE $0.63$ with $\Bclos$ below the input-insufficiency floor (per-scaffold
 systematic offsets $\le0.25$, so the LFER is well specified there), while the
-ortho/heteroaromatic regime ($n{=}1008$) degrades to RMSE $2.4$ with the convention-independent
-$\Bclos\ge1.1$---the near-exact-to-misspecified transition the closure is meant to show, now
-measured rather than asserted. This places the pKa closure near the phase-diagram boundary
+ortho/heteroaromatic regime ($n{=}1008$) degrades to RMSE $2.4$, dominated by input insufficiency
+($\Binsuf\approx4.7$---the tabulated $\sigma$ carries no ortho information, exactly the a-priori
+channel assignment) with an additional closure misspecification $\Bclos\ge1.1$ on top. This is the
+near-exact-to-degraded transition the closure is meant to show, now measured rather than asserted. This places the pKa closure near the phase-diagram boundary
 ($\Delta_\infty\approx0$) in its clean regime (Fig.~\ref{fig:phase}). What remains is a trained
 encoder-vs-DirectGNN accuracy comparison on this set, which would place the operating point on
 the fidelity axis with a \emph{learned} intermediate alongside solubility.
