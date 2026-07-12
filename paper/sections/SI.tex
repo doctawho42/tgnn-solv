@@ -253,7 +253,12 @@ properties.
 \paragraph{The $\Delta C_p=0$ approximation.} The ideal term omits the constant-heat-
 capacity correction; a group-contribution audit finds a nonzero $\Delta C_p$ for
 $1441$ of $1525$ solutes ($108{,}287$ rows), so this is a bounded model-form
-approximation, orthogonal to the activity closure, not a source of the paradox.
+approximation. It cannot produce either headline result. The closure/insufficiency
+decomposition is measured on the activity target ($\lngi$ at $298$\,K), where $\Delta C_p$
+does not enter at all; and the grounding paradox is an arm-to-arm difference (learned-$\sigma$
+vs.\ oracle-$\sigma$) whose two arms share the \emph{identical} crystal term, so any $\Delta C_p$
+error cancels exactly in the comparison. It is thus orthogonal to the activity closure, not a
+source of the paradox.
 \paragraph{Fusion-supervision scarcity.} Direct $\dHfus$ labels are extremely sparse:
 $1279$ training rows across $31$ solutes, and essentially none in validation or test.
 This is the quantitative backbone of the identifiability argument---there is almost no
@@ -298,8 +303,11 @@ per-pair mean                   & $1.46$ & $0.56$ & $0.01$ \\
 $\Tm/\dHfus$: an open melting-point pool plus a group-contribution prior. True
 $\sigma$-profiles: the VT-2005 database (ingested to
 \texttt{sigma\_profiles.csv}, $1432$ compounds, with the COSMO cavity volume
-$V_{\mathrm{cosmo}}$ for the combinatorial term). Infinite-dilution activity
-coefficients: ThermoML. Second-domain pKa: the OPERA experimental compilation
+$V_{\mathrm{cosmo}}$ for the combinatorial term). These are quantum-chemically computed for a
+single reference conformer and protonation state; any mismatch to the experimental measurement
+conditions is noise in $\zstar$ that inflates $\Binsuf$ (an imperfect intermediate) rather than
+$\Bclos$, so it is \emph{conservative} for the closure-dominance verdict. Infinite-dilution
+activity coefficients: ThermoML. Second-domain pKa: the OPERA experimental compilation
 \cite{mansouri2019opera} (\texttt{pKa\_QR.sdf}, $6502$ compounds, public-domain US EPA;
 cited, not redistributed). The Bemis--Murcko scaffold split is produced by
 \texttt{prepare\_data.py}; melting-point tables are auto-detected as $^\circ$C or K to
