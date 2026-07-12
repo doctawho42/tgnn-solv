@@ -662,6 +662,22 @@ we headline the convention-independent bound above rather than the constant offs
 Label noise is unestimable in this replicate-free set and assumed zero; the bounds we
 rely on are invariant to zero-mean noise, so the ceiling is not label noise either.
 
+\paragraph{The closure defect is low-rank and correctable.} That $\Bclos$ dominates locates the
+ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. Fitting a small
+structure-preserving residual to the fixed COSMO-SAC exchange-energy kernel---%
+$\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric and zero-initialised, the
+same object a learned closure-correction (Arm~C) would carry---on the \emph{true} VT-2005 profiles
+removes $56\%$ of the closure error out-of-sample (five-fold cross-validated, activity MSE
+$1.47\!\to\!0.64$ held-out), and does so at \emph{rank one} ($52$ parameters): rank~2 adds nothing,
+rank~3 begins to over-fit. So $\Bclos$ is not diffuse model error but a low-dimensional, correctable
+defect of the map---addressable with a handful of parameters placed on the closure, whereas the same
+error is only made worse by feeding the inputs truthfully (\S\ref{sec:paradox}) and untouched by an
+output residual (\S\ref{sec:gateb}). This is the constructive complement to the paradox, on the
+true-input set where the closure error lives; whether an end-to-end trained model realises the same
+gain is a compute-gated question we leave open. (The map correction and the input compensation of
+\S\ref{sec:surrogate} occupy different $\sigma$-grid footprints---they are two routes to the same
+defect, not one.)
+
 \paragraph{Convention-robust corroboration (Tier~2).} The genuinely
 convention-robust fact is that adding the physically \emph{more} complete
 Staverman--Guggenheim combinatorial term \emph{increases} error (activity MSE

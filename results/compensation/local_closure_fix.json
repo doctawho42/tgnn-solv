@@ -1,0 +1,34 @@
+{
+  "n": 60,
+  "baseline_mse": 1.4722676277160645,
+  "ranks": {
+    "1": {
+      "K": 52,
+      "heldout_mse": 0.6430502831935883,
+      "train_mse": 0.2439222365617752,
+      "heldout_reduction_vs_fixed": 0.8292173445224762,
+      "heldout_reduction_pct": 56.32245991911436
+    },
+    "2": {
+      "K": 104,
+      "heldout_mse": 0.6443266570568085,
+      "train_mse": 0.16466179639101028,
+      "heldout_reduction_vs_fixed": 0.827940970659256,
+      "heldout_reduction_pct": 56.23576550030137
+    },
+    "3": {
+      "K": 156,
+      "heldout_mse": 0.9882906556129456,
+      "train_mse": 0.16715696528553964,
+      "heldout_reduction_vs_fixed": 0.48397697210311885,
+      "heldout_reduction_pct": 32.872893690796865
+    }
+  },
+  "best_rank_for_map": 1,
+  "delta_frobenius": 61.11888122558594,
+  "A3": {
+    "corr_delta_vs_sigmahat_deviation": -0.09501737880494063,
+    "verdict": "weak/no convergence"
+  },
+  "figure": "/private/tmp/claude-501/-Users-nikitapolomosnov-PycharmProjects-tgnn-solv/d8c57c82-2aba-4a38-b6f5-83d49a35e42a/scratchpad/fig_local_closure_fix.pdf"
+}
