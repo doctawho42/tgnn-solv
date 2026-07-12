@@ -82,10 +82,11 @@ our activity data the closure is the binding term. We give the supporting theory
 predictor: the crystal/activity split is non-identifiable (a free head silently compensates), a
 grounding-gap identity, and a sign rule for the ``physics tax'' that predicts a critical data
 budget beyond which such a prior must lose. We are careful about reach---the grounding gap only
-corroborates the decomposition, which does the certifying---and the decomposition transfers to
-synthetic closure families and a second chemical closure (pKa through a Hammett relationship).
-Across every training budget we test, the physics prior gives no accuracy gain. What it buys is
-an interpretable decomposition and calibrated uncertainty, not lower error.
+corroborates the decomposition, which does the certifying---and the account transfers beyond
+solubility: on a second chemical closure (pKa through a well-specified Hammett relationship) a
+trained model shows the physics prior \emph{helping}, the sign flip the theory predicts, whereas
+on solubility it gives no accuracy gain at any training budget we test. What the prior buys there
+is an interpretable decomposition and calibrated uncertainty, not lower error.
 \end{abstract}
 
 \section{Introduction}
@@ -147,10 +148,11 @@ persists across solubility chemistries we scope honestly (\S\ref{sec:discussion}
   The grounding-gap identity bounds the gap by the closure bias, but only under assumptions
   that fail here; we therefore read the gap as a \emph{symptom} and let the assumption-light
   decomposition do the certifying. The sign rule's critical-budget and aleatoric-floor
-  corollaries predict the two negatives above. The \emph{decomposition} transfers to synthetic
-  closure families (\S\ref{sec:dial}) and a second chemical closure---pKa through a Hammett
-  relationship (\S\ref{sec:pka}; the trained-model paradox and tax there are left to future
-  work)---and all proofs are elementary (App.~\ref{sec:si-proofs}).
+  corollaries predict the two negatives above. The account transfers to synthetic closure
+  families (\S\ref{sec:dial}) and a second chemical closure---pKa through a Hammett relationship
+  (\S\ref{sec:pka}), where a trained model confirms the sign rule: because that closure is well
+  specified, the physics prior \emph{helps} (the opposite sign to solubility)---and all proofs are
+  elementary (App.~\ref{sec:si-proofs}).
 \end{itemize}
 
 \input{sections/related-work}
@@ -797,10 +799,10 @@ $T=\Delta_\infty-(\text{variance saved})$: a fixed-closure prior helps only belo
 diagonal, where the estimation variance it saves exceeds its asymptotic closure bias
 $\Delta_\infty=\Bclos-\Gamma$. The variance saving shrinks as $n$ grows, so systems drift
 left: solubility/COSMO-SAC sits deep in the ``hurts'' region and moves further in with more
-data, pKa through a Hammett closure sits near the boundary ($\Delta_\infty\approx0$) in its
-clean meta/para regime and moves into the tax region for ortho substituents (measured on
-experimental data, \S\ref{sec:pka}), and the synthetic dial climbs out of ``helps'' as closure
-fidelity $F$ falls. Conceptual---only the
+data, pKa through a Hammett closure sits in ``physics helps'' as a \emph{trained} comparison
+(physics MAE $1.47$ vs DirectGNN $1.88$; \S\ref{sec:pka})---the opposite side of the boundary
+from solubility, because its closure is well specified---and the synthetic dial climbs out of
+``helps'' as closure fidelity $F$ falls. Conceptual---only the
 sign is measured, not the boundary's exact shape.}
 \label{fig:phase}
 \end{figure}
@@ -858,7 +860,8 @@ The second-domain pKa measurement (\S\ref{sec:pka}) uses the OPERA experimental 
 \cite{mansouri2019opera}: \texttt{scripts/data/build\_pka\_hammett\_subset.py} assigns the oracle
 Hammett $\sigma$ and \texttt{scripts/analysis/run\_pka\_real\_decomposition.py} produces the
 decomposition ($\rightarrow$\texttt{results/pka\_hammett/real\_decomposition.json}), with the
-controlled semi-synthetic validation in \texttt{scripts/analysis/run\_pka\_hammett\_probe.py}.
+controlled semi-synthetic validation in \texttt{scripts/analysis/run\_pka\_hammett\_probe.py} and
+the trained encoder-vs-DirectGNN comparison in \texttt{scripts/experiments/run\_pka\_trained\_comparison.py}.
 The synthetic fidelity dial (Fig.~\ref{fig:dial}) is
 \texttt{scripts/analysis/run\_fidelity\_dial.py}, and the conceptual schematics
 (Figs~\ref{fig:composed}, \ref{fig:decomp-concept}, \ref{fig:ident}, \ref{fig:phase}) and the

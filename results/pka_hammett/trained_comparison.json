@@ -1,0 +1,27 @@
+{
+  "n": 1169,
+  "epochs": 300,
+  "arms": {
+    "physics_learned_sigma": {
+      "mae_mean": 1.473,
+      "mae_sd": 0.068,
+      "per_seed": [
+        1.538,
+        1.502,
+        1.378
+      ]
+    },
+    "direct": {
+      "mae_mean": 1.88,
+      "mae_sd": 0.131,
+      "per_seed": [
+        1.815,
+        1.762,
+        2.063
+      ]
+    },
+    "sigma_oracle_fixed_LFER": {
+      "mae": 1.611
+    }
+  }
+}

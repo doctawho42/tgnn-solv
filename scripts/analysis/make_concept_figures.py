@@ -248,9 +248,9 @@ def fig_phase(out_dir: Path) -> None:
                 arrowprops=dict(arrowstyle="-|>", color=GRAY, lw=1.4))
     ax.text(0.20, 0.755, "$n$ grows", fontsize=7.8, color=GRAY, ha="center")
 
-    # pKa near the boundary (Delta_inf ~ 0)
-    ax.scatter([0.55], [0.10], s=80, color=BLUE, edgecolor=INK, zorder=5)
-    ax.annotate("pKa (Hammett):\n$\\Delta_\\infty\\approx0$", xy=(0.55, 0.10), xytext=(0.72, 0.05),
+    # pKa: trained comparison lands in "helps" (physics 1.47 < DirectGNN 1.88)
+    ax.scatter([0.60], [0.09], s=80, color=BLUE, edgecolor=INK, zorder=5)
+    ax.annotate("pKa (Hammett, trained):\nphysics helps", xy=(0.60, 0.09), xytext=(0.76, 0.04),
                 fontsize=9, color=INK, ha="center")
 
     # synthetic dial ticks climbing Delta_inf as fidelity F drops

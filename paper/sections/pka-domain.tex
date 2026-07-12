@@ -38,9 +38,17 @@ ortho/heteroaromatic regime ($n{=}1008$) degrades to RMSE $2.4$, dominated by in
 ($\Binsuf\approx4.7$---the tabulated $\sigma$ carries no ortho information, exactly the a-priori
 channel assignment) with an additional closure misspecification $\Bclos\ge1.1$ on top. This is the
 near-exact-to-degraded transition the closure is meant to show, now measured rather than asserted. This places the pKa closure near the phase-diagram boundary
-($\Delta_\infty\approx0$) in its clean regime (Fig.~\ref{fig:phase}). What remains is a trained
-encoder-vs-DirectGNN accuracy comparison on this set, which would place the operating point on
-the fidelity axis with a \emph{learned} intermediate alongside solubility.
+in its clean regime. We close the loop with the trained comparison the diagnostic predicts. On a
+Bemis--Murcko scaffold split of the Hammett-amenable set ($1169$ compounds, three seeds), a shared
+GIN encoder feeding the fixed LFER (a predicted $\sigma$) reaches pKa MAE $1.47\pm0.07$ and
+\emph{beats} the matched DirectGNN control ($1.88\pm0.13$; tax $\Delta=-0.41$): the physics prior
+\emph{helps}, the opposite sign to solubility, because a well-specified closure's small bias is
+outweighed by the variance a constrained prior saves (Prop.~\ref{prop:tax}). The grounding gap is
+small but of the paradox's sign---the true-$\sigma$ oracle through the fixed LFER ($1.61$) trails
+the learned-$\sigma$ arm ($1.47$) by $\Gamma\approx0.14$, versus the large gap in solubility. This
+is the trained-model operating point for the phase diagram: pKa sits in ``physics helps'' and
+solubility in ``physics hurts,'' the sign flipping with closure fidelity exactly as the sign rule
+requires (Fig.~\ref{fig:phase}).
 
 \begin{figure}[t]
 \centering
