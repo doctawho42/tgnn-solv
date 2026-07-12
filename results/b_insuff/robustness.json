@@ -1,0 +1,222 @@
+{
+  "n": 60,
+  "n_solvents": 17,
+  "convention": "res (deployed)",
+  "mse_true_input": 1.4723,
+  "estimator_sensitivity": {
+    "rf_oof": {
+      "binsuff_up": 0.6211,
+      "bclosure_lb": 0.8511,
+      "verdict_holds": true
+    },
+    "ridge_oof": {
+      "binsuff_up": 0.8772,
+      "bclosure_lb": 0.595,
+      "verdict_holds": false
+    },
+    "knn": {
+      "binsuff_up": 0.4,
+      "bclosure_lb": 1.0722,
+      "verdict_holds": true
+    },
+    "binning6": {
+      "binsuff_up": 0.5633,
+      "bclosure_lb": 0.909,
+      "verdict_holds": true
+    },
+    "_most_conservative": {
+      "binsuff_up": 0.8772,
+      "bclosure_lb": 0.595,
+      "verdict_holds": false
+    }
+  },
+  "leave_one_solvent_out": {
+    "n_folds": 17,
+    "n_holding_rf": 2,
+    "n_holding_binning": 17,
+    "folds": [
+      {
+        "dropped": "C1CCNCC1",
+        "n": 59,
+        "mse": 1.465,
+        "binsuff_rf": 0.8,
+        "binsuff_bin": 0.635,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CC(C)(C)N",
+        "n": 59,
+        "mse": 1.445,
+        "binsuff_rf": 0.805,
+        "binsuff_bin": 0.63,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCC(C)N",
+        "n": 59,
+        "mse": 1.426,
+        "binsuff_rf": 0.82,
+        "binsuff_bin": 0.634,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCCCCCCCCCCCC",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.772,
+        "binsuff_bin": 0.573,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCCN",
+        "n": 59,
+        "mse": 1.436,
+        "binsuff_rf": 0.811,
+        "binsuff_bin": 0.634,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCN",
+        "n": 59,
+        "mse": 1.446,
+        "binsuff_rf": 0.807,
+        "binsuff_bin": 0.633,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCNCCC",
+        "n": 59,
+        "mse": 1.454,
+        "binsuff_rf": 0.801,
+        "binsuff_bin": 0.633,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCNCC",
+        "n": 59,
+        "mse": 1.46,
+        "binsuff_rf": 0.805,
+        "binsuff_bin": 0.635,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CO",
+        "n": 47,
+        "mse": 1.118,
+        "binsuff_rf": 0.566,
+        "binsuff_bin": 0.356,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1cccc(C)n1",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.801,
+        "binsuff_bin": 0.563,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1ccccn1",
+        "n": 59,
+        "mse": 1.491,
+        "binsuff_rf": 0.805,
+        "binsuff_bin": 0.568,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1cccnc1",
+        "n": 59,
+        "mse": 1.487,
+        "binsuff_rf": 0.802,
+        "binsuff_bin": 0.571,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1ccncc1",
+        "n": 59,
+        "mse": 1.493,
+        "binsuff_rf": 0.803,
+        "binsuff_bin": 0.565,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "NC1CCCCC1",
+        "n": 59,
+        "mse": 1.438,
+        "binsuff_rf": 0.799,
+        "binsuff_bin": 0.632,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "OCCO",
+        "n": 53,
+        "mse": 1.302,
+        "binsuff_rf": 0.32,
+        "binsuff_bin": 0.449,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "c1ccccc1",
+        "n": 53,
+        "mse": 1.536,
+        "binsuff_rf": 0.787,
+        "binsuff_bin": 0.631,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "c1ccncc1",
+        "n": 40,
+        "mse": 2.185,
+        "binsuff_rf": 0.833,
+        "binsuff_bin": 0.798,
+        "holds_rf": true,
+        "holds_bin": true
+      }
+    ]
+  },
+  "label_noise_stress": {
+    "binsuff_up_ref": 0.8772,
+    "sweep": [
+      {
+        "sigma_eta": 0.2,
+        "bclosure_lb_mean": 0.844,
+        "bclosure_lb_sd": 0.053,
+        "holds_all_seeds": false
+      },
+      {
+        "sigma_eta": 0.4,
+        "bclosure_lb_mean": 0.809,
+        "bclosure_lb_sd": 0.103,
+        "holds_all_seeds": false
+      },
+      {
+        "sigma_eta": 0.6,
+        "bclosure_lb_mean": 0.765,
+        "bclosure_lb_sd": 0.162,
+        "holds_all_seeds": false
+      },
+      {
+        "sigma_eta": 0.8,
+        "bclosure_lb_mean": 0.701,
+        "bclosure_lb_sd": 0.215,
+        "holds_all_seeds": false
+      }
+    ]
+  }
+}
