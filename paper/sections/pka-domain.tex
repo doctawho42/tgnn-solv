@@ -28,10 +28,18 @@ percent, e.g.\ $0.20$ vs $0.21$, $0.81$ vs $0.81$), the case where Theorem~\ref{
 proxy is valid. Sweeping the ortho/steric channel with a \emph{well-specified} closure gives
 $\Bclos=0$ throughout yet $\Gamma>0$ and growing---the pKa realization of the conflation that
 makes $\Gamma$ a symptom rather than a certificate. The oracle-$\sigma$ pipeline
-(scaffold-resolved substituent$\to\sigma$ assignment) and this controlled validation are in
-place; the trained encoder-vs-DirectGNN comparison on experimental $\mathrm pK_a$, which places
-this closure's operating point on the fidelity axis alongside solubility, is the natural next
-measurement.
+(scaffold-resolved substituent$\to\sigma$ assignment) and this validation extend directly to real
+data. On the OPERA experimental $\mathrm pK_a$ compilation \cite{mansouri2019opera} ($6{,}502$
+compounds), applying the same decomposition to the fixed Hammett closure yields a \emph{measured}
+fidelity sweep: on the clean meta/para series ($n{=}161$) the closure predicts experimental
+$\mathrm pK_a$ to RMSE $0.63$ with $\Bclos$ below the input-insufficiency floor (per-scaffold
+systematic offsets $\le0.25$, so the LFER is well specified there), while the
+ortho/heteroaromatic regime ($n{=}1008$) degrades to RMSE $2.4$ with the convention-independent
+$\Bclos\ge1.1$---the near-exact-to-misspecified transition the closure is meant to show, now
+measured rather than asserted. This places the pKa closure near the phase-diagram boundary
+($\Delta_\infty\approx0$) in its clean regime (Fig.~\ref{fig:phase}). What remains is a trained
+encoder-vs-DirectGNN accuracy comparison on this set, which would place the operating point on
+the fidelity axis with a \emph{learned} intermediate alongside solubility.
 
 \begin{figure}[t]
 \centering
