@@ -90,6 +90,7 @@ def build_dataset(mod, sdf):
         g.rho = torch.tensor([r["rho"]], dtype=torch.float)
         g.sigma = torch.tensor([r["sigma"]], dtype=torch.float)
         g.g_oracle = torch.tensor([r["g"]], dtype=torch.float)   # fixed LFER on TRUE sigma
+        g.fidelity = r["bin"]                                    # high_F (clean meta/para) | low_F (ortho)
         g.scaffold = MurckoScaffold.MurckoScaffoldSmiles(mol=Chem.MolFromSmiles(r["smiles"])) or "none"
         data.append(g)
     return data
@@ -194,27 +195,45 @@ def main():
     in_dim = data[0].x.shape[1]
     print(f"dataset: {len(data)} graphs, in_dim={in_dim}, device={device}")
 
-    res = {"n": len(data), "epochs": args.epochs, "arms": {}}
-    for name, Cls in (("physics_learned_sigma", PhysicsGNN), ("direct", DirectGNN)):
-        maes = []
-        for seed in args.seeds:
-            torch.manual_seed(seed)
-            tr_idx, te_idx = scaffold_split(data, seed)
-            tr = [data[i] for i in tr_idx]; te = [data[i] for i in te_idx]
-            loader = DataLoader(tr, batch_size=128, shuffle=True)
-            model = Cls(in_dim, args.hidden, args.layers).to(device)
-            maes.append(run_arm(model, loader, te, None, None, device, args.epochs, args.lr))
-        res["arms"][name] = {"mae_mean": round(float(np.mean(maes)), 3),
-                             "mae_sd": round(float(np.std(maes)), 3), "per_seed": [round(x, 3) for x in maes]}
-    # sigma-oracle: fixed LFER on true sigma (deterministic), on the same test split
-    _, te_idx = scaffold_split(data, args.seeds[0])
-    orc = np.array([float(data[i].g_oracle) for i in te_idx])
-    tru = np.array([float(data[i].pka) for i in te_idx])
-    res["arms"]["sigma_oracle_fixed_LFER"] = {"mae": round(float(np.mean(np.abs(orc - tru))), 3)}
+    def run_comparison(subset):
+        arms = {}
+        for name, Cls in (("physics_learned_sigma", PhysicsGNN), ("direct", DirectGNN)):
+            maes = []
+            for seed in args.seeds:
+                torch.manual_seed(seed)
+                tr_idx, te_idx = scaffold_split(subset, seed)
+                tr = [subset[i] for i in tr_idx]; te = [subset[i] for i in te_idx]
+                loader = DataLoader(tr, batch_size=128, shuffle=True)
+                model = Cls(in_dim, args.hidden, args.layers).to(device)
+                maes.append(run_arm(model, loader, te, None, None, device, args.epochs, args.lr))
+            arms[name] = {"mae_mean": round(float(np.mean(maes)), 3),
+                          "mae_sd": round(float(np.std(maes)), 3),
+                          "per_seed": [round(x, 3) for x in maes]}
+        _, te_idx = scaffold_split(subset, args.seeds[0])
+        orc = np.array([float(subset[i].g_oracle) for i in te_idx])
+        tru = np.array([float(subset[i].pka) for i in te_idx])
+        arms["sigma_oracle_fixed_LFER"] = {"mae": round(float(np.mean(np.abs(orc - tru))), 3)}
+        arms["physics_minus_direct"] = round(
+            arms["physics_learned_sigma"]["mae_mean"] - arms["direct"]["mae_mean"], 3)
+        return arms
+
+    strata = {"all": data,
+              "high_F (clean meta/para)": [g for g in data if g.fidelity == "high_F"],
+              "low_F (ortho/hetero)": [g for g in data if g.fidelity == "low_F"]}
+    res = {"epochs": args.epochs, "seeds": args.seeds, "strata": {}}
+    for label, subset in strata.items():
+        if len(subset) < 40:
+            continue
+        print(f"== stratum {label}: n={len(subset)} ==")
+        res["strata"][label] = {"n": len(subset), "arms": run_comparison(subset)}
 
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(res, indent=2))
-    print(json.dumps(res["arms"], indent=2))
+    for label, s in res["strata"].items():
+        a = s["arms"]
+        print(f"  {label:26s} n={s['n']:4d}  physics={a['physics_learned_sigma']['mae_mean']}  "
+              f"direct={a['direct']['mae_mean']}  Delta={a['physics_minus_direct']:+.2f}  "
+              f"oracle={a['sigma_oracle_fixed_LFER']['mae']}")
     print(f"wrote {args.out_json}")
 
 

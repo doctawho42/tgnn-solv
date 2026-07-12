@@ -1,0 +1,84 @@
+{
+  "epochs": 150,
+  "seeds": [
+    42,
+    43
+  ],
+  "strata": {
+    "all": {
+      "n": 1169,
+      "arms": {
+        "physics_learned_sigma": {
+          "mae_mean": 1.807,
+          "mae_sd": 0.092,
+          "per_seed": [
+            1.714,
+            1.899
+          ]
+        },
+        "direct": {
+          "mae_mean": 1.869,
+          "mae_sd": 0.342,
+          "per_seed": [
+            1.526,
+            2.211
+          ]
+        },
+        "sigma_oracle_fixed_LFER": {
+          "mae": 1.611
+        },
+        "physics_minus_direct": -0.062
+      }
+    },
+    "high_F (clean meta/para)": {
+      "n": 161,
+      "arms": {
+        "physics_learned_sigma": {
+          "mae_mean": 1.757,
+          "mae_sd": 0.199,
+          "per_seed": [
+            1.956,
+            1.559
+          ]
+        },
+        "direct": {
+          "mae_mean": 1.573,
+          "mae_sd": 0.014,
+          "per_seed": [
+            1.587,
+            1.56
+          ]
+        },
+        "sigma_oracle_fixed_LFER": {
+          "mae": 0.601
+        },
+        "physics_minus_direct": 0.184
+      }
+    },
+    "low_F (ortho/hetero)": {
+      "n": 1008,
+      "arms": {
+        "physics_learned_sigma": {
+          "mae_mean": 1.419,
+          "mae_sd": 0.157,
+          "per_seed": [
+            1.262,
+            1.577
+          ]
+        },
+        "direct": {
+          "mae_mean": 1.784,
+          "mae_sd": 0.158,
+          "per_seed": [
+            1.625,
+            1.942
+          ]
+        },
+        "sigma_oracle_fixed_LFER": {
+          "mae": 1.62
+        },
+        "physics_minus_direct": -0.365
+      }
+    }
+  }
+}

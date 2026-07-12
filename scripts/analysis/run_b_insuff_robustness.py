@@ -60,6 +60,37 @@ def verdict(mse, binsuff_up):
     return bclos_lb, bclos_lb > binsuff_up
 
 
+def clustered_bootstrap(mod, m, g, solv, n_boot=3000, seed=0):
+    """Solvent-clustered bootstrap CI on the convention-independent verdict, using the stable
+    LOTV/binning B_insuff bound. Resamples SOLVENTS with replacement (respecting the clustering
+    a referee flagged), recomputes MSE_res - B_insuff^up (the B_closure lower bound) and the
+    certification margin (B_clos_lb - B_insuff^up), and reports the CI + P(margin>0)."""
+    rng = np.random.default_rng(seed)
+    solvents = np.array(sorted(set(solv)))
+    lbs, margins = [], []
+    for _ in range(n_boot):
+        drawn = rng.choice(solvents, size=len(solvents), replace=True)
+        idx = np.concatenate([np.where(solv == s)[0] for s in drawn])
+        mm, gg = m[idx], g[idx]
+        if len(mm) < 12:
+            continue
+        mse = float(np.mean((mm - gg) ** 2))
+        binsuff = mod.lotv_binning(gg, mm, n_bins=max(3, len(mm) // 10))
+        lb = mse - binsuff
+        lbs.append(lb); margins.append(lb - binsuff)
+    lbs, margins = np.array(lbs), np.array(margins)
+    return {
+        "n_boot": len(lbs), "estimator": "LOTV/binning",
+        "bclosure_lb_median": round(float(np.median(lbs)), 3),
+        "bclosure_lb_ci90": [round(float(np.percentile(lbs, 5)), 3),
+                             round(float(np.percentile(lbs, 95)), 3)],
+        "margin_median": round(float(np.median(margins)), 3),
+        "margin_ci90": [round(float(np.percentile(margins, 5)), 3),
+                        round(float(np.percentile(margins, 95)), 3)],
+        "P_verdict_holds": round(float(np.mean(margins > 0)), 3),
+    }
+
+
 def main():
     mod = _load_decomp_module()
     pairs = pd.read_csv(MATCHED)
@@ -125,6 +156,9 @@ def main():
                       "holds_all_seeds": bool(np.all(lbs > binsuff_max))})
     out["label_noise_stress"] = {"binsuff_up_ref": round(binsuff_max, 4), "sweep": noise}
 
+    # (d) solvent-clustered bootstrap CI on the verdict --------------------------
+    out["clustered_bootstrap"] = clustered_bootstrap(mod, m, g, solv)
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, indent=2))
 
@@ -140,6 +174,10 @@ def main():
     for r in out["label_noise_stress"]["sweep"]:
         print(f"    sigma_eta={r['sigma_eta']}  B_clos_lb={r['bclosure_lb_mean']}"
               f"±{r['bclosure_lb_sd']}  holds_all={r['holds_all_seeds']}")
+    cb = out["clustered_bootstrap"]
+    print(f"(d) solvent-clustered bootstrap ({cb['n_boot']} reps, LOTV): "
+          f"B_clos_lb={cb['bclosure_lb_median']} CI90={cb['bclosure_lb_ci90']}, "
+          f"margin={cb['margin_median']} CI90={cb['margin_ci90']}, P(verdict)={cb['P_verdict_holds']}")
     print(f"wrote {OUT}")
 
 
