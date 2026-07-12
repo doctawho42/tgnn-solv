@@ -1499,8 +1499,25 @@ class CosmoSacLayer(nn.Module):
         hb = self.c_hb * torch.clamp(sigma_acc - self.sigma_hb, min=0.0) * torch.clamp(
             sigma_don + self.sigma_hb, max=0.0
         )
-        self.register_buffer("delta_w", misfit + hb, persistent=False)
+        self.register_buffer("delta_w_base", misfit + hb, persistent=False)
         self.n_bins = n_bins
+        # --- Arm C (Tier-3 closure-fix): learnable low-rank symmetric residual on the
+        # exchange-energy kernel, Δ = B·diag(a)·Bᵀ over the fixed σ-grid. Zero-init ⇒ Δ=0
+        # ⇒ bit-identical to exact COSMO-SAC at R=0 (nested). Sees only the σ-grid (never x),
+        # so it corrects the MAP (B_clos), never injects intermediate information (B_insuff).
+        R = gi("cosmo_sac_kernel_residual_rank", 0)
+        self.kernel_rank = R
+        self.kernel_smooth_penalty = g("cosmo_sac_kernel_residual_penalty", 0.0)
+        if R > 0:
+            self.kernel_B = nn.Parameter(torch.zeros(n_bins, R))   # 51·R params (persistent)
+            self.kernel_a = nn.Parameter(torch.zeros(R))           #    R params
+            D2 = torch.zeros(n_bins - 2, n_bins)                   # 2nd-difference smoothness op
+            idx = torch.arange(n_bins - 2)
+            D2[idx, idx], D2[idx, idx + 1], D2[idx, idx + 2] = 1.0, -2.0, 1.0
+            self.register_buffer("_kernel_D2", D2, persistent=False)
+        else:
+            self.kernel_B = None
+            self.kernel_a = None
 
     def _segment_ln_gamma(self, p_norm: Tensor, E: Tensor, n_iter: int) -> Tensor:
         """Solve the segment activity-coefficient fixed point; return ln Gamma (B,51).
@@ -1517,10 +1534,24 @@ class CosmoSacLayer(nn.Module):
             gamma = gamma.clamp(1e-8, 1e8)
         return torch.log(gamma + self.eps)
 
+    def _effective_delta_w(self) -> Tensor:
+        """Exchange-energy kernel with the optional Arm-C low-rank residual folded in."""
+        if self.kernel_rank and self.kernel_rank > 0:
+            Ba = self.kernel_B * self.kernel_a.unsqueeze(0)      # (n_bins, R)
+            return self.delta_w_base + Ba @ self.kernel_B.t()    # symmetric by construction
+        return self.delta_w_base
+
+    def kernel_smoothness_loss(self) -> Tensor:
+        """Optional 2nd-difference smoothness penalty on the Arm-C residual columns."""
+        if self.kernel_rank and self.kernel_rank > 0 and self.kernel_smooth_penalty > 0.0:
+            return self.kernel_smooth_penalty * (self._kernel_D2 @ self.kernel_B).pow(2).mean()
+        return self.delta_w_base.new_zeros(())
+
     def _E_matrix(self, T: Tensor) -> Tensor:
-        """Boltzmann matrix exp(-delta_w/(R T)) per sample. Returns (B,51,51)."""
+        """Boltzmann matrix exp(-delta_w_eff/(R T)) per sample. Returns (B,51,51)."""
         rt = (self.R_kcal * T).clamp_min(self.eps).view(-1, 1, 1)
-        arg = (-self.delta_w.unsqueeze(0) / rt).clamp(-self.exp_clamp, self.exp_clamp)
+        dw = self._effective_delta_w()
+        arg = (-dw.unsqueeze(0) / rt).clamp(-self.exp_clamp, self.exp_clamp)
         return torch.exp(arg)
 
     def _residual_ln_gamma2(

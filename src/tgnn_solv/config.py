@@ -184,6 +184,11 @@ class TGNNSolvConfig:
     cosmo_sac_wire_volume: bool = False  # feed (detached) molar volume so the SG combinatorial term is active
     cosmo_sac_gamma_iter_train: int = 16  # bumped from 8: n=8 failed convergence test (gap 5.86 ln-units at 273K); n=16 converges to within 6e-5 of n=30
     cosmo_sac_gamma_iter_eval: int = 30
+    # Tier-3 closure-fix crossover experiment (constructive complement to the grounding paradox).
+    cosmo_sac_kernel_residual_rank: int = 0         # Arm C: R>0 enables the LR-SKR learnable delta_w residual (K=52R)
+    cosmo_sac_kernel_residual_penalty: float = 0.0  # optional 2nd-difference smoothness on columns of kernel_B
+    sigma_head_adapter_rank: int = 0                # Arm I: r>0 enables the nonlinear rank-r adapter on SigmaProfileHead (K=320r)
+    arm_trainable: Optional[str] = None             # {"kernel","sigma_adapter","correction",None}: freeze all but this arm's K params in phase>=2
     # Sigma-profile head output scaling (cavity surface area, Å²).
     sigma_area_scale: float = 75.0  # ~pool sigma_area std; see P0 loss rebalance
     sigma_area_min: float = 20.0

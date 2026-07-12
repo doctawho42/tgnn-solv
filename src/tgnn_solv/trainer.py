@@ -343,6 +343,30 @@ class TGNNSolvTrainer:
                 and phase >= 2 and self.model.head_sigma is not None):
             self._set_requires_grad(self.model.head_sigma, False)
 
+        # --- Tier-3 crossover: train ONLY the chosen arm's K params in phase>=2 (any branch
+        # mode). Placed before the coordinate-descent early-return so it applies in "standard"
+        # mode too; the frozen base (encoder/readout/sigma-head/crystal) stays byte-identical. ---
+        arm = getattr(self.cfg, "arm_trainable", None)
+        if arm is not None and phase >= 2:
+            for p in self.model.parameters():
+                p.requires_grad = False
+            layer = self.model.sle_solver.cosmo_sac_layer
+            if arm == "kernel":
+                for p in (layer.kernel_B, layer.kernel_a):
+                    if p is not None:
+                        p.requires_grad = True
+            elif arm == "sigma_adapter":
+                for p in self.model.head_sigma.adapter_down.parameters():
+                    p.requires_grad = True
+                for p in self.model.head_sigma.adapter_up.parameters():
+                    p.requires_grad = True
+            elif arm == "correction":
+                for p in self.model.correction.parameters():
+                    p.requires_grad = True
+            else:
+                raise ValueError(f"Unknown arm_trainable={arm!r}")
+            return
+
         if self._resolved_branch_training_mode() != "coordinate_descent":
             return
 

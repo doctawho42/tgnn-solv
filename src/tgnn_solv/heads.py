@@ -598,9 +598,19 @@ class SigmaProfileHead(nn.Module):
         )
         self.shape_head = nn.Linear(128, self.n_bins)
         self.area_head = nn.Linear(128, 1)
+        # --- Arm I (Tier-3 closure-fix control): nonlinear rank-r adapter reading the
+        # molecule readout g_mol, injected into the 128-d backbone feature. r>0 enriches
+        # the intermediate (can reduce B_insuff); zero-init ⇒ starts at the frozen baseline.
+        self.adapter_rank = int(getattr(cfg, "sigma_head_adapter_rank", 0))
+        if self.adapter_rank > 0:
+            self.adapter_down = nn.Linear(input_dim, self.adapter_rank, bias=False)  # (r, D_r)
+            self.adapter_up = nn.Linear(self.adapter_rank, 128, bias=False)           # (128, r)
+            nn.init.zeros_(self.adapter_up.weight)
 
     def forward(self, g_mol: Tensor) -> dict[str, Tensor]:
         h = self.backbone(g_mol)
+        if getattr(self, "adapter_rank", 0) > 0:
+            h = h + self.adapter_up(nn.functional.silu(self.adapter_down(g_mol)))
         p_shape = torch.softmax(self.shape_head(h), dim=-1)
         area = nn.functional.softplus(self.area_head(h)).squeeze(-1)
         area = area * self.area_scale + self.area_min
