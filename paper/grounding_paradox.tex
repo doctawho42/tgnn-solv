@@ -85,7 +85,10 @@ split is non-identifiable (a free head silently compensates), a grounding-gap id
 that predicts a critical data budget beyond which such a prior must lose. The account transfers to
 synthetic closure families and a second chemical closure (pKa through a Hammett relationship); on
 solubility the physics prior gives no accuracy gain at any training budget we test. What it buys
-there is an interpretable decomposition and calibrated uncertainty, not lower error.
+there is an interpretable decomposition and calibrated uncertainty, not lower error. And the
+model's own ``physical'' intermediate is itself a closure-compensating surrogate---the predicted
+$\sigma$-profile departs systematically from the true one---so the interpretability such a
+bottleneck seems to offer is not guaranteed.
 \end{abstract}
 
 \section{Introduction}
@@ -128,6 +131,13 @@ persists across solubility chemistries we scope honestly (\S\ref{sec:discussion}
   (misspecified decoder) exceeds $\Binsuf$ (input insufficiency) on the low-$\gamma$ subset we
   can measure, robustly to the insufficiency estimator and to leaving out any solvent: there,
   the binding term is \emph{likely} the closure (\S\ref{sec:measure}).
+  \item \textbf{What the learned intermediate is (mechanism).} Where the closure binds, the
+  network's ``physical'' input does not stay physical: on the matched set the predicted
+  $\sigma$-profile deviates from the true one by ${\sim}80\%$ in a low-rank, transferable
+  pattern---a systematic closure-\emph{inverse} surrogate, not the physical quantity (a
+  $\sigma$-grounded model \emph{can} recover the true profile; the fitting objective pulls it
+  away). The interpretability a physics bottleneck appears to offer is thus not guaranteed
+  (\S\ref{sec:surrogate}).
   \item \textbf{A negative actionability result (Gate B).} A post-hoc
   output-space residual placed on the physics prediction recovers calibration but
   not accuracy; the closure binding cannot be undone downstream
@@ -679,6 +689,8 @@ $\Bclos\ge0.89$); the solvent-clustered confidence is $P(\Bclos{>}\Binsuf)\appro
 and the measurement is confined to the low-$\gamma$, $298$\,K, VT-2005-matchable corner,
 so the numeric ceiling is not claimed to transfer to the finite-composition regime. The
 four hedges are stated in full in App.~\ref{sec:si-tables}.
+
+\input{sections/compensation-surrogate}
 
 \input{sections/synthetic-dial}
 
