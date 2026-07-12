@@ -127,7 +127,7 @@ persists across solubility chemistries we scope honestly (\S\ref{sec:discussion}
   COSMO-SAC closure is configured, plus the more-physics-worse effect---$\Bclos$
   (misspecified decoder) exceeds $\Binsuf$ (input insufficiency) on the low-$\gamma$ subset we
   can measure, robustly to the insufficiency estimator and to leaving out any solvent: there,
-  the binding term is the closure (\S\ref{sec:measure}).
+  the binding term is \emph{likely} the closure (\S\ref{sec:measure}).
   \item \textbf{A negative actionability result (Gate B).} A post-hoc
   output-space residual placed on the physics prediction recovers calibration but
   not accuracy; the closure binding cannot be undone downstream
@@ -745,7 +745,7 @@ model on truer physical inputs is only as good as the closure that consumes them
 and when that closure is a fixed, mildly misspecified map, better inputs surface
 its bias rather than help. The external latent does not make the physics path win. What it buys is
 \emph{attribution}: on the infinite-dilution, low-$\gamma$ subset we can measure, the
-ceiling sits in the decoder ($\Bclos$), with the inputs ($\Binsuf$) ruled out as its
+ceiling sits in the decoder ($\Bclos$), with the inputs ($\Binsuf$) the less likely
 source and label noise unestimable but assumed zero (and unable to manufacture the
 constant offset the bounds rest on). We do not claim this numeric attribution transfers
 unchanged to the finite-composition, high-$\gamma$ regime the solubility paradox itself

@@ -171,11 +171,16 @@ $n{=}60$ set (\texttt{run\_b\_insuff\_robustness.py}). \emph{(i)~Estimator sensi
 $\Binsuf$ upper bounds are $0.40$ ($k$-NN), $0.56$ (binning/LOTV), $0.62$ (random forest), and
 $0.88$ (ridge)---computed with this section's estimator settings, so they differ slightly from
 Table~\ref{tab:decomp}, a hyperparameter effect, not a convention one ($\Binsuf$ is
-convention-independent, not estimator-independent). Since the true $\Binsuf$ lies below the
-smallest valid upper bound and
-$\mathrm{MSE}_{\mathrm{res}}=1.47$, the verdict $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}>\Binsuf$
-certifies under the three tightest estimators (the ridge bound is loose---non-certifying, not
-refuting). \emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the
+convention-independent, not estimator-independent). The spread is a bias--variance ordering of the
+same target $\Ex[\Var(m\mid z)]$: the local $k$-NN estimate is the least smoothed and sits lowest,
+while the global ridge smoother is the most regularized and sits highest. Because a \emph{smaller}
+$\Binsuf^{\mathrm{up}}$ is the \emph{less} conservative input to
+$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$, we do not lean on the $k$-NN value despite its being
+the smallest---it is the most optimistic, not the most trustworthy. With
+$\mathrm{MSE}_{\mathrm{res}}=1.47$ the verdict $\Bclos>\Binsuf$ holds under the three lower
+estimators ($k$-NN, binning/LOTV, random forest) and fails only under the most conservative ridge
+estimator---non-certifying there, not refuting, and consistent with the clustered-bootstrap
+``likely but not certified'' reading below. \emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the
 verdict holds in \emph{all} $17$ folds under the law-of-total-variance bound; under the
 random-forest estimator it holds in only $2/17$, because a random forest over-fits conditional
 variance in $102$ dimensions at $n{=}60$ (its out-of-fold MSE approaches $\Var(m)$), so its
