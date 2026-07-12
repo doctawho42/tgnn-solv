@@ -1,0 +1,54 @@
+{
+  "checkpoint": "/private/tmp/claude-501/-Users-nikitapolomosnov-PycharmProjects-tgnn-solv/d8c57c82-2aba-4a38-b6f5-83d49a35e42a/scratchpad/arm_base_sle.pt",
+  "vs_true": {
+    "A1": {
+      "tag": "sigma_hat_SLE_vs_true",
+      "n": 44,
+      "rel_deviation": 0.3288264167157714,
+      "pca_evr_top5": [
+        0.2797675720737553,
+        0.16375352540471205,
+        0.13479552186695828,
+        0.09581839545124064,
+        0.07152240706007666
+      ],
+      "top1_evr": 0.2797675720737553,
+      "top2_cum_evr": 0.44352109747846735,
+      "mean_shift_norm": 0.04310516605477308
+    },
+    "A2": {
+      "oos_mse_distortion_D": 9.624528394066648e-05,
+      "oos_mse_identity": 0.00023063373748705607,
+      "improvement_ratio": 2.396312064837646,
+      "systematic_transferable": true
+    }
+  },
+  "isolation": {
+    "baseline_checkpoint": "results/closure_fix/ckpt/arm_base.pt",
+    "grounded_vs_true_rel_deviation": 0.26472573808437455,
+    "A1": {
+      "tag": "SLE_minus_grounded",
+      "n": 44,
+      "rel_deviation": 0.1580253848959989,
+      "pca_evr_top5": [
+        0.40771785378456116,
+        0.3164047300815582,
+        0.09332600235939026,
+        0.0710269957780838,
+        0.032296307384967804
+      ],
+      "top1_evr": 0.40771785378456116,
+      "top2_cum_evr": 0.7241225838661194,
+      "mean_shift_norm": 0.031789399683475494
+    },
+    "A2": {
+      "oos_mse_distortion_D": 2.5399148851328617e-05,
+      "oos_mse_identity": 4.390739923110232e-05,
+      "improvement_ratio": 1.728695625172885,
+      "systematic_transferable": true
+    }
+  },
+  "primary_analysis": "isolation",
+  "verdict": "SUPPORTED [isolation]: deviation low-rank (top-2 EVR 72%) AND distortion transfers out-of-sample (x1.7) => sigma_hat is a systematic closure-compensating surrogate",
+  "figure": "/private/tmp/claude-501/-Users-nikitapolomosnov-PycharmProjects-tgnn-solv/d8c57c82-2aba-4a38-b6f5-83d49a35e42a/scratchpad/fig_compensation_surrogate.pdf"
+}

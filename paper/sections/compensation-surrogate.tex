@@ -47,10 +47,14 @@ is read for. Reading $\hat\sigma$ as an interpretable physical quantity is there
 misleading in the misspecified regime---the interpretability a physics-informed bottleneck appears to
 offer is not guaranteed by the architecture. It also re-explains the grounding paradox
 (\S\ref{sec:paradox}): substituting the \emph{true} $\sigma$ hurts because the rest of the pipeline is
-calibrated to the compensated $\hat\sigma$, not to physics. We flag two limits: the matched set is the
-low-$\gamma$, $n{=}44$ subset, and the grounded-vs-trained contrast is across two models; a single
-model checkpointed at warm-up and at convergence would isolate the objective's effect from
-architecture outright, which we leave as a small confirmatory run.
+calibrated to the compensated $\hat\sigma$, not to physics. We ran the one-model control that removes the
+last confound: checkpointing a \emph{single} grounded model before and after solubility
+fine-tuning (sigma head unfrozen), the objective drives a \emph{systematic} (low-rank, top-two
+modes $72\%$) drift of $\hat\sigma$ off the grounded profile---so the divergence is a property of
+the fitting objective, not of architecture or of never having been grounded. (A short local run
+reaches only ${\sim}16\%$ of the full $82\%$ departure; the magnitude develops over convergence,
+which we did not reach.) The remaining limit is scope: the matched set is the low-$\gamma$,
+$n{=}44$ VT-2005 subset.
 
 \begin{figure}[t]
 \centering
