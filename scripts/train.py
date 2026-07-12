@@ -149,6 +149,16 @@ def parse_args() -> argparse.Namespace:
         help="Path to a saved training checkpoint to resume from",
     )
     parser.add_argument(
+        "--resume-extend",
+        action="store_true",
+        help="Load the checkpoint's WEIGHTS but continue/finetune training under a freshly "
+             "supplied schedule (--epochs-phase*, --lr, --set ...): apply CLI schedule "
+             "overrides on resume and re-run the phase loop from the loaded weights instead "
+             "of honouring a 'completed' resume-state. Use to extend or fine-tune a finished "
+             "checkpoint (e.g. warm-up -> unfrozen SLE); plain --resume continues an "
+             "interrupted run under its saved schedule.",
+    )
+    parser.add_argument(
         "--checkpoint-every",
         type=int,
         default=0,
@@ -1057,9 +1067,37 @@ def main() -> None:
                 args.idac_batch_size,
             )
         ):
+            if not args.resume_extend:
+                print(
+                    "   Ignoring CLI config overrides for resumed training "
+                    "(pass --resume-extend to apply them); using the checkpoint's saved config."
+                )
+        # --resume-extend: re-apply the CLI training schedule on top of the loaded weights so a
+        # finished checkpoint can be extended / fine-tuned (e.g. warm-up -> unfrozen SLE).
+        if resume_checkpoint is not None and args.resume_extend:
+            if args.epochs_phase1 is not None:
+                config.epochs_phase1 = int(args.epochs_phase1)
+            if args.epochs_phase2 is not None:
+                config.epochs_phase2 = int(args.epochs_phase2)
+            if args.epochs_phase3 is not None:
+                config.epochs_phase3 = int(args.epochs_phase3)
+            if args.lr is not None:
+                config.lr_phase2 = args.lr
+            if args.branch_training_mode is not None:
+                config.branch_training_mode = str(args.branch_training_mode)
+            if args.sigma_steps_per_epoch is not None:
+                config.sigma_aux_steps_per_epoch = int(args.sigma_steps_per_epoch)
+            if args.crystal_steps_per_epoch is not None:
+                config.crystal_aux_steps_per_epoch = int(args.crystal_steps_per_epoch)
+            if args.idac_steps_per_epoch is not None:
+                config.idac_aux_steps_per_epoch = int(args.idac_steps_per_epoch)
+            if args.sigma_warmup_epochs is not None:
+                config.sigma_warmup_epochs = args.sigma_warmup_epochs
+            if args.freeze_sigma_head_during_sle:
+                config.freeze_sigma_head_during_sle = True
             print(
-                "   Ignoring CLI config overrides for resumed training; "
-                "using the checkpoint's saved config."
+                "   --resume-extend: continuing from loaded weights under the CLI schedule "
+                f"(epochs {config.epochs_phase1}/{config.epochs_phase2}/{config.epochs_phase3})."
             )
         if resume_checkpoint is not None and args.batch_size is not None:
             config.batch_size = args.batch_size
@@ -1370,6 +1408,10 @@ def main() -> None:
             if resume_checkpoint is not None
             else None
         )
+        if args.resume_extend:
+            # continue/finetune: ignore the checkpoint's phase/epoch cursor and 'completed'
+            # status, running the phase loop fresh under the CLI schedule from the loaded weights.
+            resume_state = None
         if resume_state and resume_state.get("status") == "completed":
             print("   Resume checkpoint already marks training as completed; skipping fit.")
         else:
