@@ -3,7 +3,8 @@
 The machinery above is not specific to COSMO-SAC. We instantiate it in a second real
 chemical domain---aqueous $\mathrm pK_a$ of substituted aromatics---where the fixed closure
 is a Hammett linear-free-energy relationship (LFER) $g(\sigma)=\mathrm pK_{a,0}-\rho\,\sigma$
-over the physical intermediate $\sigma$---here the Hammett substituent constant, \emph{not} the
+(with $\mathrm pK_{a,0},\rho$ the per-scaffold Hansch--Leo--Taft reaction-series constants) over
+the physical intermediate $\sigma$---here the Hammett substituent constant, \emph{not} the
 $\sigma$-profile of \S\ref{sec:setup}---for which Hansch--Leo tabulated constants provide an
 external oracle $\zstar$. The analogy is tight: as with the
 $\sigma$-profile through COSMO-SAC, a learnable physical descriptor is pushed through a fixed,
@@ -38,17 +39,24 @@ ortho/heteroaromatic regime ($n{=}1008$) degrades to RMSE $2.4$, dominated by in
 ($\Binsuf\approx4.7$---the tabulated $\sigma$ carries no ortho information, exactly the a-priori
 channel assignment) with an additional closure misspecification $\Bclos\ge1.1$ on top. This is the
 near-exact-to-degraded transition the closure is meant to show, now measured rather than asserted. This places the pKa closure near the phase-diagram boundary
-in its clean regime. We close the loop with the trained comparison the diagnostic predicts. On a
-Bemis--Murcko scaffold split of the Hammett-amenable set ($1169$ compounds, three seeds), a shared
-GIN encoder feeding the fixed LFER (a predicted $\sigma$) reaches pKa MAE $1.47\pm0.07$ and
-\emph{beats} the matched DirectGNN control ($1.88\pm0.13$; tax $\Delta=-0.41$): the physics prior
-\emph{helps}, the opposite sign to solubility, because a well-specified closure's small bias is
-outweighed by the variance a constrained prior saves (Prop.~\ref{prop:tax}). The grounding gap is
-small but of the paradox's sign---the true-$\sigma$ oracle through the fixed LFER ($1.61$) trails
-the learned-$\sigma$ arm ($1.47$) by $\Gamma\approx0.14$, versus the large gap in solubility. This
-is the trained-model operating point for the phase diagram: pKa sits in ``physics helps'' and
-solubility in ``physics hurts,'' the sign flipping with closure fidelity exactly as the sign rule
-requires (Fig.~\ref{fig:phase}).
+in its clean regime. We close the loop with a trained comparison. On a Bemis--Murcko scaffold
+split of the Hammett-amenable set ($1169$ compounds, three seeds), a shared GIN encoder feeding
+the fixed LFER (a predicted $\sigma$) beats the matched DirectGNN control overall ($1.63$ vs
+$1.84$ pKa MAE, $\Delta=-0.21$), placing pKa on the ``helps'' side of the phase picture
+(Fig.~\ref{fig:phase}). We read this cautiously, \emph{not} as a clean confirmation of the sign
+rule through closure fidelity. Stratified, the help concentrates in the ortho/heteroaromatic
+regime ($\Delta=-0.53$), not the clean meta/para one ($\Delta=-0.10$, within seed noise); and on
+the clean regime the fixed LFER on the \emph{true} $\sigma$ is excellent (oracle MAE $0.60$) yet
+the trained arm is not ($1.61$), so the closure is well specified there but the small-data encoder
+cannot learn $\sigma$ well enough to exploit it. Where the physics arm does win---ortho, where the
+closure is \emph{mis}specified for the true $\sigma$---the \emph{freely} learned $\sigma$ can
+absorb ortho information the tabulated Hammett constant lacks and the per-scaffold $\mathrm pK_{a,0}$
+supplies a strong baseline. So the pKa ``help'' is a permissive-closure and per-scaffold-prior
+effect, not the variance-saving of a well-specified prior: a useful caution that a ``physics
+helps'' outcome can be the encoder working through a soft closure. The absolute errors
+($\sim\!1.6$--$1.9$) are weak for pKa and the DirectGNN control is not separately tuned, so we do
+not lean on this comparison---the robust second-domain result is the decomposition above; the
+trained comparison is a cautionary complement.
 
 \begin{figure}[t]
 \centering

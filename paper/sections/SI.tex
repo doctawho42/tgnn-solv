@@ -169,7 +169,10 @@ COSMO-SAC, true $\sigma$ ($\sigma$-oracle)     & $2.25\pm0.02$ & $-0.03\pm0.04$ 
 deployed-convention verdict $\Bclos>\Binsuf$ (\S\ref{sec:measure}) three ways on the
 $n{=}60$ set (\texttt{run\_b\_insuff\_robustness.py}). \emph{(i)~Estimator sensitivity.} The
 $\Binsuf$ upper bounds are $0.40$ ($k$-NN), $0.56$ (binning/LOTV), $0.62$ (random forest), and
-$0.88$ (ridge); since the true $\Binsuf$ lies below the smallest valid upper bound and
+$0.88$ (ridge)---computed with this section's estimator settings, so they differ slightly from
+Table~\ref{tab:decomp}, a hyperparameter effect, not a convention one ($\Binsuf$ is
+convention-independent, not estimator-independent). Since the true $\Binsuf$ lies below the
+smallest valid upper bound and
 $\mathrm{MSE}_{\mathrm{res}}=1.47$, the verdict $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}>\Binsuf$
 certifies under the three tightest estimators (the ridge bound is loose---non-certifying, not
 refuting). \emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the
@@ -181,17 +184,26 @@ noise.} Injecting zero-mean Gaussian noise $\sigma_\eta\in\{0.2,\dots,0.8\}$ int
 estimated $\Bclos$ lower bound stable ($0.84\to0.70$), as expected since
 $\Bclos=\mathrm{MSE}-\Ex[\Var(m\mid\zstar)]$ is invariant to zero-mean noise. The separation is
 thus robust under a principled insufficiency estimator and noise-stable, but its numerical
-strength is estimator-dependent---consistent with the solvent-clustered $P(\Bclos>\Binsuf)\approx0.85$
-(hedge~3).
+strength is estimator-dependent. \emph{(iv)~Clustered-bootstrap interval.} A solvent-clustered
+bootstrap ($3000$ resamples of the $17$ solvents, LOTV bound) makes the confidence explicit: the
+$\Bclos$ lower bound has median $0.93$ (CI$_{90}$ $[0.40,\,1.62]$) and the certification margin
+$\Bclos-\Binsuf$ has median $0.36$ (CI$_{90}$ $[-0.22,\,+0.97]$), with $P(\Bclos>\Binsuf)\approx0.89$.
+The separation is therefore \emph{likely} but not certified at the $90\%$ level---consistent with
+the earlier $\approx0.85$ figure (hedge~3)---which is why the main text treats it as supporting
+rather than decisive.
 
-\paragraph{In-regime ($\gamma$-stratified) separation.} The keystone is matched at low $\gamma$,
+\paragraph{In-regime ($\gamma$-stratified) separation.} The $n{=}60$ measurement is matched at low $\gamma$,
 while the paradox spans all $\gamma$. Stratifying the $n{=}60$ set by $\lngi$
 (\texttt{run\_b\_insuff\_regime.py}) tests whether closure-dominance is a corner artifact. It is
 not: the verdict $\Bclos>\Binsuf$ (tightest of the binning/RF/$k$-NN upper bounds) holds in every
 stratum and \emph{strengthens} toward higher $\gamma$ (Table~\ref{tab:regime})---in the highest
 stratum ($\overline{\lngi}=2.9$, approaching the non-ideal regime) $\Bclos\ge3.0$ dominates
-$\Binsuf\le0.3$ by an order of magnitude. This supports (does not prove) the conjecture that the
-same closure misspecification drives the all-$\gamma$ paradox.
+$\Binsuf\le0.3$ by an order of magnitude. We caution that the high-$\gamma$ strata are small
+($n=17$--$30$ in $102$ dimensions): the law-of-total-variance bound can be pushed toward zero by
+too-few-points-per-bin, which mechanically widens the margin exactly where data is thinnest, so
+it is the large ($\sim\!10\times$) separations rather than the precise values that carry the
+qualitative reading. This supports---but does not prove---the conjecture that the same closure
+misspecification drives the all-$\gamma$ paradox.
 
 \begin{table}[h]
 \centering

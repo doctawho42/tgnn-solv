@@ -12,10 +12,12 @@ the identical subsample and evaluate both on the fixed scaffold test
 every fraction}, and---against the hypothesis---the gap is \emph{smallest} at the least
 data ($\Delta\mathrm{MAE}=+0.08$ at $5\%$) and \emph{grows} with more
 ($+1.0$ at full); its $R^2$ is negative throughout. In the language of
-Prop.~\ref{prop:tax}, the critical budget $n^\star$ sits below our smallest fraction---the
-variance a physics prior saves never exceeds its asymptotic bias, even at $5\%$ of solutes,
-which is a stronger statement than the proposition's bare existence claim. Even in the regime
-built to favor it, grounding does not buy accuracy; if anything, more data lets the black box pull
+Prop.~\ref{prop:tax}, the critical budget $n^\star$ appears to sit below our smallest fraction.
+We do not over-read this: the sweep is single-seed (seed 42), the low-data gap is small
+($+0.08$ at $5\%$), and the physics-arm MAEs are non-monotone across fractions, so we take it as
+\emph{consistent with}---not a sharp confirmation of---the sign rule, and leave multi-seed error
+bars at each fraction to future work. Even in the regime built to favor it, grounding does not
+buy accuracy; if anything, more data lets the black box pull
 further ahead. The one metric that inverts is top-1 solvent ranking, higher for the
 physics arm at $5\%$ ($0.42$ vs $0.23$)---consistent with the ranking-versus-accuracy
 split of \S\ref{sec:supporting}---but that decision-quality signal does not translate
