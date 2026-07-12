@@ -633,8 +633,12 @@ on, and it needs no smoothness assumption beyond the validity of the $\Binsuf$ u
 bound. We stress-test the separation directly (App.~\ref{sec:si-tables}): it certifies under the
 $k$-NN, binning, and random-forest insufficiency estimators, is stable to injected label noise,
 and survives leave-one-solvent-out under the principled law-of-total-variance bound ($17/17$
-folds), though it weakens under looser estimators---so we present it as a \emph{supporting},
-low-$\gamma$-regime measurement rather than a stand-alone certificate. Under the full COSMO-SAC convention the separation \emph{sharpens} to an
+folds), though it weakens under looser estimators---so we present it as a \emph{supporting}
+measurement rather than a stand-alone certificate. It is moreover not confined to the low-$\gamma$
+corner: stratifying the matched set by $\lngi$, $\Bclos>\Binsuf$ holds in every stratum and
+\emph{strengthens} toward higher $\gamma$ (for the $\overline{\lngi}{=}2.9$ stratum,
+$\Bclos\ge3.0$ against $\Binsuf\le0.3$), extending closure-dominance into the higher-$\gamma$
+regime the paradox spans (App.~\ref{sec:si-tables}). Under the full COSMO-SAC convention the separation \emph{sharpens} to an
 assumption-free constant-offset bound: a constant decoder offset alone accounts for
 $\Bclos\ge0.72$ (Fig.~\ref{fig:decomp}), exceeding every $\Binsuf$ upper bound
 ($\le0.62$), and subtracting the insufficiency bound gives $\Bclos\ge1.24>0.62$
@@ -761,9 +765,10 @@ help is temperature extrapolation---but as a hypothesis-class property that the 
 not exploit (\S\ref{sec:supporting}), a partial counterexample we flag rather than hide. Read
 together these point to a \emph{structural} ceiling: the crystal/activity split is
 non-identifiable from solubility alone (Lemma~\ref{prop:ident}), and the activity closure is
-misspecified where we can measure it (\S\ref{sec:measure}), so within this family---and to the
-extent our trained instantiations exercise it---better inputs, more data, and auxiliary grounding
-do not recover an accuracy the factorization cannot express. The contribution is accordingly not
+misspecified where we can measure it (\S\ref{sec:measure})---a measurement that feeds true inputs
+through the fixed closure and so cannot be a training artifact---so within this family better
+inputs, more data, and auxiliary grounding do not recover an accuracy the factorization cannot
+express. The contribution is accordingly not
 an accuracy result but a method---the externally grounded decomposition---for locating such a
 ceiling, and a proved account of why it sits where it does.
 
