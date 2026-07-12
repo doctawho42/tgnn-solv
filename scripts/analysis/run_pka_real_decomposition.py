@@ -113,6 +113,7 @@ def load_records(sdf_path: Path, assign):
             continue
         g = rec["pka0"] - rec["rho"] * rec["sigma_total"]
         recs.append(dict(smiles=smi, scaffold=rec["scaffold"], sigma=rec["sigma_total"],
+                         pka0=rec["pka0"], rho=rec["rho"],
                          g=g, pka=pka, bin=rec["fidelity_bin"], has_ortho=rec["has_ortho"],
                          n_sub=rec["n_sub"]))
     return recs, n_read
