@@ -894,8 +894,23 @@ an accuracy result but a \emph{map} of when grounding a learned latent in true p
 the externally grounded decomposition \emph{locates} the ceiling (measured, not proved), a standard
 higher-fidelity closure moves it and flips the binding term, and---where the closure binds and the
 latent is end-to-end---the ``physical'' intermediate behaves as a compensating surrogate; the two
-governing axes are closure fidelity and latent supervision. What a misspecified closure costs is thus
-not only accuracy but the interpretability the bottleneck appeared to buy.
+governing axes are closure fidelity and latent supervision (Fig.~\ref{fig:map}). What a misspecified
+closure costs is thus not only accuracy but the interpretability the bottleneck appeared to buy.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.80\linewidth]{figs/fig_grounding_map.pdf}
+\caption{The grounding map. Whether feeding a learned model its true physical inputs helps or hurts is
+governed by two axes---how the latent is trained (supervised toward truth vs.\ shaped end-to-end
+through the fixed closure) and the closure's fidelity. Grounding hurts only in the low-supervision,
+low-fidelity corner, where the end-to-end latent becomes a compensating surrogate
+(\S\ref{sec:surrogate}). Our COSMO-SAC-2002 model sits there; raising closure fidelity
+(COSMO-SAC-2010/dsp, \S\ref{sec:measure}) or supervising the latent (TeNNet-SAC) crosses into the
+``helps'' region. The boundary is the physics-tax sign $\mathcal{T}=0$ (Prop.~\ref{prop:tax}); the
+synthetic dial (\S\ref{sec:dial}) sweeps the fidelity axis. Schematic; anchor placements are
+qualitative.}
+\label{fig:map}
+\end{figure}
 
 \paragraph{When a physics prior must lose.} The tax rule (Prop.~\ref{prop:tax}) turns these
 negatives into a phase picture rather than a single verdict (Fig.~\ref{fig:phase}), and says
