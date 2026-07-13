@@ -166,7 +166,24 @@ def main():
     ap.add_argument("--warm", type=int, default=40); ap.add_argument("--sle", type=int, default=120)
     ap.add_argument("--t3-ep1", type=int, default=30); ap.add_argument("--t3-ep2", type=int, default=120)
     ap.add_argument("--t3-ep3", type=int, default=20); ap.add_argument("--t3-arm-ep2", type=int, default=60)
+    ap.add_argument("--allow-cpu", action="store_true", help="permit the silent CPU fallback (do NOT on Kaggle)")
     args = ap.parse_args()
+
+    # Fail fast instead of silently running on CPU for hours: train.py's resolve_device()
+    # falls back to CPU when cuda is unavailable (~25x slower here, ~15 min/epoch on the
+    # 112k-row corpus), which silently burns an entire Kaggle session.
+    if args.device.startswith("cuda") and not args.allow_cpu:
+        try:
+            import torch
+            _ok = torch.cuda.is_available()
+            _name = torch.cuda.get_device_name(0) if _ok else ""
+        except Exception as _e:  # noqa: BLE001
+            _ok, _name = False, f"torch import failed: {_e}"
+        if not _ok:
+            sys.exit("FATAL: --device cuda but NO GPU is available -- this would silently run on CPU "
+                     "(~25x slower, ~15 min/epoch on this corpus). In Kaggle: Settings -> Accelerator "
+                     "-> GPU T4 x2 (then re-Add Data) and re-run. Pass --allow-cpu only to force CPU.")
+        print(f"[gpu] CUDA OK: {_name}", flush=True)
 
     todo = ["onemodel", "tier3", "dataeff", "dosed"] if args.do == "all" else args.do.split(",")
     log = {"done": [], "failed": []}
