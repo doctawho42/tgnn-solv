@@ -1,12 +1,17 @@
-\subsection{What the learned intermediate is: a closure-compensating surrogate}
+\subsection{The second edge: the learned intermediate is a compensating surrogate, not the physical quantity}
 \label{sec:surrogate}
 % Artifact: results/compensation/{surrogate_vs_true,isolation}.json via
 % scripts/analysis/run_compensation_surrogate.py on the n=44 matched VT-2005 set.
-If the closure is the binding term (\S\ref{sec:measure}), the learned intermediate is under
-pressure not to be physically faithful but to \emph{cancel} the closure's error. We can see this
-directly, because the same matched set that carries external ground truth for the decomposition
-also lets us compare the model's predicted $\sigma$-profile $\hat\sigma$ against the true VT-2005
-profile $\sigma$ molecule by molecule ($n{=}44$ with both available).
+This is the second edge of the \emph{same} anchor: the external ground truth that made the
+closure/insufficiency split measurable (edge~1) also lets us hold the model's ``physical''
+intermediate up against its true value---one oracle, two consequences. Where the closure is the
+binding term (\S\ref{sec:measure}), the learned intermediate is under pressure not to be physically
+faithful but to \emph{cancel} the closure's error, and the same matched set lets us compare the
+predicted $\sigma$-profile $\hat\sigma$ against the true VT-2005 profile $\sigma$ molecule by molecule
+($n{=}44$ with both available). We flag the honesty ceiling up front: the \emph{converged} magnitude
+of this drift is provisional---our confound-free one-model control reaches only ${\sim}16\%$ of the
+full ${\sim}82\%$ departure with ${\sim}1.7\times$ transferability, and the strong ${\sim}82\%$ /
+$16\times$ figures below rest on confounded and two-model analyses pending a converged run.
 
 \paragraph{The learned profile is not the physical one, and not by noise.}
 The deviation is large and structured. Averaged over the matched molecules, $\hat\sigma$ differs
