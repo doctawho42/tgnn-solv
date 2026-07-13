@@ -1,0 +1,83 @@
+{
+  "n_pairs": 60,
+  "reference": "NIST cCOSMO (Bell et al. JCTC 2020), UD 3-profile database",
+  "B_insuff_lotv_floor": 0.563,
+  "verdict_threshold_mse (2*B_insuff)": 1.126,
+  "closures": {
+    "cosmosac_2002": {
+      "mse": 1.2631,
+      "n_finite": 60,
+      "B_closure_lb": 0.7001,
+      "closure_dominates": true
+    },
+    "cosmosac_2010": {
+      "mse": 0.7653,
+      "n_finite": 60,
+      "B_closure_lb": 0.2023,
+      "closure_dominates": false
+    },
+    "cosmosac_dsp": {
+      "mse": 0.7849,
+      "n_finite": 57,
+      "B_closure_lb": 0.2219,
+      "closure_dominates": false
+    }
+  },
+  "our_layer_res_2002_vt2005_mse": 1.4723,
+  "worst_2002_pairs": [
+    {
+      "solute": "1-hexanamine",
+      "solvent": "benzene",
+      "m": 2.785011242238338,
+      "g2002": -0.554,
+      "g2010": 0.5543,
+      "gdsp": 0.5698,
+      "our_g_res_2002_vt2005": 0.5905113
+    },
+    {
+      "solute": "diethylamine",
+      "solvent": "methanol",
+      "m": -1.1086626245216111,
+      "g2002": 1.6196,
+      "g2010": 0.4648,
+      "gdsp": 0.7267,
+      "our_g_res_2002_vt2005": -0.299353
+    },
+    {
+      "solute": "2-methyl-2-propanamine",
+      "solvent": "methanol",
+      "m": -1.3862943611198906,
+      "g2002": 1.1388,
+      "g2010": -0.5251,
+      "gdsp": -0.1548,
+      "our_g_res_2002_vt2005": -1.8457854
+    },
+    {
+      "solute": "cyclohexylamine",
+      "solvent": "benzene",
+      "m": 1.860974538249528,
+      "g2002": -0.5427,
+      "g2010": 0.5298,
+      "gdsp": 0.5454,
+      "our_g_res_2002_vt2005": 0.45723495
+    },
+    {
+      "solute": "dipropylamine",
+      "solvent": "methanol",
+      "m": -0.0943106794712412,
+      "g2002": 2.0528,
+      "g2010": 0.8419,
+      "gdsp": 1.1642,
+      "our_g_res_2002_vt2005": 0.39925873
+    },
+    {
+      "solute": "2,6-dimethylpyridine",
+      "solvent": "methanol",
+      "m": -0.0618754037180875,
+      "g2002": 1.8635,
+      "g2010": 0.9727,
+      "gdsp": 1.4391,
+      "our_g_res_2002_vt2005": 0.64445305
+    }
+  ]
+}
