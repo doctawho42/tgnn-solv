@@ -173,16 +173,22 @@ def main():
     # falls back to CPU when cuda is unavailable (~25x slower here, ~15 min/epoch on the
     # 112k-row corpus), which silently burns an entire Kaggle session.
     if args.device.startswith("cuda") and not args.allow_cpu:
+        _name = _err = None
         try:
             import torch
-            _ok = torch.cuda.is_available()
-            _name = torch.cuda.get_device_name(0) if _ok else ""
+            if torch.cuda.is_available():
+                _name = torch.cuda.get_device_name(0)
+                (torch.zeros(1, device="cuda") + 1).cpu()   # actually launch a kernel
+            else:
+                _err = "no GPU visible"
         except Exception as _e:  # noqa: BLE001
-            _ok, _name = False, f"torch import failed: {_e}"
-        if not _ok:
-            sys.exit("FATAL: --device cuda but NO GPU is available -- this would silently run on CPU "
-                     "(~25x slower, ~15 min/epoch on this corpus). In Kaggle: Settings -> Accelerator "
-                     "-> GPU T4 x2 (then re-Add Data) and re-run. Pass --allow-cpu only to force CPU.")
+            _err = f"{type(_e).__name__}: {str(_e)[:140]}"
+        if _err is not None:
+            sys.exit(f"FATAL: GPU unusable ({_err}; device={_name}). CPU fallback would be ~25x slower "
+                     "(~15 min/epoch on this corpus). If this is a Tesla P100 (compute 6.0 / sm_60) the "
+                     "kernel-launch error means it is too old for the installed PyTorch (needs sm_70+): "
+                     "set Kaggle Settings -> Accelerator -> GPU T4 x2 (sm_75) and re-Add Data. Use "
+                     "--allow-cpu only to force CPU.")
         print(f"[gpu] CUDA OK: {_name}", flush=True)
 
     todo = ["onemodel", "tier3", "dataeff", "dosed"] if args.do == "all" else args.do.split(",")
