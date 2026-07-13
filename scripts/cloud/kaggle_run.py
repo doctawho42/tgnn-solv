@@ -175,10 +175,17 @@ def main():
     ap.add_argument("--allow-cpu", action="store_true", help="permit the silent CPU fallback (do NOT on Kaggle)")
     ap.add_argument("--batch-size", type=int, default=256,
                     help="override config batch_size (default 64 starves the GPU; 256 = ~4x fewer batches). 0 = leave config default.")
+    ap.add_argument("--workers", type=int, default=0,
+                    help="DataLoader num_workers. >0 uses persistent workers to overlap graph "
+                         "collation with GPU compute (epoch 1 warms the per-worker cache, epochs 2+ are faster). "
+                         "Try 4 on Kaggle; watch epoch 2-3 vs epoch 1.")
     args = ap.parse_args()
     global EXTRA_SET
+    EXTRA_SET = []
     if args.batch_size:
-        EXTRA_SET = [f"batch_size={args.batch_size}"]
+        EXTRA_SET.append(f"batch_size={args.batch_size}")
+    if args.workers:
+        EXTRA_SET.append(f"num_workers={args.workers}")
 
     # Fail fast instead of silently running on CPU for hours: train.py's resolve_device()
     # falls back to CPU when cuda is unavailable (~25x slower here, ~15 min/epoch on the
