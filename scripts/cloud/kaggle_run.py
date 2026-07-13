@@ -39,6 +39,12 @@ SIGMA_VAL = REPO / "notebooks" / "data" / "processed_sigma_aux_stream" / "sigma_
 CRYSTAL = REPO / "notebooks" / "data" / "processed_crystal_aux_stream" / "crystal_train.csv"
 CFG = REPO / "configs" / "cosmo_sac.yaml"
 
+# Throughput: the config default batch_size=64 with num_workers=0 leaves the GPU
+# starved (~1760 batches/epoch on the 112k-row corpus, ~overhead-bound). A larger
+# batch is spliced into every train.py --set via --batch-size (default 256);
+# populated in main().
+EXTRA_SET: list = []
+
 
 def run(cmd, env_extra=None, log=None):
     env = {**os.environ, "PYTHONUNBUFFERED": "1", "KMP_DUPLICATE_LIB_OK": "TRUE",
@@ -72,13 +78,13 @@ def do_onemodel(out: Path, device: str, ep_warm: int, ep_sle: int):
          "--sigma-train-data", SIGMA, "--sigma-steps-per-epoch", "21",
          "--crystal-train-data", CRYSTAL, "--crystal-steps-per-epoch", "8",
          "--device", device, "--epochs-phase1", 5, "--epochs-phase2", 0, "--epochs-phase3", 0,
-         "--set", f"sigma_warmup_epochs={ep_warm}", "cosmo_sac_kernel_residual_rank=0",
+         "--set", f"sigma_warmup_epochs={ep_warm}", "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET,
          "--checkpoint", base])
     # 2. same model, full unfrozen SLE (sigma head trains -> drifts)
     run(["python", "scripts/train.py", "--config", CFG, "--resume", base, "--resume-extend",
          "--train-data", DATA / "train.csv", "--val-data", DATA / "val.csv", "--test-data", DATA / "test.csv",
          "--device", device, "--epochs-phase1", 0, "--epochs-phase2", ep_sle, "--epochs-phase3", 0,
-         "--set", "freeze_sigma_head_during_sle=false", "sigma_warmup_epochs=0",
+         "--set", "freeze_sigma_head_during_sle=false", "sigma_warmup_epochs=0", *EXTRA_SET,
          "--checkpoint", sle])
     # 3. isolation analysis (same model: sle vs grounded)
     run(["python", "scripts/analysis/run_compensation_surrogate.py",
@@ -101,7 +107,7 @@ def do_tier3(out: Path, device: str, ep1: int, ep2: int, ep3: int, arm_ep2: int,
          "--sigma-train-data", SIGMA, "--sigma-steps-per-epoch", "21",
          "--crystal-train-data", CRYSTAL, "--crystal-steps-per-epoch", "8",
          "--device", device, "--epochs-phase1", ep1, "--epochs-phase2", ep2, "--epochs-phase3", ep3,
-         "--set", *arch, "freeze_sigma_head_during_sle=true", "arm_trainable=None",
+         "--set", *arch, "freeze_sigma_head_during_sle=true", "arm_trainable=None", *EXTRA_SET,
          "--checkpoint", base])
 
     def export_mae(ckpt, pred):
@@ -125,7 +131,7 @@ def do_tier3(out: Path, device: str, ep1: int, ep2: int, ep3: int, arm_ep2: int,
                  "--train-data", DATA / "train.csv", "--val-data", DATA / "val.csv", "--test-data", DATA / "test.csv",
                  "--device", device, "--seed", seed,
                  "--epochs-phase1", 0, "--epochs-phase2", arm_ep2, "--epochs-phase3", 0,
-                 "--set", *arch, *extra, "freeze_sigma_head_during_sle=true",
+                 "--set", *arch, *extra, "freeze_sigma_head_during_sle=true", *EXTRA_SET,
                  "--checkpoint", cp])
             results["arms"][f"{arm}_seed{seed}"] = export_mae(cp, pred)
             save(out, "tier3_summary.json", results)   # incremental
@@ -167,7 +173,12 @@ def main():
     ap.add_argument("--t3-ep1", type=int, default=30); ap.add_argument("--t3-ep2", type=int, default=120)
     ap.add_argument("--t3-ep3", type=int, default=20); ap.add_argument("--t3-arm-ep2", type=int, default=60)
     ap.add_argument("--allow-cpu", action="store_true", help="permit the silent CPU fallback (do NOT on Kaggle)")
+    ap.add_argument("--batch-size", type=int, default=256,
+                    help="override config batch_size (default 64 starves the GPU; 256 = ~4x fewer batches). 0 = leave config default.")
     args = ap.parse_args()
+    global EXTRA_SET
+    if args.batch_size:
+        EXTRA_SET = [f"batch_size={args.batch_size}"]
 
     # Fail fast instead of silently running on CPU for hours: train.py's resolve_device()
     # falls back to CPU when cuda is unavailable (~25x slower here, ~15 min/epoch on the
