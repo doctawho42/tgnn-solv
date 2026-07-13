@@ -731,8 +731,10 @@ $11\times$ larger in the high-asymmetry half), i.e.\ it is the documented miscal
 \emph{unmodified} combinatorial term for size-asymmetric mixtures---the reason
 modified-Staverman--Guggenheim and free-volume corrections exist---so we read it as corroboration of
 closure misspecification, not an independent second effect. The residual (deployed) error is itself
-localized: self-solvation $\ln\gamma^\infty(i,i)$ is exactly zero, ruling out a global
-implementation artifact, and $90\%$ of the squared error falls on strong hydrogen-bond-donor
+localized, and it is not an implementation artifact: our differentiable layer reproduces the NIST
+benchmark COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE $0.003$~$\ln\gamma$ on identical VT-2005
+profiles ($0.005$ even in the associating regime, max $0.02$), and self-solvation
+$\ln\gamma^\infty(i,i)$ is exactly zero. Yet $90\%$ of the squared error falls on strong hydrogen-bond-donor
 solvents while acceptor-only solvents are near-exact (mean squared error $0.09$)---placing $\Bclos$
 in COSMO-SAC's documented single-parameter hydrogen-bonding kernel, a real but \emph{known}
 limitation rather than an idiosyncrasy of our differentiable layer. A second observation is consistent but is
