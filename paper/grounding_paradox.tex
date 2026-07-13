@@ -76,8 +76,8 @@ by a network. The premise is that grounding the closure on truer physical inputs
 We show it can do the opposite: replacing the model's learned $\sigma$-profiles with the true,
 externally measured ones (VT-2005) makes activity and solubility prediction \emph{worse} than a
 free learned head. We turn this anomaly into a general method for locating a physics prior's
-ceiling. Because the physical input has external ground truth, the true-input error splits---with
-no model fit---into a part the inputs cannot resolve and a part the fixed closure gets wrong; on
+ceiling. Because the physical input has external ground truth, the true-input error splits---exactly, without fitting the closure---into a part the inputs
+cannot resolve and a part the fixed closure gets wrong; on
 our activity data the closure, not the inputs, is the likely binding term (a small, honestly
 bounded corner). We give the supporting theory for any composed predictor: the crystal/activity
 split is non-identifiable (a free head silently compensates), a grounding-gap identity---a
@@ -129,7 +129,9 @@ persists across solubility chemistries we scope honestly (\S\ref{sec:discussion}
   empirically. On the convention-robust evidence---a bound that holds however the
   COSMO-SAC closure is configured, plus the more-physics-worse effect---$\Bclos$
   (misspecified decoder) exceeds $\Binsuf$ (input insufficiency) on the low-$\gamma$ subset we
-  can measure, robustly to the insufficiency estimator and to leaving out any solvent: there,
+  can measure, robustly across the $k$-NN, binning, and random-forest insufficiency estimators
+  (only the most conservative ridge does not certify) and, under the law-of-total-variance bound,
+  to leaving out any solvent: there,
   the binding term is \emph{likely} the closure (\S\ref{sec:measure}).
   \item \textbf{What the learned intermediate is (mechanism).} Where the closure binds, the
   network's ``physical'' input does not stay physical: on the matched set the predicted
@@ -325,7 +327,10 @@ If $\mathcal H$ contains the crystal score's span $\{1,1/T\}$ (a free intercept 
 $\Pi_{\mathcal H}v=v$ and $\mathcal I_{\mathrm{eff}}=0$, recovering
 Lemma~\ref{prop:ident}; if $\mathcal H$ is restricted (the slope is known or
 constrained) then $\mathcal I_{\mathrm{eff}}>0$ and the Cram\'er--Rao lower bound (CRLB) on
-$\dHfus$ is finite.
+$\dHfus$ is finite. (The melting point $\Tm$ is likewise an unknown crystal parameter, but is
+profiled jointly: its score $\partial\mu/\partial\Tm$ lies in $\mathrm{span}\{1\}\subset
+\mathrm{span}\{1,1/T\}$, already inside the nuisance tangent whenever the slope is free, so the
+dichotomy is unaffected by treating $\Tm$ as free.)
 \end{lemma}
 \noindent In words: the efficient information is what the data can still pin down
 about the crystal term \emph{after} the activity model has absorbed everything
@@ -337,8 +342,8 @@ project the crystal score onto the orthogonal complement of the nuisance tangent
 space; the squared norm of the residual is the efficient information. The numerical
 audit of \S\ref{sec:ident} quantifies both regimes, and shows the honest corollary:
 merely \emph{restricting} the activity slope leaves $\mathrm{sd}(\dHfus)\approx8{,}251$\,J/mol
---- finite but unusable --- whereas an \emph{external} crystal label, which
-contributes a score direction outside the activity tangent space, closes it to
+--- finite but unusable --- whereas \emph{external} crystal labels ($\Tm$ and $\dHfus$ together), which
+contribute a score direction outside the activity tangent space, close it to
 $\approx1{,}689$\,J/mol.
 
 \subsection{The closure--insufficiency decomposition}
@@ -373,9 +378,10 @@ For a \emph{fixed} (non-fitted) closure $g$,
   \label{eq:decomp}
 \end{equation}
 The cross term vanishes identically because $\Ex[m\mid\zstar]-g(\zstar)$ is
-$\zstar$-measurable and $\Ex[(m-\Ex[m\mid\zstar])\mid\zstar]=0$. Both components
-are separately \emph{estimable from data with no model fit}, because $\zstar$ is
-externally observed.
+$\zstar$-measurable and $\Ex[(m-\Ex[m\mid\zstar])\mid\zstar]=0$. The split is exact with no fitting of the closure $g$---the cross term vanishes because $g$ is
+fixed and $\zstar$ is externally observed---so the total and $\Bclos$'s Jensen lower bound are
+fit-free; $\Binsuf=\Ex[\Var(m\mid\zstar)]$, however, must be estimated with a conditional-variance
+smoother whose choice affects the verdict (\S\ref{sec:measure}).
 \end{lemma}
 \noindent Equation~\eqref{eq:decomp} is a bias--variance split of model
 discrepancy in the sense of Kennedy--O'Hagan \cite{kennedy2001} and
@@ -384,7 +390,14 @@ discrepancy of a structurally fixed physical map, and its dominance over
 $\Binsuf$ is the empirical content of ``the ceiling is the closure, not the
 inputs.'' We do not claim \eqref{eq:decomp} as new; the affordance is that the
 external groundedness of $\zstar$ lets us \emph{measure} the split rather than
-assume it. \textbf{The exactness is contingent on $g$ being fixed}: for a
+assume it. This is the move's distinction from model-discrepancy calibration and auxiliary-data
+uncertainty quantification, which use held-out physical observations to \emph{fit} a correction to a
+discrepancy: here the closure is fixed and the latent itself is externally observed, so the map's
+error is \emph{attributed} with no correction fitted---at the cost that the affordance runs only
+where such an external latent oracle exists (fixed-closure predictors with a tabulated or measured
+latent: LFERs, COSMO / group-contribution closures, thermodynamic cycles), not in gray-box or PINN
+hybrids whose internal fields have no external ground truth. \textbf{The exactness is contingent on
+$g$ being fixed}: for a
 \emph{fitted} decoder the cross term does not vanish and a plug-in point
 decomposition is invalid (we observe a spurious $-0.36$ cross term when
 $\Ex[m\mid\zstar]$ is replaced by a fitted estimate). We therefore report
@@ -433,8 +446,10 @@ wrong-but-useful intermediate---the formal content of Lemma~\ref{prop:ident}'s `
 head silently compensates.''
 
 \paragraph{$\Gamma$ is a symptom, not a certificate.} Both assumptions are load-bearing and
-neither holds cleanly here. A1 is \emph{empirically false}: the encoder is transfer-limited
-(linear-probe test $R^2\approx0.45$), so $\phi^\star\notin\mathcal E$ and even $\Gamma\ge0$
+neither holds cleanly here. A1 is \emph{empirically doubtful}: the encoder is transfer-limited (a linear probe onto
+descriptors drops from train $R^2\approx0.76$ to test $R^2\approx0.45$ out of distribution, a proxy
+for---not a direct measure of---representability of $\zstar$), making $\phi^\star\in\mathcal E$
+unlikely across scaffolds, so effectively $\phi^\star\notin\mathcal E$ and even $\Gamma\ge0$
 is not guaranteed. A2 is unverifiable without the oracle and physically dubious (the
 $\sigma$-profile is a lossy summary of the graph). When A2 fails, $\Gamma>0$ \emph{conflates}
 two causes: closure misspecification ($\Bclos>0$) and input insufficiency (a correct closure
@@ -457,25 +472,29 @@ R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and $\Ex[\hat R_{\mathrm{direct}}(n)]\app
 R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with $V(n)\downarrow0$, the \emph{physics tax}
 is
 \begin{equation}
-T(n)\approx\Delta_\infty+\big[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)\big],\qquad
+\mathcal{T}(n)\approx\Delta_\infty+\big[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)\big],\qquad
 \Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}.
 \end{equation}
 \begin{proposition}[Sign of the physics tax]\label{prop:tax}
-(i)~$T(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
+(i)~$\mathcal{T}(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
 the variance a constrained prior saves must exceed its asymptotic bias. (ii)~If
 $\Delta_\infty>0$ and the variance gap vanishes ($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$),
-there is a critical budget $n^\star$ beyond which $T(n)>0$ for all $n>n^\star$. (iii)~Since
+there is a critical budget $n^\star$ beyond which $\mathcal{T}(n)>0$ for all $n>n^\star$. (iii)~Since
 $V_{\mathrm{direct}}-V_{\mathrm{phys}}\le V_{\mathrm{direct}}$, as the black box nears the
-aleatoric floor ($V_{\mathrm{direct}}\to0$) the tax tends to $\Delta_\infty\ge0$.
+aleatoric floor ($V_{\mathrm{direct}}\to0$) the tax tends to $\Delta_\infty$; this limit is
+$\ge0$ when the control is asymptotically Bayes ($R_{\mathrm{direct},\infty}=R_{\mathrm{free}}$),
+not merely from $V_{\mathrm{direct}}\to0$.
 \end{proposition}
 \noindent When the control is asymptotically Bayes and A2 holds, $\Delta_\infty=\Bclos-\Gamma$,
 tying the asymptotic tax to the \emph{un-compensatable} part of the closure bias; in general
-$\Delta_\infty$ is read off the large-$n$ asymptote. Both corollaries are \emph{consistent} with
-the data: the data-efficiency null---a positive tax at every budget (\S\ref{sec:data-efficiency},
-single-seed)---matches case~(ii) with $\Delta_\infty$ above the largest variance gap, and the
-novelty inversion---the tax heaviest on the \emph{best-covered} solutes (\S\ref{sec:map},
-flagged there as exploratory)---is a case-(iii) signature. Neither is a controlled test of the
-proposition. We prove the structural parts (existence of $n^\star$ given
+$\Delta_\infty$ is read off the large-$n$ asymptote. Both corollaries are \emph{loosely consistent} with
+the data---the data-efficiency null (a positive tax at every budget, \S\ref{sec:data-efficiency},
+single-seed) and the novelty inversion (the tax heaviest on the \emph{best-covered} solutes,
+\S\ref{sec:map}, exploratory) point in directions the proposition allows---but neither is a
+controlled test: in the data-efficiency sweep the physics arm is far more under-converged than its
+control at the shared light budget (its $R^2$ falls to $-0.79$ where the control holds near $+0.22$),
+so the within-budget gap conflates inductive bias with optimization difficulty and we do not map it
+to a specific case. We prove the structural parts (existence of $n^\star$ given
 $\Delta_\infty>0$ and a vanishing variance gap; the floor inequality); the shapes of $V(n)$ are
 empirical.
 
@@ -620,15 +639,16 @@ label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{assume
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_decomposition.pdf}
-\caption{One-sided bounds on the closure--insufficiency split (full COSMO-SAC
-convention). The assumption-free Jensen lower bound on the decoder
-misspecification, $\Bclos\ge0.72$, exceeds every valid upper bound on the input
-insufficiency $\Binsuf\le0.62$ (four independent estimators cluster in the salmon
-region); the white gap is a separation that holds with no smoothness assumption.
-The teal region is the closure share of the total error (MSE $=1.80$). This
-assumption-free separation is convention-specific; under the deployed residual-only
-default it rests instead on the convention-independent
-$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}\approx0.9>0.6$ bound (\S\ref{sec:measure}).}
+\caption{One-sided bounds on the closure--insufficiency split under the \emph{deployed}
+residual-only COSMO-SAC convention---the configuration the model actually runs. The
+load-bearing, convention-independent bound $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{LOTV}}\approx0.85$
+exceeds every valid $\Binsuf$ upper bound (salmon region); the white gap is a separation that needs
+no smoothness assumption, and the teal region is the certified closure share of the total error
+(MSE $=1.47$). We headline the law-of-total-variance (LOTV) binning bound because it conditions on
+the scalar $g(\zstar)$ and is immune to the near-duplicate leakage that deflates the
+$z^\ast$-neighbour estimators ($k$-NN, RF; \S\ref{sec:measure}). The assumption-free Jensen
+constant-offset bound is convention-specific and \emph{inverts} here ($0.43<0.62$, dotted), which is
+why we do not lean on it.}
 \label{fig:decomp}
 \end{figure}
 
@@ -642,25 +662,42 @@ same in every closure convention; subtracting it from the total therefore lower-
 $\Bclos$ even for the model's \emph{deployed} residual-only convention, giving
 $\Bclos\gtrsim0.91$, well above $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). This is the claim we lean
 on, and it needs no smoothness assumption beyond the validity of the $\Binsuf$ upper
-bound. We stress-test the separation directly (App.~\ref{sec:si-tables}): it certifies under the
-$k$-NN, binning, and random-forest insufficiency estimators, is stable to injected label noise,
-and survives leave-one-solvent-out under the principled law-of-total-variance bound ($17/17$
-folds). But a solvent-clustered bootstrap puts the certification margin at $0.36$ with a $90\%$
-interval of $[-0.22,\,+0.97]$ and $P(\Bclos>\Binsuf)\approx0.89$---likely, but not certified at
-conventional confidence---so we present it as a \emph{supporting} measurement, not a stand-alone
-certificate. Stratifying the matched set by $\lngi$, the verdict holds in every stratum and
-\emph{appears} to strengthen toward higher $\gamma$; but the high-$\gamma$ strata are tiny
-($n\le30$ in $102$ dimensions), where the insufficiency bound can be driven down by sparsity, so
-we read the shared cause with the all-$\gamma$ paradox as a conjecture supported by in-regime
-signs, not a measured fact (App.~\ref{sec:si-tables}). Under the full COSMO-SAC convention the separation \emph{sharpens} to an
+bound. We stress-test the separation directly (App.~\ref{sec:si-tables}), and doing so exposes an
+identification hazard that dictates \emph{which} estimator to trust. The matched set is a crossed
+$41$-solute$\times17$-solvent design, so any two pairs sharing a solute or a solvent share $51$ of
+$102$ $\zstar$ coordinates exactly; the raw nearest neighbour of a pair is such a near-duplicate
+for $98\%$ of pairs, which deflates the $\zstar$-neighbour estimators anti-conservatively---the
+$k$-NN bound reads $0.40$, but forbidding shared-solute/solvent neighbours \emph{inflates} it to
+$1.83$ as the neighbour gap takes over. Local conditional-variance estimators therefore
+\emph{bracket} $\Binsuf$ across $\mathrm{MSE}/2$ and cannot pin it, so we do not lean on the $k$-NN
+or random-forest out-of-fold values. We lean instead on the law-of-total-variance binning bound,
+which conditions $m$ on the coarsened scalar $g(\zstar)$ rather than on $\zstar$-neighbours: it is a
+valid upper bound on $\Binsuf$ (a binning of $g(\zstar)$ is a function of $\zstar$) and is
+\emph{immune} to the shared-coordinate leakage. That bound is stable---it survives
+leave-one-solvent-out ($17/17$ folds), leave-one-solute-out ($40/41$), leave-one-pair-out
+($60/60$), and adversarial deletion of the eight highest-error pairs. For confidence, a single-axis
+solvent-clustered bootstrap gives $P(\Bclos>\Binsuf)\approx0.89$; a two-way (solute$\times$solvent)
+cluster bootstrap that also charges for repeated solutes lowers this to $P\approx0.78$ with a $90\%$
+margin spanning zero---so we present the separation as a \emph{supporting} measurement, likely but
+not certified at conventional confidence, not a stand-alone certificate. Stratifying the matched set by $\lngi$ under the same leakage-immune binning bound, the verdict
+holds in every stratum and the closure lower bound still increases with $\gamma$ ($0.95\to2.69$);
+but the higher-$\gamma$ margin is thin and estimator-dependent (the random-forest bound flips
+there), so we read the shared cause with the all-$\gamma$ paradox as a conjecture supported by the
+\emph{direction} of the in-regime signs, not a measured magnitude (App.~\ref{sec:si-tables}). Under the full COSMO-SAC convention the separation \emph{sharpens} to an
 assumption-free constant-offset bound: a constant decoder offset alone accounts for
 $\Bclos\ge0.72$ (Fig.~\ref{fig:decomp}), exceeding every $\Binsuf$ upper bound
 ($\le0.62$), and subtracting the insufficiency bound gives $\Bclos\ge1.24>0.62$
 ($\sim2\times$). That constant-offset bound is convention-specific and \emph{inverts}
 under the deployed residual-only default ($0.43<0.62$; hedge~1), which is exactly why
 we headline the convention-independent bound above rather than the constant offset.
-Label noise is unestimable in this replicate-free set and assumed zero; the bounds we
-rely on are invariant to zero-mean noise, so the ceiling is not label noise either.
+Label noise is unestimable in this replicate-free set (the matched IDAC pairs carry no repeat
+measurements at $298$\,K, so an inter-source floor cannot be formed as it was for solubility) and
+assumed zero; the bounds we rely on are invariant to zero-mean noise. Because a replicate floor is
+unavailable, we test exposure to the highest-scatter data directly: the separation is unchanged by
+deleting any single pair ($60/60$) and by trimming the eight highest-error pairs---which include the
+physically suspect associating outliers (e.g.\ $1$-hexanamine in methanol, $\ln\gamma^\infty{=}{+}2.62$
+against its reverse $-0.97$)---so the ceiling is carried by the bulk of the associating systems, not
+a few leverage points.
 
 \paragraph{The closure defect is low-rank and correctable.} That $\Bclos$ dominates locates the
 ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. Fitting a small
@@ -669,7 +706,9 @@ $\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric and z
 same object a learned closure-correction (Arm~C) would carry---on the \emph{true} VT-2005 profiles
 removes $56\%$ of the closure error out-of-sample (five-fold cross-validated, activity MSE
 $1.47\!\to\!0.64$ held-out), and does so at \emph{rank one} ($52$ parameters): rank~2 adds nothing,
-rank~3 begins to over-fit. So $\Bclos$ is not diffuse model error but a low-dimensional, correctable
+rank~3 begins to over-fit. (At $52$ parameters against $n{=}60$ this held-out reduction is
+provisional pending a larger matched set, and we have not yet separated the kernel correction from a
+per-solvent mean-offset removal.) So $\Bclos$ is not diffuse model error but a low-dimensional, correctable
 defect of the map---addressable with a handful of parameters placed on the closure, whereas the same
 error is only made worse by feeding the inputs truthfully (\S\ref{sec:paradox}) and untouched by an
 output residual (\S\ref{sec:gateb}). This is the constructive complement to the paradox, on the
@@ -686,7 +725,17 @@ This is robust to the size-factor's volume basis: recomputing the combinatorial 
 on the true COSMO cavity volumes (VT-2005 $V_{\mathrm{cosmo}}$) rather than an RDKit
 molar volume leaves it essentially unchanged (Jensen $0.714\to0.717$, MSE
 $1.793\to1.800$), because the term depends on molecular-size \emph{ratios} in which a
-near-uniform volume rescaling cancels. A second observation is consistent but is
+near-uniform volume rescaling cancels. The increase is, however, concentrated on
+size-asymmetric pairs (its magnitude correlates with $|\ln(V_2/V_1)|$ at $r{=}0.33$ and is
+$11\times$ larger in the high-asymmetry half), i.e.\ it is the documented miscalibration of the
+\emph{unmodified} combinatorial term for size-asymmetric mixtures---the reason
+modified-Staverman--Guggenheim and free-volume corrections exist---so we read it as corroboration of
+closure misspecification, not an independent second effect. The residual (deployed) error is itself
+localized: self-solvation $\ln\gamma^\infty(i,i)$ is exactly zero, ruling out a global
+implementation artifact, and $90\%$ of the squared error falls on strong hydrogen-bond-donor
+solvents while acceptor-only solvents are near-exact (mean squared error $0.09$)---placing $\Bclos$
+in COSMO-SAC's documented single-parameter hydrogen-bonding kernel, a real but \emph{known}
+limitation rather than an idiosyncrasy of our differentiable layer. A second observation is consistent but is
 \emph{not} independent of the decomposition: a flexible regressor of $m$ on $\zstar$
 fits the activity target $\sim$4$\times$ better than the fixed true-input closure---but
 that regressor is exactly our convention-independent $\Binsuf$ estimator
@@ -701,7 +750,7 @@ inverting the verdict. The constant-offset bound is convention-specific---it inv
 under the deployed residual-only default, where the convention-independent bound
 ($\Bclos\ge0.91>0.62$) and the combinatorial fact carry the claim instead; the closure
 error is chiefly a between-solvent bias (a solvent-conditional lower bound
-$\Bclos\ge0.89$); the solvent-clustered confidence is $P(\Bclos{>}\Binsuf)\approx0.85$;
+$\Bclos\ge0.89$); the solvent-clustered confidence on the constant-offset separation is $P(\Bclos{>}\Binsuf)\approx0.85$ ($0.83$ vs the random-forest bound, $0.89$ vs the law-of-total-variance bound);
 and the measurement is confined to the low-$\gamma$, $298$\,K, VT-2005-matchable corner,
 so the numeric ceiling is not claimed to transfer to the finite-composition regime. The
 four hedges are stated in full in App.~\ref{sec:si-tables}.
@@ -733,7 +782,7 @@ holds), $\Gamma$ tracks the closure bias $\Bclos$ as fidelity varies, so
 Theorem~\ref{thm:gap}'s proxy is valid. \emph{Right:} with a \emph{well-specified} closure
 ($\Bclos=0$) but a lossy intermediate (A2 fails), $\Gamma>0$ and grows with the discarded
 variance---a positive grounding gap from pure input insufficiency (the worked
-Counterexample~A of App.~\ref{sec:si-proofs}). Hence certification of closure-dominance
+counterexample in the proof of Theorem~\ref{thm:gap}, App.~\ref{sec:si-proofs}). Hence certification of closure-dominance
 rests on the decomposition, which needs neither assumption.}
 \label{fig:conflation}
 \end{figure}
@@ -747,8 +796,8 @@ An additive bounded residual with a learned confidence gate
 ($\hat y=\hat y_{\text{phys}}+(1-c)\,r$, with $y=\lnx$) leaves the valve
 effectively shut (applied
 residual $\approx0$). Forcing the gate open removes the systematic
-\emph{bias} ($+0.45\to+0.06$) but does \emph{not} recover \emph{accuracy}
-($R^2$ $0.283\to0.274$, essentially unchanged). This is the classical calibration-versus-accuracy
+\emph{bias} ($+0.45\to+0.06$) but recovers little \emph{accuracy} ($R^2$
+$0.236\to0.274$ on the same rows, a marginal rise that leaves the fit far short of usable). This is the classical calibration-versus-accuracy
 separation: when the upstream map is misspecified, a monotone or affine post-hoc
 map can fix reliability but not resolution. Recalibration buys calibration
 without buying accuracy, which is what we expect if the closure, rather than the
@@ -807,7 +856,8 @@ ceiling, and a proved account of why it sits where it does.
 \paragraph{When a physics prior must lose.} The tax rule (Prop.~\ref{prop:tax}) turns these
 negatives into a phase picture rather than a single verdict (Fig.~\ref{fig:phase}), and says
 \emph{when} to expect them. A fixed-closure prior helps only when the estimation variance it saves exceeds its
-asymptotic bias $\Delta_\infty=\Bclos-\Gamma$; both are measurable. The variance benefit is
+asymptotic bias $\Delta_\infty$ (equal to $\Bclos-\Gamma$ only under A2 with an
+asymptotically-Bayes control, otherwise read off the large-$n$ asymptote); both are measurable. The variance benefit is
 largest at small $n$ and vanishes as data accumulate or as the black box nears the aleatoric
 floor, whereas $\Delta_\infty$ is set by the closure and does not. A prior is therefore
 predicted to hurt precisely in the mature-data, low-noise, well-covered regime---exactly where
@@ -825,9 +875,9 @@ abundant, low-noise data.
 \centering
 \includegraphics[width=0.82\linewidth]{figs/fig_phase.pdf}
 \caption{When a physics prior helps versus hurts. The physics tax has sign
-$T=\Delta_\infty-(\text{variance saved})$: a fixed-closure prior helps only below the $T=0$
+$\mathcal{T}=\Delta_\infty-(\text{variance saved})$: a fixed-closure prior helps only below the $\mathcal{T}=0$
 diagonal, where the estimation variance it saves exceeds its asymptotic closure bias
-$\Delta_\infty=\Bclos-\Gamma$. The variance saving shrinks as $n$ grows, so systems drift
+$\Delta_\infty$ (the large-$n$ asymptote; $=\Bclos-\Gamma$ under A2). The variance saving shrinks as $n$ grows, so systems drift
 left: solubility/COSMO-SAC sits deep in the ``hurts'' region and moves further in with more
 data, pKa through a Hammett closure lands on the ``physics helps'' side as a \emph{trained}
 comparison (\S\ref{sec:pka})---though a stratified check shows the help is not cleanly a
@@ -864,8 +914,10 @@ Feeding a physics-informed solubility model its true physical inputs made it
 worse. What the paper contributes is a way to measure that failure: with an
 externally grounded latent, the true-input excess risk splits into a
 decoder-misspecification term and an input-insufficiency term, and on the
-infinite-dilution, low-$\gamma$ subset we can measure, the ceiling turns out to be
-the closure rather than the inputs (label noise unestimable and assumed zero). The
+infinite-dilution, low-$\gamma$ subset we can measure, the ceiling is most likely
+the closure rather than the inputs ($P\approx0.78$ under two-way solute$\times$solvent clustering,
+$0.89$ single-axis; not certified at conventional confidence;
+label noise unestimable and assumed zero). The
 practical implication is to fix the map itself, since within this closure truer
 inputs surface its bias and an output-space correction is inert.
 

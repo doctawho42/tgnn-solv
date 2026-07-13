@@ -52,8 +52,10 @@ last confound: checkpointing a \emph{single} grounded model before and after sol
 fine-tuning (sigma head unfrozen), the objective drives a \emph{systematic} (low-rank, top-two
 modes $72\%$) drift of $\hat\sigma$ off the grounded profile---so the divergence is a property of
 the fitting objective, not of architecture or of never having been grounded. (A short local run
-reaches only ${\sim}16\%$ of the full $82\%$ departure; the magnitude develops over convergence,
-which we did not reach.) The remaining limit is scope: the matched set is the low-$\gamma$,
+reaches only ${\sim}16\%$ of the full $82\%$ departure, and its \emph{transferability} is only
+${\sim}1.7\times$ over identity---versus the $16\times$/$26\times$ of the confounded and two-model
+analyses above---so the transferable-surrogate claim currently rests on those analyses; both the
+magnitude and the clean transferability develop over convergence, which we did not reach.) The remaining limit is scope: the matched set is the low-$\gamma$,
 $n{=}44$ VT-2005 subset.
 
 \begin{figure}[t]

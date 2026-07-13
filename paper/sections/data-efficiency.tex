@@ -11,8 +11,9 @@ the identical subsample and evaluate both on the fixed scaffold test
 (Table~\ref{tab:data-eff}; seed 42, full-corpus run). The physics arm is \emph{worse at
 every fraction}, and---against the hypothesis---the gap is \emph{smallest} at the least
 data ($\Delta\mathrm{MAE}=+0.08$ at $5\%$) and \emph{grows} with more
-($+1.0$ at full); its $R^2$ is negative throughout. In the language of
-Prop.~\ref{prop:tax}, the critical budget $n^\star$ appears to sit below our smallest fraction.
+($+1.0$ at full); its $R^2$ is negative throughout. We do not map this to Prop.~\ref{prop:tax}: the physics arm is markedly more under-converged than
+the control at this light per-fraction budget, so the within-budget gap reflects optimization
+difficulty as much as inductive bias.
 We do not over-read this: the sweep is single-seed (seed 42), the low-data gap is small
 ($+0.08$ at $5\%$), and the physics-arm MAEs are non-monotone across fractions, so we take it as
 \emph{consistent with}---not a sharp confirmation of---the sign rule, and leave multi-seed error

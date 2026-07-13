@@ -119,17 +119,17 @@ does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 
 \begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the physics tax)]
 Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$, so
-$T(n)=\Delta_\infty-D(n)$ with $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.
-\emph{(i)} $T(n)<0\iff D(n)>\Delta_\infty$, immediately.
+$\mathcal{T}(n)=\Delta_\infty-D(n)$ with $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.
+\emph{(i)} $\mathcal{T}(n)<0\iff D(n)>\Delta_\infty$, immediately.
 \emph{(ii)} If $\Delta_\infty>0$ and $D(n)\to0$, choose $n^\star$ with $|D(n)|<\Delta_\infty$
-for all $n>n^\star$ (possible since $D(n)\to0$); then $T(n)=\Delta_\infty-D(n)>0$. Monotonicity
+for all $n>n^\star$ (possible since $D(n)\to0$); then $\mathcal{T}(n)=\Delta_\infty-D(n)>0$. Monotonicity
 of $D$ is \emph{not} required for existence of $n^\star$; it is needed only for the stronger
-claim ``$T(n)>0$ at every $n$,'' which we treat as an empirical observation.
+claim ``$\mathcal{T}(n)>0$ at every $n$,'' which we treat as an empirical observation.
 \emph{(iii)} Since $V_{\mathrm{phys}}(n)\ge0$, $D(n)\le V_{\mathrm{direct}}(n)$: the variance a
 prior can save is bounded by the control's own estimation variance. As the black box approaches
 the aleatoric floor $V_{\mathrm{direct}}(n)\to0$, so $\limsup_n D(n)\le0$; with both estimators
 consistent ($V_{\mathrm{phys}},V_{\mathrm{direct}}\to0$) one has $D(n)\to0$ and
-$T(n)\to\Delta_\infty\ge0$. When the control is asymptotically Bayes ($R_{\mathrm{direct},\infty}
+$\mathcal{T}(n)\to\Delta_\infty\ge0$. When the control is asymptotically Bayes ($R_{\mathrm{direct},\infty}
 =R_{\mathrm{free}}$) and A2 holds, $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{free}}=\Bclos-\Gamma$
 by \eqref{eq:gap}.
 \end{proof}
