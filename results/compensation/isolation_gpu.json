@@ -1,0 +1,54 @@
+{
+  "checkpoint": "/private/tmp/claude-501/-Users-nikitapolomosnov-PycharmProjects-tgnn-solv/d8c57c82-2aba-4a38-b6f5-83d49a35e42a/scratchpad/kaggle_results/results/compensation/ckpt/sle_model.pt",
+  "vs_true": {
+    "A1": {
+      "tag": "sigma_hat_SLE_vs_true",
+      "n": 44,
+      "rel_deviation": 0.5324746230298852,
+      "pca_evr_top5": [
+        0.40423138863862074,
+        0.1963170585625977,
+        0.12046132050820062,
+        0.06959313152397589,
+        0.05629762759297014
+      ],
+      "top1_evr": 0.40423138863862074,
+      "top2_cum_evr": 0.6005484472012185,
+      "mean_shift_norm": 0.10129816357638405
+    },
+    "A2": {
+      "oos_mse_distortion_D": 0.00015370861100577444,
+      "oos_mse_identity": 0.0004957938483395313,
+      "improvement_ratio": 3.225543721134543,
+      "systematic_transferable": true
+    }
+  },
+  "isolation": {
+    "baseline_checkpoint": "/private/tmp/claude-501/-Users-nikitapolomosnov-PycharmProjects-tgnn-solv/d8c57c82-2aba-4a38-b6f5-83d49a35e42a/scratchpad/kaggle_results/results/compensation/ckpt/grounded_base.pt",
+    "grounded_vs_true_rel_deviation": 0.33388456478619205,
+    "A1": {
+      "tag": "SLE_minus_grounded",
+      "n": 44,
+      "rel_deviation": 0.45075565670979434,
+      "pca_evr_top5": [
+        0.4967750012874603,
+        0.2322159707546234,
+        0.1644545942544937,
+        0.03688836097717285,
+        0.02995957061648369
+      ],
+      "top1_evr": 0.4967750012874603,
+      "top2_cum_evr": 0.7289909720420837,
+      "mean_shift_norm": 0.10203597694635391
+    },
+    "A2": {
+      "oos_mse_distortion_D": 9.938365104870149e-05,
+      "oos_mse_identity": 0.000331416551489383,
+      "improvement_ratio": 3.334718987052088,
+      "systematic_transferable": true
+    }
+  },
+  "primary_analysis": "isolation",
+  "verdict": "SUPPORTED [isolation]: deviation low-rank (top-2 EVR 73%) AND distortion transfers out-of-sample (x3.3) => sigma_hat is a systematic closure-compensating surrogate",
+  "figure": "results/compensation/fig_compensation_surrogate.pdf"
+}

@@ -1,67 +1,50 @@
-\subsection{The second edge: the learned intermediate is a compensating surrogate, not the physical quantity}
+\subsection{Why grounding hurts on this anchor: the end-to-end latent is a compensating surrogate}
 \label{sec:surrogate}
-% Artifact: results/compensation/{surrogate_vs_true,isolation}.json via
-% scripts/analysis/run_compensation_surrogate.py on the n=44 matched VT-2005 set.
-This is the second edge of the \emph{same} anchor: the external ground truth that made the
-closure/insufficiency split measurable (edge~1) also lets us hold the model's ``physical''
-intermediate up against its true value---one oracle, two consequences. Where the closure is the
-binding term (\S\ref{sec:measure}), the learned intermediate is under pressure not to be physically
-faithful but to \emph{cancel} the closure's error, and the same matched set lets us compare the
-predicted $\sigma$-profile $\hat\sigma$ against the true VT-2005 profile $\sigma$ molecule by molecule
-($n{=}44$ with both available). We flag the honesty ceiling up front: the \emph{converged} magnitude
-of this drift is provisional---our confound-free one-model control reaches only ${\sim}16\%$ of the
-full ${\sim}82\%$ departure with ${\sim}1.7\times$ transferability, and the strong ${\sim}82\%$ /
-$16\times$ figures below rest on confounded and two-model analyses pending a converged run.
+% Artifact: results/compensation/isolation_gpu.json (converged one-model control) +
+% surrogate_vs_true.json via scripts/analysis/run_compensation_surrogate.py, n=44 matched VT-2005.
+This is the \emph{mechanism} behind the low-fidelity, end-to-end corner of the map
+(\S\ref{sec:discussion}): when a $\sigma$-profile head is trained \emph{end-to-end} through a fixed,
+misspecified closure---never supervised toward the true profile---it is under pressure not to be
+physically faithful but to \emph{cancel} the closure's error. The external ground truth that lets us
+measure the ceiling (\S\ref{sec:measure}) also lets us test this directly, comparing the predicted
+profile $\hat\sigma$ against the true VT-2005 profile $\sigma$ molecule by molecule ($n{=}44$).
 
-\paragraph{The learned profile is not the physical one, and not by noise.}
-The deviation is large and structured. Averaged over the matched molecules, $\hat\sigma$ differs
-from $\sigma$ by $\lVert\hat\sigma-\sigma\rVert/\lVert\sigma\rVert\approx0.82$---the learned
-``physical'' profile is off by the order of its own magnitude. Crucially the deviations are
-\emph{low-rank}: their first two principal components carry $66\%$ of the variance (isotropic noise
-over $51$ bins would give ${\approx}4\%$), so $\hat\sigma-\sigma$ is a systematic distortion, not
-per-molecule error. Its dominant mode (Fig.~\ref{fig:surrogate}) is a consistent transfer of
-area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and \emph{into} the polar wings
-($|\sigma|$ large): the network systematically makes molecules look more polar than they are.
+\paragraph{The learned profile is a systematic, low-rank, transferable surrogate---confound-free.}
+We use the cleanest test available: a \emph{single} grounded model checkpointed before and after
+solubility fine-tuning (the $\sigma$ head unfrozen), so architecture and initialisation are held fixed
+and only the objective differs. The grounded base recovers the true profile to within $33\%$
+($\lVert\hat\sigma_{\mathrm{grounded}}-\sigma\rVert/\lVert\sigma\rVert$), so the intermediate
+\emph{can} be physical; solubility fine-tuning then drives it $45\%$ off the grounded profile, for a
+total departure from truth of $53\%$. The drift is not per-molecule noise: its first two principal
+components carry $73\%$ of the variance (isotropic noise over $51$ bins would give ${\approx}4\%$), and
+a single affine distortion $D$ fit on half the molecules predicts the drift on the held-out half
+$3.3\times$ better than identity out-of-sample. So $\hat\sigma$ is a systematic, low-rank,
+\emph{transferable} closure-compensating surrogate---one generalizable way the intermediate ``lies'' to
+the closure, shared across chemistry, driven by the fitting objective rather than by architecture or a
+lack of grounding. (The magnitude develops over convergence---a short run reached only ${\sim}16\%$;
+the converged control above supersedes it. Earlier confounded and two-model analyses over-stated the
+departure at ${\sim}82\%$ and the transfer at $16$--$26\times$; we report the confound-free numbers.)
 
-\paragraph{It is a transferable closure-inverse, not a per-molecule fit.}
-That the deviation compensates the closure is nearly tautological in-distribution (a model that fits
-$m$ through $g(\hat\sigma)$ makes $\hat\sigma$ whatever cancels $g$'s error); the non-trivial content
-is that the compensation is a single \emph{transferable} transform. Fitting one affine distortion
-$D$ on half the molecules ($\hat\sigma\!\approx\!D\sigma$) and testing on the held-out half, $D\sigma$
-predicts $\hat\sigma$ \emph{$16\times$} better than the true $\sigma$ does out-of-sample. So
-$\hat\sigma$ is not $\sigma$ plus noise; it is a consistent, generalizable closure-inverse of it---one
-systematic way the intermediate ``lies'' to the closure, shared across chemistry.
+\paragraph{Dominant mode and consequence.} The dominant drift mode (Fig.~\ref{fig:surrogate}) transfers
+area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and \emph{into} the polar wings: the network
+makes molecules look more polar than they are, inflating the segment interactions the misspecified
+exchange kernel under-weights and thereby cancelling part of $\Bclos$---the input compensating the map,
+exactly as the non-identifiability of the split predicts (Lemma~\ref{prop:ident}). This re-explains why
+grounding hurts \emph{here} (\S\ref{sec:paradox}): the pipeline is calibrated to the compensated
+$\hat\sigma$, not to physics, so substituting the true $\sigma$ breaks the compensation. It also means
+the model's ``physical'' intermediate is not the molecule's charge distribution but a surrogate,
+consistent with known cautions that the interpretability of physics-grounded latents is not guaranteed
+under misspecification \cite{brynjarsdottir2014} (Takeishi \& Kalousis, NeurIPS 2021, \pending{cite}); what is
+specific here is the \emph{structure}---the surrogate is low-rank and transferable, not diffuse.
 
-\paragraph{The distortion is driven by the objective, not the lack of grounding.}
-One could object that $\hat\sigma$ deviates only because nothing asked it to be physical. It is not
-that: a $\sigma$-grounded model (a sigma-profile warm-up on external single-component labels) brings
-$\hat\sigma$ to within $26\%$ of the true profile, so the intermediate \emph{can} be physical. The
-$82\%$ divergence belongs to the solubility-trained model, and the SLE-induced distortion
-(the grounded-to-trained difference) is itself systematic---top-two-mode variance $77\%$, an affine
-transfer $26\times$ better than identity out-of-sample---and carries the same nonpolar$\to$polar
-signature. The learned profile is pulled off physical truth by the fitting objective, in a direction
-that inflates the segment interactions the misspecified exchange kernel under-weights, cancelling part
-of $\Bclos$: the input compensating the map, exactly as the non-identifiability of the split predicts
-(Lemma~\ref{prop:ident}).
-
-\paragraph{Consequence: the physical readout is illusory where it matters.}
-This reframes what a COSMO-SAC-over-$\hat\sigma$ model is doing. Its ``physical'' intermediate is not
-the molecule's charge distribution; it is a closure-inverse surrogate, and the surrogate departs from
-truth precisely in the polar / hydrogen-bonding region that carries the chemistry a $\sigma$-profile
-is read for. Reading $\hat\sigma$ as an interpretable physical quantity is therefore systematically
-misleading in the misspecified regime---the interpretability a physics-informed bottleneck appears to
-offer is not guaranteed by the architecture. It also re-explains the grounding paradox
-(\S\ref{sec:paradox}): substituting the \emph{true} $\sigma$ hurts because the rest of the pipeline is
-calibrated to the compensated $\hat\sigma$, not to physics. We ran the one-model control that removes the
-last confound: checkpointing a \emph{single} grounded model before and after solubility
-fine-tuning (sigma head unfrozen), the objective drives a \emph{systematic} (low-rank, top-two
-modes $72\%$) drift of $\hat\sigma$ off the grounded profile---so the divergence is a property of
-the fitting objective, not of architecture or of never having been grounded. (A short local run
-reaches only ${\sim}16\%$ of the full $82\%$ departure, and its \emph{transferability} is only
-${\sim}1.7\times$ over identity---versus the $16\times$/$26\times$ of the confounded and two-model
-analyses above---so the transferable-surrogate claim currently rests on those analyses; both the
-magnitude and the clean transferability develop over convergence, which we did not reach.) The remaining limit is scope: the matched set is the low-$\gamma$,
-$n{=}44$ VT-2005 subset.
+\paragraph{The contrast that fixes the sign.} This is why the sign of grounding is not universal. When
+the $\sigma$ head is instead \emph{supervised} toward the true profile, the intermediate stays close to
+physical and true profiles \emph{help}: the recent TeNNet-SAC model (Physics-Embedded ML, \emph{J.\
+Chem.\ Inf.\ Model.} 2025, \pending{cite}) reports better accuracy from quantum-chemistry than from
+predicted $\sigma$-profiles (MAE $0.030$ vs $0.065$). Our end-to-end head, un-supervised and pushed
+through a low-fidelity closure, becomes a surrogate and true profiles \emph{hurt}. Latent supervision
+is one of the two axes that govern the sign (\S\ref{sec:discussion}). The scope limit is the
+low-$\gamma$, $n{=}44$ VT-2005 matched set.
 
 \begin{figure}[t]
 \centering
@@ -70,9 +53,10 @@ $n{=}44$ VT-2005 subset.
 physical profile. \emph{Left:} the mean deviation $\hat\sigma-\sigma$ (and its dominant PCA mode)
 transfers area out of the nonpolar bins ($\sigma\!\approx\!0$) into the polar wings---the network makes
 molecules look more polar than they are, inflating the segment interactions the misspecified closure
-under-weights. \emph{Right:} the deviation spectrum is low-rank (top-two modes $66\%$; noise would be
+under-weights. \emph{Right:} the deviation spectrum is low-rank (top-two modes $73\%$; noise would be
 flat at ${\approx}4\%$), i.e.\ the distortion is systematic. A single affine distortion transfers
-$16\times$ better than identity out-of-sample, so $\hat\sigma$ is a transferable closure-inverse of
-$\sigma$, not $\sigma$ with noise ($n{=}44$ matched VT-2005 molecules).}
+$3.3\times$ better than identity out-of-sample, so $\hat\sigma$ is a transferable
+closure-compensating surrogate of $\sigma$, not $\sigma$ with noise (confound-free one-model control,
+$n{=}44$ matched VT-2005 molecules).}
 \label{fig:surrogate}
 \end{figure}
