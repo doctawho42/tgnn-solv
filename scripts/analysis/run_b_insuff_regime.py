@@ -47,14 +47,23 @@ def decompose(mod, Z, m, g, label):
     b_bin = mod.lotv_binning(g, m, n_bins=max(3, len(m) // 8))
     b_rf = mod.oof_var(_rf, Z, m)
     b_knn = mod.knn_var(Z, m, k=1)
-    b_up = min(b_bin, b_rf, b_knn)          # tightest valid upper bound on B_insuff
+    # HEADLINE bound = LOTV/binning: the principled coarsening upper bound on
+    # B_insuff, immune to the 51/102-shared-coordinate leakage that deflates the
+    # z*-neighbour estimators (kNN, RF) -- see run_b_insuff_keystone_robustness.py.
+    # The previous version headlined min(bin,rf,knn), which is almost always the
+    # (deflated) kNN; we now report the verdict under EACH estimator so the
+    # estimator-dependence of the in-regime trend is explicit (review #11/#17).
     return {
         "stratum": label, "n": len(m), "mean_lngamma": round(float(m.mean()), 2),
         "mse_true_input": round(mse, 3),
         "binsuff_binning": round(b_bin, 3), "binsuff_rf": round(b_rf, 3),
-        "binsuff_knn": round(b_knn, 3), "binsuff_tightest": round(b_up, 3),
-        "bclosure_lb": round(mse - b_up, 3),
-        "verdict_holds": bool((mse - b_up) > b_up),
+        "binsuff_knn": round(b_knn, 3),
+        "bclosure_lb_binning": round(mse - b_bin, 3),   # headline (leakage-immune)
+        "bclosure_lb_rf": round(mse - b_rf, 3),
+        "bclosure_lb_knn": round(mse - b_knn, 3),
+        "verdict_holds_binning": bool(b_bin < mse / 2),   # headline verdict
+        "verdict_holds_rf": bool(b_rf < mse / 2),
+        "verdict_holds_knn": bool(b_knn < mse / 2),
     }
 
 
@@ -78,11 +87,19 @@ def main():
                       if k.sum() >= 10]}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, indent=2))
-    print(f"n={out['n']}, median ln gamma_inf={out['median_lngamma']}")
+    print(f"n={out['n']}, median ln gamma_inf={out['median_lngamma']}  (headline bound = LOTV/binning)")
     for s in out["strata"]:
-        print(f"  {s['stratum']:26s} n={s['n']:2d} <lng>={s['mean_lngamma']:+.2f}  "
-              f"MSE={s['mse_true_input']:.2f}  B_insuff^up={s['binsuff_tightest']:.2f}  "
-              f"B_clos_lb={s['bclosure_lb']:.2f}  holds={s['verdict_holds']}")
+        print(f"  {s['stratum']:26s} n={s['n']:2d} <lng>={s['mean_lngamma']:+.2f}  MSE={s['mse_true_input']:.2f}  "
+              f"B_ins[bin/rf/knn]={s['binsuff_binning']:.2f}/{s['binsuff_rf']:.2f}/{s['binsuff_knn']:.2f}  "
+              f"holds[bin/rf/knn]={int(s['verdict_holds_binning'])}/{int(s['verdict_holds_rf'])}/{int(s['verdict_holds_knn'])}")
+    # is the "strengthens toward higher gamma" trend monotone under the headline (binning) bound?
+    strata_seq = [s for s in out["strata"] if s["stratum"] != "all"]
+    lbs = [s["bclosure_lb_binning"] for s in strata_seq]
+    mono = all(lbs[i] <= lbs[i + 1] for i in range(len(lbs) - 1)) if len(lbs) > 1 else None
+    out["binning_bclosure_lb_by_stratum"] = {s["stratum"]: s["bclosure_lb_binning"] for s in strata_seq}
+    out["binning_trend_monotone_increasing"] = mono
+    OUT.write_text(json.dumps(out, indent=2))
+    print(f"  binning B_clos_lb by gamma stratum: {lbs}  -> monotone-increasing={mono}")
     print(f"wrote {OUT}")
 
 

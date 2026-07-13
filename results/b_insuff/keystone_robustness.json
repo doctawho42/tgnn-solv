@@ -1,0 +1,635 @@
+{
+  "n": 60,
+  "n_solutes": 41,
+  "n_solvents": 17,
+  "convention": "res (deployed)",
+  "mse_true_input": 1.4723,
+  "verdict_threshold_mse_over_2": 0.7361,
+  "max_solute_leverage": {
+    "solute": "CO",
+    "n_pairs": 12
+  },
+  "max_solvent_leverage": {
+    "solvent": "c1ccncc1",
+    "n_pairs": 20
+  },
+  "distinct_pair_estimators": {
+    "knn_raw": {
+      "binsuff_up": 0.4,
+      "bclosure_lb": 1.0722,
+      "verdict_holds": true
+    },
+    "knn_distinct_pair": {
+      "binsuff_up": 1.8305,
+      "bclosure_lb": -0.3582,
+      "verdict_holds": false
+    },
+    "knn_distinct_solute": {
+      "binsuff_up": 0.4478,
+      "bclosure_lb": 1.0245,
+      "verdict_holds": true
+    },
+    "knn_distinct_solvent": {
+      "binsuff_up": 1.458,
+      "bclosure_lb": 0.0143,
+      "verdict_holds": false
+    },
+    "rf_oof_random5fold": {
+      "binsuff_up": 0.6211,
+      "bclosure_lb": 0.8511,
+      "verdict_holds": true
+    },
+    "rf_oof_blocked": {
+      "binsuff_up": 3.6533,
+      "bclosure_lb": -2.1811,
+      "verdict_holds": false
+    },
+    "ridge_oof_random5fold": {
+      "binsuff_up": 0.6245,
+      "bclosure_lb": 0.8478,
+      "verdict_holds": true
+    },
+    "ridge_oof_blocked": {
+      "binsuff_up": 1.2873816936688613e+27,
+      "bclosure_lb": -1.2873816936688613e+27,
+      "verdict_holds": false
+    },
+    "lotv_binning6": {
+      "binsuff_up": 0.5633,
+      "bclosure_lb": 0.909,
+      "verdict_holds": true
+    }
+  },
+  "raw_knn_neighbour_shares_solute_or_solvent": 0.983,
+  "leave_one_solute_out": {
+    "n_folds": 41,
+    "n_holding_rf": 16,
+    "n_holding_binning": 40,
+    "folds": [
+      {
+        "dropped": "Brc1ccccc1",
+        "n": 59,
+        "mse": 1.464,
+        "binsuff_rf": 1.0,
+        "binsuff_bin": 0.513,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "C#CCCCCC",
+        "n": 59,
+        "mse": 1.487,
+        "binsuff_rf": 0.969,
+        "binsuff_bin": 0.571,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "C1=CCCCC1",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.943,
+        "binsuff_bin": 0.585,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "C1CCOC1",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.946,
+        "binsuff_bin": 0.573,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "C=CCCCCC",
+        "n": 59,
+        "mse": 1.496,
+        "binsuff_rf": 0.953,
+        "binsuff_bin": 0.59,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CC#N",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.946,
+        "binsuff_bin": 0.571,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CC(C)(C)N",
+        "n": 58,
+        "mse": 1.519,
+        "binsuff_rf": 0.626,
+        "binsuff_bin": 0.638,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CC(C)=O",
+        "n": 59,
+        "mse": 1.496,
+        "binsuff_rf": 0.948,
+        "binsuff_bin": 0.572,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CC(C)Br",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.955,
+        "binsuff_bin": 0.571,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CC(Cl)CCl",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.903,
+        "binsuff_bin": 0.573,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCC(C)N",
+        "n": 58,
+        "mse": 1.487,
+        "binsuff_rf": 0.601,
+        "binsuff_bin": 0.577,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCCC",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.906,
+        "binsuff_bin": 0.587,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCCCC",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.878,
+        "binsuff_bin": 0.584,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCCCCC",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.873,
+        "binsuff_bin": 0.489,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCCCCCC",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.869,
+        "binsuff_bin": 0.493,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCCCCCCC",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.861,
+        "binsuff_bin": 0.496,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCCN",
+        "n": 58,
+        "mse": 1.124,
+        "binsuff_rf": 0.579,
+        "binsuff_bin": 0.46,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCOC(C)=O",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.818,
+        "binsuff_bin": 0.571,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCl",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.833,
+        "binsuff_bin": 0.571,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCN",
+        "n": 59,
+        "mse": 1.478,
+        "binsuff_rf": 0.74,
+        "binsuff_bin": 0.635,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCOC(C)=O",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.849,
+        "binsuff_bin": 0.572,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCN(CCC)CCC",
+        "n": 57,
+        "mse": 1.532,
+        "binsuff_rf": 0.69,
+        "binsuff_bin": 0.506,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCNCCC",
+        "n": 58,
+        "mse": 1.519,
+        "binsuff_rf": 0.666,
+        "binsuff_bin": 0.579,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCNCC",
+        "n": 59,
+        "mse": 1.486,
+        "binsuff_rf": 0.794,
+        "binsuff_bin": 0.539,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCc1ccccc1",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.778,
+        "binsuff_bin": 0.571,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CO",
+        "n": 48,
+        "mse": 1.312,
+        "binsuff_rf": 0.7,
+        "binsuff_bin": 0.785,
+        "holds_rf": false,
+        "holds_bin": false
+      },
+      {
+        "dropped": "Cc1ccc(C)cc1",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.799,
+        "binsuff_bin": 0.571,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1cccc(C)c1",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.796,
+        "binsuff_bin": 0.571,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1cccc(C)n1",
+        "n": 59,
+        "mse": 1.489,
+        "binsuff_rf": 0.806,
+        "binsuff_bin": 0.547,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1ccccc1",
+        "n": 59,
+        "mse": 1.439,
+        "binsuff_rf": 0.631,
+        "binsuff_bin": 0.491,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1ccccc1C",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.552,
+        "binsuff_bin": 0.571,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1ccccn1",
+        "n": 59,
+        "mse": 1.494,
+        "binsuff_rf": 0.563,
+        "binsuff_bin": 0.571,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1cccnc1",
+        "n": 58,
+        "mse": 1.523,
+        "binsuff_rf": 0.594,
+        "binsuff_bin": 0.582,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1ccncc1",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.564,
+        "binsuff_bin": 0.573,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Clc1ccccc1",
+        "n": 59,
+        "mse": 1.467,
+        "binsuff_rf": 0.588,
+        "binsuff_bin": 0.514,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Fc1ccccc1",
+        "n": 59,
+        "mse": 1.464,
+        "binsuff_rf": 0.58,
+        "binsuff_bin": 0.516,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Ic1ccccc1",
+        "n": 59,
+        "mse": 1.473,
+        "binsuff_rf": 0.592,
+        "binsuff_bin": 0.514,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "NC1CCCCC1",
+        "n": 58,
+        "mse": 1.292,
+        "binsuff_rf": 0.612,
+        "binsuff_bin": 0.565,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "c1ccc2ccccc2c1",
+        "n": 59,
+        "mse": 1.38,
+        "binsuff_rf": 0.612,
+        "binsuff_bin": 0.434,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "c1ccccc1",
+        "n": 59,
+        "mse": 1.467,
+        "binsuff_rf": 0.7,
+        "binsuff_bin": 0.516,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "c1ccncc1",
+        "n": 59,
+        "mse": 1.496,
+        "binsuff_rf": 0.642,
+        "binsuff_bin": 0.572,
+        "holds_rf": true,
+        "holds_bin": true
+      }
+    ]
+  },
+  "leave_one_solvent_out": {
+    "n_folds": 17,
+    "n_holding_rf": 2,
+    "n_holding_binning": 17,
+    "folds": [
+      {
+        "dropped": "C1CCNCC1",
+        "n": 59,
+        "mse": 1.465,
+        "binsuff_rf": 0.8,
+        "binsuff_bin": 0.635,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CC(C)(C)N",
+        "n": 59,
+        "mse": 1.445,
+        "binsuff_rf": 0.805,
+        "binsuff_bin": 0.63,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCC(C)N",
+        "n": 59,
+        "mse": 1.426,
+        "binsuff_rf": 0.82,
+        "binsuff_bin": 0.634,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCCCCCCCCCCCC",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.772,
+        "binsuff_bin": 0.573,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCCCN",
+        "n": 59,
+        "mse": 1.436,
+        "binsuff_rf": 0.811,
+        "binsuff_bin": 0.634,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCCN",
+        "n": 59,
+        "mse": 1.446,
+        "binsuff_rf": 0.807,
+        "binsuff_bin": 0.633,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCCNCCC",
+        "n": 59,
+        "mse": 1.454,
+        "binsuff_rf": 0.801,
+        "binsuff_bin": 0.633,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CCNCC",
+        "n": 59,
+        "mse": 1.46,
+        "binsuff_rf": 0.805,
+        "binsuff_bin": 0.635,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "CO",
+        "n": 47,
+        "mse": 1.118,
+        "binsuff_rf": 0.566,
+        "binsuff_bin": 0.356,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1cccc(C)n1",
+        "n": 59,
+        "mse": 1.497,
+        "binsuff_rf": 0.801,
+        "binsuff_bin": 0.563,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1ccccn1",
+        "n": 59,
+        "mse": 1.491,
+        "binsuff_rf": 0.805,
+        "binsuff_bin": 0.568,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1cccnc1",
+        "n": 59,
+        "mse": 1.487,
+        "binsuff_rf": 0.802,
+        "binsuff_bin": 0.571,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "Cc1ccncc1",
+        "n": 59,
+        "mse": 1.493,
+        "binsuff_rf": 0.803,
+        "binsuff_bin": 0.565,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "NC1CCCCC1",
+        "n": 59,
+        "mse": 1.438,
+        "binsuff_rf": 0.799,
+        "binsuff_bin": 0.632,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "OCCO",
+        "n": 53,
+        "mse": 1.302,
+        "binsuff_rf": 0.32,
+        "binsuff_bin": 0.449,
+        "holds_rf": true,
+        "holds_bin": true
+      },
+      {
+        "dropped": "c1ccccc1",
+        "n": 53,
+        "mse": 1.536,
+        "binsuff_rf": 0.787,
+        "binsuff_bin": 0.631,
+        "holds_rf": false,
+        "holds_bin": true
+      },
+      {
+        "dropped": "c1ccncc1",
+        "n": 40,
+        "mse": 2.185,
+        "binsuff_rf": 0.833,
+        "binsuff_bin": 0.798,
+        "holds_rf": true,
+        "holds_bin": true
+      }
+    ]
+  },
+  "joint_drop_top_solute_and_solvent": {
+    "dropped_solute": "CO",
+    "dropped_solvent": "c1ccncc1",
+    "n_remaining": 28,
+    "mse": 2.217,
+    "binsuff_rf": 1.021,
+    "binsuff_bin": 1.288,
+    "holds_rf": true,
+    "holds_bin": false
+  },
+  "bootstrap_two_way": {
+    "scheme": "two-way (solute x solvent) pigeonhole, LOTV/binning",
+    "n_boot": 2950,
+    "bclosure_lb_median": 0.912,
+    "bclosure_lb_ci90": [
+      0.059,
+      2.154
+    ],
+    "margin_median": 0.412,
+    "margin_ci90": [
+      -0.582,
+      1.668
+    ],
+    "P_verdict_holds": 0.777
+  },
+  "bootstrap_solvent_only": {
+    "scheme": "solvent-only (paper)",
+    "n_boot": 3000,
+    "margin_median": 0.359,
+    "margin_ci90": [
+      -0.224,
+      0.971
+    ],
+    "P_verdict_holds": 0.886
+  }
+}

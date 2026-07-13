@@ -11,9 +11,12 @@
       "binsuff_binning": 0.645,
       "binsuff_rf": 0.621,
       "binsuff_knn": 0.4,
-      "binsuff_tightest": 0.4,
-      "bclosure_lb": 1.072,
-      "verdict_holds": true
+      "bclosure_lb_binning": 0.827,
+      "bclosure_lb_rf": 0.851,
+      "bclosure_lb_knn": 1.072,
+      "verdict_holds_binning": true,
+      "verdict_holds_rf": true,
+      "verdict_holds_knn": true
     },
     {
       "stratum": "lower_gamma (m<=median)",
@@ -23,9 +26,12 @@
       "binsuff_binning": 0.075,
       "binsuff_rf": 0.112,
       "binsuff_knn": 0.071,
-      "binsuff_tightest": 0.071,
-      "bclosure_lb": 0.949,
-      "verdict_holds": true
+      "bclosure_lb_binning": 0.945,
+      "bclosure_lb_rf": 0.908,
+      "bclosure_lb_knn": 0.949,
+      "verdict_holds_binning": true,
+      "verdict_holds_rf": true,
+      "verdict_holds_knn": true
     },
     {
       "stratum": "higher_gamma (m>median)",
@@ -35,9 +41,12 @@
       "binsuff_binning": 0.855,
       "binsuff_rf": 1.106,
       "binsuff_knn": 0.276,
-      "binsuff_tightest": 0.276,
-      "bclosure_lb": 1.648,
-      "verdict_holds": true
+      "bclosure_lb_binning": 1.07,
+      "bclosure_lb_rf": 0.819,
+      "bclosure_lb_knn": 1.648,
+      "verdict_holds_binning": true,
+      "verdict_holds_rf": false,
+      "verdict_holds_knn": true
     },
     {
       "stratum": "high_gamma (m>1.5)",
@@ -47,9 +56,18 @@
       "binsuff_binning": 0.666,
       "binsuff_rf": 0.393,
       "binsuff_knn": 0.315,
-      "binsuff_tightest": 0.315,
-      "bclosure_lb": 3.035,
-      "verdict_holds": true
+      "bclosure_lb_binning": 2.685,
+      "bclosure_lb_rf": 2.957,
+      "bclosure_lb_knn": 3.035,
+      "verdict_holds_binning": true,
+      "verdict_holds_rf": true,
+      "verdict_holds_knn": true
     }
-  ]
+  ],
+  "binning_bclosure_lb_by_stratum": {
+    "lower_gamma (m<=median)": 0.945,
+    "higher_gamma (m>median)": 1.07,
+    "high_gamma (m>1.5)": 2.685
+  },
+  "binning_trend_monotone_increasing": true
 }

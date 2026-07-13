@@ -1,0 +1,54 @@
+{
+  "n": 60,
+  "mse_res": 1.4723,
+  "mse_full": 1.8004,
+  "self_solvation": {
+    "n_molecules": 44,
+    "max_abs_ln_gamma_inf": 0.0,
+    "mean_abs": 0.0,
+    "interpretation": "should be ~0; nonzero => global grid/damping/normalization bug"
+  },
+  "error_localization_by_donor": {
+    "strong_donor": {
+      "n_pairs": 28,
+      "mean_sq_error": 2.828,
+      "share_of_total_SSE": 0.896
+    },
+    "acceptor_only": {
+      "n_pairs": 24,
+      "mean_sq_error": 0.092,
+      "share_of_total_SSE": 0.025
+    },
+    "inert": {
+      "n_pairs": 8,
+      "mean_sq_error": 0.867,
+      "share_of_total_SSE": 0.079
+    }
+  },
+  "sg_more_physics_worse": {
+    "delta_mse_full_minus_res": 0.328,
+    "corr(size_asymmetry, delta_sq_error)": 0.332,
+    "n_used": 60,
+    "mean_delta_high_asymmetry": 0.602,
+    "mean_delta_low_asymmetry": 0.055,
+    "interpretation": "positive corr / larger delta on size-asymmetric pairs => the SG (combinatorial) miscalibration, not a general grounding paradox"
+  },
+  "c_hb_sensitivity_mean_sq_error_by_class": {
+    "c_hb_x0.0": {
+      "strong_donor": 2.422,
+      "acceptor_only": 0.09,
+      "inert": 1.205
+    },
+    "c_hb_x1.0": {
+      "strong_donor": 2.828,
+      "acceptor_only": 0.092,
+      "inert": 0.867
+    },
+    "c_hb_x2.0": {
+      "strong_donor": 10.15,
+      "acceptor_only": 0.918,
+      "inert": 0.578
+    }
+  },
+  "c_hb_sensitivity_note": "strong_donor error should move strongly with c_hb while inert stays flat => B_closure signal is localized to the HB kernel"
+}

@@ -148,49 +148,54 @@ def fig_parity(matched_csv: Path, out_dir: Path) -> list[str]:
 
 def fig_decomposition(decomp_json: Path, out_dir: Path) -> list[str]:
     d = json.load(open(decomp_json))
-    full = d["conventions"]["full"]
+    res = d["conventions"]["res"]          # DEPLOYED residual-only convention (the model runs this)
     bi = d["b_insuff_convention_independent"]
-    mse = full["mse_total"]
-    jensen = full["b_closure_jensen_lower"]
-    b_via = full["b_closure_via_mse_minus_rf"]
+    mse = res["mse_total"]
+    jensen = res["b_closure_jensen_lower"]        # convention-specific; inverts under res
+    b_lotv = res["b_insuff_lotv_upper"]           # leakage-immune headline B_insuff upper bound
+    b_clos_lb = mse - b_lotv                       # load-bearing convention-independent bound
+    # B_insuff upper-bound estimators; the z*-neighbour smoothers (kNN, RF) are deflated by the
+    # 51/102 shared-coordinate near-duplicates of the crossed design, so we headline LOTV binning.
     uppers = {
-        "kNN-in-$z^\\ast$": bi["knn_in_zstar_biased_up"],
-        "LOTV bin $g$": full["b_insuff_lotv_upper"],
-        "RF out-of-fold": bi["rf_oof_upper"],
+        "LOTV bin $g$ (headline)": b_lotv,
         "Ridge out-of-fold": bi["ridge_oof_upper"],
+        "RF out-of-fold (deflated)": bi["rf_oof_upper"],
+        "kNN-in-$z^\\ast$ (deflated)": bi["knn_in_zstar_biased_up"],
     }
     max_upper = max(uppers.values())
 
     fig, ax = plt.subplots(figsize=(8.4, 3.6))
-    # salmon region = every valid B_insuff upper bound; teal region = closure share
+    # salmon region = every valid B_insuff upper bound; teal region = certified closure share
     ax.axvspan(0, max_upper, color=SALMON, alpha=0.22, zorder=0)
-    ax.axvspan(jensen, mse, color=TEAL, alpha=0.20, zorder=0)
+    ax.axvspan(b_clos_lb, mse, color=TEAL, alpha=0.20, zorder=0)
     # B_insuff estimators as points on one row
-    ys = np.linspace(0.62, 0.90, len(uppers))
+    ys = np.linspace(0.60, 0.92, len(uppers))
     for (name, val), y in zip(uppers.items(), ys):
         ax.scatter(val, y, s=70, color=SALMON, edgecolor=INK, linewidth=0.6, zorder=3)
         ax.annotate(f"{name} = {val:.2f}", (val, y), xytext=(6, 0),
                     textcoords="offset points", va="center", fontsize=8.5, color=INK)
-    # Jensen assumption-free lower bound on B_closure
-    ax.axvline(jensen, color=INK, lw=1.6, zorder=4)
-    ax.annotate(f"$B_{{\\rm closure}}\\geq{jensen:.2f}$\n(Jensen, assumption-free)",
-                (jensen, 0.30), xytext=(8, 0), textcoords="offset points",
+    # load-bearing convention-independent lower bound on B_closure
+    ax.axvline(b_clos_lb, color=INK, lw=1.6, zorder=4)
+    ax.annotate(f"$B_{{\\rm closure}}\\geq$ MSE$-B_{{\\rm insuff}}^{{\\rm LOTV}}={b_clos_lb:.2f}$\n(load-bearing)",
+                (b_clos_lb, 0.32), xytext=(8, 0), textcoords="offset points",
                 va="center", fontsize=9, color=INK, fontweight="bold")
-    # total MSE and MSE - B_insuff
+    # total MSE
     ax.axvline(mse, color=INK, lw=1.2, ls="--", alpha=0.7, zorder=4)
     ax.annotate(f"MSE$_{{\\rm total}}={mse:.2f}$", (mse, 0.14), xytext=(-6, 0),
                 textcoords="offset points", va="center", ha="right",
                 fontsize=9, color=INK)
-    ax.annotate(f"$B_{{\\rm closure}}\\geq$ MSE$-B_{{\\rm insuff}}={b_via:.2f}$",
-                (0.5 * (max_upper + mse), 0.06), ha="center", va="center",
-                fontsize=8.5, color=INK, alpha=0.8)
-    ax.set_xlim(0, mse + 0.28)
+    # Jensen constant-offset bound: convention-specific, does NOT separate under the deployed model
+    ax.axvline(jensen, color="#999999", lw=1.0, ls=":", zorder=2)
+    ax.annotate(f"Jensen offset ${jensen:.2f}$ (convention-specific;\ndoes not separate here)",
+                (jensen, 0.06), xytext=(6, 0), textcoords="offset points",
+                va="center", fontsize=7.6, color="#777777")
+    ax.set_xlim(0, mse + 0.30)
     ax.set_ylim(0, 1.0)
     ax.set_yticks([])
     ax.set_xlabel("error magnitude  ($\\ln\\gamma$ units$^2$)")
-    ax.set_title("Closure–insufficiency bounds, full COSMO-SAC ($n{=}60$): "
-                 "$B_{\\rm closure}$ dominates")
-    ax.text(max_upper / 2, 0.955, "$B_{\\rm insuff}$ upper bounds",
+    ax.set_title("Closure–insufficiency bounds, deployed residual-only COSMO-SAC ($n{=}60$): "
+                 "$B_{\\rm closure}$ dominates (leakage-immune bound)")
+    ax.text(max_upper / 2, 0.965, "$B_{\\rm insuff}$ upper bounds",
             ha="center", va="top", fontsize=9, color="#B5654A")
     fig.tight_layout()
     return _save(fig, out_dir, "fig_decomposition")

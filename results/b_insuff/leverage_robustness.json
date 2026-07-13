@@ -1,0 +1,148 @@
+{
+  "n": 60,
+  "mse_res": 1.4723,
+  "binsuff_lotv": 0.5633,
+  "bclosure_lb": 0.909,
+  "verdict_holds_full": true,
+  "leave_one_pair_out": {
+    "n": 60,
+    "n_holding": 60,
+    "min_margin": 0.158,
+    "median_margin": 0.352,
+    "most_weakening_pair": {
+      "solute": "methanol",
+      "solvent": "2-butanamine",
+      "margin_when_dropped": 0.158,
+      "verdict_holds": true
+    }
+  },
+  "trim_top_error_pairs": [
+    {
+      "dropped_top_error": 0,
+      "n": 60,
+      "mse": 1.472,
+      "binsuff_lotv": 0.563,
+      "binsuff_rf": 0.621,
+      "mse_over_2": 0.736,
+      "bclosure_lb": 0.909,
+      "holds_lotv": true,
+      "holds_rf": true
+    },
+    {
+      "dropped_top_error": 1,
+      "n": 59,
+      "mse": 1.187,
+      "binsuff_lotv": 0.465,
+      "binsuff_rf": 0.86,
+      "mse_over_2": 0.593,
+      "bclosure_lb": 0.722,
+      "holds_lotv": true,
+      "holds_rf": false
+    },
+    {
+      "dropped_top_error": 2,
+      "n": 58,
+      "mse": 1.01,
+      "binsuff_lotv": 0.424,
+      "binsuff_rf": 0.539,
+      "mse_over_2": 0.505,
+      "bclosure_lb": 0.586,
+      "holds_lotv": true,
+      "holds_rf": false
+    },
+    {
+      "dropped_top_error": 3,
+      "n": 57,
+      "mse": 0.906,
+      "binsuff_lotv": 0.277,
+      "binsuff_rf": 0.58,
+      "mse_over_2": 0.453,
+      "bclosure_lb": 0.63,
+      "holds_lotv": true,
+      "holds_rf": false
+    },
+    {
+      "dropped_top_error": 5,
+      "n": 55,
+      "mse": 0.775,
+      "binsuff_lotv": 0.254,
+      "binsuff_rf": 0.564,
+      "mse_over_2": 0.387,
+      "bclosure_lb": 0.521,
+      "holds_lotv": true,
+      "holds_rf": false
+    },
+    {
+      "dropped_top_error": 8,
+      "n": 52,
+      "mse": 0.616,
+      "binsuff_lotv": 0.236,
+      "binsuff_rf": 0.728,
+      "mse_over_2": 0.308,
+      "bclosure_lb": 0.38,
+      "holds_lotv": true,
+      "holds_rf": false
+    }
+  ],
+  "external_idac_noise_floor": {
+    "available": true,
+    "n_pairs_with_replicates": 0,
+    "n_pairs_total": 60,
+    "sigma_eta_sq_mean_var": 0.0,
+    "replicate_sd_mean": 0.0,
+    "replicate_sd_median": 0.0,
+    "note": "zero-mean noise inflates ESTIMATED B_insuff by sigma_eta^2, so the noise-corrected TRUE B_insuff is ~0.000 smaller -> verdict easier, not harder",
+    "binsuff_lotv_noise_corrected": 0.5633
+  },
+  "top_leverage_pairs": [
+    {
+      "solute": "1-hexanamine",
+      "solvent": "methanol",
+      "m": 2.62,
+      "g_res": -1.66,
+      "sq_error": 18.32,
+      "pct_of_SSE": 20.7
+    },
+    {
+      "solute": "cyclohexylamine",
+      "solvent": "methanol",
+      "m": 1.57,
+      "g_res": -1.81,
+      "sq_error": 11.45,
+      "pct_of_SSE": 13.0
+    },
+    {
+      "solute": "naphthalene",
+      "solvent": "1,2-ethanediol",
+      "m": 5.47,
+      "g_res": 2.85,
+      "sq_error": 6.9,
+      "pct_of_SSE": 7.8
+    },
+    {
+      "solute": "1-hexanamine",
+      "solvent": "benzene",
+      "m": 2.79,
+      "g_res": 0.59,
+      "sq_error": 4.82,
+      "pct_of_SSE": 5.5
+    },
+    {
+      "solute": "methanol",
+      "solvent": "2-butanamine",
+      "m": -0.97,
+      "g_res": -3.02,
+      "sq_error": 4.22,
+      "pct_of_SSE": 4.8
+    },
+    {
+      "solute": "methanol",
+      "solvent": "1-hexanamine",
+      "m": -0.97,
+      "g_res": -2.87,
+      "sq_error": 3.61,
+      "pct_of_SSE": 4.1
+    }
+  ],
+  "top2_pct_of_SSE": 33.7
+}
