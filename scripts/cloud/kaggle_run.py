@@ -38,6 +38,7 @@ SIGMA = REPO / "notebooks" / "data" / "processed_sigma_aux_stream" / "sigma_trai
 SIGMA_VAL = REPO / "notebooks" / "data" / "processed_sigma_aux_stream" / "sigma_val.csv"
 CRYSTAL = REPO / "notebooks" / "data" / "processed_crystal_aux_stream" / "crystal_train.csv"
 CFG = REPO / "configs" / "cosmo_sac.yaml"
+SIGMA_ARTIFACT = REPO / "results" / "sigma_profile_artifact" / "sigma_profiles.csv"  # VT-2005 oracle σ
 
 # Throughput: the config default batch_size=64 with num_workers=0 leaves the GPU
 # starved (~1760 batches/epoch on the 112k-row corpus, ~overhead-bound). A larger
@@ -162,10 +163,84 @@ def do_dosed(out: Path, device: str):
     print("[dosed] done ->", out / "e2_dosed", flush=True)
 
 
+def _matched_oracle_delta(learned_csv: Path, oracle_csv: Path) -> dict:
+    """MAE(learned σ̂) vs MAE(oracle true σ) on the SAME matched test rows. Both exports
+    iterate the same test.csv with the same seed/batch order, so we align by row index and
+    VERIFY the true labels line up before differencing."""
+    import numpy as np
+    import pandas as pd
+    L = pd.read_csv(learned_csv); O = pd.read_csv(oracle_csv)
+    mask = (O["sigma_oracle_applied"] & O["has_solubility"]).to_numpy()
+    yl = L.loc[mask, "ln_x2_true"].to_numpy(float); yo = O.loc[mask, "ln_x2_true"].to_numpy(float)
+    aligned = bool(len(yl) == len(yo) and (len(yl) == 0 or np.allclose(yl, yo, atol=1e-6)))
+    mae_l = float(L.loc[mask, "abs_error"].mean()); mae_o = float(O.loc[mask, "abs_error"].mean())
+    return {"n_matched": int(mask.sum()), "rows_aligned": aligned,
+            "mae_learned_sigma": round(mae_l, 4), "mae_oracle_sigma": round(mae_o, 4),
+            "grounding_delta_oracle_minus_learned": round(mae_o - mae_l, 4)}
+
+
+def do_supervised_sigma(out: Path, device: str, ep_warm: int, ep_sle: int):
+    """Axis-2 anchor of the two-axis map, with OUR model instead of the TeNNet citation.
+    From one grounded base (σ warmup -> physical manifold), train two SLE models:
+      supervised = σ head FROZEN through SLE (stays physical),
+      endtoend   = σ head UNFROZEN (drifts into a closure-compensating surrogate).
+    Eval each with its learned σ̂ and with the oracle TRUE VT-2005 σ, on the same matched
+    test subset. Sign of (MAE_oracle - MAE_learned): expected >0 (grounding HURTS) end-to-end,
+    <=0 (HELPS/neutral) under supervision -- the sign split IS the supervision axis, anchored
+    by our own model rather than the external TeNNet-SAC citation."""
+    if not SIGMA_ARTIFACT.exists():
+        raise RuntimeError(f"oracle σ artifact missing: {SIGMA_ARTIFACT} -- bundle "
+                           "results/sigma_profile_artifact/sigma_profiles.csv onto Kaggle first")
+    ck = out / "ckpt"; ck.mkdir(parents=True, exist_ok=True)
+    base = ck / "grounded_base.pt"; sup = ck / "supervised_sle.pt"; e2e = ck / "endtoend_sle.pt"
+    common = ["--config", CFG, "--train-data", DATA / "train.csv", "--val-data", DATA / "val.csv",
+              "--test-data", DATA / "test.csv", "--device", device]
+    # 1. grounded base: σ warmup + phase-1 (physical σ manifold), no SLE yet.
+    run(["python", "scripts/train.py", *common,
+         "--sigma-train-data", SIGMA, "--sigma-steps-per-epoch", "21",
+         "--crystal-train-data", CRYSTAL, "--crystal-steps-per-epoch", "8",
+         "--epochs-phase1", 5, "--epochs-phase2", 0, "--epochs-phase3", 0,
+         "--set", f"sigma_warmup_epochs={ep_warm}", "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET,
+         "--checkpoint", base])
+    # 2. supervised-σ: full SLE, σ head FROZEN (physical σ preserved).
+    run(["python", "scripts/train.py", *common, "--resume", base, "--resume-extend",
+         "--sigma-train-data", SIGMA, "--sigma-steps-per-epoch", "21",
+         "--epochs-phase1", 0, "--epochs-phase2", ep_sle, "--epochs-phase3", 0,
+         "--set", "freeze_sigma_head_during_sle=true", "sigma_warmup_epochs=0",
+         "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET, "--checkpoint", sup])
+    # 3. end-to-end: full SLE, σ head UNFROZEN (drifts). Sanity: should reproduce the known hurt.
+    run(["python", "scripts/train.py", *common, "--resume", base, "--resume-extend",
+         "--epochs-phase1", 0, "--epochs-phase2", ep_sle, "--epochs-phase3", 0,
+         "--set", "freeze_sigma_head_during_sle=false", "sigma_warmup_epochs=0",
+         "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET, "--checkpoint", e2e])
+    # 4. eval each: learned σ̂ and oracle true σ, matched-subset delta.
+    def export(ckpt, pred, oracle):
+        cmd = ["python", "scripts/analysis/export_checkpoint_predictions.py",
+               "--checkpoint", ckpt, "--data", DATA / "test.csv", "--output", pred,
+               "--model-type", "tgnn", "--device", device]
+        if oracle:
+            cmd += ["--sigma-oracle", "--sigma-oracle-side", "both", "--sigma-artifact", SIGMA_ARTIFACT]
+        run(cmd)
+    res: dict = {}
+    for tag, ckpt in [("supervised", sup), ("endtoend", e2e)]:
+        lp = out / f"{tag}_learned.csv"; op = out / f"{tag}_oracle.csv"
+        export(ckpt, lp, oracle=False)
+        export(ckpt, op, oracle=True)
+        res[tag] = _matched_oracle_delta(lp, op)
+        save(out, "supervised_sigma_axis.json", res)
+    sd = res["supervised"]["grounding_delta_oracle_minus_learned"]
+    ed = res["endtoend"]["grounding_delta_oracle_minus_learned"]
+    res["axis2_verdict"] = (f"supervised Δ={sd:+.3f} (<=0 helps/neutral), endtoend Δ={ed:+.3f} "
+                            f"(>0 hurts); {'CONFIRMED sign split (supervision flips the sign)' if sd < ed else 'NO split'}")
+    save(out, "supervised_sigma_axis.json", res)
+    print("[supervised_sigma]", res["axis2_verdict"], flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--do", default="all",
-                    help="comma list of {onemodel,tier3,dataeff,dosed} or 'all'")
+                    help="comma list of {onemodel,tier3,dataeff,dosed,supervised_sigma} or 'all' "
+                         "(supervised_sigma is NOT in 'all'; run it explicitly for the axis-2 anchor)")
     ap.add_argument("--out", type=Path, default=Path("/kaggle/working/results"))
     ap.add_argument("--device", default="cuda")
     # budgets (trim for a shorter session)
@@ -216,6 +291,7 @@ def main():
         "tier3":    lambda: do_tier3(args.out / "closure_fix", args.device, args.t3_ep1, args.t3_ep2, args.t3_ep3, args.t3_arm_ep2),
         "dataeff":  lambda: do_dataeff(args.out, args.device),
         "dosed":    lambda: do_dosed(args.out, args.device),
+        "supervised_sigma": lambda: do_supervised_sigma(args.out / "supervised_sigma", args.device, args.warm, args.sle),
     }
     for name in todo:
         name = name.strip()

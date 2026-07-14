@@ -1,0 +1,64 @@
+{
+  "n_pairs": 60,
+  "n_solutes": 41,
+  "n_solvents": 17,
+  "B_insuff_lotv_floor": 0.563,
+  "certificate_threshold_2xBinsuff": 1.126,
+  "n_boot": 4000,
+  "closures": {
+    "cosmosac_2002": {
+      "n_finite": 60,
+      "mse_point": 1.2631,
+      "mse_ci90": [
+        0.319,
+        2.67
+      ],
+      "B_closure_lb_point": 0.7001,
+      "B_closure_lb_ci90": [
+        0.0,
+        2.107
+      ],
+      "P_closure_dominates": 0.5466,
+      "P_certificate_lost": 0.4534,
+      "flip_threshold_Binsuff_gt": 0.6315
+    },
+    "cosmosac_2010": {
+      "n_finite": 60,
+      "mse_point": 0.7653,
+      "mse_ci90": [
+        0.179,
+        1.7273
+      ],
+      "B_closure_lb_point": 0.2023,
+      "B_closure_lb_ci90": [
+        0.0,
+        1.1643
+      ],
+      "P_closure_dominates": 0.2129,
+      "P_certificate_lost": 0.7871,
+      "flip_threshold_Binsuff_gt": 0.3826
+    },
+    "cosmosac_dsp": {
+      "n_finite": 57,
+      "mse_point": 0.7849,
+      "mse_ci90": [
+        0.1703,
+        1.6766
+      ],
+      "B_closure_lb_point": 0.2219,
+      "B_closure_lb_ci90": [
+        0.0,
+        1.1136
+      ],
+      "P_closure_dominates": 0.2157,
+      "P_certificate_lost": 0.7843,
+      "flip_threshold_Binsuff_gt": 0.3924
+    }
+  },
+  "verdict": {
+    "2002_certificate": "closure dominates with P=0.5466 (MSE 90% CI [0.319, 2.67] vs threshold 1.126)",
+    "2010_certificate_lost": "P=0.7871 that the 2002 closure-dominance certificate is LOST under 2010 (MSE CI [0.179, 1.7273] below 1.126)",
+    "flip_sensitivity": "the stronger 'inputs bind' reading (B_insuff > B_closure) holds for any true B_insuff > MSE_2010/2 = 0.3826; every B_insuff estimate we have exceeds it: {'LOTV': 0.563, 'RF': 0.565, 'ridge': 0.625, 'kNN_biased_up': 0.4} (only the kNN estimate, known biased-DOWN as a floor and biased for this, is near it). We do NOT claim a certified flip -- only an upper bound on B_insuff exists.",
+    "honest_claim": "Under 2010/dsp the closure-dominance certificate is robustly lost; the binding term is no longer certifiably the closure. A certified flip to the inputs would need a lower bound on B_insuff, which we do not have."
+  }
+}
