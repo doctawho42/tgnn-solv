@@ -2,30 +2,20 @@
 \label{sec:data-efficiency}
 % Artifact: results/data_efficiency/summary.json via run_data_efficiency_summary.py
 % over the Modal run (volume tgnn-e5, seed 42); ΔMAE = physics − DirectGNN.
-The strongest a-priori case for a physics prior is data scarcity: with few training
-molecules, an inductive bias toward the correct physical factorization should beat a
-data-hungry black box even when the two tie at full data. We test this directly.
-Subsampling the training set \emph{by solute} at fractions $0.05$--$1.0$ (the regime
-that governs scaffold transfer), we train the physics-grounded model and DirectGNN on
-the identical subsample and evaluate both on the fixed scaffold test
-(Table~\ref{tab:data-eff}; seed 42, full-corpus run). The physics arm is \emph{worse at
-every fraction}, and---against the hypothesis---the gap is \emph{smallest} at the least
-data ($\Delta\mathrm{MAE}=+0.08$ at $5\%$) and \emph{grows} with more
-($+1.0$ at full); its $R^2$ is negative throughout. We do not map this to Prop.~\ref{prop:tax}: the physics arm is markedly more under-converged than
-the control at this light per-fraction budget, so the within-budget gap reflects optimization
-difficulty as much as inductive bias.
-We do not over-read this: the sweep is single-seed (seed 42), the low-data gap is small
-($+0.08$ at $5\%$), and the physics-arm MAEs are non-monotone across fractions, so we take it as
-\emph{consistent with}---not a sharp confirmation of---the sign rule, and leave multi-seed error
-bars at each fraction to future work. Even in the regime built to favor it, grounding does not
-buy accuracy; if anything, more data lets the black box pull
-further ahead. The one metric that inverts is top-1 solvent ranking, higher for the
-physics arm at $5\%$ ($0.42$ vs $0.23$)---consistent with the ranking-versus-accuracy
-split of \S\ref{sec:supporting}---but that decision-quality signal does not translate
-into lower error. This is the last regime in which a physics prior should plausibly
-have helped; that it does not closes the accuracy case and leaves the structural
-account of \S\ref{sec:framework} and \S\ref{sec:measure}---a non-identifiable split fed
-through a misspecified closure---as the operative explanation.
+The strongest a-priori case for a physics prior is data scarcity: with few training molecules, an
+inductive bias toward the correct factorization should beat a data-hungry black box. We test it
+directly, subsampling the training set \emph{by solute} at fractions $0.05$--$1.0$ and training both
+the physics-grounded model and DirectGNN on the identical subsample, evaluated on the fixed scaffold
+test (Table~\ref{tab:data-eff}, seed 42). The physics arm is \emph{worse at every fraction}, and
+against the hypothesis the gap is \emph{smallest} at the least data ($\Delta\mathrm{MAE}=+0.08$ at
+$5\%$) and \emph{grows} with more ($+1.0$ at full); its $R^2$ is negative throughout. We do not
+over-read a single-seed sweep with non-monotone physics-arm MAEs, and the light per-fraction budget
+leaves the physics arm more under-converged than the control, so we take this as \emph{consistent
+with}, not a sharp confirmation of, the sign rule (Prop.~\ref{prop:tax}). The one inverting metric is
+top-1 solvent ranking ($0.42$ vs $0.23$ at $5\%$; the ranking-versus-accuracy split of
+\S\ref{sec:supporting}), which does not translate into lower error. This is the last regime a physics
+prior should plausibly help; that it does not closes the accuracy case, leaving the structural
+account---a non-identifiable split through a misspecified closure---as the operative explanation.
 
 \begin{table}[t]
 \centering

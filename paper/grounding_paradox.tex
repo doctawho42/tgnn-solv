@@ -634,8 +634,6 @@ above the irreducible-variance floor a flexible regressor reaches (\S\ref{sec:me
 under-predicting $\lngi$ with a systematic bias (Fig.~\ref{fig:parity}). The paradox survives three controls---the evaluation-time
 oracle, injection of the true profile \emph{at training} (MAE $1.98$), and a channel-swap
 ($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring artifact.
-The $\sigma$-oracle per-arm values are in \S\ref{sec:si-tables}; the true-at-train and
-channel-swap figures are the inline values above.
 
 \begin{figure}[t]
 \centering
@@ -686,7 +684,7 @@ COSMO cavity volume, VT-2005); ``res'' = residual-only (the deployed default).
 $\Binsuf$ upper bounds are convention-independent estimates of
 $\Ex[\Var(m\mid\zstar)]$; ``k\textsc{nn}'' is a direct high-dimensional estimate
 (biased upward), the others are law-of-total-variance / out-of-fold upper bounds.
-The \emph{load-bearing} separation is the convention-independent
+The \emph{load-bearing} separation is the leakage-immune (LOTV)
 $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ row, which exceeds $\Binsuf$ under
 \emph{both} conventions ($1.27$, $0.85>0.62$); the assumption-free constant-offset
 (Jensen) bound separates only under ``full'' ($0.72$) and inverts under the
@@ -733,34 +731,24 @@ $z^\ast$-neighbour estimators ($k$-NN, RF) are deflated by near-duplicate leakag
 $\Bclos$---from the total error. On the model's \emph{deployed} residual-only convention this gives
 $\Bclos\gtrsim0.85$, well above $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). The bound conditions on
 $g(\zstar)$, so we report it per convention; it is the claim we lean on, and it needs no smoothness
-assumption beyond the validity of the $\Binsuf$ upper bound. We stress-test the separation directly (App.~\ref{sec:si-tables}), and doing so exposes an
-identification hazard that dictates \emph{which} estimator to trust. The matched set is a crossed
-$41$-solute$\times17$-solvent design, so any two pairs sharing a solute or a solvent share $51$ of
-$102$ $\zstar$ coordinates exactly; the raw nearest neighbour of a pair is such a near-duplicate
-for $98\%$ of pairs, which deflates the $\zstar$-neighbour estimators anti-conservatively---the
-$k$-NN bound reads $0.40$, but forbidding shared-solute/solvent neighbours \emph{inflates} it to
-$1.83$ as the neighbour gap takes over. Local conditional-variance estimators therefore
-\emph{bracket} $\Binsuf$ across $\mathrm{MSE}/2$ and cannot pin it, so we do not lean on the $k$-NN
-or random-forest out-of-fold values. We lean instead on the law-of-total-variance binning bound,
-which conditions $m$ on the coarsened scalar $g(\zstar)$ rather than on $\zstar$-neighbours: it is a
-valid upper bound on $\Binsuf$ (a binning of $g(\zstar)$ is a function of $\zstar$) and is
-\emph{immune} to the shared-coordinate leakage. That bound is stable---it survives
+assumption beyond the validity of the $\Binsuf$ upper bound. We stress-test it directly
+(App.~\ref{sec:si-tables}). The crossed $41$-solute$\times17$-solvent design leaks: any two pairs
+sharing a molecule share half their $\zstar$ coordinates, so the $z^\ast$-neighbour estimators are
+anti-conservative---the $k$-NN bound reads $0.40$ but jumps to $1.83$ once shared-molecule
+neighbours are forbidden, so they only \emph{bracket} $\Binsuf$ across $\mathrm{MSE}/2$. The LOTV
+bound instead conditions $m$ on the coarsened scalar $g(\zstar)$ and is immune to that leakage. It
+is stable---it survives
 leave-one-solvent-out ($17/17$ folds), leave-one-solute-out ($40/41$), leave-one-pair-out
 ($60/60$), and adversarial deletion of the eight highest-error pairs. For confidence, a single-axis
 solvent-clustered bootstrap gives $P(\Bclos>\Binsuf)\approx0.89$; a two-way (solute$\times$solvent)
 cluster bootstrap that also charges for repeated solutes lowers this to $P\approx0.78$ with a $90\%$
 margin spanning zero---so we present the separation as a \emph{supporting} measurement, likely but
-not certified at conventional confidence, not a stand-alone certificate. Stratifying the matched set by $\lngi$ under the same leakage-immune binning bound, the verdict
-holds in every stratum and the closure lower bound still increases with $\gamma$ ($0.95\to2.69$);
-but the higher-$\gamma$ margin is thin and estimator-dependent (the random-forest bound flips
-there), so we read the shared cause with the all-$\gamma$ paradox as a conjecture supported by the
-\emph{direction} of the in-regime signs, not a measured magnitude (App.~\ref{sec:si-tables}). Under the full COSMO-SAC convention the separation \emph{sharpens} to an
-assumption-free constant-offset bound: a constant decoder offset alone accounts for
-$\Bclos\ge0.72$ (Fig.~\ref{fig:decomp}), exceeding every $\Binsuf$ upper bound
-($\le0.62$), and subtracting the insufficiency bound gives $\Bclos\ge1.24>0.62$
-($\sim2\times$). That constant-offset bound is convention-specific and \emph{inverts}
-under the deployed residual-only default ($0.43<0.62$; hedge~1), which is exactly why
-we headline the convention-independent bound above rather than the constant offset.
+not certified at conventional confidence, not a stand-alone certificate. Two further checks live in
+App.~\ref{sec:si-tables}: stratifying by $\lngi$, the closure bound rises with $\gamma$
+($0.95\to2.69$, though thinly and estimator-dependently); and under the full COSMO-SAC convention an
+assumption-free constant-offset bound sharpens the separation to $\Bclos\ge1.24>0.62$ ($\sim2\times$),
+which however inverts under the deployed residual-only default ($0.43<0.62$)---the reason we headline
+the leakage-immune bound rather than the constant offset.
 Label noise is unestimable in this replicate-free set (the matched IDAC pairs carry no repeat
 measurements at $298$\,K, so an inter-source floor cannot be formed as it was for solubility) and
 assumed zero; the bounds we rely on are invariant to zero-mean noise. A \emph{systematic} between-method
@@ -775,52 +763,32 @@ against its reverse $-0.97$)---though under that trim the estimated $\Bclos$ low
 ${\sim}58\%$ ($0.91\to0.38$). The closure-dominance \emph{sign}, not its magnitude, is leverage-robust.
 
 \paragraph{The closure defect is low-rank and correctable.} That $\Bclos$ dominates locates the
-ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. Fitting a small
-structure-preserving residual to the fixed COSMO-SAC exchange-energy kernel---%
-$\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric and zero-initialised, the
-same object a learned closure-correction (Arm~C) would carry---on the \emph{true} VT-2005 profiles
-removes $56\%$ of the closure error out-of-sample (five-fold cross-validated, activity MSE
-$1.47\!\to\!0.64$ held-out), and does so at \emph{rank one} ($52$ parameters): rank~2 adds nothing,
-rank~3 begins to over-fit. (At $52$ parameters against $n{=}60$ this held-out reduction is
-provisional pending a larger matched set, and we have not yet separated the kernel correction from a
-per-solvent mean-offset removal.) So $\Bclos$ is not diffuse model error but a low-dimensional, correctable
-defect of the map---addressable with a handful of parameters placed on the closure, whereas the same
-error is only made worse by feeding the inputs truthfully (\S\ref{sec:paradox}) and untouched by an
-output residual (\S\ref{sec:gateb}). This is the constructive complement to the paradox, on the
-true-input set where the closure error lives; whether an end-to-end trained model realises the same
-gain is a compute-gated question we leave open. (The map correction and the input compensation of
-\S\ref{sec:surrogate} occupy different $\sigma$-grid footprints---they are two routes to the same
-defect, not one.)
+ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. A small
+structure-preserving residual on the fixed COSMO-SAC exchange-energy kernel
+($\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric, zero-initialised), fit on
+the \emph{true} VT-2005 profiles, removes $56\%$ of the closure error out-of-sample (five-fold
+cross-validated, activity MSE $1.47\!\to\!0.64$) at \emph{rank one} ($52$ parameters; rank~2 adds
+nothing, rank~3 over-fits). At $52$ parameters against $n{=}60$ this is provisional, and we have not
+separated the kernel correction from a per-solvent offset. So $\Bclos$ is not diffuse model error but
+a low-dimensional, correctable defect of the map---addressable with a handful of parameters on the
+closure, whereas the same error is only made worse by feeding the inputs truthfully
+(\S\ref{sec:paradox}) and untouched by an output residual (\S\ref{sec:gateb}); whether an end-to-end
+model realises the gain is a compute-gated question we leave open.
 
-\paragraph{Convention-robust corroboration (Tier~2).} The genuinely
-convention-robust fact is that adding the physically \emph{more} complete
-Staverman--Guggenheim combinatorial term \emph{increases} error (activity MSE
-$1.47\to1.80$)---what a misspecified map does, not what missing information would.
-This is robust to the size-factor's volume basis: recomputing the combinatorial term
-on the true COSMO cavity volumes (VT-2005 $V_{\mathrm{cosmo}}$) rather than an RDKit
-molar volume leaves it essentially unchanged (Jensen $0.714\to0.717$, MSE
-$1.793\to1.800$), because the term depends on molecular-size \emph{ratios} in which a
-near-uniform volume rescaling cancels. The increase is, however, concentrated on
-size-asymmetric pairs (its magnitude correlates with $|\ln(V_2/V_1)|$ at $r{=}0.33$ and is
-$11\times$ larger in the high-asymmetry half), i.e.\ it is the documented miscalibration of the
-\emph{unmodified} combinatorial term for size-asymmetric mixtures---the reason
-modified-Staverman--Guggenheim and free-volume corrections exist---so we read it as corroboration of
-closure misspecification, not an independent second effect. The residual (deployed) error is itself
-localized, and it is not an implementation artifact: our differentiable layer reproduces the NIST
-benchmark COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE $0.003$~$\ln\gamma$ on identical VT-2005
-profiles ($0.005$ even in the associating regime, max $0.02$), and self-solvation
-$\ln\gamma^\infty(i,i)$ is exactly zero. Yet $90\%$ of the squared error falls on strong hydrogen-bond-donor
-solvents while acceptor-only solvents are near-exact (mean squared error $0.09$)---placing $\Bclos$
-in COSMO-SAC's documented single-parameter hydrogen-bonding kernel, a real but \emph{known}
-limitation rather than an idiosyncrasy of our differentiable layer. A second observation is consistent but is
-\emph{not} independent of the decomposition: a flexible regressor of $m$ on $\zstar$
-fits the activity target $\sim$4$\times$ better than the fixed true-input closure---but
-that regressor is exactly our convention-independent $\Binsuf$ estimator
-($\approx0.4$), so ``$4\times$ better'' restates that the closure sits far above the
-irreducible-variance floor (that $\Bclos$ is large) rather than corroborating it by an
-independent route. We therefore lean on the dimension-robust random-forest / ridge
-out-of-fold and binning bounds and on the combinatorial effect, which agree that
-$\Bclos$ exceeds $\Binsuf$.
+\paragraph{Convention-robust corroboration (Tier~2).} The genuinely convention-robust fact is that
+adding the physically \emph{more} complete Staverman--Guggenheim combinatorial term \emph{increases}
+error (activity MSE $1.47\to1.80$)---what a misspecified map does, not what missing information would.
+This survives recomputing the size factor on the true COSMO cavity volumes (Jensen $0.714\to0.717$,
+essentially unchanged, since the term depends on size \emph{ratios}) and is concentrated on
+size-asymmetric pairs---the documented miscalibration of the unmodified combinatorial term, the reason
+modified-SG and free-volume corrections exist. The residual error is not an implementation artifact:
+our differentiable layer reproduces the NIST benchmark COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE
+$0.003\,\ln\gamma$ on identical VT-2005 profiles, and self-solvation $\ln\gamma^\infty(i,i)$ is exactly
+zero; yet $90\%$ of the squared error falls on strong hydrogen-bond-donor solvents (acceptor-only
+near-exact), placing $\Bclos$ in COSMO-SAC's documented single-parameter H-bond kernel---a known
+limitation, not a layer idiosyncrasy. (A flexible regressor of $m$ on $\zstar$ fits $\sim$4$\times$
+better than the fixed closure, but that regressor \emph{is} our $\Binsuf$ estimator ($\approx0.4$),
+so ``$4\times$'' only restates that $\Bclos$ is large---not an independent corroboration.)
 
 \paragraph{The ceiling moves with closure fidelity: a standard-closure control.} The 2002
 closure-dominance above is not a general fact about physical inputs; it is specific to the deployed
@@ -840,15 +808,9 @@ reading is thus not ``the closure always dominates'' but ``on a low-fidelity clo
 fix is a better closure, not truer inputs''---closure fidelity is the second axis of the map
 (\S\ref{sec:discussion}).
 
-\paragraph{Scope and hedges.} An adversarial audit sharpened the scope without
-inverting the verdict. The constant-offset bound is convention-specific---it inverts
-under the deployed residual-only default, where the convention-independent bound
-($\Bclos\ge0.85>0.62$) and the combinatorial fact carry the claim instead; the closure
-error is chiefly a between-solvent bias (a solvent-conditional lower bound
-$\Bclos\ge0.89$); the solvent-clustered confidence on the constant-offset separation is $P(\Bclos{>}\Binsuf)\approx0.85$ ($0.83$ vs the random-forest bound, $0.89$ vs the law-of-total-variance bound);
-and the measurement is confined to the low-$\gamma$, $298$\,K, VT-2005-matchable corner,
-so the numeric ceiling is not claimed to transfer to the finite-composition regime. The
-four hedges are stated in full in App.~\ref{sec:si-tables}.
+\paragraph{Scope.} The measurement is confined to the low-$\gamma$, $298$\,K, VT-2005-matchable
+corner, so the numeric ceiling is not claimed to transfer to the finite-composition regime where the
+paradox itself lives; the full adversarial audit and its four hedges are in App.~\ref{sec:si-tables}.
 
 \input{sections/compensation-surrogate}
 
