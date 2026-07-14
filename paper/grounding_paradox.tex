@@ -72,27 +72,28 @@ Physics-informed models increasingly route a prediction through a fixed, differe
 physical \emph{closure}---a mechanistic map with no fitted parameters---fed by a learned
 intermediate. For solid--liquid solubility the closure is COSMO-SAC, which turns a molecule's
 surface-charge $\sigma$-profile into an activity coefficient; the $\sigma$-profile is predicted
-by a network. The premise is that grounding the closure on truer physical inputs improves it.
-We show its sign is not fixed. Replacing our model's learned $\sigma$-profiles with the external
-quantum-chemical reference profiles (VT-2005; computed, not experimental) makes prediction \emph{worse} than a free learned head---yet a
-recent \emph{supervised}-$\sigma$ model reports the opposite. We organize the grounding effect on two
-axes---how the latent is trained (supervised toward truth vs.\ shaped end-to-end through the fixed
-closure) and the closure's fidelity. On the end-to-end, low-fidelity anchor (ours), grounding hurts
-because the learned $\sigma$-profile is not physical: on a confound-free one-model control it is a
-systematic, low-rank, out-of-sample-transferable closure-compensating surrogate ($53\%$ departure,
-$3.3\times$ transfer, a single $n{=}44$ control). An externally-referenced decomposition then measures
-\emph{where} the ceiling sits: on $n{=}60$ matched low-$\gamma$ pairs it is \emph{most likely} the
-closure, not the inputs, for the deployed COSMO-SAC-2002 map ($P\approx0.78$ two-way-clustered, with a
-margin CI spanning zero---likely, not certified; and this corner is not where the paradox itself
-lives, so transfer to the finite-composition regime is a conjecture). The closure error is genuine
-misspecification (our differentiable layer reproduces the NIST reference COSMO-SAC to RMSE $0.003$),
-and a standard modern closure (COSMO-SAC-2010/dsp) removes ${\sim}70\%$ of it and dissolves that
-certificate. The practical reading: on a misspecified closure with an end-to-end latent, grounding
-hurts and the latent is not physical---raise closure fidelity, or supervise the latent (which on our
-own model cuts the penalty $65\%$ but does not by itself flip it; the ``helps'' corner is anchored by
-a supervised-$\sigma$ model we did not run). We give the supporting composed-predictor theory (an exact
-error decomposition, a crystal/activity non-identifiability result, and a physics-tax sign rule); we
-make no accuracy claim.
+by a network, on the premise that truer physical inputs help. We report three findings and one
+caveated measurement. \emph{(1)~A grounding paradox:} replacing our model's learned
+$\sigma$-profiles with external quantum-chemical reference profiles (VT-2005; computed, not
+experimental) makes solubility prediction \emph{worse}, not better, than a free learned head (MAE
+$1.85\!\to\!2.25$, three seeds, surviving three injection controls)---yet a supervised-$\sigma$
+model reports the opposite, so the sign of grounding is not fixed. \emph{(2)~A reusable diagnostic:}
+because the latent has an external reference, we can \emph{measure} rather than assume whether a
+fixed closure's ceiling lies in the closure or its inputs---the true-input excess risk splits
+exactly into a closure-misspecification and an input-insufficiency term, with no closure fitting, for
+any predictor with a tabulated latent oracle. \emph{(3)~An interpretability caution:} under a
+misspecified closure the learned ``physical'' latent is not physical but a systematic, low-rank,
+out-of-sample-transferable closure-\emph{compensating} surrogate---a concept-leakage analogue whose
+drift is \emph{not} the closure's linear-response inverse. Applying the diagnostic on $n{=}60$
+matched infinite-dilution pairs, the ceiling is \emph{likely} the deployed COSMO-SAC-2002 closure
+rather than its inputs---but only in a narrow sense: a sub-threshold ($P\approx0.78$, margin CI
+spanning zero), low-$\gamma$/$298$\,K corner measurement whose transfer to the finite-composition
+regime where the paradox lives is a conjecture, and which a standard modern closure
+(COSMO-SAC-2010/dsp) itself dissolves. We organize the effect on a two-axis map (closure fidelity
+$\times$ latent supervision) with one measured corner, one synthetic dial, and one
+literature-anchored corner; the supporting composed-predictor theory (an exact decomposition, a
+non-identifiability result, a physics-tax sign rule) is elementary. We make no accuracy claim: the
+contribution is the diagnostic and the interpretability caution, not a new thermodynamic result.
 \end{abstract}
 
 \section{Introduction}
@@ -113,19 +114,21 @@ setting in which that attribution is possible, since a fitted latent has no exte
 lets us hold the learned latent against its truth---which shows that, trained end-to-end through a
 misspecified closure, the latent is driven off the physical quantity into a systematic, low-rank,
 out-of-sample-transferable compensating surrogate (confound-free control, \S\ref{sec:surrogate}).
-Both organize into one map: whether grounding helps or hurts is governed by two axes---how the latent
+Both organize into one map: whether grounding helps or hurts is shaped by two axes---how the latent
 is trained (supervised vs.\ end-to-end) and the closure's fidelity---which we anchor with three real
 systems and a synthetic dial, and a standard higher-fidelity closure (COSMO-SAC-2010/dsp) moves the
-ceiling and dissolves the closure-dominance certificate (\S\ref{sec:measure}). The composed-predictor framing
+ceiling and dissolves the closure-dominance verdict (\S\ref{sec:measure}). The composed-predictor framing
 (\S\ref{sec:framework}) and the physics-tax sign rule give the formal account of the sign; the
 synthetic dial (\S\ref{sec:dial}) and the pKa closure (\S\ref{sec:pka}) trace the same two axes. We
 make no accuracy claim.
 
 \paragraph{Contributions.}
-Our thesis is that whether grounding a learned latent in true physics helps or hurts is governed by
-two axes---how the latent is trained (supervised toward truth vs.\ shaped end-to-end through the fixed
-closure) and the closure's fidelity. We map this, give the mechanism on the corner where grounding
-hurts, a measurement that locates the ceiling, and the supporting theory and negatives.
+Our thesis is that whether grounding a learned latent in true physics helps or hurts is \emph{shaped
+by} two axes---how the latent is trained (supervised toward truth vs.\ shaped end-to-end through the
+fixed closure) and the closure's fidelity. Three findings stand cleanly---the paradox, a reusable
+measurement instrument, and the compensating-surrogate mechanism; the closure-vs-inputs attribution
+and the two-axis map we present as, respectively, a caveated corner measurement and an organizing
+frame.
 \begin{itemize}
   \item \textbf{The grounding paradox (empirical).}
   Substituting true VT-2005 $\sigma$-profiles into the differentiable COSMO-SAC
@@ -141,9 +144,10 @@ hurts, a measurement that locates the ceiling, and the supporting theory and neg
   COSMO-SAC closure is configured, plus the more-physics-worse effect---$\Bclos$
   (misspecified decoder) exceeds $\Binsuf$ (input insufficiency) on the low-$\gamma$ subset we
   can measure, robustly across the tabulated $k$-NN, binning, random-forest, and ridge insufficiency
-  estimators (a more conservative ridge stress-test is the sole non-certifying case) and, under the law-of-total-variance bound,
-  to leaving out any solvent: there,
-  the binding term is \emph{likely} the closure (\S\ref{sec:measure}).
+  estimators (a more conservative ridge stress-test is the sole non-certifying case) and to leaving out
+  any solvent, the binding term is \emph{likely} the closure---but as a \emph{sub-threshold}
+  ($P\approx0.78$, margin CI spanning zero) measurement on the $n{=}60$ low-$\gamma$ corner, not the
+  finite-composition regime where the paradox lives (\S\ref{sec:measure}).
   \item \textbf{The mechanism where grounding hurts: a compensating-surrogate latent.} On the
   end-to-end, low-fidelity anchor the network's ``physical'' input does not stay physical: on a
   confound-free one-model control the predicted $\sigma$-profile departs from the true one by $53\%$ in
@@ -151,14 +155,13 @@ hurts, a measurement that locates the ceiling, and the supporting theory and neg
   closure-compensating surrogate, not the physical quantity (a $\sigma$-grounded model \emph{can}
   recover the true profile; the objective pulls it away). This is why grounding hurts here, and why a
   \emph{supervised}-$\sigma$ model finds the opposite (\S\ref{sec:surrogate}).
-  \item \textbf{The closure-fidelity axis: a modern closure dissolves the closure-dominance certificate.}
-  On the same matched pairs under a reference 3-profile database (COSMO-SAC-2010/dsp, NIST
-  implementation), the standard better-parameterized closures cut the closure error by ${\sim}70\%$ and
-  \emph{dissolve the closure-dominance certificate} ($P\approx0.79$ that $\Bclos$ no longer exceeds
-  $\Binsuf$ under two-way clustering); the residual ``inputs bind'' reading holds unless the true
-  $\Binsuf$ falls below $\mathrm{MSE}_{2010}/2\approx0.38$, below every $\Binsuf$ estimate we have---so
-  the 2002 closure-dominance is a documented H-bond-kernel inadequacy, and the actionable lesson is to
-  raise closure fidelity, not to enrich the inputs (\S\ref{sec:measure}).
+  \item \textbf{The closure-fidelity axis: our own attribution self-dissolves under a modern closure.}
+  On the same matched pairs, evaluated under a reference 3-profile database (COSMO-SAC-2010/dsp, NIST
+  implementation), the standard better-parameterized closures no longer show closure-dominance
+  ($P\approx0.79$ that $\Bclos$ no longer exceeds $\Binsuf$ under two-way clustering)---so our own 2002
+  attribution self-dissolves, locating it in the 2002 single-parameter H-bond kernel specifically, and
+  the actionable lesson is to raise closure fidelity, not enrich the inputs. (We do \emph{not} claim
+  the inputs then bind: that would need a lower bound on $\Binsuf$, which we lack.)  (\S\ref{sec:measure})
   \item \textbf{A negative actionability result (Gate B).} A post-hoc
   output-space residual placed on the physics prediction recovers calibration but
   not accuracy; the closure binding cannot be undone downstream
@@ -198,7 +201,7 @@ has an external oracle, the true-input excess risk splits \emph{exactly} into a
 closure-misspecification part $\Bclos$ and an input-insufficiency part $\Binsuf$; on the matched
 low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P\approx0.78$). \emph{(3)~The map:} two levers
 move the ceiling---raising closure fidelity (COSMO-SAC-2010/dsp) or supervising the latent toward
-truth (TeNNet-SAC)---so whether grounding helps is governed by two axes, closure fidelity and latent
+truth (TeNNet-SAC)---so whether grounding helps is shaped by two axes, closure fidelity and latent
 supervision.}
 \label{fig:overview}
 \end{figure}
@@ -714,7 +717,7 @@ label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{assume
 residual-only COSMO-SAC convention---the configuration the model actually runs. The
 load-bearing, convention-independent bound $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{LOTV}}\approx0.85$
 exceeds every valid $\Binsuf$ upper bound (salmon region); the white gap is a separation that needs
-no smoothness assumption, and the teal region is the certified closure share of the total error
+no smoothness assumption, and the teal region is the closure share of the total error lower-bounded by that margin (deterministic on this $n{=}60$ set; its generalization is the $P\approx0.78$ of Table~\ref{tab:decomp})
 (MSE $=1.47$). We headline the law-of-total-variance (LOTV) binning bound because it conditions on
 the scalar $g(\zstar)$ and is immune to the near-duplicate leakage that deflates the
 $z^\ast$-neighbour estimators ($k$-NN, RF; \S\ref{sec:measure}). The assumption-free Jensen
@@ -802,14 +805,13 @@ $3$-profile database---on which the reference 2002 map scores $\mathrm{MSE}=1.26
 our deployed residual-only layer on the VT-2005 profiles used elsewhere. The better-parameterized
 closures cut the error to $\mathrm{MSE}=0.77$ (2010) / $0.79$ (dsp, $n{=}57$): a ${\sim}70\%$ reduction of $\Bclos$
 ($0.70\to0.20$ at point) against the unchanged $\Binsuf$ floor. Under two-way
-solute$\times$solvent clustering this \emph{dissolves the closure-dominance certificate}---$P\approx0.79$
+solute$\times$solvent clustering this \emph{dissolves the closure-dominance verdict}---$P\approx0.79$
 that $\Bclos$ no longer exceeds $\Binsuf$ (the near-mirror of the $P\approx0.78$ that it \emph{does}
 bind under 2002: same clustering, opposite verdicts, hence the near-identical numbers pointing in
-opposite directions). We do not claim a certified flip to the inputs: we hold only
-an \emph{upper} bound on $\Binsuf$, so ``the inputs bind'' would require a lower bound. That reading does
-hold for any true $\Binsuf>\mathrm{MSE}_{2010}/2\approx0.38$, which is below every $\Binsuf$ estimate we
-have ($0.56$--$0.63$; only the downward-biased $k$-NN floor $0.40$ approaches it). The decision-relevant
-reading is thus not ``the closure always dominates'' but ``on a low-fidelity closure it does, and the
+opposite directions). We do \emph{not} claim a flip to the inputs: we hold only an \emph{upper} bound
+on $\Binsuf$, so ``the inputs bind'' would require a lower bound we do not have---what the modern
+closure establishes is only that our own 2002 attribution no longer holds. The decision-relevant
+reading is thus not ``the closure always dominates'' but ``on the low-fidelity 2002 closure it does, and the
 fix is a better closure, not truer inputs''---closure fidelity is the second axis of the map
 (\S\ref{sec:discussion}).
 
@@ -906,16 +908,16 @@ inputs, more data, and auxiliary grounding do not recover an accuracy the factor
 express. The contribution is accordingly not
 an accuracy result but a \emph{map} of when grounding a learned latent in true physics helps or hurts:
 the externally grounded decomposition \emph{locates} the ceiling (measured, not proved), a standard
-higher-fidelity closure moves it and dissolves the closure-dominance certificate, and---where the closure binds and the
+higher-fidelity closure moves it and dissolves the closure-dominance verdict, and---where the closure binds and the
 latent is end-to-end---the ``physical'' intermediate behaves as a compensating surrogate; the two
-governing axes are closure fidelity and latent supervision (Fig.~\ref{fig:map}). What a misspecified
+two axes are closure fidelity and latent supervision (Fig.~\ref{fig:map}). What a misspecified
 closure costs is thus not only accuracy but the interpretability the bottleneck appeared to buy.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.80\linewidth]{figs/fig_grounding_map.pdf}
 \caption{The grounding map. Whether feeding a learned model its true physical inputs helps or hurts is
-governed by two axes---how the latent is trained (supervised toward truth vs.\ shaped end-to-end
+shaped by two axes---how the latent is trained (supervised toward truth vs.\ end-to-end
 through the fixed closure) and the closure's fidelity. Grounding hurts only in the low-supervision,
 low-fidelity corner, where the end-to-end latent becomes a compensating surrogate
 (\S\ref{sec:surrogate}). Our COSMO-SAC-2002 model sits there; raising closure fidelity
@@ -939,7 +941,7 @@ predicted to hurt precisely in the mature-data, low-noise, well-covered regime--
 our data-efficiency null (a positive tax at every budget, \S\ref{sec:data-efficiency}) and the
 novelty inversion (the tax heaviest on the best-covered solutes, \S\ref{sec:map}) place this
 system, and where much of modern machine learning operates. The synthetic dial (\S\ref{sec:dial})
-and the pKa closure (\S\ref{sec:pka}) trace the two governing axes---closure fidelity and
+and the pKa closure (\S\ref{sec:pka}) trace the two axes---closure fidelity and
 intermediate sufficiency---directly. We claim no universal boundary; we \emph{propose}, but do not here cleanly validate, a diagnostic for the sign of the physics tax:
 measure $\Bclos$ through the decomposition, read $\Delta_\infty$ off the large-$n$ asymptote, and
 the sign should follow---a prediction our own tests (single-seed, under-converged; \S\ref{sec:data-efficiency}) support only weakly. In this sense the failure is not idiosyncratic to
@@ -999,10 +1001,11 @@ the closure rather than the inputs ($P\approx0.78$ under two-way solute$\times$s
 $0.89$ single-axis; not certified at conventional confidence;
 label noise unestimable and assumed zero). The
 practical implication is to fix the map itself, since within this closure truer
-inputs surface its bias and an output-space correction is inert. Neither failure is universal: raising
-closure fidelity (COSMO-SAC-2010/dsp dissolves the certificate) or supervising the latent toward truth
-moves the system out of the hurts-corner, so whether grounding helps is governed by two axes---closure
-fidelity and how the latent is trained (Fig.~\ref{fig:map}). The same grounding also indicates,
+inputs surface its bias and an output-space correction is inert---though this attribution is itself
+the sub-threshold, $2002$-specific corner measurement above, which a modern closure
+(COSMO-SAC-2010/dsp) dissolves. Neither failure is universal: raising closure fidelity or supervising
+the latent toward truth moves the system out of the hurts-corner, so whether grounding helps is
+\emph{shaped by} two axes---closure fidelity and how the latent is trained (Fig.~\ref{fig:map}). The same grounding also indicates,
 where the closure binds, that the learned $\sigma$-profile is a closure-compensating surrogate rather
 than the physical quantity---an interpretability cost of physics-informed bottlenecks that the
 external latent makes measurable: a $53\%$, low-rank, transferable departure from truth on a
