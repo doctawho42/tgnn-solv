@@ -1,0 +1,71 @@
+\section{The pKa closure: full construction, measured sweep, and trained comparison}
+\label{sec:si-pka}
+This appendix gives the full second-closure instantiation summarized in \S\ref{sec:pka}: a fixed
+Hammett linear-free-energy relationship (LFER) $g(\sigma)=\mathrm pK_{a,0}-\rho\,\sigma$ over the
+Hammett substituent constant $\sigma$ (with $\mathrm pK_{a,0},\rho$ the per-scaffold
+Hansch--Leo--Taft reaction-series constants), for which Hansch--Leo tabulated constants provide an
+external oracle $\zstar$. The analogy is tight: as with the $\sigma$-profile through COSMO-SAC, a
+learnable physical descriptor is pushed through a fixed, approximate, differentiable map. The two
+classic LFER failure modes fall cleanly onto the two error channels of Lemma~\ref{prop:decomp}:
+\emph{resonance saturation}---a curvature in $\sigma$ that the linear closure structurally cannot
+represent---is a mis-map of a function of $\zstar$ and lands in $\Bclos$; \emph{ortho/steric} field
+effects, absent from the tabulated constants, are information the intermediate lacks and land in
+$\Binsuf$. The chemical scope is a fidelity sweep: meta/para monosubstituted benzoic acids, phenols,
+and anilinium ions are the near-exact ($\Bclos\!\approx\!0$) regime, ortho
+(insufficiency-dominated) and polyfunctional the low-fidelity one.
+
+This decomposition is directly visible before any training. Pushed through the fixed Hammett
+closure, $p$-nitrophenol reads $\mathrm pK_a\!\approx\!8.3$ against an experimental $\approx7.1$
+(and $p$-nitroaniline overshoots similarly): the linear closure is off by $\sim1$ unit exactly
+where through-conjugation ($\sigma^-$) breaks it---$\Bclos$ in the wild.
+
+A controlled semi-synthetic construction on real tabulated $\sigma$ (known ground-truth
+channels) validates the estimator and reproduces the paper's central distinction in this second
+closure (Fig.~\ref{fig:pka}). Sweeping closure fidelity with a sufficient intermediate, the
+grounding gap $\Gamma$ tracks $\Bclos$ (the plug-in estimate recovers the truth to within a few
+percent, e.g.\ $0.20$ vs $0.21$, $0.81$ vs $0.81$), the case where Theorem~\ref{thm:gap}'s
+proxy is valid. Sweeping the ortho/steric channel with a \emph{well-specified} closure gives
+$\Bclos=0$ throughout yet $\Gamma>0$ and growing---the pKa realization of the conflation that
+makes $\Gamma$ a symptom rather than a certificate. The oracle-$\sigma$ pipeline
+(scaffold-resolved substituent$\to\sigma$ assignment) and this validation extend directly to real
+data. On the OPERA experimental $\mathrm pK_a$ compilation \cite{mansouri2019opera} ($6{,}502$
+compounds), applying the same decomposition to the fixed Hammett closure yields a \emph{measured}
+fidelity sweep: on the clean meta/para series ($n{=}161$) the closure predicts experimental
+$\mathrm pK_a$ to RMSE $0.63$ with $\Bclos$ below the input-insufficiency floor (per-scaffold
+systematic offsets $\le0.25$, so the LFER is well specified there), while the
+ortho/heteroaromatic regime ($n{=}1008$) degrades to RMSE $2.4$, dominated by input insufficiency
+($\Binsuf\approx4.7$---the tabulated $\sigma$ carries no ortho information, exactly the a-priori
+channel assignment) with an additional closure misspecification $\Bclos\ge1.1$ on top. This is the
+near-exact-to-degraded transition the closure is meant to show, now measured rather than asserted. This places the pKa closure near the phase-diagram boundary
+in its clean regime. We close the loop with a trained comparison. On a Bemis--Murcko scaffold
+split of the Hammett-amenable set ($1169$ compounds, three seeds), a shared GIN encoder feeding
+the fixed LFER (a predicted $\sigma$) beats the matched DirectGNN control overall ($1.63$ vs
+$1.84$ pKa MAE, $\Delta=-0.21$), placing pKa on the ``helps'' side of the phase picture
+(Fig.~\ref{fig:phase}). We read this cautiously, \emph{not} as a clean confirmation of the sign
+rule through closure fidelity. Stratified, the help concentrates in the ortho/heteroaromatic
+regime ($\Delta=-0.53$), not the clean meta/para one ($\Delta=-0.10$, within seed noise); and on
+the clean regime the fixed LFER on the \emph{true} $\sigma$ is excellent (oracle MAE $0.60$) yet
+the trained arm is not ($1.61$), so the closure is well specified there but the small-data encoder
+cannot learn $\sigma$ well enough to exploit it. Where the physics arm does win---ortho, where the
+closure is \emph{mis}specified for the true $\sigma$---the \emph{freely} learned $\sigma$ can
+absorb ortho information the tabulated Hammett constant lacks and the per-scaffold $\mathrm pK_{a,0}$
+supplies a strong baseline. So the pKa ``help'' is a permissive-closure and per-scaffold-prior
+effect, not the variance-saving of a well-specified prior: a useful caution that a ``physics
+helps'' outcome can be the encoder working through a soft closure. The absolute errors
+($\sim\!1.6$--$1.9$) are weak for pKa and the DirectGNN control is not separately tuned, so we do
+not lean on this comparison---the robust second-domain result is the decomposition above; the
+trained comparison is a cautionary complement.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_pka_hammett.pdf}
+\caption{The diagnostic transfers to a second real closure (pKa through a Hammett LFER), on a
+controlled construction with known ground-truth channels. \emph{Left:} varying closure fidelity
+with a sufficient intermediate, the grounding gap $\Gamma$ tracks the closure bias $\Bclos$
+(the assumption-light Jensen bound is flat here because the misspecification carries no mean
+offset). \emph{Right:} varying an ortho/steric insufficiency channel with a \emph{well-specified}
+closure, $\Bclos=0$ throughout while $\Gamma>0$ grows---the pKa realization of the two-cause
+conflation of \S\ref{sec:gap}, and the reason certification rests on the decomposition, not on
+$\Gamma$.}
+\label{fig:pka}
+\end{figure}

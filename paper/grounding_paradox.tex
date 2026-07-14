@@ -184,6 +184,23 @@ hurts, a measurement that locates the ceiling, and the supporting theory and neg
   (App.~\ref{sec:si-proofs}).
 \end{itemize}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_overview.pdf}
+\caption{\textbf{The paper in one view.} A learned encoder $h$ predicts a physical latent---a
+molecular $\sigma$-profile---that a fixed COSMO-SAC closure $g$ (no fitted parameters) turns into a
+solubility. \emph{(1)~The paradox:} replacing the learned $\hat\sigma$ with the \emph{true},
+externally measured $\sigma^\star$ (VT-2005) makes the prediction \emph{worse} than a free learned
+head---so which is wrong, the closure or the inputs? \emph{(2)~The measurement:} because the latent
+has an external oracle, the true-input excess risk splits \emph{exactly} into a
+closure-misspecification part $\Bclos$ and an input-insufficiency part $\Binsuf$; on the matched
+low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P\approx0.78$). \emph{(3)~The map:} two levers
+move the ceiling---raising closure fidelity (COSMO-SAC-2010/dsp) or supervising the latent toward
+truth (TeNNet-SAC)---so whether grounding helps is governed by two axes, closure fidelity and latent
+supervision.}
+\label{fig:overview}
+\end{figure}
+
 \input{sections/related-work}
 
 \section{Problem setup and notation}
