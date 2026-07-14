@@ -34,14 +34,49 @@ grounding hurts \emph{here} (\S\ref{sec:paradox}): the pipeline is calibrated to
 $\hat\sigma$, not to physics, so substituting the true $\sigma$ breaks the compensation. It also means
 the model's ``physical'' intermediate is not the molecule's charge distribution but a surrogate,
 consistent with known cautions that the interpretability of physics-grounded latents is not guaranteed
-under misspecification \cite{brynjarsdottir2014} (Takeishi \& Kalousis, NeurIPS 2021, \pending{cite}); what is
+under misspecification \cite{brynjarsdottir2014,takeishi2021}; what is
 specific here is the \emph{structure}---the surrogate is low-rank and transferable, not diffuse.
+
+\paragraph{The structure is not the closure's linear response.} A natural hope is that this
+structure is simply the closure's first-order inverse: the smallest input change that cancels the
+closure's discrepancy, $\hat\sigma-\sigma\approx J^{+}\,(m-g(\sigma))$, with $J=\partial g/\partial\sigma$
+the closure Jacobian and $m$ the observed \lngi---a drift that would then be \emph{predictable a priori}
+from $J$, before any solubility training. It is not. Testing this on the matched set (per molecule, the
+compensation solved in the span of its own pairs' Jacobian rows), the measured drift shows no alignment
+with $J^{+}(m-g)$: the per-molecule cosine is centred on zero (median $-0.00$), a smoothness-matched
+control---aligning each molecule's drift against \emph{other} molecules' predicted drift, all equally
+smooth---shows no molecule-specific gap (own vs.\ other cosine $-0.00$ vs.\ $-0.01$, permutation
+$p{=}0.17$), and the drift's energy inside each molecule's own Jacobian subspace ($6\%$) is no larger
+than inside other molecules' ($5\%$); the null is unchanged when pairs are weighted by their residual or
+restricted to the largest residuals, where the compensation pressure is strongest.\footnote{The residual
+COSMO-SAC closure runs a segment-activity fixed-point iteration, so its \emph{autograd} Jacobian is
+numerically unstable ($\lVert\partial g/\partial\sigma_{\text{solvent}}\rVert\!\sim\!10^{15}$ at infinite
+dilution); $J$ is therefore computed by finite differences on the converged closure.} So the surrogate is
+systematic and transferable yet \emph{not closure-geometric}: it is an affine distortion in
+$\sigma$-space (Fig.~\ref{fig:picard}), not the closure's first-order inverse. This sharpens the
+interpretability caution rather than softening it---the intermediate's departure from physics cannot be
+undone by inverting the closure, so the true $\sigma$ is not recoverable from the misspecified pipeline
+even in principle.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{figs/fig_picard_test.pdf}
+\caption{The compensating drift is \emph{not} the closure's linear-response inverse. \emph{Left:}
+per-molecule cosine between the measured drift $\hat\sigma-\sigma$ and the first-order closure
+compensation $J^{+}(m-g)$ is centred on zero (median $-0.00$). \emph{Middle:} the smoothness-matched
+wrong-molecule control---each molecule's drift aligned against every other molecule's predicted drift, all
+equally smooth---places the true diagonal squarely inside the null ($p{=}0.17$), so any weak alignment is
+generic smoothness, not molecule-specific closure geometry. \emph{Right:} the best-aligned exemplar,
+showing that even the strongest case is not tracked by the Picard prediction. The surrogate is structured
+but not readable from the closure.}
+\label{fig:picard}
+\end{figure}
 
 \paragraph{The contrast that fixes the sign.} This is why the sign of grounding is not universal. When
 the $\sigma$ head is instead \emph{supervised} toward the true profile, the intermediate stays close to
-physical and true profiles \emph{help}: the recent TeNNet-SAC model (Physics-Embedded ML, \emph{J.\
-Chem.\ Inf.\ Model.} 2025, \pending{cite}) reports better accuracy from quantum-chemistry than from
-predicted $\sigma$-profiles (MAE $0.030$ vs $0.065$). Our end-to-end head, un-supervised and pushed
+physical and true profiles \emph{help}: the recent TeNNet-SAC model \cite{yang2025tennet} supervises
+its $\sigma$-profiles toward quantum-chemistry values and, once fine-tuned end-to-end, outperforms
+COSMO-SAC. Our end-to-end head, un-supervised and pushed
 through a low-fidelity closure, becomes a surrogate and true profiles \emph{hurt}. Latent supervision
 is one of the two axes that govern the sign (\S\ref{sec:discussion}). The scope limit is the
 low-$\gamma$, $n{=}44$ VT-2005 matched set.

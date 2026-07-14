@@ -239,10 +239,10 @@ but sharpened its scope:
   \item \emph{Convention.} The deployed default is residual-only. Under it the
   \emph{constant-offset} (Jensen) lower bound inverts
   ($\Bclos\ge0.43<\Binsuf\le0.62$), so that assumption-free bound does not separate, and
-  the $\sim2\times$ full-convention margin (the sharpened $\mathrm{MSE}-\Binsuf$ bound,
-  $1.24$ vs $0.62$) is a full-COSMO-SAC-only result. What separates under the deployed
-  convention is the convention-independent bound
-  $\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{up}}\approx0.91>0.62$, on which
+  the full-convention margin (the sharpened $\mathrm{MSE}-\Binsuf$ bound,
+  $1.27$ vs $0.53$) is a full-COSMO-SAC-only result. What separates under the deployed
+  convention is the leakage-immune bound
+  $\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{LOTV}}\approx0.85>0.62$, on which
   we headline, together with the combinatorial Tier~2 fact.
   \item \emph{Confound.} The closure error is predominantly a \emph{between-solvent}
   systematic bias ($\sim$64\% of total error); within the largest single-solvent stratum
@@ -253,7 +253,7 @@ but sharpened its scope:
   separation is the solvent-clustered bootstrap $P(\Bclos{>}\Binsuf)\approx0.85$ ($0.83$
   vs the random-forest upper bound, $0.89$ vs the law-of-total-variance bound); we report
   the solvent-clustered scheme rather than the less conservative i.i.d.-pair one because
-  solvent dependence dominates. The convention-independent margin ($0.91$ vs $0.62$) is a
+  solvent dependence dominates. The leakage-immune margin ($0.85$ vs $0.62$) is a
   point estimate. The decomposition is checkpoint/seed-independent (the closure has zero
   learnable parameters).
   \item \emph{Selection/scope.} The 60 matchable pairs are the low-to-moderate $\gamma$

@@ -82,11 +82,12 @@ synthetic fidelity dial. On the end-to-end, low-fidelity anchor (ours), groundin
 learned $\sigma$-profile is not physical: on a confound-free one-model control it is a systematic,
 low-rank, out-of-sample-transferable closure-compensating surrogate (converged departure $53\%$,
 transfer $3.3\times$ over identity). An externally-grounded decomposition measures \emph{where} the
-ceiling sits, and finds it is the closure, not the inputs, for the deployed COSMO-SAC-2002 map (our
-differentiable closure reproduces the NIST reference COSMO-SAC to RMSE $0.003$, so this is genuine
-misspecification, not an implementation artifact). Raising closure fidelity moves the ceiling: a
-standard modern closure (COSMO-SAC-2010/dsp) removes ${\sim}70\%$ of the closure error on the same set
-and \emph{flips} the binding term from the closure to the inputs. The practical map: if the closure is
+ceiling sits, and finds it is most likely the closure, not the inputs ($P\approx0.78$ under two-way
+clustering), for the deployed COSMO-SAC-2002 map (our differentiable closure reproduces the NIST
+reference COSMO-SAC to RMSE $0.003$, so this is genuine misspecification, not an implementation
+artifact). Raising closure fidelity moves the ceiling: a standard modern closure (COSMO-SAC-2010/dsp)
+removes ${\sim}70\%$ of the closure error and \emph{dissolves the closure-dominance certificate}---the
+binding term is no longer certifiably the closure. The practical map: if the closure is
 misspecified and the latent is end-to-end, grounding hurts and the latent is not physical---supervise
 the latent, or raise closure fidelity. We give the supporting composed-predictor theory (an exact
 error decomposition, a crystal/activity non-identifiability result, and a physics-tax sign rule); we
@@ -105,7 +106,7 @@ predictor cannot exploit. The expectation is that the closer the model's physica
 inputs are to the truth, the better it should predict. On the activity branch
 this expectation fails on our model---yet a recent supervised-$\sigma$ model reports the
 \emph{opposite}, so the sign of grounding is not a fixed fact. The reason we dwell on our failure is
-what its \emph{cause} reveals. Having the latent's true value externally is a double lever: it lets us
+what its \emph{cause} reveals. Having the latent's true value externally does two things: it lets us
 \emph{measure} where the ceiling lies and attribute it to the closure rather than the inputs (the only
 setting in which that attribution is possible, since a fitted latent has no external oracle), and it
 lets us hold the learned latent against its truth---which shows that, trained end-to-end through a
@@ -114,7 +115,7 @@ out-of-sample-transferable compensating surrogate (confound-free control, \S\ref
 Both organize into one map: whether grounding helps or hurts is governed by two axes---how the latent
 is trained (supervised vs.\ end-to-end) and the closure's fidelity---which we anchor with three real
 systems and a synthetic dial, and a standard higher-fidelity closure (COSMO-SAC-2010/dsp) moves the
-ceiling and \emph{flips} the binding term (\S\ref{sec:measure}). The composed-predictor framing
+ceiling and dissolves the closure-dominance certificate (\S\ref{sec:measure}). The composed-predictor framing
 (\S\ref{sec:framework}) and the physics-tax sign rule give the formal account of the sign; the
 synthetic dial (\S\ref{sec:dial}) and the pKa closure (\S\ref{sec:pka}) trace the same two axes. We
 make no accuracy claim.
@@ -149,11 +150,14 @@ hurts, a measurement that locates the ceiling, and the supporting theory and neg
   closure-compensating surrogate, not the physical quantity (a $\sigma$-grounded model \emph{can}
   recover the true profile; the objective pulls it away). This is why grounding hurts here, and why a
   \emph{supervised}-$\sigma$ model finds the opposite (\S\ref{sec:surrogate}).
-  \item \textbf{The closure-fidelity axis: a modern closure flips the verdict.} On the same matched
-  set, the standard better-parameterized closures (COSMO-SAC-2010/dsp, reference implementation) cut
-  the closure error by ${\sim}70\%$ and \emph{flip} the binding term from the closure to the
-  inputs---so the 2002 closure-dominance is a documented H-bond-kernel inadequacy, and the actionable
-  lesson is to raise closure fidelity, not to enrich the inputs (\S\ref{sec:measure}).
+  \item \textbf{The closure-fidelity axis: a modern closure dissolves the closure-dominance certificate.}
+  On the same matched pairs under a reference 3-profile database (COSMO-SAC-2010/dsp, NIST
+  implementation), the standard better-parameterized closures cut the closure error by ${\sim}70\%$ and
+  \emph{dissolve the closure-dominance certificate} ($P\approx0.79$ that $\Bclos$ no longer exceeds
+  $\Binsuf$ under two-way clustering); the residual ``inputs bind'' reading holds unless the true
+  $\Binsuf$ falls below $\mathrm{MSE}_{2010}/2\approx0.38$, below every $\Binsuf$ estimate we have---so
+  the 2002 closure-dominance is a documented H-bond-kernel inadequacy, and the actionable lesson is to
+  raise closure fidelity, not to enrich the inputs (\S\ref{sec:measure}).
   \item \textbf{A negative actionability result (Gate B).} A post-hoc
   output-space residual placed on the physics prediction recovers calibration but
   not accuracy; the closure binding cannot be undone downstream
@@ -642,7 +646,7 @@ $\Ex[\Var(m\mid\zstar)]$; ``k\textsc{nn}'' is a direct high-dimensional estimate
 (biased upward), the others are law-of-total-variance / out-of-fold upper bounds.
 The \emph{load-bearing} separation is the convention-independent
 $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ row, which exceeds $\Binsuf$ under
-\emph{both} conventions ($1.24$, $0.91>0.62$); the assumption-free constant-offset
+\emph{both} conventions ($1.27$, $0.85>0.62$); the assumption-free constant-offset
 (Jensen) bound separates only under ``full'' ($0.72$) and inverts under the
 deployed ``res'' ($0.43<0.62$).}
 \label{tab:decomp}
@@ -651,7 +655,7 @@ deployed ``res'' ($0.43<0.62$).}
 Quantity & full & res \\
 \midrule
 MSE$_{\text{total}}=\Bclos+\Binsuf$ (exact)      & $1.80$ & $1.47$ \\
-$\Bclos$ lower via MSE$-\Binsuf^{\text{up}}$ (RF; \emph{$\Binsuf$ conv.-indep., load-bearing}) & $1.24$ & $0.91$ \\
+$\Bclos$ lower via MSE$-\Binsuf^{\text{up}}$ (LOTV; \emph{leakage-immune, load-bearing}) & $1.27$ & $0.85$ \\
 $\Bclos$ lower bound (Jensen, offset$^2$; assumption-free; \emph{full-only}) & $0.72$ & $0.43$ \\
 $\Binsuf$ upper (bin $g$; law of total variance)  & $0.53$ & $0.62$ \\
 $\Binsuf$ upper (RF / Ridge out-of-fold)          & $0.56/0.62$ & same \\
@@ -681,13 +685,13 @@ We grade the evidence in two tiers: \emph{Tier~1} claims hold for \emph{any} COS
 configuration and are the load-bearing ones, while \emph{Tier~2} claims are
 configuration-robust corroboration that is not strictly independent of the model fit.
 
-\paragraph{The load-bearing separation (convention-independent, Tier~1).} Because
-$\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, its upper bound is the
-same in every closure convention; subtracting it from the total therefore lower-bounds
-$\Bclos$ even for the model's \emph{deployed} residual-only convention, giving
-$\Bclos\gtrsim0.91$, well above $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). This is the claim we lean
-on, and it needs no smoothness assumption beyond the validity of the $\Binsuf$ upper
-bound. We stress-test the separation directly (App.~\ref{sec:si-tables}), and doing so exposes an
+\paragraph{The load-bearing separation (leakage-immune, Tier~1).} We subtract the leakage-immune
+law-of-total-variance $\Binsuf$ upper bound---the most conservative of our estimators, since the
+$z^\ast$-neighbour estimators ($k$-NN, RF) are deflated by near-duplicate leakage and so \emph{inflate}
+$\Bclos$---from the total error. On the model's \emph{deployed} residual-only convention this gives
+$\Bclos\gtrsim0.85$, well above $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). The bound conditions on
+$g(\zstar)$, so we report it per convention; it is the claim we lean on, and it needs no smoothness
+assumption beyond the validity of the $\Binsuf$ upper bound. We stress-test the separation directly (App.~\ref{sec:si-tables}), and doing so exposes an
 identification hazard that dictates \emph{which} estimator to trust. The matched set is a crossed
 $41$-solute$\times17$-solvent design, so any two pairs sharing a solute or a solvent share $51$ of
 $102$ $\zstar$ coordinates exactly; the raw nearest neighbour of a pair is such a near-duplicate
@@ -717,12 +721,16 @@ under the deployed residual-only default ($0.43<0.62$; hedge~1), which is exactl
 we headline the convention-independent bound above rather than the constant offset.
 Label noise is unestimable in this replicate-free set (the matched IDAC pairs carry no repeat
 measurements at $298$\,K, so an inter-source floor cannot be formed as it was for solubility) and
-assumed zero; the bounds we rely on are invariant to zero-mean noise. Because a replicate floor is
-unavailable, we test exposure to the highest-scatter data directly: the separation is unchanged by
-deleting any single pair ($60/60$) and by trimming the eight highest-error pairs---which include the
+assumed zero; the bounds we rely on are invariant to zero-mean noise. A \emph{systematic} between-method
+offset in the compiled IDAC labels (gas--liquid chromatography, ebulliometry, and dilutor techniques
+carry known method-dependent bias, not zero-mean scatter) is \emph{not} covered by that invariance and
+would inflate $\Bclos$; we cannot estimate it on this replicate-free set and flag it as an untested
+exposure of the attribution. Because a replicate floor is
+unavailable, we test exposure to the highest-scatter data directly: the separation \emph{sign} survives
+deleting any single pair ($60/60$) and trimming the eight highest-error pairs---which include the
 physically suspect associating outliers (e.g.\ $1$-hexanamine in methanol, $\ln\gamma^\infty{=}{+}2.62$
-against its reverse $-0.97$)---so the ceiling is carried by the bulk of the associating systems, not
-a few leverage points.
+against its reverse $-0.97$)---though under that trim the estimated $\Bclos$ lower bound falls
+${\sim}58\%$ ($0.91\to0.38$). The closure-dominance \emph{sign}, not its magnitude, is leverage-robust.
 
 \paragraph{The closure defect is low-rank and correctable.} That $\Bclos$ dominates locates the
 ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. Fitting a small
@@ -775,20 +783,25 @@ $\Bclos$ exceeds $\Binsuf$.
 \paragraph{The ceiling moves with closure fidelity: a standard-closure control.} The 2002
 closure-dominance above is not a general fact about physical inputs; it is specific to the deployed
 map's single-parameter hydrogen-bonding kernel, and the field already has better-parameterized
-closures built for exactly that defect. Running the NIST reference implementation of COSMO-SAC-2010
-(donor/acceptor-typed HB) and -dsp on the \emph{same} matched pairs (true $3$-profile inputs) cuts the
-closure error from $\mathrm{MSE}=1.26$ to $0.77$/$0.79$---a ${\sim}70\%$ reduction of $\Bclos$ against
-the unchanged $\Binsuf$ floor---and \emph{flips} the binding term: under 2010/dsp $\Bclos\approx0.20<
-\Binsuf$, so the \emph{inputs}, not the closure, bind. (Our differentiable layer reproduces the
-reference COSMO-SAC-2002 to RMSE $0.003$ $\ln\gamma$ on identical VT-2005 profiles, so the 2002 error
-is genuine misspecification, not an implementation artifact.) The decision-relevant reading is thus not
-``the closure always dominates'' but ``on a low-fidelity closure it does, and the fix is a better
-closure, not truer inputs''---closure fidelity is the second axis of the map (\S\ref{sec:discussion}).
+closures built for exactly that defect. We run the NIST reference implementation of COSMO-SAC-2010
+(donor/acceptor-typed HB) and -dsp on the same matched pairs, now under the reference Delaware (UD)
+$3$-profile database---on which the reference 2002 map scores $\mathrm{MSE}=1.26$, against $1.47$ for
+our deployed residual-only layer on the VT-2005 profiles used elsewhere. The better-parameterized
+closures cut the error to $\mathrm{MSE}=0.77$/$0.79$: a ${\sim}70\%$ reduction of $\Bclos$
+($0.70\to0.20$ at point) against the unchanged $\Binsuf$ floor. Under two-way
+solute$\times$solvent clustering this \emph{dissolves the closure-dominance certificate}---$P\approx0.79$
+that $\Bclos$ no longer exceeds $\Binsuf$. We do not claim a certified flip to the inputs: we hold only
+an \emph{upper} bound on $\Binsuf$, so ``the inputs bind'' would require a lower bound. That reading does
+hold for any true $\Binsuf>\mathrm{MSE}_{2010}/2\approx0.38$, which is below every $\Binsuf$ estimate we
+have ($0.56$--$0.63$; only the downward-biased $k$-NN floor $0.40$ approaches it). The decision-relevant
+reading is thus not ``the closure always dominates'' but ``on a low-fidelity closure it does, and the
+fix is a better closure, not truer inputs''---closure fidelity is the second axis of the map
+(\S\ref{sec:discussion}).
 
 \paragraph{Scope and hedges.} An adversarial audit sharpened the scope without
 inverting the verdict. The constant-offset bound is convention-specific---it inverts
 under the deployed residual-only default, where the convention-independent bound
-($\Bclos\ge0.91>0.62$) and the combinatorial fact carry the claim instead; the closure
+($\Bclos\ge0.85>0.62$) and the combinatorial fact carry the claim instead; the closure
 error is chiefly a between-solvent bias (a solvent-conditional lower bound
 $\Bclos\ge0.89$); the solvent-clustered confidence on the constant-offset separation is $P(\Bclos{>}\Binsuf)\approx0.85$ ($0.83$ vs the random-forest bound, $0.89$ vs the law-of-total-variance bound);
 and the measurement is confined to the low-$\gamma$, $298$\,K, VT-2005-matchable corner,
@@ -892,7 +905,7 @@ inputs, more data, and auxiliary grounding do not recover an accuracy the factor
 express. The contribution is accordingly not
 an accuracy result but a \emph{map} of when grounding a learned latent in true physics helps or hurts:
 the externally grounded decomposition \emph{locates} the ceiling (measured, not proved), a standard
-higher-fidelity closure moves it and flips the binding term, and---where the closure binds and the
+higher-fidelity closure moves it and dissolves the closure-dominance certificate, and---where the closure binds and the
 latent is end-to-end---the ``physical'' intermediate behaves as a compensating surrogate; the two
 governing axes are closure fidelity and latent supervision (Fig.~\ref{fig:map}). What a misspecified
 closure costs is thus not only accuracy but the interpretability the bottleneck appeared to buy.
@@ -965,10 +978,12 @@ amide-solvent regime is untested. (iv)~Absolute scaffold $\lnx$ accuracy is
 encoder-bound; it sits well \emph{above} the inter-lab replicate-reproducibility floor
 ($0.15$--$0.31$ in $\lnx$; \S\ref{sec:supporting}), so label noise does not explain the ceiling,
 but it is near the practical difficulty of new-solute extrapolation set by the current
-state of the art. (v)~The second-edge surrogate result is the paper's weakest link: its converged
-magnitude and clean one-model transferability are pending---a short run reaches only ${\sim}16\%$ of
-the departure and ${\sim}1.7\times$ transferability, and the strong, transferable form is measured
-only in confounded/two-model analyses. This paper is not an accuracy claim.
+state of the art. (v)~The compensating-surrogate result rests on a single converged one-model isolation
+control ($n{=}44$ matched molecules; \S\ref{sec:surrogate}): the reported $53\%$ departure, its
+low-rank structure (top-two modes $73\%$), and its $3.3\times$ out-of-sample transfer supersede an
+earlier short pilot that reached only ${\sim}16\%$/${\sim}1.7\times$ before convergence. The
+remaining hedges are the sample size and that the clean isolation is a single GPU run. This paper
+is not an accuracy claim.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -981,10 +996,14 @@ the closure rather than the inputs ($P\approx0.78$ under two-way solute$\times$s
 $0.89$ single-axis; not certified at conventional confidence;
 label noise unestimable and assumed zero). The
 practical implication is to fix the map itself, since within this closure truer
-inputs surface its bias and an output-space correction is inert. The same grounding also indicates,
+inputs surface its bias and an output-space correction is inert. Neither failure is universal: raising
+closure fidelity (COSMO-SAC-2010/dsp dissolves the certificate) or supervising the latent toward truth
+moves the system out of the hurts-corner, so whether grounding helps is governed by two axes---closure
+fidelity and how the latent is trained (Fig.~\ref{fig:map}). The same grounding also indicates,
 where the closure binds, that the learned $\sigma$-profile is a closure-compensating surrogate rather
-than the physical quantity---an interpretability cost of physics-informed bottlenecks whose converged
-magnitude is still pending, but whose direction the external latent already exposes.
+than the physical quantity---an interpretability cost of physics-informed bottlenecks that the
+external latent makes measurable: a $53\%$, low-rank, transferable departure from truth on a
+converged one-model control.
 
 \section*{Data and code availability}
 All code and the intermediate result artifacts needed to regenerate every figure and
