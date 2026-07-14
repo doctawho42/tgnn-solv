@@ -168,19 +168,14 @@ COSMO-SAC, true $\sigma$ ($\sigma$-oracle)     & $2.25\pm0.02$ & $-0.03\pm0.04$ 
 \paragraph{Robustness of the closure/insufficiency separation.} We stress the
 deployed-convention verdict $\Bclos>\Binsuf$ (\S\ref{sec:measure}) three ways on the
 $n{=}60$ set (\texttt{run\_b\_insuff\_robustness.py}). \emph{(i)~Estimator sensitivity.} The
-$\Binsuf$ upper bounds are $0.40$ ($k$-NN), $0.56$ (binning/LOTV), $0.62$ (random forest), and
-$0.88$ (ridge)---computed with this section's estimator settings, so they differ slightly from
-Table~\ref{tab:decomp}, a hyperparameter effect, not a convention one ($\Binsuf$ is
-convention-independent, not estimator-independent). The spread is a bias--variance ordering of the
-same target $\Ex[\Var(m\mid z)]$: the local $k$-NN estimate is the least smoothed and sits lowest,
-while the global ridge smoother is the most regularized and sits highest. Because a \emph{smaller}
-$\Binsuf^{\mathrm{up}}$ is the \emph{less} conservative input to
-$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$, we do not lean on the $k$-NN value despite its being
-the smallest---it is the most optimistic, not the most trustworthy. With
-$\mathrm{MSE}_{\mathrm{res}}=1.47$ the verdict $\Bclos>\Binsuf$ holds under the three lower
-estimators ($k$-NN, binning/LOTV, random forest) and fails only under the most conservative ridge
-estimator---non-certifying there, not refuting, and consistent with the clustered-bootstrap
-``likely but not certified'' reading below. \emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the
+$\Binsuf$ upper bounds of Table~\ref{tab:decomp} are $0.40$ ($k$-NN), $0.62$ (binning/LOTV), $0.56$
+(random forest), and $0.62$ (ridge out-of-fold). With $\mathrm{MSE}_{\mathrm{res}}=1.47$ the verdict
+$\Bclos>\Binsuf$ (equivalently $\Binsuf<\mathrm{MSE}/2=0.74$) holds under \emph{all four}. The local
+$k$-NN value is the smallest and hence the \emph{least} conservative input to
+$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$, so we headline the leakage-immune LOTV bound rather than
+it. The sole non-certifying configuration is a deliberately more aggressive ridge regularization,
+which lifts $\Binsuf$ to $0.88$ (then $\Bclos\ge0.59<0.88$)---a sensitivity edge, not a refutation,
+consistent with the clustered-bootstrap ``likely but not certified'' reading below. \emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the
 verdict holds in \emph{all} $17$ folds under the law-of-total-variance bound; under the
 random-forest estimator it holds in only $2/17$, because a random forest over-fits conditional
 variance in $102$ dimensions at $n{=}60$ (its out-of-fold MSE approaches $\Var(m)$), so its
@@ -192,7 +187,9 @@ thus robust under a principled insufficiency estimator and noise-stable, but its
 strength is estimator-dependent. \emph{(iv)~Clustered-bootstrap interval.} A solvent-clustered
 bootstrap ($3000$ resamples of the $17$ solvents, LOTV bound) makes the confidence explicit: the
 $\Bclos$ lower bound has median $0.93$ (CI$_{90}$ $[0.40,\,1.62]$) and the certification margin
-$\Bclos-\Binsuf$ has median $0.36$ (CI$_{90}$ $[-0.22,\,+0.97]$), with $P(\Bclos>\Binsuf)\approx0.89$.
+$\Bclos-\Binsuf$ has median $0.36$ (CI$_{90}$ $[-0.22,\,+0.97]$), with $P(\Bclos>\Binsuf)\approx0.89$
+(solvent-clustered, single-axis; the more conservative two-way solute$\times$solvent bootstrap that
+also charges for repeated solutes gives $\approx0.78$, the value the main text headlines).
 The separation is therefore \emph{likely} but not certified at the $90\%$ level---consistent with
 the earlier $\approx0.85$ figure (hedge~3)---which is why the main text treats it as supporting
 rather than decisive.
@@ -200,30 +197,30 @@ rather than decisive.
 \paragraph{In-regime ($\gamma$-stratified) separation.} The $n{=}60$ measurement is matched at low $\gamma$,
 while the paradox spans all $\gamma$. Stratifying the $n{=}60$ set by $\lngi$
 (\texttt{run\_b\_insuff\_regime.py}) tests whether closure-dominance is a corner artifact. It is
-not: the verdict $\Bclos>\Binsuf$ (tightest of the binning/RF/$k$-NN upper bounds) holds in every
+not: the verdict $\Bclos>\Binsuf$ (leakage-immune LOTV binning bound) holds in every
 stratum and \emph{strengthens} toward higher $\gamma$ (Table~\ref{tab:regime})---in the highest
-stratum ($\overline{\lngi}=2.9$, approaching the non-ideal regime) $\Bclos\ge3.0$ dominates
-$\Binsuf\le0.3$ by an order of magnitude. We caution that the high-$\gamma$ strata are small
+stratum ($\overline{\lngi}=2.9$, approaching the non-ideal regime) $\Bclos\ge2.69$ exceeds
+$\Binsuf\le0.67$ several-fold. We caution that the high-$\gamma$ strata are small
 ($n=17$--$30$ in $102$ dimensions): the law-of-total-variance bound can be pushed toward zero by
 too-few-points-per-bin, which mechanically widens the margin exactly where data is thinnest, so
-it is the large ($\sim\!10\times$) separations rather than the precise values that carry the
+it is the several-fold separations rather than the precise values that carry the
 qualitative reading. This supports---but does not prove---the conjecture that the same closure
 misspecification drives the all-$\gamma$ paradox.
 
 \begin{table}[h]
 \centering
 \caption{Closure/insufficiency verdict across $\lngi$ strata of the matched set (deployed
-residual-only convention; $\Binsuf^{\mathrm{up}}$ is the tightest of the binning / RF / $k$-NN
-upper bounds). The separation holds in every stratum and grows with $\gamma$.}
+residual-only convention; $\Binsuf^{\mathrm{up}}$ is the leakage-immune LOTV binning bound throughout,
+for even-handedness with the main-text headline). The separation holds in every stratum and grows with $\gamma$.}
 \label{tab:regime}
 \begin{tabular}{lrrrr}
 \toprule
 Stratum & $n$ & $\overline{\lngi}$ & $\Binsuf\le$ & $\Bclos\ge$ \\
 \midrule
-all                         & $60$ & $+0.75$ & $0.40$ & $1.07$ \\
-lower $\gamma$ ($m\le$ med.) & $30$ & $-0.40$ & $0.07$ & $0.95$ \\
-higher $\gamma$ ($m>$ med.)  & $30$ & $+1.90$ & $0.28$ & $1.65$ \\
-high $\gamma$ ($m>1.5$)      & $17$ & $+2.94$ & $0.32$ & $3.04$ \\
+all                         & $60$ & $+0.75$ & $0.65$ & $0.83$ \\
+lower $\gamma$ ($m\le$ med.) & $30$ & $-0.40$ & $0.08$ & $0.95$ \\
+higher $\gamma$ ($m>$ med.)  & $30$ & $+1.90$ & $0.86$ & $1.07$ \\
+high $\gamma$ ($m>1.5$)      & $17$ & $+2.94$ & $0.67$ & $2.69$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -270,13 +267,13 @@ We retrained the direct SOTA (FastSolv \cite{osanloo2024}) and the physics-infor
 SOTA (SolProp \cite{vermeire2022solprop}) on our corpus and evaluated them on a
 by-solute test split (\texttt{test\_solute.csv}, $n\approx10$--$12$k). In $\lnx$ they
 reach MAE $1.94$ (FastSolv, $R^2\,0.23$) and $2.34$ (SolProp, calibrated,
-$R^2\,{-}0.18$); in $\log_{10}S$, $0.87$ and $1.04$. Neither beats our matched arms, and
-the physics-informed SolProp trails the direct FastSolv---the same ordering we find
-internally between the physics closures and DirectGNN. These runs use a different
-(by-solute) test file than the scaffold split of the headline comparison, so they bound
-the task's difficulty rather than rank directly against the scaffold numbers of
-Table~\ref{tab:si-arms}; a like-for-like scaffold evaluation of the external models is
-left to the deposited artifacts. The regime-level reading is that on this corpus no
+$R^2\,{-}0.18$); in $\log_{10}S$, $0.87$ and $1.04$. These are on a \emph{by-solute} split that is
+\emph{not comparable} to our scaffold numbers (Table~\ref{tab:si-arms}): they bound the task's
+difficulty, not a head-to-head ranking, so we do \emph{not} read our scaffold-split DirectGNN
+($1.70$) as beating them, and a like-for-like scaffold evaluation of the external models is left to
+the deposited artifacts. What \emph{is} comparable is the internal ordering: the physics-informed
+SolProp trails the direct FastSolv---the same ordering we find between our physics closures and
+DirectGNN. The regime-level reading is that on this corpus no
 black box, ours or external, escapes the accuracy ceiling---consistent with the
 structural account of \S\ref{sec:discussion}. Per-arm ablations (NRTL vs COSMO-SAC,
 combinatorial on/off) are in Table~\ref{tab:si-arms}.

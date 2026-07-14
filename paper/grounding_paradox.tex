@@ -60,7 +60,7 @@
 \newcommand{\Var}{\ensuremath{\mathrm{Var}}}
 
 \title{When True Physical Inputs Help or Hurt a Learned Solubility Model:\\
-Closure Fidelity and Latent Supervision Govern the Sign of Grounding}
+A Closure-vs-Inputs Diagnostic and a Two-Axis Map of Grounding}
 \author{N.~L. Polomoshnov \and \pending[co-authors]}
 \date{\today}
 
@@ -73,23 +73,24 @@ physical \emph{closure}---a mechanistic map with no fitted parameters---fed by a
 intermediate. For solid--liquid solubility the closure is COSMO-SAC, which turns a molecule's
 surface-charge $\sigma$-profile into an activity coefficient; the $\sigma$-profile is predicted
 by a network. The premise is that grounding the closure on truer physical inputs improves it.
-We show its sign is not fixed. Replacing our model's learned $\sigma$-profiles with the true,
-externally measured ones (VT-2005) makes prediction \emph{worse} than a free learned head---yet a
-recent \emph{supervised}-$\sigma$ model reports the opposite. We resolve this by mapping the grounding
-effect onto two governing axes---how the latent is trained (supervised toward truth vs.\ shaped
-end-to-end through the fixed closure) and the closure's fidelity---anchored by three real systems and a
-synthetic fidelity dial. On the end-to-end, low-fidelity anchor (ours), grounding hurts because the
-learned $\sigma$-profile is not physical: on a confound-free one-model control it is a systematic,
-low-rank, out-of-sample-transferable closure-compensating surrogate (converged departure $53\%$,
-transfer $3.3\times$ over identity). An externally-grounded decomposition measures \emph{where} the
-ceiling sits, and finds it is most likely the closure, not the inputs ($P\approx0.78$ under two-way
-clustering), for the deployed COSMO-SAC-2002 map (our differentiable closure reproduces the NIST
-reference COSMO-SAC to RMSE $0.003$, so this is genuine misspecification, not an implementation
-artifact). Raising closure fidelity moves the ceiling: a standard modern closure (COSMO-SAC-2010/dsp)
-removes ${\sim}70\%$ of the closure error and \emph{dissolves the closure-dominance certificate}---the
-binding term is no longer certifiably the closure. The practical map: if the closure is
-misspecified and the latent is end-to-end, grounding hurts and the latent is not physical---supervise
-the latent, or raise closure fidelity. We give the supporting composed-predictor theory (an exact
+We show its sign is not fixed. Replacing our model's learned $\sigma$-profiles with the external
+quantum-chemical reference profiles (VT-2005; computed, not experimental) makes prediction \emph{worse} than a free learned head---yet a
+recent \emph{supervised}-$\sigma$ model reports the opposite. We organize the grounding effect on two
+axes---how the latent is trained (supervised toward truth vs.\ shaped end-to-end through the fixed
+closure) and the closure's fidelity. On the end-to-end, low-fidelity anchor (ours), grounding hurts
+because the learned $\sigma$-profile is not physical: on a confound-free one-model control it is a
+systematic, low-rank, out-of-sample-transferable closure-compensating surrogate ($53\%$ departure,
+$3.3\times$ transfer, a single $n{=}44$ control). An externally-referenced decomposition then measures
+\emph{where} the ceiling sits: on $n{=}60$ matched low-$\gamma$ pairs it is \emph{most likely} the
+closure, not the inputs, for the deployed COSMO-SAC-2002 map ($P\approx0.78$ two-way-clustered, with a
+margin CI spanning zero---likely, not certified; and this corner is not where the paradox itself
+lives, so transfer to the finite-composition regime is a conjecture). The closure error is genuine
+misspecification (our differentiable layer reproduces the NIST reference COSMO-SAC to RMSE $0.003$),
+and a standard modern closure (COSMO-SAC-2010/dsp) removes ${\sim}70\%$ of it and dissolves that
+certificate. The practical reading: on a misspecified closure with an end-to-end latent, grounding
+hurts and the latent is not physical---raise closure fidelity, or supervise the latent (which on our
+own model cuts the penalty $65\%$ but does not by itself flip it; the ``helps'' corner is anchored by
+a supervised-$\sigma$ model we did not run). We give the supporting composed-predictor theory (an exact
 error decomposition, a crystal/activity non-identifiability result, and a physics-tax sign rule); we
 make no accuracy claim.
 \end{abstract}
@@ -135,7 +136,7 @@ hurts, a measurement that locates the ceiling, and the supporting theory and neg
   physical latent $\zstar$ (the true $\sigma$-profile) has external ground truth, the
   true-input excess risk splits \emph{exactly} as $B=\Bclos+\Binsuf$ with no model
   fit (Lemma~\ref{prop:decomp}). The decomposition and its estimators are textbook;
-  the new element is exploiting an externally measured latent to bound the split
+  the new element is exploiting an externally referenced latent to bound the split
   empirically. On the convention-robust evidence---a bound that holds however the
   COSMO-SAC closure is configured, plus the more-physics-worse effect---$\Bclos$
   (misspecified decoder) exceeds $\Binsuf$ (input insufficiency) on the low-$\gamma$ subset we
@@ -174,9 +175,10 @@ hurts, a measurement that locates the ceiling, and the supporting theory and neg
   $g$ over a learned intermediate. We prove three structural lemmas
   (Lemmas~\ref{prop:ident}--\ref{prop:decomp}), a grounding-gap identity
   (Theorem~\ref{thm:gap}), and a sign rule for the physics tax (Prop.~\ref{prop:tax}).
-  The grounding-gap identity bounds the gap by the closure bias, but only under assumptions
-  that fail here; we therefore read the gap as a \emph{symptom} and let the assumption-light
-  decomposition do the certifying. The sign rule's critical-budget and aleatoric-floor
+  The grounding-gap identity bounds the gap by the closure bias, but both its assumptions
+  (A1 representability, A2 lossless bottleneck) fail or are unverifiable in our setting, so it is
+  \emph{not} load-bearing; we read the gap as a \emph{symptom} and rest certification on the
+  assumption-light decomposition (Lemma~\ref{prop:decomp}) alone. The sign rule's critical-budget and aleatoric-floor
   corollaries predict the two negatives above. The account transfers to synthetic closure
   families (\S\ref{sec:dial}) and a second chemical closure (pKa through a Hammett relationship,
   \S\ref{sec:pka}, where a trained physics arm does beat its control---though a stratified check
@@ -189,8 +191,8 @@ hurts, a measurement that locates the ceiling, and the supporting theory and neg
 \includegraphics[width=\linewidth]{figs/fig_overview.pdf}
 \caption{\textbf{The paper in one view.} A learned encoder $h$ predicts a physical latent---a
 molecular $\sigma$-profile---that a fixed COSMO-SAC closure $g$ (no fitted parameters) turns into a
-solubility. \emph{(1)~The paradox:} replacing the learned $\hat\sigma$ with the \emph{true},
-externally measured $\sigma^\star$ (VT-2005) makes the prediction \emph{worse} than a free learned
+solubility. \emph{(1)~The paradox:} replacing the learned $\hat\sigma$ with the external
+quantum-chemical reference $\sigma^\star$ (VT-2005) makes the prediction \emph{worse} than a free learned
 head---so which is wrong, the closure or the inputs? \emph{(2)~The measurement:} because the latent
 has an external oracle, the true-input excess risk splits \emph{exactly} into a
 closure-misspecification part $\Bclos$ and an input-insufficiency part $\Binsuf$; on the matched
@@ -221,7 +223,7 @@ a graph encoder predicts a $\sigma$-profile---the distribution of screening
 (surface) charge density over a molecule, the histogram a COSMO model
 consumes---for each molecule, and COSMO-SAC (the COnductor-like Screening
 Model--Segment Activity Coefficient \cite{lin2002}) maps the pair of profiles to
-$\lng$. Write $\zstar$ for the \emph{true} physical latent, the externally measured
+$\lng$. Write $\zstar$ for the \emph{true} physical latent, the externally referenced
 $\sigma$-profile from the VT-2005 database (the Virginia Tech 2005 compilation of
 quantum-chemically computed screening-charge profiles for ${\sim}1{,}400$
 compounds \cite{mullins2006}), and $g(\zstar)$ for the closure output when fed the
@@ -496,7 +498,7 @@ closure-dominance therefore rests on the convention-independent \emph{decomposit
 the insufficiency estimates place $\Bclos$ above $\Binsuf$ \emph{directly}
 (\S\ref{sec:measure}), and the grounding gap only corroborates it. This is the paper's method:
 \emph{the decomposition is the instrument, $\Gamma$ is the cheap symptom that motivates it, and
-separating its two causes is what an externally measured latent buys.}
+separating its two causes is what an externally referenced latent buys.}
 
 \subsection{The physics tax and the critical data budget}
 \label{sec:tax}
@@ -526,10 +528,10 @@ $\Delta_\infty$ is read off the large-$n$ asymptote. Both corollaries are \emph{
 the data---the data-efficiency null (a positive tax at every budget, \S\ref{sec:data-efficiency},
 single-seed) and the novelty inversion (the tax heaviest on the \emph{best-covered} solutes,
 \S\ref{sec:map}, exploratory) point in directions the proposition allows---but neither is a
-controlled test: in the data-efficiency sweep the physics arm is far more under-converged than its
-control at the shared light budget (its $R^2$ falls to $-0.79$ where the control holds near $+0.22$),
-so the within-budget gap conflates inductive bias with optimization difficulty and we do not map it
-to a specific case. We prove the structural parts (existence of $n^\star$ given
+controlled test: in the data-efficiency sweep the physics arm is more under-converged than its
+control across the sweep---its $R^2$ is negative at every fraction (down to $-0.79$ at full data,
+where the control holds near $+0.22$)---so the within-budget gap conflates inductive bias with
+optimization difficulty and we do not map it to a specific case. We prove the structural parts (existence of $n^\star$ given
 $\Delta_\infty>0$ and a vanishing variance gap; the floor inequality); the shapes of $V(n)$ are
 empirical.
 
@@ -624,7 +626,7 @@ Feeding true $\sigma$-profiles into the closure degrades it rather than improvin
 in both the activity and the solubility target, and it fails the way a \emph{misspecified
 map} does---not the way missing information would. In the solubility target the effect
 erases any positive $R^2$ (Fig.~\ref{fig:paradox}): the model predicts solubility better
-\emph{from its own learned $\sigma$-profile} than when \emph{given the true measured one}
+\emph{from its own learned $\sigma$-profile} than when \emph{given the external reference one}
 (MAE $1.85$ vs $2.25$, in $\lnx$ units). Two facts pin the cause on the map. First,
 restoring the physically \emph{more} complete Staverman--Guggenheim combinatorial term
 (the entropic contribution from solute--solvent size and shape mismatch) \emph{increases}
@@ -646,7 +648,7 @@ physics closures trail it (the ``physics tax''). Replacing the model's learned
 $\sigma$-profile with the \emph{true} VT-2005 profile (the $\sigma$-oracle,
 salmon) gives the \emph{worst} arm, collapsing $R^2$ to $\approx0$ ($-0.03\pm0.04$):
 by MAE the model predicts solubility distinctly better from its invented $\sigma$
-($1.85$) than from the measured one ($2.25$). Per-arm exact values are transcribed
+($1.85$) than from the reference one ($2.25$). Per-arm exact values are transcribed
 in the SI.}
 \label{fig:paradox}
 \end{figure}
@@ -766,8 +768,9 @@ ${\sim}58\%$ ($0.91\to0.38$). The closure-dominance \emph{sign}, not its magnitu
 ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. A small
 structure-preserving residual on the fixed COSMO-SAC exchange-energy kernel
 ($\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric, zero-initialised), fit on
-the \emph{true} VT-2005 profiles, removes $56\%$ of the closure error out-of-sample (five-fold
-cross-validated, activity MSE $1.47\!\to\!0.64$) at \emph{rank one} ($52$ parameters; rank~2 adds
+the \emph{true} VT-2005 profiles, removes $56\%$ of the total true-input error out-of-sample (five-fold
+cross-validated, activity MSE $1.47\!\to\!0.64$---nearly all of the reducible closure component above
+the $\Binsuf$ floor) at \emph{rank one} ($52$ parameters; rank~2 adds
 nothing, rank~3 over-fits). At $52$ parameters against $n{=}60$ this is provisional, and we have not
 separated the kernel correction from a per-solvent offset. So $\Bclos$ is not diffuse model error but
 a low-dimensional, correctable defect of the map---addressable with a handful of parameters on the
@@ -800,7 +803,9 @@ our deployed residual-only layer on the VT-2005 profiles used elsewhere. The bet
 closures cut the error to $\mathrm{MSE}=0.77$ (2010) / $0.79$ (dsp, $n{=}57$): a ${\sim}70\%$ reduction of $\Bclos$
 ($0.70\to0.20$ at point) against the unchanged $\Binsuf$ floor. Under two-way
 solute$\times$solvent clustering this \emph{dissolves the closure-dominance certificate}---$P\approx0.79$
-that $\Bclos$ no longer exceeds $\Binsuf$. We do not claim a certified flip to the inputs: we hold only
+that $\Bclos$ no longer exceeds $\Binsuf$ (the near-mirror of the $P\approx0.78$ that it \emph{does}
+bind under 2002: same clustering, opposite verdicts, hence the near-identical numbers pointing in
+opposite directions). We do not claim a certified flip to the inputs: we hold only
 an \emph{upper} bound on $\Binsuf$, so ``the inputs bind'' would require a lower bound. That reading does
 hold for any true $\Binsuf>\mathrm{MSE}_{2010}/2\approx0.38$, which is below every $\Binsuf$ estimate we
 have ($0.56$--$0.63$; only the downward-biased $k$-NN floor $0.40$ approaches it). The decision-relevant
