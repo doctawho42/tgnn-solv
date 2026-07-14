@@ -139,8 +139,8 @@ hurts, a measurement that locates the ceiling, and the supporting theory and neg
   empirically. On the convention-robust evidence---a bound that holds however the
   COSMO-SAC closure is configured, plus the more-physics-worse effect---$\Bclos$
   (misspecified decoder) exceeds $\Binsuf$ (input insufficiency) on the low-$\gamma$ subset we
-  can measure, robustly across the $k$-NN, binning, and random-forest insufficiency estimators
-  (only the most conservative ridge does not certify) and, under the law-of-total-variance bound,
+  can measure, robustly across the tabulated $k$-NN, binning, random-forest, and ridge insufficiency
+  estimators (a more conservative ridge stress-test is the sole non-certifying case) and, under the law-of-total-variance bound,
   to leaving out any solvent: there,
   the binding term is \emph{likely} the closure (\S\ref{sec:measure}).
   \item \textbf{The mechanism where grounding hurts: a compensating-surrogate latent.} On the
@@ -588,8 +588,8 @@ closure-fidelity axis, \S\ref{sec:measure}); the compensating-surrogate mechanis
 (\S\ref{sec:surrogate}) explains the end-to-end/low-fidelity corner where grounding hurts. The
 remaining sections---the
 synthetic dial (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), the pKa closure
-(\S\ref{sec:pka}), and the data-efficiency and chemistry maps---stress-test and generalize the
-account.
+(\S\ref{sec:pka}), and the data-efficiency null (\S\ref{sec:data-efficiency})---stress-test and
+generalize the account, with further diagnostics in the ESI.
 
 \begin{table}[t]
 \centering
@@ -745,10 +745,10 @@ cluster bootstrap that also charges for repeated solutes lowers this to $P\appro
 margin spanning zero---so we present the separation as a \emph{supporting} measurement, likely but
 not certified at conventional confidence, not a stand-alone certificate. Two further checks live in
 App.~\ref{sec:si-tables}: stratifying by $\lngi$, the closure bound rises with $\gamma$
-($0.95\to2.69$, though thinly and estimator-dependently); and under the full COSMO-SAC convention an
-assumption-free constant-offset bound sharpens the separation to $\Bclos\ge1.24>0.62$ ($\sim2\times$),
-which however inverts under the deployed residual-only default ($0.43<0.62$)---the reason we headline
-the leakage-immune bound rather than the constant offset.
+($0.95\to2.69$, though thinly and estimator-dependently); and under the full COSMO-SAC convention the
+assumption-free constant-offset (Jensen) bound also separates ($\Bclos\ge0.72>0.62$), whereas it
+inverts under the deployed residual-only default ($0.43<0.62$)---the reason we headline the
+leakage-immune bound rather than the constant offset.
 Label noise is unestimable in this replicate-free set (the matched IDAC pairs carry no repeat
 measurements at $298$\,K, so an inter-source floor cannot be formed as it was for solubility) and
 assumed zero; the bounds we rely on are invariant to zero-mean noise. A \emph{systematic} between-method
