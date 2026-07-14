@@ -1,41 +1,25 @@
 \subsection{Closure fidelity sets the true-input penalty} \label{sec:dial}
 % Artifact: results/synthetic_dial/summary.json via scripts/analysis/run_fidelity_dial.py (seed 0).
-To isolate the mechanism behind the grounding paradox we built a controlled, reproducible
-synthetic experiment in which the only quantity that varies is the fidelity of the closure,
-with input quality, sample size, and estimator held fixed. A teacher draws a latent $\zstar$
-and generates a target through a known map $T$; a fixed candidate closure $g_F$ reconstructs
-the target from $\zstar$ under a tunable misspecification that deforms $T$ by a controlled
-amount, summarized by a scalar fidelity $F$ ($F=1$ recovers $T$ exactly; $F$ decreases as the
-closure is pushed further away). The measurement is the true-input penalty
-$\Delta R^2 = R^2_{\text{oracle}}-R^2_{\text{head}}$, the change in fit from feeding the genuine
-latent through $g_F$ rather than fitting a free head---$B_{\mathrm{closure}}$ made visible,
-since the free head recovers $\Ex[m\mid\zstar]$ while $g_F$ is the misspecified map. As $F$
-falls the penalty grows monotonically and without exception: averaged over six misspecification
-functional forms (linear, quadratic, cubic, absolute-value, sinusoidal, cross-term), $F=1.00$
-gives $\Delta R^2\approx0$; $F=0.76$ gives $\approx-0.04$; $F=0.38$ gives $\approx-0.33$; and an
-over-rotation stress test ($F=-0.50$) gives $\approx-2.0$ (Fig~\ref{fig:dial}). The ordering is
-identical across four unrelated teacher families---linear, monotone-nonlinear,
-kinetics-exponential, and a PDE-field surrogate, agreeing to within a few hundredths at each
-$F$---so the effect is a property of the fidelity magnitude, not of any one domain or
-deformation form.
+To isolate the mechanism we built a controlled synthetic experiment in which only the closure's
+fidelity varies (input quality, sample size, and estimator held fixed). A teacher draws a latent
+$\zstar$ and a target through a known map $T$; a fixed candidate closure $g_F$ reconstructs it under
+a tunable misspecification of scalar fidelity $F$ ($F=1$ recovers $T$ exactly, smaller $F$ pushes
+$g_F$ away). The true-input penalty $\Delta R^2 = R^2_{\text{oracle}}-R^2_{\text{head}}$ is $\Bclos$
+made visible---the free head recovers $\Ex[m\mid\zstar]$ while $g_F$ is the misspecified map. As $F$
+falls the penalty grows monotonically and without exception: averaged over six misspecification forms
+(linear, quadratic, cubic, absolute-value, sinusoidal, cross-term) $F{=}1.00$ gives
+$\Delta R^2\approx0$, $F{=}0.38$ gives $\approx-0.33$, and an over-rotation stress test ($F{=}{-}0.50$)
+gives $\approx-2.0$ (Fig.~\ref{fig:dial}); the ordering is identical across four unrelated teacher
+families (linear, monotone-nonlinear, kinetics-exponential, PDE-field), so the effect is a property of
+fidelity magnitude, not of any one domain. Placing the real system on the dial only illustratively
+(the real-closure-to-$F$ map is a synthetic construction, not a calibrated measurement), the COSMO-SAC
+closure over predicted $\sigma$-profiles falls at $F\lesssim0.4$: its solubility $\Delta R^2\approx-0.36$
+is what a closure of this fidelity predicts, consistent with $\Bclos$ dominating $\Binsuf$.
 
-This construction separates the two error channels the physics path confounds. When the closure
-is exact the true input is optimal and $\Delta R^2=0$; the penalty appears only as the closure
-becomes misspecified, and its size is set by that misspecification alone. Placing the real system
-on the same dial only illustratively---the mapping from a real closure to a scalar $F$ is a
-synthetic construction, not an independently calibrated measurement---the COSMO-SAC closure over
-predicted $\sigma$-profiles falls well inside the misspecified regime, where the dial's
-solubility $\Delta R^2$ between the $\sigma$-oracle and learned-$\sigma$ arms ($\approx-0.36$)
-lands at $F\lesssim0.4$ on the monotone curve. This locates the empirical grounding paradox on a
-mechanistic axis: the loss from feeding true physical inputs is what one expects from a closure
-of this fidelity, consistent with $\Bclos$ dominating $\Binsuf$.
-
-The same engine also makes concrete why the grounding gap is a symptom rather than a certificate
-(\S\ref{sec:gap}). With a knob on the sufficiency of $\zstar$, we can hold the closure
-\emph{well specified} ($\Bclos=0$) and vary how much target-relevant information the intermediate
-discards. When $\zstar$ is sufficient (A2 holds) the grounding gap $\Gamma$ tracks $\Bclos$ as
-fidelity varies, the regime in which Theorem~\ref{thm:gap}'s proxy is exact; when $\zstar$ is
-lossy but the closure is correct, $\Bclos=0$ throughout yet $\Gamma>0$ and grows with the
-discarded variance (Fig~\ref{fig:conflation}). A positive grounding gap can therefore be pure
-input insufficiency, not closure error---so the certificate of closure-dominance is the
-convention-independent decomposition, and $\Gamma$ only corroborates it.
+The same engine shows why the grounding gap is a symptom, not a certificate (\S\ref{sec:gap}). Holding
+the closure \emph{well specified} ($\Bclos=0$) and varying how much target-relevant information
+$\zstar$ discards: when $\zstar$ is sufficient, $\Gamma$ tracks $\Bclos$ as fidelity varies
+(Theorem~\ref{thm:gap}'s proxy is exact); when $\zstar$ is lossy but the closure is correct,
+$\Bclos=0$ throughout yet $\Gamma>0$ grows with the discarded variance (Fig.~\ref{fig:conflation}). A
+positive grounding gap can thus be pure input insufficiency, not closure error---so closure-dominance
+is certified by the convention-independent decomposition, and $\Gamma$ only corroborates it.
