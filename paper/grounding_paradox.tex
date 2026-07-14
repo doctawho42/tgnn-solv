@@ -574,6 +574,31 @@ synthetic dial (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb
 (\S\ref{sec:pka}), and the data-efficiency and chemistry maps---stress-test and generalize the
 account.
 
+\begin{table}[t]
+\centering
+\caption{What the paper establishes, graded by strength of evidence. \emph{Certified} claims hold
+under any closure configuration or are exactly proved; \emph{likely} claims are measured but
+sub-threshold or one-sidedly bounded on the matched $n{=}60$/$n{=}44$ sets; \emph{exploratory} claims
+are directional or conjectural. We make no accuracy claim.}
+\label{tab:claims}
+\small
+\begin{tabular}{@{}p{0.15\linewidth}p{0.79\linewidth}@{}}
+\toprule
+\textbf{Certified} & The grounding paradox: true VT-2005 $\sigma$-profiles make the model \emph{worse} than a free learned head ($3$ seeds, $n{=}5608$, surviving three injection controls). \\
+ & The exact split $B=\Bclos+\Binsuf$ for a fixed closure (Lemma~\ref{prop:decomp}). \\
+ & The differentiable closure reproduces the NIST reference COSMO-SAC-2002 to RMSE $0.003\,\ln\gamma$, so $\Bclos$ is genuine misspecification, not an implementation artifact. \\
+\addlinespace
+\textbf{Likely} & On the low-$\gamma$ $n{=}60$ set the closure binds: $\Bclos\ge0.85>0.62$, $P\approx0.78$ (two-way clustering; the margin CI spans zero; not certified at conventional confidence). \\
+ & A standard modern closure (COSMO-SAC-2010/dsp) dissolves that certificate ($P\approx0.79$); the reading turns to the inputs for any true $\Binsuf>\mathrm{MSE}_{2010}/2\approx0.38$, below every $\Binsuf$ estimate. \\
+ & The end-to-end latent is a low-rank (top-two $73\%$), out-of-sample-transferable ($3.3\times$) closure-compensating surrogate ($n{=}44$, one converged control). \\
+\addlinespace
+\textbf{Exploratory} & Transfer of the closure-dominance to the finite-composition/high-$\gamma$ regime (supported by in-regime signs, not measured there). \\
+ & The $\gamma$-stratified strengthening of $\Bclos$ (thin, estimator-dependent). \\
+ & The pKa/Hammett second closure as a fidelity-axis anchor (a cautionary complement, not a clean one). \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{The grounding paradox}
 \label{sec:paradox}
 % Artifacts: results/e5_sigma_grounding/seed_{42,43,44}/comparison.json (3-seed e5 lock, n=5608); aggregate THREE_SEED_SUMMARY.md via run_e5_comparison.py.
@@ -787,7 +812,7 @@ closures built for exactly that defect. We run the NIST reference implementation
 (donor/acceptor-typed HB) and -dsp on the same matched pairs, now under the reference Delaware (UD)
 $3$-profile database---on which the reference 2002 map scores $\mathrm{MSE}=1.26$, against $1.47$ for
 our deployed residual-only layer on the VT-2005 profiles used elsewhere. The better-parameterized
-closures cut the error to $\mathrm{MSE}=0.77$/$0.79$: a ${\sim}70\%$ reduction of $\Bclos$
+closures cut the error to $\mathrm{MSE}=0.77$ (2010) / $0.79$ (dsp, $n{=}57$): a ${\sim}70\%$ reduction of $\Bclos$
 ($0.70\to0.20$ at point) against the unchanged $\Binsuf$ floor. Under two-way
 solute$\times$solvent clustering this \emph{dissolves the closure-dominance certificate}---$P\approx0.79$
 that $\Bclos$ no longer exceeds $\Binsuf$. We do not claim a certified flip to the inputs: we hold only
