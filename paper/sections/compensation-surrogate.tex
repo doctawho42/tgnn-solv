@@ -72,14 +72,18 @@ but not readable from the closure.}
 \label{fig:picard}
 \end{figure}
 
-\paragraph{The contrast that fixes the sign.} This is why the sign of grounding is not universal. When
-the $\sigma$ head is instead \emph{supervised} toward the true profile, the intermediate stays close to
-physical and true profiles \emph{help}: the recent TeNNet-SAC model \cite{yang2025tennet} supervises
-its $\sigma$-profiles toward quantum-chemistry values and, once fine-tuned end-to-end, outperforms
-COSMO-SAC. Our end-to-end head, un-supervised and pushed
-through a low-fidelity closure, becomes a surrogate and true profiles \emph{hurt}. Latent supervision
-is one of the two axes that govern the sign (\S\ref{sec:discussion}). The scope limit is the
-low-$\gamma$, $n{=}44$ VT-2005 matched set.
+\paragraph{The contrast that fixes the sign, and how the axes interact.} The sign of grounding is not
+universal, and it turns on \emph{both} axes. On our own model, holding the $\sigma$ head at its
+supervised warmup manifold instead of letting it drift end-to-end cuts the true-input penalty by
+$65\%$ ($\Delta\mathrm{MAE}$ from $+0.40$ to $+0.14$ over $n{=}5571$ matched test rows): a
+near-physical intermediate makes the pipeline far more robust to substituting the true $\sigma$. But
+supervision alone does not \emph{flip} the sign here---the penalty stays positive, because the closure
+is still the low-fidelity COSMO-SAC-2002 and the warmup $\sigma$ is itself only partly physical. The
+full flip needs supervision \emph{and} fidelity together: the recent TeNNet-SAC model
+\cite{yang2025tennet}, which supervises its $\sigma$-profiles toward quantum-chemistry values
+\emph{and} learns its segment-activity closure, outperforms COSMO-SAC and gains from truer profiles. So
+the two axes interact---supervision moves the system toward the helps-corner, closure fidelity carries
+it across (\S\ref{sec:discussion}).
 
 \begin{figure}[t]
 \centering

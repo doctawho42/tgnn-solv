@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/kaggle/working/results/supervised_sigma/ckpt/endtoend_sle.pt",
+  "data": "/kaggle/working/tgnn-solv/notebooks/data/processed/test.csv",
+  "output": "/kaggle/working/results/supervised_sigma/endtoend_learned.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 1.8448956983672793,
+  "rmse": 2.5031527022286397,
+  "r2": 0.2977806806814606,
+  "bias": 0.613855747122732,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.400023962953393,
+  "pred_std_ratio": 0.8034606663171651
+}

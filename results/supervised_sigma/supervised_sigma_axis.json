@@ -1,0 +1,17 @@
+{
+  "supervised": {
+    "n_matched": 5571,
+    "rows_aligned": true,
+    "mae_learned_sigma": 1.8756,
+    "mae_oracle_sigma": 2.0152,
+    "grounding_delta_oracle_minus_learned": 0.1396
+  },
+  "endtoend": {
+    "n_matched": 5571,
+    "rows_aligned": true,
+    "mae_learned_sigma": 1.8463,
+    "mae_oracle_sigma": 2.2487,
+    "grounding_delta_oracle_minus_learned": 0.4024
+  },
+  "axis2_verdict": "supervised \u0394=+0.140 (<=0 helps/neutral), endtoend \u0394=+0.402 (>0 hurts); CONFIRMED sign split (supervision flips the sign)"
+}

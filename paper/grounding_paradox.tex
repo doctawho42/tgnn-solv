@@ -914,8 +914,10 @@ governed by two axes---how the latent is trained (supervised toward truth vs.\ s
 through the fixed closure) and the closure's fidelity. Grounding hurts only in the low-supervision,
 low-fidelity corner, where the end-to-end latent becomes a compensating surrogate
 (\S\ref{sec:surrogate}). Our COSMO-SAC-2002 model sits there; raising closure fidelity
-(COSMO-SAC-2010/dsp, \S\ref{sec:measure}) or supervising the latent (TeNNet-SAC) crosses into the
-``helps'' region. The boundary is the physics-tax sign $\mathcal{T}=0$ (Prop.~\ref{prop:tax}); the
+(COSMO-SAC-2010/dsp, \S\ref{sec:measure}) or supervising the latent moves toward the ``helps''
+region---on our own model supervision cuts the true-input penalty $65\%$ short of crossing, while
+TeNNet-SAC (supervised \emph{and} higher-fidelity) crosses fully, so the axes interact. The boundary
+is the physics-tax sign $\mathcal{T}=0$ (Prop.~\ref{prop:tax}); the
 synthetic dial (\S\ref{sec:dial}) sweeps the fidelity axis. Schematic; anchor placements are
 qualitative.}
 \label{fig:map}
