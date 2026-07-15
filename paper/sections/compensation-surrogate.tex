@@ -37,59 +37,53 @@ consistent with known cautions that the interpretability of physics-grounded lat
 under misspecification \cite{brynjarsdottir2014,takeishi2021}; what is
 specific here is the \emph{structure}---the surrogate is low-rank and transferable, not diffuse.
 
-\paragraph{How much room, and why $\sigma$ is unrecoverable in principle.} The freedom that makes the
-surrogate possible is the closure's own geometry, and it is extreme. Aggregating the activity Fisher
-information of the solute profile, $J^{\top}J$ with $J=\partial\lngi/\partial\sigma$, over $100$ VT-2005
-solutes $\times\,48$ solvents $\times$ two temperatures, the spectrum is essentially \emph{rank-one}: the
-participation ratio is $1.0$ and the second eigenvalue is below $0.2\%$ of the first, unchanged across
-composition ($\lngi$ and $x_2{=}0.1$), temperature, and projection onto the area-preserving
-subspace.\footnote{$J^{\top}J$ is the Gram of $\partial\lngi/\partial\sigma_{\text{solute}}$ (autograd;
-the solute-profile derivative is numerically stable, unlike the infinite-dilution solvent-profile
-derivative of the footnote below) over $100\times48\times2$ (solute, solvent, temperature) evaluations at
-real VT-2005 profiles.} Of the $51$
-$\sigma$-coordinates the activity map resolves ${\approx}1$ and is blind to the rest. So the end-to-end
-head is unconstrained in ${\sim}50$ directions---free to drift from the true profile at no cost to the
-fit---while the single resolved direction is set by the misspecified closure's demand rather than by
-physics; and the true $\sigma$ is unrecoverable from the pipeline not merely in practice but \emph{by
-construction}, since fifty of fifty-one profile directions leave no trace in the observable. The one
-resolved direction concentrates on the hydrogen-bonding bins ($\sigma\!\approx\!\pm\sigma_{\mathrm{hb}}$):
-activity's sole handle on the profile is its HB content---the same regime in which the closure is least
-faithful and the solvent-resolved physics tax is largest (\S\ref{sec:map}). This directly measures the
-under-determination this section rests on, and sharpens the conclusion below to its limit: even the
-closure's \emph{own} inverse cannot recover $\sigma$, because there is almost nothing there to invert.
+\paragraph{How much room, and why $\sigma$ is under-determined by activity.} The freedom that makes the
+surrogate possible is the closure's geometry. At \emph{infinite dilution} the aggregate activity Fisher
+$J^{\top}J$ ($J=\partial\lngi/\partial\sigma$, over $100$ VT-2005 solutes $\times\,48$ solvents $\times$ two
+temperatures) is rank-one---participation ratio $1.0$, reproduced to $1.00$ by an independent
+finite-difference computation.\footnote{$J^{\top}J$ is the Gram of $\partial\lngi/\partial\sigma_{\text{solute}}$
+at infinite dilution over $100\times48\times2$ evaluations at real VT-2005 profiles. The solute-profile
+autograd is stable at infinite dilution and agrees with central finite differences; at finite composition the
+fixed-point autograd is numerically unstable (per-pair gradients inflate by ${\sim}10^{6}$), so the rank's
+transfer to finite composition cannot be assessed this way.} That aggregate is the \emph{common} sensitivity
+direction across chemistry; the object that governs per-molecule drift is the per-molecule Fisher, whose
+participation ratio is ${\approx}1.4$ of $51$ even at full solvent coverage. Either way the activity map
+concentrates on ${\approx}1$--$2$ profile directions---the hydrogen-bonding bins
+($\sigma\!\approx\!\pm\sigma_{\mathrm{hb}}$), where the closure is least faithful (\S\ref{sec:map})---and is
+weakly sensitive to the rest, so the solute profile is strongly \emph{under-determined} by activity: the
+end-to-end head can move it along the low-sensitivity directions at little cost to the fit. We state this
+narrowly. Participation ratio is a concentration statistic, not a hard count of free directions; and it is
+measured at infinite dilution, where $\partial\Gamma_{S,\mathrm{mix}}/\partial\sigma_{\text{solute}}\!\to\!0$
+by the dilution limit, so the low rank may be a property of that limit rather than of the map, and its
+transfer to the finite-composition regime that actually generates the drift (the SLE solves $x_2$ at
+saturation) is \emph{not} established---the same scope gap we flag for $\Bclos$ (\S\ref{sec:measure}). So
+activity under-determines $\sigma$ at infinite dilution, measured where the latent has an external reference;
+we do not claim recovery is impossible in principle.
 
-\paragraph{The structure is not the closure's linear response.} A natural hope is that this
-structure is simply the closure's first-order inverse: the smallest input change that cancels the
-closure's discrepancy, $\hat\sigma-\sigma\approx J^{+}\,(m-g(\sigma))$, with $J=\partial g/\partial\sigma$
-the closure Jacobian and $m$ the observed \lngi---a drift that would then be \emph{predictable a priori}
-from $J$, before any solubility training. It is not. Testing this on the matched set (per molecule, the
-compensation solved in the span of its own pairs' Jacobian rows), the measured drift shows no alignment
-with $J^{+}(m-g)$: the per-molecule cosine is centred on zero (median $-0.00$), a smoothness-matched
-control---aligning each molecule's drift against \emph{other} molecules' predicted drift, all equally
-smooth---shows no molecule-specific gap (own vs.\ other cosine $-0.00$ vs.\ $-0.01$, permutation
-$p{=}0.17$), and the drift's energy inside each molecule's own Jacobian subspace ($5.5\%$) is no larger
-than inside other molecules' ($5.0\%$; sign-test $p{=}0.76$); the null is unchanged when pairs are weighted by their residual or
-restricted to the largest residuals, where the compensation pressure is strongest.\footnote{The residual
-COSMO-SAC closure runs a segment-activity fixed-point iteration, so its \emph{autograd} Jacobian is
-numerically unstable ($\lVert\partial g/\partial\sigma_{\text{solvent}}\rVert\!\sim\!10^{15}$ at infinite
-dilution); $J$ is therefore computed by finite differences on the converged closure.} So the surrogate is
-systematic and transferable yet \emph{not closure-geometric}: it is an affine distortion in
-$\sigma$-space (Fig.~\ref{fig:picard}), not the closure's first-order inverse. This sharpens the
-interpretability caution rather than softening it---the intermediate's departure from physics cannot be
-undone by inverting the closure, so the true $\sigma$ is not recoverable from the misspecified pipeline
-even in principle.
+\paragraph{The drift is not the closure's first-order inverse.} One might hope the drift is the closure's
+linear-response inverse, $\hat\sigma-\sigma\approx J^{+}(m-g(\sigma))$, with $J=\partial g/\partial\sigma$ the
+closure Jacobian and $m$ the observed \lngi---predictable a priori from $J$, before any solubility training.
+It is not: on the matched set the measured per-molecule drift shows no signed alignment with $J^{+}(m-g)$
+(median cosine $-0.00$; Fig.~\ref{fig:picard}).\footnote{The residual COSMO-SAC closure runs a segment-activity
+fixed-point iteration, so its autograd Jacobian is numerically unstable
+($\lVert\partial g/\partial\sigma_{\text{solvent}}\rVert\!\sim\!10^{15}$ at infinite dilution); $J$ is
+computed by finite differences on the converged closure.} We report this as a negative on the \emph{signed}
+prediction only, and do not build on it. The matched set is sparse---a median of one pair per molecule, so
+each per-molecule Jacobian subspace is one-dimensional---which makes the dimension-matched row-space controls
+uninformative here: with a resolved direction common across molecules, a molecule's ``own'' and ``other''
+subspaces coincide, so their near-equality carries no signal. The load-bearing claim is the
+under-determination above, not the geometry of the drift.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.98\linewidth]{figs/fig_picard_test.pdf}
-\caption{The compensating drift is \emph{not} the closure's linear-response inverse. \emph{Left:}
-per-molecule cosine between the measured drift $\hat\sigma-\sigma$ and the first-order closure
-compensation $J^{+}(m-g)$ is centred on zero (median $-0.00$). \emph{Middle:} the smoothness-matched
-wrong-molecule control---each molecule's drift aligned against every other molecule's predicted drift, all
-equally smooth---places the true diagonal squarely inside the null ($p{=}0.17$), so any weak alignment is
-generic smoothness, not molecule-specific closure geometry. \emph{Right:} the best-aligned exemplar,
-showing that even the strongest case is not tracked by the Picard prediction. The surrogate is structured
-but not readable from the closure.}
+\caption{The measured drift does not match the closure's \emph{signed} first-order inverse. \emph{Left:}
+the per-molecule cosine between the measured drift $\hat\sigma-\sigma$ and the first-order closure
+compensation $J^{+}(m-g)$ is centred on zero (median $-0.00$). \emph{Middle, Right:} a wrong-molecule
+control and the best-aligned exemplar, shown for completeness; on the sparse matched set (median one pair
+per molecule, so a one-dimensional per-molecule Jacobian subspace) these dimension-matched controls are
+uninformative---a resolved direction common across molecules makes the ``own'' and ``other'' subspaces
+coincide---so we do not lean on them. The signed misalignment is the claim; the drift's geometry is not.}
 \label{fig:picard}
 \end{figure}
 
