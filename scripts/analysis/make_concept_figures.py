@@ -68,10 +68,11 @@ def _box(ax, xy, w, h, text, fc, ec=INK, fs=10.5, tc=INK, lw=1.1, style="round,p
     ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=fs, color=tc)
 
 
-def _arrow(ax, p0, p1, color=INK, lw=1.6, style="-|>", ls="-", rad=0.0, mut=14):
+def _arrow(ax, p0, p1, color=INK, lw=1.6, style="-|>", ls="-", rad=0.0, mut=14, cs=None):
+    conn = cs if cs is not None else f"arc3,rad={rad}"
     ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle=style, mutation_scale=mut,
                                  linewidth=lw, color=color, linestyle=ls,
-                                 connectionstyle=f"arc3,rad={rad}"))
+                                 connectionstyle=conn, zorder=1))
 
 
 def _save(fig, out_dir: Path, name: str) -> None:
@@ -111,9 +112,9 @@ def fig_composed(out_dir: Path) -> None:
     yd = 1.0
     _box(ax, (xs[4], yd), bw, bh, "$\\hat y_{\\mathrm{direct}}$\n(no closure)", "white",
          ec=GRAY, tc=GRAY, fs=9.5, lw=1.1)
-    _arrow(ax, (xs[1] + bw / 2, yb), (xs[4] + 0.2, yd + bh), color=GRAY, ls=(0, (4, 3)),
-           rad=-0.28)
-    ax.text(5.0, 1.5, "matched control:\nshares $h$, drops $g$", ha="center", va="center",
+    _arrow(ax, (xs[1] + bw / 2, yb), (xs[4], yd + bh / 2), color=GRAY, ls=(0, (4, 3)),
+           cs="angle,angleA=-90,angleB=180,rad=12")
+    ax.text(4.15, 1.05, "matched control: shares $h$, drops $g$", ha="center", va="center",
             fontsize=8.6, color=GRAY, style="italic")
     ax.text(xs[4] + bw / 2, yd - 0.28,
             "physics tax $=R_{\\mathrm{phys}}-R_{\\mathrm{direct}}$",
@@ -196,12 +197,12 @@ def fig_ident(out_dir: Path) -> None:
     a1.add_patch(FancyArrowPatch((0, 0), tuple(act), arrowstyle="-|>", mutation_scale=16,
                                  lw=2.4, color=TEAL))
     a1.text(2.75, 2.52, r"activity $\ln\gamma^\infty\propto 1/T$", fontsize=9, color=TEAL, ha="right")
-    a1.text(1.45, 1.18, r"crystal $\Phi\propto(1/T-1/T_m)$", fontsize=9, color=SALMON, ha="center")
+    a1.text(2.5, 0.98, r"crystal $\Phi\propto(1/T-1/T_m)$", fontsize=9, color=SALMON, ha="center")
     thetas = np.linspace(np.arctan2(cry[1], cry[0]), np.arctan2(act[1], act[0]), 30)
     for t in thetas:
         a1.plot([0, 3.05 * np.cos(t)], [0, 3.05 * np.sin(t)], color=GRAY, lw=0.6, alpha=0.30, zorder=0)
-    a1.text(2.05, 0.55, "family of\nequivalent splits\n(profiled Fisher\ninfo for $\\Delta H_{\\mathrm{fus}}=0$)",
-            fontsize=8.4, color=GRAY, ha="center")
+    a1.text(2.42, 0.42, "family of equivalent splits\n(profiled Fisher info, $\\Delta H_{\\mathrm{fus}}$ free)",
+            fontsize=8.2, color=GRAY, ha="center")
     a1.set_title("(a) solubility alone: split unrecoverable", fontsize=10.5)
 
     # (b) external label collapses the band
@@ -250,8 +251,9 @@ def fig_phase(out_dir: Path) -> None:
 
     # pKa: trained comparison lands in "helps" (physics 1.47 < DirectGNN 1.88)
     ax.scatter([0.60], [0.09], s=80, color=BLUE, edgecolor=INK, zorder=5)
-    ax.annotate("pKa (Hammett, trained):\nphysics helps", xy=(0.60, 0.09), xytext=(0.76, 0.04),
-                fontsize=9, color=INK, ha="center")
+    ax.annotate("pKa (Hammett,\ntrained): helps", xy=(0.60, 0.09), xytext=(0.46, 0.19),
+                fontsize=8.6, color=INK, ha="center",
+                arrowprops=dict(arrowstyle="-|>", color=BLUE, lw=1.0))
 
     # synthetic dial ticks climbing Delta_inf as fidelity F drops
     for F, yv in [(1.00, 0.03), (0.76, 0.30), (0.38, 0.60)]:
@@ -289,7 +291,7 @@ def fig_arch(out_dir: Path) -> None:
     _arrow(ax, (5.5, 3.47), (6.35, 3.47))
     ax.text(5.9, 3.68, "$\\hat z$", fontsize=9, color=INK, ha="center")
     ax.text(5.9, 3.24, "$B_{\\mathrm{insuff}}$", fontsize=8.6, color=BLUE, ha="center", va="top")
-    ax.text(6.62, 2.80, "$B_{\\mathrm{closure}}$", fontsize=8.6, color="#C67A54", ha="center", va="top")
+    ax.text(7.2, 2.95, "$B_{\\mathrm{closure}}$", fontsize=8.6, color="#C67A54", ha="center", va="top")
     # sigma-oracle injection
     _box(ax, (6.35, 1.35), 1.7, 0.75, "$\\sigma$-oracle $z^\\star$\n(true VT-2005)", "#F3D4C4", ec=SALMON, fs=8.4)
     _arrow(ax, (7.6, 2.1), (7.6, 3.05), color=SALMON, ls=(0, (3, 2)))
@@ -305,8 +307,8 @@ def fig_arch(out_dir: Path) -> None:
     _arrow(ax, (10.25, 4.12), (10.55, 4.15))
     # DirectGNN control branch (solid)
     _box(ax, (8.75, 1.15), 1.5, 0.8, "DirectGNN\n(no closure)", "white", ec=GRAY, tc=GRAY, fs=8.6)
-    _arrow(ax, (2.8, 3.05), (8.75, 1.55), color=GRAY, rad=-0.18, lw=1.8)
-    ax.text(5.4, 1.75, "matched control:\nshares $h$, drops $g$", fontsize=8.2, color=GRAY,
+    _arrow(ax, (2.75, 2.9), (8.75, 1.55), color=GRAY, lw=1.8, rad=-0.34)
+    ax.text(4.35, 1.35, "matched control:\nshares $h$, drops $g$", fontsize=8.2, color=GRAY,
             style="italic", ha="center")
     _box(ax, (10.55, 1.15), 1.6, 0.8, "$\\ln x_2$\n(direct)", "white", ec=GRAY, tc=GRAY, fs=9)
     _arrow(ax, (10.25, 1.55), (10.55, 1.55), color=GRAY)
