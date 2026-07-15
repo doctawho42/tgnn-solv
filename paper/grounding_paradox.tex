@@ -76,7 +76,7 @@ by a network, on the premise that truer physical inputs help. We report three fi
 caveated measurement. \emph{(1)~A grounding paradox:} replacing our model's learned
 $\sigma$-profiles with external quantum-chemical reference profiles (VT-2005; computed, not
 experimental) makes solubility prediction \emph{worse}, not better, than a free learned head (MAE
-$1.85\!\to\!2.25$, three seeds, surviving three injection controls)---yet a supervised-$\sigma$
+$1.85\!\to\!2.25$, three seeds, surviving three injection controls). Yet a supervised-$\sigma$
 model reports the opposite, so the sign of grounding is not fixed. \emph{(2)~A reusable diagnostic:}
 because the latent has an external reference, we can \emph{measure} rather than assume whether a
 fixed closure's ceiling lies in the closure or its inputs---the true-input excess risk splits
@@ -86,10 +86,10 @@ misspecified closure the learned ``physical'' latent is not physical but a syste
 out-of-sample-transferable closure-\emph{compensating} surrogate---a concept-leakage analogue whose
 drift is \emph{not} the closure's linear-response inverse. Applying the diagnostic on $n{=}60$
 matched infinite-dilution pairs, the ceiling is \emph{likely} the deployed COSMO-SAC-2002 closure
-rather than its inputs---but only in a narrow sense: a sub-threshold ($P\approx0.78$, margin CI
-spanning zero), low-$\gamma$/$298$\,K corner measurement whose transfer to the finite-composition
-regime where the paradox lives is a conjecture, and which a standard modern closure
-(COSMO-SAC-2010/dsp) itself dissolves. We organize the effect on a two-axis map (closure fidelity
+rather than its inputs. This holds only in a narrow sense: it is a sub-threshold ($P\approx0.78$, margin CI
+spanning zero), low-$\gamma$/$298$\,K corner measurement; its transfer to the finite-composition
+regime where the paradox lives is a conjecture; and a standard modern closure
+(COSMO-SAC-2010/dsp) itself dissolves it. We organize the effect on a two-axis map (closure fidelity
 $\times$ latent supervision) with one measured corner, one synthetic dial, and one
 literature-anchored corner; the supporting composed-predictor theory (an exact decomposition, a
 non-identifiability result, a physics-tax sign rule) is elementary. We make no accuracy claim: the
@@ -143,9 +143,9 @@ frame.
   empirically. On the convention-robust evidence---a bound that holds however the
   COSMO-SAC closure is configured, plus the more-physics-worse effect---$\Bclos$
   (misspecified decoder) exceeds $\Binsuf$ (input insufficiency) on the low-$\gamma$ subset we
-  can measure, robustly across the tabulated $k$-NN, binning, random-forest, and ridge insufficiency
+  can measure. This is robust across the tabulated $k$-NN, binning, random-forest, and ridge insufficiency
   estimators (a more conservative ridge stress-test is the sole non-certifying case) and to leaving out
-  any solvent, the binding term is \emph{likely} the closure---but as a \emph{sub-threshold}
+  any solvent, so the binding term is \emph{likely} the closure---but as a \emph{sub-threshold}
   ($P\approx0.78$, margin CI spanning zero) measurement on the $n{=}60$ low-$\gamma$ corner, not the
   finite-composition regime where the paradox lives (\S\ref{sec:measure}).
   \item \textbf{The mechanism where grounding hurts: a compensating-surrogate latent.} On the
@@ -910,7 +910,7 @@ an accuracy result but a \emph{map} of when grounding a learned latent in true p
 the externally grounded decomposition \emph{locates} the ceiling (measured, not proved), a standard
 higher-fidelity closure moves it and dissolves the closure-dominance verdict, and---where the closure binds and the
 latent is end-to-end---the ``physical'' intermediate behaves as a compensating surrogate; the two
-two axes are closure fidelity and latent supervision (Fig.~\ref{fig:map}). What a misspecified
+axes are closure fidelity and latent supervision (Fig.~\ref{fig:map}). What a misspecified
 closure costs is thus not only accuracy but the interpretability the bottleneck appeared to buy.
 
 \begin{figure}[t]
