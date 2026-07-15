@@ -178,8 +178,9 @@ frame.
   assumption-light decomposition (Lemma~\ref{prop:decomp}) alone. The sign rule's critical-budget and aleatoric-floor
   corollaries predict the two negatives above. The account transfers to synthetic closure
   families (\S\ref{sec:dial}) and a second chemical closure (pKa through a Hammett relationship,
-  \S\ref{sec:pka}, where a trained physics arm does beat its control---though a stratified check
-  shows the gain is not cleanly a closure-fidelity effect); all proofs are elementary
+  \S\ref{sec:pka}, where the same oracle swap flips sign across strata---grounding helps in the
+  well-specified meta/para regime and hurts in the ortho regime---transferring the diagnostic off
+  solubility); all proofs are elementary
   (App.~\ref{sec:si-proofs}).
 \end{itemize}
 
@@ -950,9 +951,9 @@ $\mathcal{T}=\Delta_\infty-(\text{variance saved})$: a fixed-closure prior helps
 diagonal, where the estimation variance it saves exceeds its asymptotic closure bias
 $\Delta_\infty$ (the large-$n$ asymptote; $=\Bclos-\Gamma$ under A2). The variance saving shrinks as $n$ grows, so systems drift
 left: solubility/COSMO-SAC sits deep in the ``hurts'' region and moves further in with more
-data, pKa through a Hammett closure lands on the ``physics helps'' side as a \emph{trained}
-comparison (\S\ref{sec:pka})---though a stratified check shows the help is not cleanly a
-closure-fidelity effect---and the synthetic dial climbs out of ``helps'' as closure fidelity
+data, pKa through a Hammett closure \emph{straddles} the diagonal---grounding helps in its
+well-specified meta/para regime and hurts in the ortho regime, where the learned constant
+compensates (\S\ref{sec:pka})---and the synthetic dial climbs out of ``helps'' as closure fidelity
 $F$ falls. Conceptual---only the
 sign is measured, not the boundary's exact shape.}
 \label{fig:phase}
