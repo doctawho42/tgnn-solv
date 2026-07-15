@@ -154,14 +154,14 @@ Table~\ref{tab:si-arms} gives the exact per-arm metrics behind
 Fig.~\ref{fig:paradox}: three seeds (mean$\pm$sd) on the cross-arm intersection lock
 ($n{=}5608$, rows supervised and finite in every arm). Both closure families---NRTL and
 COSMO-SAC over a learned $\sigma$-profile---trail the DirectGNN control (the physics
-tax); the $\sigma$-oracle (true VT-2005 profile) is the worst arm, and restoring the
+tax); the $\sigma$-oracle (reference VT-2005 profile) is the worst arm, and restoring the
 Staverman--Guggenheim combinatorial term makes it slightly worse still---the signature
 of a misspecified map (\S\ref{sec:measure}).
 
 \begin{table}[h]
 \centering
 \caption{Per-arm scaffold-split metrics (3 seeds, $n{=}5608$ cross-arm lock).
-Ordered by MAE; the physics closures trail DirectGNN and the true-$\sigma$ oracle is
+Ordered by MAE; the physics closures trail DirectGNN and the reference-$\sigma$ oracle is
 worst.}
 \label{tab:si-arms}
 \begin{tabular}{lrr}
@@ -173,7 +173,7 @@ NRTL closure                                   & $1.80\pm0.07$ & $+0.34\pm0.03$ 
 COSMO-SAC, learned $\sigma$ (grounded)         & $1.85\pm0.05$ & $+0.33\pm0.05$ \\
 \quad $+$ Staverman--Guggenheim combinatorial  & $1.88\pm0.09$ & $+0.32\pm0.05$ \\
 COSMO-SAC, ungrounded $\sigma$                 & $2.04\pm0.04$ & $+0.19\pm0.01$ \\
-COSMO-SAC, true $\sigma$ ($\sigma$-oracle)     & $2.25\pm0.02$ & $-0.03\pm0.04$ \\
+COSMO-SAC, reference $\sigma$ ($\sigma$-oracle)     & $2.25\pm0.02$ & $-0.03\pm0.04$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -331,7 +331,7 @@ $0.97$ and std $2.5$ (range $[-2.6,22]$), far from collapsed---yet the arm still
 closure-free DirectGNN ($1.80$ vs $1.70$; Table~\ref{tab:si-arms}). A trained, non-degenerate
 activity branch beaten by the control is evidence that the tax is structural, not a dead branch.
 (The core closure-misspecification result---the $\sigma$-oracle and the decomposition---is in
-any case training-\emph{independent}: it feeds the true VT-2005 profiles through the fixed
+any case training-\emph{independent}: it feeds the reference VT-2005 profiles through the fixed
 closure with no encoder optimization, so it cannot be a training pathology.)
 
 \paragraph{Structured temperature extrapolation.} Withholding \emph{temperature} rather

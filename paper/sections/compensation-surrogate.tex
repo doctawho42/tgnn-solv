@@ -4,15 +4,15 @@
 % surrogate_vs_true.json via scripts/analysis/run_compensation_surrogate.py, n=44 matched VT-2005.
 This is the \emph{mechanism} behind the low-fidelity, end-to-end corner of the map
 (\S\ref{sec:discussion}): when a $\sigma$-profile head is trained \emph{end-to-end} through a fixed,
-misspecified closure---never supervised toward the true profile---it is under pressure not to be
+misspecified closure---never supervised toward the reference profile---it is under pressure not to be
 physically faithful but to \emph{cancel} the closure's error. The external ground truth that lets us
 measure the ceiling (\S\ref{sec:measure}) also lets us test this directly, comparing the predicted
-profile $\hat\sigma$ against the true VT-2005 profile $\sigma$ molecule by molecule ($n{=}44$).
+profile $\hat\sigma$ against the reference VT-2005 profile $\sigma$ molecule by molecule ($n{=}44$).
 
 \paragraph{The learned profile is a systematic, low-rank, transferable surrogate---confound-free.}
 We use the cleanest test available: a \emph{single} grounded model checkpointed before and after
 solubility fine-tuning (the $\sigma$ head unfrozen), so architecture and initialisation are held fixed
-and only the objective differs. The grounded base recovers the true profile to within $33\%$
+and only the objective differs. The grounded base recovers the reference profile to within $33\%$
 ($\lVert\hat\sigma_{\mathrm{grounded}}-\sigma\rVert/\lVert\sigma\rVert$), so the intermediate
 \emph{can} be physical; solubility fine-tuning then drives it $45\%$ off the grounded profile, for a
 total departure from truth of $53\%$. The drift is not per-molecule noise: its first two principal
@@ -31,7 +31,7 @@ makes molecules look more polar than they are, inflating the segment interaction
 exchange kernel under-weights and thereby cancelling part of $\Bclos$---the input compensating the map,
 exactly as the non-identifiability of the split predicts (Lemma~\ref{prop:ident}). This re-explains why
 grounding hurts \emph{here} (\S\ref{sec:paradox}): the pipeline is calibrated to the compensated
-$\hat\sigma$, not to physics, so substituting the true $\sigma$ breaks the compensation. It also means
+$\hat\sigma$, not to physics, so substituting the reference $\sigma$ breaks the compensation. It also means
 the model's ``physical'' intermediate is not the molecule's charge distribution but a surrogate,
 consistent with known cautions that the interpretability of physics-grounded latents is not guaranteed
 under misspecification \cite{brynjarsdottir2014,takeishi2021}; what is
@@ -91,9 +91,9 @@ molecule's ``own'' and ``other'' subspaces coincide---so we do not lean on the d
 
 \paragraph{The contrast that fixes the sign, and how the axes interact.} The sign of grounding is not
 universal, and it turns on \emph{both} axes. On our own model, holding the $\sigma$ head at its
-supervised warmup manifold instead of letting it drift end-to-end cuts the true-input penalty by
+supervised warmup manifold instead of letting it drift end-to-end cuts the reference-input penalty by
 $65\%$ ($\Delta\mathrm{MAE}$ from $+0.40$ to $+0.14$ over $n{=}5571$ matched test rows): a
-near-physical intermediate makes the pipeline far more robust to substituting the true $\sigma$. But
+near-physical intermediate makes the pipeline far more robust to substituting the reference $\sigma$. But
 supervision alone does not \emph{flip} the sign here---the penalty stays positive, because the closure
 is still the low-fidelity COSMO-SAC-2002 and the warmup $\sigma$ is itself only partly physical. The
 full flip needs supervision \emph{and} fidelity together: the recent TeNNet-SAC model

@@ -16,7 +16,7 @@ arm (learned $\hat\sigma$ through the fixed LFER) beats its matched DirectGNN co
 ($1.63$ vs $1.84$ pKa MAE), but the informative test is the same oracle swap as on solubility, now
 run per stratum: replace the learned $\hat\sigma$ with the tabulated $\sigma^\star$ in the same
 closure and read the sign of the change. It \emph{flips}. On the clean meta/para series feeding the
-true constant \emph{helps}---MAE $1.61\to0.60$, oracle below learned in every seed---so there the
+reference constant \emph{helps}---MAE $1.61\to0.60$, oracle below learned in every seed---so there the
 ceiling is the noisy learned estimate, not the closure: a real-data \emph{grounding-helps} corner and
 an internal positive control, the swap reading correctly where the latent is physical. On the ortho
 regime the same swap \emph{hurts}---MAE $1.39\to1.62$, oracle above learned in every seed---because

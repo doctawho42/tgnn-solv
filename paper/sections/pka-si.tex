@@ -44,10 +44,10 @@ $1.84$ pKa MAE, $\Delta=-0.21$), placing pKa on the ``helps'' side of the phase 
 (Fig.~\ref{fig:phase}). We read this cautiously, \emph{not} as a clean confirmation of the sign
 rule through closure fidelity. Stratified, the help concentrates in the ortho/heteroaromatic
 regime ($\Delta=-0.53$), not the clean meta/para one ($\Delta=-0.10$, within seed noise); and on
-the clean regime the fixed LFER on the \emph{true} $\sigma$ is excellent (oracle MAE $0.60$) yet
+the clean regime the fixed LFER on the \emph{reference} $\sigma$ is excellent (oracle MAE $0.60$) yet
 the trained arm is not ($1.61$), so the closure is well specified there but the small-data encoder
 cannot learn $\sigma$ well enough to exploit it. Where the physics arm does win---ortho, where the
-closure is \emph{mis}specified for the true $\sigma$---the \emph{freely} learned $\sigma$ can
+closure is \emph{mis}specified for the reference $\sigma$---the \emph{freely} learned $\sigma$ can
 absorb ortho information the tabulated Hammett constant lacks and the per-scaffold $\mathrm pK_{a,0}$
 supplies a strong baseline. So the pKa ``help'' is a permissive-closure and per-scaffold-prior
 effect, not the variance-saving of a well-specified prior: a useful caution that a ``physics

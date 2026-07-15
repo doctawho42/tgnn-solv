@@ -1,10 +1,10 @@
-\subsection{Closure fidelity sets the true-input penalty} \label{sec:dial}
+\subsection{Closure fidelity sets the reference-input penalty} \label{sec:dial}
 % Artifact: results/synthetic_dial/summary.json via scripts/analysis/run_fidelity_dial.py (seed 0).
 To isolate the mechanism we built a controlled synthetic experiment in which only the closure's
 fidelity varies (input quality, sample size, and estimator held fixed). A teacher draws a latent
 $\zstar$ and a target through a known map $T$; a fixed candidate closure $g_F$ reconstructs it under
 a tunable misspecification of scalar fidelity $F$ ($F=1$ recovers $T$ exactly, smaller $F$ pushes
-$g_F$ away). The true-input penalty $\Delta R^2 = R^2_{\text{oracle}}-R^2_{\text{head}}$ is $\Bclos$
+$g_F$ away). The reference-input penalty $\Delta R^2 = R^2_{\text{oracle}}-R^2_{\text{head}}$ is $\Bclos$
 made visible---the free head recovers $\Ex[m\mid\zstar]$ while $g_F$ is the misspecified map. As $F$
 falls the penalty grows monotonically and without exception: averaged over six misspecification forms
 (linear, quadratic, cubic, absolute-value, sinusoidal, cross-term) $F{=}1.00$ gives

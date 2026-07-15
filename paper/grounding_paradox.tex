@@ -59,7 +59,7 @@
 \newcommand{\Ex}{\ensuremath{\mathbb{E}}}
 \newcommand{\Var}{\ensuremath{\mathrm{Var}}}
 
-\title{When True Physical Inputs Help or Hurt a Learned Solubility Model:\\
+\title{When Reference Physical Inputs Help or Hurt a Learned Solubility Model:\\
 A Closure-vs-Inputs Diagnostic and a Two-Axis Map of Grounding}
 \author{N.~L. Polomoshnov \and \pending[co-authors]}
 \date{\today}
@@ -79,7 +79,7 @@ experimental) makes solubility prediction \emph{worse}, not better, than a free 
 $1.85\!\to\!2.25$, three seeds, surviving three injection controls). Yet a supervised-$\sigma$
 model reports the opposite, so the sign of grounding is not fixed. \emph{(2)~A reusable diagnostic:}
 because the latent has an external reference, we can \emph{measure} rather than assume whether a
-fixed closure's ceiling lies in the closure or its inputs---the true-input excess risk splits
+fixed closure's ceiling lies in the closure or its inputs---the reference-input excess risk splits
 exactly into a closure-misspecification and an input-insufficiency term, with no closure fitting, for
 any predictor with a tabulated latent oracle. \emph{(3)~An interpretability caution:} under a
 misspecified closure the learned ``physical'' latent is not physical but a systematic, low-rank,
@@ -107,7 +107,7 @@ predictor cannot exploit. The expectation is that the closer the model's physica
 inputs are to the truth, the better it should predict. On the activity branch
 this expectation fails on our model---yet a recent supervised-$\sigma$ model reports the
 \emph{opposite}, so the sign of grounding is not a fixed fact. The reason we dwell on our failure is
-what its \emph{cause} reveals. Having the latent's true value externally does two things: it lets us
+what its \emph{cause} reveals. Having the latent's reference value externally does two things: it lets us
 \emph{measure} where the ceiling lies and attribute it to the closure rather than the inputs (the only
 setting in which that attribution is possible, since a fitted latent has no external oracle), and it
 lets us hold the learned latent against its truth---which shows that, trained end-to-end through a
@@ -122,7 +122,7 @@ synthetic dial (\S\ref{sec:dial}) and the pKa closure (\S\ref{sec:pka}) trace th
 make no accuracy claim.
 
 \paragraph{Contributions.}
-Our thesis is that whether grounding a learned latent in true physics helps or hurts is \emph{shaped
+Our thesis is that whether grounding a learned latent in reference physics helps or hurts is \emph{shaped
 by} two axes---how the latent is trained (supervised toward truth vs.\ shaped end-to-end through the
 fixed closure) and the closure's fidelity. Three findings stand cleanly---the paradox, a reusable
 measurement instrument, and the compensating-surrogate mechanism; the closure-vs-inputs attribution
@@ -130,13 +130,13 @@ and the two-axis map we present as, respectively, a caveated corner measurement 
 frame.
 \begin{itemize}
   \item \textbf{The grounding paradox (empirical).}
-  Substituting true VT-2005 $\sigma$-profiles into the differentiable COSMO-SAC
+  Substituting reference VT-2005 $\sigma$-profiles into the differentiable COSMO-SAC
   closure degrades activity ($\lngi$) and solubility ($\lnx$) prediction relative
   to a free learned activity head, the opposite of the intended benefit
   (\S\ref{sec:paradox}).
   \item \textbf{A measurement instrument: the closure/insufficiency decomposition.} Because the
-  physical latent $\zstar$ (the true $\sigma$-profile) has external ground truth, the
-  true-input excess risk splits \emph{exactly} as $B=\Bclos+\Binsuf$ with no model
+  physical latent $\zstar$ (the reference $\sigma$-profile) has external ground truth, the
+  reference-input excess risk splits \emph{exactly} as $B=\Bclos+\Binsuf$ with no model
   fit (Lemma~\ref{prop:decomp}). The decomposition and its estimators are textbook;
   the new element is exploiting an externally referenced latent to bound the split
   empirically. On the convention-robust evidence---a bound that holds however the
@@ -149,10 +149,10 @@ frame.
   finite-composition regime where the paradox lives (\S\ref{sec:measure}).
   \item \textbf{The mechanism where grounding hurts: a compensating-surrogate latent.} On the
   end-to-end, low-fidelity anchor the network's ``physical'' input does not stay physical: on a
-  confound-free one-model control the predicted $\sigma$-profile departs from the true one by $53\%$ in
+  confound-free one-model control the predicted $\sigma$-profile departs from the reference one by $53\%$ in
   a low-rank (top-two modes $73\%$), out-of-sample-transferable ($3.3\times$) pattern---a systematic
   closure-compensating surrogate, not the physical quantity (a $\sigma$-grounded model \emph{can}
-  recover the true profile; the objective pulls it away). This is why grounding hurts here, and why a
+  recover the reference profile; the objective pulls it away). This is why grounding hurts here, and why a
   \emph{supervised}-$\sigma$ model finds the opposite (\S\ref{sec:surrogate}).
   \item \textbf{The closure-fidelity axis: our own attribution self-dissolves under a modern closure.}
   On the same matched pairs, evaluated under a reference 3-profile database (COSMO-SAC-2010/dsp, NIST
@@ -192,7 +192,7 @@ molecular $\sigma$-profile---that a fixed COSMO-SAC closure $g$ (no fitted param
 solubility. \emph{(1)~The paradox:} replacing the learned $\hat\sigma$ with the external
 quantum-chemical reference $\sigma^\star$ (VT-2005) makes the prediction \emph{worse} than a free learned
 head---so which is wrong, the closure or the inputs? \emph{(2)~The measurement:} because the latent
-has an external oracle, the true-input excess risk splits \emph{exactly} into a
+has an external oracle, the reference-input excess risk splits \emph{exactly} into a
 closure-misspecification part $\Bclos$ and an input-insufficiency part $\Binsuf$; on the matched
 low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P\approx0.78$). \emph{(3)~The map:} two levers
 move the ceiling---raising closure fidelity (COSMO-SAC-2010/dsp) or supervising the latent toward
@@ -221,11 +221,11 @@ a graph encoder predicts a $\sigma$-profile---the distribution of screening
 (surface) charge density over a molecule, the histogram a COSMO model
 consumes---for each molecule, and COSMO-SAC (the COnductor-like Screening
 Model--Segment Activity Coefficient \cite{lin2002}) maps the pair of profiles to
-$\lng$. Write $\zstar$ for the \emph{true} physical latent, the externally referenced
+$\lng$. Write $\zstar$ for the \emph{reference} physical latent, the externally referenced
 $\sigma$-profile from the VT-2005 database (the Virginia Tech 2005 compilation of
 quantum-chemically computed screening-charge profiles for ${\sim}1{,}400$
 compounds \cite{mullins2006}), and $g(\zstar)$ for the closure output when fed the
-true profile. The model's own head instead predicts a \emph{learned} profile
+reference profile. The model's own head instead predicts a \emph{learned} profile
 $\hat z$ and evaluates $g(\hat z)$; a matched \emph{DirectGNN} control shares the
 encoder but emits $\lnx$ with no closure, and is the reference for ``what the
 physics bottleneck costs'' (Fig.~\ref{fig:arch}).
@@ -233,19 +233,19 @@ physics bottleneck costs'' (Fig.~\ref{fig:arch}).
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_architecture.pdf}
-\caption{The model and the grounding intervention. Solute and solvent graphs pass
+\caption{The model and the oracle substitution. Solute and solvent graphs pass
 through a shared encoder to a crystal head (the ideal term $\Phi(T)$) and a
 $\sigma$-profile head; the predicted profile $\hat z$ feeds the fixed COSMO-SAC closure
 $g$, which returns $\ln\gamma_2$, and an SLE solver combines the two into $\lnx$. Input
 insufficiency $\Binsuf$ enters at the intermediate $\hat z$ and closure misspecification
-$\Bclos$ at $g$. The $\sigma$-oracle replaces $\hat z$ with the true VT-2005 profile
+$\Bclos$ at $g$. The $\sigma$-oracle replaces $\hat z$ with the reference VT-2005 profile
 $\zstar$ (salmon). DirectGNN (grey) is the matched control---it shares the encoder but
 drops the closure, so the gap to the physics path is the physics tax
 $R_{\mathrm{phys}}-R_{\mathrm{direct}}$.}
 \label{fig:arch}
 \end{figure}
 
-\paragraph{The grounding intervention.} Feeding $\zstar$ in place of $\hat z$
+\paragraph{The oracle substitution.} Feeding $\zstar$ in place of $\hat z$
 (a $\sigma$-oracle) isolates the closure from encoder error: if the closure were
 well specified, $g(\zstar)$ should be the best available activity estimate. The
 paradox is that it is not.
@@ -255,7 +255,7 @@ BigSolDB \cite{krasnov2025bigsoldb} (grouping molecules by ring-system-plus-link
 scaffold, side chains stripped), so test solutes share no scaffold with training;
 the activity labels $m$ are experimental infinite-dilution activity coefficients
 ($\lngi$, IDAC) compiled from ThermoML (the NIST/IUPAC archive of experimental
-thermophysical data \cite{frenkel2011thermoml}), and the true $\sigma$-profiles
+thermophysical data \cite{frenkel2011thermoml}), and the reference $\sigma$-profiles
 $\zstar$ are the VT-2005 database.
 
 \begin{table}[t]
@@ -268,7 +268,7 @@ Symbol / term & Meaning \\
 \midrule
 $g$ (closure)          & fixed, non-fitted physical map (COSMO-SAC; a Hammett LFER for pKa) \\
 $h$ (encoder)          & learned graph network, $x\mapsto z$ \\
-$\zstar$, $\hat z$     & true (oracle) vs.\ learned physical intermediate (the $\sigma$-profile) \\
+$\zstar$, $\hat z$     & reference (oracle) vs.\ learned physical intermediate (the $\sigma$-profile) \\
 $m$                    & activity target (experimental $\lngi$) \\
 $\Bclos$               & closure misspecification, $\Ex[(\Ex[m\mid\zstar]-g(\zstar))^2]$ \\
 $\Binsuf$              & input insufficiency, $\Ex[\Var(m\mid\zstar)]$ \\
@@ -384,7 +384,7 @@ $\approx1{,}689$\,J/mol.
 \subsection{The closure--insufficiency decomposition}
 \label{sec:decomp}
 Let $m$ be the activity target (experimental $\lngi$) and $g(\zstar)$ the closure
-evaluated on the true latent. The excess risk of the true-input path over the
+evaluated on the true latent. The excess risk of the reference-input path over the
 best-possible predictor $\Ex[m\mid\cdot]$ (the Bayes predictor) decomposes
 exactly---into a part the intermediate cannot resolve and a part the fixed map gets
 wrong (Fig.~\ref{fig:decomp-concept}).
@@ -405,7 +405,7 @@ displacement is the paradox. Schematic; the measured bounds are Fig.~\ref{fig:de
 \begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
 For a \emph{fixed} (non-fitted) closure $g$,
 \begin{equation}
-  \underbrace{\Ex\big[(m-g(\zstar))^2\big]}_{\text{MSE of the true-input path}}
+  \underbrace{\Ex\big[(m-g(\zstar))^2\big]}_{\text{MSE of the reference-input path}}
   \;=\;
   \underbrace{\Ex\big[\Var(m\mid \zstar)\big]}_{\Binsuf\ \text{(inputs cannot resolve)}}
   \;+\;
@@ -597,7 +597,7 @@ are directional or conjectural. We make no accuracy claim.}
 \small
 \begin{tabular}{@{}p{0.15\linewidth}p{0.79\linewidth}@{}}
 \toprule
-\textbf{Certified} & The grounding paradox: true VT-2005 $\sigma$-profiles make the model \emph{worse} than a free learned head ($3$ seeds, $n{=}5608$, surviving three injection controls). \\
+\textbf{Certified} & The grounding paradox: reference VT-2005 $\sigma$-profiles make the model \emph{worse} than a free learned head ($3$ seeds, $n{=}5608$, surviving three injection controls). \\
  & The exact split $B=\Bclos+\Binsuf$ for a fixed closure (Lemma~\ref{prop:decomp}). \\
  & The differentiable closure reproduces the NIST reference COSMO-SAC-2002 to RMSE $0.003\,\ln\gamma$, so $\Bclos$ is genuine misspecification, not an implementation artifact. \\
 \addlinespace
@@ -616,7 +616,7 @@ are directional or conjectural. We make no accuracy claim.}
 \label{sec:paradox}
 % Artifacts: results/e5_sigma_grounding/seed_{42,43,44}/comparison.json (3-seed e5 lock, n=5608); aggregate THREE_SEED_SUMMARY.md via run_e5_comparison.py.
 % Triple confirmation: eval-oracle / true-at-train / channel-swap.
-Feeding true $\sigma$-profiles into the closure degrades it rather than improving it,
+Feeding reference $\sigma$-profiles into the closure degrades it rather than improving it,
 in both the activity and the solubility target, and it fails the way a \emph{misspecified
 map} does---not the way missing information would. In the solubility target the effect
 erases any positive $R^2$ (Fig.~\ref{fig:paradox}): the model predicts solubility better
@@ -625,10 +625,10 @@ erases any positive $R^2$ (Fig.~\ref{fig:paradox}): the model predicts solubilit
 restoring the physically \emph{more} complete Staverman--Guggenheim combinatorial term
 (the entropic contribution from solute--solvent size and shape mismatch) \emph{increases}
 error---what a wrong map does, not what a missing input would. Second, on the activity
-target ($\lngi$, $n{=}60$ matched pairs) the fixed true-input closure sits about $4\times$
+target ($\lngi$, $n{=}60$ matched pairs) the fixed reference-input closure sits about $4\times$
 above the irreducible-variance floor a flexible regressor reaches (\S\ref{sec:measure}),
 under-predicting $\lngi$ with a systematic bias (Fig.~\ref{fig:parity}). The paradox survives three controls---the evaluation-time
-oracle, injection of the true profile \emph{at training} (MAE $1.98$), and a channel-swap
+oracle, injection of the reference profile \emph{at training} (MAE $1.98$), and a channel-swap
 ($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring artifact.
 
 \begin{figure}[t]
@@ -639,7 +639,7 @@ $n{=}5608$; metrics are the 3-seed mean of the cross-arm intersection lock, over
 supervised and finite in every arm).
 DirectGNN shares the encoder but has no thermodynamic closure; the
 physics closures trail it (the ``physics tax''). Replacing the model's learned
-$\sigma$-profile with the \emph{true} VT-2005 profile (the $\sigma$-oracle,
+$\sigma$-profile with the \emph{reference} VT-2005 profile (the $\sigma$-oracle,
 salmon) gives the \emph{worst} arm, collapsing $R^2$ to $\approx0$ ($-0.03\pm0.04$):
 by MAE the model predicts solubility distinctly better from its invented $\sigma$
 ($1.85$) than from the reference one ($2.25$). Per-arm exact values are transcribed
@@ -650,12 +650,12 @@ in the SI.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.72\linewidth]{figs/fig_parity.pdf}
-\caption{Activity-coefficient parity on the $n{=}60$ matched pairs. The true-$\sigma$
+\caption{Activity-coefficient parity on the $n{=}60$ matched pairs. The reference-$\sigma$
 COSMO-SAC closure $g(\zstar)$ (salmon) falls systematically below the diagonal at
 larger $\lngi$, under-predicting the activity coefficient (MSE $1.80$, full
 convention). This systematic downward bias is the visible form of the decoder
 misspecification $\Bclos$; for reference a flexible regressor of $\lngi$ on the same
-true profiles reaches the irreducible-variance floor (MSE $\approx0.40$, our $\Binsuf$
+reference profiles reaches the irreducible-variance floor (MSE $\approx0.40$, our $\Binsuf$
 estimator; \S\ref{sec:measure}), so the closure's excess over that floor is $\Bclos$.}
 \label{fig:parity}
 \end{figure}
@@ -663,19 +663,19 @@ estimator; \S\ref{sec:measure}), so the closure's excess over that floor is $\Bc
 \subsection{Measuring the ceiling: the closure dominates}
 \label{sec:measure}
 % Artifact: results/b_insuff/decomposition.json via scripts/analysis/run_b_insuff_decomposition.py.
-Because the true latent is externally observed, we can locate the prior's ceiling and attribute it to
+Because the reference latent is externally observed, we can locate the prior's ceiling and attribute it to
 the map rather than the inputs---the measurement instrument at the core of the map. We apply the
 decomposition of \S\ref{sec:decomp} to the $n{=}60$ matchable activity pairs (298\,K, infinite
-dilution), with $\zstar$ the true concatenated solute/solvent
+dilution), with $\zstar$ the reference concatenated solute/solvent
 $\sigma$-profiles and $m$ the experimental $\lngi$; Table~\ref{tab:decomp} reports the
 bounds. The set spans 41 solutes and 17 solvents in $102$ profile dimensions, with two
 formamide pairs dropped on a canonical-SMILES tautomer mismatch.
 
 \begin{table}[t]
 \centering
-\caption{Closure--insufficiency decomposition on the true-input activity path.
+\caption{Closure--insufficiency decomposition on the reference-input activity path.
 Bounds, not a point split (Lemma~\ref{prop:decomp}). Convention ``full'' =
-COSMO-SAC with the combinatorial term (size factor $r_i=V_i/r_0$ on the true
+COSMO-SAC with the combinatorial term (size factor $r_i=V_i/r_0$ on the reference
 COSMO cavity volume, VT-2005); ``res'' = residual-only (the deployed default).
 $\Binsuf$ upper bounds are convention-independent estimates of
 $\Ex[\Var(m\mid\zstar)]$; ``k\textsc{nn}'' is a direct high-dimensional estimate
@@ -766,7 +766,7 @@ ${\sim}58\%$ ($0.91\to0.38$). The closure-dominance \emph{sign}, not its magnitu
 ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. A small
 structure-preserving residual on the fixed COSMO-SAC exchange-energy kernel
 ($\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric, zero-initialised), fit on
-the \emph{true} VT-2005 profiles, removes $56\%$ of the total true-input error out-of-sample (five-fold
+the \emph{reference} VT-2005 profiles, removes $56\%$ of the total reference-input error out-of-sample (five-fold
 cross-validated, activity MSE $1.47\!\to\!0.64$---nearly all of the reducible closure component above
 the $\Binsuf$ floor) at \emph{rank one} ($52$ parameters; rank~2 adds
 nothing, rank~3 over-fits). At $52$ parameters against $n{=}60$ this is provisional, and we have not
@@ -779,7 +779,7 @@ model realises the gain is a compute-gated question we leave open.
 \paragraph{Convention-robust corroboration (Tier~2).} The genuinely convention-robust fact is that
 adding the physically \emph{more} complete Staverman--Guggenheim combinatorial term \emph{increases}
 error (activity MSE $1.47\to1.80$)---what a misspecified map does, not what missing information would.
-This survives recomputing the size factor on the true COSMO cavity volumes (Jensen $0.714\to0.717$,
+This survives recomputing the size factor on the reference COSMO cavity volumes (Jensen $0.714\to0.717$,
 essentially unchanged, since the term depends on size \emph{ratios}) and is concentrated on
 size-asymmetric pairs---the documented miscalibration of the unmodified combinatorial term, the reason
 modified-SG and free-volume corrections exist. The residual error is not an implementation artifact:
@@ -827,7 +827,7 @@ paradox itself lives; the full adversarial audit and its four hedges are in App.
 \centering
 \includegraphics[width=0.78\linewidth]{figs/fig_fidelity_dial.pdf}
 \caption{Reproducible closure-fidelity dial. As the
-closure is made more misspecified (fidelity $F$ decreasing from $1$), the true-input
+closure is made more misspecified (fidelity $F$ decreasing from $1$), the reference-input
 penalty $\Delta R^2=R^2_{\text{oracle}}-R^2_{\text{head}}$ grows monotonically, and the
 same ordering holds across four non-chemistry teacher families (linear, monotone,
 kinetics-exponential, PDE-field) and six misspecification functional forms. The effect is
@@ -898,11 +898,11 @@ help is temperature extrapolation---but as a hypothesis-class property that the 
 not exploit (\S\ref{sec:supporting}), a partial counterexample we flag rather than hide. Read
 together these point to a \emph{structural} ceiling: the crystal/activity split is
 non-identifiable from solubility alone (Lemma~\ref{prop:ident}), and the activity closure is
-misspecified where we can measure it (\S\ref{sec:measure})---a measurement that feeds true inputs
+misspecified where we can measure it (\S\ref{sec:measure})---a measurement that feeds reference inputs
 through the fixed closure and so cannot be a training artifact---so within this family better
 inputs, more data, and auxiliary grounding do not recover an accuracy the factorization cannot
 express. The contribution is accordingly not
-an accuracy result but a \emph{map} of when grounding a learned latent in true physics helps or hurts:
+an accuracy result but a \emph{map} of when grounding a learned latent in reference physics helps or hurts:
 the externally grounded decomposition \emph{locates} the ceiling (measured, not proved), a standard
 higher-fidelity closure moves it and dissolves the closure-dominance verdict, and---where the closure binds and the
 latent is end-to-end---the ``physical'' intermediate behaves as a compensating surrogate; the two
@@ -912,13 +912,13 @@ closure costs is thus not only accuracy but the interpretability the bottleneck 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.80\linewidth]{figs/fig_grounding_map.pdf}
-\caption{The grounding map. Whether feeding a learned model its true physical inputs helps or hurts is
+\caption{The grounding map. Whether feeding a learned model its reference physical inputs helps or hurts is
 shaped by two axes---how the latent is trained (supervised toward truth vs.\ end-to-end
 through the fixed closure) and the closure's fidelity. Grounding hurts only in the low-supervision,
 low-fidelity corner, where the end-to-end latent becomes a compensating surrogate
 (\S\ref{sec:surrogate}). Our COSMO-SAC-2002 model sits there; raising closure fidelity
 (COSMO-SAC-2010/dsp, \S\ref{sec:measure}) or supervising the latent moves toward the ``helps''
-region---on our own model supervision cuts the true-input penalty $65\%$ short of crossing, while
+region---on our own model supervision cuts the reference-input penalty $65\%$ short of crossing, while
 TeNNet-SAC (supervised \emph{and} higher-fidelity) crosses fully, so the axes interact. The boundary
 is the physics-tax sign $\mathcal{T}=0$ (Prop.~\ref{prop:tax}); the
 synthetic dial (\S\ref{sec:dial}) sweeps the fidelity axis. Schematic; anchor placements are
@@ -987,9 +987,9 @@ is not an accuracy claim.
 
 \section{Conclusion}
 \label{sec:conclusion}
-Feeding a physics-informed solubility model its true physical inputs made it
+Feeding a physics-informed solubility model its reference physical inputs made it
 worse. What the paper contributes is a way to measure that failure: with an
-externally grounded latent, the true-input excess risk splits into a
+externally grounded latent, the reference-input excess risk splits into a
 decoder-misspecification term and an input-insufficiency term, and on the
 infinite-dilution, low-$\gamma$ subset we can measure, the ceiling is most likely
 the closure rather than the inputs ($P\approx0.78$ under two-way solute$\times$solvent clustering,
@@ -1011,7 +1011,7 @@ All code and the intermediate result artifacts needed to regenerate every figure
 reported number are available at \pending[repository URL]\ (commit \pending[hash]), released under
 \pending[license]; the large model checkpoints and full per-arm prediction files are deposited at
 \pending[Zenodo DOI]. Every data source is public: the solubility corpus is BigSolDB~2.0
-\cite{krasnov2025bigsoldb}, the true $\sigma$-profiles are the VT-2005 database, the experimental
+\cite{krasnov2025bigsoldb}, the reference $\sigma$-profiles are the VT-2005 database, the experimental
 infinite-dilution activity coefficients are compiled from ThermoML, and the second-domain pKa data
 are the OPERA compilation \cite{mansouri2019opera}. The repository documents the exact command that
 reproduces each figure, table, and number from these sources, including the Bemis--Murcko scaffold

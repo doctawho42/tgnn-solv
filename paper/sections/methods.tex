@@ -6,7 +6,7 @@ explicit thermodynamic bottleneck (\emph{TGNNSolv}) or a direct regressor
 gap between them measures what the bottleneck costs or buys. This section
 describes the shared backbone, the three interchangeable activity closures, the
 solid--liquid-equilibrium (SLE) solver and its implicit differentiation, the
-grounding intervention, and the training protocol. Exact architecture and optimisation
+oracle substitution, and the training protocol. Exact architecture and optimisation
 hyperparameters and the load-bearing loss weights are in the SI (\S\ref{sec:si-methods}); the full
 feature list and the complete ${\sim}30$-term loss taxonomy are released with the code.
 
@@ -103,7 +103,7 @@ $\lng^{\mathrm{res}}=(A_2/a_{\mathrm{eff}})\sum_m p_2^{\mathrm{pure}}(\sigma_m)
 [\ln\Gamma_{S,\mathrm{mix}}(\sigma_m)-\ln\Gamma_{S,2}^{\mathrm{pure}}(\sigma_m)]$, and
 an optional Staverman--Guggenheim combinatorial term uses the molecular cavity
 volume and area. The combinatorial size factor $r_i=V_i/r_0$ takes the
-\emph{true} COSMO cavity volume ($V_{\mathrm{cosmo}}$) so that it shares the cavity
+\emph{reference} COSMO cavity volume ($V_{\mathrm{cosmo}}$) so that it shares the cavity
 basis of the area $A_i$. This closure --- COSMO-SAC evaluated over a network-
 \emph{predicted} $\sigma$-profile, and the intervention that swaps that profile
 for the external reference one --- is the object of study in the grounding analysis
@@ -132,16 +132,16 @@ $1+x_2^\star\eta\to0$. Iteration counts (train $16$, eval $30$) were set by a
 convergence audit --- a shorter $n{=}8$ schedule failed a $5.86$-\lnx\ convergence
 test on strongly non-ideal pairs (SI \S\ref{sec:si-methods}).
 
-\subsection{Adaptive correction and the grounding intervention}
+\subsection{Adaptive correction and the oracle substitution}
 A bounded, gated ``adaptive physics correction'' perturbs the physical parameters
 ($\Tm,\dHfus,\tau$) rather than the output, re-solves \eqref{eq:sle-iter}, and
 blends $\lnx^{\mathrm{final}}=\lnx^{\mathrm{phys}}+(1-w)\,\mathrm{clip}(\Delta)$;
 keeping the correction in parameter space preserves the physical decomposition.
-The \emph{grounding intervention} (a $\sigma$-oracle) replaces the predicted
-$\sigma$-profile $\hat z$ with the true VT-2005 profile $\zstar$ before the closure,
+The \emph{oracle substitution} (a $\sigma$-oracle) replaces the predicted
+$\sigma$-profile $\hat z$ with the reference VT-2005 profile $\zstar$ before the closure,
 matched by canonical SMILES. It is applied three ways to rule out wiring
 artifacts: at evaluation only, injected at training time so the rest of the model
-co-adapts, and as a channel-swap control; an analogous override substitutes true
+co-adapts, and as a channel-swap control; an analogous override substitutes reference
 crystal targets. The activity target used for the closure/insufficiency
 decomposition (\S\ref{sec:measure}) is evaluated at infinite dilution,
 $\lngi=\lim_{x_2\to0}\lng$, at $298$\,K.
