@@ -45,6 +45,8 @@ SIGMA_ARTIFACT = REPO / "results" / "sigma_profile_artifact" / "sigma_profiles.c
 # batch is spliced into every train.py --set via --batch-size (default 256);
 # populated in main().
 EXTRA_SET: list = []
+_BATCH: int | None = None      # native --batch-size for train_directgnn.py
+_WORKERS: int | None = None    # native --num-workers for train_directgnn.py
 
 
 def run(cmd, env_extra=None, log=None):
@@ -66,6 +68,108 @@ def save(out: Path, name: str, obj):
     out.mkdir(parents=True, exist_ok=True)
     (out / name).write_text(json.dumps(obj, indent=2))
     print(f"[saved] {out / name}", flush=True)
+
+
+def _read_metrics(pred_csv: Path) -> dict:
+    """Read MAE/R^2 from the summary.json export_checkpoint_predictions writes next to pred."""
+    sp = Path(str(pred_csv)[:-4] + ".summary.json")
+    if not sp.exists():
+        return {}
+    d = json.loads(sp.read_text())
+    return {"mae": d.get("mae"), "r2": d.get("r2"), "rmse": d.get("rmse"), "n": d.get("n")}
+
+
+# --------------------------------------------------------------------------- #
+def do_dataeff_converged(out: Path, device: str, deadline_s: float,
+                         seeds=(42, 43, 44), fracs=(0.05, 0.1, 0.25, 0.5, 1.0),
+                         ep1=50, ep2=150, ep3=30, direct_epochs=150):
+    """CONVERGENCE-MATCHED data-efficiency sweep -- the Fork-A confound-killer.
+
+    do_dataeff runs the LIGHT budget (--epochs-phase2 40) that left the physics arm
+    under-converged (negative test R^2 at every fraction), which confounds "physics
+    hurts" with "physics undertrained". Here both arms train to their validation
+    plateau (generous cap + the configs' early stopping) at each fraction/seed.
+
+    Cheapest fraction first and seed-major, so a COMPLETE seed-42 curve banks before
+    any seed 43/44 point; wall-clock guarded (skips runs that will not finish, using
+    a rows->seconds cost calibrated on the first physics run); saved after every run;
+    and an inline plateau audit prints PLATEAUED/CAP-HIT per physics run so the result
+    is reviewer-proof ("converged AND still trails", not "trails because undertrained").
+    The two arms are driven directly (NOT via run_data_efficiency.sh) because
+    train_directgnn.py takes --epochs, while train.py takes --epochs-phase{1,2,3}.
+    """
+    import pandas as pd
+    PHYS = REPO / "configs" / "physics_grounded.yaml"
+    DIR = REPO / "configs" / "paper_config_directgnn_tuned.yaml"
+    AUDIT = REPO / "scripts" / "analysis" / "audit_data_efficiency_convergence.py"
+    de = out / "de_converged"; ck = de / "ckpt"; sub = de / "sub"
+    for d in (de, ck, sub):
+        d.mkdir(parents=True, exist_ok=True)
+    train_df = pd.read_csv(DATA / "train.csv", low_memory=False)
+    solutes = pd.Series(train_df["solute_smiles"].dropna().unique())
+
+    t0 = time.time()
+    secs_per_row = None
+    rows_out: list = []
+
+    def left() -> float:
+        return deadline_s - (time.time() - t0)
+
+    for seed in seeds:
+        for frac in fracs:
+            keep = set(solutes.sample(frac=frac, random_state=seed)) if frac < 1.0 else set(solutes)
+            sdf = train_df[train_df["solute_smiles"].isin(keep)]
+            n_rows = int(len(sdf))
+            if secs_per_row is not None:                    # cost guard (physics dominates the pair)
+                est = secs_per_row * n_rows * 2.4
+                if est > left():
+                    print(f"[budget] defer s{seed} f{frac}: ~{est/60:.0f} min needed, {left()/60:.0f} left", flush=True)
+                    rows_out.append({"seed": seed, "frac": frac, "rows": n_rows, "status": "deferred_budget"})
+                    save(de, "dataeff_converged.json", rows_out); continue
+            sub_csv = sub / f"train_s{seed}_f{frac}.csv"; sdf.to_csv(sub_csv, index=False)
+            rec: dict = {"seed": seed, "frac": frac, "rows": n_rows}
+
+            # --- DirectGNN control (native --epochs / --batch-size / --num-workers) ---
+            dck = ck / f"direct_s{seed}_f{frac}.pt"; dpred = de / f"direct_s{seed}_f{frac}.csv"
+            run(["python", "scripts/train_directgnn.py", "--config", DIR,
+                 "--train-data", sub_csv, "--val-data", DATA / "val.csv", "--test-data", DATA / "test.csv",
+                 "--checkpoint", dck, "--device", device, "--seed", seed, "--epochs", direct_epochs,
+                 *(["--batch-size", _BATCH] if _BATCH else []),
+                 *(["--num-workers", _WORKERS] if _WORKERS else [])])
+            run(["python", "scripts/analysis/export_checkpoint_predictions.py",
+                 "--checkpoint", dck, "--data", DATA / "test.csv", "--output", dpred,
+                 "--model-type", "direct", "--device", device])
+            rec["direct"] = _read_metrics(dpred)
+
+            # --- physics-grounded arm (train.py: --epochs-phase{1,2,3}, batch via --set) ---
+            tp = time.time()
+            pck = ck / f"physics_s{seed}_f{frac}.pt"; ppred = de / f"physics_s{seed}_f{frac}.csv"
+            run(["python", "scripts/train.py", "--config", PHYS,
+                 "--train-data", sub_csv, "--val-data", DATA / "val.csv", "--test-data", DATA / "test.csv",
+                 "--crystal-train-data", CRYSTAL, "--crystal-steps-per-epoch", "8",
+                 "--checkpoint", pck, "--device", device, "--seed", seed,
+                 "--epochs-phase1", ep1, "--epochs-phase2", ep2, "--epochs-phase3", ep3,
+                 *(["--set", *EXTRA_SET] if EXTRA_SET else [])])
+            dt = time.time() - tp
+            spr = dt / max(n_rows, 1)
+            secs_per_row = spr if secs_per_row is None else 0.5 * secs_per_row + 0.5 * spr
+            run(["python", "scripts/analysis/export_checkpoint_predictions.py",
+                 "--checkpoint", pck, "--data", DATA / "test.csv", "--output", ppred,
+                 "--model-type", "tgnn", "--device", device])
+            rec["physics"] = _read_metrics(ppred)
+            rec["physics_wall_min"] = round(dt / 60, 1)
+            run(["python", str(AUDIT), "--checkpoints", str(pck)])   # inline PLATEAUED / CAP-HIT verdict
+            dm, pm = rec["direct"], rec["physics"]
+            rec["delta_mae"] = (round(pm["mae"] - dm["mae"], 4)
+                                if pm.get("mae") is not None and dm.get("mae") is not None else None)
+            rows_out.append(rec)
+            save(de, "dataeff_converged.json", rows_out)
+            print(f"[dataeff-conv] s{seed} f{frac}: direct MAE={dm.get('mae')} R2={dm.get('r2')} | "
+                  f"physics MAE={pm.get('mae')} R2={pm.get('r2')} | dMAE={rec['delta_mae']} ({dt/60:.0f}m)", flush=True)
+        if left() < 0:
+            print(f"[budget] deadline reached after seed {seed}", flush=True); break
+    save(de, "dataeff_converged.json", rows_out)
+    print("[dataeff_converged] done ->", de / "dataeff_converged.json", flush=True)
 
 
 # --------------------------------------------------------------------------- #
@@ -239,8 +343,12 @@ def do_supervised_sigma(out: Path, device: str, ep_warm: int, ep_sle: int):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--do", default="all",
-                    help="comma list of {onemodel,tier3,dataeff,dosed,supervised_sigma} or 'all' "
-                         "(supervised_sigma is NOT in 'all'; run it explicitly for the axis-2 anchor)")
+                    help="comma list of {onemodel,tier3,dataeff,dataeff_converged,dosed,supervised_sigma} "
+                         "or 'all' (dataeff_converged and supervised_sigma are NOT in 'all'; run them "
+                         "explicitly -- dataeff_converged is the Fork-A convergence-matched sweep)")
+    ap.add_argument("--deadline-hours", type=float, default=8.0,
+                    help="wall-clock budget for dataeff_converged; it defers runs that will not finish "
+                         "in time (leave ~1h margin below the Kaggle session limit for result packaging).")
     ap.add_argument("--out", type=Path, default=Path("/kaggle/working/results"))
     ap.add_argument("--device", default="cuda")
     # budgets (trim for a shorter session)
@@ -255,12 +363,14 @@ def main():
                          "collation with GPU compute (epoch 1 warms the per-worker cache, epochs 2+ are faster). "
                          "Try 4 on Kaggle; watch epoch 2-3 vs epoch 1.")
     args = ap.parse_args()
-    global EXTRA_SET
+    global EXTRA_SET, _BATCH, _WORKERS
     EXTRA_SET = []
     if args.batch_size:
         EXTRA_SET.append(f"batch_size={args.batch_size}")
     if args.workers:
         EXTRA_SET.append(f"num_workers={args.workers}")
+    _BATCH = args.batch_size or None       # native flag for train_directgnn.py
+    _WORKERS = args.workers or None
 
     # Fail fast instead of silently running on CPU for hours: train.py's resolve_device()
     # falls back to CPU when cuda is unavailable (~25x slower here, ~15 min/epoch on the
@@ -290,6 +400,7 @@ def main():
         "onemodel": lambda: do_onemodel(args.out / "compensation", args.device, args.warm, args.sle),
         "tier3":    lambda: do_tier3(args.out / "closure_fix", args.device, args.t3_ep1, args.t3_ep2, args.t3_ep3, args.t3_arm_ep2),
         "dataeff":  lambda: do_dataeff(args.out, args.device),
+        "dataeff_converged": lambda: do_dataeff_converged(args.out, args.device, args.deadline_hours * 3600.0),
         "dosed":    lambda: do_dosed(args.out, args.device),
         "supervised_sigma": lambda: do_supervised_sigma(args.out / "supervised_sigma", args.device, args.warm, args.sle),
     }
