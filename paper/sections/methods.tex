@@ -6,9 +6,9 @@ explicit thermodynamic bottleneck (\emph{TGNNSolv}) or a direct regressor
 gap between them measures what the bottleneck costs or buys. This section
 describes the shared backbone, the three interchangeable activity closures, the
 solid--liquid-equilibrium (SLE) solver and its implicit differentiation, the
-grounding intervention, and the training protocol. Exact hyperparameters, the
-full feature list, and the complete loss taxonomy are in the SI
-(\S\ref{sec:si-methods}).
+grounding intervention, and the training protocol. Exact architecture and optimisation
+hyperparameters and the load-bearing loss weights are in the SI (\S\ref{sec:si-methods}); the full
+feature list and the complete ${\sim}30$-term loss taxonomy are released with the code.
 
 \subsection{Data, splits, and labels}
 Solubility measurements are drawn from BigSolDB~2.0 \cite{krasnov2025bigsoldb} and
@@ -183,8 +183,8 @@ reference for every ``physics tax'' comparison in \S\ref{sec:results}.
 \subsection{Reproducibility}
 All controlled comparisons are run at three seeds and reported as mean$\pm$sd on a
 cross-arm intersection lock (rows supervised and finite in every arm). Solver
-iteration counts, COSMO-SAC constants, the exact feature list, per-phase loss
-weights, and the compute ledger (which results are full-corpus GPU runs versus
+iteration counts, COSMO-SAC constants, architecture and optimisation hyperparameters, the
+load-bearing loss weights, and the compute ledger (which results are full-corpus GPU runs versus
 CPU-reproducible proxies) are given in the SI (\S\ref{sec:si-methods},
-\S\ref{sec:si-repro}); the named analysis scripts regenerate every figure and
+\S\ref{sec:si-repro}); the released code regenerates every figure and
 table from committed artifacts.

@@ -18,12 +18,27 @@ at evaluation.
 \paragraph{Crystal head.} $\Tm=100+600\,\sigma(\cdot)\in[100,700]$\,K,
 $\dHfus=S_H\,\mathrm{softplus}(\cdot)$; the group-contribution $\Tm$ prior is affine-
 calibrated on the train split before entering the head.
-\paragraph{Loss.} Only the following terms are load-bearing for the claims: a
-bin-weighted Huber on \lnx; auxiliary $\sigma$-profile (earth-mover), crystal
-($\Tm,\dHfus$), \lngi, and Hansen losses; and van't~Hoff-slope and monotonicity
-regularisers. The full $\sim$30-term taxonomy, per-phase weights, graph featurisation,
-and encoder hyperparameters are in the training configs; every reported run
-pins its fully resolved configuration alongside its outputs.
+\paragraph{Architecture.} The headline COSMO-SAC model uses a message-passing encoder (a shared
+backbone with a $2$-layer residual role-specific branch) of hidden width $64$ over $3$ message-passing
+layers, on $35$-dimensional node and $8$-dimensional edge features; a set2set readout ($3$ processing
+steps) pools each graph, solute and solvent interact through a $3$-layer cross-attention block, and the
+$512$-dimensional pair representation $[\,g_s,g_v,g_s\!\odot g_v,|g_s-g_v|\,]$ (dropout $0.012$) feeds
+the crystal head, the $51$-bin $\sigma$-profile head, and the parameter-free COSMO-SAC closure. The
+full model has $5.40$M trainable parameters---capacity that the in-sample linear probe
+($R^2\approx0.76$, \S\ref{sec:supporting}) indicates is not the binding constraint. The DirectGNN
+control shares this encoder, interaction, and readout verbatim.
+\paragraph{Optimisation.} Adam (weight decay $5\times10^{-4}$, gradient clipping at $2.0$, batch $64$)
+under the three-phase curriculum of \S\ref{sec:methods}: $30$ epochs of auxiliary pretraining (P1),
+$70$ of full SLE training (P2), and $10$ of low-rate stabilisation (P3), at learning rates
+$2.6\times10^{-4}$, $8.5\times10^{-5}$, and $8.5\times10^{-6}$ respectively.
+\paragraph{Loss.} Only the following terms are load-bearing for the claims: a bin-weighted Huber on
+\lnx\ (weight $1.0$); crystal $\Tm/\dHfus$ ($0.3$ each), \lngi\ ($0.5$), and Hansen ($0.2$) auxiliary
+losses; a monotonicity regulariser ($0.1$) and a van't~Hoff-slope term (activated in P3); and, when the
+$\sigma$-profile grounding stream is active, an earth-mover distance on the profile---the term whose
+\emph{absence} in the end-to-end arm is what the grounding paradox exploits. The remaining ${\sim}24$
+terms (channel orthogonality, contrastive, mixture-of-experts balance, and assorted priors) carry
+small or zero default weight; the full taxonomy and per-phase overrides are released with the code and
+pinned in each run's resolved configuration.
 
 \section{Proofs}
 \label{sec:si-proofs}
