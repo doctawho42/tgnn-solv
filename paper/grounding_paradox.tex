@@ -162,7 +162,7 @@ frame.
   attribution self-dissolves, locating it in the 2002 single-parameter H-bond kernel specifically, and
   the actionable lesson is to raise closure fidelity, not enrich the inputs. (We do \emph{not} claim
   the inputs then bind: that would need a lower bound on $\Binsuf$, which we lack.)  (\S\ref{sec:measure})
-  \item \textbf{A negative actionability result (Gate B).} A post-hoc
+  \item \textbf{A negative actionability result.} A post-hoc
   output-space residual placed on the physics prediction recovers calibration but
   not accuracy; the closure binding cannot be undone downstream
   (\S\ref{sec:gateb}).
@@ -267,7 +267,7 @@ $\zstar$ are the VT-2005 database.
 \centering
 \caption{Notation and coined terms used throughout.}
 \label{tab:notation}
-\begin{tabular}{ll}
+\begin{tabular}{@{}lp{0.62\linewidth}@{}}
 \toprule
 Symbol / term & Meaning \\
 \midrule
@@ -644,8 +644,8 @@ oracle, injection of the true profile \emph{at training} (MAE $1.98$), and a cha
 \centering
 \includegraphics[width=\linewidth]{figs/fig_paradox.pdf}
 \caption{Controlled comparison on the scaffold split (3 seeds, mean$\pm$sd,
-$n{=}5608$; metrics are the 3-seed mean of the cross-arm intersection lock --- rows
-supervised and finite in every arm --- from \texttt{run\_e5\_comparison.py}).
+$n{=}5608$; metrics are the 3-seed mean of the cross-arm intersection lock, over rows
+supervised and finite in every arm).
 DirectGNN shares the encoder but has no thermodynamic closure; the
 physics closures trail it (the ``physics tax''). Replacing the model's learned
 $\sigma$-profile with the \emph{true} VT-2005 profile (the $\sigma$-oracle,
@@ -695,7 +695,8 @@ $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ row, which exceeds $\Binsuf$ under
 (Jensen) bound separates only under ``full'' ($0.72$) and inverts under the
 deployed ``res'' ($0.43<0.62$).}
 \label{tab:decomp}
-\begin{tabular}{lrr}
+{\small
+\begin{tabular}{@{}p{0.60\linewidth}rr@{}}
 \toprule
 Quantity & full & res \\
 \midrule
@@ -705,9 +706,10 @@ $\Bclos$ lower bound (Jensen, offset$^2$; assumption-free; \emph{full-only}) & $
 $\Binsuf$ upper (bin $g$; law of total variance)  & $0.53$ & $0.62$ \\
 $\Binsuf$ upper (RF / Ridge out-of-fold)          & $0.56/0.62$ & same \\
 $\Binsuf$ (k\textsc{nn}-in-$\zstar$, convention-indep., biased up) & $0.40$ & $0.40$ \\
-label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{assumed $0$ (no replicates in matched set)} \\
+label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{$0$ (assumed)} \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \begin{figure}[t]
@@ -826,7 +828,7 @@ paradox itself lives; the full adversarial audit and its four hedges are in App.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.78\linewidth]{figs/fig_fidelity_dial.pdf}
-\caption{Reproducible closure-fidelity dial (\texttt{run\_fidelity\_dial.py}). As the
+\caption{Reproducible closure-fidelity dial. As the
 closure is made more misspecified (fidelity $F$ decreasing from $1$), the true-input
 penalty $\Delta R^2=R^2_{\text{oracle}}-R^2_{\text{head}}$ grows monotonically, and the
 same ordering holds across four non-chemistry teacher families (linear, monotone,
@@ -840,8 +842,8 @@ rough magnitude of the empirical paradox, not a precise fidelity value.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_grounding_conflation.pdf}
-\caption{The grounding gap $\Gamma$ is a symptom, not a certificate (\S\ref{sec:gap};
-\texttt{run\_fidelity\_dial.py}). \emph{Left:} when the intermediate is sufficient (A2
+\caption{The grounding gap $\Gamma$ is a symptom, not a certificate (\S\ref{sec:gap}).
+\emph{Left:} when the intermediate is sufficient (A2
 holds), $\Gamma$ tracks the closure bias $\Bclos$ as fidelity varies, so
 Theorem~\ref{thm:gap}'s proxy is valid. \emph{Right:} with a \emph{well-specified} closure
 ($\Bclos=0$) but a lossy intermediate (A2 fails), $\Gamma>0$ and grows with the discarded
@@ -851,7 +853,7 @@ rests on the decomposition, which needs neither assumption.}
 \label{fig:conflation}
 \end{figure}
 
-\subsection{The ceiling is not fixable downstream (Gate B)}
+\subsection{The ceiling is not fixable downstream}
 \label{sec:gateb}
 % Artifacts: results/e5_sigma_grounding/seed_42/grounded_a_truetrain_residual{,_v2}_predictions.summary.json (Gate B v1 gated-shut / v2 forced-open); model.py correction_force_open_gate.
 If the closure binding were merely a bad point estimate, a learned output-space
@@ -1012,37 +1014,16 @@ external latent makes measurable: a $53\%$, low-rank, transferable departure fro
 converged one-model control.
 
 \section*{Data and code availability}
-All code and the intermediate result artifacts needed to regenerate every figure and
-table are available at \pending[repository URL]\ (commit \pending[hash]), released
-under \pending[license]. The solubility corpus is BigSolDB~2.0
-\cite{krasnov2025bigsoldb}; the true $\sigma$-profiles are the VT-2005 database,
-ingested to \texttt{results/sigma\_profile\_artifact/sigma\_profiles.csv}; the
-experimental infinite-dilution activity coefficients are compiled from ThermoML
-(\texttt{notebooks/data/raw/idac.csv}). The Bemis--Murcko scaffold split is produced
-by \texttt{scripts/prepare\_data.py}. The controlled comparison
-(Fig.~\ref{fig:paradox}, \S\ref{sec:map}) is produced by
-\texttt{scripts/experiments/run\_e5\_sigma\_grounding.sh} and aggregated by
-\texttt{scripts/analysis/run\_e5\_comparison.py} over
-\texttt{results/e5\_sigma\_grounding/seed\_\{42,43,44\}/}; the 3-seed aggregate is
-tabulated in \texttt{results/e5\_sigma\_grounding/THREE\_SEED\_SUMMARY.md}. The
-closure--insufficiency decomposition (Table~\ref{tab:decomp},
-Figs~\ref{fig:parity} and~\ref{fig:decomp}) is regenerated deterministically by
-\texttt{scripts/analysis/run\_b\_insuff\_decomposition.py} $\rightarrow$
-\texttt{results/b\_insuff/decomposition.json} from the committed matched-pair table
-\texttt{results/b\_insuff/matched\_pairs.csv} (the $n{=}60$ VT-2005-matchable pairs).
-The second-domain pKa measurement (\S\ref{sec:pka}) uses the OPERA experimental compilation
-\cite{mansouri2019opera}: \texttt{scripts/data/build\_pka\_hammett\_subset.py} assigns the oracle
-Hammett $\sigma$ and \texttt{scripts/analysis/run\_pka\_real\_decomposition.py} produces the
-decomposition ($\rightarrow$\texttt{results/pka\_hammett/real\_decomposition.json}), with the
-controlled semi-synthetic validation in \texttt{scripts/analysis/run\_pka\_hammett\_probe.py} and
-the trained encoder-vs-DirectGNN comparison in \texttt{scripts/experiments/run\_pka\_trained\_comparison.py}.
-The synthetic fidelity dial (Fig.~\ref{fig:dial}) is
-\texttt{scripts/analysis/run\_fidelity\_dial.py}, and the conceptual schematics
-(Figs~\ref{fig:composed}, \ref{fig:decomp-concept}, \ref{fig:ident}, \ref{fig:phase}) and the
-architecture figure (Fig.~\ref{fig:arch}) are \texttt{scripts/analysis/make\_concept\_figures.py}.
-The model checkpoints and the full per-arm prediction CSVs are large and are deposited
-at \pending[Zenodo DOI] rather than in git; the named scripts regenerate them from the
-raw sources. The manuscript compiles with \texttt{make} in \texttt{paper/}.
+All code and the intermediate result artifacts needed to regenerate every figure, table, and
+reported number are available at \pending[repository URL]\ (commit \pending[hash]), released under
+\pending[license]; the large model checkpoints and full per-arm prediction files are deposited at
+\pending[Zenodo DOI]. Every data source is public: the solubility corpus is BigSolDB~2.0
+\cite{krasnov2025bigsoldb}, the true $\sigma$-profiles are the VT-2005 database, the experimental
+infinite-dilution activity coefficients are compiled from ThermoML, and the second-domain pKa data
+are the OPERA compilation \cite{mansouri2019opera}. The repository documents the exact command that
+reproduces each figure, table, and number from these sources, including the Bemis--Murcko scaffold
+split, the controlled grounded-vs-free comparison, the closure--insufficiency decomposition over the
+$n{=}60$ VT-2005-matchable pairs, the pKa second-domain measurement, and the synthetic fidelity dial.
 
 \input{sections/SI}
 
