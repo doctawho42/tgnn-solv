@@ -195,17 +195,25 @@ def main() -> None:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        _style = Path.home() / ".claude/skills/repo-to-paper/assets/softpastel.mplstyle"
+        if _style.exists():
+            plt.style.use(str(_style))
+        SALMON, BLUE, PURPLE = "#E8A98C", "#8FB3DA", "#B7A5DC"   # shared soft-pastel palette
         fig, ax = plt.subplots(1, 2, figsize=(9.5, 4.0))
-        ax[0].plot(SIGMA_GRID, r.mean(0), color="#c1443c", lw=2, label="mean deviation")
+        ax[0].plot(SIGMA_GRID, r.mean(0), color=SALMON, lw=2.2, label="mean deviation")
         top_mode = Vt[0] * np.sign(Vt[0][np.argmax(np.abs(Vt[0]))])
-        ax[0].plot(SIGMA_GRID, top_mode * S[0] / np.sqrt(len(keep)), color="#2f6f8f", lw=2,
+        ax[0].plot(SIGMA_GRID, top_mode * S[0] / np.sqrt(len(keep)), color=BLUE, lw=2.2,
                    ls="--", label=f"top PC (EVR {ev[0]:.0%})")
-        ax[0].axvline(0, color="0.7", lw=0.7); ax[0].axhline(0, color="0.7", lw=0.7)
-        ax[0].set_xlabel(r"$\sigma$ (e/\AA$^2$)"); ax[0].set_ylabel(r"$\hat\sigma-\sigma$ (shape)")
-        ax[0].set_title("How the learned profile deviates from truth"); ax[0].legend(fontsize=8)
-        ax[1].bar(range(1, 6), ev[:5], color="#5a3a86")
-        ax[1].set_xlabel("PC"); ax[1].set_ylabel("explained variance ratio")
-        ax[1].set_title(f"Deviation spectrum (top-2 = {a1['top2_cum_evr']:.0%})\nlow-rank => systematic")
+        ax[0].axvline(0, color="0.8", lw=0.7, zorder=0); ax[0].axhline(0, color="0.8", lw=0.7, zorder=0)
+        ax[0].set_xlabel(r"$\sigma$  (e/Å$^2$)"); ax[0].set_ylabel(r"$\hat\sigma-\sigma$  (shape)")
+        ax[0].set_title("How the learned profile deviates from truth")
+        ax[0].legend(fontsize=8, frameon=False)
+        ax[0].spines[["top", "right"]].set_visible(False)
+        ax[1].bar(range(1, 6), ev[:5], color=PURPLE, edgecolor="white", linewidth=0.8)
+        ax[1].set_xlabel("principal component"); ax[1].set_ylabel("explained variance ratio")
+        ax[1].set_title(f"Deviation spectrum (top-2 = {a1['top2_cum_evr']:.0%})\n"
+                        "low-rank $\\Rightarrow$ systematic")
+        ax[1].spines[["top", "right"]].set_visible(False)
         fig.tight_layout()
         args.fig_dir.mkdir(parents=True, exist_ok=True)
         for ext in ("pdf", "png"):

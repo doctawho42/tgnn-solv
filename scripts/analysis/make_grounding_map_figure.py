@@ -31,11 +31,13 @@ ax.text(0.50, 0.07, "grounding hurts", color="#B5654A", fontsize=13, ha="center"
 ax.text(0.72, 0.94, "grounding helps", color="#4A806F", fontsize=13, ha="center", va="top", fontweight="bold")
 ax.text(0.79, 0.13, r"physics-tax $\mathcal{T}=0$", color=INK, fontsize=8.5, rotation=-38, alpha=0.7)
 
-def anchor(x, y, label, sub, dx=8, dy=8, ha="left"):
+def anchor(x, y, label, sub, dx=8, dy=8, ha="left", va="bottom"):
     ax.scatter([x], [y], s=95, color=INK, zorder=5, edgecolor="white", linewidth=1.1)
     ax.annotate(f"{label}\n{sub}", (x, y), xytext=(dx, dy), textcoords="offset points",
-                fontsize=9, color=INK, ha=ha, va="bottom",
-                bbox=dict(boxstyle="round,pad=0.25", fc="white", ec=INK, alpha=0.85, lw=0.6))
+                fontsize=9, color=INK, ha=ha, va=va,
+                bbox=dict(boxstyle="round,pad=0.25", fc="white", ec=INK, alpha=0.92, lw=0.6),
+                arrowprops=dict(arrowstyle="-", color=INK, lw=0.7, alpha=0.5,
+                                shrinkA=2, shrinkB=3))
 
 # ours: end-to-end sigma, low-fidelity 2002 closure -> hurts (the grounding paradox)
 anchor(0.13, 0.17, "Ours (end-to-end $\\hat\\sigma$,", "COSMO-SAC-2002) $\\to$ hurts", dx=12, dy=6)
@@ -45,12 +47,12 @@ arr = FancyArrowPatch((0.135, 0.24), (0.14, 0.73), arrowstyle="-|>", mutation_sc
                       color="#4A806F", lw=1.8, zorder=4)
 ax.add_patch(arr)
 ax.text(0.155, 0.47, "raise closure\nfidelity", color="#4A806F", fontsize=8.5, va="center")
-# latent-supervision axis: TeNNet supervised sigma -> helps
-anchor(0.80, 0.35, "TeNNet-SAC", "(supervised $\\sigma$) $\\to$ helps", dx=-8, dy=8, ha="right")
-arr2 = FancyArrowPatch((0.27, 0.28), (0.66, 0.36), arrowstyle="-|>", mutation_scale=14,
-                       color="#4A806F", lw=1.8, zorder=4)
+# latent-supervision axis: TeNNet supervised sigma -> helps (box sits just above its dot)
+anchor(0.80, 0.35, "TeNNet-SAC", "(supervised $\\sigma$) $\\to$ helps", dx=0, dy=15, ha="center")
+arr2 = FancyArrowPatch((0.45, 0.235), (0.75, 0.345), arrowstyle="-|>", mutation_scale=14,
+                       color="#4A806F", lw=1.8, zorder=4)  # starts past the Ours box edge
 ax.add_patch(arr2)
-ax.text(0.47, 0.375, "supervise the latent", color="#4A806F", fontsize=8.5, ha="center", va="bottom")
+ax.text(0.60, 0.225, "supervise the latent", color="#4A806F", fontsize=8.5, ha="center", va="top")
 # synthetic dial: swept closure fidelity
 ax.plot([0.40, 0.40], [0.10, 0.90], color=INK, lw=1.0, ls=":", alpha=0.5)
 ax.text(0.405, 0.985, "synthetic fidelity dial", color=INK, fontsize=8, va="top", ha="center", alpha=0.7)

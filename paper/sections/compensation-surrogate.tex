@@ -21,9 +21,9 @@ a single affine distortion $D$ fit on half the molecules predicts the drift on t
 $3.3\times$ better than identity out-of-sample. So $\hat\sigma$ is a systematic, low-rank,
 \emph{transferable} closure-compensating surrogate---one generalizable way the intermediate ``lies'' to
 the closure, shared across chemistry, driven by the fitting objective rather than by architecture or a
-lack of grounding. (The magnitude develops over convergence---a short run reached only ${\sim}16\%$;
-the converged control above supersedes it. Earlier confounded and two-model analyses over-stated the
-departure at ${\sim}82\%$ and the transfer at $16$--$26\times$; we report the confound-free numbers.)
+lack of grounding.\footnote{These are the confound-free, converged one-model numbers. The magnitude
+develops over training---a short run reached only ${\sim}16\%$---and earlier confounded and two-model
+analyses over-stated both the departure (${\sim}82\%$) and the transfer ($16$--$26\times$).}
 
 \paragraph{Dominant mode and consequence.} The dominant drift mode (Fig.~\ref{fig:surrogate}) transfers
 area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and \emph{into} the polar wings: the network

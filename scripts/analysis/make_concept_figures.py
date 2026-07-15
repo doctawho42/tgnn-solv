@@ -216,8 +216,9 @@ def fig_ident(out_dir: Path) -> None:
     a2.text(ext[0] - 0.05, ext[1] + 0.12, "external\nsingle-component\nlabel (off-axis)",
             fontsize=8.6, color=PURPLE, ha="center")
     a2.scatter([cry[0]], [cry[1]], s=60, color=INK, zorder=5)
-    a2.annotate("split pinned", xy=(cry[0], cry[1]), xytext=(1.15, 1.15),
-                fontsize=8.6, color=INK, arrowprops=dict(arrowstyle="-|>", color=INK, lw=1.0))
+    a2.annotate("split pinned", xy=(cry[0], cry[1]), xytext=(2.7, 1.24),
+                ha="center", va="top", fontsize=8.6, color=INK,
+                arrowprops=dict(arrowstyle="-|>", color=INK, lw=1.0, shrinkA=3, shrinkB=5))
     a2.text(1.55, 0.35, r"CRLB sd($\Delta H_{\mathrm{fus}}$):" "\n"
             r"$19{,}895\rightarrow1{,}689$ J/mol",
             fontsize=8.6, color=INK, ha="center")
@@ -259,9 +260,9 @@ def fig_phase(out_dir: Path) -> None:
     for F, yv in [(1.00, 0.03), (0.76, 0.30), (0.38, 0.60)]:
         ax.scatter([0.42], [yv], s=42, color=GOLD, edgecolor=INK, zorder=5)
         ax.text(0.455, yv, f"$F={F:.2f}$", fontsize=7.6, color=INK, va="center")
-    ax.annotate("synthetic dial\n(fidelity $F\\downarrow$)", xy=(0.42, 0.30), xytext=(0.15, 0.20),
-                fontsize=8.4, color="#9A8425", ha="center",
-                arrowprops=dict(arrowstyle="-|>", color=GOLD, lw=1.0))
+    ax.annotate("synthetic dial\n(fidelity $F\\downarrow$)", xy=(0.42, 0.30), xytext=(0.60, 0.44),
+                fontsize=8.4, color="#9A8425", ha="left", va="center",
+                arrowprops=dict(arrowstyle="-|>", color=GOLD, lw=1.0, shrinkA=3, shrinkB=4))
 
     ax.set_xlim(0, lim); ax.set_ylim(0, lim)
     ax.set_xlabel("estimation-variance saving  $V_{\\mathrm{direct}}-V_{\\mathrm{phys}}$  (grows at small $n$)")
@@ -307,8 +308,8 @@ def fig_arch(out_dir: Path) -> None:
     _arrow(ax, (10.25, 4.12), (10.55, 4.15))
     # DirectGNN control branch (solid)
     _box(ax, (8.75, 1.15), 1.5, 0.8, "DirectGNN\n(no closure)", "white", ec=GRAY, tc=GRAY, fs=8.6)
-    _arrow(ax, (2.75, 2.9), (8.75, 1.55), color=GRAY, lw=1.8, rad=-0.34)
-    ax.text(4.35, 1.35, "matched control:\nshares $h$, drops $g$", fontsize=8.2, color=GRAY,
+    _arrow(ax, (2.75, 2.9), (8.75, 1.55), color=GRAY, lw=1.8, rad=0.42)  # dips below the closure/oracle boxes
+    ax.text(5.3, 0.5, "matched control: shares $h$, drops $g$", fontsize=8.2, color=GRAY,
             style="italic", ha="center")
     _box(ax, (10.55, 1.15), 1.6, 0.8, "$\\ln x_2$\n(direct)", "white", ec=GRAY, tc=GRAY, fs=9)
     _arrow(ax, (10.25, 1.55), (10.55, 1.55), color=GRAY)

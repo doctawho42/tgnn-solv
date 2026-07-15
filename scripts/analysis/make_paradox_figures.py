@@ -172,8 +172,11 @@ def fig_decomposition(decomp_json: Path, out_dir: Path) -> list[str]:
     ys = np.linspace(0.50, 0.80, len(uppers))
     for (name, val), y in zip(uppers.items(), ys):
         ax.scatter(val, y, s=70, color=SALMON, edgecolor=INK, linewidth=0.6, zorder=3)
-        ax.annotate(f"{name} = {val:.2f}", (val, y), xytext=(6, 0),
-                    textcoords="offset points", va="center", fontsize=8.5, color=INK)
+        # label to the left of the marker so it stays inside the B_insuff (salmon) region,
+        # never crossing the B_closure line into the certified-closure block
+        ax.annotate(f"{name} = {val:.2f}", (val, y), xytext=(-8, 0),
+                    textcoords="offset points", va="center", ha="right",
+                    fontsize=8.5, color=INK)
     # load-bearing convention-independent lower bound on B_closure
     ax.axvline(b_clos_lb, color=INK, lw=1.6, zorder=4)
     ax.annotate(f"$B_{{\\rm closure}}\\geq$ MSE$-B_{{\\rm insuff}}^{{\\rm LOTV}}={b_clos_lb:.2f}$\n(load-bearing)",
