@@ -360,22 +360,16 @@ def main() -> None:
         _st = _Path.home() / ".claude/skills/repo-to-paper/assets/softpastel.mplstyle"
         if _st.exists():
             plt.style.use(str(_st))
-        fig, ax = plt.subplots(1, 3, figsize=(13.5, 4.0))
-        ax[0].hist(cos_diag, bins=15, color="#8FB3DA", alpha=0.85)
-        ax[0].axvline(0, color="0.6", lw=0.8); ax[0].axvline(med_cos, color="#E8A98C", lw=2, label=f"median {med_cos:+.2f}")
-        ax[0].set_xlabel(r"cos($d_i$, $\hat d_i$)"); ax[0].set_ylabel("molecules")
-        ax[0].set_title("Per-molecule drift alignment"); ax[0].legend(fontsize=8)
-        ax[1].hist(perm_means, bins=30, color="0.75", label="wrong-molecule null")
-        ax[1].axvline(diag_mean, color="#E8A98C", lw=2, label=f"real diag {diag_mean:+.2f}")
-        ax[1].set_xlabel("mean cos over matching"); ax[1].set_title(f"Smoothness-matched null (p={p_wrongmol:.3f})")
-        ax[1].legend(fontsize=8)
-        # exemplar: the best-aligned constrained molecule
-        best = ci[int(np.argmax(cos_diag))]
-        ax[2].plot(SIGMA_GRID, D_meas[best], color="#E8A98C", lw=2, label="measured drift")
-        sc = (D_meas[best] @ D_hat[best]) / (D_hat[best] @ D_hat[best] + 1e-12)
-        ax[2].plot(SIGMA_GRID, sc * D_hat[best], color="#8FB3DA", lw=2, ls="--", label=r"Picard $\hat d$ (scaled)")
-        ax[2].axhline(0, color="0.7", lw=0.6); ax[2].set_xlabel(r"$\sigma$"); ax[2].set_ylabel("drift (shape)")
-        ax[2].set_title(f"Best exemplar (cos {np.max(cos_diag):+.2f})"); ax[2].legend(fontsize=8)
+        # single panel: the signed per-molecule cosine (the load-bearing negative). The
+        # wrong-molecule and exemplar panels were dropped -- on the sparse matched set (1-D
+        # per-molecule subspaces, common resolved direction) those controls are uninformative.
+        fig, ax = plt.subplots(figsize=(5.2, 3.6))
+        ax.hist(cos_diag, bins=15, color="#8FB3DA", alpha=0.85)
+        ax.axvline(0, color="0.6", lw=0.8)
+        ax.axvline(med_cos, color="#E8A98C", lw=2, label=f"median {med_cos:+.2f}")
+        ax.set_xlabel(r"$\cos(d_i,\ J^{+}(m-g)_i)$"); ax.set_ylabel("molecules")
+        ax.set_title(r"Measured drift vs. closure first-order inverse")
+        ax.legend(fontsize=9)
         fig.tight_layout()
         args.fig_dir.mkdir(parents=True, exist_ok=True)
         for ext in ("pdf", "png"):

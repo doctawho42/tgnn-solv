@@ -372,6 +372,52 @@ per-pair mean                   & $1.46$ & $0.56$ & $0.01$ \\
 
 \input{sections/pka-si}
 
+\subsection{Diagnostics that do not work, and why}
+\label{sec:si-failed-diagnostics}
+The instrument behind \S\ref{sec:surrogate}---the rank of the activity Fisher $J^{\top}J$
+($J=\partial\lngi/\partial\sigma$), read as a participation ratio
+$\mathrm{PR}=(\sum_i\lambda_i)^2/\sum_i\lambda_i^2$---is cheap and oracle-free, which is its appeal for
+probing any physics-grounded latent. It is also easy to misread in three ways that inflate a null or a rank
+in the flattering direction, silently; we record them because the corrections are not obvious.
+
+\paragraph{(i)~Finite differences inflate the participation ratio.} $\mathrm{PR}$ is a \emph{tail} statistic,
+governed by the small eigenvalues. A closure evaluated by an unrolled fixed point carries a small,
+step-\emph{independent} gradient noise (from the convergence tolerance, not truncation), so central finite
+differences lift the exactly- and near-zero eigenvalues onto a floor and $\mathrm{PR}$ rises. On the
+differentiable COSMO-SAC-2002 layer, autograd and finite differences on \emph{identical} profiles give
+$\mathrm{PR}=1.00$ and $1.25$---a $25\%$ inflation from noise alone, though the per-gradient cosine is $0.995$
+(the direction is right, the tail is not). It is worse on a typed ($3\times51$) profile basis: a closure that
+ignores the typing (2002) has $102$ exactly-redundant coordinates that finite differences decorrelate into a
+spurious floor, inflating its $\mathrm{PR}$ from $1.0$ toward $2.0$, while a closure that uses the typing
+(2010) has no such redundancy---so the same step inflates the two \emph{asymmetrically} and can manufacture a
+rank ordering with no physical content. \emph{Use autograd where the closure is differentiable; with only
+finite differences, read $\mathrm{PR}$ against a known-rank or permuted control, never absolutely.}
+
+\paragraph{(ii)~``Own vs.\ other'' controls are powerless when the resolved direction is common.} A
+dimension- and smoothness-matched control aligns a molecule's drift against its own predicted compensation and
+against other molecules'. It has power only if the predictions differ. But when the aggregate Fisher is
+rank-one (\S\ref{sec:surrogate}) the resolved direction is \emph{common}, so ``own'' and ``other'' point
+almost the same way and the diagonal must sit inside the null---$p\approx0.5$ regardless of the truth. On the
+matched set sparsity compounds this: a median of one pair per molecule makes each per-molecule Jacobian
+subspace one-dimensional, so ``own'' and ``other'' subspaces coincide exactly. \emph{Verify a control has
+power before reading its null: if the compared predictions have median cosine near one, the test cannot
+reject.}
+
+\paragraph{(iii)~Energy-in-subspace baselines need the effective rank and a cluster null.} A random zero-mean
+vector in $D$ dimensions places $k_{\mathrm{eff}}/(D{-}1)$ of its energy in a subspace of \emph{effective}
+rank $k_{\mathrm{eff}}$ (the participation ratio of its singular values), which for near-collinear Jacobian
+rows is far below the nominal row count. On the matched set the per-molecule subspace is effectively
+one-dimensional, so the baseline is ${\approx}2\%$ and the observed $5.5\%$ is a two-to-threefold
+\emph{enrichment}, not the ``no concentration'' a raw own-versus-other equality suggests: own equals other
+because both one-dimensional subspaces are the same common direction, not because the drift avoids the
+resolved one. And with that direction common, $N$ enriched molecules are not $N$ independent draws---the
+enrichment needs a cluster null (\S\ref{sec:measure}), without which its significance is over-stated by
+$\sqrt{N/N_{\mathrm{eff}}}$. We therefore report the $5.5\%$ as evidence in neither direction. \emph{Baseline
+by effective rank; cluster by the shared direction.}
+
+Each failure turns a soft spectral quantity into a hard structural claim---the mode the surviving statements
+of \S\ref{sec:surrogate} are written to avoid, by carrying their null model and a power check inline.
+
 \section{Data provenance and reproducibility}
 \label{sec:si-repro}
 \paragraph{Sources.} Solubility: BigSolDB~2.0 \cite{krasnov2025bigsoldb}. Crystal
@@ -388,9 +434,8 @@ cited, not redistributed). The Bemis--Murcko scaffold split follows the main tex
 melting-point tables are auto-detected as $^\circ$C or K to
 avoid a $+273$\,K double-conversion.
 \paragraph{Compute ledger.} The headline $\sigma$-grounding comparison
-(Fig.~\ref{fig:paradox}, Table~\ref{tab:si-arms}) and the data-efficiency sweep
-(Table~\ref{tab:data-eff}) are full-corpus GPU runs (three seeds for the former, seed 42
-for the latter); the closure/insufficiency decomposition (\S\ref{sec:measure}), the
+(Fig.~\ref{fig:paradox}, Table~\ref{tab:si-arms}) is a full-corpus GPU run (three seeds);
+the closure/insufficiency decomposition (\S\ref{sec:measure}), the
 Fisher audit (\S\ref{sec:ident}), the noise floor, the encoder probe, and the
 temperature and mechanism diagnostics of \S\ref{sec:si-mech} are CPU-reproducible from
 committed artifacts. Each figure and table names the script that regenerates it from

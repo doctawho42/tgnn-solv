@@ -161,14 +161,12 @@ frame.
   attribution self-dissolves, locating it in the 2002 single-parameter H-bond kernel specifically, and
   the actionable lesson is to raise closure fidelity, not enrich the inputs. (We do \emph{not} claim
   the inputs then bind: that would need a lower bound on $\Binsuf$, which we lack.)  (\S\ref{sec:measure})
-  \item \textbf{Two negatives, one structural reading.} A post-hoc output-space residual on the
+  \item \textbf{A negative that is not fixable downstream.} A post-hoc output-space residual on the
   physics prediction recovers calibration but not accuracy---the closure binding cannot be undone
-  downstream (\S\ref{sec:gateb}); and the physics prior does not beat a matched black box on accuracy
-  at any training-data budget---including the low-data regime where an inductive bias should help most
-  (\S\ref{sec:data-efficiency})---nor, as a trained model, on temperature (though the physical
-  hypothesis \emph{class} does extrapolate there, \S\ref{sec:supporting}). Read against the lemmas and
-  the closure measurement, these point to a \emph{structural} ceiling within this closure family rather
-  than an incidental one (\S\ref{sec:discussion}). We make no accuracy claim.
+  downstream (\S\ref{sec:gateb}); and while the physical hypothesis \emph{class} extrapolates in
+  temperature, the trained model does not exploit it (\S\ref{sec:supporting}). Read against the lemmas
+  and the closure measurement, these point to a \emph{structural} ceiling within this closure family
+  rather than an incidental one (\S\ref{sec:discussion}). We make no accuracy claim.
   \item \textbf{A general account, and honest scoping.} The method is not tied to
   COSMO-SAC: it is stated for any composed predictor $\hat y=g(h(x))$ with a fixed closure
   $g$ over a learned intermediate. We prove three structural lemmas
@@ -524,13 +522,9 @@ not merely from $V_{\mathrm{direct}}\to0$.
 \noindent When the control is asymptotically Bayes and A2 holds, $\Delta_\infty=\Bclos-\Gamma$,
 tying the asymptotic tax to the \emph{un-compensatable} part of the closure bias; in general
 $\Delta_\infty$ is read off the large-$n$ asymptote. Both corollaries are \emph{loosely consistent} with
-the data---the data-efficiency null (a positive tax at every budget, \S\ref{sec:data-efficiency},
-single-seed) and the novelty inversion (the tax heaviest on the \emph{best-covered} solutes,
-\S\ref{sec:map}, exploratory) point in directions the proposition allows---but neither is a
-controlled test: in the data-efficiency sweep the physics arm is more under-converged than its
-control across the sweep---its $R^2$ is negative at every fraction (down to $-0.79$ at full data,
-where the control holds near $+0.22$)---so the within-budget gap conflates inductive bias with
-optimization difficulty and we do not map it to a specific case. We prove the structural parts (existence of $n^\star$ given
+the data---the novelty inversion (the tax heaviest on the \emph{best-covered} solutes,
+\S\ref{sec:map}, exploratory) points in a direction the proposition allows---but it is not a
+controlled test. We prove the structural parts (existence of $n^\star$ given
 $\Delta_\infty>0$ and a vanishing variance gap; the floor inequality); the shapes of $V(n)$ are
 empirical.
 
@@ -588,8 +582,8 @@ Results build the map. The paradox (\S\ref{sec:paradox}) motivates; the decompos
 closure-fidelity axis, \S\ref{sec:measure}); the compensating-surrogate mechanism
 (\S\ref{sec:surrogate}) explains the end-to-end/low-fidelity corner where grounding hurts. The
 remaining sections---the
-synthetic dial (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), the pKa closure
-(\S\ref{sec:pka}), and the data-efficiency null (\S\ref{sec:data-efficiency})---stress-test and
+synthetic dial (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa
+closure (\S\ref{sec:pka})---stress-test and
 generalize the account, with further diagnostics in the ESI.
 
 \begin{table}[t]
@@ -874,8 +868,6 @@ estimate, is the binding constraint.
 
 \input{sections/pka-domain}
 
-\input{sections/data-efficiency}
-
 \section{Discussion}
 \label{sec:discussion}
 The result is a cautionary measurement for physics-informed modeling: grounding a
@@ -900,9 +892,7 @@ model trails the matched black box on the full corpus (and the external state-of
 FastSolv and SolProp retrained on our corpus, does no better---though on a by-solute split that
 bounds task difficulty rather than ranking head-to-head; App.~\ref{sec:si-baselines}), a
 (dose-limited) attempt to ground the crystal factor on external labels did not move the ceiling
-(\S\ref{sec:e2}, inconclusive), and---in the case built to favour a physics prior---it loses at
-\emph{every} training-data fraction, including the low-data regime where an inductive bias should
-help most (\S\ref{sec:data-efficiency}). The one axis on which the physical \emph{structure} does
+(\S\ref{sec:e2}, inconclusive). The one axis on which the physical \emph{structure} does
 help is temperature extrapolation---but as a hypothesis-class property that the trained models do
 not exploit (\S\ref{sec:supporting}), a partial counterexample we flag rather than hide. Read
 together these point to a \emph{structural} ceiling: the crystal/activity split is
@@ -943,13 +933,12 @@ asymptotically-Bayes control, otherwise read off the large-$n$ asymptote); both 
 largest at small $n$ and vanishes as data accumulate or as the black box nears the aleatoric
 floor, whereas $\Delta_\infty$ is set by the closure and does not. A prior is therefore
 predicted to hurt precisely in the mature-data, low-noise, well-covered regime---exactly where
-our data-efficiency null (a positive tax at every budget, \S\ref{sec:data-efficiency}) and the
-novelty inversion (the tax heaviest on the best-covered solutes, \S\ref{sec:map}) place this
+the novelty inversion (the tax heaviest on the best-covered solutes, \S\ref{sec:map}) places this
 system, and where much of modern machine learning operates. The synthetic dial (\S\ref{sec:dial})
 and the pKa closure (\S\ref{sec:pka}) trace the two axes---closure fidelity and
 intermediate sufficiency---directly. We claim no universal boundary; we \emph{propose}, but do not here cleanly validate, a diagnostic for the sign of the physics tax:
 measure $\Bclos$ through the decomposition, read $\Delta_\infty$ off the large-$n$ asymptote, and
-the sign should follow---a prediction our own tests (single-seed, under-converged; \S\ref{sec:data-efficiency}) support only weakly. In this sense the failure is not idiosyncratic to
+the sign should follow, though we do not cleanly validate it here. In this sense the failure is not idiosyncratic to
 solubility; it recurs whenever a misspecified closure is coupled to an expressive encoder on
 abundant, low-noise data.
 

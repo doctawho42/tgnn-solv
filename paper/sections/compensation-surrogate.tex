@@ -57,8 +57,10 @@ measured at infinite dilution, where $\partial\Gamma_{S,\mathrm{mix}}/\partial\s
 by the dilution limit, so the low rank may be a property of that limit rather than of the map, and its
 transfer to the finite-composition regime that actually generates the drift (the SLE solves $x_2$ at
 saturation) is \emph{not} established---the same scope gap we flag for $\Bclos$ (\S\ref{sec:measure}). So
-activity under-determines $\sigma$ at infinite dilution, measured where the latent has an external reference;
-we do not claim recovery is impossible in principle.
+activity under-determines $\sigma$ at infinite dilution, measured where the latent has an external
+reference---itself \emph{computed} (VT-2005 quantum chemistry), not experimental. The under-determined
+directions can be pinned only by external information, and here that information is quantum-chemical, not
+measured; we do not claim recovery is impossible in principle.
 
 \paragraph{The drift is not the closure's first-order inverse.} One might hope the drift is the closure's
 linear-response inverse, $\hat\sigma-\sigma\approx J^{+}(m-g(\sigma))$, with $J=\partial g/\partial\sigma$ the
@@ -76,14 +78,14 @@ under-determination above, not the geometry of the drift.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.98\linewidth]{figs/fig_picard_test.pdf}
-\caption{The measured drift does not match the closure's \emph{signed} first-order inverse. \emph{Left:}
-the per-molecule cosine between the measured drift $\hat\sigma-\sigma$ and the first-order closure
-compensation $J^{+}(m-g)$ is centred on zero (median $-0.00$). \emph{Middle, Right:} a wrong-molecule
-control and the best-aligned exemplar, shown for completeness; on the sparse matched set (median one pair
-per molecule, so a one-dimensional per-molecule Jacobian subspace) these dimension-matched controls are
-uninformative---a resolved direction common across molecules makes the ``own'' and ``other'' subspaces
-coincide---so we do not lean on them. The signed misalignment is the claim; the drift's geometry is not.}
+\includegraphics[width=0.56\linewidth]{figs/fig_picard_test.pdf}
+\caption{The measured drift does not match the closure's \emph{signed} first-order inverse: the
+per-molecule cosine between the measured drift $\hat\sigma-\sigma$ and the first-order closure compensation
+$J^{+}(m-g)$ is centred on zero (median $-0.00$). We report this as a signed negative only. On the sparse
+matched set (median one pair per molecule, hence a one-dimensional per-molecule Jacobian subspace) the
+dimension-matched controls we ran are uninformative---a resolved direction common across molecules makes a
+molecule's ``own'' and ``other'' subspaces coincide---so we do not lean on the drift's geometry
+(App.~\ref{sec:si-failed-diagnostics}).}
 \label{fig:picard}
 \end{figure}
 
