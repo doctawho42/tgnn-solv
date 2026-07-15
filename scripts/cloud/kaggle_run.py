@@ -129,19 +129,10 @@ def do_dataeff_converged(out: Path, device: str, deadline_s: float,
             sub_csv = sub / f"train_s{seed}_f{frac}.csv"; sdf.to_csv(sub_csv, index=False)
             rec: dict = {"seed": seed, "frac": frac, "rows": n_rows}
 
-            # --- DirectGNN control (native --epochs / --batch-size / --num-workers) ---
-            dck = ck / f"direct_s{seed}_f{frac}.pt"; dpred = de / f"direct_s{seed}_f{frac}.csv"
-            run(["python", "scripts/train_directgnn.py", "--config", DIR,
-                 "--train-data", sub_csv, "--val-data", DATA / "val.csv", "--test-data", DATA / "test.csv",
-                 "--checkpoint", dck, "--device", device, "--seed", seed, "--epochs", direct_epochs,
-                 *(["--batch-size", _BATCH] if _BATCH else []),
-                 *(["--num-workers", _WORKERS] if _WORKERS else [])])
-            run(["python", "scripts/analysis/export_checkpoint_predictions.py",
-                 "--checkpoint", dck, "--data", DATA / "test.csv", "--output", dpred,
-                 "--model-type", "direct", "--device", device])
-            rec["direct"] = _read_metrics(dpred)
-
-            # --- physics-grounded arm (train.py: --epochs-phase{1,2,3}, batch via --set) ---
+            # --- physics-grounded arm FIRST: it is the at-risk arm (the whole question is
+            #     whether IT converges), so its signal should land earliest.
+            #     train.py: --epochs-phase{1,2,3}; batch via --set. ---
+            print(f"\n=== seed {seed} frac {frac} [{n_rows} rows] :: [1/2] PHYSICS-GROUNDED (train.py) ===", flush=True)
             tp = time.time()
             pck = ck / f"physics_s{seed}_f{frac}.pt"; ppred = de / f"physics_s{seed}_f{frac}.csv"
             run(["python", "scripts/train.py", "--config", PHYS,
@@ -159,6 +150,20 @@ def do_dataeff_converged(out: Path, device: str, deadline_s: float,
             rec["physics"] = _read_metrics(ppred)
             rec["physics_wall_min"] = round(dt / 60, 1)
             run(["python", str(AUDIT), "--checkpoints", str(pck)])   # inline PLATEAUED / CAP-HIT verdict
+
+            # --- matched DirectGNN control SECOND (the comparison needs both arms).
+            #     train_directgnn.py: native --epochs / --batch-size / --num-workers. ---
+            print(f"\n=== seed {seed} frac {frac} [{n_rows} rows] :: [2/2] DirectGNN control (matched baseline) ===", flush=True)
+            dck = ck / f"direct_s{seed}_f{frac}.pt"; dpred = de / f"direct_s{seed}_f{frac}.csv"
+            run(["python", "scripts/train_directgnn.py", "--config", DIR,
+                 "--train-data", sub_csv, "--val-data", DATA / "val.csv", "--test-data", DATA / "test.csv",
+                 "--checkpoint", dck, "--device", device, "--seed", seed, "--epochs", direct_epochs,
+                 *(["--batch-size", _BATCH] if _BATCH else []),
+                 *(["--num-workers", _WORKERS] if _WORKERS else [])])
+            run(["python", "scripts/analysis/export_checkpoint_predictions.py",
+                 "--checkpoint", dck, "--data", DATA / "test.csv", "--output", dpred,
+                 "--model-type", "direct", "--device", device])
+            rec["direct"] = _read_metrics(dpred)
             dm, pm = rec["direct"], rec["physics"]
             rec["delta_mae"] = (round(pm["mae"] - dm["mae"], 4)
                                 if pm.get("mae") is not None and dm.get("mae") is not None else None)
@@ -349,6 +354,9 @@ def main():
     ap.add_argument("--deadline-hours", type=float, default=8.0,
                     help="wall-clock budget for dataeff_converged; it defers runs that will not finish "
                          "in time (leave ~1h margin below the Kaggle session limit for result packaging).")
+    ap.add_argument("--smoke", action="store_true",
+                    help="dataeff_converged only: one tiny point (seed 42, frac 0.05, 1-2 epochs/arm) to "
+                         "verify the whole pipeline end-to-end in ~2-3 min BEFORE spending real compute.")
     ap.add_argument("--out", type=Path, default=Path("/kaggle/working/results"))
     ap.add_argument("--device", default="cuda")
     # budgets (trim for a shorter session)
@@ -400,7 +408,10 @@ def main():
         "onemodel": lambda: do_onemodel(args.out / "compensation", args.device, args.warm, args.sle),
         "tier3":    lambda: do_tier3(args.out / "closure_fix", args.device, args.t3_ep1, args.t3_ep2, args.t3_ep3, args.t3_arm_ep2),
         "dataeff":  lambda: do_dataeff(args.out, args.device),
-        "dataeff_converged": lambda: do_dataeff_converged(args.out, args.device, args.deadline_hours * 3600.0),
+        "dataeff_converged": lambda: do_dataeff_converged(
+            args.out, args.device, args.deadline_hours * 3600.0,
+            **({"seeds": (42,), "fracs": (0.05,), "ep1": 1, "ep2": 2, "ep3": 1, "direct_epochs": 2}
+               if args.smoke else {})),
         "dosed":    lambda: do_dosed(args.out, args.device),
         "supervised_sigma": lambda: do_supervised_sigma(args.out / "supervised_sigma", args.device, args.warm, args.sle),
     }
