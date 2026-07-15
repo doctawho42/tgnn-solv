@@ -37,6 +37,27 @@ consistent with known cautions that the interpretability of physics-grounded lat
 under misspecification \cite{brynjarsdottir2014,takeishi2021}; what is
 specific here is the \emph{structure}---the surrogate is low-rank and transferable, not diffuse.
 
+\paragraph{How much room, and why $\sigma$ is unrecoverable in principle.} The freedom that makes the
+surrogate possible is the closure's own geometry, and it is extreme. Aggregating the activity Fisher
+information of the solute profile, $J^{\top}J$ with $J=\partial\lngi/\partial\sigma$, over $100$ VT-2005
+solutes $\times\,48$ solvents $\times$ two temperatures, the spectrum is essentially \emph{rank-one}: the
+participation ratio is $1.0$ and the second eigenvalue is below $0.2\%$ of the first, unchanged across
+composition ($\lngi$ and $x_2{=}0.1$), temperature, and projection onto the area-preserving
+subspace.\footnote{$J^{\top}J$ is the Gram of $\partial\lngi/\partial\sigma_{\text{solute}}$ (autograd;
+the solute-profile derivative is numerically stable, unlike the infinite-dilution solvent-profile
+derivative of the footnote below) over $100\times48\times2$ (solute, solvent, temperature) evaluations at
+real VT-2005 profiles: \texttt{run\_grounding\_budget\_t05\_real\_closure.py}.} Of the $51$
+$\sigma$-coordinates the activity map resolves ${\approx}1$ and is blind to the rest. So the end-to-end
+head is unconstrained in ${\sim}50$ directions---free to drift from the true profile at no cost to the
+fit---while the single resolved direction is set by the misspecified closure's demand rather than by
+physics; and the true $\sigma$ is unrecoverable from the pipeline not merely in practice but \emph{by
+construction}, since fifty of fifty-one profile directions leave no trace in the observable. The one
+resolved direction concentrates on the hydrogen-bonding bins ($\sigma\!\approx\!\pm\sigma_{\mathrm{hb}}$):
+activity's sole handle on the profile is its HB content---the same regime in which the closure is least
+faithful and the solvent-resolved physics tax is largest (\S\ref{sec:map}). This directly measures the
+under-determination this section rests on, and sharpens the conclusion below to its limit: even the
+closure's \emph{own} inverse cannot recover $\sigma$, because there is almost nothing there to invert.
+
 \paragraph{The structure is not the closure's linear response.} A natural hope is that this
 structure is simply the closure's first-order inverse: the smallest input change that cancels the
 closure's discrepancy, $\hat\sigma-\sigma\approx J^{+}\,(m-g(\sigma))$, with $J=\partial g/\partial\sigma$
