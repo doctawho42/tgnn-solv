@@ -162,17 +162,14 @@ frame.
   attribution self-dissolves, locating it in the 2002 single-parameter H-bond kernel specifically, and
   the actionable lesson is to raise closure fidelity, not enrich the inputs. (We do \emph{not} claim
   the inputs then bind: that would need a lower bound on $\Binsuf$, which we lack.)  (\S\ref{sec:measure})
-  \item \textbf{A negative actionability result.} A post-hoc
-  output-space residual placed on the physics prediction recovers calibration but
-  not accuracy; the closure binding cannot be undone downstream
-  (\S\ref{sec:gateb}).
-  \item \textbf{A broad, explained negative.} The physics prior does not beat a
-  matched black box on accuracy at any training-data budget---including the low-data
-  regime where an inductive bias should help most (\S\ref{sec:data-efficiency})---nor, as a
-  trained model, on temperature (though the physical hypothesis \emph{class} does extrapolate
-  there, \S\ref{sec:supporting}); read against the lemmas and the closure measurement, this
-  points to a \emph{structural} ceiling within this closure family rather than an incidental
-  one (\S\ref{sec:discussion}). We make no accuracy claim.
+  \item \textbf{Two negatives, one structural reading.} A post-hoc output-space residual on the
+  physics prediction recovers calibration but not accuracy---the closure binding cannot be undone
+  downstream (\S\ref{sec:gateb}); and the physics prior does not beat a matched black box on accuracy
+  at any training-data budget---including the low-data regime where an inductive bias should help most
+  (\S\ref{sec:data-efficiency})---nor, as a trained model, on temperature (though the physical
+  hypothesis \emph{class} does extrapolate there, \S\ref{sec:supporting}). Read against the lemmas and
+  the closure measurement, these point to a \emph{structural} ceiling within this closure family rather
+  than an incidental one (\S\ref{sec:discussion}). We make no accuracy claim.
   \item \textbf{A general account, and honest scoping.} The method is not tied to
   COSMO-SAC: it is stated for any composed predictor $\hat y=g(h(x))$ with a fixed closure
   $g$ over a learned intermediate. We prove three structural lemmas
@@ -749,8 +746,10 @@ leave-one-solvent-out ($17/17$ folds), leave-one-solute-out ($40/41$), leave-one
 ($60/60$), and adversarial deletion of the eight highest-error pairs. For confidence, a single-axis
 solvent-clustered bootstrap gives $P(\Bclos>\Binsuf)\approx0.89$; a two-way (solute$\times$solvent)
 cluster bootstrap that also charges for repeated solutes lowers this to $P\approx0.78$ with a $90\%$
-margin spanning zero---so we present the separation as a \emph{supporting} measurement, likely but
-not certified at conventional confidence, not a stand-alone certificate. Two further checks live in
+margin spanning zero. With only $17$ solvent and $41$ solute clusters this is the small-$G$ regime,
+where cluster-bootstrap coverage is itself optimistic, so we read these figures as a coarse band (mid
+$0.7$s to high $0.8$s) rather than to two decimals---and present the separation as a \emph{supporting}
+measurement, likely but not certified at conventional confidence, not a stand-alone certificate. Two further checks live in
 App.~\ref{sec:si-tables}: stratifying by $\lngi$, the closure bound rises with $\gamma$
 ($0.95\to2.69$, though thinly and estimator-dependently); and under the full COSMO-SAC convention the
 assumption-free constant-offset (Jensen) bound also separates ($\Bclos\ge0.72>0.62$), whereas it
@@ -805,12 +804,17 @@ closures built for exactly that defect. We run the NIST reference implementation
 (donor/acceptor-typed HB) and -dsp on the same matched pairs, now under the reference Delaware (UD)
 $3$-profile database---on which the reference 2002 map scores $\mathrm{MSE}=1.26$, against $1.47$ for
 our deployed residual-only layer on the VT-2005 profiles used elsewhere. The better-parameterized
-closures cut the error to $\mathrm{MSE}=0.77$ (2010) / $0.79$ (dsp, $n{=}57$): a ${\sim}70\%$ reduction of $\Bclos$
-($0.70\to0.20$ at point) against the unchanged $\Binsuf$ floor. Under two-way
-solute$\times$solvent clustering this \emph{dissolves the closure-dominance verdict}---$P\approx0.79$
-that $\Bclos$ no longer exceeds $\Binsuf$ (the near-mirror of the $P\approx0.78$ that it \emph{does}
-bind under 2002: same clustering, opposite verdicts, hence the near-identical numbers pointing in
-opposite directions). We do \emph{not} claim a flip to the inputs: we hold only an \emph{upper} bound
+closures cut the error to $\mathrm{MSE}=0.77$ (2010) / $0.79$ (dsp, $n{=}57$). The cleanest read is the
+\emph{same-database} contrast, which holds the latent $\zstar$ fixed and is therefore
+insufficiency-free by construction: on the identical UD $3$-profiles, swapping the 2002 kernel for
+2010 cuts the error from $\mathrm{MSE}=1.26$ to $0.77$, a ${\sim}70\%$ drop attributable to the closure
+alone. Charging that against the $\Binsuf$ floor, this \emph{dissolves the closure-dominance
+verdict}---$P\approx0.79$ under two-way solute$\times$solvent clustering that $\Bclos$ no longer exceeds
+$\Binsuf$, the near-mirror of the $P\approx0.78$ that it \emph{does} bind under 2002 (same clustering,
+opposite verdicts). This last step charges a UD-based error against a $\Binsuf$ estimated on the
+VT-2005 latent used elsewhere, so we read the dissolution as directional rather than exact---though a
+richer $3$-profile latent would if anything \emph{lower} $\Binsuf$, reinforcing rather than weakening
+the closure attribution. We do \emph{not} claim a flip to the inputs: we hold only an \emph{upper} bound
 on $\Binsuf$, so ``the inputs bind'' would require a lower bound we do not have---what the modern
 closure establishes is only that our own 2002 attribution no longer holds. The decision-relevant
 reading is thus not ``the closure always dominates'' but ``on the low-fidelity 2002 closure it does, and the

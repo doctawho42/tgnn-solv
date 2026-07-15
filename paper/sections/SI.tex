@@ -171,7 +171,12 @@ $\Binsuf$ upper bounds of Table~\ref{tab:decomp} are $0.40$ ($k$-NN), $0.62$ (bi
 $\Bclos>\Binsuf$ (equivalently $\Binsuf<\mathrm{MSE}/2=0.74$) holds under \emph{all four}. The local
 $k$-NN value is the smallest and hence the \emph{least} conservative input to
 $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$, so we headline the leakage-immune LOTV bound rather than
-it. The sole non-certifying configuration is a deliberately more aggressive ridge regularization,
+it. The LOTV bound bins $g(\zstar)$, so like any plug-in within-bin variance it is finite-sample
+downward-biased when points per bin are few (the mechanism we flag for the thin high-$\gamma$ strata
+below), which would \emph{inflate} $\Bclos$ favourably; the two non-binning upper bounds---random
+forest ($0.56$) and ridge out-of-fold ($0.62$)---are immune to that per-bin sparsity and reproduce the
+$0.62$ value, so the headline separation does not rest on the binning estimator's finite-sample
+behaviour. The sole non-certifying configuration is a deliberately more aggressive ridge regularization,
 which lifts $\Binsuf$ to $0.88$ (then $\Bclos\ge0.59<0.88$)---a sensitivity edge, not a refutation,
 consistent with the clustered-bootstrap ``likely but not certified'' reading below. \emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the
 verdict holds in \emph{all} $17$ folds under the law-of-total-variance bound; under the
@@ -188,6 +193,10 @@ $\Bclos$ lower bound has median $0.93$ (CI$_{90}$ $[0.40,\,1.62]$) and the certi
 $\Bclos-\Binsuf$ has median $0.36$ (CI$_{90}$ $[-0.22,\,+0.97]$), with $P(\Bclos>\Binsuf)\approx0.89$
 (solvent-clustered, single-axis; the more conservative two-way solute$\times$solvent bootstrap that
 also charges for repeated solutes gives $\approx0.78$, the value the main text headlines).
+With only $G=17$ solvent (and $41$ solute) clusters this sits in the small-$G$ regime, where
+cluster-bootstrap interval coverage is known to be optimistic; the finite-cluster correction points
+the same way we already conclude---less confidence, hence non-certification---so we treat the $P$
+values as a coarse band, not two-decimal quantities.
 The separation is therefore \emph{likely} but not certified at the $90\%$ level---consistent with
 the earlier $\approx0.85$ figure (hedge~3)---which is why the main text treats it as supporting
 rather than decisive.
