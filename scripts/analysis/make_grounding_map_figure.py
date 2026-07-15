@@ -42,7 +42,7 @@ def anchor(x, y, label, sub, dx=8, dy=8, ha="left", va="bottom"):
 # ours: end-to-end sigma, low-fidelity 2002 closure -> hurts (the grounding paradox)
 anchor(0.13, 0.17, "Ours (end-to-end $\\hat\\sigma$,", "COSMO-SAC-2002) $\\to$ hurts", dx=12, dy=6)
 # closure-fidelity axis: 2010/dsp on true inputs -> crosses the boundary (verdict flips)
-anchor(0.14, 0.80, "COSMO-SAC-2010/dsp", "(true inputs) $\\to$ flips to inputs", dx=12, dy=6)
+anchor(0.14, 0.80, "COSMO-SAC-2010/dsp", "(true inputs) $\\to$ flips to helps", dx=12, dy=6)
 arr = FancyArrowPatch((0.135, 0.24), (0.14, 0.73), arrowstyle="-|>", mutation_scale=14,
                       color="#4A806F", lw=1.8, zorder=4)
 ax.add_patch(arr)
