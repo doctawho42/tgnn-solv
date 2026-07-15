@@ -263,6 +263,10 @@ def make_figures(dial: list[DialRecord], conf: list[ConflationRecord], fig_dir: 
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from pathlib import Path as _Path
+    _st = _Path.home() / ".claude/skills/repo-to-paper/assets/softpastel.mplstyle"
+    if _st.exists():
+        plt.style.use(str(_st))
 
     fig_dir.mkdir(parents=True, exist_ok=True)
     written: list[str] = []
@@ -271,12 +275,14 @@ def make_figures(dial: list[DialRecord], conf: list[ConflationRecord], fig_dir: 
     fams = sorted({r.family for r in dial})
     Fs = sorted({r.fidelity for r in dial}, reverse=True)
     fig, ax = plt.subplots(figsize=(6.0, 4.2))
+    pretty = {"linear": "linear", "monotone_nonlinear": "monotone nonlinear",
+              "kinetics_exp": "kinetics (exp.)", "pde_field": "PDE field"}
     for fam in fams:
         ys = []
         for F in Fs:
             vals = [r.delta_r2 for r in dial if r.family == fam and r.fidelity == F]
             ys.append(np.mean(vals))
-        ax.plot(Fs, ys, marker="o", label=fam)
+        ax.plot(Fs, ys, marker="o", label=pretty.get(fam, fam.replace("_", " ")))
     ax.axhline(0, color="0.6", lw=0.8, ls="--")
     ax.set_xlabel("closure fidelity  F   (1 = exact map)")
     ax.set_ylabel(r"true-input penalty  $\Delta R^2 = R^2_{\rm oracle}-R^2_{\rm head}$")
@@ -286,7 +292,7 @@ def make_figures(dial: list[DialRecord], conf: list[ConflationRecord], fig_dir: 
     fig.tight_layout()
     for ext in ("pdf", "png"):
         p = fig_dir / f"fig_fidelity_dial.{ext}"
-        fig.savefig(p, dpi=150)
+        fig.savefig(p, dpi=150, bbox_inches="tight")
         written.append(str(p))
     plt.close(fig)
 
@@ -307,14 +313,14 @@ def make_figures(dial: list[DialRecord], conf: list[ConflationRecord], fig_dir: 
     axes[1].plot([r.knob for r in av], [r.b_clos for r in av], marker="s", label=r"$B_{\rm clos}$ (=0, well-spec.)")
     axes[1].plot([r.knob for r in av], [r.gamma for r in av], marker="o", label=r"$\Gamma$ (oracle gap)")
     axes[1].axhline(0, color="0.6", lw=0.8, ls="--")
-    axes[1].set_xlabel("fraction of target variance discarded by bottleneck")
+    axes[1].set_xlabel("fraction of target variance discarded")
     axes[1].set_ylabel("risk units")
     axes[1].set_title("A2 violated, closure well-specified:\n$B_{\\rm clos}=0$ yet $\\Gamma>0$ (Counterexample A)")
     axes[1].legend(fontsize=8)
     fig.tight_layout()
     for ext in ("pdf", "png"):
         p = fig_dir / f"fig_grounding_conflation.{ext}"
-        fig.savefig(p, dpi=150)
+        fig.savefig(p, dpi=150, bbox_inches="tight")
         written.append(str(p))
     plt.close(fig)
     return written

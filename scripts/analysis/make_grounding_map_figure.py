@@ -29,7 +29,7 @@ bx = np.linspace(0, 0.85, 100)
 ax.plot(bx, 0.85 - bx, color=INK, lw=1.4, ls="--", alpha=0.7)
 ax.text(0.50, 0.07, "grounding hurts", color="#B5654A", fontsize=13, ha="center", va="bottom", fontweight="bold")
 ax.text(0.72, 0.94, "grounding helps", color="#4A806F", fontsize=13, ha="center", va="top", fontweight="bold")
-ax.text(0.60, 0.32, r"physics-tax $\mathcal{T}=0$", color=INK, fontsize=8.5, rotation=-38, alpha=0.7)
+ax.text(0.79, 0.13, r"physics-tax $\mathcal{T}=0$", color=INK, fontsize=8.5, rotation=-38, alpha=0.7)
 
 def anchor(x, y, label, sub, dx=8, dy=8, ha="left"):
     ax.scatter([x], [y], s=95, color=INK, zorder=5, edgecolor="white", linewidth=1.1)
@@ -47,13 +47,13 @@ ax.add_patch(arr)
 ax.text(0.155, 0.47, "raise closure\nfidelity", color="#4A806F", fontsize=8.5, va="center")
 # latent-supervision axis: TeNNet supervised sigma -> helps
 anchor(0.80, 0.35, "TeNNet-SAC", "(supervised $\\sigma$) $\\to$ helps", dx=-8, dy=8, ha="right")
-arr2 = FancyArrowPatch((0.22, 0.20), (0.70, 0.33), arrowstyle="-|>", mutation_scale=14,
+arr2 = FancyArrowPatch((0.27, 0.28), (0.66, 0.36), arrowstyle="-|>", mutation_scale=14,
                        color="#4A806F", lw=1.8, zorder=4)
 ax.add_patch(arr2)
-ax.text(0.46, 0.20, "supervise the latent", color="#4A806F", fontsize=8.5, ha="center")
+ax.text(0.47, 0.375, "supervise the latent", color="#4A806F", fontsize=8.5, ha="center", va="bottom")
 # synthetic dial: swept closure fidelity
 ax.plot([0.40, 0.40], [0.10, 0.90], color=INK, lw=1.0, ls=":", alpha=0.5)
-ax.text(0.415, 0.90, "synthetic\nfidelity dial", color=INK, fontsize=8, va="top", alpha=0.7)
+ax.text(0.405, 0.985, "synthetic fidelity dial", color=INK, fontsize=8, va="top", ha="center", alpha=0.7)
 
 ax.set_xlim(0, 1); ax.set_ylim(0, 1)
 ax.set_xlabel("latent supervision  (end-to-end $\\to$ supervised toward truth)", fontsize=11)

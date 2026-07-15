@@ -84,7 +84,7 @@ def _save(fig, out_dir: Path, stem: str) -> list[str]:
 def fig_paradox(e5_dir: Path, seeds, out_dir: Path) -> list[str]:
     arms = ["nrtl", "directgnn", "ungrounded", "grounded_a", "grounded_b", "oracle"]
     labels = ["NRTL", "DirectGNN", "ungrounded", "grounded (learn $\\sigma$)",
-              "+comb. (gr. B)", "$\\sigma$-oracle (true $\\sigma$)"]
+              "grounded (+comb.)", "$\\sigma$-oracle (true $\\sigma$)"]
     mae = {a: [] for a in arms}
     r2 = {a: [] for a in arms}
     for s in seeds:
@@ -164,12 +164,12 @@ def fig_decomposition(decomp_json: Path, out_dir: Path) -> list[str]:
     }
     max_upper = max(uppers.values())
 
-    fig, ax = plt.subplots(figsize=(8.4, 3.6))
+    fig, ax = plt.subplots(figsize=(8.8, 4.3))
     # salmon region = every valid B_insuff upper bound; teal region = certified closure share
     ax.axvspan(0, max_upper, color=SALMON, alpha=0.22, zorder=0)
     ax.axvspan(b_clos_lb, mse, color=TEAL, alpha=0.20, zorder=0)
     # B_insuff estimators as points on one row
-    ys = np.linspace(0.60, 0.92, len(uppers))
+    ys = np.linspace(0.50, 0.80, len(uppers))
     for (name, val), y in zip(uppers.items(), ys):
         ax.scatter(val, y, s=70, color=SALMON, edgecolor=INK, linewidth=0.6, zorder=3)
         ax.annotate(f"{name} = {val:.2f}", (val, y), xytext=(6, 0),
@@ -195,8 +195,8 @@ def fig_decomposition(decomp_json: Path, out_dir: Path) -> list[str]:
     ax.set_xlabel("error magnitude  ($\\ln\\gamma$ units$^2$)")
     ax.set_title("Closure–insufficiency bounds, deployed residual-only COSMO-SAC ($n{=}60$): "
                  "$B_{\\rm closure}$ dominates (leakage-immune bound)")
-    ax.text(max_upper / 2, 0.965, "$B_{\\rm insuff}$ upper bounds",
-            ha="center", va="top", fontsize=9, color="#B5654A")
+    ax.text(max_upper / 2, 0.94, "$B_{\\rm insuff}$ upper bounds",
+            ha="center", va="bottom", fontsize=9, color="#B5654A")
     fig.tight_layout()
     return _save(fig, out_dir, "fig_decomposition")
 
