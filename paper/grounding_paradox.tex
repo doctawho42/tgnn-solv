@@ -463,7 +463,7 @@ restoring the physically \emph{more} complete Staverman--Guggenheim combinatoria
 error---what a wrong map does, not what a missing input would. Second, on the activity
 target ($\lngi$, $n{=}60$ matched pairs) the fixed reference-input closure sits about $4\times$
 above the irreducible-variance floor a flexible regressor reaches (\S\ref{sec:measure}),
-under-predicting $\lngi$ with a systematic bias (Fig.~\ref{fig:parity}). The paradox survives three controls---the evaluation-time
+under-predicting $\lngi$ with a systematic bias (SI, Fig.~\ref{fig:parity}). The paradox survives three controls---the evaluation-time
 oracle, injection of the reference profile \emph{at training} (MAE $1.98$), and a channel-swap
 ($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring artifact.
 
@@ -481,19 +481,6 @@ by MAE the model predicts solubility distinctly better from its invented $\sigma
 ($1.85$) than from the reference one ($2.25$). Per-arm exact values are transcribed
 in the SI.}
 \label{fig:paradox}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.72\linewidth]{figs/fig_parity.pdf}
-\caption{Activity-coefficient parity on the $n{=}60$ matched pairs. The reference-$\sigma$
-COSMO-SAC closure $g(\zstar)$ (salmon) falls systematically below the diagonal at
-larger $\lngi$, under-predicting the activity coefficient (MSE $1.80$, full
-convention). This systematic downward bias is the visible form of the decoder
-misspecification $\Bclos$; for reference a flexible regressor of $\lngi$ on the same
-reference profiles reaches the irreducible-variance floor (MSE $\approx0.40$, our $\Binsuf$
-estimator; \S\ref{sec:measure}), so the closure's excess over that floor is $\Bclos$.}
-\label{fig:parity}
 \end{figure}
 
 \subsection{The closure-fidelity axis: locating the ceiling, and moving it}
@@ -740,7 +727,7 @@ physics-tax sign $\mathcal{T}=0$ (Prop.~\ref{prop:tax}); only the fidelity axis 
 \end{figure}
 
 \paragraph{When a fixed-closure prior helps versus hurts.} The tax rule (Prop.~\ref{prop:tax}) turns
-these negatives into a phase picture rather than a single verdict (Fig.~\ref{fig:phase}), and says
+these negatives into a phase picture rather than a single verdict (SI, Fig.~\ref{fig:phase}), and says
 \emph{when} to expect them. A fixed-closure prior helps only when the estimation variance it saves exceeds its
 asymptotic bias $\Delta_\infty$ (equal to $\Bclos-\Gamma$ only under A2 with an
 asymptotically-Bayes control, otherwise read off the large-$n$ asymptote); both are measurable. The variance benefit is
@@ -766,17 +753,6 @@ the sign should follow. In this sense the failure is not idiosyncratic to
 solubility; it recurs whenever a misspecified closure is coupled to an expressive encoder on
 abundant, low-noise data.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.82\linewidth]{figs/fig_phase.pdf}
-\caption{\textbf{When a fixed-closure prior helps versus hurts (conceptual).} The physics tax
-$\mathcal{T}=\Delta_\infty-(\text{variance saved})$ is negative (helps) only below the $\mathcal{T}=0$
-diagonal; the variance saving shrinks as $n$ grows, so systems drift left. Solubility/COSMO-SAC sits
-deep in ``hurts'' and moves further with more data; pKa via a Hammett closure \emph{straddles} the
-diagonal (helps in meta/para, hurts in ortho; \S\ref{sec:pka}); the synthetic dial climbs out of
-``helps'' as fidelity falls. Only the sign is measured, not the boundary.}
-\label{fig:phase}
-\end{figure}
 
 \paragraph{Limitations.} (i)~$\Binsuf$ is upper-bounded, not point-identified (no replicates at fixed
 $\zstar$); the smoothness-free Jensen bound assumes $m$ and $g$ share the $\lngi$ reference state,

@@ -54,7 +54,7 @@ impossible in principle.
 linear-response inverse, $\hat\sigma-\sigma\approx J^{+}(m-g(\sigma))$, with $J=\partial g/\partial\sigma$ the
 closure Jacobian and $m$ the observed \lngi---predictable a priori from $J$, before any solubility training.
 It is not: on the matched set the measured per-molecule drift shows no signed alignment with $J^{+}(m-g)$
-(median cosine $-0.00$; Fig.~\ref{fig:picard}).\footnote{The residual COSMO-SAC closure runs a segment-activity
+(median cosine $-0.00$; SI, Fig.~\ref{fig:picard}).\footnote{The residual COSMO-SAC closure runs a segment-activity
 fixed-point iteration, so its autograd Jacobian is numerically unstable
 ($\lVert\partial g/\partial\sigma_{\text{solvent}}\rVert\!\sim\!10^{15}$ at infinite dilution); $J$ is
 computed by finite differences on the converged closure.} We report this as a negative on the \emph{signed}
@@ -63,19 +63,6 @@ each per-molecule Jacobian subspace is one-dimensional---which makes the dimensi
 uninformative here: with a resolved direction common across molecules, a molecule's ``own'' and ``other''
 subspaces coincide, so their near-equality carries no signal. The load-bearing claim is the
 under-determination above, not the geometry of the drift.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.56\linewidth]{figs/fig_picard_test.pdf}
-\caption{The measured drift does not match the closure's \emph{signed} first-order inverse: the
-per-molecule cosine between the measured drift $\hat\sigma-\sigma$ and the first-order closure compensation
-$J^{+}(m-g)$ is centred on zero (median $-0.00$). We report this as a signed negative only. On the sparse
-matched set (median one pair per molecule, hence a one-dimensional per-molecule Jacobian subspace) the
-dimension-matched controls we ran are uninformative---a resolved direction common across molecules makes a
-molecule's ``own'' and ``other'' subspaces coincide---so we do not lean on the drift's geometry
-(App.~\ref{sec:si-failed-diagnostics}).}
-\label{fig:picard}
-\end{figure}
 
 \paragraph{The contrast that fixes the sign, and how the axes interact.} The sign of grounding is not
 universal, and it turns on \emph{both} axes. On our own model, holding the $\sigma$ head at its

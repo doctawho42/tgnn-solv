@@ -215,6 +215,18 @@ $\mathcal{T}(n)\to\Delta_\infty\ge0$. When the control is asymptotically Bayes (
 by \eqref{eq:gap}.
 \end{proof}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{figs/fig_phase.pdf}
+\caption{\textbf{When a fixed-closure prior helps versus hurts (conceptual).} The physics tax
+$\mathcal{T}=\Delta_\infty-(\text{variance saved})$ is negative (helps) only below the $\mathcal{T}=0$
+diagonal; the variance saving shrinks as $n$ grows, so systems drift left. Solubility/COSMO-SAC sits
+deep in ``hurts'' and moves further with more data; pKa via a Hammett closure \emph{straddles} the
+diagonal (helps in meta/para, hurts in ortho; \S\ref{sec:pka}); the synthetic dial climbs out of
+``helps'' as fidelity falls. Only the sign is measured, not the boundary.}
+\label{fig:phase}
+\end{figure}
+
 \section{Per-arm tables and decomposition robustness}
 \label{sec:si-tables}
 Table~\ref{tab:si-arms} gives the exact per-arm metrics behind
@@ -316,6 +328,19 @@ high $\gamma$ ($m>1.5$)      & $17$ & $+2.94$ & $0.67$ & $2.69$ \\
 The closure/insufficiency decomposition (full/res conventions; law-of-total-variance (LOTV), random-forest (RF), ridge, and
 k\textsc{nn} estimators; solvent-clustered bootstrap; the pyridine stratum) is
 tabulated in \S\ref{sec:measure}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\linewidth]{figs/fig_parity.pdf}
+\caption{Activity-coefficient parity on the $n{=}60$ matched pairs. The reference-$\sigma$
+COSMO-SAC closure $g(\zstar)$ (salmon) falls systematically below the diagonal at
+larger $\lngi$, under-predicting the activity coefficient (MSE $1.80$, full
+convention). This systematic downward bias is the visible form of the decoder
+misspecification $\Bclos$; for reference a flexible regressor of $\lngi$ on the same
+reference profiles reaches the irreducible-variance floor (MSE $\approx0.40$, our $\Binsuf$
+estimator; \S\ref{sec:measure}), so the closure's excess over that floor is $\Bclos$.}
+\label{fig:parity}
+\end{figure}
 
 \paragraph{The four hedges (full).} The adversarial audit could not invert the verdict
 but sharpened its scope:
@@ -441,6 +466,20 @@ per-pair mean                   & $1.46$ & $0.56$ & $0.01$ \\
 
 \subsection{Diagnostics that do not work, and why}
 \label{sec:si-failed-diagnostics}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.56\linewidth]{figs/fig_picard_test.pdf}
+\caption{The measured drift does not match the closure's \emph{signed} first-order inverse: the
+per-molecule cosine between the measured drift $\hat\sigma-\sigma$ and the first-order closure compensation
+$J^{+}(m-g)$ is centred on zero (median $-0.00$). We report this as a signed negative only. On the sparse
+matched set (median one pair per molecule, hence a one-dimensional per-molecule Jacobian subspace) the
+dimension-matched controls we ran are uninformative---a resolved direction common across molecules makes a
+molecule's ``own'' and ``other'' subspaces coincide---so we do not lean on the drift's geometry
+(this section).}
+\label{fig:picard}
+\end{figure}
+
 The instrument behind \S\ref{sec:surrogate}---the rank of the activity Fisher $J^{\top}J$
 ($J=\partial\lngi/\partial\sigma$), read as a participation ratio
 $\mathrm{PR}=(\sum_i\lambda_i)^2/\sum_i\lambda_i^2$---is cheap and oracle-free, which is its appeal for
