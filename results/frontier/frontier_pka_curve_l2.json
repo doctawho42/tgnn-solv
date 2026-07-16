@@ -1,0 +1,139 @@
+{
+  "config": {
+    "epochs": 150,
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "lambdas": [
+      0.0,
+      0.3,
+      1.0,
+      3.0,
+      10.0,
+      30.0,
+      100.0
+    ],
+    "hidden": 64,
+    "layers": 3
+  },
+  "strata": {
+    "meta/para (well-specified)": {
+      "n": 163,
+      "curve": [
+        {
+          "lambda": 0.0,
+          "P_mean": 0.3451,
+          "mae_mean": 1.9211,
+          "mae_sd": 0.9246,
+          "mse_mean": 7.9735
+        },
+        {
+          "lambda": 0.3,
+          "P_mean": 0.4351,
+          "mae_mean": 2.4189,
+          "mae_sd": 1.3443,
+          "mse_mean": 10.7446
+        },
+        {
+          "lambda": 1.0,
+          "P_mean": 0.31,
+          "mae_mean": 1.7964,
+          "mae_sd": 0.8185,
+          "mse_mean": 7.5099
+        },
+        {
+          "lambda": 3.0,
+          "P_mean": 0.2326,
+          "mae_mean": 1.3202,
+          "mae_sd": 0.5079,
+          "mse_mean": 5.6364
+        },
+        {
+          "lambda": 10.0,
+          "P_mean": 0.2361,
+          "mae_mean": 1.4041,
+          "mae_sd": 0.5643,
+          "mse_mean": 6.4088
+        },
+        {
+          "lambda": 30.0,
+          "P_mean": 0.2855,
+          "mae_mean": 1.5292,
+          "mae_sd": 0.5976,
+          "mse_mean": 6.9999
+        },
+        {
+          "lambda": 100.0,
+          "P_mean": 0.2884,
+          "mae_mean": 1.595,
+          "mae_sd": 0.5713,
+          "mse_mean": 7.5771
+        }
+      ],
+      "mae_oracle_laminf_P0": 0.9386,
+      "mse_oracle_laminf_P0": 6.8769,
+      "slope_S_mae": -5.3372,
+      "slope_S_mse": -22.5952
+    },
+    "ortho (misspecified)": {
+      "n": 1198,
+      "curve": [
+        {
+          "lambda": 0.0,
+          "P_mean": 0.3903,
+          "mae_mean": 1.355,
+          "mae_sd": 0.0864,
+          "mse_mean": 5.259
+        },
+        {
+          "lambda": 0.3,
+          "P_mean": 0.3677,
+          "mae_mean": 1.4343,
+          "mae_sd": 0.0836,
+          "mse_mean": 5.527
+        },
+        {
+          "lambda": 1.0,
+          "P_mean": 0.3114,
+          "mae_mean": 1.4032,
+          "mae_sd": 0.2168,
+          "mse_mean": 4.7169
+        },
+        {
+          "lambda": 3.0,
+          "P_mean": 0.2651,
+          "mae_mean": 1.4936,
+          "mae_sd": 0.1379,
+          "mse_mean": 4.9177
+        },
+        {
+          "lambda": 10.0,
+          "P_mean": 0.1566,
+          "mae_mean": 1.8271,
+          "mae_sd": 0.1274,
+          "mse_mean": 6.1578
+        },
+        {
+          "lambda": 30.0,
+          "P_mean": 0.0962,
+          "mae_mean": 2.0524,
+          "mae_sd": 0.1805,
+          "mse_mean": 7.3151
+        },
+        {
+          "lambda": 100.0,
+          "P_mean": 0.0842,
+          "mae_mean": 2.12,
+          "mae_sd": 0.1833,
+          "mse_mean": 7.7441
+        }
+      ],
+      "mae_oracle_laminf_P0": 2.0372,
+      "mse_oracle_laminf_P0": 7.2723,
+      "slope_S_mae": 2.4774,
+      "slope_S_mse": 7.9256
+    }
+  }
+}
