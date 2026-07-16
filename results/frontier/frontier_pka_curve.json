@@ -1,0 +1,123 @@
+{
+  "config": {
+    "epochs": 150,
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "lambdas": [
+      0.0,
+      0.3,
+      1.0,
+      3.0,
+      10.0,
+      30.0,
+      100.0
+    ],
+    "hidden": 64,
+    "layers": 3
+  },
+  "strata": {
+    "meta/para (well-specified)": {
+      "n": 163,
+      "curve": [
+        {
+          "lambda": 0.0,
+          "P_mean": 0.3451,
+          "mae_mean": 1.9211,
+          "mae_sd": 0.9246
+        },
+        {
+          "lambda": 0.3,
+          "P_mean": 0.4351,
+          "mae_mean": 2.4189,
+          "mae_sd": 1.3443
+        },
+        {
+          "lambda": 1.0,
+          "P_mean": 0.31,
+          "mae_mean": 1.7964,
+          "mae_sd": 0.8185
+        },
+        {
+          "lambda": 3.0,
+          "P_mean": 0.2326,
+          "mae_mean": 1.3202,
+          "mae_sd": 0.5079
+        },
+        {
+          "lambda": 10.0,
+          "P_mean": 0.2361,
+          "mae_mean": 1.4041,
+          "mae_sd": 0.5643
+        },
+        {
+          "lambda": 30.0,
+          "P_mean": 0.2855,
+          "mae_mean": 1.5292,
+          "mae_sd": 0.5976
+        },
+        {
+          "lambda": 100.0,
+          "P_mean": 0.2884,
+          "mae_mean": 1.595,
+          "mae_sd": 0.5713
+        }
+      ],
+      "mae_oracle_laminf_P0": 0.9386,
+      "slope_S": -5.3372,
+      "slope_S_with_oracle": -3.2788
+    },
+    "ortho (misspecified)": {
+      "n": 1198,
+      "curve": [
+        {
+          "lambda": 0.0,
+          "P_mean": 0.3903,
+          "mae_mean": 1.355,
+          "mae_sd": 0.0864
+        },
+        {
+          "lambda": 0.3,
+          "P_mean": 0.3677,
+          "mae_mean": 1.4343,
+          "mae_sd": 0.0836
+        },
+        {
+          "lambda": 1.0,
+          "P_mean": 0.3114,
+          "mae_mean": 1.4032,
+          "mae_sd": 0.2168
+        },
+        {
+          "lambda": 3.0,
+          "P_mean": 0.2651,
+          "mae_mean": 1.4936,
+          "mae_sd": 0.1379
+        },
+        {
+          "lambda": 10.0,
+          "P_mean": 0.1566,
+          "mae_mean": 1.8271,
+          "mae_sd": 0.1274
+        },
+        {
+          "lambda": 30.0,
+          "P_mean": 0.0962,
+          "mae_mean": 2.0524,
+          "mae_sd": 0.1805
+        },
+        {
+          "lambda": 100.0,
+          "P_mean": 0.0842,
+          "mae_mean": 2.12,
+          "mae_sd": 0.1833
+        }
+      ],
+      "mae_oracle_laminf_P0": 2.0372,
+      "slope_S": 2.4774,
+      "slope_S_with_oracle": 2.1581
+    }
+  }
+}

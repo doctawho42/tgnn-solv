@@ -1,83 +1,90 @@
 {
-  "epochs": 150,
+  "epochs": 300,
   "seeds": [
     42,
-    43
+    43,
+    44
   ],
   "strata": {
     "all": {
       "n": 1169,
       "arms": {
         "physics_learned_sigma": {
-          "mae_mean": 1.807,
-          "mae_sd": 0.092,
+          "mae_mean": 1.627,
+          "mae_sd": 0.256,
           "per_seed": [
-            1.714,
-            1.899
+            1.542,
+            1.974,
+            1.365
           ]
         },
         "direct": {
-          "mae_mean": 1.869,
-          "mae_sd": 0.342,
+          "mae_mean": 1.838,
+          "mae_sd": 0.114,
           "per_seed": [
-            1.526,
-            2.211
+            1.74,
+            1.775,
+            1.998
           ]
         },
         "sigma_oracle_fixed_LFER": {
           "mae": 1.611
         },
-        "physics_minus_direct": -0.062
+        "physics_minus_direct": -0.211
       }
     },
     "high_F (clean meta/para)": {
       "n": 161,
       "arms": {
         "physics_learned_sigma": {
-          "mae_mean": 1.757,
-          "mae_sd": 0.199,
+          "mae_mean": 1.614,
+          "mae_sd": 0.375,
           "per_seed": [
-            1.956,
-            1.559
+            2.13,
+            1.461,
+            1.251
           ]
         },
         "direct": {
-          "mae_mean": 1.573,
-          "mae_sd": 0.014,
+          "mae_mean": 1.712,
+          "mae_sd": 0.21,
           "per_seed": [
-            1.587,
-            1.56
+            1.774,
+            1.933,
+            1.429
           ]
         },
         "sigma_oracle_fixed_LFER": {
           "mae": 0.601
         },
-        "physics_minus_direct": 0.184
+        "physics_minus_direct": -0.098
       }
     },
     "low_F (ortho/hetero)": {
       "n": 1008,
       "arms": {
         "physics_learned_sigma": {
-          "mae_mean": 1.419,
-          "mae_sd": 0.157,
+          "mae_mean": 1.394,
+          "mae_sd": 0.15,
           "per_seed": [
-            1.262,
-            1.577
+            1.182,
+            1.506,
+            1.494
           ]
         },
         "direct": {
-          "mae_mean": 1.784,
-          "mae_sd": 0.158,
+          "mae_mean": 1.922,
+          "mae_sd": 0.242,
           "per_seed": [
-            1.625,
-            1.942
+            1.638,
+            1.897,
+            2.229
           ]
         },
         "sigma_oracle_fixed_LFER": {
           "mae": 1.62
         },
-        "physics_minus_direct": -0.365
+        "physics_minus_direct": -0.528
       }
     }
   }
