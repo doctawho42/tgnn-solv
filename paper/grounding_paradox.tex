@@ -829,18 +829,16 @@ estimate, is the binding constraint.
 The result is a cautionary measurement for physics-informed modeling: grounding a
 model on truer physical inputs is only as good as the closure that consumes them,
 and when that closure is a fixed, mildly misspecified map, better inputs surface
-its bias rather than help. The external latent does not make the physics path win. What it buys is
-\emph{attribution}: on the subset we can measure, the
-ceiling sits in the decoder ($\Bclos$), with the inputs ($\Binsuf$) the less likely
-source and label noise unestimable but assumed zero (and unable to manufacture the
-constant offset the bounds rest on). We do not claim this numeric attribution transfers
-unchanged to the finite-composition, high-$\gamma$ regime the solubility paradox itself
-spans; that the solubility paradox shares the same closure-misspecification cause is a
-conjecture supported by in-regime signs---the more-physics-worse effect on the full
-$n{=}5608$ set and the chemistry map---not a measured fact. For practice this relocates the lever. Within this closure family, effort
-spent on richer inputs or a better encoder is mis-targeted; the payoff is in the
-closure itself, for example a corrected or learned residual on the map rather
-than on its output (which \S\ref{sec:gateb} shows is inert).
+its bias rather than help. The external latent does not make the physics path win; what it buys is a \emph{lever}. Used as an
+instrument on the corner we can measure, the decomposition places the ceiling in the closure rather
+than its inputs, and a higher-fidelity closure (COSMO-SAC-2010/dsp) removes the penalty---so within
+this closure family effort spent on richer inputs or a better encoder is mis-targeted, and the payoff
+is in the closure itself (a corrected or learned residual on the map, not on its output, which
+\S\ref{sec:gateb} shows is inert). This attribution is a demonstration on a low-$\gamma$,
+infinite-dilution corner, not a certificate: we do not claim it transfers unchanged to the
+finite-composition regime the paradox spans, where its shared closure-misspecification cause is a
+conjecture supported by in-regime signs (the more-physics-worse effect on the full $n{=}5608$ set and
+the chemistry map), not a measured fact.
 
 \paragraph{The accuracy case is broad, with an explained boundary.} That the physics prior does
 not improve accuracy is a pattern with no confirmed exception \emph{on accuracy}: the grounded
@@ -858,10 +856,10 @@ through the fixed closure and so cannot be a training artifact---so within this 
 inputs, more data, and auxiliary grounding do not recover an accuracy the factorization cannot
 express. The contribution is accordingly not
 an accuracy result but a \emph{map} of when grounding a learned latent in reference physics helps or hurts:
-the externally grounded decomposition \emph{locates} the ceiling (measured, not proved), a standard
-higher-fidelity closure moves it and dissolves the closure-dominance verdict, and---where the closure binds and the
-latent is end-to-end---the ``physical'' intermediate behaves as a compensating surrogate; the two
-axes are closure fidelity and latent supervision (Fig.~\ref{fig:map}). What a misspecified
+the externally grounded decomposition \emph{locates} the ceiling in the closure (measured, not
+proved), a standard higher-fidelity closure moves it---closure fidelity is the lever---and, where the
+closure is misspecified and the latent is end-to-end, the ``physical'' intermediate behaves as a
+compensating surrogate; the two axes are closure fidelity and latent supervision (Fig.~\ref{fig:map}). What a misspecified
 closure costs is thus not only accuracy but the interpretability the bottleneck appeared to buy.
 
 \begin{figure}[t]
@@ -881,8 +879,8 @@ qualitative.}
 \label{fig:map}
 \end{figure}
 
-\paragraph{When a physics prior must lose.} The tax rule (Prop.~\ref{prop:tax}) turns these
-negatives into a phase picture rather than a single verdict (Fig.~\ref{fig:phase}), and says
+\paragraph{When a fixed-closure prior helps versus hurts.} The tax rule (Prop.~\ref{prop:tax}) turns
+these negatives into a phase picture rather than a single verdict (Fig.~\ref{fig:phase}), and says
 \emph{when} to expect them. A fixed-closure prior helps only when the estimation variance it saves exceeds its
 asymptotic bias $\Delta_\infty$ (equal to $\Bclos-\Gamma$ only under A2 with an
 asymptotically-Bayes control, otherwise read off the large-$n$ asymptote); both are measurable. The variance benefit is
@@ -902,7 +900,7 @@ the tax rule predicts, and where much of modern machine learning operates. The s
 and the pKa closure (\S\ref{sec:pka}) trace the two axes---closure fidelity and
 intermediate sufficiency---directly. We claim no universal boundary; we \emph{propose}, but do not here cleanly validate, a diagnostic for the sign of the physics tax:
 measure $\Bclos$ through the decomposition, read $\Delta_\infty$ off the large-$n$ asymptote, and
-the sign should follow, though we do not cleanly validate it here. In this sense the failure is not idiosyncratic to
+the sign should follow. In this sense the failure is not idiosyncratic to
 solubility; it recurs whenever a misspecified closure is coupled to an expressive encoder on
 abundant, low-noise data.
 
