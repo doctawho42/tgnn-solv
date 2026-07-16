@@ -132,8 +132,24 @@ sentence of distribution-mismatch reasoning goes in-paper, pre-empting the refer
 
 ---
 
-## Build order
-1. A1 synthetic frontier — `run_physicality_frontier.py` (this turn).
-2. A2 pKa λ-sweep — extend the pKa comparison rig (CPU).
-3. B synthetic distribution-mismatch — new pair-teacher component (synthetic).
-4. A3 solubility 2-point sweep — GPU, on the L4, folded with the surrogate-seeds run.
+## Build order / status (updated 2026-07-16)
+1. A1 synthetic frontier — `run_physicality_frontier.py`. **DONE.** S(F=1)=0.000±0.000,
+   S(0.6)=0.069, S(0.35)=0.170. Law confirmed.
+2. A2 pKa — **DONE (both).** Two-point SIGN from committed strata
+   (`run_pka_frontier_twopoint.py`): meta/para S<0, ortho S>0. Full λ-CURVE
+   (`run_pka_lambda_frontier.py`, `results/frontier/frontier_pka_curve.json`, on the fetched
+   OPERA SDF): ortho (n=1198, monotone) S=+2.48 (MAE 1.355→2.12; free σ̂ beats oracle = paradox
+   as a curve); meta/para (n=163, noisier) S=−5.34 (free 1.92→oracle 0.94). Opposite-signed
+   slopes with magnitude.
+3. B synthetic distribution-mismatch (`run_drift_distribution_mismatch.py`): **TESTED, DROPPED.**
+   The hypothesis did not survive its own Gauss-Newton control: the drift is essentially the GN
+   first-order compensation (cos 0.98), so Fig 9's ~0 is dominated by its naive single-pair J⁺
+   being a poor ESTIMATOR of GN (weak even on D_train, 0.20), not by the partner distribution;
+   the GN distribution gap is modest (0.98 vs 0.79) and the shift sweep is confounded by Jacobian
+   conditioning. Real rank-1 Fisher makes GN ill-posed anyway. **Fig 9 stays an honest negative;
+   no distribution-mismatch claim goes in the paper.** Kept as a documented negative control.
+4. A3 solubility 2-point sweep — GPU, on the L4, folded with the surrogate-seeds run. PENDING.
+
+Net: the **spine (A)** is the real result and is confirmed on synthetic (full law) and real
+pKa data (sign). The **salvage (B)** was a plausible idea that the rig correctly killed before
+it reached the paper.
