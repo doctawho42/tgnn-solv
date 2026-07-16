@@ -1,0 +1,65 @@
+{
+  "config": {
+    "d": 4,
+    "M": 150,
+    "K_train": 30,
+    "K_match": 30,
+    "fidelity": 0.5,
+    "kappa": 0.15,
+    "beta": 0.8,
+    "mu_shift": 2.0,
+    "sigma_match": 0.5,
+    "snr": 20.0,
+    "steps": 1500,
+    "seed": 0
+  },
+  "cos_median": {
+    "train_many_naive": 0.201,
+    "train_1_naive": 0.078,
+    "match_many_naive": 0.039,
+    "match_1_FIG9": 0.055,
+    "train_GaussNewton": 0.983,
+    "match_GaussNewton": 0.785
+  },
+  "shift_sweep": [
+    {
+      "mu_shift": 0.0,
+      "cos_match_many_naive": 0.105,
+      "cos_match_GaussNewton": 0.612
+    },
+    {
+      "mu_shift": 0.5,
+      "cos_match_many_naive": 0.108,
+      "cos_match_GaussNewton": 0.71
+    },
+    {
+      "mu_shift": 1.0,
+      "cos_match_many_naive": 0.076,
+      "cos_match_GaussNewton": 0.785
+    },
+    {
+      "mu_shift": 1.5,
+      "cos_match_many_naive": 0.049,
+      "cos_match_GaussNewton": 0.838
+    },
+    {
+      "mu_shift": 2.0,
+      "cos_match_many_naive": 0.05,
+      "cos_match_GaussNewton": 0.825
+    },
+    {
+      "mu_shift": 3.0,
+      "cos_match_many_naive": 0.043,
+      "cos_match_GaussNewton": 0.798
+    }
+  ],
+  "drift_norm_median": 2.688,
+  "checks": {
+    "fig9_reproduced": true,
+    "power_excluded": true,
+    "distribution_effect": false,
+    "first_order_ok": true
+  },
+  "salvage_supported": false,
+  "reading": "drift aligns with the D_train first-order compensation (best under Gauss-Newton) but NOT with D_match; Fig 9 = match_1. Many D_match samples also fail => distribution mismatch, not power. Naive per-pair-J^+ average (Fig 9's own estimator) is a lossy predictor even on D_train; Gauss-Newton is the clean one."
+}
