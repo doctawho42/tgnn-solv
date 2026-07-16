@@ -324,24 +324,20 @@ fit-free; $\Binsuf=\Ex[\Var(m\mid\zstar)]$, however, must be estimated with a co
 smoother whose choice affects the verdict (\S\ref{sec:measure}).
 \end{lemma}
 \noindent Equation~\eqref{eq:decomp} is a bias--variance split of model
-discrepancy in the sense of Kennedy--O'Hagan \cite{kennedy2001} and
-Brynjarsd\'ottir--O'Hagan \cite{brynjarsdottir2014}: $\Bclos$ is the systematic
-discrepancy of a structurally fixed physical map, and its dominance over
-$\Binsuf$ is the empirical content of ``the ceiling is the closure, not the
-inputs.'' We do not claim \eqref{eq:decomp} as new; the affordance is that the
-external groundedness of $\zstar$ lets us \emph{measure} the split rather than
-assume it. This is the move's distinction from model-discrepancy calibration and auxiliary-data
-uncertainty quantification, which use held-out physical observations to \emph{fit} a correction to a
-discrepancy: here the closure is fixed and the latent itself is externally observed, so the map's
-error is \emph{attributed} with no correction fitted---at the cost that the affordance runs only
-where such an external latent oracle exists (fixed-closure predictors with a tabulated or measured
-latent: LFERs, COSMO / group-contribution closures, thermodynamic cycles), not in gray-box or PINN
-hybrids whose internal fields have no external ground truth. \textbf{The exactness is contingent on
-$g$ being fixed}: for a
-\emph{fitted} decoder the cross term does not vanish and a plug-in point
-decomposition is invalid (we observe a spurious $-0.36$ cross term when
-$\Ex[m\mid\zstar]$ is replaced by a fitted estimate). We therefore report
-\emph{one-sided bounds}, not a point split (each proved in App.~\ref{sec:si-proofs}):
+discrepancy in the sense of Kennedy--O'Hagan \cite{kennedy2001,brynjarsdottir2014}:
+$\Bclos$ is the systematic discrepancy of a fixed physical map, and its dominance over
+$\Binsuf$ is the empirical content of ``the ceiling is the closure, not the inputs.'' We
+do not claim \eqref{eq:decomp} as new. The affordance is that an externally grounded
+$\zstar$ lets us \emph{measure} the split rather than assume it: unlike
+model-discrepancy calibration, which \emph{fits} a correction from held-out
+observations, here $g$ is fixed and $\zstar$ externally observed, so the map's error is
+\emph{attributed}, not corrected---available only where an external latent oracle exists
+(LFERs, COSMO / group-contribution closures, thermodynamic cycles), not in gray-box or
+PINN hybrids. \textbf{Exactness is contingent on $g$ being fixed}: for a \emph{fitted}
+decoder the cross term does not vanish and a plug-in point split is invalid (a spurious
+$-0.36$ cross term appears when $\Ex[m\mid\zstar]$ is replaced by a fitted estimate). We
+therefore report \emph{one-sided bounds}, not a point split (each proved in
+App.~\ref{sec:si-proofs}):
 \begin{itemize}
   \item $\Bclos \ge (\Ex[m]-\Ex[g])^2$ by Jensen: a constant offset between the
   decoder's mean output and the target is misspecification, not input insufficiency, and
@@ -416,18 +412,17 @@ optimiser splits error between the factors rather than fit either; and each sing
 stream rank-completes a different deficient direction of Lemma~\ref{prop:ident} (\S\ref{sec:e2}).
 
 \subsection{What we prove}
-Two lemmas carry the measurement---the split's non-identifiability (Lemma~\ref{prop:ident}) and the
-exact closure/insufficiency decomposition with its one-sided bounds (Lemma~\ref{prop:decomp}); the
+Two lemmas carry the measurement: the split's non-identifiability (Lemma~\ref{prop:ident}) and the
+exact closure/insufficiency decomposition with its one-sided bounds (Lemma~\ref{prop:decomp}). The
 class-dependence refinement, the grounding-gap sandwich (Theorem~\ref{thm:gap}), and the physics-tax
-sign rule (Prop.~\ref{prop:tax}) are in App.~\ref{sec:si-proofs}, all elementary. We are deliberate
-about their reach: Theorem~\ref{thm:gap} certifies closure misspecification only under assumptions
-(A1--A2) that fail or are unverifiable here, so we rest on the assumption-light decomposition and read
-$\Gamma$ as a corroborating symptom; there is no ``optimal grounding'' theorem, and the honest
-empirical answer is that the decomposition does not improve out-of-distribution accuracy
-(\S\ref{sec:results}). These results are read against, not in competition with, known work on model
-discrepancy \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
-\cite{transtrum2015,gutenkunst2007}, identifiability \cite{raue2009,villaverde2016}, misspecification
-\cite{white1982}, and underspecification \cite{damour2022}.
+sign rule (Prop.~\ref{prop:tax}) are in App.~\ref{sec:si-proofs}, all elementary. Their reach is
+deliberate: Theorem~\ref{thm:gap} certifies misspecification only under (A1--A2), which fail or are
+unverifiable here, so we rest on the assumption-light decomposition and read $\Gamma$ as a
+corroborating symptom. There is no ``optimal grounding'' theorem, and the decomposition does not
+improve out-of-distribution accuracy (\S\ref{sec:results}). We read these against known work on model
+discrepancy \cite{kennedy2001,brynjarsdottir2014}, sloppiness \cite{transtrum2015,gutenkunst2007},
+identifiability \cite{raue2009,villaverde2016}, misspecification \cite{white1982}, and
+underspecification \cite{damour2022}.
 
 \input{sections/methods}
 
