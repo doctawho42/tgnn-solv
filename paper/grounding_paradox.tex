@@ -620,48 +620,22 @@ We separate the load-bearing evidence---a bound that holds under \emph{any} COSM
 configuration---from corroborating checks that are robust across the conventions we tried but not
 strictly independent of the model fit.
 
-\paragraph{The load-bearing separation (leakage-immune).} We subtract the leakage-immune
-law-of-total-variance $\Binsuf$ upper bound---the most conservative of our estimators, since the
-$z^\ast$-neighbour estimators ($k$-NN, RF) are deflated by near-duplicate leakage and so \emph{inflate}
-$\Bclos$---from the total error. On the model's \emph{deployed} residual-only convention this gives
-$\Bclos\gtrsim0.85$, well above $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). The bound conditions on
-$g(\zstar)$, so we report it per convention; it is the claim we lean on, and it needs no smoothness
-assumption beyond the validity of the $\Binsuf$ upper bound. We stress-test it directly
-(App.~\ref{sec:si-tables}). The crossed $41$-solute$\times17$-solvent design leaks: any two pairs
-sharing a molecule share half their $\zstar$ coordinates, so the $z^\ast$-neighbour estimators are
-anti-conservative---the $k$-NN bound reads $0.40$ but jumps to $1.83$ once shared-molecule
-neighbours are forbidden, so they only \emph{bracket} $\Binsuf$ across $\mathrm{MSE}/2$. The LOTV
-bound instead conditions $m$ on the coarsened scalar $g(\zstar)$ and is immune to that leakage. It
-is stable---it survives
-leave-one-solvent-out ($17/17$ folds), leave-one-solute-out ($40/41$), leave-one-pair-out
-($60/60$), and adversarial deletion of the eight highest-error pairs. For confidence, a single-axis
-solvent-clustered bootstrap gives $P(\Bclos>\Binsuf)\approx0.89$; a two-way (solute$\times$solvent)
-cluster bootstrap that also charges for repeated solutes lowers this to $P\approx0.78$ with a $90\%$
-margin spanning zero. With only $17$ solvent and $41$ solute clusters this is the small-$G$ regime,
-where cluster-bootstrap coverage is itself optimistic, so we read these figures as a coarse band (mid
-$0.7$s to high $0.8$s) rather than to two decimals---and present the separation as a \emph{supporting}
-measurement, likely but not certified at conventional confidence, not a stand-alone certificate. Two further checks live in
-App.~\ref{sec:si-tables}: stratifying by $\lngi$, the closure bound rises with $\gamma$
-($0.95\to2.69$, though thinly and estimator-dependently); and under the full COSMO-SAC convention the
-assumption-free constant-offset (Jensen) bound also separates ($\Bclos\ge0.72>0.62$), whereas it
-inverts under the deployed residual-only default ($0.43<0.62$)---the reason we headline the
-leakage-immune bound rather than the constant offset.
-Label noise is unestimable in this replicate-free set (the matched IDAC pairs carry no repeat
-measurements at $298$\,K, so an inter-source floor cannot be formed as it was for solubility) and
-assumed zero; the bounds we rely on are invariant to zero-mean noise. A \emph{systematic} between-method
-offset would not be covered by that invariance---but it does not arise here: the matched set is
-essentially \emph{single-method}, with $158$ of the $165$ matched measurements from gas
-chromatography. Between-method bias---the concern for a mixed compilation of chromatographic,
-ebulliometric, and dilutor data, each with its own systematic offset---therefore does not apply, and
-a method-stratified re-estimate is neither necessary nor possible on a homogeneous-method set. The
-residual exposure is only within-method systematic error; against the measured margin
-($\Bclos\ge0.85$ vs $\Binsuf\le0.62$, ${\approx}0.23$ in $(\ln\gamma)^2$) it would take an
-implausibly large coherent within-method offset to close the separation. Because a replicate floor is
-unavailable, we test exposure to the highest-scatter data directly: the separation \emph{sign} survives
-deleting any single pair ($60/60$) and trimming the eight highest-error pairs---which include the
-physically suspect associating outliers (e.g.\ $1$-hexanamine in methanol, $\ln\gamma^\infty{=}{+}2.62$
-against its reverse $-0.97$)---though under that trim the estimated $\Bclos$ lower bound falls
-${\sim}58\%$ ($0.91\to0.38$). The closure-dominance \emph{sign}, not its magnitude, is leverage-robust.
+\paragraph{The load-bearing separation (leakage-immune).} Subtracting the leakage-immune
+law-of-total-variance $\Binsuf$ upper bound (the most conservative estimator; the $z^\ast$-neighbour
+$k$-NN/RF estimators are deflated by near-duplicate leakage on the crossed $41$-solute$\times17$-solvent
+design and only \emph{bracket} $\Binsuf$) from the total error gives, on the deployed residual-only
+convention, $\Bclos\gtrsim0.85$ against $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). This is the
+claim we lean on. It is stable---surviving leave-one-solvent, -solute, and -pair folds and adversarial
+deletion of the eight highest-error pairs---but not certified: a two-way cluster bootstrap gives
+$P(\Bclos>\Binsuf)\approx0.78$ with a $90\%$ margin spanning zero, and with only $17$/$41$ clusters
+this small-$G$ figure is a coarse band (mid-$0.7$s to high-$0.8$s), so we present the separation as a
+\emph{supporting} measurement---likely but not certified---not a stand-alone certificate. The
+convention, leakage, $\gamma$-stratification, and leverage stress-tests are in
+App.~\ref{sec:si-tables}. Label noise is unestimable here (replicate-free) and assumed zero; the bounds
+are invariant to zero-mean noise, and between-method bias does not arise because the matched IDAC is
+essentially single-method ($158/165$ gas chromatography), leaving only a within-method systematic
+exposure that against the ${\approx}0.23\,(\ln\gamma)^2$ margin would have to be implausibly large to
+close the separation.
 
 \paragraph{The closure defect is low-rank and correctable.} That $\Bclos$ dominates locates the
 ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. A small
@@ -677,20 +651,16 @@ closure, whereas the same error is only made worse by feeding the inputs truthfu
 (\S\ref{sec:paradox}) and untouched by an output residual (\S\ref{sec:gateb}); whether an end-to-end
 model realises the gain is a compute-gated question we leave open.
 
-\paragraph{Corroboration robust across conventions.} The genuinely convention-robust fact is that
-adding the physically \emph{more} complete Staverman--Guggenheim combinatorial term \emph{increases}
-error (activity MSE $1.47\to1.80$)---what a misspecified map does, not what missing information would.
-This survives recomputing the size factor on the reference COSMO cavity volumes (Jensen $0.714\to0.717$,
-essentially unchanged, since the term depends on size \emph{ratios}) and is concentrated on
-size-asymmetric pairs---the documented miscalibration of the unmodified combinatorial term, the reason
-modified-SG and free-volume corrections exist. The residual error is not an implementation artifact:
-our differentiable layer reproduces the NIST benchmark COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE
-$0.003\,\ln\gamma$ on identical VT-2005 profiles, and self-solvation $\ln\gamma^\infty(i,i)$ is exactly
-zero; yet $90\%$ of the squared error falls on strong hydrogen-bond-donor solvents (acceptor-only
-near-exact), placing $\Bclos$ in COSMO-SAC's documented single-parameter H-bond kernel---a known
-limitation, not a layer idiosyncrasy. (A flexible regressor of $m$ on $\zstar$ fits $\sim$4$\times$
-better than the fixed closure, but that regressor \emph{is} our $\Binsuf$ estimator ($\approx0.4$),
-so ``$4\times$'' only restates that $\Bclos$ is large---not an independent corroboration.)
+\paragraph{Where the closure fails, chemically.} The residual error is not an implementation
+artifact: our differentiable layer reproduces the NIST benchmark COSMO-SAC-2002~\cite{bell2020cosmosac}
+to RMSE $0.003\,\ln\gamma$ on identical VT-2005 profiles, with self-solvation $\ln\gamma^\infty(i,i)$
+exactly zero. Yet $90\%$ of the squared error falls on strong hydrogen-bond-donor solvents
+(acceptor-only near-exact), placing $\Bclos$ squarely in COSMO-SAC's documented single-parameter
+H-bond kernel---a known limitation, not a layer idiosyncrasy, and the specific defect the
+donor/acceptor-typed 2010 closure was built to fix. Convention-robustly, adding the physically
+\emph{more} complete Staverman--Guggenheim combinatorial term \emph{increases} error ($1.47\to1.80$)
+on size-asymmetric pairs---what a misspecified map does, not what missing information would (details in
+App.~\ref{sec:si-tables}).
 
 \paragraph{The ceiling moves with closure fidelity: a standard-closure control.} The 2002
 closure-dominance above is not a general fact about physical inputs; it is specific to the deployed
@@ -719,9 +689,9 @@ reading is thus not ``the closure always dominates'' but ``on the low-fidelity 2
 fix is a better closure, not truer inputs''---closure fidelity is the second axis of the map
 (\S\ref{sec:discussion}).
 
-\paragraph{Scope.} The measurement is confined to the low-$\gamma$, $298$\,K, VT-2005-matchable
-corner, so the numeric ceiling is not claimed to transfer to the finite-composition regime where the
-paradox itself lives; the full adversarial audit and its four hedges are in App.~\ref{sec:si-tables}.
+\paragraph{Scope.} This measurement is a low-$\gamma$/$298$\,K/VT-2005-matchable corner and does not
+transfer to the finite-composition regime the paradox lives in (\S\ref{sec:scope}); the full audit is
+in App.~\ref{sec:si-tables}.
 
 \input{sections/compensation-surrogate}
 
