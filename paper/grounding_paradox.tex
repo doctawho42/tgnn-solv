@@ -748,17 +748,14 @@ to buy.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.80\linewidth]{figs/fig_grounding_map.pdf}
-\caption{The grounding map. Whether feeding a learned model its reference physical inputs helps or hurts is
-shaped by two axes---how the latent is trained (supervised toward truth vs.\ end-to-end
-through the fixed closure) and the closure's fidelity. Grounding hurts only in the low-supervision,
-low-fidelity corner, where the end-to-end latent becomes a compensating surrogate
-(\S\ref{sec:surrogate}). Our COSMO-SAC-2002 model sits there; raising closure fidelity
-(COSMO-SAC-2010/dsp, \S\ref{sec:measure}) or supervising the latent moves toward the ``helps''
-region---on our own model supervision cuts the reference-input penalty $65\%$ short of crossing, while
-TeNNet-SAC (supervised \emph{and} higher-fidelity) crosses fully, so the axes interact. The boundary
-is the physics-tax sign $\mathcal{T}=0$ (Prop.~\ref{prop:tax}); the
-synthetic dial (\S\ref{sec:dial}) sweeps the fidelity axis. Schematic; anchor placements are
-qualitative.}
+\caption{\textbf{The grounding map (conceptual).} Whether grounding helps or hurts is shaped by two
+axes: how the latent is trained (supervised vs.\ end-to-end) and the closure's fidelity. Grounding
+hurts only in the low-supervision, low-fidelity corner, where the latent becomes a compensating
+surrogate (\S\ref{sec:surrogate}); our COSMO-SAC-2002 model sits there, and raising fidelity (2010/dsp)
+or supervising the latent moves toward ``helps'' (supervision alone cuts the penalty $65\%$ short of
+crossing; TeNNet-SAC, supervised \emph{and} higher-fidelity, crosses fully). The boundary is the
+physics-tax sign $\mathcal{T}=0$ (Prop.~\ref{prop:tax}); only the fidelity axis is swept directly
+(\S\ref{sec:dial}). Anchor placements are qualitative.}
 \label{fig:map}
 \end{figure}
 
@@ -792,44 +789,26 @@ abundant, low-noise data.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\linewidth]{figs/fig_phase.pdf}
-\caption{When a physics prior helps versus hurts. The physics tax has sign
-$\mathcal{T}=\Delta_\infty-(\text{variance saved})$: a fixed-closure prior helps only below the $\mathcal{T}=0$
-diagonal, where the estimation variance it saves exceeds its asymptotic closure bias
-$\Delta_\infty$ (the large-$n$ asymptote; $=\Bclos-\Gamma$ under A2). The variance saving shrinks as $n$ grows, so systems drift
-left: solubility/COSMO-SAC sits deep in the ``hurts'' region and moves further in with more
-data, pKa through a Hammett closure \emph{straddles} the diagonal---grounding helps in its
-well-specified meta/para regime and hurts in the ortho regime, where the learned constant
-compensates (\S\ref{sec:pka})---and the synthetic dial climbs out of ``helps'' as closure fidelity
-$F$ falls. Conceptual---only the
-sign is measured, not the boundary's exact shape.}
+\caption{\textbf{When a fixed-closure prior helps versus hurts (conceptual).} The physics tax
+$\mathcal{T}=\Delta_\infty-(\text{variance saved})$ is negative (helps) only below the $\mathcal{T}=0$
+diagonal; the variance saving shrinks as $n$ grows, so systems drift left. Solubility/COSMO-SAC sits
+deep in ``hurts'' and moves further with more data; pKa via a Hammett closure \emph{straddles} the
+diagonal (helps in meta/para, hurts in ortho; \S\ref{sec:pka}); the synthetic dial climbs out of
+``helps'' as fidelity falls. Only the sign is measured, not the boundary.}
 \label{fig:phase}
 \end{figure}
 
-\paragraph{Limitations.} (i)~$\Binsuf$ is bounded, never point-identified: there
-are no true replicate measurements at fixed $\zstar$, so the insufficiency estimates
-lean on a smoothness assumption. The constant-offset (Jensen) bound is smoothness-free
-but assumes $m$ and $g$ share the $\lngi$ (mole-fraction, Lewis--Randall) reference
-state; we check this two ways---the closure is nearly exact within the largest
-single-solvent stratum (pyridine, MSE $0.07$), which a uniform reference-state offset
-could not produce, and an independent recomputation reproduces the closure output---so
-the mean offset is genuine decoder bias, not a units artifact. We headline the
-convention-independent bound (\S\ref{sec:measure}) as the load-bearing claim.
-(ii)~The assumption-free constant-offset margin is convention-specific (full COSMO-SAC)
-and \emph{inverts} under the deployed residual-only default; there the separation rests
-on the convention-independent bound $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ and
-the more-physics-worse effect (which we verified is robust to the molecular-volume
-basis). (iii)~The measurement is at infinite
-dilution and 298\,K on the VT-2005-matchable, low-$\gamma$ subset; the non-ideal
-amide-solvent regime is untested. (iv)~Absolute scaffold $\lnx$ accuracy is
-encoder-bound; it sits well \emph{above} the inter-lab replicate-reproducibility floor
-($0.15$--$0.31$ in $\lnx$; \S\ref{sec:supporting}), so label noise does not explain the ceiling,
-but it is near the practical difficulty of new-solute extrapolation set by the current
-state of the art. (v)~The compensating-surrogate result rests on a single converged one-model isolation
-control ($n{=}44$ matched molecules; \S\ref{sec:surrogate}): the reported $53\%$ departure, its
-low-rank structure (top-two modes $73\%$), and its $3.3\times$ out-of-sample transfer supersede an
-earlier short pilot that reached only ${\sim}16\%$/${\sim}1.7\times$ before convergence. The
-remaining hedges are the sample size and that the clean isolation is a single GPU run. This paper
-is not an accuracy claim.
+\paragraph{Limitations.} (i)~$\Binsuf$ is upper-bounded, not point-identified (no replicates at fixed
+$\zstar$); the smoothness-free Jensen bound assumes $m$ and $g$ share the $\lngi$ reference state,
+which we verify (\S\ref{sec:measure}), so the mean offset is genuine decoder bias, not a units
+artifact. (ii)~The constant-offset margin is convention-specific and inverts under the deployed
+residual-only default; there the separation rests on the convention-independent bound and the
+more-physics-worse effect. (iii)~The measurement is the infinite-dilution/$298$\,K/low-$\gamma$ corner,
+not the finite-composition regime the paradox lives in (\S\ref{sec:scope}). (iv)~Absolute scaffold
+accuracy is encoder-bound but well \emph{above} the inter-lab noise floor ($0.15$--$0.31$ in $\lnx$;
+\S\ref{sec:supporting}), so label noise does not explain the ceiling. (v)~The compensating-surrogate
+magnitudes ($53\%$/$73\%$/$3.3\times$) rest on a single converged one-model control ($n{=}44$;
+\S\ref{sec:surrogate})---sign and structure robust, magnitude provisional.
 
 \section{Conclusion}
 \label{sec:conclusion}
