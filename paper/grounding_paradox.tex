@@ -94,26 +94,23 @@ truer inputs.
 \label{sec:intro}
 % Frame: the field's default is "add physics / ground on real inputs -> better OOD".
 % We show a clean counterexample and a measurement that says why.
-Coupling a graph encoder to an explicit thermodynamic bottleneck is a common
-recipe for out-of-distribution solubility prediction: the model must route its
-prediction through interpretable physical factors, and each factor can in
-principle be grounded on abundant single-component data that a black-box
-predictor cannot exploit. The expectation is that the closer the model's physical
-inputs are to the truth, the better it should predict. On the activity branch
-this expectation fails on our model---yet a recent supervised-$\sigma$ model reports the
-\emph{opposite}, so the sign of grounding is not a fixed fact. The reason we dwell on our failure is
-what its \emph{cause} reveals. Having the latent's reference value externally does two things: it lets us
-\emph{measure} where the ceiling lies and attribute it to the closure rather than the inputs (the only
-setting in which that attribution is possible, since a fitted latent has no external oracle), and it
-lets us hold the learned latent against its truth---which shows that, trained end-to-end through a
-misspecified closure, the latent is driven off the physical quantity into a systematic, low-rank,
-out-of-sample-transferable compensating surrogate (confound-free control, \S\ref{sec:surrogate}).
-Both organize into one map: whether grounding helps or hurts is shaped by two axes---how the latent
-is trained (supervised vs.\ end-to-end) and the closure's fidelity---which we anchor with three real
-systems and a synthetic dial, and a standard higher-fidelity closure (COSMO-SAC-2010/dsp) moves the
-ceiling and dissolves the closure-dominance verdict (\S\ref{sec:measure}). The composed-predictor framing
-(\S\ref{sec:framework}) and the physics-tax sign rule give the formal account of the sign; the
-synthetic dial (\S\ref{sec:dial}) and the pKa closure (\S\ref{sec:pka}) trace the same two axes.
+Coupling a graph encoder to an explicit thermodynamic bottleneck is a common recipe for
+out-of-distribution solubility prediction: the model routes its prediction through interpretable
+physical factors, each groundable on abundant single-component data a black box cannot exploit. The
+expectation is that the closer the physical inputs are to the truth, the better the model predicts. On
+the activity branch this fails: feeding our model the external quantum-chemical reference
+$\sigma$-profile makes it \emph{worse}. The reason we dwell on this failure is what its \emph{cause}
+reveals. Because the latent has an external reference, we can \emph{measure} where the ceiling lies and
+attribute it to the closure rather than the inputs (impossible for a fitted latent, which has no
+oracle), and hold the learned latent against its reference---which shows that, trained end-to-end
+through a misspecified closure, the latent is driven off the physical quantity into a systematic,
+low-rank, transferable compensating surrogate (\S\ref{sec:surrogate}). Holding the reference input
+fixed, a higher-fidelity closure removes the penalty: closure fidelity, not input fidelity, is the
+lever (\S\ref{sec:measure}). The sign is not universal---a supervised-$\sigma$ model reports the
+opposite---so whether grounding helps is shaped by two axes, closure fidelity and latent supervision,
+which we anchor with three real closures and a synthetic dial; the composed-predictor framing
+(\S\ref{sec:framework}) and physics-tax sign rule give the formal account, and the pKa closure
+(\S\ref{sec:pka}) generalises it.
 
 \paragraph{Contributions.}
 Our thesis is that whether grounding a learned latent in reference physics helps or hurts is \emph{shaped
@@ -266,20 +263,7 @@ closure misspecification whose validity we characterize.
 \subsection{Why a free head can compensate: structural non-identifiability}
 The crystal/activity split is not identifiable from solubility data alone, which
 is precisely why an unconstrained head can silently absorb crystal error into the
-activity term (Fig.~\ref{fig:ident}).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.94\linewidth]{figs/fig_ident.pdf}
-\caption{Why the crystal/activity split is non-identifiable from solubility.
-\emph{(a)}~As functions of $1/T$ the crystal direction $\Phi$ and the activity direction
-$\ln\gamma^\infty$ are nearly collinear, so a whole band of crystal/activity splits fits the
-data equally well (the profiled Fisher information for $\dHfus$ is zero, Lemma~\ref{prop:ident}).
-\emph{(b)}~An external single-component label points off that axis and collapses the band to a
-point, pinning the split---the mechanism behind the aux-stream grounding, with the measured
-Cram\'er--Rao drop on $\dHfus$.}
-\label{fig:ident}
-\end{figure}
+activity term.
 \begin{lemma}[Structural non-identifiability of the SLE split]\label{prop:ident}
 Consider the infinite-dilution SLE observable $\mu(T)=-\Phicry(T)-\lngi(T)$ with
 $\Delta C_p=0$, so that $\Phicry(T)=(\dHfus/\Rgas)(1/T-1/\Tm)$ is affine in $u=1/T$,
@@ -693,19 +677,6 @@ rough magnitude of the empirical paradox, not a precise fidelity value.}
 \label{fig:dial}
 \end{figure}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig_grounding_conflation.pdf}
-\caption{The grounding gap $\Gamma$ is a symptom, not a certificate (\S\ref{sec:gap}).
-\emph{Left:} when the intermediate is sufficient (A2
-holds), $\Gamma$ tracks the closure bias $\Bclos$ as fidelity varies, so
-Theorem~\ref{thm:gap}'s proxy is valid. \emph{Right:} with a \emph{well-specified} closure
-($\Bclos=0$) but a lossy intermediate (A2 fails), $\Gamma>0$ and grows with the discarded
-variance---a positive grounding gap from pure input insufficiency (the worked
-counterexample in the proof of Theorem~\ref{thm:gap}, App.~\ref{sec:si-proofs}). Hence certification of closure-dominance
-rests on the decomposition, which needs neither assumption.}
-\label{fig:conflation}
-\end{figure}
 
 \subsection{The ceiling is not fixable downstream}
 \label{sec:gateb}
