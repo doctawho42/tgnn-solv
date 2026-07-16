@@ -71,19 +71,21 @@ A Closure-vs-Inputs Diagnostic and a Two-Axis Map of Grounding}
 Feeding a graph network's own learned, imperfect $\sigma$-profiles through a fixed COSMO-SAC
 closure predicts solid--liquid solubility better (MAE $1.85$ vs $2.25$ in $\ln x_2$) than feeding
 external quantum-chemical reference profiles (VT-2005) through the same closure, which erases the
-positive $R^2$ ($+0.33\!\to\!-0.03\pm0.04$). We establish this grounding paradox across three seeds
-($n{=}5608$) and three injection controls. End-to-end training drives the ``physical'' latent
-$53\%$ off the reference into a low-rank (top-two modes $73\%$), out-of-sample-transferable
-($3.3\times$) surrogate that cancels the closure's error rather than reporting the physical
-quantity. Because the latent carries an external reference, the reference-input excess risk splits
-exactly into a closure-misspecification and an input-insufficiency term with no closure fitting,
-letting us \emph{measure} rather than assume where the ceiling lies. On $n{=}60$ matched
-infinite-dilution pairs the closure term binds ($P\approx0.78$), but a modern closure
-(COSMO-SAC-2010/dsp) dissolves this, placing the effect on a two-axis map of closure fidelity
-$\times$ latent supervision. A second closure, $\mathrm{p}K_a$ through a Hammett relationship,
-reproduces the sign flip: the same reference swap helps in the well-specified meta/para regime and
-hurts in the ortho regime. We make no accuracy claim; the contribution is the diagnostic and the
-interpretability caution.
+positive $R^2$ ($+0.33\!\to\!-0.03\pm0.04$). This grounding paradox is robust across three seeds
+($n{=}5608$) and three injection controls. Mechanistically, end-to-end training drives the
+``physical'' latent into a low-rank, out-of-sample-transferable surrogate that cancels the closure's
+error rather than reporting the physical quantity (a single converged-run illustration: the sign is
+robust, the magnitudes---$53\%$ departure, $73\%$ in two modes, $3.3\times$ transfer---provisional).
+Because the latent carries an external reference, the reference-input excess risk splits exactly,
+with no closure fitting, into a closure-misspecification and an input-insufficiency term, letting us
+\emph{measure} rather than assume where the ceiling lies; on $n{=}60$ matched pairs the closure term
+binds ($P\approx0.78$), though a modern closure (COSMO-SAC-2010/dsp) dissolves it. Both the split and
+the mechanism are measured at infinite dilution, not in the finite-composition regime where the
+paradox lives, so the causal attribution is corroborative, not established. We organize the effect
+on a two-axis map (closure fidelity $\times$ latent supervision), and a second closure---$\mathrm{p}K_a$
+through a Hammett relationship---reproduces the sign flip: the same reference swap helps in the
+well-specified meta/para regime and hurts in the ortho regime. We make no accuracy claim; the
+contribution is the diagnostic and the interpretability caution.
 \end{abstract}
 
 \section{Introduction}
@@ -116,9 +118,10 @@ make no accuracy claim.
 Our thesis is that whether grounding a learned latent in reference physics helps or hurts is \emph{shaped
 by} two axes---how the latent is trained (supervised toward truth vs.\ shaped end-to-end through the
 fixed closure) and the closure's fidelity. Three findings stand cleanly---the paradox, a reusable
-measurement instrument, and the compensating-surrogate mechanism; the closure-vs-inputs attribution
-and the two-axis map we present as, respectively, a caveated corner measurement and an organizing
-frame.
+measurement instrument, and the \emph{structure} of the compensating-surrogate mechanism (its sign
+and low-rank, transferable form robust; its magnitude a single converged-run estimate); the
+closure-vs-inputs attribution and the two-axis map we present as, respectively, a caveated corner
+measurement and an organizing frame.
 \begin{itemize}
   \item \textbf{The grounding paradox (empirical).}
   Substituting reference VT-2005 $\sigma$-profiles into the differentiable COSMO-SAC
@@ -143,8 +146,9 @@ frame.
   confound-free one-model control the predicted $\sigma$-profile departs from the reference one by $53\%$ in
   a low-rank (top-two modes $73\%$), out-of-sample-transferable ($3.3\times$) pattern---a systematic
   closure-compensating surrogate, not the physical quantity (a $\sigma$-grounded model \emph{can}
-  recover the reference profile; the objective pulls it away). This is why grounding hurts here, and why a
-  \emph{supervised}-$\sigma$ model finds the opposite (\S\ref{sec:surrogate}).
+  recover the reference profile; the objective pulls it away). The magnitudes are a single
+  converged-run estimate---sign and structure robust, magnitude provisional. This is why grounding
+  hurts here, and why a \emph{supervised}-$\sigma$ model finds the opposite (\S\ref{sec:surrogate}).
   \item \textbf{The closure-fidelity axis: our own attribution self-dissolves under a modern closure.}
   On the same matched pairs, evaluated under a reference 3-profile database (COSMO-SAC-2010/dsp, NIST
   implementation), the standard better-parameterized closures no longer show closure-dominance
@@ -693,9 +697,15 @@ Label noise is unestimable in this replicate-free set (the matched IDAC pairs ca
 measurements at $298$\,K, so an inter-source floor cannot be formed as it was for solubility) and
 assumed zero; the bounds we rely on are invariant to zero-mean noise. A \emph{systematic} between-method
 offset in the compiled IDAC labels (gas--liquid chromatography, ebulliometry, and dilutor techniques
-carry known method-dependent bias, not zero-mean scatter) is \emph{not} covered by that invariance and
-would inflate $\Bclos$; we cannot estimate it on this replicate-free set and flag it as an untested
-exposure of the attribution. Because a replicate floor is
+carry known method-dependent bias, not zero-mean scatter) is \emph{not} covered by that invariance.
+We bound the exposure rather than leave it open. The load-bearing separation is a lower bound
+$\Bclos\ge0.85$ against an upper bound $\Binsuf\le0.62$, a margin of ${\approx}0.23$ in
+$(\ln\gamma)^2$. Method-heterogeneous bias uncorrelated with $\zstar$ inflates the \emph{insufficiency}
+estimate (it adds conditional variance to $\Ex[\Var(m\mid\zstar)]$), so it erases the certified
+$\Bclos>\Binsuf$ only once it contributes ${\gtrsim}0.23\,(\ln\gamma)^2$ of between-method label
+variance---a between-method standard deviation ${\gtrsim}0.5\,\ln\gamma$. A method-stratified
+re-estimate on multi-source ThermoML entries is the direct test; absent it we state this overturning
+threshold explicitly rather than assume the bias is zero. Because a replicate floor is
 unavailable, we test exposure to the highest-scatter data directly: the separation \emph{sign} survives
 deleting any single pair ($60/60$) and trimming the eight highest-error pairs---which include the
 physically suspect associating outliers (e.g.\ $1$-hexanamine in methanol, $\ln\gamma^\infty{=}{+}2.62$
@@ -746,9 +756,12 @@ alone. Charging that against the $\Binsuf$ floor, this \emph{dissolves the closu
 verdict}---$P\approx0.79$ under two-way solute$\times$solvent clustering that $\Bclos$ no longer exceeds
 $\Binsuf$, the near-mirror of the $P\approx0.78$ that it \emph{does} bind under 2002 (same clustering,
 opposite verdicts). This last step charges a UD-based error against a $\Binsuf$ estimated on the
-VT-2005 latent used elsewhere, so we read the dissolution as directional rather than exact---though a
-richer $3$-profile latent would if anything \emph{lower} $\Binsuf$, reinforcing rather than weakening
-the closure attribution. We do \emph{not} claim a flip to the inputs: we hold only an \emph{upper} bound
+VT-2005 latent used elsewhere, so the $P\approx0.79$ figure is a \emph{cross-database} quantity: we
+report it as indicative, not exact, and rest the conclusion on the database-consistent
+\emph{same-database} contrast above ($1.26\to0.77$ on identical UD profiles, insufficiency-free by
+construction). A $\Binsuf$ re-estimate on the UD latent is the exact test; absent it the mismatch can
+move $P\approx0.79$ but not its sign, since a richer $3$-profile latent would if anything \emph{lower}
+$\Binsuf$, reinforcing rather than weakening the closure attribution. We do \emph{not} claim a flip to the inputs: we hold only an \emph{upper} bound
 on $\Binsuf$, so ``the inputs bind'' would require a lower bound we do not have---what the modern
 closure establishes is only that our own 2002 attribution no longer holds. The decision-relevant
 reading is thus not ``the closure always dominates'' but ``on the low-fidelity 2002 closure it does, and the

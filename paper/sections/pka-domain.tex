@@ -13,7 +13,12 @@ meta/para series ($n{=}161$) is well specified (RMSE $0.63$, $\Bclos$ below the 
 while the ortho/heteroaromatic regime ($n{=}1008$) degrades to RMSE $2.4$, input-insufficiency
 dominated---the near-exact-to-degraded transition, measured rather than asserted. A trained physics
 arm (learned $\hat\sigma$ through the fixed LFER) beats its matched DirectGNN control overall
-($1.63$ vs $1.84$ pKa MAE), but the informative test is the same oracle swap as on solubility, now
+($1.63$ vs $1.84$ pKa MAE), but we do \emph{not} read this overall ``help'' as a clean confirmation
+of the sign rule: it concentrates in the \emph{misspecified} ortho regime ($\Delta=-0.53$), is
+within seed noise on the clean meta/para one ($\Delta=-0.10$), and the DirectGNN control is not
+separately tuned---so it reflects a permissive closure plus a strong per-scaffold $\mathrm pK_{a,0}$
+prior, not the variance-saving of a well-specified prior (App.~\ref{sec:si-pka}). The informative
+test is instead the same oracle swap as on solubility, now
 run per stratum: replace the learned $\hat\sigma$ with the tabulated $\sigma^\star$ in the same
 closure and read the sign of the change. It \emph{flips}. On the clean meta/para series feeding the
 reference constant \emph{helps}---MAE $1.61\to0.60$, oracle below learned in every seed---so there the
