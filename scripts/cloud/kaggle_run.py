@@ -399,6 +399,10 @@ def main():
                          "verify the whole pipeline end-to-end in ~2-3 min BEFORE spending real compute.")
     ap.add_argument("--out", type=Path, default=Path("/kaggle/working/results"))
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--seeds", default="0,1,2",
+                    help="surrogate_seeds only: comma list of seeds. Use a single seed per VM "
+                         "(--seeds 0 / 1 / 2) to fan the 3 seeds across 3 GPUs, then aggregate the "
+                         "per-seed isolation_gpu.json locally.")
     # budgets (trim for a shorter session)
     ap.add_argument("--warm", type=int, default=40); ap.add_argument("--sle", type=int, default=120)
     ap.add_argument("--t3-ep1", type=int, default=30); ap.add_argument("--t3-ep2", type=int, default=120)
@@ -454,7 +458,8 @@ def main():
                if args.smoke else {})),
         "dosed":    lambda: do_dosed(args.out, args.device),
         "supervised_sigma": lambda: do_supervised_sigma(args.out / "supervised_sigma", args.device, args.warm, args.sle),
-        "surrogate_seeds": lambda: do_surrogate_seeds(args.out / "surrogate_seeds", args.device, args.warm, args.sle),
+        "surrogate_seeds": lambda: do_surrogate_seeds(args.out / "surrogate_seeds", args.device, args.warm, args.sle,
+                                                       seeds=tuple(int(s) for s in str(args.seeds).split(","))),
     }
     for name in todo:
         name = name.strip()

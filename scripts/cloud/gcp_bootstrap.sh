@@ -8,7 +8,8 @@ set -euo pipefail
 BRANCH=sigma-grounded-cosmosac
 REPO=https://github.com/doctawho42/tgnn-solv.git
 WARM=${WARM:-40}
-SLE=${SLE:-120}
+SLE=${SLE:-70}
+SEEDS=${SEEDS:-0,1,2}   # set SEEDS=0 (or 1/2) to run ONE seed per VM for the 3-GPU parallel split
 
 # 1. code -----------------------------------------------------------------
 [ -d tgnn-solv ] || git clone --branch "$BRANCH" "$REPO"
@@ -36,7 +37,7 @@ PY
 
 # 4. run: 3-seed surrogate isolation -> mean+/-sd of 33/45/53/73%/3.3x -----
 KMP_DUPLICATE_LIB_OK=TRUE python scripts/cloud/kaggle_run.py \
-    --do surrogate_seeds --out results/sur --device cuda --warm "$WARM" --sle "$SLE"
+    --do surrogate_seeds --out results/sur --device cuda --warm "$WARM" --sle "$SLE" --seeds "$SEEDS"
 
 # 5. show + pack results --------------------------------------------------
 echo "===== surrogate_seeds.json ====="
