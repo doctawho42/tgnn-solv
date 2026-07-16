@@ -134,7 +134,7 @@ measurement and an organizing frame.
   the new element is exploiting an externally referenced latent to bound the split
   empirically. On the convention-robust evidence---a bound that holds however the
   COSMO-SAC closure is configured, plus the more-physics-worse effect---$\Bclos$
-  (misspecified decoder) exceeds $\Binsuf$ (input insufficiency) on the low-$\gamma$ subset we
+  (misspecified decoder) exceeds $\Binsuf$ (input insufficiency) on the subset we
   can measure. This is robust across the tabulated $k$-NN, binning, random-forest, and ridge insufficiency
   estimators (a more conservative ridge stress-test is the sole non-certifying case) and to leaving out
   any solvent, so the binding term is \emph{likely} the closure---but as a \emph{sub-threshold}
@@ -831,7 +831,7 @@ The result is a cautionary measurement for physics-informed modeling: grounding 
 model on truer physical inputs is only as good as the closure that consumes them,
 and when that closure is a fixed, mildly misspecified map, better inputs surface
 its bias rather than help. The external latent does not make the physics path win. What it buys is
-\emph{attribution}: on the infinite-dilution, low-$\gamma$ subset we can measure, the
+\emph{attribution}: on the subset we can measure, the
 ceiling sits in the decoder ($\Bclos$), with the inputs ($\Binsuf$) the less likely
 source and label noise unestimable but assumed zero (and unable to manufacture the
 constant offset the bounds rest on). We do not claim this numeric attribution transfers
@@ -955,14 +955,12 @@ Feeding a physics-informed solubility model its reference physical inputs made i
 worse. What the paper contributes is a way to measure that failure: with an
 externally grounded latent, the reference-input excess risk splits into a
 decoder-misspecification term and an input-insufficiency term, and on the
-infinite-dilution, low-$\gamma$ subset we can measure, the ceiling is most likely
-the closure rather than the inputs ($P\approx0.78$ under two-way solute$\times$solvent clustering,
-$0.89$ single-axis; not certified at conventional confidence;
-label noise unestimable and assumed zero). The
+subset we can measure, the ceiling is most likely
+the closure rather than the inputs ($P\approx0.78$ under two-way clustering, not certified at
+conventional confidence). The
 practical implication is to fix the map itself, since within this closure truer
-inputs surface its bias and an output-space correction is inert---though this attribution is itself
-the sub-threshold, $2002$-specific corner measurement above, which a modern closure
-(COSMO-SAC-2010/dsp) dissolves. Neither failure is universal: raising closure fidelity or supervising
+inputs surface its bias and an output-space correction is inert---though this attribution is
+$2002$-specific: a modern closure (COSMO-SAC-2010/dsp) dissolves it. Neither failure is universal: raising closure fidelity or supervising
 the latent toward truth moves the system out of the hurts-corner, so whether grounding helps is
 \emph{shaped by} two axes---closure fidelity and how the latent is trained (Fig.~\ref{fig:map}). The same grounding also indicates,
 where the closure binds, that the learned $\sigma$-profile is a closure-compensating surrogate rather
