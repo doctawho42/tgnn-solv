@@ -27,6 +27,13 @@ the crystal head, the $51$-bin $\sigma$-profile head, and the parameter-free COS
 full model has $5.40$M trainable parameters---capacity that the in-sample linear probe
 ($R^2\approx0.76$, \S\ref{sec:supporting}) indicates is not the binding constraint. The DirectGNN
 control shares this encoder, interaction, and readout verbatim.
+\paragraph{Encoder backbones.} The shared encoder has three interchangeable backbones: the
+headline message-passing network (MPNN); a hybrid local-message/global-attention graph transformer
+(GPS \cite{rampasek2022}); and a physics-channelled variant, Thermodynamically-Informed Message
+Passing (TIMP), which splits messages into dispersive, polar, and hydrogen-bonding channels
+supervised toward the Hansen parameters to prevent channel collapse. TIMP does not beat the plain
+MPNN across our runs, consistent with the encoder being transfer-limited rather than
+expressivity-limited (linear probe train $R^2\approx0.76$, test $R^2\approx0.45$).
 \paragraph{Optimisation.} Adam (weight decay $5\times10^{-4}$, gradient clipping at $2.0$, batch $64$)
 under the three-phase curriculum of \S\ref{sec:methods}: $30$ epochs of auxiliary pretraining (P1),
 $70$ of full SLE training (P2), and $10$ of low-rate stabilisation (P3), at learning rates

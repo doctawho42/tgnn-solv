@@ -31,18 +31,10 @@ each is filtered to exclude any molecule whose scaffold appears in the
 validation or test split.
 
 \subsection{Graph encoder and pair representation}
-Solute and solvent are encoded by a \emph{shared} graph network with three
-interchangeable backbones: a message-passing network (MPNN), a hybrid
-local-message/global-attention graph transformer (GPS \cite{rampasek2022}), and a
-physics-channelled variant, Thermodynamically-Informed Message Passing (TIMP),
-that splits messages into dispersive, polar, and hydrogen-bonding channels
-supervised toward the Hansen solubility parameters (the dispersive, polar, and
-hydrogen-bonding components of a molecule's cohesive energy density) to prevent
-channel collapse.\footnote{TIMP is a physics-motivated backbone we introduced to
-test whether a thermodynamically structured encoder helps; across our runs it does
-not beat the plain MPNN, consistent with the encoder being transfer-limited rather
-than expressivity-limited (a linear probe reaches train $R^2\approx0.76$ but test
-$R^2\approx0.45$).} Small hydride
+Solute and solvent are encoded by a \emph{shared} message-passing graph network; two other
+interchangeable backbones (a graph-transformer and a physics-channelled variant that supervises
+message channels toward the Hansen parameters) are described in the SI (\S\ref{sec:si-methods}) and
+do not outperform the headline MPNN. Small hydride
 solvents such as water are given explicit hydrogens so the polar and
 hydrogen-bond channels activate. Solute and solvent embeddings interact through a
 bipartite cross-attention/message-passing block and a physics-aware readout, and
@@ -73,19 +65,13 @@ the constant-$\Delta C_p$ correction omitted (its magnitude is audited in the SI
 The activity term \lng\ is produced by one of three closures, selected by
 configuration, all differentiable and all consuming the same pair representation.
 
-\paragraph{NRTL (Non-Random Two-Liquid \cite{renon1968}).} A head predicts the two
-interaction energies and a non-randomness factor, $\tau_{12}^{\mathrm{ref}},\beta_{12},
-\tau_{21}^{\mathrm{ref}},\beta_{21},\alpha\in[0.1,0.6]$, with a temperature law
-$\tau_{ij}(T)=\tau_{ij}^{\mathrm{ref}}+\beta_{ij}(1/T-1/T_{\mathrm{ref}})$; an
-optional UNIFAC (UNIQUAC Functional-group Activity Coefficients \cite{fredenslund1975})
-group-contribution prior regularises the $\tau$'s. This is the
-default and the most expressive activity model.
-
-\paragraph{Single-parameter (\texttt{gamma\_inf}).} Collapsing the NRTL closure to
-a symmetric one-parameter form yields the analytic infinite-dilution law
-$\lng(x_2,T)=\lngi(T)\,(1-x_2)^2$, with $\lngi$ affine in $1/T$. This is the
-minimal activity model and the setting in which the identifiability analysis is
-cleanest (\S\ref{sec:framework}).
+\paragraph{Two baseline closures.} NRTL (Non-Random Two-Liquid \cite{renon1968}), the most
+expressive of the three, predicts two interaction energies with a $1/T$ temperature law and a
+non-randomness factor, optionally regularised by a UNIFAC group-contribution prior
+\cite{fredenslund1975}; both are standard and serve mainly as baselines. Its symmetric
+one-parameter collapse \texttt{gamma\_inf} gives the analytic infinite-dilution law
+$\lng(x_2,T)=\lngi(T)\,(1-x_2)^2$ with $\lngi$ affine in $1/T$, the minimal model in which the
+identifiability analysis is cleanest (\S\ref{sec:framework}).
 
 \paragraph{Differentiable COSMO-SAC.} A $\sigma$-profile head emits, for each
 molecule, a $51$-bin screening-charge-density profile $p(\sigma)$ (area per bin,
@@ -119,16 +105,9 @@ composition. We iterate a damped map
 \end{equation}
 with closure-specific kernels for the NRTL, \texttt{gamma\_inf}, and COSMO-SAC
 paths. Rather than backpropagating through the iterations, gradients use the
-implicit-function theorem at the converged $x_2^\star$,
-\begin{equation}
-  \frac{\partial \lnx^\star}{\partial\theta}
-  =-\,\frac{\partial(\Phicry+\lng)/\partial\theta}{\,1+x_2^\star\,\eta\,},
-  \qquad \eta=\frac{\partial\lng}{\partial x_2},
-  \label{eq:implicit}
-\end{equation}
-which is exact at the fixed point, memory-constant in the iteration count, and
-exposes an explicit stability criterion: the gradient is well conditioned unless
-$1+x_2^\star\eta\to0$. Iteration counts (train $16$, eval $30$) were set by a
+implicit-function theorem at the converged $x_2^\star$ (with $\eta=\partial\lng/\partial x_2$):
+exact at the fixed point, memory-constant in the iteration count, and well conditioned unless
+$1+x_2^\star\eta\to0$, an explicit stability criterion. Iteration counts (train $16$, eval $30$) were set by a
 convergence audit --- a shorter $n{=}8$ schedule failed a $5.86$-\lnx\ convergence
 test on strongly non-ideal pairs (SI \S\ref{sec:si-methods}).
 
