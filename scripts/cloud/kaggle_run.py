@@ -178,20 +178,20 @@ def do_dataeff_converged(out: Path, device: str, deadline_s: float,
 
 
 # --------------------------------------------------------------------------- #
-def do_onemodel(out: Path, device: str, ep_warm: int, ep_sle: int):
+def do_onemodel(out: Path, device: str, ep_warm: int, ep_sle: int, seed: int = 0):
     """Full-magnitude candidate-#2 isolation on one model (warm-up -> unfrozen SLE)."""
     ck = out / "ckpt"; ck.mkdir(parents=True, exist_ok=True)
     base = ck / "grounded_base.pt"; sle = ck / "sle_model.pt"
     # 1. grounded base: sigma warm-up + phase-1, sigma head frozen in any later SLE (none here)
-    run(["python", "scripts/train.py", "--config", CFG,
+    run(["python", "scripts/train.py", "--config", CFG, "--seed", seed,
          "--train-data", DATA / "train.csv", "--val-data", DATA / "val.csv", "--test-data", DATA / "test.csv",
          "--sigma-train-data", SIGMA, "--sigma-steps-per-epoch", "21",
          "--crystal-train-data", CRYSTAL, "--crystal-steps-per-epoch", "8",
          "--device", device, "--epochs-phase1", 5, "--epochs-phase2", 0, "--epochs-phase3", 0,
          "--set", f"sigma_warmup_epochs={ep_warm}", "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET,
          "--checkpoint", base])
-    # 2. same model, full unfrozen SLE (sigma head trains -> drifts)
-    run(["python", "scripts/train.py", "--config", CFG, "--resume", base, "--resume-extend",
+    # 2. same model, full unfrozen SLE (sigma head trains -> drifts); resume inherits the base seed
+    run(["python", "scripts/train.py", "--config", CFG, "--resume", base, "--resume-extend", "--seed", seed,
          "--train-data", DATA / "train.csv", "--val-data", DATA / "val.csv", "--test-data", DATA / "test.csv",
          "--device", device, "--epochs-phase1", 0, "--epochs-phase2", ep_sle, "--epochs-phase3", 0,
          "--set", "freeze_sigma_head_during_sle=false", "sigma_warmup_epochs=0", *EXTRA_SET,
@@ -201,6 +201,43 @@ def do_onemodel(out: Path, device: str, ep_warm: int, ep_sle: int):
          "--checkpoint", sle, "--baseline-checkpoint", base, "--device", device,
          "--out-json", out / "isolation_gpu.json", "--fig-dir", out])
     print("[onemodel] done ->", out / "isolation_gpu.json", flush=True)
+
+
+def do_surrogate_seeds(out: Path, device: str, ep_warm: int, ep_sle: int, seeds=(0, 1, 2)):
+    """Compensating-surrogate isolation across seeds -> mean+/-sd of the 5 headline metrics.
+    Upgrades the single-run 33/45/53/73%/3.3x numbers (paper sec:surrogate) to mean+/-spread."""
+    import json as _json
+    rows = []
+    for s in seeds:
+        sub = out / f"seed{s}"
+        print(f"\n----- surrogate seed {s} -----", flush=True)
+        do_onemodel(sub, device, ep_warm, ep_sle, seed=s)
+        d = _json.loads((sub / "isolation_gpu.json").read_text())
+        iso = d.get("isolation", {})
+        rows.append({
+            "seed": s,
+            "grounded_vs_true": iso.get("grounded_vs_true_rel_deviation"),         # ~0.33
+            "sle_vs_grounded": (iso.get("A1") or {}).get("rel_deviation"),          # ~0.45
+            "sle_vs_true": ((d.get("vs_true") or {}).get("A1") or {}).get("rel_deviation"),  # ~0.53
+            "top2_evr": (iso.get("A1") or {}).get("top2_cum_evr"),                  # ~0.73
+            "transfer_ratio": (iso.get("A2") or {}).get("improvement_ratio"),       # ~3.3
+        })
+    keys = ["grounded_vs_true", "sle_vs_grounded", "sle_vs_true", "top2_evr", "transfer_ratio"]
+    agg = {}
+    for k in keys:
+        vals = [r[k] for r in rows if r[k] is not None]
+        if vals:
+            m = sum(vals) / len(vals)
+            sd = (sum((v - m) ** 2 for v in vals) / len(vals)) ** 0.5 if len(vals) > 1 else 0.0
+            agg[k] = {"mean": m, "sd": sd, "n": len(vals), "values": vals}
+    summary = {"seeds": list(seeds), "per_seed": rows, "aggregate": agg,
+               "recipe": {"ep_warm": ep_warm, "ep_sle": ep_sle}}
+    save(out, "surrogate_seeds.json", summary)
+    print("\n[surrogate_seeds] aggregate (mean +/- sd):", flush=True)
+    for k in keys:
+        if k in agg:
+            print(f"   {k:18s}: {agg[k]['mean']:.3f} +/- {agg[k]['sd']:.3f}  (n={agg[k]['n']})", flush=True)
+    print("[surrogate_seeds] done ->", out / "surrogate_seeds.json", flush=True)
 
 
 def do_tier3(out: Path, device: str, ep1: int, ep2: int, ep3: int, arm_ep2: int, seeds=(0, 1, 2)):
@@ -348,9 +385,10 @@ def do_supervised_sigma(out: Path, device: str, ep_warm: int, ep_sle: int):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--do", default="all",
-                    help="comma list of {onemodel,tier3,dataeff,dataeff_converged,dosed,supervised_sigma} "
-                         "or 'all' (dataeff_converged and supervised_sigma are NOT in 'all'; run them "
-                         "explicitly -- dataeff_converged is the Fork-A convergence-matched sweep)")
+                    help="comma list of {onemodel,tier3,dataeff,dataeff_converged,dosed,supervised_sigma,"
+                         "surrogate_seeds} or 'all' (dataeff_converged, supervised_sigma, surrogate_seeds are "
+                         "NOT in 'all'; run them explicitly -- surrogate_seeds is the 3-seed compensating-"
+                         "surrogate run that turns the single-run 53/73/3.3x into mean+/-sd)")
     ap.add_argument("--deadline-hours", type=float, default=8.0,
                     help="wall-clock budget for dataeff_converged; it defers runs that will not finish "
                          "in time (leave ~1h margin below the Kaggle session limit for result packaging).")
@@ -414,6 +452,7 @@ def main():
                if args.smoke else {})),
         "dosed":    lambda: do_dosed(args.out, args.device),
         "supervised_sigma": lambda: do_supervised_sigma(args.out / "supervised_sigma", args.device, args.warm, args.sle),
+        "surrogate_seeds": lambda: do_surrogate_seeds(args.out / "surrogate_seeds", args.device, args.warm, args.sle),
     }
     for name in todo:
         name = name.strip()
