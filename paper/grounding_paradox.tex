@@ -69,10 +69,12 @@ The Latent Becomes a Compensating Surrogate}
 
 \begin{abstract}
 Feeding a graph network's own learned, imperfect $\sigma$-profiles through a fixed COSMO-SAC
-closure predicts solid--liquid solubility better (MAE $1.85$ vs $2.25$ in $\ln x_2$) than feeding
-external quantum-chemical reference profiles (VT-2005) through the same closure, which erases the
-positive $R^2$ ($+0.33\!\to\!-0.03\pm0.04$). This grounding paradox is robust across three seeds
-($n{=}5608$) and three injection controls. Mechanistically, end-to-end training drives the
+closure predicts solid--liquid solubility better than feeding external quantum-chemical reference
+profiles (VT-2005) through the same closure---by $+0.13$ in $\ln x_2$ MAE when the model co-adapts to
+the reference input (reference $\sigma$ injected at training, $1.85\!\to\!1.98$) and by $+0.40$ when
+it is swapped in only at evaluation ($\to\!2.25$, maximally exposing the drift), with the
+reference-input arm's $R^2$ dropping from $+0.33$ to $-0.03\pm0.04$. This grounding paradox is robust
+across three seeds ($n{=}5608$) and three injection controls. Mechanistically, end-to-end training drives the
 ``physical'' latent into a low-rank, out-of-sample-transferable surrogate that cancels the closure's
 error rather than reporting the physical quantity (a single converged-run illustration: the sign is
 robust, the magnitudes---$53\%$ departure, $73\%$ in two modes, $3.3\times$ transfer---provisional).
@@ -608,16 +610,20 @@ estimator; \S\ref{sec:measure}), so the closure's excess over that floor is $\Bc
 \subsection{The closure-fidelity axis: locating the ceiling, and moving it}
 \label{sec:measure}
 % Artifact: results/b_insuff/decomposition.json via scripts/analysis/run_b_insuff_decomposition.py.
-Because the reference latent is externally observed, the decomposition of \S\ref{sec:decomp} becomes
-an \emph{instrument}: on a matched corner it asks whether a fixed closure's ceiling sits in the map
-or in its inputs. We demonstrate it on the $n{=}60$ matchable activity pairs (298\,K, infinite
-dilution)---a small corner, so we read the split as a demonstration, not a certificate---with
-$\zstar$ the reference concatenated solute/solvent $\sigma$-profiles and $m$ the experimental
-$\lngi$; Table~\ref{tab:decomp} reports the bounds. On this corner the ceiling sits in the
-\emph{low-fidelity} closure rather than its inputs, and---the constructive reading of the map's
-fidelity axis---raising closure fidelity (COSMO-SAC-2010/dsp) moves it. The set spans 41 solutes and
-17 solvents in $102$ profile dimensions, with two formamide pairs dropped on a canonical-SMILES
-tautomer mismatch.
+The cause is cleanest in the form that needs no bounds and no small-set variance estimation. Holding
+the reference latent $\zstar$ \emph{fixed} on identical Delaware (UD) $3$-profiles and swapping only
+the closure---the low-fidelity COSMO-SAC-2002 kernel for the donor/acceptor-typed 2010---cuts the
+activity error from $\mathrm{MSE}=1.26$ to $0.77$ ($n{=}57$; \S\ref{sec:measure} below). Because the
+inputs never change, this is attributable to the closure alone and is insufficiency-free by
+construction: \emph{closure fidelity, not input fidelity, is the lever}. The externally-referenced
+decomposition of \S\ref{sec:decomp} corroborates this on the harder $n{=}60$ matched corner, where it
+acts as an \emph{instrument}: on a matched corner it asks whether a fixed closure's ceiling sits in
+the map or in its inputs. We demonstrate it on the $n{=}60$ matchable activity pairs (298\,K, infinite
+dilution)---a small corner, so we read the split as a demonstration, not a certificate---with $\zstar$
+the reference concatenated solute/solvent $\sigma$-profiles and $m$ the experimental $\lngi$;
+Table~\ref{tab:decomp} reports the bounds. On this corner too the ceiling sits in the
+\emph{low-fidelity} closure rather than its inputs. The set spans 41 solutes and 17 solvents in $102$
+profile dimensions, with two formamide pairs dropped on a canonical-SMILES tautomer mismatch.
 
 \begin{table}[t]
 \centering
@@ -718,8 +724,8 @@ ${\sim}58\%$ ($0.91\to0.38$). The closure-dominance \emph{sign}, not its magnitu
 ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. A small
 structure-preserving residual on the fixed COSMO-SAC exchange-energy kernel
 ($\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric, zero-initialised), fit on
-the \emph{reference} VT-2005 profiles, removes $56\%$ of the total reference-input error out-of-sample (five-fold
-cross-validated, activity MSE $1.47\!\to\!0.64$---nearly all of the reducible closure component above
+the \emph{reference} VT-2005 profiles, removes $49\%$ of the total reference-input error out-of-sample (five-fold
+cross-validated, activity MSE $1.47\!\to\!0.75$---most of the reducible closure component above
 the $\Binsuf$ floor) at \emph{rank one} ($52$ parameters; rank~2 adds
 nothing, rank~3 over-fits). At $52$ parameters against $n{=}60$ this is provisional, and we have not
 separated the kernel correction from a per-solvent offset. So $\Bclos$ is not diffuse model error but

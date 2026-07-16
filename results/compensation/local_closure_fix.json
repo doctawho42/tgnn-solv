@@ -4,31 +4,31 @@
   "ranks": {
     "1": {
       "K": 52,
-      "heldout_mse": 0.6430502831935883,
-      "train_mse": 0.2439222365617752,
-      "heldout_reduction_vs_fixed": 0.8292173445224762,
-      "heldout_reduction_pct": 56.32245991911436
+      "heldout_mse": 0.7468407392501831,
+      "train_mse": 0.2795743942260742,
+      "heldout_reduction_vs_fixed": 0.7254268884658813,
+      "heldout_reduction_pct": 49.27275957233668
     },
     "2": {
       "K": 104,
-      "heldout_mse": 0.6443266570568085,
-      "train_mse": 0.16466179639101028,
-      "heldout_reduction_vs_fixed": 0.827940970659256,
-      "heldout_reduction_pct": 56.23576550030137
+      "heldout_mse": 0.8503957748413086,
+      "train_mse": 0.22889320254325868,
+      "heldout_reduction_vs_fixed": 0.6218718528747559,
+      "heldout_reduction_pct": 42.23904955646336
     },
     "3": {
       "K": 156,
-      "heldout_mse": 0.9882906556129456,
-      "train_mse": 0.16715696528553964,
-      "heldout_reduction_vs_fixed": 0.48397697210311885,
-      "heldout_reduction_pct": 32.872893690796865
+      "heldout_mse": 0.7720765173435211,
+      "train_mse": 0.16494523286819457,
+      "heldout_reduction_vs_fixed": 0.7001911103725433,
+      "heldout_reduction_pct": 47.55868411361819
     }
   },
   "best_rank_for_map": 1,
-  "delta_frobenius": 61.11888122558594,
+  "delta_frobenius": 53.90327835083008,
   "A3": {
-    "corr_delta_vs_sigmahat_deviation": -0.09501737880494063,
+    "corr_delta_vs_sigmahat_deviation": -0.06785797223737385,
     "verdict": "weak/no convergence"
   },
-  "figure": "/private/tmp/claude-501/-Users-nikitapolomosnov-PycharmProjects-tgnn-solv/d8c57c82-2aba-4a38-b6f5-83d49a35e42a/scratchpad/fig_local_closure_fix.pdf"
+  "figure": "paper/figs/fig_local_closure_fix.pdf"
 }
