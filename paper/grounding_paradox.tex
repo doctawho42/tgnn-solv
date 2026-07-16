@@ -59,8 +59,8 @@
 \newcommand{\Ex}{\ensuremath{\mathbb{E}}}
 \newcommand{\Var}{\ensuremath{\mathrm{Var}}}
 
-\title{When Reference Physical Inputs Help or Hurt a Learned Solubility Model:\\
-A Closure-vs-Inputs Diagnostic and a Two-Axis Map of Grounding}
+\title{When Reference Physical Inputs Hurt a Learned Solubility Model:\\
+The Latent Becomes a Compensating Surrogate}
 \author{N.~L. Polomoshnov\thanks{\pending[affiliation and full postal address]. E-mail: \pending[corresponding-author email]} \and \pending[co-author names and affiliations]}
 \date{\today}
 
@@ -270,9 +270,7 @@ $\Binsuf$              & input insufficiency, $\Ex[\Var(m\mid\zstar)]$ \\
 $\Gamma$ (grounding gap) & $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$: oracle risk minus best end-to-end risk \\
 $\Delta_\infty$ (physics tax) & asymptotic risk of the physics arm minus the matched control \\
 full / res             & COSMO-SAC with / without the Staverman--Guggenheim combinatorial term \\
-Tier~1 / Tier~2        & convention-independent (load-bearing) / convention-robust corroboration \\
 $R_{\mathrm{orc}},R_{\mathrm{e2e}},R_{\mathrm{free}}$ & oracle / best end-to-end / free black-box population risks (they define $\Gamma$) \\
-convention-indep.\ / -robust & invariant to the full/res combinatorial choice / same sign across the conventions tested \\
 compensating surrogate & a learned $\hat z$ that \emph{cancels} the closure's error instead of matching $\zstar$; here low-rank and out-of-sample transferable \\
 $P$                    & clustered-bootstrap probability that $\Bclos>\Binsuf$ on the matched set \\
 \bottomrule
@@ -669,11 +667,11 @@ why we do not lean on it.}
 \label{fig:decomp}
 \end{figure}
 
-We grade the evidence in two tiers: \emph{Tier~1} claims hold for \emph{any} COSMO-SAC
-configuration and are the load-bearing ones, while \emph{Tier~2} claims are
-configuration-robust corroboration that is not strictly independent of the model fit.
+We separate the load-bearing evidence---a bound that holds under \emph{any} COSMO-SAC
+configuration---from corroborating checks that are robust across the conventions we tried but not
+strictly independent of the model fit.
 
-\paragraph{The load-bearing separation (leakage-immune, Tier~1).} We subtract the leakage-immune
+\paragraph{The load-bearing separation (leakage-immune).} We subtract the leakage-immune
 law-of-total-variance $\Binsuf$ upper bound---the most conservative of our estimators, since the
 $z^\ast$-neighbour estimators ($k$-NN, RF) are deflated by near-duplicate leakage and so \emph{inflate}
 $\Bclos$---from the total error. On the model's \emph{deployed} residual-only convention this gives
@@ -730,7 +728,7 @@ closure, whereas the same error is only made worse by feeding the inputs truthfu
 (\S\ref{sec:paradox}) and untouched by an output residual (\S\ref{sec:gateb}); whether an end-to-end
 model realises the gain is a compute-gated question we leave open.
 
-\paragraph{Convention-robust corroboration (Tier~2).} The genuinely convention-robust fact is that
+\paragraph{Corroboration robust across conventions.} The genuinely convention-robust fact is that
 adding the physically \emph{more} complete Staverman--Guggenheim combinatorial term \emph{increases}
 error (activity MSE $1.47\to1.80$)---what a misspecified map does, not what missing information would.
 This survives recomputing the size factor on the reference COSMO cavity volumes (Jensen $0.714\to0.717$,
