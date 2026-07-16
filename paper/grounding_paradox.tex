@@ -122,7 +122,9 @@ fixed closure) and the closure's fidelity. Three findings stand cleanly---the pa
 measurement instrument, and the \emph{structure} of the compensating-surrogate mechanism (its sign
 and low-rank, transferable form robust; its magnitude a single converged-run estimate); the
 closure-vs-inputs attribution and the two-axis map we present as, respectively, a caveated corner
-measurement and an organizing frame.
+measurement and a \emph{conceptual} organizing frame---not a measured phase diagram, since only the
+closure-fidelity axis is swept directly (\S\ref{sec:dial}); the supervision axis rests on our own
+warmup-manifold point and a literature anchor.
 \begin{itemize}
   \item \textbf{The grounding paradox (empirical).}
   Substituting reference VT-2005 $\sigma$-profiles into the differentiable COSMO-SAC
@@ -830,6 +832,26 @@ estimate, is the binding constraint.
 
 \input{sections/pka-domain}
 
+\subsection{What we do not measure, and why}
+\label{sec:scope}
+The paper's strongest claim and its causal attribution live in \emph{different regimes}, and we state
+the gap plainly rather than distribute it across scope footnotes. The grounding paradox is measured
+where the model operates---finite composition, all $\gamma$, $n{=}5608$. Its \emph{cause}---the
+closure/insufficiency attribution (\S\ref{sec:measure}) and the compensating-surrogate mechanism
+(\S\ref{sec:surrogate})---is measured only on the matched external-reference corner: infinite
+dilution, $298$\,K, low $\gamma$, $n{=}60$ (attribution) and $n{=}44$ (mechanism). So the cause of the
+headline result is \emph{not} measured in the headline's own regime; we transfer it by in-regime
+signs---the more-physics-worse effect on the full $n{=}5608$ set and the chemistry map
+(\S\ref{sec:map})---which is a conjecture, not a measured fact, and is the first place a referee
+should press. Two structural limits keep us from closing it. The external-reference corner cannot be
+enlarged: only $74$ VT-2005-matchable IDAC pairs exist ($60$ at $298$\,K plus $14$ off-temperature),
+so the $n{=}60$ attribution cannot be pushed to significance on this data; and the matched IDAC is
+essentially single-method (gas chromatography), so a method-stratified re-estimate is unavailable.
+What \emph{does} hold in any regime, needing neither bounds nor cross-regime transfer, is the
+same-database fidelity contrast of \S\ref{sec:measure} ($1.26\to0.77$, closure alone). We therefore
+lead with that, present the attribution as a demonstration, and mark its regime transfer as the open
+question.
+
 \section{Discussion}
 \label{sec:discussion}
 The result is a cautionary measurement for physics-informed modeling: grounding a
@@ -892,19 +914,21 @@ asymptotic bias $\Delta_\infty$ (equal to $\Bclos-\Gamma$ only under A2 with an
 asymptotically-Bayes control, otherwise read off the large-$n$ asymptote); both are measurable. The variance benefit is
 largest at small $n$ and vanishes as data accumulate or as the black box nears the aleatoric
 floor, whereas $\Delta_\infty$ is set by the closure and does not. A prior is therefore
-predicted to hurt precisely in the mature-data, low-noise, well-covered regime, and this is what we
-observe---the \emph{novelty inversion}, our most unexpected secondary finding. Resolving the
-physics tax by solute novelty runs opposite to the usual coverage intuition: the closure is neutral
-on the most \emph{novel} solutes (nearest-train Tanimoto $\le0.3$:
+predicted to hurt precisely in the mature-data, low-noise, well-covered regime. The synthetic dial
+(\S\ref{sec:dial}) and the pKa closure (\S\ref{sec:pka}) exercise the fidelity and sufficiency
+behaviour directly.
+
+\paragraph{The novelty inversion (exploratory).} The sharpest---and most unexpected---confirmation of
+the tax rule runs opposite to the usual coverage intuition. Resolving the physics tax by solute
+novelty, the closure is neutral on the most \emph{novel} solutes (nearest-train Tanimoto $\le0.3$:
 $\Delta\mathrm{MAE}=-0.04\pm0.18$) and heaviest on the most \emph{familiar}, best-covered ones
-(Tanimoto $>0.8$: $+0.51\pm0.09$), because a structural closure bias surfaces as the dominant
-residual only where the direct control is already accurate. The tax likewise concentrates in
-strongly hydrogen-bonding solvents (water $+0.52\pm0.35$) and reverses sign in the
-acceptor-dominated amides ($-0.22\pm0.11$) the closure was built for (\S\ref{sec:map}). Both
-patterns are exploratory---no multiplicity control across strata families---but they point where
-the tax rule predicts, and where much of modern machine learning operates. The synthetic dial (\S\ref{sec:dial})
-and the pKa closure (\S\ref{sec:pka}) trace the two axes---closure fidelity and
-intermediate sufficiency---directly. We claim no universal boundary; we \emph{propose}, but do not here cleanly validate, a diagnostic for the sign of the physics tax:
+(Tanimoto $>0.8$: $+0.51\pm0.09$)---exactly as Proposition~\ref{prop:tax} predicts, since the variance
+a prior saves vanishes precisely where the black box is already accurate, leaving a structural closure
+bias as the dominant residual. The tax likewise concentrates in strongly hydrogen-bonding solvents
+(water $+0.52\pm0.35$) and reverses sign in the acceptor-dominated amides ($-0.22\pm0.11$) the closure
+was built for (\S\ref{sec:map}). Both patterns are exploratory---no multiplicity control across strata
+families---but they land where the tax rule predicts, and where much of modern machine learning
+operates. We claim no universal boundary; we \emph{propose}, but do not here cleanly validate, a diagnostic for the sign of the physics tax:
 measure $\Bclos$ through the decomposition, read $\Delta_\infty$ off the large-$n$ asymptote, and
 the sign should follow. In this sense the failure is not idiosyncratic to
 solubility; it recurs whenever a misspecified closure is coupled to an expressive encoder on
