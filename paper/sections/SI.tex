@@ -27,6 +27,22 @@ the crystal head, the $51$-bin $\sigma$-profile head, and the parameter-free COS
 full model has $5.40$M trainable parameters---capacity that the in-sample linear probe
 ($R^2\approx0.76$, \S\ref{sec:supporting}) indicates is not the binding constraint. The DirectGNN
 control shares this encoder, interaction, and readout verbatim.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_architecture.pdf}
+\caption{The model and the oracle substitution. Solute and solvent graphs pass
+through a shared encoder to a crystal head (the ideal term $\Phi(T)$) and a
+$\sigma$-profile head; the predicted profile $\hat z$ feeds the fixed COSMO-SAC closure
+$g$, which returns $\ln\gamma_2$, and an SLE solver combines the two into $\lnx$. Input
+insufficiency $\Binsuf$ enters at the intermediate $\hat z$ and closure misspecification
+$\Bclos$ at $g$. The $\sigma$-oracle replaces $\hat z$ with the reference VT-2005 profile
+$\zstar$ (salmon). DirectGNN (grey) is the matched control---it shares the encoder but
+drops the closure, so the gap to the physics path is the physics tax
+$R_{\mathrm{phys}}-R_{\mathrm{direct}}$.}
+\label{fig:arch}
+\end{figure}
+
 \paragraph{Encoder backbones.} The shared encoder has three interchangeable backbones: the
 headline message-passing network (MPNN); a hybrid local-message/global-attention graph transformer
 (GPS \cite{rampasek2022}); and a physics-channelled variant, Thermodynamically-Informed Message

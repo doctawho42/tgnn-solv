@@ -191,22 +191,7 @@ compounds \cite{mullins2006}), and $g(\zstar)$ for the closure output when fed t
 reference profile. The model's own head instead predicts a \emph{learned} profile
 $\hat z$ and evaluates $g(\hat z)$; a matched \emph{DirectGNN} control shares the
 encoder but emits $\lnx$ with no closure, and is the reference for ``what the
-physics bottleneck costs'' (Fig.~\ref{fig:arch}).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig_architecture.pdf}
-\caption{The model and the oracle substitution. Solute and solvent graphs pass
-through a shared encoder to a crystal head (the ideal term $\Phi(T)$) and a
-$\sigma$-profile head; the predicted profile $\hat z$ feeds the fixed COSMO-SAC closure
-$g$, which returns $\ln\gamma_2$, and an SLE solver combines the two into $\lnx$. Input
-insufficiency $\Binsuf$ enters at the intermediate $\hat z$ and closure misspecification
-$\Bclos$ at $g$. The $\sigma$-oracle replaces $\hat z$ with the reference VT-2005 profile
-$\zstar$ (salmon). DirectGNN (grey) is the matched control---it shares the encoder but
-drops the closure, so the gap to the physics path is the physics tax
-$R_{\mathrm{phys}}-R_{\mathrm{direct}}$.}
-\label{fig:arch}
-\end{figure}
+physics bottleneck costs'' (schematic in SI, Fig.~\ref{fig:arch}).
 
 \paragraph{The oracle substitution.} Feeding $\zstar$ in place of $\hat z$
 (a $\sigma$-oracle) isolates the closure from encoder error: if the closure were
