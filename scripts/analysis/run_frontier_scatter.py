@@ -29,9 +29,16 @@ import torch
 HERE = Path(__file__).resolve().parent
 SNR = 8.0
 
-# fetched-SDF decomposition (run_pka_real_decomposition) + Var(pKa) computed on the same SDF
-PKA_BCLOS = {"ortho": 0.7539, "meta/para": 0.5499}
+# fetched-SDF decomposition (run_pka_real_decomposition) + Var(pKa) computed on the same SDF.
+# B_closure is a ONE-SIDED lower bound (S4.2: "one-sided bounds, not a point split"); there is no
+# lower bound on B_insuff (S6.2: "label noise is unestimable in this replicate-free set"), so the
+# only upper bound on B_closure is MSE itself (B_insuff >= 0). => x is an INTERVAL, not a point.
+PKA_MSE = {"ortho": 6.1166, "meta/para": 3.3271}
+PKA_BINSUF_UP = {"ortho": 5.3628, "meta/para": 2.7773}
 PKA_VAR = {"ortho": 9.612, "meta/para": 8.235}
+# solubility (A3): replicates EXIST (F.1 inter-source spread 0.15-0.31 ln x2) -> a LOWER bound on
+# B_insuff -> a two-sided (finite) interval on B_closure. The only system where the test can be
+# informative. Floor is small (~0.02-0.10 sq units vs MSE ~1.5) so the interval stays ~1.7x wide.
 
 
 def _load_diag():
@@ -82,31 +89,44 @@ def main():
                     "S_norm_full": round(float(np.nanmean(Ss)), 3),
                     "S_norm_matched": round(float(np.nanmean(Ssm)), 3)})
 
-    # fit synthetic law on the MATCHED slopes
-    Bs = np.array([s["B_closure_norm"] for s in syn]); Sm = np.array([s["S_norm_matched"] for s in syn])
-    b, a = np.polyfit(Bs, Sm, 1)
+    # fit the synthetic law on the FULL slopes (synthetic B_closure is point-identified: it is the law)
+    Bs = np.array([s["B_closure_norm"] for s in syn]); Sf = np.array([s["S_norm_full"] for s in syn])
+    b, a = np.polyfit(Bs, Sf, 1)
 
-    # --- real ortho point ---
-    o_Snorm_full = snorm(oD, oMSE); o_Snorm_matched = snorm(oD, oMSE, dmin)   # ortho already spans the window
-    o_Bc = PKA_BCLOS["ortho"] / PKA_VAR["ortho"]
-    pred = a + b * o_Bc
-
-    print(f"{'F':>4} {'B_clos_norm':>12} {'S_norm(full)':>13} {'S_norm(matched)':>16}")
+    print(f"{'F':>4} {'B_clos_norm':>12} {'S_norm(full)':>13}")
     for s in syn:
-        print(f"{s['F']:>4.2f} {s['B_closure_norm']:>12.3f} {s['S_norm_full']:>13.3f} {s['S_norm_matched']:>16.3f}")
-    print(f"\nsynthetic law (matched): S_norm = {a:+.3f} + {b:.2f} * B_closure_norm")
-    print(f"\npKa ortho: B_closure_norm = {o_Bc:.3f} (B_clos_lb {PKA_BCLOS['ortho']}/Var {PKA_VAR['ortho']})")
-    print(f"  S_norm(full)   = {o_Snorm_full:+.3f}")
-    print(f"  S_norm(matched)= {o_Snorm_matched:+.3f}   vs synthetic-predicted {pred:+.3f}")
-    lands = abs(o_Snorm_matched - pred) < 0.15
-    print(f"  => ortho lands on the synthetic line: {lands}  (|resid|={abs(o_Snorm_matched-pred):.3f})")
+        print(f"{s['F']:>4.2f} {s['B_closure_norm']:>12.3f} {s['S_norm_full']:>13.3f}")
+    print(f"\nsynthetic law: S_norm = {a:+.3f} + {b:.2f} * B_closure_norm\n")
+
+    # --- real point: x is a ONE-SIDED INTERVAL, not a point (that was the banked-negative error) ---
+    def interval(st):
+        lo = (PKA_MSE[st] - PKA_BINSUF_UP[st]) / PKA_VAR[st]   # B_closure lower bound / Var
+        hi = PKA_MSE[st] / PKA_VAR[st]                          # B_insuff >= 0 => B_closure <= MSE
+        return lo, hi
+
+    o_S = snorm(oD, oMSE)                                       # measured ortho S_norm(MSE)
+    xlo, xhi = interval("ortho")
+    req_x = (o_S - a) / b                                       # x the law needs to pass through (S, .)
+    uninformative = xlo <= req_x <= xhi
+    print(f"pKa ortho: measured S_norm(MSE) = {o_S:+.3f}")
+    print(f"  B_closure_norm INTERVAL = [{xlo:.3f}, {xhi:.3f}]  (~{(xhi-xlo)/xlo:.0f}x wide; lower-bounded only)")
+    print(f"  law needs x = {req_x:.3f}  ->  inside interval: {uninformative}")
+    print(f"  => the test is {'UNINFORMATIVE (line passes through the interval; neither confirmed nor refuted)' if uninformative else 'INFORMATIVE (line misses the interval)'}")
+    # A3 projection: solubility replicates give a B_insuff LOWER bound -> finite upper on B_closure
+    print("\n  A3 (solubility) is the only system with replicates (F.1) -> two-sided interval; est. ~1.7x wide.")
 
     Path("results/frontier/frontier_scatter.json").write_text(json.dumps(
-        {"snr": SNR, "matched_window_dmin": round(dmin, 3), "synthetic": syn,
-         "synthetic_fit_matched": {"intercept": round(a, 3), "slope": round(b, 3)},
-         "pka_ortho": {"B_closure_norm": round(o_Bc, 3), "S_norm_full": round(o_Snorm_full, 3),
-                       "S_norm_matched": round(o_Snorm_matched, 3), "predicted": round(pred, 3),
-                       "lands_on_line": bool(lands)}}, indent=2))
+        {"snr": SNR, "synthetic": syn, "synthetic_fit": {"intercept": round(a, 3), "slope": round(b, 3)},
+         "pka_ortho": {"S_norm_mse": round(o_S, 3),
+                       "B_closure_norm_interval": [round(xlo, 3), round(xhi, 3)],
+                       "law_required_x": round(float(req_x), 3), "uninformative": bool(uninformative)},
+         "conclusion": ("quantitative S_norm=f(B_closure) test needs a POINT-identified B_closure; the "
+                        "instrument gives a one-sided lower bound (no B_insuff lower bound in this "
+                        "replicate-free set), so x is a ~7x interval that CONTAINS the law's required "
+                        "value -> uninformative, NOT refuting. The money-plot is structurally beyond "
+                        "this instrument's reach; retreat to the SIGN law for the right reason. "
+                        "Solubility (A3) has replicates -> the only potentially informative point.")},
+        indent=2))
     print("\nwrote results/frontier/frontier_scatter.json")
 
 

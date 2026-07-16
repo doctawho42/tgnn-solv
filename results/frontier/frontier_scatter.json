@@ -1,6 +1,5 @@
 {
   "snr": 8.0,
-  "matched_window_dmin": 0.216,
   "synthetic": [
     {
       "F": 1.0,
@@ -51,15 +50,18 @@
       "S_norm_matched": 0.027
     }
   ],
-  "synthetic_fit_matched": {
-    "intercept": NaN,
-    "slope": NaN
+  "synthetic_fit": {
+    "intercept": -0.032,
+    "slope": 1.805
   },
   "pka_ortho": {
-    "B_closure_norm": 0.078,
-    "S_norm_full": 0.588,
-    "S_norm_matched": 0.588,
-    "predicted": NaN,
-    "lands_on_line": false
-  }
+    "S_norm_mse": 0.588,
+    "B_closure_norm_interval": [
+      0.078,
+      0.636
+    ],
+    "law_required_x": 0.343,
+    "uninformative": true
+  },
+  "conclusion": "quantitative S_norm=f(B_closure) test needs a POINT-identified B_closure; the instrument gives a one-sided lower bound (no B_insuff lower bound in this replicate-free set), so x is a ~7x interval that CONTAINS the law's required value -> uninformative, NOT refuting. The money-plot is structurally beyond this instrument's reach; retreat to the SIGN law for the right reason. Solubility (A3) has replicates -> the only potentially informative point."
 }
