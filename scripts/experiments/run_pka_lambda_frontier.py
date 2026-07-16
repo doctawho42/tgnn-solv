@@ -82,13 +82,15 @@ def train_eval(cmp, subset, lam, seed, in_dim, hid, layers, epochs, lr, device):
             sigma_hat = model.head(z).squeeze(-1)
             pred = batch.pka0.squeeze(-1) - batch.rho.squeeze(-1) * sigma_hat
             devs.append((sigma_hat - batch.sigma.squeeze(-1)).abs().cpu())
-            errs.append((pred - batch.pka.squeeze(-1)).abs().cpu())
+            errs.append((pred - batch.pka.squeeze(-1)).cpu())     # signed residual
         P = float(torch.cat(devs).mean())
-        mae = float(torch.cat(errs).mean())
+        r = torch.cat(errs)
+        mae, mse = float(r.abs().mean()), float((r ** 2).mean())   # L2 axis for the law + MAE for continuity
     orc = np.array([float(subset[i].g_oracle) for i in te_idx])
     tru = np.array([float(subset[i].pka) for i in te_idx])
-    mae_oracle = float(np.mean(np.abs(orc - tru)))
-    return P, mae, mae_oracle
+    ro = orc - tru
+    mae_oracle, mse_oracle = float(np.mean(np.abs(ro))), float(np.mean(ro ** 2))
+    return P, mae, mse, mae_oracle, mse_oracle
 
 
 def slope(P, mae):
@@ -133,29 +135,29 @@ def main():
         if len(subset) < 40:
             continue
         print(f"\n== {label}: n={len(subset)} ==")
-        curve, oracle_maes = [], []
+        curve, oracle_maes, oracle_mses = [], [], []
         for lam in args.lambdas:
-            Ps, maes = [], []
+            Ps, maes, mses = [], [], []
             for seed in args.seeds:
-                P, mae, mae_orc = train_eval(cmp, subset, lam, seed, in_dim, args.hidden,
-                                             args.layers, args.epochs, args.lr, device)
-                Ps.append(P); maes.append(mae); oracle_maes.append(mae_orc)
+                P, mae, mse, mae_orc, mse_orc = train_eval(cmp, subset, lam, seed, in_dim, args.hidden,
+                                                           args.layers, args.epochs, args.lr, device)
+                Ps.append(P); maes.append(mae); mses.append(mse)
+                oracle_maes.append(mae_orc); oracle_mses.append(mse_orc)
             pt = {"lambda": lam, "P_mean": round(float(np.mean(Ps)), 4),
-                  "mae_mean": round(float(np.mean(maes)), 4), "mae_sd": round(float(np.std(maes)), 4)}
+                  "mae_mean": round(float(np.mean(maes)), 4), "mae_sd": round(float(np.std(maes)), 4),
+                  "mse_mean": round(float(np.mean(mses)), 4)}
             curve.append(pt)
-            print(f"   lambda={lam:>5}: P=mean|sigma_hat-sigma|={pt['P_mean']:.3f}  "
-                  f"pKa MAE={pt['mae_mean']:.3f} +/- {pt['mae_sd']:.3f}")
+            print(f"   lambda={lam:>5}: P={pt['P_mean']:.3f}  pKa MAE={pt['mae_mean']:.3f}  MSE={pt['mse_mean']:.3f}")
         mae_oracle = round(float(np.mean(oracle_maes)), 4)
-        S = slope([p["P_mean"] for p in curve], [p["mae_mean"] for p in curve])
-        # include the lambda=inf oracle anchor (P=0) in a second slope for robustness
-        S_with_oracle = slope([p["P_mean"] for p in curve] + [0.0],
-                              [p["mae_mean"] for p in curve] + [mae_oracle])
+        mse_oracle = round(float(np.mean(oracle_mses)), 4)
+        S = slope([p["P_mean"] for p in curve], [p["mae_mean"] for p in curve])           # MAE (continuity)
+        S_mse = slope([p["P_mean"] for p in curve], [p["mse_mean"] for p in curve])        # MSE (the law axis)
         out["strata"][label] = {"n": len(subset), "curve": curve,
-                                "mae_oracle_laminf_P0": mae_oracle,
-                                "slope_S": round(S, 4), "slope_S_with_oracle": round(S_with_oracle, 4)}
-        verdict = "HURTS (misspecified)" if S > 0 else "HELPS (well specified)"
-        print(f"   oracle (lambda=inf, P=0): pKa MAE={mae_oracle:.3f}")
-        print(f"   slope S = -d(MAE)/dP = {S:+.4f}  ({verdict}); with-oracle {S_with_oracle:+.4f}")
+                                "mae_oracle_laminf_P0": mae_oracle, "mse_oracle_laminf_P0": mse_oracle,
+                                "slope_S_mae": round(S, 4), "slope_S_mse": round(S_mse, 4)}
+        verdict = "HURTS (misspecified)" if S_mse > 0 else "HELPS (well specified)"
+        print(f"   oracle (P=0): MAE={mae_oracle:.3f} MSE={mse_oracle:.3f}")
+        print(f"   slope S(MAE)={S:+.4f}  S(MSE)={S_mse:+.4f}  ({verdict})")
 
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(out, indent=2))

@@ -1,0 +1,93 @@
+{
+  "cells": [
+    {
+      "loss": "l2",
+      "noise": "gauss",
+      "F": 1.0,
+      "S_norm_mae": -0.023,
+      "S_norm_mse": -0.053
+    },
+    {
+      "loss": "l2",
+      "noise": "gauss",
+      "F": 0.7,
+      "S_norm_mae": 0.057,
+      "S_norm_mse": 0.105
+    },
+    {
+      "loss": "l2",
+      "noise": "gauss",
+      "F": 0.4,
+      "S_norm_mae": 0.23,
+      "S_norm_mse": 0.506
+    },
+    {
+      "loss": "l2",
+      "noise": "skew",
+      "F": 1.0,
+      "S_norm_mae": -0.007,
+      "S_norm_mse": -0.022
+    },
+    {
+      "loss": "l2",
+      "noise": "skew",
+      "F": 0.7,
+      "S_norm_mae": 0.043,
+      "S_norm_mse": 0.139
+    },
+    {
+      "loss": "l2",
+      "noise": "skew",
+      "F": 0.4,
+      "S_norm_mae": 0.175,
+      "S_norm_mse": 0.499
+    },
+    {
+      "loss": "l1",
+      "noise": "gauss",
+      "F": 1.0,
+      "S_norm_mae": -0.031,
+      "S_norm_mse": -0.054
+    },
+    {
+      "loss": "l1",
+      "noise": "gauss",
+      "F": 0.7,
+      "S_norm_mae": 0.03,
+      "S_norm_mse": 0.054
+    },
+    {
+      "loss": "l1",
+      "noise": "gauss",
+      "F": 0.4,
+      "S_norm_mae": 0.179,
+      "S_norm_mse": 0.398
+    },
+    {
+      "loss": "l1",
+      "noise": "skew",
+      "F": 1.0,
+      "S_norm_mae": 0.012,
+      "S_norm_mse": -0.028
+    },
+    {
+      "loss": "l1",
+      "noise": "skew",
+      "F": 0.7,
+      "S_norm_mae": 0.056,
+      "S_norm_mse": 0.061
+    },
+    {
+      "loss": "l1",
+      "noise": "skew",
+      "F": 0.4,
+      "S_norm_mae": 0.204,
+      "S_norm_mse": 0.418
+    }
+  ],
+  "verdict": {
+    "l1_skew_Snorm_mse_F1": -0.028,
+    "l2_gauss_Snorm_mse_F1": -0.053,
+    "retrain_needed": false
+  }
+}
