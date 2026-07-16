@@ -64,6 +64,20 @@ affine in $u$ because $x_2=x_2(u)$; the crystal score then has a component outsi
 activity span of order $x_2$, so $\mathcal I_{\mathrm{eff}}(\dHfus)=O(x_2^2)>0$.
 \end{proof}
 
+\begin{lemma}[Class-dependent efficient information]\label{prop:semiparam}
+Let the activity nuisance lie in a class $\mathcal H$ with tangent projection
+$\Pi_{\mathcal H}$, and let $v=\partial\mu/\partial\dHfus$ be the crystal score.
+The efficient information for $\dHfus$ is
+$\mathcal I_{\mathrm{eff}}(\dHfus)=\sigma^{-2}\,\lVert v-\Pi_{\mathcal H}v\rVert^2$.
+If $\mathcal H$ contains the crystal score's span $\{1,1/T\}$ (a free intercept and slope) then
+$\Pi_{\mathcal H}v=v$ and $\mathcal I_{\mathrm{eff}}=0$, recovering
+Lemma~\ref{prop:ident}; if $\mathcal H$ is restricted (the slope is known or
+constrained) then $\mathcal I_{\mathrm{eff}}>0$ and the Cram\'er--Rao lower bound (CRLB) on
+$\dHfus$ is finite. (The melting point $\Tm$ is likewise an unknown crystal parameter, but is
+profiled jointly: its score $\partial\mu/\partial\Tm$ lies in $\mathrm{span}\{1\}\subset
+\mathrm{span}\{1,1/T\}$, already inside the nuisance tangent whenever the slope is free, so the
+dichotomy is unaffected by treating $\Tm$ as free.)
+\end{lemma}
 \begin{proof}[Proof of Lemma~\ref{prop:semiparam} (class-dependent information)]
 This is the semiparametric efficient-score construction \cite{vandervaart1998}
 (here finite-dimensional and Gaussian, so equivalently the partitioned-information /
@@ -104,6 +118,20 @@ closure conventions, and any $\mathrm{MSE}(g_1)-\mathrm{MSE}(g_2)$ is entirely
 $\Bclos(g_1)-\Bclos(g_2)$.
 \end{proof}
 
+\begin{theorem}[Grounding-gap sandwich]\label{thm:gap}
+Assume all risks are finite ($m,g(\zstar)\in L^2$; $g$ and each $h\in\mathcal E$
+measurable), (A1) the true encoder is representable, $\phi^\star\in\mathcal E$ with
+$\zstar=\phi^\star(x)$, and (A2) the intermediate is a lossless bottleneck,
+$\Ex[m\mid x]=\Ex[m\mid\zstar]$. Then
+\begin{equation}
+0\;\le\;\Gamma\;\le\;\Bclos,\qquad
+\Gamma=\Bclos-\big(R_{\mathrm{e2e}}-R_{\mathrm{free}}\big),
+\label{eq:gap}
+\end{equation}
+with $\Gamma=\Bclos$ iff $R_{\mathrm{e2e}}=R_{\mathrm{free}}$ (the composed class realizes
+the Bayes predictor by distorting the intermediate). In particular a well-specified closure
+($\Bclos=0$) gives $\Gamma=0$; hence \emph{under A1--A2}, $\Gamma>0$ certifies $\Bclos>0$.
+\end{theorem}
 \begin{proof}[Proof of Theorem~\ref{thm:gap} (grounding-gap sandwich)]
 Throughout assume $m,g(\zstar)\in L^2$ and $g$, every $h\in\mathcal E$ measurable.
 \emph{(a) $\Gamma\ge0$.} By A1, $\phi^\star\in\mathcal E$ is a feasible encoder with
@@ -131,6 +159,22 @@ $R_{\mathrm{e2e}}=0$ while $R_{\mathrm{orc}}=1$, hence $\Gamma=1>0=\Bclos$. So $
 does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 \end{proof}
 
+\noindent Writing each trained risk as an asymptote plus estimation variance,
+$\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
+$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
+$V(n)\downarrow0$, the \emph{physics tax} is
+$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ with
+$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.
+\begin{proposition}[Sign of the physics tax]\label{prop:tax}
+(i)~$\mathcal{T}(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
+the variance a constrained prior saves must exceed its asymptotic bias. (ii)~If
+$\Delta_\infty>0$ and the variance gap vanishes ($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$),
+there is a critical budget $n^\star$ beyond which $\mathcal{T}(n)>0$ for all $n>n^\star$. (iii)~Since
+$V_{\mathrm{direct}}-V_{\mathrm{phys}}\le V_{\mathrm{direct}}$, as the black box nears the
+aleatoric floor ($V_{\mathrm{direct}}\to0$) the tax tends to $\Delta_\infty$; this limit is
+$\ge0$ when the control is asymptotically Bayes ($R_{\mathrm{direct},\infty}=R_{\mathrm{free}}$),
+not merely from $V_{\mathrm{direct}}\to0$.
+\end{proposition}
 \begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the physics tax)]
 Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$, so
 $\mathcal{T}(n)=\Delta_\infty-D(n)$ with $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.

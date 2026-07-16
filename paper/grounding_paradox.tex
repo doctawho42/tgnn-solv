@@ -68,31 +68,22 @@ A Closure-vs-Inputs Diagnostic and a Two-Axis Map of Grounding}
 \maketitle
 
 \begin{abstract}
-Physics-informed models increasingly route a prediction through a fixed, differentiable
-physical \emph{closure}---a mechanistic map with no fitted parameters---fed by a learned
-intermediate. For solid--liquid solubility the closure is COSMO-SAC, which turns a molecule's
-surface-charge $\sigma$-profile into an activity coefficient; the $\sigma$-profile is predicted
-by a network, on the premise that truer physical inputs help. We report three findings and one
-caveated measurement. \emph{(1)~A grounding paradox:} replacing our model's learned
-$\sigma$-profiles with external quantum-chemical reference profiles (VT-2005; computed, not
-experimental) makes solubility prediction \emph{worse}, not better, than a free learned head (MAE
-$1.85\!\to\!2.25$, three seeds, surviving three injection controls). Yet a supervised-$\sigma$
-model reports the opposite, so the sign of grounding is not fixed. \emph{(2)~A reusable diagnostic:}
-because the latent has an external reference, we can \emph{measure} rather than assume whether a
-fixed closure's ceiling lies in the closure or its inputs---the reference-input excess risk splits
-exactly into a closure-misspecification and an input-insufficiency term, with no closure fitting, for
-any predictor with a tabulated latent oracle. \emph{(3)~An interpretability caution:} under a
-misspecified closure the learned ``physical'' latent is not physical but a systematic, low-rank,
-out-of-sample-transferable closure-\emph{compensating} surrogate---a concept-leakage analogue. Applying the diagnostic on $n{=}60$
-matched infinite-dilution pairs, the ceiling is \emph{likely} the deployed COSMO-SAC-2002 closure
-rather than its inputs. This holds only in a narrow sense: it is a sub-threshold ($P\approx0.78$, margin CI
-spanning zero), low-$\gamma$/$298$\,K corner measurement; its transfer to the finite-composition
-regime where the paradox lives is a conjecture; and a standard modern closure
-(COSMO-SAC-2010/dsp) itself dissolves it. We organize the effect on a two-axis map (closure fidelity
-$\times$ latent supervision) with one measured corner, one synthetic dial, and one
-literature-anchored corner; the supporting composed-predictor theory (an exact decomposition, a
-non-identifiability result, a physics-tax sign rule) is elementary. We make no accuracy claim: the
-contribution is the diagnostic and the interpretability caution, not a new thermodynamic result.
+Feeding a graph network's own learned, imperfect $\sigma$-profiles through a fixed COSMO-SAC
+closure predicts solid--liquid solubility better (MAE $1.85$ vs $2.25$ in $\ln x_2$) than feeding
+external quantum-chemical reference profiles (VT-2005) through the same closure, which erases the
+positive $R^2$ ($+0.33\!\to\!-0.03\pm0.04$). We establish this grounding paradox across three seeds
+($n{=}5608$) and three injection controls. End-to-end training drives the ``physical'' latent
+$53\%$ off the reference into a low-rank (top-two modes $73\%$), out-of-sample-transferable
+($3.3\times$) surrogate that cancels the closure's error rather than reporting the physical
+quantity. Because the latent carries an external reference, the reference-input excess risk splits
+exactly into a closure-misspecification and an input-insufficiency term with no closure fitting,
+letting us \emph{measure} rather than assume where the ceiling lies. On $n{=}60$ matched
+infinite-dilution pairs the closure term binds ($P\approx0.78$), but a modern closure
+(COSMO-SAC-2010/dsp) dissolves this, placing the effect on a two-axis map of closure fidelity
+$\times$ latent supervision. A second closure, $\mathrm{p}K_a$ through a Hammett relationship,
+reproduces the sign flip: the same reference swap helps in the well-specified meta/para regime and
+hurts in the ortho regime. We make no accuracy claim; the contribution is the diagnostic and the
+interpretability caution.
 \end{abstract}
 
 \section{Introduction}
@@ -169,9 +160,10 @@ frame.
   rather than an incidental one (\S\ref{sec:discussion}). We make no accuracy claim.
   \item \textbf{A general account, and honest scoping.} The method is not tied to
   COSMO-SAC: it is stated for any composed predictor $\hat y=g(h(x))$ with a fixed closure
-  $g$ over a learned intermediate. We prove three structural lemmas
-  (Lemmas~\ref{prop:ident}--\ref{prop:decomp}), a grounding-gap identity
-  (Theorem~\ref{thm:gap}), and a sign rule for the physics tax (Prop.~\ref{prop:tax}).
+  $g$ over a learned intermediate. We prove two structural lemmas
+  (Lemmas~\ref{prop:ident}--\ref{prop:decomp}) in the main text; the grounding-gap identity
+  (Theorem~\ref{thm:gap}) and the physics-tax sign rule (Prop.~\ref{prop:tax}) are deferred to
+  App.~\ref{sec:si-proofs}.
   The grounding-gap identity bounds the gap by the closure bias, but both its assumptions
   (A1 representability, A2 lossless bottleneck) fail or are unverifiable in our setting, so it is
   \emph{not} load-bearing; we read the gap as a \emph{symptom} and rest certification on the
@@ -351,34 +343,13 @@ factors is expected. By itself it says nothing about whether grounding helps.
 That depends on whether the closure that consumes the grounded inputs is
 correctly specified, which is the question we make measurable next.
 
-The non-identifiability is not binary but graded by how much of the crystal
-direction the activity class can absorb.
-\begin{lemma}[Class-dependent efficient information]\label{prop:semiparam}
-Let the activity nuisance lie in a class $\mathcal H$ with tangent projection
-$\Pi_{\mathcal H}$, and let $v=\partial\mu/\partial\dHfus$ be the crystal score.
-The efficient information for $\dHfus$ is
-$\mathcal I_{\mathrm{eff}}(\dHfus)=\sigma^{-2}\,\lVert v-\Pi_{\mathcal H}v\rVert^2$.
-If $\mathcal H$ contains the crystal score's span $\{1,1/T\}$ (a free intercept and slope) then
-$\Pi_{\mathcal H}v=v$ and $\mathcal I_{\mathrm{eff}}=0$, recovering
-Lemma~\ref{prop:ident}; if $\mathcal H$ is restricted (the slope is known or
-constrained) then $\mathcal I_{\mathrm{eff}}>0$ and the Cram\'er--Rao lower bound (CRLB) on
-$\dHfus$ is finite. (The melting point $\Tm$ is likewise an unknown crystal parameter, but is
-profiled jointly: its score $\partial\mu/\partial\Tm$ lies in $\mathrm{span}\{1\}\subset
-\mathrm{span}\{1,1/T\}$, already inside the nuisance tangent whenever the slope is free, so the
-dichotomy is unaffected by treating $\Tm$ as free.)
-\end{lemma}
-\noindent In words: the efficient information is what the data can still pin down
-about the crystal term \emph{after} the activity model has absorbed everything
-within its reach. If that model can fit a free intercept and slope in $1/T$, it
-absorbs the entire crystal direction and nothing identifies $\dHfus$
-($\mathcal I_{\mathrm{eff}}=0$); constraining the slope leaves a little information
-behind. The proof is the efficient-score construction (App.~\ref{sec:si-proofs}):
-project the crystal score onto the orthogonal complement of the nuisance tangent
-space; the squared norm of the residual is the efficient information. The numerical
-audit of \S\ref{sec:ident} quantifies both regimes, and shows the honest corollary:
-merely \emph{restricting} the activity slope leaves $\mathrm{sd}(\dHfus)\approx8{,}251$\,J/mol
---- finite but unusable --- whereas \emph{external} crystal labels ($\Tm$ and $\dHfus$ together), which
-contribute a score direction outside the activity tangent space, close it to
+The non-identifiability is not binary but graded by the activity class: the efficient
+information for $\dHfus$ is zero when the activity nuisance spans the crystal score's directions
+$\{1,1/T\}$ and strictly positive (a finite Cram\'er--Rao bound) when the slope is constrained
+(Lemma~\ref{prop:semiparam}, App.~\ref{sec:si-proofs}). The numerical audit (\S\ref{sec:ident})
+shows the honest corollary: merely restricting the activity slope leaves
+$\mathrm{sd}(\dHfus)\approx8{,}251$\,J/mol---finite but unusable---whereas external crystal labels,
+which contribute a score direction outside the activity tangent space, close it to
 $\approx1{,}689$\,J/mol.
 
 \subsection{The closure--insufficiency decomposition}
@@ -458,24 +429,12 @@ the activity target $m$: the oracle risk $R_{\mathrm{orc}}=\Ex[(m-g(\zstar))^2]$
 end-to-end risk $R_{\mathrm{e2e}}=\inf_{h\in\mathcal E}\Ex[(m-g(h(x)))^2]$, and the
 free-predictor (black-box) risk $R_{\mathrm{free}}=\Ex[(m-\Ex[m\mid x])^2]$. The
 \emph{grounding gap} is $\Gamma:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$; the paradox is
-$\Gamma>0$ (a free learned head beats the true input pushed through the closure).
-\begin{theorem}[Grounding-gap sandwich]\label{thm:gap}
-Assume all risks are finite ($m,g(\zstar)\in L^2$; $g$ and each $h\in\mathcal E$
-measurable), (A1) the true encoder is representable, $\phi^\star\in\mathcal E$ with
-$\zstar=\phi^\star(x)$, and (A2) the intermediate is a lossless bottleneck,
-$\Ex[m\mid x]=\Ex[m\mid\zstar]$. Then
-\begin{equation}
-0\;\le\;\Gamma\;\le\;\Bclos,\qquad
-\Gamma=\Bclos-\big(R_{\mathrm{e2e}}-R_{\mathrm{free}}\big),
-\label{eq:gap}
-\end{equation}
-with $\Gamma=\Bclos$ iff $R_{\mathrm{e2e}}=R_{\mathrm{free}}$ (the composed class realizes
-the Bayes predictor by distorting the intermediate). In particular a well-specified closure
-($\Bclos=0$) gives $\Gamma=0$; hence \emph{under A1--A2}, $\Gamma>0$ certifies $\Bclos>0$.
-\end{theorem}
-\noindent The proof is elementary (App.~\ref{sec:si-proofs}): $\Gamma\ge0$ because
-$\phi^\star$ is a feasible encoder; $R_{\mathrm{e2e}}\ge R_{\mathrm{free}}$ because every
-$g(h(x))$ is $\sigma(x)$-measurable; and $R_{\mathrm{free}}=\Binsuf$ under A2. Thus
+$\Gamma>0$ (a free learned head beats the true input pushed through the closure). Under
+(A1) a representable encoder ($\phi^\star\in\mathcal E$ with $\zstar=\phi^\star(x)$) and
+(A2) a lossless bottleneck ($\Ex[m\mid x]=\Ex[m\mid\zstar]$), the gap is sandwiched,
+$0\le\Gamma\le\Bclos$ with $\Gamma=\Bclos-(R_{\mathrm{e2e}}-R_{\mathrm{free}})$, so a
+well-specified closure ($\Bclos=0$) forces $\Gamma=0$ and, under A1--A2, an observed
+$\Gamma>0$ certifies $\Bclos>0$ (Theorem~\ref{thm:gap}, App.~\ref{sec:si-proofs}). Then
 $\Gamma$ is exactly the closure bias the encoder can \emph{absorb} by feeding $g$ a
 wrong-but-useful intermediate---the formal content of Lemma~\ref{prop:ident}'s ``a free
 head silently compensates.''
@@ -501,33 +460,17 @@ separating its two causes is what an externally referenced latent buys.}
 \subsection{The physics tax and the critical data budget}
 \label{sec:tax}
 The gap is a population statement; the deployed question is whether the \emph{trained} physics
-model beats the \emph{trained} black box at sample size $n$. Writing each expected risk as an
-asymptote plus estimation variance, $\Ex[\hat R_{\mathrm{phys}}(n)]\approx
-R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and $\Ex[\hat R_{\mathrm{direct}}(n)]\approx
-R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with $V(n)\downarrow0$, the \emph{physics tax}
-is
-\begin{equation}
-\mathcal{T}(n)\approx\Delta_\infty+\big[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)\big],\qquad
-\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}.
-\end{equation}
-\begin{proposition}[Sign of the physics tax]\label{prop:tax}
-(i)~$\mathcal{T}(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
-the variance a constrained prior saves must exceed its asymptotic bias. (ii)~If
-$\Delta_\infty>0$ and the variance gap vanishes ($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$),
-there is a critical budget $n^\star$ beyond which $\mathcal{T}(n)>0$ for all $n>n^\star$. (iii)~Since
-$V_{\mathrm{direct}}-V_{\mathrm{phys}}\le V_{\mathrm{direct}}$, as the black box nears the
-aleatoric floor ($V_{\mathrm{direct}}\to0$) the tax tends to $\Delta_\infty$; this limit is
-$\ge0$ when the control is asymptotically Bayes ($R_{\mathrm{direct},\infty}=R_{\mathrm{free}}$),
-not merely from $V_{\mathrm{direct}}\to0$.
-\end{proposition}
-\noindent When the control is asymptotically Bayes and A2 holds, $\Delta_\infty=\Bclos-\Gamma$,
-tying the asymptotic tax to the \emph{un-compensatable} part of the closure bias; in general
-$\Delta_\infty$ is read off the large-$n$ asymptote. Both corollaries are \emph{loosely consistent} with
-the data---the novelty inversion (the tax heaviest on the \emph{best-covered} solutes,
-\S\ref{sec:map}, exploratory) points in a direction the proposition allows---but it is not a
-controlled test. We prove the structural parts (existence of $n^\star$ given
-$\Delta_\infty>0$ and a vanishing variance gap; the floor inequality); the shapes of $V(n)$ are
-empirical.
+model beats the \emph{trained} black box at sample size $n$. Writing each trained risk as an
+asymptote plus estimation variance, the \emph{physics tax}
+$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ (with
+$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$) is negative---physics helps---only
+when the estimation variance a constrained prior saves exceeds its asymptotic bias; if
+$\Delta_\infty>0$ and the variance gap vanishes there is a critical budget $n^\star$ beyond which
+physics always loses, and as the control nears the aleatoric floor the tax tends to $\Delta_\infty$
+(Proposition~\ref{prop:tax}, App.~\ref{sec:si-proofs}). When the control is asymptotically Bayes and
+A2 holds, $\Delta_\infty=\Bclos-\Gamma$, the \emph{un-compensatable} part of the closure bias. The
+novelty inversion---the tax heaviest on the \emph{best-covered} solutes (\S\ref{sec:map},
+exploratory)---points in a direction the proposition allows, but is not a controlled test.
 
 \subsection{Supporting structural facts}
 Three further consequences of the same collinear geometry are used informally and
@@ -550,21 +493,18 @@ this is the design rule behind the auxiliary streams, though (as \S\ref{sec:e2}
 shows for a dose-limited crystal run) it does not by itself promise an end-task gain.
 
 \subsection{What we prove, and what we do not claim}
-We prove the three structural lemmas the measurement rests on --- the split's
-non-identifiability (Lemma~\ref{prop:ident}), its class-dependence
-(Lemma~\ref{prop:semiparam}), and the exact closure/insufficiency decomposition with
-its one-sided bounds (Lemma~\ref{prop:decomp}) --- together with the grounding-gap
-sandwich (Theorem~\ref{thm:gap}) and the sign rule for the physics tax
-(Prop.~\ref{prop:tax}); all proofs are elementary (App.~\ref{sec:si-proofs}). We are
-deliberate about their reach. Theorem~\ref{thm:gap}
-certifies closure misspecification \emph{only} under A1--A2, and both fail or are
-unverifiable in our setting (A1 empirically, A2 in principle); we therefore rest
+Two lemmas carry the measurement---the split's non-identifiability
+(Lemma~\ref{prop:ident}) and the exact closure/insufficiency decomposition with its one-sided
+bounds (Lemma~\ref{prop:decomp}); its class-dependence (Lemma~\ref{prop:semiparam}), the
+grounding-gap sandwich (Theorem~\ref{thm:gap}), and the sign rule for the physics tax
+(Prop.~\ref{prop:tax}) are stated and proved in App.~\ref{sec:si-proofs}, all elementary. We are
+deliberate about their reach: Theorem~\ref{thm:gap} certifies closure misspecification \emph{only}
+under A1--A2, and both fail or are unverifiable here (A1 empirically, A2 in principle), so we rest
 closure-dominance on the assumption-light decomposition and use $\Gamma$ as a corroborating
-symptom, not a certificate. Proposition~\ref{prop:tax} predicts the \emph{sign} of the tax
-from measurable quantities, not an optimum. In particular there is no ``optimal grounding''
-theorem and no necessary-and-sufficient condition for the decomposition to improve
-out-of-distribution accuracy --- the honest empirical answer (\S\ref{sec:results}) is that
-it does not. The lemmas are read
+symptom, not a certificate; Proposition~\ref{prop:tax} predicts the \emph{sign} of the tax, not an
+optimum. There is no ``optimal grounding'' theorem and no sufficient condition for the
+decomposition to improve out-of-distribution accuracy---the honest empirical answer
+(\S\ref{sec:results}) is that it does not. These results are read
 against, not in competition with, known results on model discrepancy
 \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
 \cite{transtrum2015,gutenkunst2007}, structural and practical identifiability
@@ -933,9 +873,17 @@ asymptotic bias $\Delta_\infty$ (equal to $\Bclos-\Gamma$ only under A2 with an
 asymptotically-Bayes control, otherwise read off the large-$n$ asymptote); both are measurable. The variance benefit is
 largest at small $n$ and vanishes as data accumulate or as the black box nears the aleatoric
 floor, whereas $\Delta_\infty$ is set by the closure and does not. A prior is therefore
-predicted to hurt precisely in the mature-data, low-noise, well-covered regime---exactly where
-the novelty inversion (the tax heaviest on the best-covered solutes, \S\ref{sec:map}) places this
-system, and where much of modern machine learning operates. The synthetic dial (\S\ref{sec:dial})
+predicted to hurt precisely in the mature-data, low-noise, well-covered regime, and this is what we
+observe---the \emph{novelty inversion}, our most unexpected secondary finding. Resolving the
+physics tax by solute novelty runs opposite to the usual coverage intuition: the closure is neutral
+on the most \emph{novel} solutes (nearest-train Tanimoto $\le0.3$:
+$\Delta\mathrm{MAE}=-0.04\pm0.18$) and heaviest on the most \emph{familiar}, best-covered ones
+(Tanimoto $>0.8$: $+0.51\pm0.09$), because a structural closure bias surfaces as the dominant
+residual only where the direct control is already accurate. The tax likewise concentrates in
+strongly hydrogen-bonding solvents (water $+0.52\pm0.35$) and reverses sign in the
+acceptor-dominated amides ($-0.22\pm0.11$) the closure was built for (\S\ref{sec:map}). Both
+patterns are exploratory---no multiplicity control across strata families---but they point where
+the tax rule predicts, and where much of modern machine learning operates. The synthetic dial (\S\ref{sec:dial})
 and the pKa closure (\S\ref{sec:pka}) trace the two axes---closure fidelity and
 intermediate sufficiency---directly. We claim no universal boundary; we \emph{propose}, but do not here cleanly validate, a diagnostic for the sign of the physics tax:
 measure $\Bclos$ through the decomposition, read $\Delta_\infty$ off the large-$n$ asymptote, and
