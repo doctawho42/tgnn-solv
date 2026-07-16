@@ -1,0 +1,65 @@
+{
+  "snr": 8.0,
+  "matched_window_dmin": 0.216,
+  "synthetic": [
+    {
+      "F": 1.0,
+      "B_closure_norm": 0.0,
+      "S_norm_full": -0.041,
+      "S_norm_matched": NaN
+    },
+    {
+      "F": 0.9,
+      "B_closure_norm": 0.009,
+      "S_norm_full": -0.025,
+      "S_norm_matched": NaN
+    },
+    {
+      "F": 0.8,
+      "B_closure_norm": 0.036,
+      "S_norm_full": 0.031,
+      "S_norm_matched": NaN
+    },
+    {
+      "F": 0.7,
+      "B_closure_norm": 0.08,
+      "S_norm_full": 0.118,
+      "S_norm_matched": NaN
+    },
+    {
+      "F": 0.6,
+      "B_closure_norm": 0.142,
+      "S_norm_full": 0.238,
+      "S_norm_matched": 0.024
+    },
+    {
+      "F": 0.5,
+      "B_closure_norm": 0.222,
+      "S_norm_full": 0.378,
+      "S_norm_matched": 0.029
+    },
+    {
+      "F": 0.4,
+      "B_closure_norm": 0.32,
+      "S_norm_full": 0.555,
+      "S_norm_matched": -0.001
+    },
+    {
+      "F": 0.3,
+      "B_closure_norm": 0.436,
+      "S_norm_full": 0.739,
+      "S_norm_matched": 0.027
+    }
+  ],
+  "synthetic_fit_matched": {
+    "intercept": NaN,
+    "slope": NaN
+  },
+  "pka_ortho": {
+    "B_closure_norm": 0.078,
+    "S_norm_full": 0.588,
+    "S_norm_matched": 0.588,
+    "predicted": NaN,
+    "lands_on_line": false
+  }
+}
