@@ -126,61 +126,28 @@ measurement and a \emph{conceptual} organizing frame---not a measured phase diag
 closure-fidelity axis is swept directly (\S\ref{sec:dial}); the supervision axis rests on our own
 warmup-manifold point and a literature anchor.
 \begin{itemize}
-  \item \textbf{The grounding paradox (empirical).}
-  Substituting reference VT-2005 $\sigma$-profiles into the differentiable COSMO-SAC
-  closure degrades activity ($\lngi$) and solubility ($\lnx$) prediction relative
-  to a free learned activity head, the opposite of the intended benefit
-  (\S\ref{sec:paradox}).
-  \item \textbf{A measurement instrument: the closure/insufficiency decomposition.} Because the
-  physical latent $\zstar$ (the reference $\sigma$-profile) has external ground truth, the
-  reference-input excess risk splits \emph{exactly} as $B=\Bclos+\Binsuf$ with no model
-  fit (Lemma~\ref{prop:decomp}). The decomposition and its estimators are textbook;
-  the new element is exploiting an externally referenced latent to bound the split
-  empirically. On the convention-robust evidence---a bound that holds however the
-  COSMO-SAC closure is configured, plus the more-physics-worse effect---$\Bclos$
-  (misspecified decoder) exceeds $\Binsuf$ (input insufficiency) on the subset we
-  can measure. This is robust across the tabulated $k$-NN, binning, random-forest, and ridge insufficiency
-  estimators (a more conservative ridge stress-test is the sole non-certifying case) and to leaving out
-  any solvent, so the binding term is \emph{likely} the closure---but as a \emph{sub-threshold}
-  ($P\approx0.78$, margin CI spanning zero) measurement on the $n{=}60$ low-$\gamma$ corner, not the
-  finite-composition regime where the paradox lives (\S\ref{sec:measure}).
-  \item \textbf{The mechanism where grounding hurts: a compensating-surrogate latent.} On the
-  end-to-end, low-fidelity anchor the network's ``physical'' input does not stay physical: on a
-  confound-free one-model control the predicted $\sigma$-profile departs from the reference one by $53\%$ in
-  a low-rank (top-two modes $73\%$), out-of-sample-transferable ($3.3\times$) pattern---a systematic
-  closure-compensating surrogate, not the physical quantity (a $\sigma$-grounded model \emph{can}
-  recover the reference profile; the objective pulls it away). The magnitudes are a single
-  converged-run estimate---sign and structure robust, magnitude provisional. This is why grounding
-  hurts here, and why a \emph{supervised}-$\sigma$ model finds the opposite (\S\ref{sec:surrogate}).
-  \item \textbf{The closure-fidelity axis: our own attribution self-dissolves under a modern closure.}
-  On the same matched pairs, evaluated under a reference 3-profile database (COSMO-SAC-2010/dsp, NIST
-  implementation), the standard better-parameterized closures no longer show closure-dominance
-  ($P\approx0.79$ that $\Bclos$ no longer exceeds $\Binsuf$ under two-way clustering)---so our own 2002
-  attribution self-dissolves, locating it in the 2002 single-parameter H-bond kernel specifically, and
-  the actionable lesson is to raise closure fidelity, not enrich the inputs. (We do \emph{not} claim
-  the inputs then bind: that would need a lower bound on $\Binsuf$, which we lack.)  (\S\ref{sec:measure})
-  \item \textbf{A negative that is not fixable downstream.} A post-hoc output-space residual on the
-  physics prediction recovers calibration but not accuracy---the closure binding cannot be undone
-  downstream (\S\ref{sec:gateb}); and while the physical hypothesis \emph{class} extrapolates in
-  temperature, the trained model does not exploit it (\S\ref{sec:supporting}). Read against the lemmas
-  and the closure measurement, these point to a \emph{structural} ceiling within this closure family
-  rather than an incidental one (\S\ref{sec:discussion}).
-  \item \textbf{A general account, and honest scoping.} The method is not tied to
-  COSMO-SAC: it is stated for any composed predictor $\hat y=g(h(x))$ with a fixed closure
-  $g$ over a learned intermediate. We prove two structural lemmas
-  (Lemmas~\ref{prop:ident}--\ref{prop:decomp}) in the main text; the grounding-gap identity
-  (Theorem~\ref{thm:gap}) and the physics-tax sign rule (Prop.~\ref{prop:tax}) are deferred to
-  App.~\ref{sec:si-proofs}.
-  The grounding-gap identity bounds the gap by the closure bias, but both its assumptions
-  (A1 representability, A2 lossless bottleneck) fail or are unverifiable in our setting, so it is
-  \emph{not} load-bearing; we read the gap as a \emph{symptom} and rest certification on the
-  assumption-light decomposition (Lemma~\ref{prop:decomp}) alone. The sign rule's critical-budget and aleatoric-floor
-  corollaries predict the two negatives above. The account transfers to synthetic closure
-  families (\S\ref{sec:dial}) and a second chemical closure (pKa through a Hammett relationship,
-  \S\ref{sec:pka}, where the same oracle swap flips sign across strata---grounding helps in the
-  well-specified meta/para regime and hurts in the ortho regime---transferring the diagnostic off
-  solubility); all proofs are elementary
-  (App.~\ref{sec:si-proofs}).
+  \item \textbf{The grounding paradox.} Substituting reference VT-2005 $\sigma$-profiles into the
+  fixed COSMO-SAC closure degrades $\lngi$ and $\lnx$ prediction relative to a free learned head---the
+  opposite of the intended benefit ($3$ seeds, $n{=}5608$, three injection controls; \S\ref{sec:paradox}).
+  \item \textbf{A measurement instrument.} Because the latent $\zstar$ (the reference $\sigma$-profile)
+  has external ground truth, the reference-input excess risk splits \emph{exactly}, with no model fit,
+  as $B=\Bclos+\Binsuf$ (Lemma~\ref{prop:decomp}); on the matched corner the closure term binds
+  (\S\ref{sec:measure}).
+  \item \textbf{The mechanism where grounding hurts.} The end-to-end ``physical'' latent becomes a
+  low-rank, out-of-sample-transferable closure-\emph{compensating} surrogate, not the physical
+  quantity---why grounding hurts here, and why a supervised-$\sigma$ model finds the opposite
+  (\S\ref{sec:surrogate}).
+  \item \textbf{Closure fidelity is the lever.} Holding the reference input fixed, swapping the
+  low-fidelity 2002 closure for 2010 removes the penalty ($1.26\!\to\!0.77$, insufficiency-free): the
+  ceiling is the closure, and the fix is a better closure, not truer inputs (\S\ref{sec:measure}).
+  \item \textbf{Not fixable downstream.} A post-hoc output residual recovers calibration but not
+  accuracy, so the closure binding cannot be undone downstream---a \emph{structural} ceiling within
+  this closure family (\S\ref{sec:gateb},~\S\ref{sec:discussion}).
+  \item \textbf{A general account.} The method holds for any composed predictor $\hat y=g(h(x))$ with a
+  fixed closure over a learned intermediate; two structural lemmas are in the main text, the
+  grounding-gap identity and physics-tax sign rule in App.~\ref{sec:si-proofs}. It transfers to a
+  synthetic closure dial (\S\ref{sec:dial}) and a second real closure---pKa through a Hammett
+  relationship, where the same oracle swap flips sign across strata (\S\ref{sec:pka}).
 \end{itemize}
 
 \begin{figure}[t]
@@ -294,20 +261,7 @@ Lemmas~\ref{prop:ident}--\ref{prop:decomp}, Theorem~\ref{thm:gap}, or
 Proposition~\ref{prop:tax} is specific to COSMO-SAC. Two quantities organize the section:
 the closure/insufficiency split $B=\Bclos+\Binsuf$, which is the assumption-light
 \emph{instrument}, and the observable grounding gap $\Gamma$, which is a \emph{symptom} of
-closure misspecification whose validity we characterize (Fig.~\ref{fig:composed}).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig_composed.pdf}
-\caption{The general composed predictor $\hat y=g(h(x))$ and its matched control. A learned
-encoder $h$ produces a physical intermediate $z$; a \emph{fixed} closure $g$ maps it to the
-prediction. Input insufficiency $\Binsuf$ lives in $z$ (what the intermediate cannot resolve)
-and closure misspecification $\Bclos$ in $g$ (where the fixed map is wrong); an external oracle
-$\zstar$ lets us measure the split. The matched control (grey) shares $h$ but drops $g$, so the
-gap between them is the ``physics tax.'' The same abstraction instantiates as solubility, pKa,
-and the synthetic dial (table).}
-\label{fig:composed}
-\end{figure}
+closure misspecification whose validity we characterize.
 
 \subsection{Why a free head can compensate: structural non-identifiability}
 The crystal/activity split is not identifiable from solubility data alone, which
@@ -367,20 +321,7 @@ Let $m$ be the activity target (experimental $\lngi$) and $g(\zstar)$ the closur
 evaluated on the true latent. The excess risk of the reference-input path over the
 best-possible predictor $\Ex[m\mid\cdot]$ (the Bayes predictor) decomposes
 exactly---into a part the intermediate cannot resolve and a part the fixed map gets
-wrong (Fig.~\ref{fig:decomp-concept}).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.82\linewidth]{figs/fig_decomp_concept.pdf}
-\caption{What the closure/insufficiency split means. The activity target $m$ is scattered
-against a one-dimensional summary of the physical intermediate $\zstar$. The vertical spread
-of the conditional cloud is the input insufficiency $\Binsuf=\Ex\,\Var(m\mid\zstar)$---what no
-map of $\zstar$ can resolve---while the gap between the conditional mean $\Ex[m\mid\zstar]$ (the
-best any map reaches) and the fixed closure $g(\zstar)$ is the closure misspecification $\Bclos$.
-Feeding the true $\zstar$ through $g$ lands on the lower curve, off the conditional mean; that
-displacement is the paradox. Schematic; the measured bounds are Fig.~\ref{fig:decomp}.}
-\label{fig:decomp-concept}
-\end{figure}
+wrong.
 
 \begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
 For a \emph{fixed} (non-fitted) closure $g$,
