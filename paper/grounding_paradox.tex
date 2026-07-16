@@ -761,27 +761,18 @@ finite-composition regime the paradox spans, where its shared closure-misspecifi
 conjecture supported by in-regime signs (the more-physics-worse effect on the full $n{=}5608$ set and
 the chemistry map), not a measured fact.
 
-\paragraph{The accuracy case is broad, with an explained boundary.} That the physics prior does
-not improve accuracy is a pattern with no confirmed exception \emph{on accuracy}: the grounded
-model trails the matched black box on the full corpus (and the external state-of-the-art (SOTA),
-FastSolv and SolProp retrained on our corpus, does no better---though on a by-solute split that
-bounds task difficulty rather than ranking head-to-head; App.~\ref{sec:si-baselines}), a
-(dose-limited) attempt to ground the crystal factor on external labels did not move the ceiling
-(\S\ref{sec:e2}, inconclusive). The one axis on which the physical \emph{structure} does
-help is temperature extrapolation---but as a hypothesis-class property that the trained models do
-not exploit (\S\ref{sec:supporting}), a partial counterexample we flag rather than hide. Read
-together these point to a \emph{structural} ceiling: the crystal/activity split is
+\paragraph{The accuracy case, and its boundary.} That the physics prior does not improve accuracy has
+no confirmed exception: the grounded model trails the matched black box on the full corpus, the
+external SOTA (FastSolv, SolProp) does no better on a difficulty-bounding by-solute split
+(App.~\ref{sec:si-baselines}), and grounding the crystal factor on external labels did not move the
+ceiling (\S\ref{sec:e2}). The one place the physical \emph{structure} helps is temperature
+extrapolation---but as a hypothesis-class property the trained models do not exploit
+(\S\ref{sec:supporting}). These point to a \emph{structural} ceiling: the crystal/activity split is
 non-identifiable from solubility alone (Lemma~\ref{prop:ident}), and the activity closure is
-misspecified where we can measure it (\S\ref{sec:measure})---a measurement that feeds reference inputs
-through the fixed closure and so cannot be a training artifact---so within this family better
-inputs, more data, and auxiliary grounding do not recover an accuracy the factorization cannot
-express. The contribution is accordingly not
-an accuracy result but a \emph{map} of when grounding a learned latent in reference physics helps or hurts:
-the externally grounded decomposition \emph{locates} the ceiling in the closure (measured, not
-proved), a standard higher-fidelity closure moves it---closure fidelity is the lever---and, where the
-closure is misspecified and the latent is end-to-end, the ``physical'' intermediate behaves as a
-compensating surrogate; the two axes are closure fidelity and latent supervision (Fig.~\ref{fig:map}). What a misspecified
-closure costs is thus not only accuracy but the interpretability the bottleneck appeared to buy.
+misspecified where we can measure it (\S\ref{sec:measure}), so within this family better inputs, more
+data, and auxiliary grounding do not recover an accuracy the factorization cannot express. What a
+misspecified closure costs is thus not only accuracy but the interpretability the bottleneck appeared
+to buy.
 
 \begin{figure}[t]
 \centering
