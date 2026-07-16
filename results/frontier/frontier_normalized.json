@@ -1,0 +1,35 @@
+{
+  "definition": "S_norm = -d(MAE/MAE_free)/d(D/D_free); D = latent infidelity ||z_hat-z*||. >0 = misspecified. endpoint_penalty = MAE_oracle/MAE_free - 1 (pKa only).",
+  "rows": [
+    {
+      "system": "synthetic F=1.00",
+      "S_norm": -0.014,
+      "S_norm_sd": 0.015,
+      "endpoint_penalty": null
+    },
+    {
+      "system": "synthetic F=0.60",
+      "S_norm": 0.241,
+      "S_norm_sd": 0.114,
+      "endpoint_penalty": null
+    },
+    {
+      "system": "synthetic F=0.35",
+      "S_norm": 0.608,
+      "S_norm_sd": 0.294,
+      "endpoint_penalty": null
+    },
+    {
+      "system": "pKa meta/para (well-specified)",
+      "S_norm": -0.959,
+      "S_norm_sd": null,
+      "endpoint_penalty": -0.511
+    },
+    {
+      "system": "pKa ortho (misspecified)",
+      "S_norm": 0.714,
+      "S_norm_sd": null,
+      "endpoint_penalty": 0.503
+    }
+  ]
+}
