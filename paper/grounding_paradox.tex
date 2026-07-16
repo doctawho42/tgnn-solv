@@ -111,8 +111,7 @@ is trained (supervised vs.\ end-to-end) and the closure's fidelity---which we an
 systems and a synthetic dial, and a standard higher-fidelity closure (COSMO-SAC-2010/dsp) moves the
 ceiling and dissolves the closure-dominance verdict (\S\ref{sec:measure}). The composed-predictor framing
 (\S\ref{sec:framework}) and the physics-tax sign rule give the formal account of the sign; the
-synthetic dial (\S\ref{sec:dial}) and the pKa closure (\S\ref{sec:pka}) trace the same two axes. We
-make no accuracy claim.
+synthetic dial (\S\ref{sec:dial}) and the pKa closure (\S\ref{sec:pka}) trace the same two axes.
 
 \paragraph{Contributions.}
 Our thesis is that whether grounding a learned latent in reference physics helps or hurts is \emph{shaped
@@ -161,7 +160,7 @@ measurement and an organizing frame.
   downstream (\S\ref{sec:gateb}); and while the physical hypothesis \emph{class} extrapolates in
   temperature, the trained model does not exploit it (\S\ref{sec:supporting}). Read against the lemmas
   and the closure measurement, these point to a \emph{structural} ceiling within this closure family
-  rather than an incidental one (\S\ref{sec:discussion}). We make no accuracy claim.
+  rather than an incidental one (\S\ref{sec:discussion}).
   \item \textbf{A general account, and honest scoping.} The method is not tied to
   COSMO-SAC: it is stated for any composed predictor $\hat y=g(h(x))$ with a fixed closure
   $g$ over a learned intermediate. We prove two structural lemmas
@@ -272,6 +271,10 @@ $\Gamma$ (grounding gap) & $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$: oracle risk minu
 $\Delta_\infty$ (physics tax) & asymptotic risk of the physics arm minus the matched control \\
 full / res             & COSMO-SAC with / without the Staverman--Guggenheim combinatorial term \\
 Tier~1 / Tier~2        & convention-independent (load-bearing) / convention-robust corroboration \\
+$R_{\mathrm{orc}},R_{\mathrm{e2e}},R_{\mathrm{free}}$ & oracle / best end-to-end / free black-box population risks (they define $\Gamma$) \\
+convention-indep.\ / -robust & invariant to the full/res combinatorial choice / same sign across the conventions tested \\
+compensating surrogate & a learned $\hat z$ that \emph{cancels} the closure's error instead of matching $\zstar$; here low-rank and out-of-sample transferable \\
+$P$                    & clustered-bootstrap probability that $\Bclos>\Binsuf$ on the matched set \\
 \bottomrule
 \end{tabular}
 \end{table}
