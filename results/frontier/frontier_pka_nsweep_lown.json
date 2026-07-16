@@ -1,0 +1,89 @@
+{
+  "config": {
+    "epochs": 150,
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "n_grid": [
+      60,
+      90,
+      120,
+      150,
+      190,
+      240
+    ]
+  },
+  "axis_note": "D_free = mean|sigma_hat - sigma_true| is latent INFIDELITY (0 = physical). S = -(dMAE/dD): >0 = misspecified (pinning to truth hurts).",
+  "rows": [
+    {
+      "n": 60,
+      "D_free": 0.491,
+      "mae_free": 2.569,
+      "mae_direct": 3.356,
+      "mae_oracle": 1.778,
+      "ref_input_penalty": -0.791,
+      "S_twopoint": -1.613,
+      "physics_tax_vs_direct": -0.787,
+      "mae_free_sd": 0.865
+    },
+    {
+      "n": 90,
+      "D_free": 0.401,
+      "mae_free": 1.852,
+      "mae_direct": 2.805,
+      "mae_oracle": 2.024,
+      "ref_input_penalty": 0.172,
+      "S_twopoint": 0.43,
+      "physics_tax_vs_direct": -0.953,
+      "mae_free_sd": 0.416
+    },
+    {
+      "n": 120,
+      "D_free": 0.462,
+      "mae_free": 1.872,
+      "mae_direct": 1.688,
+      "mae_oracle": 2.135,
+      "ref_input_penalty": 0.263,
+      "S_twopoint": 0.569,
+      "physics_tax_vs_direct": 0.184,
+      "mae_free_sd": 0.42
+    },
+    {
+      "n": 150,
+      "D_free": 0.403,
+      "mae_free": 2.023,
+      "mae_direct": 1.991,
+      "mae_oracle": 2.08,
+      "ref_input_penalty": 0.057,
+      "S_twopoint": 0.142,
+      "physics_tax_vs_direct": 0.032,
+      "mae_free_sd": 0.474
+    },
+    {
+      "n": 190,
+      "D_free": 0.358,
+      "mae_free": 1.877,
+      "mae_direct": 2.095,
+      "mae_oracle": 1.949,
+      "ref_input_penalty": 0.072,
+      "S_twopoint": 0.2,
+      "physics_tax_vs_direct": -0.218,
+      "mae_free_sd": 0.076
+    },
+    {
+      "n": 240,
+      "D_free": 0.481,
+      "mae_free": 1.976,
+      "mae_direct": 1.836,
+      "mae_oracle": 1.988,
+      "ref_input_penalty": 0.012,
+      "S_twopoint": 0.025,
+      "physics_tax_vs_direct": 0.14,
+      "mae_free_sd": 0.246
+    }
+  ],
+  "n_star_ref_input_penalty": 85,
+  "n_star_physics_tax": 115
+}
