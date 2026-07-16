@@ -1,0 +1,35 @@
+{
+  "source": "results/pka_hammett/trained_by_stratum.json",
+  "definition": "S = -d(MAE)/dP, P=||sigma_hat-sigma_true||; sign(S)=sign(MAE_oracle-MAE_free)",
+  "law": "well-specified closure -> S<=0 ; misspecified closure -> S>0",
+  "strata": [
+    {
+      "stratum": "all",
+      "n": 1169,
+      "mae_free_lam0": 1.627,
+      "mae_oracle_laminf": 1.611,
+      "mae_direct": 1.838,
+      "delta_mae_oracle_minus_free": -0.016,
+      "S_sign": "negative (physicality HELPS -> well specified)"
+    },
+    {
+      "stratum": "high_F (clean meta/para)",
+      "n": 161,
+      "mae_free_lam0": 1.614,
+      "mae_oracle_laminf": 0.601,
+      "mae_direct": 1.712,
+      "delta_mae_oracle_minus_free": -1.013,
+      "S_sign": "negative (physicality HELPS -> well specified)"
+    },
+    {
+      "stratum": "low_F (ortho/hetero)",
+      "n": 1008,
+      "mae_free_lam0": 1.394,
+      "mae_oracle_laminf": 1.62,
+      "mae_direct": 1.922,
+      "delta_mae_oracle_minus_free": 0.226,
+      "S_sign": "positive (physicality HURTS -> misspecified)"
+    }
+  ],
+  "caveat": "endpoints only (lambda in {0, inf}); full curve/magnitude needs pKa_QR.sdf + supervised retrain (spec A2)."
+}
