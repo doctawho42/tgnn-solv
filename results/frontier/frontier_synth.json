@@ -1,0 +1,1798 @@
+{
+  "config": {
+    "n": 2500,
+    "d": 6,
+    "steps": 400,
+    "hidden": 32,
+    "snr": 8.0,
+    "seed": 0,
+    "fidelities": [
+      1.0,
+      0.6,
+      0.35
+    ],
+    "lambdas": [
+      0.0,
+      0.05,
+      0.2,
+      0.8,
+      3.0,
+      12.0
+    ],
+    "families": [
+      "linear",
+      "monotone_nonlinear",
+      "kinetics_exp",
+      "pde_field"
+    ],
+    "shapes": [
+      "linear_bias",
+      "quadratic",
+      "sinusoidal"
+    ]
+  },
+  "slope_by_fidelity": {
+    "1.00": {
+      "S_mean": 0.0,
+      "S_sd": 0.0
+    },
+    "0.60": {
+      "S_mean": 0.0686,
+      "S_sd": 0.0313
+    },
+    "0.35": {
+      "S_mean": 0.1699,
+      "S_sd": 0.0771
+    }
+  },
+  "endpoints_by_fidelity": {
+    "1.00": {
+      "phys_free_lam0": 0.9142,
+      "phys_pinned_lammax": 0.0519,
+      "mae_free_lam0": 0.2636,
+      "mae_pinned_lammax": 0.2595
+    },
+    "0.60": {
+      "phys_free_lam0": 0.9176,
+      "phys_pinned_lammax": 0.0538,
+      "mae_free_lam0": 0.2628,
+      "mae_pinned_lammax": 0.3646
+    },
+    "0.35": {
+      "phys_free_lam0": 0.9255,
+      "phys_pinned_lammax": 0.0573,
+      "mae_free_lam0": 0.2622,
+      "mae_pinned_lammax": 0.4894
+    }
+  },
+  "points": [
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.9209501367133018,
+      "mae_rel": 0.2594686038909466
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.07876248559050927,
+      "mae_rel": 0.2587998446999996
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.06281730201059195,
+      "mae_rel": 0.2574967350921088
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.054824963429950864,
+      "mae_rel": 0.2572791614569561
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.052362949285824925,
+      "mae_rel": 0.2583822073244873
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.051639108538877966,
+      "mae_rel": 0.2588964673471053
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.9623354397083492,
+      "mae_rel": 0.25994921352221406
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.14210374072278104,
+      "mae_rel": 0.2591922982186862
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.1201681741754862,
+      "mae_rel": 0.2590951204244337
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.08974407743680769,
+      "mae_rel": 0.2789459099339526
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.06299145161346772,
+      "mae_rel": 0.326993816189865
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.052320922540072555,
+      "mae_rel": 0.3643371695068285
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.9538906532735202,
+      "mae_rel": 0.2596706522015443
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.185252722097653,
+      "mae_rel": 0.25926675505899677
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.16254845200380805,
+      "mae_rel": 0.2617698181792612
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.12405523850928085,
+      "mae_rel": 0.29933378797198923
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.07860228923248395,
+      "mae_rel": 0.39916396847365715
+    },
+    {
+      "family": "linear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.05473800920315485,
+      "mae_rel": 0.4865138249369418
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.9209501367133018,
+      "mae_rel": 0.2594686038909466
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.07876248559050927,
+      "mae_rel": 0.2587998446999996
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.06281730201059195,
+      "mae_rel": 0.2574967350921088
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.054824963429950864,
+      "mae_rel": 0.2572791614569561
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.052362949285824925,
+      "mae_rel": 0.2583822073244873
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.051639108538877966,
+      "mae_rel": 0.2588964673471053
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.9257141848038336,
+      "mae_rel": 0.25984872426372885
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.1273937205546177,
+      "mae_rel": 0.2619249351568784
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.10178199577220329,
+      "mae_rel": 0.26053464998628906
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.0776299252870491,
+      "mae_rel": 0.2742052282789238
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.05761394238462904,
+      "mae_rel": 0.30589162050366814
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.05172687836678223,
+      "mae_rel": 0.3329561711695623
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.9491658354655322,
+      "mae_rel": 0.260281191949987
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.1705639628820471,
+      "mae_rel": 0.26441177629378804
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.13300152652709638,
+      "mae_rel": 0.26518931159187537
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.09939632788817397,
+      "mae_rel": 0.29134801487378
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.06811387759928687,
+      "mae_rel": 0.34807419651309834
+    },
+    {
+      "family": "linear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.05324077479730339,
+      "mae_rel": 0.41543553754254475
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.9209501367133018,
+      "mae_rel": 0.2594686038909466
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.07876248559050927,
+      "mae_rel": 0.2587998446999996
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.06281730201059195,
+      "mae_rel": 0.2574967350921088
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.054824963429950864,
+      "mae_rel": 0.2572791614569561
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.052362949285824925,
+      "mae_rel": 0.2583822073244873
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.051639108538877966,
+      "mae_rel": 0.2588964673471053
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.9522753391856177,
+      "mae_rel": 0.2583104789296219
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.1931445078607605,
+      "mae_rel": 0.2611693859107956
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.14984555459605592,
+      "mae_rel": 0.26553917169836905
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.09578732988689388,
+      "mae_rel": 0.30976575731269634
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.05796964438927132,
+      "mae_rel": 0.374329110266174
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.05194009037286114,
+      "mae_rel": 0.396849344189736
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.9493105834241837,
+      "mae_rel": 0.25861686382868954
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.25750779826741105,
+      "mae_rel": 0.2615815743509826
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.22280082893592099,
+      "mae_rel": 0.2743533088117335
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.14156336353202018,
+      "mae_rel": 0.3630989682385213
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.07240901343917927,
+      "mae_rel": 0.5146170009962322
+    },
+    {
+      "family": "linear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.05278629542938651,
+      "mae_rel": 0.5727136982769169
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.9192127452368412,
+      "mae_rel": 0.26214082265112315
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.09009926650738526,
+      "mae_rel": 0.2610956764253605
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.07014007976155263,
+      "mae_rel": 0.25967219615781345
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.05744370712182106,
+      "mae_rel": 0.2589912106878469
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.05325109533519116,
+      "mae_rel": 0.2592854929851244
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.052158933466202616,
+      "mae_rel": 0.25968335253449193
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.9183522601606096,
+      "mae_rel": 0.2601540502241687
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.15663597283392053,
+      "mae_rel": 0.2617097536077821
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.13013410832627556,
+      "mae_rel": 0.25977947754514114
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.10100801337496544,
+      "mae_rel": 0.2710132072294016
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.06975750399427168,
+      "mae_rel": 0.3153864528555878
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.053941051721610705,
+      "mae_rel": 0.3622423232713195
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.9256831216076525,
+      "mae_rel": 0.26077355849300726
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.20076608326994935,
+      "mae_rel": 0.2628847809862459
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.17292734707167737,
+      "mae_rel": 0.26257891053723265
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.13750566231019645,
+      "mae_rel": 0.28445431839170265
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.09085279945886048,
+      "mae_rel": 0.37440139444523657
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.05843501163707723,
+      "mae_rel": 0.4780606377700205
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.9192127452368412,
+      "mae_rel": 0.26214082265112315
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.09009926650738526,
+      "mae_rel": 0.2610956764253605
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.07014007976155263,
+      "mae_rel": 0.25967219615781345
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.05744370712182106,
+      "mae_rel": 0.2589912106878469
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.05325109533519116,
+      "mae_rel": 0.2592854929851244
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.052158933466202616,
+      "mae_rel": 0.25968335253449193
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.8948335783961826,
+      "mae_rel": 0.26537933399517805
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.15032570681908974,
+      "mae_rel": 0.26699205221425504
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.110751792396094,
+      "mae_rel": 0.2645313908346045
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.08485165036134139,
+      "mae_rel": 0.27162629431951674
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.0622876699167547,
+      "mae_rel": 0.2971234282223489
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.0522683551043617,
+      "mae_rel": 0.33165902072244857
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.9185140794599701,
+      "mae_rel": 0.26505881829648237
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.19737635185762578,
+      "mae_rel": 0.26944938203666696
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.14497869267520636,
+      "mae_rel": 0.2687377343255543
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.10978509550229419,
+      "mae_rel": 0.28321171238270426
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.07562629043647054,
+      "mae_rel": 0.3336809958228361
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.05510259671790063,
+      "mae_rel": 0.4085527679566569
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.9192127452368412,
+      "mae_rel": 0.26214082265112315
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.09009926650738526,
+      "mae_rel": 0.2610956764253605
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.07014007976155263,
+      "mae_rel": 0.25967219615781345
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.05744370712182106,
+      "mae_rel": 0.2589912106878469
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.05325109533519116,
+      "mae_rel": 0.2592854929851244
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.052158933466202616,
+      "mae_rel": 0.25968335253449193
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.9324126121051104,
+      "mae_rel": 0.26037702571529425
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.21787796865198786,
+      "mae_rel": 0.26309872677592455
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.1651154288893573,
+      "mae_rel": 0.26668410555039634
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.11267977941104249,
+      "mae_rel": 0.2910107416867497
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.06592517191794507,
+      "mae_rel": 0.3607188805479618
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.05299750375680695,
+      "mae_rel": 0.39782697222243396
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.9535978405125846,
+      "mae_rel": 0.25931783406657266
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.2777161260018946,
+      "mae_rel": 0.26305387666251473
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.2392052617294949,
+      "mae_rel": 0.2703813138577598
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.166534758301053,
+      "mae_rel": 0.3428632544591304
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.07976228520297941,
+      "mae_rel": 0.5104438974911362
+    },
+    {
+      "family": "monotone_nonlinear",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.05465563583134518,
+      "mae_rel": 0.5746051873608261
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.9222043973314256,
+      "mae_rel": 0.2570091374167433
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.05874935014630782,
+      "mae_rel": 0.2554555187776762
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.05246971856752204,
+      "mae_rel": 0.25524194371318404
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.051889003535127994,
+      "mae_rel": 0.25731597024492536
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.051606803511416194,
+      "mae_rel": 0.2579782791954382
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.05167904322064369,
+      "mae_rel": 0.258118449722272
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.9855082946449983,
+      "mae_rel": 0.2568423500093615
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.11207172935878718,
+      "mae_rel": 0.2599331698462069
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.07891009019692334,
+      "mae_rel": 0.28946767710688615
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.05662160037532491,
+      "mae_rel": 0.3405172745534584
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.05172496918028274,
+      "mae_rel": 0.3676148987137063
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.051553895450151266,
+      "mae_rel": 0.377080298598239
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.9649199724366555,
+      "mae_rel": 0.2555915303497558
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.152226851306719,
+      "mae_rel": 0.2639454347825337
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.10778158452325132,
+      "mae_rel": 0.3246974693309627
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.06587663496021079,
+      "mae_rel": 0.43380631226174465
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.052700605859261264,
+      "mae_rel": 0.49730021782237943
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.051501407396994936,
+      "mae_rel": 0.5199654504482402
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.9222043973314256,
+      "mae_rel": 0.2570091374167433
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.05874935014630782,
+      "mae_rel": 0.2554555187776762
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.05246971856752204,
+      "mae_rel": 0.25524194371318404
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.051889003535127994,
+      "mae_rel": 0.25731597024492536
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.051606803511416194,
+      "mae_rel": 0.2579782791954382
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.05167904322064369,
+      "mae_rel": 0.258118449722272
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.9304475507857694,
+      "mae_rel": 0.2573038949755847
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.09300504045932977,
+      "mae_rel": 0.26223113427069583
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.06949770976188374,
+      "mae_rel": 0.280824266013942
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.054076087013989506,
+      "mae_rel": 0.3154178269129906
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.051525489033455156,
+      "mae_rel": 0.3324820260334768
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.051595739700595146,
+      "mae_rel": 0.3364121267659224
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.9441483500522657,
+      "mae_rel": 0.2579917568520575
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.12422246035261511,
+      "mae_rel": 0.26793490235317163
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.08743202670831393,
+      "mae_rel": 0.30444536455477106
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.06051950898360134,
+      "mae_rel": 0.373703691621173
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.0521731140030376,
+      "mae_rel": 0.4202930197538467
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.05151854496136091,
+      "mae_rel": 0.4343778052280813
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.9222043973314256,
+      "mae_rel": 0.2570091374167433
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.05874935014630782,
+      "mae_rel": 0.2554555187776762
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.05246971856752204,
+      "mae_rel": 0.25524194371318404
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.051889003535127994,
+      "mae_rel": 0.25731597024492536
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.051606803511416194,
+      "mae_rel": 0.2579782791954382
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.05167904322064369,
+      "mae_rel": 0.258118449722272
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.9544419910716144,
+      "mae_rel": 0.25468079215867767
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.12938312291527454,
+      "mae_rel": 0.2733965470919162
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.08342527071714889,
+      "mae_rel": 0.3186371855659353
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.05405897661964807,
+      "mae_rel": 0.3832762146872802
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.051674076145210295,
+      "mae_rel": 0.3980028589686811
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.051610920549764995,
+      "mae_rel": 0.4026998214670686
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.9574574640476782,
+      "mae_rel": 0.2554230836880492
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.20197237709669758,
+      "mae_rel": 0.29255330387145173
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.11305592773659844,
+      "mae_rel": 0.4268374998316652
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.05847226098352003,
+      "mae_rel": 0.546490358084606
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.0520103539334369,
+      "mae_rel": 0.5755839636345779
+    },
+    {
+      "family": "kinetics_exp",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.051602234897973574,
+      "mae_rel": 0.5845432083556107
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.8945119670499768,
+      "mae_rel": 0.2759508596333918
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.11595502105925791,
+      "mae_rel": 0.2754474727811751
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.09102881335497687,
+      "mae_rel": 0.2717615152905259
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.06762655919228429,
+      "mae_rel": 0.2654613430164639
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.05622229518264339,
+      "mae_rel": 0.2615732735555488
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.05214357814119987,
+      "mae_rel": 0.2614244657784368
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.8071113034060663,
+      "mae_rel": 0.27320710360351735
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.22755641232754975,
+      "mae_rel": 0.27585276721685414
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.1608024114766099,
+      "mae_rel": 0.27468314270451805
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.11798362609875149,
+      "mae_rel": 0.28238172764006636
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.08626500478605793,
+      "mae_rel": 0.3045257317009408
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.0602640004734939,
+      "mae_rel": 0.34847574445600116
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.798333129710083,
+      "mae_rel": 0.272685383929264
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.27928300578953014,
+      "mae_rel": 0.2747369386433663
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.21724514074511767,
+      "mae_rel": 0.2734378395899806
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.16756640415636925,
+      "mae_rel": 0.29116054923876
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.1184618689800523,
+      "mae_rel": 0.34383042647069384
+    },
+    {
+      "family": "pde_field",
+      "shape": "linear_bias",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.0731010192984953,
+      "mae_rel": 0.44513524844008073
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.8945119670499768,
+      "mae_rel": 0.2759508596333918
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.11595502105925791,
+      "mae_rel": 0.2754474727811751
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.09102881335497687,
+      "mae_rel": 0.2717615152905259
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.06762655919228429,
+      "mae_rel": 0.2654613430164639
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.05622229518264339,
+      "mae_rel": 0.2615732735555488
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.05214357814119987,
+      "mae_rel": 0.2614244657784368
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.9453311198162814,
+      "mae_rel": 0.27718954836631304
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.20854921545674107,
+      "mae_rel": 0.2786747139682811
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.13878603037577575,
+      "mae_rel": 0.2782828744347746
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.10442480503935479,
+      "mae_rel": 0.2824776283313019
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.07820589618948476,
+      "mae_rel": 0.29649031403959114
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.05699761312824738,
+      "mae_rel": 0.3308650113939031
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.8716894034447636,
+      "mae_rel": 0.27495136914877294
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.36012019369788284,
+      "mae_rel": 0.2794482411652341
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.17619355922839328,
+      "mae_rel": 0.2852748895233202
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.1347693104622167,
+      "mae_rel": 0.29315706411155856
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.0982740418765868,
+      "mae_rel": 0.3225956462372417
+    },
+    {
+      "family": "pde_field",
+      "shape": "quadratic",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.06550908947239976,
+      "mae_rel": 0.39266292319165114
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.0,
+      "physicality": 0.8945119670499768,
+      "mae_rel": 0.2759508596333918
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.05,
+      "physicality": 0.11595502105925791,
+      "mae_rel": 0.2754474727811751
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.2,
+      "physicality": 0.09102881335497687,
+      "mae_rel": 0.2717615152905259
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 0.8,
+      "physicality": 0.06762655919228429,
+      "mae_rel": 0.2654613430164639
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 3.0,
+      "physicality": 0.05622229518264339,
+      "mae_rel": 0.2615732735555488
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 1.0,
+      "lam": 12.0,
+      "physicality": 0.05214357814119987,
+      "mae_rel": 0.2614244657784368
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.0,
+      "physicality": 0.8018547377396288,
+      "mae_rel": 0.2701673875057768
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.05,
+      "physicality": 0.3052870414231541,
+      "mae_rel": 0.2759414039847761
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.2,
+      "physicality": 0.22303833363344083,
+      "mae_rel": 0.28104810953805176
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 0.8,
+      "physicality": 0.13259113333322492,
+      "mae_rel": 0.30176829265648414
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 3.0,
+      "physicality": 0.08647543704839723,
+      "mae_rel": 0.3431322390556172
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.6,
+      "lam": 12.0,
+      "physicality": 0.058091948357675297,
+      "mae_rel": 0.39319766055779526
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.0,
+      "physicality": 0.9195432066945196,
+      "mae_rel": 0.2663893282702471
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.05,
+      "physicality": 0.43841642742008863,
+      "mae_rel": 0.28048851779297923
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.2,
+      "physicality": 0.30158417581429575,
+      "mae_rel": 0.28009696643536386
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 0.8,
+      "physicality": 0.2050574253546281,
+      "mae_rel": 0.3296913867014209
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 3.0,
+      "physicality": 0.12815930598884745,
+      "mae_rel": 0.43072998382821426
+    },
+    {
+      "family": "pde_field",
+      "shape": "sinusoidal",
+      "fidelity": 0.35,
+      "lam": 12.0,
+      "physicality": 0.06564977266396874,
+      "mae_rel": 0.5600630043636581
+    }
+  ]
+}
