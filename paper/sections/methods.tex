@@ -45,21 +45,14 @@ feature. All heads below consume this pair representation; the DirectGNN control
 consumes the identical representation.
 
 \subsection{Crystal head and the ideal term}
-A fusion head predicts the two crystal properties that define the ideal
-(activity-free) solubility, with physically bounded parametrisations
-$\Tm=100+600\,\sigma(\cdot)\in[100,700]\,\mathrm{K}$ and
-$\dHfus=S_H\,\mathrm{softplus}(\cdot)>0$; an optional entropy-coupled mode instead
-predicts a Walden-constrained fusion entropy (Walden's rule: rigid organics have a
-near-constant entropy of fusion, ${\sim}57$\,J\,mol$^{-1}$\,K$^{-1}$) and sets
-$\Tm=\dHfus/\Delta S$. When a
-group-contribution $\Tm$ prior is used it is affine-calibrated on the training
-set before entering the head. The crystal properties give the ideal term
+A fusion head predicts the two crystal properties defining the ideal (activity-free) solubility, with
+physically bounded parametrisations ($\Tm\in[100,700]$\,K, $\dHfus>0$; an optional Walden-constrained
+entropy mode and a group-contribution $\Tm$ prior are described in the SI). They give the ideal term
 \begin{equation}
   \Phicry(T)=\frac{\dHfus}{\Rgas}\!\left(\frac1T-\frac1\Tm\right),
   \label{eq:phi}
 \end{equation}
-the constant-$\Delta C_p$ correction omitted (its magnitude is audited in the SI,
-\S\ref{sec:si-mech}).
+the constant-$\Delta C_p$ correction omitted (audited in \S\ref{sec:si-mech}).
 
 \subsection{Three interchangeable activity closures}
 The activity term \lng\ is produced by one of three closures, selected by
@@ -113,17 +106,13 @@ test on strongly non-ideal pairs (SI \S\ref{sec:si-methods}).
 
 \subsection{Adaptive correction and the oracle substitution}
 A bounded, gated ``adaptive physics correction'' perturbs the physical parameters
-($\Tm,\dHfus,\tau$) rather than the output, re-solves \eqref{eq:sle-iter}, and
-blends $\lnx^{\mathrm{final}}=\lnx^{\mathrm{phys}}+(1-w)\,\mathrm{clip}(\Delta)$;
-keeping the correction in parameter space preserves the physical decomposition.
-The \emph{oracle substitution} (a $\sigma$-oracle) replaces the predicted
-$\sigma$-profile $\hat z$ with the reference VT-2005 profile $\zstar$ before the closure,
-matched by canonical SMILES. It is applied three ways to rule out wiring
-artifacts: at evaluation only, injected at training time so the rest of the model
-co-adapts, and as a channel-swap control; an analogous override substitutes reference
-crystal targets. The activity target used for the closure/insufficiency
-decomposition (\S\ref{sec:measure}) is evaluated at infinite dilution,
-$\lngi=\lim_{x_2\to0}\lng$, at $298$\,K.
+($\Tm,\dHfus,\tau$) rather than the output and re-solves the SLE, keeping the correction in parameter
+space to preserve the physical decomposition. The \emph{oracle substitution} replaces the predicted
+$\sigma$-profile $\hat z$ with the reference VT-2005 profile $\zstar$ before the closure (matched by
+canonical SMILES); it is applied three ways to rule out wiring artifacts---at evaluation only, injected
+at training time so the model co-adapts, and as a channel-swap control---and an analogous override
+substitutes reference crystal targets. The activity target for the decomposition (\S\ref{sec:measure})
+is the infinite-dilution $\lngi=\lim_{x_2\to0}\lng$ at $298$\,K.
 
 \subsection{Training: three-phase curriculum and single-component grounding}
 Optimisation follows a fixed three-phase curriculum: (P1) auxiliary-property

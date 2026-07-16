@@ -422,46 +422,28 @@ A2 holds, $\Delta_\infty=\Bclos-\Gamma$, the \emph{un-compensatable} part of the
 novelty inversion---the tax heaviest on the \emph{best-covered} solutes (\S\ref{sec:map},
 exploratory)---points in a direction the proposition allows, but is not a controlled test.
 
-\subsection{Supporting structural facts}
-Three further consequences of the same collinear geometry are used informally and
-are not stated as theorems. \emph{(i)~Temperature extrapolation.} Within the
-affine-in-$1/T$ activity family, same-pair prediction at a temperature $T^\star$
-outside the training range is an affine extrapolation whose error is controlled by
-the fitted-slope variance times $|1/T^\star-\overline{1/T}|$, whereas an
-unstructured temperature encoder is unconstrained beyond its support. This is the
-one place the physical \emph{structure} is expected to help; \S\ref{sec:supporting}
-reports the class-level margin, which is a property of the hypothesis class and not
-an accuracy claim for the trained model (indeed the trained models trail the
-van't~Hoff baseline). \emph{(ii)~Geometry of compensation.} As the training window
-$\Delta T\to0$, $1/T$ becomes nearly constant, the crystal and activity design
-columns become collinear, and the smallest Fisher eigenvalue tends to zero (the
-$\Delta T$ sweep of \S\ref{sec:ident} reaches conditioning $10^{16}$ at
-$\Delta T=10$\,K), so an optimizer prefers to split error between the factors rather
-than fit either correctly. \emph{(iii)~Grounding design.} Each single-component
-stream rank-completes a different deficient direction of Lemma~\ref{prop:ident};
-this is the design rule behind the auxiliary streams, though (as \S\ref{sec:e2}
-shows for a dose-limited crystal run) it does not by itself promise an end-task gain.
+\paragraph{Three informal consequences.} The same collinear geometry has three further consequences we
+use informally (details in the SI): within the affine-in-$1/T$ activity family, same-pair temperature
+extrapolation is controlled by the fitted-slope variance---the one place the physical \emph{structure}
+is expected to help (\S\ref{sec:supporting}, a hypothesis-class margin, not a claim for the trained
+model, which trails the van't~Hoff baseline); as the training window $\Delta T\to0$ the crystal and
+activity columns become collinear and the smallest Fisher eigenvalue $\to0$ (\S\ref{sec:ident}), so an
+optimiser splits error between the factors rather than fit either; and each single-component grounding
+stream rank-completes a different deficient direction of Lemma~\ref{prop:ident} (\S\ref{sec:e2}).
 
-\subsection{What we prove, and what we do not claim}
-Two lemmas carry the measurement---the split's non-identifiability
-(Lemma~\ref{prop:ident}) and the exact closure/insufficiency decomposition with its one-sided
-bounds (Lemma~\ref{prop:decomp}); its class-dependence (Lemma~\ref{prop:semiparam}), the
-grounding-gap sandwich (Theorem~\ref{thm:gap}), and the sign rule for the physics tax
-(Prop.~\ref{prop:tax}) are stated and proved in App.~\ref{sec:si-proofs}, all elementary. We are
-deliberate about their reach: Theorem~\ref{thm:gap} certifies closure misspecification \emph{only}
-under A1--A2, and both fail or are unverifiable here (A1 empirically, A2 in principle), so we rest
-closure-dominance on the assumption-light decomposition and use $\Gamma$ as a corroborating
-symptom, not a certificate; Proposition~\ref{prop:tax} predicts the \emph{sign} of the tax, not an
-optimum. There is no ``optimal grounding'' theorem and no sufficient condition for the
-decomposition to improve out-of-distribution accuracy---the honest empirical answer
-(\S\ref{sec:results}) is that it does not. These results are read
-against, not in competition with, known results on model discrepancy
-\cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
-\cite{transtrum2015,gutenkunst2007}, structural and practical identifiability
-\cite{raue2009,villaverde2016}, estimation under misspecification \cite{white1982},
-and underspecification \cite{damour2022}; the calibration-versus-accuracy separation
-of \S\ref{sec:gateb} is the classical refinement decomposition of a probability
-forecast \cite{murphy1973,degroot1983}.
+\subsection{What we prove}
+Two lemmas carry the measurement---the split's non-identifiability (Lemma~\ref{prop:ident}) and the
+exact closure/insufficiency decomposition with its one-sided bounds (Lemma~\ref{prop:decomp}); the
+class-dependence refinement, the grounding-gap sandwich (Theorem~\ref{thm:gap}), and the physics-tax
+sign rule (Prop.~\ref{prop:tax}) are in App.~\ref{sec:si-proofs}, all elementary. We are deliberate
+about their reach: Theorem~\ref{thm:gap} certifies closure misspecification only under assumptions
+(A1--A2) that fail or are unverifiable here, so we rest on the assumption-light decomposition and read
+$\Gamma$ as a corroborating symptom; there is no ``optimal grounding'' theorem, and the honest
+empirical answer is that the decomposition does not improve out-of-distribution accuracy
+(\S\ref{sec:results}). These results are read against, not in competition with, known work on model
+discrepancy \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
+\cite{transtrum2015,gutenkunst2007}, identifiability \cite{raue2009,villaverde2016}, misspecification
+\cite{white1982}, and underspecification \cite{damour2022}.
 
 \input{sections/methods}
 
