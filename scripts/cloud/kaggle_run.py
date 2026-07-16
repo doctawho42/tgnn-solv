@@ -55,6 +55,8 @@ def run(cmd, env_extra=None, log=None):
     if env_extra:
         env.update(env_extra)
     cmd = [str(c) for c in cmd]
+    if cmd and cmd[0] == "python":   # some images (Ubuntu DLVM) ship only python3, no `python` symlink
+        cmd[0] = sys.executable
     print(f"\n>>> {' '.join(cmd)}", flush=True)
     t0 = time.time()
     r = subprocess.run(cmd, cwd=str(REPO), env=env)

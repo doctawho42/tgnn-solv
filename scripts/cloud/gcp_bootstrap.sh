@@ -23,11 +23,15 @@ else
 fi
 
 # 3. install + verify CUDA ------------------------------------------------
-pip install -q -e .
-python - <<'PY'
-import torch
+# Current Ubuntu DLVM images ship torch+CUDA system-wide (python3) but have NO `python`
+# symlink (kaggle_run.py's subprocess calls "python"), are PEP-668 externally-managed,
+# and do not include scikit-learn (used by the analysis scripts).
+command -v python >/dev/null 2>&1 || sudo ln -sf /usr/bin/python3 /usr/local/bin/python
+pip install -q --break-system-packages -e . scikit-learn scipy
+KMP_DUPLICATE_LIB_OK=TRUE python - <<'PY'
+import torch, torch_geometric, rdkit, sklearn  # noqa: F401
 assert torch.cuda.is_available(), "CUDA not available -- wrong VM image or torch is the CPU build (see runbook)"
-print("[bootstrap] CUDA OK:", torch.cuda.get_device_name(0))
+print("[bootstrap] CUDA OK:", torch.cuda.get_device_name(0), "| torch", torch.__version__)
 PY
 
 # 4. run: 3-seed surrogate isolation -> mean+/-sd of 33/45/53/73%/3.3x -----
