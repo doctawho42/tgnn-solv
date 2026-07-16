@@ -525,14 +525,14 @@ forecast \cite{murphy1973,degroot1983}.
 \section{Results}
 \label{sec:results}
 
-Results build the map. The paradox (\S\ref{sec:paradox}) motivates; the decomposition then
-\emph{measures} where the ceiling sits and a standard higher-fidelity closure moves it (the
-closure-fidelity axis, \S\ref{sec:measure}); the compensating-surrogate mechanism
-(\S\ref{sec:surrogate}) explains the end-to-end/low-fidelity corner where grounding hurts. The
-remaining sections---the
-synthetic dial (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa
-closure (\S\ref{sec:pka})---stress-test and
-generalize the account, with further diagnostics in the ESI.
+Two results carry the paper: the grounding paradox (\S\ref{sec:paradox}) and its mechanism
+(\S\ref{sec:surrogate})---the end-to-end latent becomes a compensating surrogate that cancels the
+closure's error rather than reporting the physical quantity. The decomposition (\S\ref{sec:measure})
+is the \emph{instrument} that makes the failure legible: on a matched corner it locates the ceiling
+in the low-fidelity closure rather than its inputs, and a standard higher-fidelity closure
+(COSMO-SAC-2010/dsp) moves it---the closure-fidelity axis. The remaining sections---the synthetic
+dial (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa closure
+(\S\ref{sec:pka})---stress-test and generalize the account, with further diagnostics in the ESI.
 
 \begin{table}[t]
 \centering
@@ -607,16 +607,19 @@ estimator; \S\ref{sec:measure}), so the closure's excess over that floor is $\Bc
 \label{fig:parity}
 \end{figure}
 
-\subsection{Measuring the ceiling: the closure dominates}
+\subsection{The closure-fidelity axis: locating the ceiling, and moving it}
 \label{sec:measure}
 % Artifact: results/b_insuff/decomposition.json via scripts/analysis/run_b_insuff_decomposition.py.
-Because the reference latent is externally observed, we can locate the prior's ceiling and attribute it to
-the map rather than the inputs---the measurement instrument at the core of the map. We apply the
-decomposition of \S\ref{sec:decomp} to the $n{=}60$ matchable activity pairs (298\,K, infinite
-dilution), with $\zstar$ the reference concatenated solute/solvent
-$\sigma$-profiles and $m$ the experimental $\lngi$; Table~\ref{tab:decomp} reports the
-bounds. The set spans 41 solutes and 17 solvents in $102$ profile dimensions, with two
-formamide pairs dropped on a canonical-SMILES tautomer mismatch.
+Because the reference latent is externally observed, the decomposition of \S\ref{sec:decomp} becomes
+an \emph{instrument}: on a matched corner it asks whether a fixed closure's ceiling sits in the map
+or in its inputs. We demonstrate it on the $n{=}60$ matchable activity pairs (298\,K, infinite
+dilution)---a small corner, so we read the split as a demonstration, not a certificate---with
+$\zstar$ the reference concatenated solute/solvent $\sigma$-profiles and $m$ the experimental
+$\lngi$; Table~\ref{tab:decomp} reports the bounds. On this corner the ceiling sits in the
+\emph{low-fidelity} closure rather than its inputs, and---the constructive reading of the map's
+fidelity axis---raising closure fidelity (COSMO-SAC-2010/dsp) moves it. The set spans 41 solutes and
+17 solvents in $102$ profile dimensions, with two formamide pairs dropped on a canonical-SMILES
+tautomer mismatch.
 
 \begin{table}[t]
 \centering
@@ -699,16 +702,14 @@ leakage-immune bound rather than the constant offset.
 Label noise is unestimable in this replicate-free set (the matched IDAC pairs carry no repeat
 measurements at $298$\,K, so an inter-source floor cannot be formed as it was for solubility) and
 assumed zero; the bounds we rely on are invariant to zero-mean noise. A \emph{systematic} between-method
-offset in the compiled IDAC labels (gas--liquid chromatography, ebulliometry, and dilutor techniques
-carry known method-dependent bias, not zero-mean scatter) is \emph{not} covered by that invariance.
-We bound the exposure rather than leave it open. The load-bearing separation is a lower bound
-$\Bclos\ge0.85$ against an upper bound $\Binsuf\le0.62$, a margin of ${\approx}0.23$ in
-$(\ln\gamma)^2$. Method-heterogeneous bias uncorrelated with $\zstar$ inflates the \emph{insufficiency}
-estimate (it adds conditional variance to $\Ex[\Var(m\mid\zstar)]$), so it erases the certified
-$\Bclos>\Binsuf$ only once it contributes ${\gtrsim}0.23\,(\ln\gamma)^2$ of between-method label
-variance---a between-method standard deviation ${\gtrsim}0.5\,\ln\gamma$. A method-stratified
-re-estimate on multi-source ThermoML entries is the direct test; absent it we state this overturning
-threshold explicitly rather than assume the bias is zero. Because a replicate floor is
+offset would not be covered by that invariance---but it does not arise here: the matched set is
+essentially \emph{single-method}, with $158$ of the $165$ matched measurements from gas
+chromatography. Between-method bias---the concern for a mixed compilation of chromatographic,
+ebulliometric, and dilutor data, each with its own systematic offset---therefore does not apply, and
+a method-stratified re-estimate is neither necessary nor possible on a homogeneous-method set. The
+residual exposure is only within-method systematic error; against the measured margin
+($\Bclos\ge0.85$ vs $\Binsuf\le0.62$, ${\approx}0.23$ in $(\ln\gamma)^2$) it would take an
+implausibly large coherent within-method offset to close the separation. Because a replicate floor is
 unavailable, we test exposure to the highest-scatter data directly: the separation \emph{sign} survives
 deleting any single pair ($60/60$) and trimming the eight highest-error pairs---which include the
 physically suspect associating outliers (e.g.\ $1$-hexanamine in methanol, $\ln\gamma^\infty{=}{+}2.62$
