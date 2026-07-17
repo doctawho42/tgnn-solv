@@ -28,8 +28,8 @@ single 2002 profile from the typed set is instead their \emph{sum},
 $p=p_{\mathrm{nhb}}+p_{\mathrm{OH}}+p_{\mathrm{OT}}$ (Eq.~9 of Ref.~\cite{bell2020cosmosac}); the
 nonpolar-only read is neither that sum nor a documented mode. The crippled arm scores
 $\mathrm{MSE}\ 1.263$ on our matched corner, whereas the fair full 2002 --- the same molecule fed
-either to our differentiable layer or to \texttt{cCOSMO} on its native single-profile base --- scores
-$1.757/1.758$. We report this as an issue for the library maintainers (a silently-wrong return where
+either to our differentiable layer or to \texttt{cCOSMO} with the full profile placed in the single
+(nonpolar) channel it actually reads --- scores $1.757/1.758$. We report this as an issue for the library maintainers (a silently-wrong return where
 an error would be safer), not as a defect of any published benchmark.
 \paragraph{Crystal head.} $\Tm=100+600\,\sigma(\cdot)\in[100,700]$\,K,
 $\dHfus=S_H\,\mathrm{softplus}(\cdot)$; the group-contribution $\Tm$ prior is affine-
