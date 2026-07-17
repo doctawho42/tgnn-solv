@@ -635,12 +635,27 @@ $\Binsuf$, reinforcing rather than weakening the closure attribution. We do \emp
 on $\Binsuf$, so ``the inputs bind'' would require a lower bound we do not have---what the modern
 closure establishes is only that our own 2002 attribution no longer holds. The decision-relevant
 reading is thus not ``the closure always dominates'' but ``on the low-fidelity 2002 closure it does, and the
-fix is a better closure, not truer inputs''---closure fidelity is the second axis of the map
-(\S\ref{sec:discussion}).
+fix is a better closure, not truer inputs''---closure fidelity, not input fidelity, is the lever.
 
 \paragraph{Scope.} This measurement is a low-$\gamma$/$298$\,K/VT-2005-matchable corner and does not
 transfer to the finite-composition regime the paradox lives in (\S\ref{sec:scope}); the full audit is
 in App.~\ref{sec:si-tables}.
+
+\subsection{Isn't this just a bad closure?}
+\label{sec:badclosure}
+Yes---and that is the contribution, not the objection. COSMO-SAC-2002 has a documented
+single-parameter hydrogen-bond kernel, and the 2010/dsp closure was built to fix exactly that defect;
+we do not dispute this, we \emph{measure} it ($\mathrm{MSE}\ 1.26\to0.77$ on identical UD $3$-profiles,
+insufficiency-free by construction). But the 2002 kernel is not an exotic choice---it is the closure a
+practitioner reaches for, and its fidelity is \emph{not knowable in advance} on a new system. The field
+routinely composes an expressive learned encoder with a fixed mechanistic map and assumes the map is
+good enough. What we show is what happens when it is not: the encoder silently compensates, the
+resulting latent is a surrogate rather than the physical quantity it is named after
+(\S\ref{sec:surrogate}), and the interpretability the bottleneck appeared to buy is absent---none of it
+visible without an external oracle. Our decomposition is how you make it visible on \emph{your} closure,
+before its misspecification has quietly eaten your result. The practical consequence inverts the usual
+instinct: before investing in richer inputs, measure the split---within a closure family the payoff is
+in the closure.
 
 \input{sections/compensation-surrogate}
 
