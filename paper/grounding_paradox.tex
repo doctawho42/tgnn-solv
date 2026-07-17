@@ -465,9 +465,9 @@ $\Ex[\Var(m\mid\zstar)]$; ``k\textsc{nn}'' is a direct high-dimensional estimate
 (biased upward), the others are law-of-total-variance / out-of-fold upper bounds.
 The \emph{load-bearing} separation is the leakage-immune (LOTV)
 $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ row, which exceeds $\Binsuf$ under
-\emph{both} conventions ($1.27$, $0.85>0.62$); the assumption-free constant-offset
-(Jensen) bound separates only under ``full'' ($0.72$) and inverts under the
-deployed ``res'' ($0.43<0.62$).}
+\emph{both} conventions ($1.27$, $0.85>0.62$). The convention-specific constant-offset
+(Jensen) bound, which separates only under ``full'' but inverts under the deployed
+``res'', is deferred to App.~\ref{sec:si-tables}.}
 \label{tab:decomp}
 {\small
 \begin{tabular}{@{}p{0.60\linewidth}rr@{}}
@@ -476,7 +476,6 @@ Quantity & full & res \\
 \midrule
 MSE$_{\text{total}}=\Bclos+\Binsuf$ (exact)      & $1.80$ & $1.47$ \\
 $\Bclos$ lower via MSE$-\Binsuf^{\text{up}}$ (LOTV; \emph{leakage-immune, load-bearing}) & $1.27$ & $0.85$ \\
-$\Bclos$ lower bound (Jensen, offset$^2$; assumption-free; \emph{full-only}) & $0.72$ & $0.43$ \\
 $\Binsuf$ upper (bin $g$; law of total variance)  & $0.53$ & $0.62$ \\
 $\Binsuf$ upper (RF / Ridge out-of-fold)          & $0.56/0.62$ & same \\
 $\Binsuf$ (k\textsc{nn}-in-$\zstar$, convention-indep., biased up) & $0.40$ & $0.40$ \\
@@ -496,9 +495,8 @@ exceeds every valid $\Binsuf$ upper bound (salmon region); the white gap is a se
 no smoothness assumption, and the teal region is the closure share of the total error lower-bounded by that margin (deterministic on this $n{=}60$ set; its generalization is the $P_{\mathrm{boot}}\approx0.78$ of Table~\ref{tab:decomp})
 (MSE $=1.47$). We headline the law-of-total-variance (LOTV) binning bound because it conditions on
 the scalar $g(\zstar)$ and is immune to the near-duplicate leakage that deflates the
-$z^\ast$-neighbour estimators ($k$-NN, RF; \S\ref{sec:measure}). The assumption-free Jensen
-constant-offset bound is convention-specific and \emph{inverts} here ($0.43<0.62$, dotted), which is
-why we do not lean on it.}
+$z^\ast$-neighbour estimators ($k$-NN, RF; \S\ref{sec:measure}). The convention-specific constant-offset
+(Jensen) bound, which inverts under this deployed convention, is deferred to App.~\ref{sec:si-tables}.}
 \label{fig:decomp}
 \end{figure*}
 

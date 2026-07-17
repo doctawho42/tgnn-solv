@@ -11,10 +11,12 @@ figures always reflect the corrected n=60 keystone:
                         sigma COSMO-SAC closure g(z*) (full convention) vs the
                         diagonal, from results/b_insuff/matched_pairs.csv. (The CSV
                         has no free-head prediction, so only the closure is drawn.)
-  fig_decomposition.pdf one-sided bounds (full convention) from
-                        results/b_insuff/decomposition.json: the assumption-free
-                        Jensen B_closure lower bound vs the cluster of B_insuff
-                        upper bounds (LOTV / RF / Ridge / kNN), against total MSE.
+  fig_decomposition.pdf one-sided bounds (deployed residual-only convention) from
+                        results/b_insuff/decomposition.json: the load-bearing,
+                        leakage-immune LOTV B_closure lower bound vs the cluster of
+                        B_insuff upper bounds (LOTV / RF / Ridge / kNN), against total
+                        MSE. (The convention-specific Jensen constant-offset bound,
+                        which inverts under this convention, is reported in the SI.)
 
 Does NOT touch fig_dial.pdf (separate synthetic generator) and edits no .tex.
 
@@ -151,7 +153,6 @@ def fig_decomposition(decomp_json: Path, out_dir: Path) -> list[str]:
     res = d["conventions"]["res"]          # DEPLOYED residual-only convention (the model runs this)
     bi = d["b_insuff_convention_independent"]
     mse = res["mse_total"]
-    jensen = res["b_closure_jensen_lower"]        # convention-specific; inverts under res
     b_lotv = res["b_insuff_lotv_upper"]           # leakage-immune headline B_insuff upper bound
     b_clos_lb = mse - b_lotv                       # load-bearing convention-independent bound
     # B_insuff upper-bound estimators; the z*-neighbour smoothers (kNN, RF) are deflated by the
@@ -187,11 +188,8 @@ def fig_decomposition(decomp_json: Path, out_dir: Path) -> list[str]:
     ax.annotate(f"MSE$_{{\\rm total}}={mse:.2f}$", (mse, 0.14), xytext=(-6, 0),
                 textcoords="offset points", va="center", ha="right",
                 fontsize=9, color=INK)
-    # Jensen constant-offset bound: convention-specific, does NOT separate under the deployed model
-    ax.axvline(jensen, color="#999999", lw=1.0, ls=":", zorder=2)
-    ax.annotate(f"Jensen offset ${jensen:.2f}$ (convention-specific;\ndoes not separate here)",
-                (jensen, 0.06), xytext=(6, 0), textcoords="offset points",
-                va="center", fontsize=7.6, color="#777777")
+    # (the convention-specific Jensen constant-offset bound, which inverts under this deployed
+    #  residual-only convention, is reported in the SI, not shown here)
     ax.set_xlim(0, mse + 0.30)
     ax.set_ylim(0, 1.0)
     ax.set_yticks([])
