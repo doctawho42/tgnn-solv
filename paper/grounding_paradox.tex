@@ -159,7 +159,8 @@ closure-misspecification part $\Bclos$ and an input-insufficiency part $\Binsuf$
 low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P_{\mathrm{boot}}\approx0.78$). \emph{(3)~The lever:} raising
 closure fidelity (COSMO-SAC-2010/dsp) moves the ceiling---closure fidelity, not input fidelity, is the
 lever; supervising the latent toward truth (TeNNet-SAC) points the same way and is a second lever left
-to future work.}
+to future work. \emph{Bottom:} every claim in the paper graded by strength of evidence
+(certified~/~likely~/~exploratory), with the same one-sided-bound and scope caveats made in the text.}
 \label{fig:overview}
 \end{figure*}
 
@@ -391,30 +392,10 @@ in the low-fidelity closure rather than its inputs, and a standard higher-fideli
 sweep (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa closure
 (\S\ref{sec:pka})---stress-test and generalize the account, with further diagnostics in the ESI.
 
-\begin{table}[t]
-\centering
-\caption{What the paper establishes, graded by strength of evidence. \emph{Certified} claims hold
-under any closure configuration or are exactly proved; \emph{likely} claims are measured but
-sub-threshold or one-sidedly bounded on the matched $n{=}60$/$n{=}44$ sets; \emph{exploratory} claims
-are directional or conjectural. We make no accuracy claim.}
-\label{tab:claims}
-\small
-\begin{tabular}{@{}p{0.15\linewidth}p{0.79\linewidth}@{}}
-\toprule
-\textbf{Certified} & The grounding paradox: reference VT-2005 $\sigma$-profiles make the model \emph{worse} than a free learned head ($3$ seeds, $n{=}5608$, surviving three injection controls). \\
- & The exact split $B=\Bclos+\Binsuf$ for a fixed closure (Lemma~\ref{prop:decomp}). \\
- & The differentiable closure reproduces the NIST reference COSMO-SAC-2002 to RMSE $0.003\,\ln\gamma$, so $\Bclos$ is genuine misspecification, not an implementation artifact. \\
-\addlinespace
-\textbf{Likely} & On the low-$\gamma$ $n{=}60$ set the closure binds: $\Bclos\ge0.85>0.62$, $P_{\mathrm{boot}}\approx0.78$ (two-way clustering; the margin CI spans zero; not certified at conventional confidence). \\
- & A standard modern closure (COSMO-SAC-2010/dsp) dissolves that certificate ($P_{\mathrm{boot}}\approx0.79$); the reading turns to the inputs for any true $\Binsuf>\mathrm{MSE}_{2010}/2\approx0.38$, below every $\Binsuf$ estimate. \\
- & The end-to-end latent is a low-rank (top-two $72\pm1\%$), out-of-sample-transferable ($4.1\pm0.5\times$) closure-compensating surrogate ($n{=}44$, three seeds). \\
-\addlinespace
-\textbf{Exploratory} & Transfer of the closure-dominance to the finite-composition/high-$\gamma$ regime (supported by in-regime signs, not measured there). \\
- & The $\gamma$-stratified strengthening of $\Bclos$ (thin, estimator-dependent). \\
- & The pKa/Hammett second closure as a fidelity-axis cross-check (a cautionary complement, not a clean one). \\
-\bottomrule
-\end{tabular}
-\end{table}
+Every claim in this paper is graded by strength of evidence---certified (holds under any closure
+configuration or exactly proved), likely (measured but sub-threshold or one-sidedly bounded on the
+matched $n{=}60$/$n{=}44$ sets), or exploratory (directional or conjectural)---in the ledger at the
+foot of Fig.~\ref{fig:overview}. We make no accuracy claim.
 
 \subsection{The grounding paradox}
 \label{sec:paradox}
