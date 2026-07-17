@@ -62,7 +62,7 @@
 
 % Previous title (kept for reference): When Reference Physical Inputs Hurt a Learned Solubility Model: The Latent Becomes a Compensating Surrogate
 \title{To Thine Own $\sigma$ Be False:\\[0.2em]
-\large A Learned $\sigma$-Profile Beats Its Quantum-Chemical Reference by Compensating a Misspecified Solubility Closure}
+\large A learned $\sigma$-profile beats its quantum-chemical reference by compensating a misspecified closure}
 \author{N.~L. Polomoshnov\thanks{\pending[affiliation and full postal address]. E-mail: \pending[corresponding-author email]} \and \pending[co-author names and affiliations]}
 \date{\today}
 
@@ -73,24 +73,17 @@
 \begin{abstract}
 Feeding a graph network's own learned, imperfect $\sigma$-profiles through a fixed COSMO-SAC
 closure predicts solid--liquid solubility better than feeding external quantum-chemical reference
-profiles (VT-2005) through the same closure---by $+0.13$ in $\ln x_2$ MAE when the model co-adapts to
-the reference input (reference $\sigma$ injected at training, $1.85\!\to\!1.98$) and by $+0.40$ when
-it is swapped in only at evaluation ($\to\!2.25$, maximally exposing the drift); the
-reference-input arm's $R^2$ falls from $+0.33$ to $\approx0$ ($-0.03\pm0.04$), corroborating the MAE. This grounding paradox is robust
-across three seeds ($n{=}5608$) and three injection controls. Mechanistically, end-to-end training drives the
-``physical'' latent into a low-rank, out-of-sample-transferable surrogate that cancels the closure's
-error rather than reporting the physical quantity (three seeds, mean$\pm$sd: $51\pm2\%$ departure,
-$72\pm1\%$ in two modes, $4.1\pm0.5\times$ transfer).
-Because the latent carries an external reference, we can \emph{measure} rather than assume where a
-fixed closure's ceiling lies: an exact, fit-free split of the reference-input excess risk into
-closure-misspecification and input-insufficiency terms. On a small matched corner it places the
-ceiling in the low-fidelity COSMO-SAC-2002 closure, not its inputs, and a modern closure
-(COSMO-SAC-2010/dsp) removes the penalty---closure fidelity, not input fidelity, is the lever. That
-corner is at infinite dilution, not the finite-composition regime the paradox spans, so we read the
-attribution as a demonstration, not a certificate. A second closure, $\mathrm{p}K_a$ through a
-Hammett relationship, reproduces the sign flip. We make no accuracy claim; the contribution is the
-paradox, its compensating-surrogate mechanism, and the lesson that the lever is closure fidelity, not
-truer inputs.
+profiles (VT-2005) through the same closure: substituting the reference collapses the arm's $R^2$
+to ${\approx}0$. Truer physical inputs make the model worse. Which component is at fault---the
+closure, or its inputs? Because the learned latent has an external oracle, the reference-input
+excess risk splits exactly into a closure-misspecification term and an input-insufficiency term; on
+a matched infinite-dilution corner, the closure term binds. The mechanism follows: trained
+end-to-end through a misspecified closure, the latent becomes a low-rank, out-of-sample-transferable
+surrogate that cancels the closure's error rather than reporting the physical quantity. Holding the
+inputs fixed and swapping the low-fidelity 2002 kernel for a modern closure (COSMO-SAC-2010/dsp)
+removes the penalty: closure fidelity, not input fidelity, is the lever. We make no accuracy
+claim---the contribution is the paradox, its compensating-surrogate mechanism, and a reusable
+instrument for locating a fixed closure's ceiling.
 \end{abstract}
 \vspace{1.4em}
 \end{@twocolumnfalse}
