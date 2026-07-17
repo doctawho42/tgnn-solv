@@ -332,6 +332,10 @@ App.~\ref{sec:si-proofs}):
   \emph{upper} bound (law of total variance, since a binning of $g(\zstar)$
   coarsens $\zstar$).
 \end{itemize}
+The Jensen constant-offset bound is convention-specific---it separates under the full combinatorial
+convention but inverts under the deployed residual-only default---so the headline separation in
+\S\ref{sec:measure} rests on the leakage-immune law-of-total-variance bound, and the Jensen numbers
+are reported in App.~\ref{sec:si-tables}.
 Because $\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, it is
 \emph{independent of the closure convention}: any disagreement between closure
 variants is decoder disagreement and lands in $\Bclos$.
@@ -466,8 +470,8 @@ $\Ex[\Var(m\mid\zstar)]$; ``k\textsc{nn}'' is a direct high-dimensional estimate
 The \emph{load-bearing} separation is the leakage-immune (LOTV)
 $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ row, which exceeds $\Binsuf$ under
 \emph{both} conventions ($1.27$, $0.85>0.62$). The convention-specific constant-offset
-(Jensen) bound, which separates only under ``full'' but inverts under the deployed
-``res'', is deferred to App.~\ref{sec:si-tables}.}
+(Jensen) bound separates only under ``full'' and inverts under the deployed ``res'';
+its numbers are reported with the convention hedge in App.~\ref{sec:si-tables}.}
 \label{tab:decomp}
 {\small
 \begin{tabular}{@{}p{0.60\linewidth}rr@{}}
@@ -492,11 +496,12 @@ label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{$0$ (a
 residual-only COSMO-SAC convention---the configuration the model actually runs. The
 load-bearing, convention-independent bound $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{LOTV}}\approx0.85$
 exceeds every valid $\Binsuf$ upper bound (salmon region); the white gap is a separation that needs
-no smoothness assumption, and the teal region is the closure share of the total error lower-bounded by that margin (deterministic on this $n{=}60$ set; its generalization is the $P_{\mathrm{boot}}\approx0.78$ of Table~\ref{tab:decomp})
+no smoothness assumption, and the teal region is the closure share of the total error lower-bounded by that margin (deterministic on this $n{=}60$ set; its generalization is the two-way cluster-bootstrap frequency $P_{\mathrm{boot}}\approx0.78$)
 (MSE $=1.47$). We headline the law-of-total-variance (LOTV) binning bound because it conditions on
 the scalar $g(\zstar)$ and is immune to the near-duplicate leakage that deflates the
 $z^\ast$-neighbour estimators ($k$-NN, RF; \S\ref{sec:measure}). The convention-specific constant-offset
-(Jensen) bound, which inverts under this deployed convention, is deferred to App.~\ref{sec:si-tables}.}
+(Jensen) bound inverts under this deployed convention; its numbers are reported with the convention
+hedge in App.~\ref{sec:si-tables}.}
 \label{fig:decomp}
 \end{figure*}
 
