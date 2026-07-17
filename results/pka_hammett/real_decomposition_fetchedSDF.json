@@ -1,0 +1,149 @@
+{
+  "source": "OPERA / Mansouri 2019 pKa_QR.sdf (experimental pKa_a/pKa_b)",
+  "n_molecules_read": 7904,
+  "n_hammett_amenable": 1361,
+  "high_F_mono": {
+    "label": "high_F mono-substituted (canonical LFER)",
+    "n": 104,
+    "mse_true_input": 4.0939,
+    "rmse_true_input": 2.023,
+    "binsuff_within_scaffold_up": 3.0763,
+    "bclosure_lb_conv_indep": 1.0175,
+    "bclosure_jensen_by_scaffold": {
+      "anilinium": 0.1964,
+      "benzoic_acid": 0.0001,
+      "phenol": 0.2089,
+      "pyridinium": 0.5375
+    },
+    "per_scaffold": {
+      "anilinium": {
+        "n": 27,
+        "rmse": 0.803,
+        "mean_resid": 0.443
+      },
+      "benzoic_acid": {
+        "n": 23,
+        "rmse": 0.026,
+        "mean_resid": 0.009
+      },
+      "phenol": {
+        "n": 27,
+        "rmse": 0.653,
+        "mean_resid": 0.457
+      },
+      "pyridinium": {
+        "n": 27,
+        "rmse": 3.834,
+        "mean_resid": 0.733
+      }
+    }
+  },
+  "high_F": {
+    "label": "high_F (meta/para, incl. poly-sub)",
+    "n": 163,
+    "mse_true_input": 3.3271,
+    "rmse_true_input": 1.824,
+    "binsuff_within_scaffold_up": 2.7773,
+    "bclosure_lb_conv_indep": 0.5499,
+    "bclosure_jensen_by_scaffold": {
+      "anilinium": 0.151,
+      "benzoic_acid": 0.0011,
+      "phenol": 0.4091,
+      "pyridinium": 0.3356
+    },
+    "per_scaffold": {
+      "anilinium": {
+        "n": 42,
+        "rmse": 0.724,
+        "mean_resid": 0.389
+      },
+      "benzoic_acid": {
+        "n": 42,
+        "rmse": 0.157,
+        "mean_resid": 0.034
+      },
+      "phenol": {
+        "n": 45,
+        "rmse": 1.597,
+        "mean_resid": 0.64
+      },
+      "pyridinium": {
+        "n": 34,
+        "rmse": 3.449,
+        "mean_resid": 0.579
+      }
+    }
+  },
+  "low_F": {
+    "label": "low_F (ortho / unknown)",
+    "n": 1198,
+    "mse_true_input": 6.1166,
+    "rmse_true_input": 2.473,
+    "binsuff_within_scaffold_up": 5.3628,
+    "bclosure_lb_conv_indep": 0.7539,
+    "bclosure_jensen_by_scaffold": {
+      "anilinium": 0.254,
+      "benzoic_acid": 0.3993,
+      "phenol": 1.5249,
+      "pyridinium": 0.2467
+    },
+    "per_scaffold": {
+      "anilinium": {
+        "n": 151,
+        "rmse": 2.364,
+        "mean_resid": 0.504
+      },
+      "benzoic_acid": {
+        "n": 155,
+        "rmse": 1.013,
+        "mean_resid": 0.632
+      },
+      "phenol": {
+        "n": 438,
+        "rmse": 2.469,
+        "mean_resid": 1.235
+      },
+      "pyridinium": {
+        "n": 454,
+        "rmse": 2.837,
+        "mean_resid": -0.497
+      }
+    }
+  },
+  "all": {
+    "label": "all",
+    "n": 1361,
+    "mse_true_input": 5.7825,
+    "rmse_true_input": 2.405,
+    "binsuff_within_scaffold_up": 5.1126,
+    "bclosure_lb_conv_indep": 0.67,
+    "bclosure_jensen_by_scaffold": {
+      "anilinium": 0.2293,
+      "benzoic_acid": 0.2544,
+      "phenol": 1.391,
+      "pyridinium": 0.1778
+    },
+    "per_scaffold": {
+      "anilinium": {
+        "n": 193,
+        "rmse": 2.118,
+        "mean_resid": 0.479
+      },
+      "benzoic_acid": {
+        "n": 197,
+        "rmse": 0.901,
+        "mean_resid": 0.504
+      },
+      "phenol": {
+        "n": 483,
+        "rmse": 2.401,
+        "mean_resid": 1.179
+      },
+      "pyridinium": {
+        "n": 488,
+        "rmse": 2.884,
+        "mean_resid": -0.422
+      }
+    }
+  }
+}
