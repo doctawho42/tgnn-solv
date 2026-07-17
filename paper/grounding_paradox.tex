@@ -283,7 +283,7 @@ $\mathrm{sd}(\dHfus)\approx8{,}251$\,J/mol---finite but unusable---whereas exter
 which contribute a score direction outside the activity tangent space, close it to
 $\approx1{,}689$\,J/mol.
 
-\subsection{The closure--insufficiency decomposition}
+\subsection{The closure--insufficiency decomposition: the instrument}
 \label{sec:decomp}
 Let $m$ be the activity target (experimental $\lngi$) and $g(\zstar)$ the closure
 evaluated on the true latent. The excess risk of the reference-input path over the
@@ -348,78 +348,34 @@ with $n{=}1198$ ($\dim(\zstar)/n\approx10^{-3}$), so $\Binsuf$ is a point estima
 not a bound. The decomposition is identifiable exactly where $\dim(\zstar)/n$ is small---which is why
 the pKa domain, not the solubility keystone, is where the split is pinned rather than bounded.
 
-\subsection{The grounding gap: a symptom of closure misspecification}
+\subsection{What the instrument resolves, and what it does not}
 \label{sec:gap}
-The paradox---true inputs hurting---is a measurable quantity, not a curiosity. Let
-$\mathcal E$ be the encoder class ($h:x\mapsto z$) and define three population risks of
-the activity target $m$: the oracle risk $R_{\mathrm{orc}}=\Ex[(m-g(\zstar))^2]$, the best
-end-to-end risk $R_{\mathrm{e2e}}=\inf_{h\in\mathcal E}\Ex[(m-g(h(x)))^2]$, and the
-free-predictor (black-box) risk $R_{\mathrm{free}}=\Ex[(m-\Ex[m\mid x])^2]$. The
-\emph{grounding gap} is $\Gamma:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$; the paradox is
-$\Gamma>0$ (a free learned head beats the true input pushed through the closure). Under
-(A1) a representable encoder ($\phi^\star\in\mathcal E$ with $\zstar=\phi^\star(x)$) and
-(A2) a lossless bottleneck ($\Ex[m\mid x]=\Ex[m\mid\zstar]$), the gap is sandwiched,
-$0\le\Gamma\le\Bclos$ with $\Gamma=\Bclos-(R_{\mathrm{e2e}}-R_{\mathrm{free}})$, so a
-well-specified closure ($\Bclos=0$) forces $\Gamma=0$ and, under A1--A2, an observed
-$\Gamma>0$ certifies $\Bclos>0$ (Theorem~\ref{thm:gap}, App.~\ref{sec:si-proofs}). Then
-$\Gamma$ is exactly the closure bias the encoder can \emph{absorb} by feeding $g$ a
-wrong-but-useful intermediate---the formal content of Lemma~\ref{prop:ident}'s ``a free
-head silently compensates.''
+The decomposition (\S\ref{sec:decomp}) is the load-bearing measurement---assumption-light, needing
+neither a representable encoder nor a lossless bottleneck. Alongside it we report a cheaper, purely
+observable quantity: the \emph{reference-input penalty} $\Gamma:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, the
+oracle risk minus the best end-to-end risk; the paradox is $\Gamma>0$. Under a representable encoder
+(A1) and a lossless bottleneck (A2) it is sandwiched $0\le\Gamma\le\Bclos$, so an observed $\Gamma>0$
+would certify $\Bclos>0$ (Theorem~\ref{thm:gap}, App.~\ref{sec:si-proofs}). But A1 is empirically
+doubtful (the encoder is transfer-limited: a linear probe drops from train $R^2\approx0.76$ to test
+$R^2\approx0.45$) and A2 is unverifiable and physically dubious; when A2 fails, $\Gamma>0$ conflates
+closure misspecification with input insufficiency---a well-specified closure with a lossy latent gives
+$\Bclos=0$ yet $\Gamma>0$ (\S\ref{sec:dial}, and the pKa ortho sweep of \S\ref{sec:pka}). We therefore
+read $\Gamma$ as a corroborating \emph{symptom} and rest the closure-dominance verdict on the
+decomposition, which needs neither assumption: \emph{the decomposition is the instrument; $\Gamma$ is
+the cheap symptom that motivates it}.
 
-\paragraph{$\Gamma$ is a symptom, not a certificate.} Both assumptions are load-bearing and
-neither holds cleanly here. A1 is \emph{empirically doubtful}: the encoder is transfer-limited (a linear probe onto
-descriptors drops from train $R^2\approx0.76$ to test $R^2\approx0.45$ out of distribution, a proxy
-for---not a direct measure of---representability of $\zstar$), making $\phi^\star\in\mathcal E$
-unlikely across scaffolds, so effectively $\phi^\star\notin\mathcal E$ and even $\Gamma\ge0$
-is not guaranteed. A2 is unverifiable without the oracle and physically dubious (the
-$\sigma$-profile is a lossy summary of the graph). When A2 fails, $\Gamma>0$ \emph{conflates}
-two causes: closure misspecification ($\Bclos>0$) and input insufficiency (a correct closure
-driven off-support to recover information the intermediate discarded). A controlled construction
-with a \emph{well-specified} closure and a lossy intermediate gives $\Bclos=0$ yet $\Gamma>0$
-(\S\ref{sec:dial}, and the pKa ortho sweep of \S\ref{sec:pka}). Certification of
-closure-dominance therefore rests on the convention-independent \emph{decomposition}
-(Lemma~\ref{prop:decomp}), which needs neither A1 nor A2: in solubility the Jensen bound and
-the insufficiency estimates place $\Bclos$ above $\Binsuf$ \emph{directly}
-(\S\ref{sec:measure}), and the grounding gap only corroborates it. This is the paper's method:
-\emph{the decomposition is the instrument, $\Gamma$ is the cheap symptom that motivates it, and
-separating its two causes is what an externally referenced latent buys.}
-
-\subsection{The physics tax and the critical data budget}
-\label{sec:tax}
-The gap is a population statement; the deployed question is whether the \emph{trained} physics
-model beats the \emph{trained} black box at sample size $n$. Writing each trained risk as an
-asymptote plus estimation variance, the \emph{physics tax}
-$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ (with
-$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$) is negative---physics helps---only
-when the estimation variance a constrained prior saves exceeds its asymptotic bias; if
-$\Delta_\infty>0$ and the variance gap vanishes there is a critical budget $n^\star$ beyond which
-physics always loses, and as the control nears the aleatoric floor the tax tends to $\Delta_\infty$
-(Proposition~\ref{prop:tax}, App.~\ref{sec:si-proofs}). When the control is asymptotically Bayes and
-A2 holds, $\Delta_\infty=\Bclos-\Gamma$, the \emph{un-compensatable} part of the closure bias. The
-novelty inversion---the tax heaviest on the \emph{best-covered} solutes (\S\ref{sec:map},
-exploratory)---points in a direction the proposition allows, but is not a controlled test.
-
-\paragraph{Three informal consequences.} The same collinear geometry has three further consequences we
-use informally (details in the SI): within the affine-in-$1/T$ activity family, same-pair temperature
-extrapolation is controlled by the fitted-slope variance---the one place the physical \emph{structure}
-is expected to help (\S\ref{sec:supporting}, a hypothesis-class margin, not a claim for the trained
-model, which trails the van't~Hoff baseline); as the training window $\Delta T\to0$ the crystal and
-activity columns become collinear and the smallest Fisher eigenvalue $\to0$ (\S\ref{sec:ident}), so an
-optimiser splits error between the factors rather than fit either; and each single-component grounding
-stream rank-completes a different deficient direction of Lemma~\ref{prop:ident} (\S\ref{sec:e2}).
-
-\subsection{What we prove}
-Two lemmas carry the measurement: the split's non-identifiability (Lemma~\ref{prop:ident}) and the
-exact closure/insufficiency decomposition with its one-sided bounds (Lemma~\ref{prop:decomp}). The
-class-dependence refinement, the grounding-gap sandwich (Theorem~\ref{thm:gap}), and the physics-tax
-sign rule (Prop.~\ref{prop:tax}) are in App.~\ref{sec:si-proofs}, all elementary. Their reach is
-deliberate: Theorem~\ref{thm:gap} certifies misspecification only under (A1--A2), which fail or are
-unverifiable here, so we rest on the assumption-light decomposition and read $\Gamma$ as a
-corroborating symptom. There is no ``optimal grounding'' theorem, and the decomposition does not
-improve out-of-distribution accuracy (\S\ref{sec:results}). We read these against known work on model
-discrepancy \cite{kennedy2001,brynjarsdottir2014}, sloppiness \cite{transtrum2015,gutenkunst2007},
-identifiability \cite{raue2009,villaverde2016}, misspecification \cite{white1982}, and
-underspecification \cite{damour2022}.
+\paragraph{When a fixed prior loses; and scope.}\label{sec:tax} The deployed question---does the
+\emph{trained} physics model beat the \emph{trained} black box at sample size $n$?---follows a sign
+rule: writing each trained risk as an asymptote plus estimation variance, a fixed-closure prior helps
+only when the variance it saves exceeds its asymptotic bias $\Delta_\infty$, so if $\Delta_\infty>0$
+there is a critical budget $n^\star$ beyond which physics always loses (Prop.~\ref{prop:tax},
+App.~\ref{sec:si-proofs}). There is no ``optimal grounding'' theorem, and the decomposition does not
+improve out-of-distribution accuracy (\S\ref{sec:results}). Everything here is measured at infinite
+dilution, $298$\,K, on the VT-2005-matchable low-$\gamma$ corner; transfer to the finite-composition
+regime the paradox lives in is a conjecture, not a result (\S\ref{sec:scope}). We read these results
+against known work on model discrepancy \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
+\cite{transtrum2015,gutenkunst2007}, identifiability \cite{raue2009,villaverde2016}, misspecification
+\cite{white1982}, and underspecification \cite{damour2022}.
 
 \input{sections/methods}
 
