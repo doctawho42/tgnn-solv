@@ -1,0 +1,13 @@
+IDAC-cap-UD @298 pairs (native profiles): n=136  solutes=71  solvents=28
+
+=== SLICE A: clean ln gamma_inf (IDAC-cap-UD, in-house, same-database, native profiles, PAIRED) ===
+
+  --- 2002 vs 2010 ---
+    MSE(2002)=1.198  MSE(2010)=1.075  drop=+10%  paired mean(dSE)=+0.124  2010 beats 2002 on 79/136
+    two-way solute x solvent bootstrap: P(2010 better)=0.651  margin CI90=[-0.959,+0.970]
+
+  --- 2002 vs 2010/dsp ---
+    MSE(2002)=1.198  MSE(2010/dsp)=1.212  drop=-1%  paired mean(dSE)=-0.013  2010 beats 2002 on 87/136
+    two-way solute x solvent bootstrap: P(2010/dsp better)=0.560  margin CI90=[-1.555,+1.019]
+
+  PRIMARY VERDICT (2010 no-dsp): direction 2010<2002 (as predicted); certified=NO (CI spans 0)
