@@ -47,6 +47,13 @@ differences), and the per-molecule Fisher that governs the drift has participati
 of $51$ even at full solvent coverage: the activity map concentrates on the one or two hydrogen-bonding
 directions where the closure is least faithful (\S\ref{sec:map}) and is weakly sensitive to the rest,
 so the end-to-end head can move $\sigma$ along the low-sensitivity directions at little cost to the fit.
+This under-determination is the classical picture from regularization theory---the part of a fit through
+a fixed forward map that the data does not constrain lives in its null / small-singular-value directions
+and is fixed only by the prior \cite{engl1996}, a geometry restated for learned reconstruction as
+null-space networks \cite{schwab2019} and mirrored in the sloppy directions of the Fisher
+\cite{gutenkunst2007,transtrum2015}. What is specific here is that the confinement is not imposed
+architecturally but \emph{emerges} under free end-to-end training, and that the direction it fills is set
+by---and therefore diagnostic of---the closure's misspecification rather than a numerical null.
 We state this narrowly---participation ratio is a concentration statistic, not a hard count, and it is
 measured at infinite dilution, so its transfer to the finite-composition regime that generates the drift
 is not established (the same scope gap as $\Bclos$, \S\ref{sec:scope}); the external reference here is

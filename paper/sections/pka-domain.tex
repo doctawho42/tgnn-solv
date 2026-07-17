@@ -8,27 +8,36 @@ external oracle. The two classic LFER failure modes fall cleanly onto the two ch
 Lemma~\ref{prop:decomp}: \emph{resonance saturation} (a curvature the linear closure cannot
 represent) lands in $\Bclos$, while \emph{ortho/steric} effects, absent from the tabulated
 constants, are information the intermediate lacks and land in $\Binsuf$. On the OPERA experimental
-compilation \cite{mansouri2019opera} this yields a \emph{measured} fidelity sweep: the clean
-meta/para series ($n{=}161$) is well specified (RMSE $0.63$, $\Bclos$ below the insufficiency floor),
-while the ortho/heteroaromatic regime ($n{=}1008$) degrades to RMSE $2.4$, input-insufficiency
-dominated---the near-exact-to-degraded transition, measured rather than asserted. A trained physics
-arm (learned $\hat\sigma$ through the fixed LFER) beats its matched DirectGNN control overall
-($1.63$ vs $1.84$ pKa MAE), but we do \emph{not} read this overall ``help'' as a clean confirmation
-of the sign rule: it concentrates in the \emph{misspecified} ortho regime ($\Delta=-0.53$), is
-within seed noise on the clean meta/para one ($\Delta=-0.10$), and the DirectGNN control is not
-separately tuned---so it reflects a permissive closure plus a strong per-scaffold $\mathrm pK_{a,0}$
-prior, not the variance-saving of a well-specified prior (App.~\ref{sec:si-pka}). The informative
-test is instead the same oracle swap as on solubility, now
-run per stratum: replace the learned $\hat\sigma$ with the tabulated $\sigma^\star$ in the same
-closure and read the sign of the change. It \emph{flips}. On the clean meta/para series feeding the
-reference constant \emph{helps}---MAE $1.61\to0.60$, oracle below learned in every seed---so there the
-ceiling is the noisy learned estimate, not the closure: a real-data \emph{grounding-helps} corner and
-an internal positive control, the swap reading correctly where the latent is physical. On the ortho
-regime the same swap \emph{hurts}---MAE $1.39\to1.62$, oracle above learned in every seed---because
-the freely learned $\hat\sigma$ absorbs the ortho/steric information the tabulated constant lacks,
-the compensating-surrogate mechanism of \S\ref{sec:surrogate} on a second closure. The ortho gap is
-small ($+0.23$\,MAE, with the oracle evaluated on a single split), so we lean on the sign flip and
-its strong meta/para pole, not the ortho magnitude. Either way the diagnostic is not an artifact of
-solubility: on an independent chemical map it separates a helps-corner from a hurts-corner, measured.
+compilation \cite{mansouri2019opera}---the canonical full set under a uniform, closure-independent
+quality filter that drops pre-ionized input microstates (App.~\ref{sec:si-pka})---this yields a
+\emph{measured} fidelity sweep: the clean meta/para series ($n{=}158$) is well specified (RMSE $0.55$,
+$\Bclos$ below the insufficiency floor), while the ortho/heteroaromatic regime ($n{=}846$) degrades to
+RMSE $2.3$, input-insufficiency dominated---the near-exact-to-degraded transition, measured rather than
+asserted. The decisive test is the
+same oracle swap as on solubility---replace the learned $\hat\sigma$ with the tabulated $\sigma^\star$
+in the same closure and read the sign, per stratum---now certified across $K{=}20$ within-scaffold
+splits with a paired per-molecule, scaffold-cluster bootstrap. It \emph{flips}. On the clean meta/para
+pole feeding the reference constant \emph{helps} (learned MAE $0.48$ vs oracle $0.315$; oracle better
+in $19/20$ splits, bootstrap $P<0.01$): the ceiling there is the noisy learned estimate, not the
+closure---a real-data grounding-helps corner and an internal positive control. On the ortho pole the
+same swap \emph{hurts} (learned $0.83$ vs oracle $1.62$; oracle worse in $\mathbf{20/20}$ splits,
+$P{=}1.00$, $90\%$ CI $[{+}0.6,{+}0.9]$): the freely learned $\hat\sigma$ absorbs the ortho/steric
+information the tabulated constant lacks---the compensating-surrogate mechanism of \S\ref{sec:surrogate}
+on a second closure.
+
+Both signs obey one \emph{crossover law}---grounding helps a pole iff the fidelity-set oracle error
+there exceeds what the learned arm can achieve---which a competence sweep confirms
+(App.~\ref{sec:si-pka}): the well-specified pole's oracle threshold ($0.31$) is unbeatable, so grounding
+helps at every training budget; the misspecified pole's threshold ($1.62$) is high, so the learned arm
+beats it, and grounding hurts, across the whole interpolation range (down to $12\%$ of the data),
+reverting to helps only under scaffold \emph{extrapolation}, where $\hat\sigma$ breaks ($2.6{\pm}2.0$)
+back above the threshold. The flip is thus a within-distribution, fidelity-driven crossover whose one
+scope boundary is predicted by the same law. It is the sharp, two-sided form of the penalty sign rule
+(Prop.~\ref{prop:tax}); its ``a fitted intermediate can beat the true one'' half is a known
+phenomenon---from plug-in efficiency under correct specification \cite{hirano2003} to pseudo-true
+fitting under misspecification \cite{white1982}---that the crossover sharpens into a fidelity-set
+threshold. The weaker trained physics-vs-DirectGNN comparison is a complement we do not lean on
+(App.~\ref{sec:si-pka}). On an independent chemical closure the diagnostic separates a certified
+helps-corner from a certified hurts-corner.
 The full construction, the semi-synthetic estimator validation, the measured OPERA sweep, and the
 stratified comparison are in App.~\ref{sec:si-pka} (Fig.~\ref{fig:pka}).

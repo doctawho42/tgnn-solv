@@ -28,37 +28,50 @@ proxy is valid. Sweeping the ortho/steric channel with a \emph{well-specified} c
 $\Bclos=0$ throughout yet $\Gamma>0$ and growing---the pKa realization of the conflation that
 makes $\Gamma$ a symptom rather than a certificate. The oracle-$\sigma$ pipeline
 (scaffold-resolved substituent$\to\sigma$ assignment) and this validation extend directly to real
-data. On the OPERA experimental $\mathrm pK_a$ compilation \cite{mansouri2019opera} ($6{,}502$
-compounds), applying the same decomposition to the fixed Hammett closure yields a \emph{measured}
-fidelity sweep: on the clean meta/para series ($n{=}161$) the closure predicts experimental
-$\mathrm pK_a$ to RMSE $0.63$ with $\Bclos$ below the input-insufficiency floor (per-scaffold
-systematic offsets $\le0.25$, so the LFER is well specified there), while the
-ortho/heteroaromatic regime ($n{=}1198$) degrades to RMSE $2.47$, dominated by input insufficiency.
+data. On the OPERA experimental $\mathrm pK_a$ compilation \cite{mansouri2019opera} ($7{,}904$
+records under the same net-neutral filter), applying the same decomposition to the fixed Hammett
+closure yields a \emph{measured} fidelity sweep: on the clean meta/para series ($n{=}158$) the closure
+predicts experimental $\mathrm pK_a$ to RMSE $0.55$ with $\Bclos$ below the input-insufficiency floor
+(per-scaffold systematic offsets $\le0.18$, so the LFER is well specified there), while the
+ortho/heteroaromatic regime ($n{=}846$) degrades to RMSE $2.26$, dominated by input insufficiency.
 Here the pKa latent is a \emph{scalar} Hammett constant, so---unlike the solubility regime---$\Binsuf$
 is \emph{point}-identified rather than one-sidedly bounded (\S\ref{sec:decomp}): a within-scaffold
-difference (Rice) estimator gives $\Binsuf=4.36$ (95\%~CI $[3.85,4.86]$; $71\%$ of the error---the
-tabulated $\sigma$ carries no ortho information, exactly the a-priori channel assignment), leaving a
-\emph{point} closure misspecification $\Bclos=1.76$ ($[1.25,2.27]$). We state $\Binsuf$ as a value here,
+regression estimator gives $\Binsuf=4.5$ ($\approx89\%$ of the error---the tabulated $\sigma$ carries no
+ortho information, exactly the a-priori channel assignment), leaving a small \emph{point} closure
+misspecification $\Bclos=0.6$. We state $\Binsuf$ as a value here,
 and only here, because it is measured, not bounded (see the resolution note in \S\ref{sec:decomp}). This is the
 near-exact-to-degraded transition the closure is meant to show, now measured rather than asserted. This places the pKa closure near the phase-diagram boundary
-in its clean regime. We close the loop with a trained comparison. On a Bemis--Murcko scaffold
-split of the Hammett-amenable set ($1169$ compounds, three seeds), a shared GIN encoder feeding
-the fixed LFER (a predicted $\sigma$) beats the matched DirectGNN control overall ($1.63$ vs
-$1.84$ pKa MAE, $\Delta=-0.21$), placing pKa on the ``helps'' side of the penalty sign rule
-(Prop.~\ref{prop:tax}). We read this cautiously, \emph{not} as a clean confirmation of the sign
-rule through closure fidelity. Stratified, the help concentrates in the ortho/heteroaromatic
-regime ($\Delta=-0.53$), not the clean meta/para one ($\Delta=-0.10$, within seed noise); and on
-the clean regime the fixed LFER on the \emph{reference} $\sigma$ is excellent (oracle MAE $0.60$) yet
-the trained arm is not ($1.61$), so the closure is well specified there but the small-data encoder
-cannot learn $\sigma$ well enough to exploit it. Where the physics arm does win---ortho, where the
-closure is \emph{mis}specified for the reference $\sigma$---the \emph{freely} learned $\sigma$ can
-absorb ortho information the tabulated Hammett constant lacks and the per-scaffold $\mathrm pK_{a,0}$
-supplies a strong baseline. So the pKa ``help'' is a permissive-closure and per-scaffold-prior
-effect, not the variance-saving of a well-specified prior: a useful caution that a ``physics
-helps'' outcome can be the encoder working through a soft closure. The absolute errors
-($\sim\!1.6$--$1.9$) are weak for pKa and the DirectGNN control is not separately tuned, so we do
-not lean on this comparison---the robust second-domain result is the decomposition above; the
-trained comparison is a cautionary complement.
+in its clean regime. \paragraph{Data quality control (uniform, closure-independent).} The trained runs use the canonical
+full OPERA set ($7904$ records). A handful of entries are supplied as pre-ionized microstates---an
+$[\mathrm{NH}^+]$-protonated aminopyridine at $\mathrm pK_a=-7.78$, a pyrylium $[\mathrm O^+]$, and a
+few others---inconsistent with a neutral-scaffold Hammett assignment, and they wreck the clean pole
+(pyridinium RMSE $0.63\!\to\!3.83$). We drop them with one rule, \emph{net formal charge} $\neq0$,
+applied uniformly to both strata. It is closure-independent (it never references the oracle residual,
+so it cannot be circular) and keeps net-neutral substituents such as nitro $[\mathrm N^+][\mathrm O^-]{=}\mathrm O$.
+This removes $5$ of $163$ meta/para rows (restoring the clean pole to RMSE ${\approx}0.55$) and $352$
+of $1198$ ortho rows (leaving $846$; the ortho RMSE is essentially unchanged, so the filter does not
+manufacture the sign), for $1004$ Hammett-amenable rows.
+
+\paragraph{Certification of the flip.} We train the physics arm (encoder $\to\hat\sigma\to$ fixed LFER)
+on $K{=}20$ stratified $80/20$-within-scaffold splits---a Bemis--Murcko split collapses the meta/para
+pole to two ring systems and is unstable---and read the paired per-molecule error against the
+deterministic oracle, per stratum. Meta/para: learned MAE $0.48\pm0.09$ vs oracle $0.315\pm0.07$, gap
+$-0.165$, oracle better in $19/20$ splits (scaffold-cluster and split bootstraps both exclude zero,
+$P<0.01$). Ortho: learned $0.83\pm0.07$ vs oracle $1.62\pm0.08$, gap $+0.79$, oracle worse in $20/20$
+splits ($P=1.00$, $90\%$ CI $[+0.57,+0.95]$).
+
+\paragraph{The crossover law and its scope boundary.} A competence sweep (train fraction
+$\in\{1.0,0.5,0.25,0.12\}$ and, as the low-competence extreme, scaffold extrapolation; six seeds each)
+confirms the sign is set by the crossover of the learned error against the fidelity-fixed oracle
+threshold. On meta/para the learned arm rises from $0.46$ to $0.98$ as data shrinks but never reaches
+the $0.31$ oracle threshold, so grounding helps throughout. On ortho the learned arm stays below the
+$1.62$ threshold across the whole interpolation range ($0.85$ at full data, $1.31$ at $12\%$), so
+grounding hurts throughout; only scaffold extrapolation, where $\hat\sigma$ breaks to $2.6\pm2.0$,
+pushes it back above the threshold and reverts the sign. The flip is therefore a within-distribution,
+fidelity-driven crossover, and the extrapolation reversion is predicted by the same law rather than a
+contradiction of it. A trained physics-vs-DirectGNN comparison points the same way overall but has
+weak absolute errors and an untuned control, so we treat it only as a complement; the load-bearing
+second-domain results are the decomposition above and the certified flip.
 
 \begin{figure}[t]
 \centering
