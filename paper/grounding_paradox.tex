@@ -106,22 +106,22 @@ oracle), and hold the learned latent against its reference---which shows that, t
 through a misspecified closure, the latent is driven off the physical quantity into a systematic,
 low-rank, transferable compensating surrogate (\S\ref{sec:surrogate}). Holding the reference input
 fixed, a higher-fidelity closure removes the penalty: closure fidelity, not input fidelity, is the
-lever (\S\ref{sec:measure}). The sign is not universal---a supervised-$\sigma$ model reports the
-opposite---so whether grounding helps is shaped by two axes, closure fidelity and latent supervision,
-which we anchor with three real closures and a synthetic dial; the composed-predictor framing
-(\S\ref{sec:framework}) and physics-tax sign rule give the formal account, and the pKa closure
-(\S\ref{sec:pka}) generalises it.
+lever (\S\ref{sec:measure}). Whether grounding helps is thus determined by \emph{closure fidelity}---the fidelity of the map that
+consumes the grounded inputs---which we measure directly with three real closures, a synthetic dial,
+and a second closure in the pKa domain (\S\ref{sec:pka}); the composed-predictor framing
+(\S\ref{sec:framework}) and physics-tax sign rule give the formal account. Supervising the latent toward
+truth points the opposite way, so how the latent is trained is a second lever that interacts with
+fidelity---measuring it directly is left to future work.
 
 \paragraph{Contributions.}
-Our thesis is that whether grounding a learned latent in reference physics helps or hurts is \emph{shaped
-by} two axes---how the latent is trained (supervised toward truth vs.\ shaped end-to-end through the
-fixed closure) and the closure's fidelity. Three findings stand cleanly---the paradox, a reusable
-measurement instrument, and the \emph{structure} of the compensating-surrogate mechanism (its sign
-and low-rank, transferable form robust; its magnitude a three-seed estimate, mean$\pm$sd); the
-closure-vs-inputs attribution and the two-axis map we present as, respectively, a caveated corner
-measurement and a \emph{conceptual} organizing frame---not a measured phase diagram, since only the
-closure-fidelity axis is swept directly (\S\ref{sec:dial}); the supervision axis rests on our own
-warmup-manifold point and a literature anchor.
+Our thesis is that whether grounding a learned latent in reference physics helps or hurts is determined
+by the \emph{fidelity of the closure} that consumes the grounded inputs. Three findings stand
+cleanly---the paradox, a reusable measurement instrument, and the \emph{structure} of the
+compensating-surrogate mechanism (its sign and low-rank, transferable form robust; its magnitude a
+three-seed estimate, mean$\pm$sd)---while the closure-vs-inputs attribution is a caveated corner
+measurement. A second lever, how the latent is trained, interacts with fidelity---our warmup-manifold
+contrast and the supervised, higher-fidelity TeNNet-SAC \cite{yang2025tennet} point across it---but
+mapping the two axes together, each measured, is future work.
 \begin{itemize}
   \item \textbf{The grounding paradox.} Substituting reference VT-2005 $\sigma$-profiles into the
   fixed COSMO-SAC closure degrades $\lngi$ and $\lnx$ prediction relative to a free learned head---the
@@ -157,10 +157,10 @@ quantum-chemical reference $\sigma^\star$ (VT-2005) makes the prediction \emph{w
 head---so which is wrong, the closure or the inputs? \emph{(2)~The measurement:} because the latent
 has an external oracle, the reference-input excess risk splits \emph{exactly} into a
 closure-misspecification part $\Bclos$ and an input-insufficiency part $\Binsuf$; on the matched
-low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P\approx0.78$). \emph{(3)~The map:} two levers
-move the ceiling---raising closure fidelity (COSMO-SAC-2010/dsp) or supervising the latent toward
-truth (TeNNet-SAC)---so whether grounding helps is shaped by two axes, closure fidelity and latent
-supervision.}
+low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P\approx0.78$). \emph{(3)~The lever:} raising
+closure fidelity (COSMO-SAC-2010/dsp) moves the ceiling---closure fidelity, not input fidelity, is the
+lever; supervising the latent toward truth (TeNNet-SAC) points the same way and is a second lever left
+to future work.}
 \label{fig:overview}
 \end{figure}
 
@@ -781,9 +781,9 @@ the closure rather than the inputs ($P\approx0.78$ under two-way clustering, not
 conventional confidence). The
 practical implication is to fix the map itself, since within this closure truer
 inputs surface its bias and an output-space correction is inert---though this attribution is
-$2002$-specific: a modern closure (COSMO-SAC-2010/dsp) dissolves it. Neither failure is universal: raising closure fidelity or supervising
-the latent toward truth moves the system out of the hurts-corner, so whether grounding helps is
-\emph{shaped by} two axes---closure fidelity and how the latent is trained. The same grounding also indicates,
+$2002$-specific: a modern closure (COSMO-SAC-2010/dsp) dissolves it. Neither failure is universal: raising closure fidelity moves the system out of the hurts-corner---
+closure fidelity is the lever, and supervising the latent toward truth points the same way, a second
+lever we leave to future work. The same grounding also indicates,
 where the closure binds, that the learned $\sigma$-profile is a closure-compensating surrogate rather
 than the physical quantity---an interpretability cost of physics-informed bottlenecks that the
 external latent makes measurable: a $51\pm2\%$, low-rank, transferable departure from truth across
