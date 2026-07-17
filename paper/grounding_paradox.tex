@@ -15,7 +15,7 @@
 %   S2 Setup ...................... SLE eq + sigma-profile closure + z* external latent   [reuse eq:sle]
 %   S3 Framework (general g(h(x))). Lemmas 1-3 (non-identifiability/efficient-info/B-decomposition);
 %                                   Theorem 1 grounding-gap sandwich 0<=Gamma<=B_clos (thm:gap, sec:gap);
-%                                   Proposition physics-tax sign rule (prop:tax, sec:tax);
+%                                   Proposition penalty sign rule (prop:tax, sec:tax);
 %                                   proofs in SI. Gamma = SYMPTOM, decomposition = certificate.
 %   S4 Results .................... R1 paradox; R2 B measurement (keystone); R3 Gate B null;
 %                                   synthetic dial (sec:dial) + pKa second closure (sec:pka); data-eff; maps
@@ -77,7 +77,7 @@ profiles (VT-2005) through the same closure: substituting the reference collapse
 to ${\approx}0$. Truer physical inputs make the model worse. Which component is at fault---the
 closure, or its inputs? Because the learned latent has an external oracle, the reference-input
 excess risk splits exactly into a closure-misspecification term and an input-insufficiency term; on
-a matched infinite-dilution corner, the closure term binds. The mechanism follows: trained
+a matched infinite-dilution regime, the closure term binds. The mechanism follows: trained
 end-to-end through a misspecified closure, the latent becomes a low-rank, out-of-sample-transferable
 surrogate that cancels the closure's error rather than reporting the physical quantity. Holding the
 inputs fixed and swapping the low-fidelity 2002 kernel for a modern closure (COSMO-SAC-2010/dsp)
@@ -106,9 +106,9 @@ through a misspecified closure, the latent is driven off the physical quantity i
 low-rank, transferable compensating surrogate (\S\ref{sec:surrogate}). Holding the reference input
 fixed, a higher-fidelity closure removes the penalty: closure fidelity, not input fidelity, is the
 lever (\S\ref{sec:measure}). Whether grounding helps is thus determined by \emph{closure fidelity}---the fidelity of the map that
-consumes the grounded inputs---which we measure directly with three real closures, a synthetic dial,
+consumes the grounded inputs---which we measure directly with three real closures, a synthetic sweep,
 and a second closure in the pKa domain (\S\ref{sec:pka}); the composed-predictor framing
-(\S\ref{sec:framework}) and physics-tax sign rule give the formal account. Supervising the latent toward
+(\S\ref{sec:framework}) and penalty sign rule give the formal account. Supervising the latent toward
 truth points the opposite way, so how the latent is trained is a second lever that interacts with
 fidelity---measuring it directly is left to future work.
 
@@ -117,17 +117,17 @@ Our thesis is that whether grounding a learned latent in reference physics helps
 by the \emph{fidelity of the closure} that consumes the grounded inputs. Three findings stand
 cleanly---the paradox, a reusable measurement instrument, and the \emph{structure} of the
 compensating-surrogate mechanism (its sign and low-rank, transferable form robust; its magnitude a
-three-seed estimate, mean$\pm$sd)---while the closure-vs-inputs attribution is a caveated corner
+three-seed estimate, mean$\pm$sd)---while the closure-vs-inputs attribution is a caveated regime
 measurement. A second lever, how the latent is trained, interacts with fidelity---our warmup-manifold
 contrast and the supervised, higher-fidelity TeNNet-SAC \cite{yang2025tennet} point across it---but
-mapping the two axes together, each measured, is future work.
+measuring both levers together is future work.
 \begin{itemize}
   \item \textbf{The grounding paradox.} Substituting reference VT-2005 $\sigma$-profiles into the
   fixed COSMO-SAC closure degrades $\lngi$ and $\lnx$ prediction relative to a free learned head---the
   opposite of the intended benefit ($3$ seeds, $n{=}5608$, three injection controls; \S\ref{sec:paradox}).
   \item \textbf{A measurement instrument.} Because the latent $\zstar$ (the reference $\sigma$-profile)
   has external ground truth, the reference-input excess risk splits \emph{exactly}, with no model fit,
-  as $B=\Bclos+\Binsuf$ (Lemma~\ref{prop:decomp}); on the matched corner the closure term binds
+  as $B=\Bclos+\Binsuf$ (Lemma~\ref{prop:decomp}); on the matched regime the closure term binds
   (\S\ref{sec:measure}).
   \item \textbf{The mechanism where grounding hurts.} The end-to-end ``physical'' latent becomes a
   low-rank, out-of-sample-transferable closure-\emph{compensating} surrogate, not the physical
@@ -141,8 +141,8 @@ mapping the two axes together, each measured, is future work.
   this closure family (\S\ref{sec:gateb},~\S\ref{sec:discussion}).
   \item \textbf{A general account.} The method holds for any composed predictor $\hat y=g(h(x))$ with a
   fixed closure over a learned intermediate; two structural lemmas are in the main text, the
-  grounding-gap identity and physics-tax sign rule in App.~\ref{sec:si-proofs}. It transfers to a
-  synthetic closure dial (\S\ref{sec:dial}) and a second real closure---pKa through a Hammett
+  grounding-gap identity and penalty sign rule in App.~\ref{sec:si-proofs}. It transfers to a
+  synthetic closure sweep (\S\ref{sec:dial}) and a second real closure---pKa through a Hammett
   relationship, where the same oracle swap flips sign across strata (\S\ref{sec:pka}).
 \end{itemize}
 
@@ -220,7 +220,7 @@ $m$                    & activity target (experimental $\lngi$) \\
 $\Bclos$               & closure misspecification, $\Ex[(\Ex[m\mid\zstar]-g(\zstar))^2]$ \\
 $\Binsuf$              & input insufficiency, $\Ex[\Var(m\mid\zstar)]$ \\
 $\Gamma$ (grounding gap) & $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$: oracle risk minus best end-to-end risk \\
-$\Delta_\infty$ (physics tax) & asymptotic risk of the physics arm minus the matched control \\
+$\Delta_\infty$ (physics penalty) & asymptotic risk of the physics arm minus the matched control \\
 full / res             & COSMO-SAC with / without the Staverman--Guggenheim combinatorial term \\
 $R_{\mathrm{orc}},R_{\mathrm{e2e}},R_{\mathrm{free}}$ & oracle / best end-to-end / free black-box population risks (they define $\Gamma$) \\
 compensating surrogate & a learned $\hat z$ that \emph{cancels} the closure's error instead of matching $\zstar$; here low-rank and out-of-sample transferable \\
@@ -339,7 +339,7 @@ variants is decoder disagreement and lands in $\Bclos$.
 \emph{point}-identified or only bounded is set by the latent dimension relative to sample size.
 $\Binsuf=\Ex[\Var(m\mid\zstar)]$ is a conditional variance in $\dim(\zstar)$ dimensions, and
 estimating it from $n$ observations is a nonparametric problem governed by $\dim(\zstar)/n$. On the
-solubility corner $\zstar$ is a $102$-bin $\sigma$-profile with $n{=}60$ matched pairs
+solubility regime $\zstar$ is a $102$-bin $\sigma$-profile with $n{=}60$ matched pairs
 ($\dim(\zstar)/n\approx1.7$): the conditional variance is unestimable, so every $\Binsuf$ entry of
 Table~\ref{tab:decomp} is a one-sided \emph{bound} and $\Bclos$ is only lower-bounded---the
 one-sidedness above is a consequence of this ratio, not a modelling choice. Where the latent is
@@ -371,7 +371,7 @@ only when the variance it saves exceeds its asymptotic bias $\Delta_\infty$, so 
 there is a critical budget $n^\star$ beyond which physics always loses (Prop.~\ref{prop:tax},
 App.~\ref{sec:si-proofs}). There is no ``optimal grounding'' theorem, and the decomposition does not
 improve out-of-distribution accuracy (\S\ref{sec:results}). Everything here is measured at infinite
-dilution, $298$\,K, on the VT-2005-matchable low-$\gamma$ corner; transfer to the finite-composition
+dilution, $298$\,K, on the VT-2005-matchable low-$\gamma$ regime; transfer to the finite-composition
 regime the paradox lives in is a conjecture, not a result (\S\ref{sec:scope}). We read these results
 against known work on model discrepancy \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
 \cite{transtrum2015,gutenkunst2007}, identifiability \cite{raue2009,villaverde2016}, misspecification
@@ -385,10 +385,10 @@ against known work on model discrepancy \cite{kennedy2001,brynjarsdottir2014}, p
 Two results carry the paper: the grounding paradox (\S\ref{sec:paradox}) and its mechanism
 (\S\ref{sec:surrogate})---the end-to-end latent becomes a compensating surrogate that cancels the
 closure's error rather than reporting the physical quantity. The decomposition (\S\ref{sec:measure})
-is the \emph{instrument} that makes the failure legible: on a matched corner it locates the ceiling
+is the \emph{instrument} that makes the failure legible: on a matched regime it locates the ceiling
 in the low-fidelity closure rather than its inputs, and a standard higher-fidelity closure
 (COSMO-SAC-2010/dsp) moves it---the closure-fidelity axis. The remaining sections---the synthetic
-dial (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa closure
+sweep (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa closure
 (\S\ref{sec:pka})---stress-test and generalize the account, with further diagnostics in the ESI.
 
 \begin{table}[t]
@@ -442,7 +442,7 @@ oracle, injection of the reference profile \emph{at training} (MAE $1.98$), and 
 $n{=}5608$; metrics are the 3-seed mean of the cross-arm intersection lock, over rows
 supervised and finite in every arm).
 DirectGNN shares the encoder but has no thermodynamic closure; the
-physics closures trail it (the ``physics tax''). Replacing the model's learned
+physics closures trail it (the asymptotic physics penalty). Replacing the model's learned
 $\sigma$-profile with the \emph{reference} VT-2005 profile (the $\sigma$-oracle,
 salmon) gives the \emph{worst} arm, collapsing $R^2$ to $\approx0$ ($-0.03\pm0.04$):
 by MAE the model predicts solubility distinctly better from its invented $\sigma$
@@ -460,16 +460,16 @@ the closure---the low-fidelity COSMO-SAC-2002 kernel for the donor/acceptor-type
 activity error from $\mathrm{MSE}=1.26$ to $0.77$ ($n{=}57$; \S\ref{sec:measure} below). Because the
 inputs never change, this is attributable to the closure alone and is insufficiency-free by
 construction: \emph{closure fidelity, not input fidelity, is the lever}. The externally-referenced
-decomposition of \S\ref{sec:decomp} corroborates this on the harder $n{=}60$ matched corner, where it
-acts as an \emph{instrument}: on a matched corner it asks whether a fixed closure's ceiling sits in
+decomposition of \S\ref{sec:decomp} corroborates this on the harder $n{=}60$ matched regime, where it
+acts as an \emph{instrument}: on a matched regime it asks whether a fixed closure's ceiling sits in
 the map or in its inputs. We demonstrate it on the $n{=}60$ matchable activity pairs (298\,K, infinite
-dilution)---a corner where $\dim(\zstar)/n\approx102/60$ leaves the split behind one-sided bounds
+dilution)---a regime where $\dim(\zstar)/n\approx102/60$ leaves the split behind one-sided bounds
 (\S\ref{sec:decomp}), read as a bounded demonstration, not a certificate. Its point-identified
 counterpart is the scalar-latent pKa domain (\S\ref{sec:pka}), where the same instrument resolves the
 split and recovers the a-priori channel assignment (there, insufficiency)---evidence the instrument
 works, not a re-confirmation of this verdict. Here $\zstar$ is
 the reference concatenated solute/solvent $\sigma$-profiles and $m$ the experimental $\lngi$;
-Table~\ref{tab:decomp} reports the bounds. On this corner too the ceiling sits in the
+Table~\ref{tab:decomp} reports the bounds. In this regime too the ceiling sits in the
 \emph{low-fidelity} closure rather than its inputs. The set spans 41 solutes and 17 solvents in $102$
 profile dimensions, with two formamide pairs dropped on a canonical-SMILES tautomer mismatch.
 
@@ -604,7 +604,7 @@ $\Bclos$. It therefore works against the closure-dominance reading rather than f
 condition-matched reference would lower $\Binsuf$ and widen the margin we already find, so the verdict
 is conservative to this defect.
 
-\paragraph{Scope.} This measurement is a low-$\gamma$/$298$\,K/VT-2005-matchable corner and does not
+\paragraph{Scope.} This measurement is a low-$\gamma$/$298$\,K/VT-2005-matchable regime and does not
 transfer to the finite-composition regime the paradox lives in (\S\ref{sec:scope}); the full audit is
 in App.~\ref{sec:si-tables}.
 
@@ -631,7 +631,7 @@ in the closure.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.78\linewidth]{figs/fig_fidelity_dial.pdf}
-\caption{Reproducible closure-fidelity dial. As the
+\caption{Reproducible closure-fidelity sweep. As the
 closure is made more misspecified (fidelity $F$ decreasing from $1$), the reference-input
 penalty $\Delta R^2=R^2_{\text{oracle}}-R^2_{\text{head}}$ grows monotonically, and the
 same ordering holds across four non-chemistry teacher families (linear, monotone,
@@ -667,12 +667,12 @@ The paper's strongest claim and its causal attribution live in \emph{different r
 the gap plainly rather than distribute it across scope footnotes. The grounding paradox is measured
 where the model operates---finite composition, all $\gamma$, $n{=}5608$. Its \emph{cause}---the
 closure/insufficiency attribution (\S\ref{sec:measure}) and the compensating-surrogate mechanism
-(\S\ref{sec:surrogate})---is measured only on the matched external-reference corner: infinite
+(\S\ref{sec:surrogate})---is measured only on the matched external-reference regime: infinite
 dilution, $298$\,K, low $\gamma$, $n{=}60$ (attribution) and $n{=}44$ (mechanism). So the cause of the
 headline result is \emph{not} measured in the headline's own regime; we transfer it by in-regime
-signs---the more-physics-worse effect on the full $n{=}5608$ set and the chemistry map
+signs---the more-physics-worse effect on the full $n{=}5608$ set and the chemistry-resolved structure
 (\S\ref{sec:map})---which is a conjecture, not a measured fact, and is the first place a referee
-should press. Two structural limits keep us from closing it. The external-reference corner cannot be
+should press. Two structural limits keep us from closing it. The external-reference regime cannot be
 enlarged: only $74$ VT-2005-matchable IDAC pairs exist ($60$ at $298$\,K plus $14$ off-temperature),
 so the $n{=}60$ attribution cannot be pushed to significance on this data; and the matched IDAC is
 essentially single-method (gas chromatography), so a method-stratified re-estimate is unavailable.
@@ -687,15 +687,15 @@ The result is a cautionary measurement for physics-informed modeling: grounding 
 model on truer physical inputs is only as good as the closure that consumes them,
 and when that closure is a fixed, mildly misspecified map, better inputs surface
 its bias rather than help. The external latent does not make the physics path win; what it buys is a \emph{lever}. Used as an
-instrument on the corner we can measure, the decomposition places the ceiling in the closure rather
+instrument on the regime we can measure, the decomposition places the ceiling in the closure rather
 than its inputs, and a higher-fidelity closure (COSMO-SAC-2010/dsp) removes the penalty---so within
 this closure family effort spent on richer inputs or a better encoder is mis-targeted, and the payoff
 is in the closure itself (a corrected or learned residual on the map, not on its output, which
 \S\ref{sec:gateb} shows is inert). This attribution is a demonstration on a low-$\gamma$,
-infinite-dilution corner, not a certificate: we do not claim it transfers unchanged to the
+infinite-dilution regime, not a certificate: we do not claim it transfers unchanged to the
 finite-composition regime the paradox spans, where its shared closure-misspecification cause is a
 conjecture supported by in-regime signs (the more-physics-worse effect on the full $n{=}5608$ set and
-the chemistry map), not a measured fact.
+the chemistry-resolved structure), not a measured fact.
 
 \paragraph{The accuracy case, and its boundary.} That the physics prior does not improve accuracy has
 no confirmed exception: the grounded model trails the matched black box on the full corpus, the
@@ -710,28 +710,28 @@ data, and auxiliary grounding do not recover an accuracy the factorization canno
 misspecified closure costs is thus not only accuracy but the interpretability the bottleneck appeared
 to buy.
 
-\paragraph{When a fixed-closure prior helps versus hurts.} The tax rule (Prop.~\ref{prop:tax}) predicts
+\paragraph{When a fixed-closure prior helps versus hurts.} The penalty sign rule (Prop.~\ref{prop:tax}) predicts
 \emph{when} to expect these negatives: a fixed-closure prior helps only when the estimation variance it
 saves exceeds its asymptotic bias $\Delta_\infty$ (both measurable). The variance benefit is largest at
 small $n$ and vanishes as data accumulate or as the black box nears the aleatoric floor, whereas
 $\Delta_\infty$ is set by the closure; a prior is therefore predicted to hurt precisely in the
-mature-data, low-noise, well-covered regime. The synthetic dial (\S\ref{sec:dial}) and the pKa closure
+mature-data, low-noise, well-covered regime. The synthetic sweep (\S\ref{sec:dial}) and the pKa closure
 (\S\ref{sec:pka}) exercise the fidelity and sufficiency behaviour directly. Whether grounding helps is
 shaped by \emph{two} axes---closure fidelity and how the latent is trained (supervised vs.\
-end-to-end); mapping that plane in full, and sweeping each axis directly on real systems, is deferred
+end-to-end); characterising that plane in full, and sweeping each axis directly on real systems, is deferred
 to future work.
 
 \paragraph{The novelty inversion (exploratory).} The sharpest---and most unexpected---confirmation of
-the tax rule runs opposite to the usual coverage intuition. Resolving the physics tax by solute
+the penalty sign rule runs opposite to the usual coverage intuition. Resolving the asymptotic physics penalty by solute
 novelty, the closure is neutral on the most \emph{novel} solutes (nearest-train Tanimoto $\le0.3$:
 $\Delta\mathrm{MAE}=-0.04\pm0.18$) and heaviest on the most \emph{familiar}, best-covered ones
 (Tanimoto $>0.8$: $+0.51\pm0.09$)---exactly as Proposition~\ref{prop:tax} predicts, since the variance
 a prior saves vanishes precisely where the black box is already accurate, leaving a structural closure
-bias as the dominant residual. The tax likewise concentrates in strongly hydrogen-bonding solvents
+bias as the dominant residual. The penalty likewise concentrates in strongly hydrogen-bonding solvents
 (water $+0.52\pm0.35$) and reverses sign in the acceptor-dominated amides ($-0.22\pm0.11$) the closure
 was built for (\S\ref{sec:map}). Both patterns are exploratory---no multiplicity control across strata
-families---but they land where the tax rule predicts, and where much of modern machine learning
-operates. We claim no universal boundary; we \emph{propose}, but do not here cleanly validate, a diagnostic for the sign of the physics tax:
+families---but they land where the penalty sign rule predicts, and where much of modern machine learning
+operates. We claim no universal boundary; we \emph{propose}, but do not here cleanly validate, a diagnostic for the sign of the asymptotic physics penalty:
 measure $\Bclos$ through the decomposition, read $\Delta_\infty$ off the large-$n$ asymptote, and
 the sign should follow. In this sense the failure is not idiosyncratic to
 solubility; it recurs whenever a misspecified closure is coupled to an expressive encoder on
@@ -740,7 +740,7 @@ abundant, low-noise data.
 
 \paragraph{Limitations.} (i)~The phenomenon and its causal attribution live in \emph{different
 regimes}: the paradox is a finite-composition solubility effect, but the closure--insufficiency
-measurement is made on the infinite-dilution/$298$\,K/low-$\gamma$ VT-2005-matchable corner, so the
+measurement is made on the infinite-dilution/$298$\,K/low-$\gamma$ VT-2005-matchable regime, so the
 transfer of the attribution back to the paradox's own regime is argued from in-regime signs, not
 measured there (\S\ref{sec:scope}). (ii)~$\Binsuf$ is upper-bounded, not point-identified (no
 replicates at fixed $\zstar$); the smoothness-free Jensen bound assumes $m$ and $g$ share the $\lngi$
@@ -765,7 +765,7 @@ the closure rather than the inputs ($P_{\mathrm{boot}}\approx0.78$ under two-way
 conventional confidence). The
 practical implication is to fix the map itself, since within this closure truer
 inputs surface its bias and an output-space correction is inert---though this attribution is
-$2002$-specific: a modern closure (COSMO-SAC-2010/dsp) dissolves it. Neither failure is universal: raising closure fidelity moves the system out of the hurts-corner---
+$2002$-specific: a modern closure (COSMO-SAC-2010/dsp) dissolves it. Neither failure is universal: raising closure fidelity moves the system out of the hurts-regime---
 closure fidelity is the lever, and supervising the latent toward truth points the same way, a second
 lever we leave to future work. The same grounding also indicates,
 where the closure binds, that the learned $\sigma$-profile is a closure-compensating surrogate rather
@@ -794,7 +794,7 @@ infinite-dilution activity coefficients are compiled from ThermoML, and the seco
 are the OPERA compilation \cite{mansouri2019opera}. The repository documents the exact command that
 reproduces each figure, table, and number from these sources, including the Bemis--Murcko scaffold
 split, the controlled grounded-vs-free comparison, the closure--insufficiency decomposition over the
-$n{=}60$ VT-2005-matchable pairs, the pKa second-domain measurement, and the synthetic fidelity dial.
+$n{=}60$ VT-2005-matchable pairs, the pKa second-domain measurement, and the synthetic fidelity sweep.
 
 \section*{Acknowledgements}
 \noindent This work was supported by \pending[funder name(s) and grant/award number(s)].

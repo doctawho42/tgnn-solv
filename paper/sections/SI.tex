@@ -38,7 +38,7 @@ $g$, which returns $\ln\gamma_2$, and an SLE solver combines the two into $\lnx$
 insufficiency $\Binsuf$ enters at the intermediate $\hat z$ and closure misspecification
 $\Bclos$ at $g$. The $\sigma$-oracle replaces $\hat z$ with the reference VT-2005 profile
 $\zstar$ (salmon). DirectGNN (grey) is the matched control---it shares the encoder but
-drops the closure, so the gap to the physics path is the physics tax
+drops the closure, so the gap to the physics path is the asymptotic physics penalty
 $R_{\mathrm{phys}}-R_{\mathrm{direct}}$.}
 \label{fig:arch}
 \end{figure}
@@ -185,20 +185,20 @@ does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 \noindent Writing each trained risk as an asymptote plus estimation variance,
 $\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
 $\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
-$V(n)\downarrow0$, the \emph{physics tax} is
+$V(n)\downarrow0$, the \emph{asymptotic physics penalty} is
 $\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ with
 $\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.
-\begin{proposition}[Sign of the physics tax]\label{prop:tax}
+\begin{proposition}[Sign of the asymptotic physics penalty]\label{prop:tax}
 (i)~$\mathcal{T}(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
 the variance a constrained prior saves must exceed its asymptotic bias. (ii)~If
 $\Delta_\infty>0$ and the variance gap vanishes ($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$),
 there is a critical budget $n^\star$ beyond which $\mathcal{T}(n)>0$ for all $n>n^\star$. (iii)~Since
 $V_{\mathrm{direct}}-V_{\mathrm{phys}}\le V_{\mathrm{direct}}$, as the black box nears the
-aleatoric floor ($V_{\mathrm{direct}}\to0$) the tax tends to $\Delta_\infty$; this limit is
+aleatoric floor ($V_{\mathrm{direct}}\to0$) the penalty tends to $\Delta_\infty$; this limit is
 $\ge0$ when the control is asymptotically Bayes ($R_{\mathrm{direct},\infty}=R_{\mathrm{free}}$),
 not merely from $V_{\mathrm{direct}}\to0$.
 \end{proposition}
-\begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the physics tax)]
+\begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the asymptotic physics penalty)]
 Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$, so
 $\mathcal{T}(n)=\Delta_\infty-D(n)$ with $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.
 \emph{(i)} $\mathcal{T}(n)<0\iff D(n)>\Delta_\infty$, immediately.
@@ -222,7 +222,7 @@ Table~\ref{tab:si-arms} gives the exact per-arm metrics behind
 Fig.~\ref{fig:paradox}: three seeds (mean$\pm$sd) on the cross-arm intersection lock
 ($n{=}5608$, rows supervised and finite in every arm). Both closure families---NRTL and
 COSMO-SAC over a learned $\sigma$-profile---trail the DirectGNN control (the physics
-tax); the $\sigma$-oracle (reference VT-2005 profile) is the worst arm, and restoring the
+penalty); the $\sigma$-oracle (reference VT-2005 profile) is the worst arm, and restoring the
 Staverman--Guggenheim combinatorial term makes it slightly worse still---the signature
 of a misspecified map (\S\ref{sec:measure}).
 
@@ -286,7 +286,7 @@ rather than decisive.
 
 \paragraph{In-regime ($\gamma$-stratified) separation.} The $n{=}60$ measurement is matched at low $\gamma$,
 while the paradox spans all $\gamma$. Stratifying the $n{=}60$ set by $\lngi$
-tests whether closure-dominance is a corner artifact. It is
+tests whether closure-dominance is a regime artifact. It is
 not: the verdict $\Bclos>\Binsuf$ (leakage-immune LOTV binning bound) holds in every
 stratum and \emph{strengthens} toward higher $\gamma$ (Table~\ref{tab:regime})---in the highest
 stratum ($\overline{\lngi}=2.94$, approaching the non-ideal regime) $\Bclos\ge2.69$ exceeds
@@ -355,7 +355,7 @@ but sharpened its scope:
   point estimate. The decomposition is checkpoint/seed-independent (the closure has zero
   learnable parameters).
   \item \emph{Selection/scope.} The 60 matchable pairs are the low-to-moderate $\gamma$
-  corner (matched mean $\lngi=0.75$ vs $3.56$ for VT-2005-unmatchable pairs, $t=-7.44$;
+  regime (matched mean $\lngi=0.75$ vs $3.56$ for VT-2005-unmatchable pairs, $t=-7.44$;
   the strongly non-ideal amide-solvent regime is untested because VT-2005 lacks those
   profiles). This narrows scope but is \emph{conservative}, since the untested regime is
   a harder closure test. The target is $\lngi$ at 298\,K, so the numeric ceiling is not
@@ -405,12 +405,12 @@ source of the paradox.
 $1279$ training rows across $31$ solutes, and essentially none in validation or test.
 This is the quantitative backbone of the identifiability argument---there is almost no
 signal with which to pin the crystal term from data.
-\paragraph{The NRTL branch trains (a trainability check).} The physics tax is not an
+\paragraph{The NRTL branch trains (a trainability check).} The asymptotic physics penalty is not an
 under-training artifact of the activity branch. In the headline NRTL arm the head produces
 solvent-varying interaction parameters---$\tau_{12}$ over the $n{=}8103$ test pairs has mean
 $0.97$ and std $2.5$ (range $[-2.6,22]$), far from collapsed---yet the arm still trails the
 closure-free DirectGNN ($1.80$ vs $1.70$; Table~\ref{tab:si-arms}). A trained, non-degenerate
-activity branch beaten by the control is evidence that the tax is structural, not a dead branch.
+activity branch beaten by the control is evidence that the penalty is structural, not a dead branch.
 (The core closure-misspecification result---the $\sigma$-oracle and the decomposition---is in
 any case training-\emph{independent}: it feeds the reference VT-2005 profiles through the fixed
 closure with no encoder optimization, so it cannot be a training pathology.)

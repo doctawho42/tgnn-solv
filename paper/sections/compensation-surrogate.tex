@@ -2,7 +2,7 @@
 \label{sec:surrogate}
 % Artifact: results/sur/surrogate_seeds/surrogate_seeds.json (3-seed GCP L4) +
 % surrogate_vs_true.json via scripts/analysis/run_compensation_surrogate.py, n=44 matched VT-2005.
-This is the \emph{mechanism} behind the low-fidelity, end-to-end corner of the map
+This is the \emph{mechanism} behind the low-fidelity, end-to-end regime of the map
 (\S\ref{sec:discussion}): when a $\sigma$-profile head is trained \emph{end-to-end} through a fixed,
 misspecified closure---never supervised toward the reference profile---it is under pressure not to be
 physically faithful but to \emph{cancel} the closure's error. The external ground truth that lets us
@@ -68,7 +68,7 @@ is still the low-fidelity COSMO-SAC-2002 and the warmup $\sigma$ is itself only 
 full flip needs supervision \emph{and} fidelity together: the recent TeNNet-SAC model
 \cite{yang2025tennet}, which supervises its $\sigma$-profiles toward quantum-chemistry values
 \emph{and} learns its segment-activity closure, outperforms COSMO-SAC and gains from truer profiles. So
-the two axes interact---supervision moves the system toward the helps-corner, closure fidelity carries
+the two axes interact---supervision moves the system toward the helps-regime, closure fidelity carries
 it across (\S\ref{sec:discussion}).
 
 \begin{figure*}[t]
