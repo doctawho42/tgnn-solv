@@ -64,7 +64,7 @@ axl = fig.add_subplot(gs[1]); axl.set_xlim(0, 3.0); axl.set_ylim(0, 1.0); axl.ax
 # ---- act panels (soft backing cards) ----
 for i, (x0, title) in enumerate([(0.02, "1. The paradox"),
                                   (1.03, "2. The measurement"),
-                                  (2.04, "3. The lever")]):
+                                  (2.04, "3. No lever found")]):
     ax.add_patch(FancyBboxPatch((x0, 0.03), 0.94, 0.94, boxstyle="round,pad=0.006,rounding_size=0.02",
                                 fc=PAPER, ec="#E4DED8", lw=1.0, zorder=0))
     ax.text(x0 + 0.03, 0.90, title, ha="left", va="center", fontsize=10.5,
@@ -127,52 +127,41 @@ ax.text(cx + 0.47, 0.135, "The ceiling is the CLOSURE,\nnot the inputs.", ha="ce
 # chevron 2 -> 3
 arrow(ax, (1.965, 0.5), (2.04, 0.5), color=INK, lw=2.2, mut=18)
 
-# ===================== ACT 3: the lever (ONE axis: closure fidelity) =====================
-mx, my, mw, mh = 2.14, 0.40, 0.76, 0.14          # horizontal fidelity track
-# headline
-ax.text(mx + mw / 2, 0.80, "Raise closure fidelity and grounding\nflips from hurt to help.",
-        ha="center", va="center", fontsize=8.6, color=INK)
-# the big fidelity arrow above the track
-arrow(ax, (mx + 0.02, my + mh + 0.135), (mx + mw - 0.02, my + mh + 0.135),
-      color=HELP, lw=1.9, mut=15)
-# track: hurts (low fidelity) | helps (high fidelity)
-split = 0.40
-ax.add_patch(FancyBboxPatch((mx, my), mw * split, mh, boxstyle="square,pad=0",
-                            fc="#EAD6CE", ec=INK, lw=0.9, zorder=1))
-ax.add_patch(FancyBboxPatch((mx + mw * split, my), mw * (1 - split), mh, boxstyle="square,pad=0",
-                            fc="#DDEBE4", ec=INK, lw=0.9, zorder=1))
-ax.text(mx + mw * split * 0.5, my + mh / 2, "grounding\nHURTS", ha="center", va="center",
-        fontsize=7.0, color=HURT, fontweight="bold", zorder=2)
-ax.text(mx + mw * (split + (1 - split) * 0.5), my + mh / 2, "grounding\nHELPS", ha="center",
-        va="center", fontsize=7.0, color=HELP, fontweight="bold", zorder=2)
-# axis label under the track
-ax.text(mx + mw / 2, my - 0.075, "closure fidelity  $\\rightarrow$", ha="center", va="center",
-        fontsize=7.8, color=INK)
-# tick markers along the track (below it), with labels
-for fx, lab, col in [(0.12, "ours\n(2002)", INK), (0.62, "2010/\ndsp", HELP),
-                     (0.88, "TeNNet", HELP)]:
-    ax.scatter([mx + mw * fx], [my], s=26, color=col, zorder=4, edgecolor="white", lw=0.8)
-    ax.text(mx + mw * fx, my - 0.155, lab, ha="center", va="center", fontsize=6.3, color=col)
-# secondary lever note
-ax.text(mx + mw / 2, 0.115,
-        "(latent supervision is a second lever,\nleft to future work)",
-        ha="center", va="center", fontsize=6.8, color=GRAY, style="italic")
+# ===================== ACT 3: no lever found (2002 vs 2010/dsp, two sets) =====================
+mx0 = 2.10
+ax.text(mx0 + 0.43, 0.80, "The obvious fix---a better closure---\ndoes not hold up on representative data.",
+        ha="center", va="center", fontsize=8.0, color=INK)
+# two paired-bar groups: MSE(2002) vs MSE(2010/dsp) on the curated corner and the representative set
+base_y, bw, scale = 0.34, 0.052, 0.165
+groups = [(mx0 + 0.10, "curated\n$n{=}60$", 1.757, 0.765, "$+56\\%$,\ngrazes 0"),
+          (mx0 + 0.52, "represent.\n$n{=}477$", 1.911, 1.855, "$+3\\%$,\nnot sig.")]
+for gx, glab, m02, m10, note in groups:
+    for dx, val, col, lab in [(-0.035, m02, SALMON, "2002"), (0.035, m10, TEAL, "2010/\ndsp")]:
+        ax.add_patch(FancyBboxPatch((gx + dx - bw / 2, base_y), bw, val * scale,
+                                    boxstyle="square,pad=0", fc=col, ec=INK, lw=0.7, zorder=3))
+        ax.text(gx + dx, base_y + val * scale + 0.016, f"{val:.2f}", ha="center", va="bottom",
+                fontsize=5.6, color=INK)
+        ax.text(gx + dx, base_y - 0.032, lab, ha="center", va="top", fontsize=5.5, color=col)
+    ax.text(gx, base_y - 0.115, glab, ha="center", va="top", fontsize=6.6, color=INK, fontweight="bold")
+    ax.text(gx, 0.705, note, ha="center", va="bottom", fontsize=5.8, color=GRAY, style="italic")
+ax.text(mx0 + 0.43, 0.115, "No closure-fidelity lever established.", ha="center", va="center",
+        fontsize=8.0, color="#B5654A", fontweight="bold")
 
 # ===================== BOTTOM ROW: the claims ledger =====================
 ledger = [
     (0.02, "CERTIFIED", HELP, "#EAF1EE", [
         r"Paradox: reference $\sigma$ makes it worse (3 seeds, $n{=}5608$)",
         r"Exact split $B=B_{\mathrm{closure}}+B_{\mathrm{insuff}}$ (Lemma 2)",
-        r"Closure $=$ NIST COSMO-SAC-2002 to $0.003\,\ln\gamma$",
+        r"Our 2002 & 2010/dsp layers reproduce NIST ($0.003$/$10^{-4}$)",
     ]),
     (1.03, "LIKELY", AMBER, "#F6EEDD", [
         r"Closure binds on low-$\gamma$ set: $P_{\mathrm{boot}}{\approx}0.78$",
-        r"A modern closure (2010/dsp) removes the penalty",
+        r"Attribution on the matched $n{=}60$ corner (no transfer)",
         r"Latent $=$ low-rank, transferable surrogate ($n{=}44$)",
     ]),
-    (2.04, "EXPLORATORY", GRAY, "#F0F0F0", [
+    (2.04, "OPEN", GRAY, "#F0F0F0", [
+        r"No fidelity lever: $2002{\to}2010$/dsp $+3\%$ ($n{=}477$, $P{=}0.62$)",
         r"Transfer to the finite-composition regime",
-        r"$\gamma$-stratified strengthening (estimator-dependent)",
         r"pKa second closure as a fidelity cross-check",
     ]),
 ]

@@ -79,11 +79,11 @@ closure, or its inputs? Because the learned latent has an external oracle, the r
 excess risk splits exactly into a closure-misspecification term and an input-insufficiency term; on
 a matched infinite-dilution regime, the closure term binds. The mechanism follows: trained
 end-to-end through a misspecified closure, the latent becomes a low-rank, out-of-sample-transferable
-surrogate that cancels the closure's error rather than reporting the physical quantity. Holding the
-inputs fixed and swapping the low-fidelity 2002 kernel for a modern closure (COSMO-SAC-2010/dsp)
-removes the penalty: closure fidelity, not input fidelity, is the lever. We make no accuracy
-claim---the contribution is the paradox, its compensating-surrogate mechanism, and a reusable
-instrument for locating a fixed closure's ceiling.
+surrogate that cancels the closure's error rather than reporting the physical quantity. We looked for
+the obvious remedy and did not find it: on representative data a fair, validated comparison of the
+2002 and modern (COSMO-SAC-2010/dsp) kernels establishes no fidelity gain, so the standard upgrade
+path does not dispose of the paradox. We make no accuracy claim---the contribution is the paradox, its
+compensating-surrogate mechanism, and a reusable instrument for locating a fixed closure's ceiling.
 \end{abstract}
 \vspace{1.4em}
 \end{@twocolumnfalse}
@@ -103,10 +103,12 @@ reveals. Because the latent has an external reference, we can \emph{measure} whe
 attribute it to the closure rather than the inputs (impossible for a fitted latent, which has no
 oracle), and hold the learned latent against its reference---which shows that, trained end-to-end
 through a misspecified closure, the latent is driven off the physical quantity into a systematic,
-low-rank, transferable compensating surrogate (\S\ref{sec:surrogate}). Holding the reference input
-fixed, a higher-fidelity closure removes the penalty: closure fidelity, not input fidelity, is the
-lever (\S\ref{sec:measure}). Whether grounding helps is thus determined by \emph{closure fidelity}---the fidelity of the map that
-consumes the grounded inputs---which we measure directly with three real closures, a synthetic sweep,
+low-rank, transferable compensating surrogate (\S\ref{sec:surrogate}). A fair, validated comparison of
+the 2002 and modern (COSMO-SAC-2010/dsp) kernels, however, does \emph{not} establish that a
+higher-fidelity closure removes the penalty on representative data (\S\ref{sec:measure}): we locate
+the ceiling but cannot raise it by the standard route. Whether grounding helps is thus tied to
+\emph{closure fidelity}---the fidelity of the map that
+consumes the grounded inputs---which we probe directly with three real closures, a synthetic sweep,
 and a second closure in the pKa domain (\S\ref{sec:pka}); the composed-predictor framing
 (\S\ref{sec:framework}) and penalty sign rule give the formal account. Supervising the latent toward
 truth points the opposite way, so how the latent is trained is a second lever that interacts with
@@ -133,9 +135,11 @@ measuring both levers together is future work.
   low-rank, out-of-sample-transferable closure-\emph{compensating} surrogate, not the physical
   quantity---why grounding hurts here, and why a supervised-$\sigma$ model finds the opposite
   (\S\ref{sec:surrogate}).
-  \item \textbf{Closure fidelity is the lever.} Holding the reference input fixed, swapping the
-  low-fidelity 2002 closure for 2010 removes the penalty ($1.26\!\to\!0.77$, insufficiency-free): the
-  ceiling is the closure, and the fix is a better closure, not truer inputs (\S\ref{sec:measure}).
+  \item \textbf{No fidelity lever, established.} A fair, validated comparison of the 2002 and modern
+  (COSMO-SAC-2010/dsp) kernels does \emph{not} establish a fidelity gain on representative
+  infinite-dilution data ($+56\%$ on the curated $n{=}60$ corner with a margin grazing zero, $+3\%$ on
+  the representative $n{=}477$, not certified). We locate a ceiling and offer no fix inside this
+  closure family (\S\ref{sec:measure}).
   \item \textbf{Not fixable downstream.} A post-hoc output residual recovers calibration but not
   accuracy, so the closure binding cannot be undone downstream---a \emph{structural} ceiling within
   this closure family (\S\ref{sec:gateb},~\S\ref{sec:discussion}).
@@ -156,10 +160,10 @@ quantum-chemical reference $\sigma^\star$ (VT-2005) makes the prediction \emph{w
 head---so which is wrong, the closure or the inputs? \emph{(2)~The measurement:} because the latent
 has an external oracle, the reference-input excess risk splits \emph{exactly} into a
 closure-misspecification part $\Bclos$ and an input-insufficiency part $\Binsuf$; on the matched
-low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P_{\mathrm{boot}}\approx0.78$). \emph{(3)~The lever:} raising
-closure fidelity (COSMO-SAC-2010/dsp) moves the ceiling---closure fidelity, not input fidelity, is the
-lever; supervising the latent toward truth (TeNNet-SAC) points the same way and is a second lever left
-to future work. \emph{Bottom:} every claim in the paper graded by strength of evidence
+low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P_{\mathrm{boot}}\approx0.78$). \emph{(3)~No lever found:} on
+representative data a fair, validated comparison of the 2002 and modern (COSMO-SAC-2010/dsp) kernels
+does \emph{not} establish that raising closure fidelity removes the penalty---we locate the ceiling
+but offer no fix inside this closure family. \emph{Bottom:} every claim in the paper graded by strength of evidence
 (certified~/~likely~/~exploratory), with the same one-sided-bound and scope caveats made in the text.}
 \label{fig:overview}
 \end{figure*}
@@ -391,8 +395,9 @@ Two results carry the paper: the grounding paradox (\S\ref{sec:paradox}) and its
 (\S\ref{sec:surrogate})---the end-to-end latent becomes a compensating surrogate that cancels the
 closure's error rather than reporting the physical quantity. The decomposition (\S\ref{sec:measure})
 is the \emph{instrument} that makes the failure legible: on a matched regime it locates the ceiling
-in the low-fidelity closure rather than its inputs, and a standard higher-fidelity closure
-(COSMO-SAC-2010/dsp) moves it---the closure-fidelity axis. The remaining sections---the synthetic
+in the low-fidelity closure rather than its inputs; whether a standard higher-fidelity closure
+(COSMO-SAC-2010/dsp) moves it, however, we could not establish on representative data
+(\S\ref{sec:measure}). The remaining sections---the synthetic
 sweep (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa closure
 (\S\ref{sec:pka})---stress-test and generalize the account, with further diagnostics in the ESI.
 
@@ -439,14 +444,9 @@ in the SI.}
 \subsection{The closure-fidelity axis: locating the ceiling, and moving it}
 \label{sec:measure}
 % Artifact: results/b_insuff/decomposition.json via scripts/analysis/run_b_insuff_decomposition.py.
-The cause is cleanest in the form that needs no bounds and no small-set variance estimation. Holding
-the reference latent $\zstar$ \emph{fixed} on identical Delaware (UD) $3$-profiles and swapping only
-the closure---the low-fidelity COSMO-SAC-2002 kernel for the donor/acceptor-typed 2010---cuts the
-activity error from $\mathrm{MSE}=1.26$ to $0.77$ ($n{=}57$; \S\ref{sec:measure} below). Because the
-inputs never change, this is attributable to the closure alone and is insufficiency-free by
-construction: \emph{closure fidelity, not input fidelity, is the lever}. The externally-referenced
-decomposition of \S\ref{sec:decomp} corroborates this on the harder $n{=}60$ matched regime, where it
-acts as an \emph{instrument}: on a matched regime it asks whether a fixed closure's ceiling sits in
+The cause is cleanest in the form that needs no bounds and no small-set variance estimation. The
+externally-referenced decomposition of \S\ref{sec:decomp} acts as an \emph{instrument} on the
+$n{=}60$ matched regime: it asks whether a fixed closure's ceiling sits in
 the map or in its inputs. We demonstrate it on the $n{=}60$ matchable activity pairs (298\,K, infinite
 dilution)---a regime where $\dim(\zstar)/n\approx102/60$ leaves the split behind one-sided bounds
 (\S\ref{sec:decomp}), read as a bounded demonstration, not a certificate. Its point-identified
@@ -553,38 +553,49 @@ donor/acceptor-typed 2010 closure was built to fix. Convention-robustly, adding 
 on size-asymmetric pairs---what a misspecified map does, not what missing information would (details in
 App.~\ref{sec:si-tables}).
 
-\paragraph{The ceiling moves with closure fidelity: a standard-closure control.} The 2002
-closure-dominance above is not a general fact about physical inputs; it is specific to the deployed
-map's single-parameter hydrogen-bonding kernel, and the field already has better-parameterized
-closures built for exactly that defect. We run the NIST reference implementation of COSMO-SAC-2010
-(donor/acceptor-typed HB) and -dsp on the same matched pairs, now under the reference Delaware (UD)
-$3$-profile database---on which the reference 2002 map scores $\mathrm{MSE}=1.26$, against $1.47$ for
-our deployed residual-only layer on the VT-2005 profiles used elsewhere. The better-parameterized
-closures cut the error to $\mathrm{MSE}=0.77$ (2010) / $0.79$ (dsp, $n{=}57$). The cleanest read is the
-\emph{same-database} contrast, which holds the latent $\zstar$ fixed and is therefore
-insufficiency-free by construction: on the identical UD $3$-profiles, swapping the 2002 kernel for
-2010 cuts the error from $\mathrm{MSE}=1.26$ to $0.77$, a ${\sim}70\%$ drop attributable to the closure
-alone---the fidelity axis, measured directly. Charging that against the $\Binsuf$ floor, this
-\emph{dissolves the closure-dominance verdict}---$P_{\mathrm{boot}}\approx0.79$ under two-way solute$\times$solvent clustering that $\Bclos$ no longer exceeds
-$\Binsuf$, the near-mirror of the $P_{\mathrm{boot}}\approx0.78$ that it \emph{does} bind under 2002 (same clustering,
-opposite verdicts). This last step charges a UD-based error against a $\Binsuf$ estimated on the
-VT-2005 latent used elsewhere, so the $P_{\mathrm{boot}}\approx0.79$ figure is a \emph{cross-database} quantity: we
-report it as indicative, not exact, and rest the conclusion on the database-consistent
-\emph{same-database} contrast above ($1.26\to0.77$ on identical UD profiles, insufficiency-free by
-construction). A $\Binsuf$ re-estimate on the UD latent is the exact test; absent it the mismatch can
-move $P_{\mathrm{boot}}\approx0.79$ but not its sign, since a richer $3$-profile latent would if anything \emph{lower}
-$\Binsuf$, reinforcing rather than weakening the closure attribution. We do \emph{not} claim a flip to the inputs: we hold only an \emph{upper} bound
-on $\Binsuf$, so ``the inputs bind'' would require a lower bound we do not have---what the modern
-closure establishes is only that our own 2002 attribution no longer holds. The decision-relevant
-reading is thus not ``the closure always dominates'' but ``on the low-fidelity 2002 closure it does, and the
-fix is a better closure, not truer inputs''---closure fidelity, not input fidelity, is the lever.
-This contrast lives on the \emph{activity} axis (matched infinite-dilution $\lngi$ pairs, on the UD
-$3$-profile base), not the solubility $\lnx$ axis of Fig.~\ref{fig:paradox}: the typed $2010$/dsp
-closures produce no per-sample solubility prediction in our pipeline and run on a different profile
-database (UD, not VT-2005), so they do not enter Fig.~\ref{fig:paradox} as a further arm. It is a
-scope statement---on \emph{this} closure, in \emph{this} regime, the ceiling is the closure and a
-better closure moves it---not a claim that the \emph{solubility} paradox itself survives $2010$/dsp,
-which we have not tested (Limitations).
+\paragraph{Looking for the lever, and not finding it.} If the ceiling is the closure, the obvious
+remedy is a better closure. We tested this directly and report a negative result.
+
+Two corrections to our earlier reading come first. \emph{(i)}~The NIST reference implementation of
+COSMO-SAC-2002, when handed a typed three-profile database, reads the nonpolar channel only and
+silently discards the donor and acceptor profiles while retaining the total area as prefactor. The
+figure we previously reported for the 2002 kernel on the UD profiles ($\mathrm{MSE}\ 1.26$) is that
+crippled arm, not the reference closure; it is also not comparable to the $1.47$ we report for our own
+layer on the single-profile VT-2005 database. The fair full 2002 on the same UD data scores
+$\mathrm{MSE}\ 1.757$, which we validate two independent ways: our differentiable layer, and the NIST
+reference itself fed the same profile reformatted into the three-profile layout ($1.758$).
+
+\emph{(ii)}~There is consequently \textbf{no clean input-fixed design} for this contrast, and we
+withdraw the claim that it is insufficiency-free by construction. Holding the profile data literally
+fixed denies the 2002 kernel two of three channels---an input-insufficiency confound in precisely the
+term the decomposition of \S\ref{sec:decomp} exists to isolate. Giving each closure its native profile
+instead changes the $\sigma$-averaging convention. We report the fair comparison and treat the
+residual convention difference as a caveat rather than a construction.
+
+With that settled, the swap is measurable. On the matched corner the fair 2002 $\to$ 2010/dsp swap
+cuts the activity error from $1.757$ to $0.765$ ($n{=}60$; the two-way cluster bootstrap gives
+$P=0.98$ with a $90\%$ margin of $[+0.05,+2.16]$, i.e.\ grazing zero). On a representative
+IDAC$\,\cap\,$UD set---all temperatures, dispersion enabled, every arm validated against the NIST
+reference---the same swap gives $1.911\to1.855$ ($n{=}477$; $P=0.62$, margin $[-2.25,+1.31]$).
+
+\textbf{The two measurements are statistically compatible with a single small effect:} each interval
+contains the other's point estimate. We therefore do not read this as a lever that exists on our
+corner and fails to generalize, but as one small, unestablished effect of which the corner supplies a
+low-power estimate. The chemistry points the same way: the corner is the \emph{lower}-$\gamma$ set, and
+COSMO-SAC-2010's donor/acceptor typing exists to repair hydrogen bonding---a real fidelity gain should
+have been \emph{larger} where hydrogen bonding matters more, not smaller. The sign of that dependence
+is wrong for a signal.
+
+This is consistent with the published behaviour of the closure family rather than a challenge to it:
+COSMO-SAC-2010's demonstrated gains are in liquid--liquid equilibria and in the temperature dependence
+of the electrostatic term, and its infinite-dilution improvement is known to be modest and
+system-dependent. Our set is $477$ pairs against the ${\sim}29{,}000$-point benchmarks in the
+literature. We claim only that \textbf{we cannot establish a closure-fidelity lever on the data we can
+compute}, not that the modern closure is not an improvement.
+
+The consequence for the paper is that we have no fix to offer. The ceiling we locate is not disposed
+of by the standard upgrade path, and the search for a remedy inside this closure family came back
+empty.
 
 \paragraph{The reference is itself imperfect, but conservatively so.} The external ground truth used
 to charge $\Bclos$ against $\Binsuf$ is quantum chemistry, not experiment: the VT-2005 profiles are
@@ -603,8 +614,8 @@ in App.~\ref{sec:si-tables}.
 \label{sec:badclosure}
 Yes---and that is the contribution, not the objection. COSMO-SAC-2002 has a documented
 single-parameter hydrogen-bond kernel, and the 2010/dsp closure was built to fix exactly that defect;
-we do not dispute this, we \emph{measure} it ($\mathrm{MSE}\ 1.26\to0.77$ on identical UD $3$-profiles,
-insufficiency-free by construction). But the 2002 kernel is not an exotic choice---it is the closure a
+we do not dispute this---it is a well-documented defect, though on our data upgrading the closure did
+not establish a fidelity gain (\S\ref{sec:measure}). But the 2002 kernel is not an exotic choice---it is the closure a
 practitioner reaches for, and its fidelity is \emph{not knowable in advance} on a new system. The field
 routinely composes an expressive learned encoder with a fixed mechanistic map and assumes the map is
 good enough. What we show is what happens when it is not: the encoder silently compensates, the
@@ -667,22 +678,20 @@ should press. Two structural limits keep us from closing it. The external-refere
 enlarged: only $74$ VT-2005-matchable IDAC pairs exist ($60$ at $298$\,K plus $14$ off-temperature),
 so the $n{=}60$ attribution cannot be pushed to significance on this data; and the matched IDAC is
 essentially single-method (gas chromatography), so a method-stratified re-estimate is unavailable.
-What \emph{does} hold in any regime, needing neither bounds nor cross-regime transfer, is the
-same-database fidelity contrast of \S\ref{sec:measure} ($1.26\to0.77$, closure alone). We therefore
-lead with that, present the attribution as a demonstration, and mark its regime transfer as the open
-question.
+We therefore present the attribution as a bounded demonstration on the matched corner and mark both
+its regime transfer and the absence of an established closure-fidelity lever (\S\ref{sec:measure}) as
+the open questions.
 
 \section{Discussion}
 \label{sec:discussion}
 The result is a cautionary measurement for physics-informed modeling: grounding a
 model on truer physical inputs is only as good as the closure that consumes them,
-and when that closure is a fixed, mildly misspecified map, better inputs surface
-its bias rather than help. The external latent does not make the physics path win; what it buys is a \emph{lever}. Used as an
-instrument on the regime we can measure, the decomposition places the ceiling in the closure rather
-than its inputs, and a higher-fidelity closure (COSMO-SAC-2010/dsp) removes the penalty---so within
-this closure family effort spent on richer inputs or a better encoder is mis-targeted, and the payoff
-is in the closure itself (a corrected or learned residual on the map, not on its output, which
-\S\ref{sec:gateb} shows is inert). This attribution is a demonstration on a low-$\gamma$,
+and when that closure is a fixed map of unknown fidelity---one we found we could not raise by the
+standard route---better inputs surface its bias rather than help. The external latent does not make
+the physics path win. Used as an instrument on the regime we can measure, the decomposition places
+the ceiling in the closure rather than its inputs; but we looked for the payoff in the closure and did
+not find it: a fair, fully validated comparison of the 2002 and 2010/dsp kernels on representative
+infinite-dilution data does not establish a fidelity gain. We locate a ceiling and offer no lever. This attribution is a demonstration on a low-$\gamma$,
 infinite-dilution regime, not a certificate: we do not claim it transfers unchanged to the
 finite-composition regime the paradox spans, where its shared closure-misspecification cause is a
 conjecture supported by in-regime signs (the more-physics-worse effect on the full $n{=}5608$ set and
@@ -758,11 +767,11 @@ decoder-misspecification term and an input-insufficiency term, and on the
 subset we can measure, the ceiling is most likely
 the closure rather than the inputs ($P_{\mathrm{boot}}\approx0.78$ under two-way clustering, not certified at
 conventional confidence). The
-practical implication is to fix the map itself, since within this closure truer
-inputs surface its bias and an output-space correction is inert---though this attribution is
-$2002$-specific: a modern closure (COSMO-SAC-2010/dsp) dissolves it. Neither failure is universal: raising closure fidelity moves the system out of the hurts-regime---
-closure fidelity is the lever, and supervising the latent toward truth points the same way, a second
-lever we leave to future work. The same grounding also indicates,
+practical implication is a caution, not a fix: within this closure, truer
+inputs surface its bias and an output-space correction is inert, and a fair, validated comparison of
+the 2002 and modern (COSMO-SAC-2010/dsp) kernels does not establish that upgrading the closure removes
+the penalty on representative data. We locate a ceiling and offer no lever; supervising the latent
+toward truth may be a second route, which we leave to future work. The same grounding also indicates,
 where the closure binds, that the learned $\sigma$-profile is a closure-compensating surrogate rather
 than the physical quantity---an interpretability cost of physics-informed bottlenecks that the
 external latent makes measurable: a $51\pm2\%$, low-rank, transferable departure from truth across

@@ -88,6 +88,19 @@ basis of the area $A_i$. This closure --- COSMO-SAC evaluated over a network-
 for the external reference one --- is the object of study in the grounding analysis
 (\S\ref{sec:paradox}).
 
+\paragraph{In-house closures are the primary instrument.} Both closures used in the
+fidelity measurement (\S\ref{sec:measure}) are our own differentiable implementations, so
+that every arm shares one code path and the swap isolates the kernel rather than an engine
+difference. The 2002 layer above reproduces the NIST reference
+COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE $0.003\,\ln\gamma$ on identical VT-2005
+profiles. For the modern arm we implement a differentiable COSMO-SAC-2010/dsp layer --- the
+donor/acceptor-typed three-profile representation, the temperature-dependent electrostatic
+misfit $c_{\mathrm{ES}}(T)=A_{\mathrm{ES}}+B_{\mathrm{ES}}/T^2$, the typed hydrogen-bonding
+kernel, and the optional dispersion term --- which reproduces the NIST COSMO-SAC-2010
+reference to RMSE $1.4\times10^{-4}\,\ln\gamma$ (dispersion term and temperature handling to
+RMSE $0$ and ${\sim}10^{-5}$). We report the fidelity contrast on these in-house layers and
+cross-check each point against the NIST \texttt{cCOSMO} reference.
+
 \subsection{The SLE solver and implicit differentiation}
 Given $\Phicry(T)$ and a closure for \lng, the saturated mole fraction solves
 $\lnx=-\Phicry(T)-\lng(x_2,T)$, a fixed point in $x_2$ because \lng\ depends on
