@@ -336,6 +336,19 @@ Because $\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, it is
 \emph{independent of the closure convention}: any disagreement between closure
 variants is decoder disagreement and lands in $\Bclos$.
 
+\paragraph{The instrument's resolution is $\dim(\zstar)/n$.} Whether the split can be
+\emph{point}-identified or only bounded is set by the latent dimension relative to sample size.
+$\Binsuf=\Ex[\Var(m\mid\zstar)]$ is a conditional variance in $\dim(\zstar)$ dimensions, and
+estimating it from $n$ observations is a nonparametric problem governed by $\dim(\zstar)/n$. On the
+solubility corner $\zstar$ is a $102$-bin $\sigma$-profile with $n{=}60$ matched pairs
+($\dim(\zstar)/n\approx1.7$): the conditional variance is unestimable, so every $\Binsuf$ entry of
+Table~\ref{tab:decomp} is a one-sided \emph{bound} and $\Bclos$ is only lower-bounded---the
+one-sidedness above is a consequence of this ratio, not a modelling choice. Where the latent is
+low-dimensional the same instrument point-identifies: the pKa Hammett constant is a \emph{scalar}
+with $n{=}1198$ ($\dim(\zstar)/n\approx10^{-3}$), so $\Binsuf$ is a point estimate (\S\ref{sec:pka}),
+not a bound. The decomposition is identifiable exactly where $\dim(\zstar)/n$ is small---which is why
+the pKa domain, not the solubility keystone, is where the split is pinned rather than bounded.
+
 \subsection{The grounding gap: a symptom of closure misspecification}
 \label{sec:gap}
 The paradox---true inputs hurting---is a measurable quantity, not a curiosity. Let
