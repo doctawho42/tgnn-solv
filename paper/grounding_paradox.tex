@@ -30,12 +30,13 @@
 % BIB: murphy1973 / degroot1983 (calibration refinement) and white1982 (QMLE under
 % misspecification) are present in references_verified.bib and cited.
 % =====================================================================
-\documentclass[11pt]{article}
+\documentclass[twocolumn]{article}   % Digital Discovery two-column format
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{xcolor}
-\usepackage[margin=1in]{geometry}
+\usepackage[margin=0.8in]{geometry}
+\usepackage[super,sort&compress,comma]{natbib}  % DD/RSC superscript citations
 \usepackage{hyperref}
 
 \newtheorem{theorem}{Theorem}
@@ -65,8 +66,9 @@ The Latent Becomes a Compensating Surrogate}
 \date{\today}
 
 \begin{document}
+\twocolumn[
+\begin{@twocolumnfalse}
 \maketitle
-
 \begin{abstract}
 Feeding a graph network's own learned, imperfect $\sigma$-profiles through a fixed COSMO-SAC
 closure predicts solid--liquid solubility better than feeding external quantum-chemical reference
@@ -89,6 +91,9 @@ Hammett relationship, reproduces the sign flip. We make no accuracy claim; the c
 paradox, its compensating-surrogate mechanism, and the lesson that the lever is closure fidelity, not
 truer inputs.
 \end{abstract}
+\vspace{1.4em}
+\end{@twocolumnfalse}
+]
 
 \section{Introduction}
 \label{sec:intro}
@@ -147,7 +152,7 @@ mapping the two axes together, each measured, is future work.
   relationship, where the same oracle swap flips sign across strata (\S\ref{sec:pka}).
 \end{itemize}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_overview.pdf}
 \caption{\textbf{The paper in one view.} A learned encoder $h$ predicts a physical latent---a
@@ -162,7 +167,7 @@ closure fidelity (COSMO-SAC-2010/dsp) moves the ceiling---closure fidelity, not 
 lever; supervising the latent toward truth (TeNNet-SAC) points the same way and is a second lever left
 to future work.}
 \label{fig:overview}
-\end{figure}
+\end{figure*}
 
 \input{sections/related-work}
 
@@ -295,11 +300,11 @@ wrong.
 \begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
 For a \emph{fixed} (non-fitted) closure $g$,
 \begin{equation}
-  \underbrace{\Ex\big[(m-g(\zstar))^2\big]}_{\text{MSE of the reference-input path}}
-  \;=\;
-  \underbrace{\Ex\big[\Var(m\mid \zstar)\big]}_{\Binsuf\ \text{(inputs cannot resolve)}}
-  \;+\;
-  \underbrace{\Ex\big[(\Ex[m\mid\zstar]-g(\zstar))^2\big]}_{\Bclos\ \text{(decoder mis-map)}} .
+\begin{aligned}
+  \underbrace{\Ex\big[(m-g(\zstar))^2\big]}_{\text{ref.-input MSE}}
+  &= \underbrace{\Ex\big[\Var(m\mid \zstar)\big]}_{\Binsuf\ (\text{irreducible})} \\
+  &\quad + \underbrace{\Ex\big[(\Ex[m\mid\zstar]-g(\zstar))^2\big]}_{\Bclos\ (\text{decoder bias})} .
+\end{aligned}
   \label{eq:decomp}
 \end{equation}
 The cross term vanishes identically because $\Ex[m\mid\zstar]-g(\zstar)$ is
@@ -480,7 +485,7 @@ under-predicting $\lngi$ with a systematic bias (SI, Fig.~\ref{fig:parity}). The
 oracle, injection of the reference profile \emph{at training} (MAE $1.98$), and a channel-swap
 ($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring artifact.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_paradox.pdf}
 \caption{Controlled comparison on the scaffold split (3 seeds, mean$\pm$sd,
@@ -494,7 +499,7 @@ by MAE the model predicts solubility distinctly better from its invented $\sigma
 ($1.85$) than from the reference one ($2.25$). Per-arm exact values are transcribed
 in the SI.}
 \label{fig:paradox}
-\end{figure}
+\end{figure*}
 
 \subsection{The closure-fidelity axis: locating the ceiling, and moving it}
 \label{sec:measure}
@@ -518,7 +523,7 @@ Table~\ref{tab:decomp} reports the bounds. On this corner too the ceiling sits i
 \emph{low-fidelity} closure rather than its inputs. The set spans 41 solutes and 17 solvents in $102$
 profile dimensions, with two formamide pairs dropped on a canonical-SMILES tautomer mismatch.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \caption{Closure--insufficiency decomposition on the reference-input activity path.
 Bounds, not a point split (Lemma~\ref{prop:decomp}). Convention ``full'' =
@@ -548,9 +553,9 @@ label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{$0$ (a
 \bottomrule
 \end{tabular}
 }
-\end{table}
+\end{table*}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_decomposition.pdf}
 \caption{One-sided bounds on the closure--insufficiency split under the \emph{deployed}
@@ -564,7 +569,7 @@ $z^\ast$-neighbour estimators ($k$-NN, RF; \S\ref{sec:measure}). The assumption-
 constant-offset bound is convention-specific and \emph{inverts} here ($0.43<0.62$, dotted), which is
 why we do not lean on it.}
 \label{fig:decomp}
-\end{figure}
+\end{figure*}
 
 We separate the load-bearing evidence---a bound that holds under \emph{any} COSMO-SAC
 configuration---from corroborating checks that are robust across the conventions we tried but not
@@ -819,7 +824,7 @@ $n{=}60$ VT-2005-matchable pairs, the pKa second-domain measurement, and the syn
 
 \input{sections/SI}
 
-\bibliographystyle{plain}
+\bibliographystyle{unsrtnat}   % natbib numeric; swap for rsc.bst at submission
 \bibliography{references_verified}
 
 \end{document}
