@@ -294,8 +294,13 @@ $\Binsuf\le0.67$ several-fold. We caution that the high-$\gamma$ strata are smal
 ($n=17$--$30$ in $102$ dimensions): the law-of-total-variance bound can be pushed toward zero by
 too-few-points-per-bin, which mechanically widens the margin exactly where data is thinnest, so
 it is the several-fold separations rather than the precise values that carry the
-qualitative reading. This supports---but does not prove---the conjecture that the same closure
-misspecification drives the all-$\gamma$ paradox.
+qualitative reading. One boundary deserves an explicit note: the $m>\overline{m}$ stratum separates
+through its upper (high-$\gamma$) half, and the \emph{isolated} moderate band
+($\overline{m}<m\le1.5$) does \emph{not} separate. This is not a counter-example. The total error there
+is only ${\approx}0.06$, so $\Bclos\le\mathrm{MSE}\approx0.06$ assumption-free (since $\Binsuf\ge0$),
+and there is simply nothing to attribute---near ideality the target is small and the split is
+uninformative. We read no closure-quality claim from it in either direction. This supports---but does
+not prove---the conjecture that the same closure misspecification drives the all-$\gamma$ paradox.
 
 \begin{table}[h]
 \centering
@@ -544,7 +549,11 @@ $V_{\mathrm{cosmo}}$ for the combinatorial term). These are quantum-chemically c
 single reference conformer and protonation state; any mismatch to the experimental measurement
 conditions is noise in $\zstar$ that inflates $\Binsuf$ (an imperfect intermediate) rather than
 $\Bclos$, so it is \emph{conservative} for the closure-dominance verdict. Infinite-dilution
-activity coefficients: ThermoML. Second-domain pKa: the OPERA experimental compilation
+activity coefficients: ThermoML. We checked whether enlarging the reference $\sigma$-profile set would
+grow the matched activity corner: of the $298$\,K ThermoML IDAC pairs, only two solutes lack a VT-2005
+profile while their solvent has one, so computing further reference profiles does not materially
+enlarge the matched set---the binding constraint is joint IDAC$\times$profile coverage, not profile
+availability. Second-domain pKa: the OPERA experimental compilation
 \cite{mansouri2019opera} (\texttt{pKa\_QR.sdf}, $6502$ compounds, public-domain US EPA;
 cited, not redistributed). The Bemis--Murcko scaffold split follows the main text; because the seeded
 split is not stable across pipeline versions (\S\ref{sec:framework}), every number in this paper is
