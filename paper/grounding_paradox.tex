@@ -72,8 +72,8 @@ Feeding a graph network's own learned, imperfect $\sigma$-profiles through a fix
 closure predicts solid--liquid solubility better than feeding external quantum-chemical reference
 profiles (VT-2005) through the same closure---by $+0.13$ in $\ln x_2$ MAE when the model co-adapts to
 the reference input (reference $\sigma$ injected at training, $1.85\!\to\!1.98$) and by $+0.40$ when
-it is swapped in only at evaluation ($\to\!2.25$, maximally exposing the drift), with the
-reference-input arm's $R^2$ dropping from $+0.33$ to $-0.03\pm0.04$. This grounding paradox is robust
+it is swapped in only at evaluation ($\to\!2.25$, maximally exposing the drift); the
+reference-input arm's $R^2$ falls from $+0.33$ to $\approx0$ ($-0.03\pm0.04$), corroborating the MAE. This grounding paradox is robust
 across three seeds ($n{=}5608$) and three injection controls. Mechanistically, end-to-end training drives the
 ``physical'' latent into a low-rank, out-of-sample-transferable surrogate that cancels the closure's
 error rather than reporting the physical quantity (three seeds, mean$\pm$sd: $51\pm2\%$ departure,

@@ -53,19 +53,10 @@ is not established (the same scope gap as $\Bclos$, \S\ref{sec:scope}); the exte
 itself \emph{computed} (VT-2005 quantum chemistry), not experimental, so we do not claim recovery is
 impossible in principle.
 
-\paragraph{The drift is not the closure's first-order inverse.} One might hope the drift is the closure's
-linear-response inverse, $\hat\sigma-\sigma\approx J^{+}(m-g(\sigma))$, with $J=\partial g/\partial\sigma$ the
-closure Jacobian and $m$ the observed \lngi---predictable a priori from $J$, before any solubility training.
-It is not: on the matched set the measured per-molecule drift shows no signed alignment with $J^{+}(m-g)$
-(median cosine $-0.00$; SI, Fig.~\ref{fig:picard}).\footnote{The residual COSMO-SAC closure runs a segment-activity
-fixed-point iteration, so its autograd Jacobian is numerically unstable
-($\lVert\partial g/\partial\sigma_{\text{solvent}}\rVert\!\sim\!10^{15}$ at infinite dilution); $J$ is
-computed by finite differences on the converged closure.} We report this as a negative on the \emph{signed}
-prediction only, and do not build on it. The matched set is sparse---a median of one pair per molecule, so
-each per-molecule Jacobian subspace is one-dimensional---which makes the dimension-matched row-space controls
-uninformative here: with a resolved direction common across molecules, a molecule's ``own'' and ``other''
-subspaces coincide, so their near-equality carries no signal. The load-bearing claim is the
-under-determination above, not the geometry of the drift.
+Whether the drift is additionally the closure's \emph{signed} first-order inverse $J^{+}(m-g)$ is
+under-resolved on this sparse, near-rank-one problem---a signed null we report but do not build on
+(App.~\ref{sec:si-failed-diagnostics}); the load-bearing claim is the under-determination above, not the
+geometry of the drift.
 
 \paragraph{The contrast that fixes the sign, and how the axes interact.} The sign of grounding is not
 universal, and it turns on \emph{both} axes. On our own model, holding the $\sigma$ head at its

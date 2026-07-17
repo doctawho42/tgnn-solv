@@ -480,6 +480,24 @@ molecule's ``own'' and ``other'' subspaces coincide---so we do not lean on the d
 \label{fig:picard}
 \end{figure}
 
+\paragraph{The drift is not the closure's signed first-order inverse---but the test is under-resolved.}
+One might hope the compensating drift is the closure's linear-response inverse,
+$\hat\sigma-\sigma\approx J^{+}(m-g(\sigma))$ (with $J=\partial g/\partial\sigma$), predictable a priori
+from $J$ before any solubility training. On the matched set the per-molecule drift shows no signed
+alignment with $J^{+}(m-g)$ (median cosine $-0.00$; Fig.~\ref{fig:picard}).\footnote{The residual
+COSMO-SAC closure runs a segment-activity fixed point, so its autograd Jacobian is numerically unstable
+($\lVert\partial g/\partial\sigma_{\text{solvent}}\rVert\!\sim\!10^{15}$ at infinite dilution); $J$ is
+computed by finite differences on the converged closure.} We read this as a signed negative only, and do
+not build on it, for two reasons the test cannot escape. First, the matched set is sparse (median one
+pair per molecule), so each per-molecule Jacobian subspace is one-dimensional and the dimension-matched
+row-space controls are uninformative---a resolved direction common across molecules makes a molecule's
+``own'' and ``other'' subspaces coincide. Second, and more fundamentally, the single-pair $J^{+}(m-g)$
+is a poor \emph{estimator} of the first-order compensation: the activity Fisher is near rank-one
+($\mathrm{PR}\approx1.4$ of $51$, \S\ref{sec:surrogate}), so the closure's first-order inverse is
+ill-posed along all but one direction. A null here is therefore uninformative about whether the drift is
+first-order, not evidence that it is not. The load-bearing claim is the under-determination of $\sigma$
+by activity (\S\ref{sec:surrogate}), not the geometry of the drift.
+
 The instrument behind \S\ref{sec:surrogate}---the rank of the activity Fisher $J^{\top}J$
 ($J=\partial\lngi/\partial\sigma$), read as a participation ratio
 $\mathrm{PR}=(\sum_i\lambda_i)^2/\sum_i\lambda_i^2$---is cheap and oracle-free, which is its appeal for
