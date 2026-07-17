@@ -76,8 +76,8 @@ it is swapped in only at evaluation ($\to\!2.25$, maximally exposing the drift),
 reference-input arm's $R^2$ dropping from $+0.33$ to $-0.03\pm0.04$. This grounding paradox is robust
 across three seeds ($n{=}5608$) and three injection controls. Mechanistically, end-to-end training drives the
 ``physical'' latent into a low-rank, out-of-sample-transferable surrogate that cancels the closure's
-error rather than reporting the physical quantity (a single converged-run illustration: the sign is
-robust, the magnitudes---$53\%$ departure, $73\%$ in two modes, $3.3\times$ transfer---provisional).
+error rather than reporting the physical quantity (three seeds, mean$\pm$sd: $51\pm2\%$ departure,
+$72\pm1\%$ in two modes, $4.1\pm0.5\times$ transfer).
 Because the latent carries an external reference, we can \emph{measure} rather than assume where a
 fixed closure's ceiling lies: an exact, fit-free split of the reference-input excess risk into
 closure-misspecification and input-insufficiency terms. On a small matched corner it places the
@@ -117,7 +117,7 @@ Our thesis is that whether grounding a learned latent in reference physics helps
 by} two axes---how the latent is trained (supervised toward truth vs.\ shaped end-to-end through the
 fixed closure) and the closure's fidelity. Three findings stand cleanly---the paradox, a reusable
 measurement instrument, and the \emph{structure} of the compensating-surrogate mechanism (its sign
-and low-rank, transferable form robust; its magnitude a single converged-run estimate); the
+and low-rank, transferable form robust; its magnitude a three-seed estimate, mean$\pm$sd); the
 closure-vs-inputs attribution and the two-axis map we present as, respectively, a caveated corner
 measurement and a \emph{conceptual} organizing frame---not a measured phase diagram, since only the
 closure-fidelity axis is swept directly (\S\ref{sec:dial}); the supervision axis rests on our own
@@ -452,7 +452,7 @@ are directional or conjectural. We make no accuracy claim.}
 \addlinespace
 \textbf{Likely} & On the low-$\gamma$ $n{=}60$ set the closure binds: $\Bclos\ge0.85>0.62$, $P\approx0.78$ (two-way clustering; the margin CI spans zero; not certified at conventional confidence). \\
  & A standard modern closure (COSMO-SAC-2010/dsp) dissolves that certificate ($P\approx0.79$); the reading turns to the inputs for any true $\Binsuf>\mathrm{MSE}_{2010}/2\approx0.38$, below every $\Binsuf$ estimate. \\
- & The end-to-end latent is a low-rank (top-two $73\%$), out-of-sample-transferable ($3.3\times$) closure-compensating surrogate ($n{=}44$, one converged control). \\
+ & The end-to-end latent is a low-rank (top-two $72\pm1\%$), out-of-sample-transferable ($4.1\pm0.5\times$) closure-compensating surrogate ($n{=}44$, three seeds). \\
 \addlinespace
 \textbf{Exploratory} & Transfer of the closure-dominance to the finite-composition/high-$\gamma$ regime (supported by in-regime signs, not measured there). \\
  & The $\gamma$-stratified strengthening of $\Bclos$ (thin, estimator-dependent). \\
@@ -776,8 +776,8 @@ more-physics-worse effect. (iii)~The measurement is the infinite-dilution/$298$\
 not the finite-composition regime the paradox lives in (\S\ref{sec:scope}). (iv)~Absolute scaffold
 accuracy is encoder-bound but well \emph{above} the inter-lab noise floor ($0.15$--$0.31$ in $\lnx$;
 \S\ref{sec:supporting}), so label noise does not explain the ceiling. (v)~The compensating-surrogate
-magnitudes ($53\%$/$73\%$/$3.3\times$) rest on a single converged one-model control ($n{=}44$;
-\S\ref{sec:surrogate})---sign and structure robust, magnitude provisional.
+magnitudes ($51\pm2\%$/$72\pm1\%$/$4.1\pm0.5\times$) are three-seed mean$\pm$sd ($n{=}44$;
+\S\ref{sec:surrogate})---sign, structure, and magnitude seed-stable.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -795,8 +795,8 @@ the latent toward truth moves the system out of the hurts-corner, so whether gro
 \emph{shaped by} two axes---closure fidelity and how the latent is trained (Fig.~\ref{fig:map}). The same grounding also indicates,
 where the closure binds, that the learned $\sigma$-profile is a closure-compensating surrogate rather
 than the physical quantity---an interpretability cost of physics-informed bottlenecks that the
-external latent makes measurable: a $53\%$, low-rank, transferable departure from truth on a
-converged one-model control.
+external latent makes measurable: a $51\pm2\%$, low-rank, transferable departure from truth across
+three seeds.
 
 \section*{Author contributions}
 \noindent

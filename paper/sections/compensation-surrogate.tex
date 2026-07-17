@@ -1,6 +1,6 @@
 \subsection{Why grounding hurts on this anchor: the end-to-end latent is a compensating surrogate}
 \label{sec:surrogate}
-% Artifact: results/compensation/isolation_gpu.json (converged one-model control) +
+% Artifact: results/sur/surrogate_seeds/surrogate_seeds.json (3-seed GCP L4) +
 % surrogate_vs_true.json via scripts/analysis/run_compensation_surrogate.py, n=44 matched VT-2005.
 This is the \emph{mechanism} behind the low-fidelity, end-to-end corner of the map
 (\S\ref{sec:discussion}): when a $\sigma$-profile head is trained \emph{end-to-end} through a fixed,
@@ -10,20 +10,22 @@ measure the ceiling (\S\ref{sec:measure}) also lets us test this directly, compa
 profile $\hat\sigma$ against the reference VT-2005 profile $\sigma$ molecule by molecule ($n{=}44$).
 
 \paragraph{The learned profile is a systematic, low-rank, transferable surrogate---confound-free.}
-We use the cleanest test available: a \emph{single} grounded model checkpointed before and after
+We use the cleanest test available: a grounded model checkpointed before and after
 solubility fine-tuning (the $\sigma$ head unfrozen), so architecture and initialisation are held fixed
-and only the objective differs. The grounded base recovers the reference profile to within $33\%$
+and only the objective differs; we repeat it over \emph{three seeds} and report mean$\pm$sd. The
+grounded base recovers the reference profile to within $36\pm1\%$
 ($\lVert\hat\sigma_{\mathrm{grounded}}-\sigma\rVert/\lVert\sigma\rVert$), so the intermediate
-\emph{can} be physical; solubility fine-tuning then drives it $45\%$ off the grounded profile, for a
-total departure from truth of $53\%$. The drift is not per-molecule noise: its first two principal
-components carry $73\%$ of the variance (isotropic noise over $51$ bins would give ${\approx}4\%$), and
+\emph{can} be physical; solubility fine-tuning then drives it $41\pm3\%$ off the grounded profile, for a
+total departure from truth of $51\pm2\%$. The drift is not per-molecule noise: its first two principal
+components carry $72\pm1\%$ of the variance (isotropic noise over $51$ bins would give ${\approx}4\%$), and
 a single affine distortion $D$ fit on half the molecules predicts the drift on the held-out half
-$3.3\times$ better than identity out-of-sample. So $\hat\sigma$ is a systematic, low-rank,
+$4.1\pm0.5\times$ better than identity out-of-sample. So $\hat\sigma$ is a systematic, low-rank,
 \emph{transferable} closure-compensating surrogate---one generalizable way the intermediate ``lies'' to
 the closure, shared across chemistry, driven by the fitting objective rather than by architecture or a
-lack of grounding.\footnote{These are the confound-free, converged one-model numbers. The magnitude
-develops over training---a short run reached only ${\sim}16\%$---and earlier confounded and two-model
-analyses over-stated both the departure (${\sim}82\%$) and the transfer ($16$--$26\times$).}
+lack of grounding.\footnote{Three-seed mean$\pm$sd; the small sd's show sign and structure are
+seed-stable. The magnitude develops over training---a short run reached only ${\sim}16\%$---and earlier
+confounded and two-model analyses over-stated both the departure (${\sim}82\%$) and the transfer
+($16$--$26\times$).}
 
 \paragraph{Dominant mode and consequence.} The dominant drift mode (Fig.~\ref{fig:surrogate}) transfers
 area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and \emph{into} the polar wings: the network
@@ -84,10 +86,10 @@ it across (\S\ref{sec:discussion}).
 physical profile. \emph{Left:} the mean deviation $\hat\sigma-\sigma$ (and its dominant PCA mode)
 transfers area out of the nonpolar bins ($\sigma\!\approx\!0$) into the polar wings---the network makes
 molecules look more polar than they are, inflating the segment interactions the misspecified closure
-under-weights. \emph{Right:} the deviation spectrum is low-rank (top-two modes $73\%$; noise would be
+under-weights. \emph{Right:} the deviation spectrum is low-rank (top-two modes $72\pm1\%$; noise would be
 flat at ${\approx}4\%$), i.e.\ the distortion is systematic. A single affine distortion transfers
-$3.3\times$ better than identity out-of-sample, so $\hat\sigma$ is a transferable
-closure-compensating surrogate of $\sigma$, not $\sigma$ with noise (confound-free one-model control,
+$4.1\pm0.5\times$ better than identity out-of-sample, so $\hat\sigma$ is a transferable
+closure-compensating surrogate of $\sigma$, not $\sigma$ with noise (confound-free, three seeds,
 $n{=}44$ matched VT-2005 molecules).}
 \label{fig:surrogate}
 \end{figure}
