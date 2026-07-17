@@ -156,7 +156,7 @@ quantum-chemical reference $\sigma^\star$ (VT-2005) makes the prediction \emph{w
 head---so which is wrong, the closure or the inputs? \emph{(2)~The measurement:} because the latent
 has an external oracle, the reference-input excess risk splits \emph{exactly} into a
 closure-misspecification part $\Bclos$ and an input-insufficiency part $\Binsuf$; on the matched
-low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P\approx0.78$). \emph{(3)~The lever:} raising
+low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P_{\mathrm{boot}}\approx0.78$). \emph{(3)~The lever:} raising
 closure fidelity (COSMO-SAC-2010/dsp) moves the ceiling---closure fidelity, not input fidelity, is the
 lever; supervising the latent toward truth (TeNNet-SAC) points the same way and is a second lever left
 to future work.}
@@ -405,8 +405,8 @@ are directional or conjectural. We make no accuracy claim.}
  & The exact split $B=\Bclos+\Binsuf$ for a fixed closure (Lemma~\ref{prop:decomp}). \\
  & The differentiable closure reproduces the NIST reference COSMO-SAC-2002 to RMSE $0.003\,\ln\gamma$, so $\Bclos$ is genuine misspecification, not an implementation artifact. \\
 \addlinespace
-\textbf{Likely} & On the low-$\gamma$ $n{=}60$ set the closure binds: $\Bclos\ge0.85>0.62$, $P\approx0.78$ (two-way clustering; the margin CI spans zero; not certified at conventional confidence). \\
- & A standard modern closure (COSMO-SAC-2010/dsp) dissolves that certificate ($P\approx0.79$); the reading turns to the inputs for any true $\Binsuf>\mathrm{MSE}_{2010}/2\approx0.38$, below every $\Binsuf$ estimate. \\
+\textbf{Likely} & On the low-$\gamma$ $n{=}60$ set the closure binds: $\Bclos\ge0.85>0.62$, $P_{\mathrm{boot}}\approx0.78$ (two-way clustering; the margin CI spans zero; not certified at conventional confidence). \\
+ & A standard modern closure (COSMO-SAC-2010/dsp) dissolves that certificate ($P_{\mathrm{boot}}\approx0.79$); the reading turns to the inputs for any true $\Binsuf>\mathrm{MSE}_{2010}/2\approx0.38$, below every $\Binsuf$ estimate. \\
  & The end-to-end latent is a low-rank (top-two $72\pm1\%$), out-of-sample-transferable ($4.1\pm0.5\times$) closure-compensating surrogate ($n{=}44$, three seeds). \\
 \addlinespace
 \textbf{Exploratory} & Transfer of the closure-dominance to the finite-composition/high-$\gamma$ regime (supported by in-regime signs, not measured there). \\
@@ -512,7 +512,7 @@ label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{$0$ (a
 residual-only COSMO-SAC convention---the configuration the model actually runs. The
 load-bearing, convention-independent bound $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{LOTV}}\approx0.85$
 exceeds every valid $\Binsuf$ upper bound (salmon region); the white gap is a separation that needs
-no smoothness assumption, and the teal region is the closure share of the total error lower-bounded by that margin (deterministic on this $n{=}60$ set; its generalization is the $P\approx0.78$ of Table~\ref{tab:decomp})
+no smoothness assumption, and the teal region is the closure share of the total error lower-bounded by that margin (deterministic on this $n{=}60$ set; its generalization is the $P_{\mathrm{boot}}\approx0.78$ of Table~\ref{tab:decomp})
 (MSE $=1.47$). We headline the law-of-total-variance (LOTV) binning bound because it conditions on
 the scalar $g(\zstar)$ and is immune to the near-duplicate leakage that deflates the
 $z^\ast$-neighbour estimators ($k$-NN, RF; \S\ref{sec:measure}). The assumption-free Jensen
@@ -531,9 +531,11 @@ $k$-NN/RF estimators are deflated by near-duplicate leakage on the crossed $41$-
 design and only \emph{bracket} $\Binsuf$) from the total error gives, on the deployed residual-only
 convention, $\Bclos\gtrsim0.85$ against $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). This is the
 claim we lean on. It is stable---surviving leave-one-solvent, -solute, and -pair folds and adversarial
-deletion of the eight highest-error pairs---but not certified: a two-way cluster bootstrap gives
-$P(\Bclos>\Binsuf)\approx0.78$ with a $90\%$ margin spanning zero, and with only $17$/$41$ clusters
-this small-$G$ figure is a coarse band (mid-$0.7$s to high-$0.8$s), so we present the separation as a
+deletion of the eight highest-error pairs---but not certified: in a two-way cluster
+bootstrap $\Bclos$ exceeds $\Binsuf$ in $78\%$ of resamples (a resampling frequency $P_{\mathrm{boot}}$,
+not a posterior probability of the inequality), with the $90\%$ margin spanning zero, and with only
+$17$/$41$ clusters this small-$G$ fraction is a coarse band (mid-$0.7$s to high-$0.8$s), so we present
+the separation as a
 \emph{supporting} measurement---likely but not certified---not a stand-alone certificate. The
 convention, leakage, $\gamma$-stratification, and leverage stress-tests are in
 App.~\ref{sec:si-tables}. Label noise is unestimable here (replicate-free) and assumed zero; the bounds
@@ -579,19 +581,28 @@ closures cut the error to $\mathrm{MSE}=0.77$ (2010) / $0.79$ (dsp, $n{=}57$). T
 insufficiency-free by construction: on the identical UD $3$-profiles, swapping the 2002 kernel for
 2010 cuts the error from $\mathrm{MSE}=1.26$ to $0.77$, a ${\sim}70\%$ drop attributable to the closure
 alone---the fidelity axis, measured directly. Charging that against the $\Binsuf$ floor, this
-\emph{dissolves the closure-dominance verdict}---$P\approx0.79$ under two-way solute$\times$solvent clustering that $\Bclos$ no longer exceeds
-$\Binsuf$, the near-mirror of the $P\approx0.78$ that it \emph{does} bind under 2002 (same clustering,
+\emph{dissolves the closure-dominance verdict}---$P_{\mathrm{boot}}\approx0.79$ under two-way solute$\times$solvent clustering that $\Bclos$ no longer exceeds
+$\Binsuf$, the near-mirror of the $P_{\mathrm{boot}}\approx0.78$ that it \emph{does} bind under 2002 (same clustering,
 opposite verdicts). This last step charges a UD-based error against a $\Binsuf$ estimated on the
-VT-2005 latent used elsewhere, so the $P\approx0.79$ figure is a \emph{cross-database} quantity: we
+VT-2005 latent used elsewhere, so the $P_{\mathrm{boot}}\approx0.79$ figure is a \emph{cross-database} quantity: we
 report it as indicative, not exact, and rest the conclusion on the database-consistent
 \emph{same-database} contrast above ($1.26\to0.77$ on identical UD profiles, insufficiency-free by
 construction). A $\Binsuf$ re-estimate on the UD latent is the exact test; absent it the mismatch can
-move $P\approx0.79$ but not its sign, since a richer $3$-profile latent would if anything \emph{lower}
+move $P_{\mathrm{boot}}\approx0.79$ but not its sign, since a richer $3$-profile latent would if anything \emph{lower}
 $\Binsuf$, reinforcing rather than weakening the closure attribution. We do \emph{not} claim a flip to the inputs: we hold only an \emph{upper} bound
 on $\Binsuf$, so ``the inputs bind'' would require a lower bound we do not have---what the modern
 closure establishes is only that our own 2002 attribution no longer holds. The decision-relevant
 reading is thus not ``the closure always dominates'' but ``on the low-fidelity 2002 closure it does, and the
 fix is a better closure, not truer inputs''---closure fidelity, not input fidelity, is the lever.
+
+\paragraph{The reference is itself imperfect, but conservatively so.} The external ground truth used
+to charge $\Bclos$ against $\Binsuf$ is quantum chemistry, not experiment: the VT-2005 profiles are
+computed for a single reference conformer and protonation state (\S\ref{sec:si-repro}). Any mismatch
+between that fixed state and the conformer/tautomer population under the measurement conditions enters
+as noise in the reference $\zstar$, and such noise raises $\Binsuf$---the input-sufficiency term---not
+$\Bclos$. It therefore works against the closure-dominance reading rather than for it: a truer,
+condition-matched reference would lower $\Binsuf$ and widen the margin we already find, so the verdict
+is conservative to this defect.
 
 \paragraph{Scope.} This measurement is a low-$\gamma$/$298$\,K/VT-2005-matchable corner and does not
 transfer to the finite-composition regime the paradox lives in (\S\ref{sec:scope}); the full audit is
@@ -727,13 +738,16 @@ solubility; it recurs whenever a misspecified closure is coupled to an expressiv
 abundant, low-noise data.
 
 
-\paragraph{Limitations.} (i)~$\Binsuf$ is upper-bounded, not point-identified (no replicates at fixed
-$\zstar$); the smoothness-free Jensen bound assumes $m$ and $g$ share the $\lngi$ reference state,
-which we verify (\S\ref{sec:measure}), so the mean offset is genuine decoder bias, not a units
-artifact. (ii)~The constant-offset margin is convention-specific and inverts under the deployed
-residual-only default; there the separation rests on the convention-independent bound and the
-more-physics-worse effect. (iii)~The measurement is the infinite-dilution/$298$\,K/low-$\gamma$ corner,
-not the finite-composition regime the paradox lives in (\S\ref{sec:scope}). (iv)~Absolute scaffold
+\paragraph{Limitations.} (i)~The phenomenon and its causal attribution live in \emph{different
+regimes}: the paradox is a finite-composition solubility effect, but the closure--insufficiency
+measurement is made on the infinite-dilution/$298$\,K/low-$\gamma$ VT-2005-matchable corner, so the
+transfer of the attribution back to the paradox's own regime is argued from in-regime signs, not
+measured there (\S\ref{sec:scope}). (ii)~$\Binsuf$ is upper-bounded, not point-identified (no
+replicates at fixed $\zstar$); the smoothness-free Jensen bound assumes $m$ and $g$ share the $\lngi$
+reference state, which we verify (\S\ref{sec:measure}), so the mean offset is genuine decoder bias, not
+a units artifact. (iii)~The constant-offset margin is convention-specific and inverts under the
+deployed residual-only default; there the separation rests on the convention-independent bound and the
+more-physics-worse effect. (iv)~Absolute scaffold
 accuracy is encoder-bound but well \emph{above} the inter-lab noise floor ($0.15$--$0.31$ in $\lnx$;
 \S\ref{sec:supporting}), so label noise does not explain the ceiling. (v)~The compensating-surrogate
 result is three-seed mean$\pm$sd ($n{=}44$; \S\ref{sec:surrogate}); its load-bearing content is the
@@ -747,7 +761,7 @@ worse. What the paper contributes is a way to measure that failure: with an
 externally grounded latent, the reference-input excess risk splits into a
 decoder-misspecification term and an input-insufficiency term, and on the
 subset we can measure, the ceiling is most likely
-the closure rather than the inputs ($P\approx0.78$ under two-way clustering, not certified at
+the closure rather than the inputs ($P_{\mathrm{boot}}\approx0.78$ under two-way clustering, not certified at
 conventional confidence). The
 practical implication is to fix the map itself, since within this closure truer
 inputs surface its bias and an output-space correction is inert---though this attribution is
