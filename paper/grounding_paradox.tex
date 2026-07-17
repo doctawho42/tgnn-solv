@@ -729,30 +729,16 @@ data, and auxiliary grounding do not recover an accuracy the factorization canno
 misspecified closure costs is thus not only accuracy but the interpretability the bottleneck appeared
 to buy.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.80\linewidth]{figs/fig_grounding_map.pdf}
-\caption{\textbf{The grounding map (conceptual).} Whether grounding helps or hurts is shaped by two
-axes: how the latent is trained (supervised vs.\ end-to-end) and the closure's fidelity. Grounding
-hurts only in the low-supervision, low-fidelity corner, where the latent becomes a compensating
-surrogate (\S\ref{sec:surrogate}); our COSMO-SAC-2002 model sits there, and raising fidelity (2010/dsp)
-or supervising the latent moves toward ``helps'' (supervision alone cuts the penalty $65\%$ short of
-crossing; TeNNet-SAC, supervised \emph{and} higher-fidelity, crosses fully). The boundary is the
-physics-tax sign $\mathcal{T}=0$ (Prop.~\ref{prop:tax}); only the fidelity axis is swept directly
-(\S\ref{sec:dial}). Anchor placements are qualitative.}
-\label{fig:map}
-\end{figure}
-
-\paragraph{When a fixed-closure prior helps versus hurts.} The tax rule (Prop.~\ref{prop:tax}) turns
-these negatives into a phase picture rather than a single verdict (SI, Fig.~\ref{fig:phase}), and says
-\emph{when} to expect them. A fixed-closure prior helps only when the estimation variance it saves exceeds its
-asymptotic bias $\Delta_\infty$ (equal to $\Bclos-\Gamma$ only under A2 with an
-asymptotically-Bayes control, otherwise read off the large-$n$ asymptote); both are measurable. The variance benefit is
-largest at small $n$ and vanishes as data accumulate or as the black box nears the aleatoric
-floor, whereas $\Delta_\infty$ is set by the closure and does not. A prior is therefore
-predicted to hurt precisely in the mature-data, low-noise, well-covered regime. The synthetic dial
-(\S\ref{sec:dial}) and the pKa closure (\S\ref{sec:pka}) exercise the fidelity and sufficiency
-behaviour directly.
+\paragraph{When a fixed-closure prior helps versus hurts.} The tax rule (Prop.~\ref{prop:tax}) predicts
+\emph{when} to expect these negatives: a fixed-closure prior helps only when the estimation variance it
+saves exceeds its asymptotic bias $\Delta_\infty$ (both measurable). The variance benefit is largest at
+small $n$ and vanishes as data accumulate or as the black box nears the aleatoric floor, whereas
+$\Delta_\infty$ is set by the closure; a prior is therefore predicted to hurt precisely in the
+mature-data, low-noise, well-covered regime. The synthetic dial (\S\ref{sec:dial}) and the pKa closure
+(\S\ref{sec:pka}) exercise the fidelity and sufficiency behaviour directly. Whether grounding helps is
+shaped by \emph{two} axes---closure fidelity and how the latent is trained (supervised vs.\
+end-to-end); mapping that plane in full, and sweeping each axis directly on real systems, is deferred
+to future work.
 
 \paragraph{The novelty inversion (exploratory).} The sharpest---and most unexpected---confirmation of
 the tax rule runs opposite to the usual coverage intuition. Resolving the physics tax by solute
@@ -797,7 +783,7 @@ practical implication is to fix the map itself, since within this closure truer
 inputs surface its bias and an output-space correction is inert---though this attribution is
 $2002$-specific: a modern closure (COSMO-SAC-2010/dsp) dissolves it. Neither failure is universal: raising closure fidelity or supervising
 the latent toward truth moves the system out of the hurts-corner, so whether grounding helps is
-\emph{shaped by} two axes---closure fidelity and how the latent is trained (Fig.~\ref{fig:map}). The same grounding also indicates,
+\emph{shaped by} two axes---closure fidelity and how the latent is trained. The same grounding also indicates,
 where the closure binds, that the learned $\sigma$-profile is a closure-compensating surrogate rather
 than the physical quantity---an interpretability cost of physics-informed bottlenecks that the
 external latent makes measurable: a $51\pm2\%$, low-rank, transferable departure from truth across
