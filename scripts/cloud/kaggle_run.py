@@ -205,6 +205,31 @@ def do_onemodel(out: Path, device: str, ep_warm: int, ep_sle: int, seed: int = 0
     print("[onemodel] done ->", out / "isolation_gpu.json", flush=True)
 
 
+def _split_provenance():
+    """Record which scaffold split / matched set this run used, so it is auditable (S5.1: the seeded
+    split is NOT stable across pipeline versions). Hash the sorted matched-molecule keys + note the
+    processed-split file sizes. (Added after a surrogate run shipped with no split provenance.)"""
+    import hashlib, csv
+    prov = {}
+    try:
+        mp = Path("results/b_insuff/matched_pairs.csv")
+        if mp.exists():
+            keys = []
+            with open(mp) as f:
+                for row in csv.DictReader(f):
+                    keys += [row.get("solute_key", ""), row.get("solvent_key", "")]
+            keys = sorted({k for k in keys if k})
+            prov["matched_n"] = len(keys)
+            prov["matched_hash"] = hashlib.sha256("|".join(keys).encode()).hexdigest()[:16]
+    except Exception as e:  # pragma: no cover
+        prov["error"] = str(e)
+    for name in ("test", "val", "train"):
+        p = Path(f"notebooks/data/processed/{name}.csv")
+        if p.exists():
+            prov[f"{name}_bytes"] = p.stat().st_size
+    return prov
+
+
 def do_surrogate_seeds(out: Path, device: str, ep_warm: int, ep_sle: int, seeds=(0, 1, 2)):
     """Compensating-surrogate isolation across seeds -> mean+/-sd of the 5 headline metrics.
     Upgrades the single-run 33/45/53/73%/3.3x numbers (paper sec:surrogate) to mean+/-spread."""
@@ -233,7 +258,8 @@ def do_surrogate_seeds(out: Path, device: str, ep_warm: int, ep_sle: int, seeds=
             sd = (sum((v - m) ** 2 for v in vals) / len(vals)) ** 0.5 if len(vals) > 1 else 0.0
             agg[k] = {"mean": m, "sd": sd, "n": len(vals), "values": vals}
     summary = {"seeds": list(seeds), "per_seed": rows, "aggregate": agg,
-               "recipe": {"ep_warm": ep_warm, "ep_sle": ep_sle}}
+               "recipe": {"ep_warm": ep_warm, "ep_sle": ep_sle},
+               "split_provenance": _split_provenance()}
     save(out, "surrogate_seeds.json", summary)
     print("\n[surrogate_seeds] aggregate (mean +/- sd):", flush=True)
     for k in keys:

@@ -543,9 +543,14 @@ conditions is noise in $\zstar$ that inflates $\Binsuf$ (an imperfect intermedia
 $\Bclos$, so it is \emph{conservative} for the closure-dominance verdict. Infinite-dilution
 activity coefficients: ThermoML. Second-domain pKa: the OPERA experimental compilation
 \cite{mansouri2019opera} (\texttt{pKa\_QR.sdf}, $6502$ compounds, public-domain US EPA;
-cited, not redistributed). The Bemis--Murcko scaffold split follows the main text;
-melting-point tables are auto-detected as $^\circ$C or K to
-avoid a $+273$\,K double-conversion.
+cited, not redistributed). The Bemis--Murcko scaffold split follows the main text; because the seeded
+split is not stable across pipeline versions (\S\ref{sec:framework}), every number in this paper is
+computed on a \emph{single} committed split, whose molecule-level hash is recorded with the released
+artifacts.\footnote{The three-seed surrogate isolation (\S\ref{sec:surrogate}) was produced on a
+separate run whose per-run split provenance was not logged; its matched set is the same $n{=}44$
+molecules, derivable from the committed split independently of the model, so it is consistent with the
+reported split. We record the split hash in the runner so future runs are auditable directly.}
+Melting-point tables are auto-detected as $^\circ$C or K to avoid a $+273$\,K double-conversion.
 \paragraph{Compute ledger.} The headline $\sigma$-grounding comparison
 (Fig.~\ref{fig:paradox}, Table~\ref{tab:si-arms}) is a full-corpus GPU run (three seeds);
 the closure/insufficiency decomposition (\S\ref{sec:measure}), the
@@ -555,5 +560,6 @@ committed artifacts. Each figure and table names the script that regenerates it 
 \texttt{results/}; large prediction CSVs and model checkpoints are deposited separately
 (\pending[Zenodo DOI]) rather than in the repository.
 \paragraph{Seeds and determinism.} Controlled comparisons use seeds $\{42,43,44\}$ and
-are reported on a cross-arm intersection lock (rows supervised and finite in every arm);
-the decomposition is seed-independent (its closure has no learnable parameters).
+are reported on a cross-arm intersection lock (rows supervised and finite in every arm); the
+surrogate isolation (\S\ref{sec:surrogate}) uses seeds $\{0,1,2\}$. The decomposition is seed-independent
+(its closure has no learnable parameters).
