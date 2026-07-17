@@ -31,14 +31,15 @@ makes $\Gamma$ a symptom rather than a certificate. The oracle-$\sigma$ pipeline
 data. On the OPERA experimental $\mathrm pK_a$ compilation \cite{mansouri2019opera} ($7{,}904$
 records under the same net-neutral filter), applying the same decomposition to the fixed Hammett
 closure yields a \emph{measured} fidelity sweep: on the clean meta/para series ($n{=}158$) the closure
-predicts experimental $\mathrm pK_a$ to RMSE $0.55$ with $\Bclos$ below the input-insufficiency floor
-(per-scaffold systematic offsets $\le0.18$, so the LFER is well specified there), while the
-ortho/heteroaromatic regime ($n{=}846$) degrades to RMSE $2.26$, dominated by input insufficiency.
-Here the pKa latent is a \emph{scalar} Hammett constant, so---unlike the solubility regime---$\Binsuf$
-is \emph{point}-identified rather than one-sidedly bounded (\S\ref{sec:decomp}): a within-scaffold
-regression estimator gives $\Binsuf=4.5$ ($\approx89\%$ of the error---the tabulated $\sigma$ carries no
-ortho information, exactly the a-priori channel assignment), leaving a small \emph{point} closure
-misspecification $\Bclos=0.6$. We state $\Binsuf$ as a value here,
+predicts experimental $\mathrm pK_a$ to RMSE $0.55$ with $\Bclos$ certified below the
+input-insufficiency floor ($\Bclos=-0.2$, $95\%$~CI $[-0.4,-0.0]$; per-scaffold systematic offsets
+$\le0.18$, so the LFER is well specified there), while the ortho/heteroaromatic regime ($n{=}846$)
+degrades to RMSE $2.26$, dominated by input insufficiency. Here the pKa latent is a \emph{scalar}
+Hammett constant, so---unlike the solubility regime---$\Binsuf$ is \emph{point}-identified rather than
+one-sidedly bounded (\S\ref{sec:decomp}): a within-scaffold regression estimator gives $\Binsuf=4.5$
+($95\%$~CI $[4.0,5.1]$; $\approx89\%$ of the error---the tabulated $\sigma$ carries no ortho
+information, exactly the a-priori channel assignment), leaving a small but certified \emph{point}
+closure misspecification $\Bclos=0.6$ ($[0.3,0.8]$, a stratified within-scaffold molecule bootstrap). We state $\Binsuf$ as a value here,
 and only here, because it is measured, not bounded (see the resolution note in \S\ref{sec:decomp}). This is the
 near-exact-to-degraded transition the closure is meant to show, now measured rather than asserted. This places the pKa closure near the phase-diagram boundary
 in its clean regime. \paragraph{Data quality control (uniform, closure-independent).} The trained runs use the canonical
