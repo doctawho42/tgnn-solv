@@ -22,10 +22,11 @@ a single affine distortion $D$ fit on half the molecules predicts the drift on t
 $4.1\pm0.5\times$ better than identity out-of-sample. So $\hat\sigma$ is a systematic, low-rank,
 \emph{transferable} closure-compensating surrogate---one generalizable way the intermediate ``lies'' to
 the closure, shared across chemistry, driven by the fitting objective rather than by architecture or a
-lack of grounding.\footnote{Three-seed mean$\pm$sd; the small sd's show sign and structure are
-seed-stable. The magnitude develops over training---a short run reached only ${\sim}16\%$---and earlier
-confounded and two-model analyses over-stated both the departure (${\sim}82\%$) and the transfer
-($16$--$26\times$).}
+lack of grounding.\footnote{Three-seed mean$\pm$sd (seeds $0$--$2$). The load-bearing claim is the
+\emph{sign} and the low-rank, transferable \emph{structure}, both seed-stable; the \emph{magnitude} has
+moved across pipeline versions over the project---a short run reached only ${\sim}16\%$, and earlier
+confounded/two-model analyses over-stated the departure (${\sim}82\%$) and transfer ($16$--$26\times$)---so
+we report it but do not lean on it (with $n{=}3$ the sd is itself only indicative, not a precision).}
 
 \paragraph{Dominant mode and consequence.} The dominant drift mode (Fig.~\ref{fig:surrogate}) transfers
 area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and \emph{into} the polar wings: the network
