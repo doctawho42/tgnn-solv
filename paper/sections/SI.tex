@@ -15,21 +15,22 @@ Staverman--Guggenheim normalisers $r_0=66.69$\,\AA$^3$, $q_0=79.53$\,\AA$^2$; th
 $\sigma$-profile grid is $51$ bins on $[-0.025,0.025]$\,e\,\AA$^{-2}$. The segment-activity
 fixed point is damped ($\lambda=0.7$) and run for $16$ iterations at train time and $30$
 at evaluation.
-\paragraph{A reproducibility caution for \texttt{cCOSMO} (COSMO-SAC-2002 on typed profiles).}
-We flag a silent-failure mode of the NIST reference implementation that a comparison of
-closures can easily trip over, and that produced the mislabelled $\mathrm{MSE}\ 1.26$ we
-withdraw in \S\ref{sec:measure}. The 2002 model (\texttt{COSMO1}) expects a single untyped
-$\sigma$-profile. When it is instead handed a typed three-profile (Hsieh/2010, \texttt{sigma3})
-database --- the natural thing to do when both a 2002 and a 2010 arm are to be run off one
-profile source --- it reads the nonpolar channel only, discards the donor and acceptor
-profiles, and keeps the total cavity area as prefactor. It returns a number without error.
-That crippled 2002 scores $\mathrm{MSE}\ 1.263$ on our matched corner, whereas the fair full
-2002 --- the same profile fed either to our differentiable layer or to \texttt{cCOSMO}
-reformatted into the three-profile layout --- scores $1.757/1.758$. Anyone contrasting 2002
-against 2010 by calling \texttt{COSMO1} and \texttt{COSMO3} on a shared \texttt{sigma3} base is
-therefore comparing a two-channels-deleted 2002 to a full 2010 and will overstate the fidelity
-gain; the fair 2002 requires the native single-profile (Mullins) base or the reformatted
-layout.
+\paragraph{A usage pitfall in \texttt{cCOSMO} (\texttt{COSMO1} on typed profiles), and a correction
+to our own earlier reading.} The $\mathrm{MSE}\ 1.26$ we previously reported for the 2002 kernel and
+withdraw in \S\ref{sec:measure} was a usage error on our part, worth documenting only because the
+library gives no warning. The reference implementation~\cite{bell2020cosmosac} pairs its 2002 model
+(\texttt{COSMO1}) with the single-profile Virginia Tech database; the demonstrated input is one
+untyped, Mullins-averaged profile. When \texttt{COSMO1} is instead handed a typed three-profile
+(Hsieh, \texttt{sigma3}) base --- tempting when a 2002 and a 2010 arm are to share one profile source
+--- it silently reads the nonpolar channel only, discards the donor and acceptor channels, keeps the
+total cavity area as prefactor, and returns a number without error. The prescribed way to recover a
+single 2002 profile from the typed set is instead their \emph{sum},
+$p=p_{\mathrm{nhb}}+p_{\mathrm{OH}}+p_{\mathrm{OT}}$ (Eq.~9 of Ref.~\cite{bell2020cosmosac}); the
+nonpolar-only read is neither that sum nor a documented mode. The crippled arm scores
+$\mathrm{MSE}\ 1.263$ on our matched corner, whereas the fair full 2002 --- the same molecule fed
+either to our differentiable layer or to \texttt{cCOSMO} on its native single-profile base --- scores
+$1.757/1.758$. We report this as an issue for the library maintainers (a silently-wrong return where
+an error would be safer), not as a defect of any published benchmark.
 \paragraph{Crystal head.} $\Tm=100+600\,\sigma(\cdot)\in[100,700]$\,K,
 $\dHfus=S_H\,\mathrm{softplus}(\cdot)$; the group-contribution $\Tm$ prior is affine-
 calibrated on the train split before entering the head.

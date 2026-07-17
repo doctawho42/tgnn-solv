@@ -341,8 +341,10 @@ convention but inverts under the deployed residual-only default---so the headlin
 \S\ref{sec:measure} rests on the leakage-immune law-of-total-variance bound, and the Jensen numbers
 are reported in App.~\ref{sec:si-tables}.
 Because $\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, it is
-\emph{independent of the closure convention}: any disagreement between closure
-variants is decoder disagreement and lands in $\Bclos$.
+\emph{independent of the combinatorial convention} (full vs.\ residual) at fixed $\zstar$:
+disagreement between closures that share one reference profile is decoder disagreement and lands
+in $\Bclos$. A kernel that carries its own $\sigma$-averaging, by contrast, changes $\zstar$ itself,
+so the 2002-vs-2010 contrast (\S\ref{sec:measure}) is not a fixed-input decoder difference.
 
 \paragraph{The instrument's resolution is $\dim(\zstar)/n$.} Whether the split can be
 \emph{point}-identified or only bounded is set by the latent dimension relative to sample size.
@@ -565,12 +567,17 @@ layer on the single-profile VT-2005 database. The fair full 2002 on the same UD 
 $\mathrm{MSE}\ 1.757$, which we validate two independent ways: our differentiable layer, and the NIST
 reference itself fed the same profile reformatted into the three-profile layout ($1.758$).
 
-\emph{(ii)}~There is consequently \textbf{no clean input-fixed design} for this contrast, and we
-withdraw the claim that it is insufficiency-free by construction. Holding the profile data literally
-fixed denies the 2002 kernel two of three channels---an input-insufficiency confound in precisely the
-term the decomposition of \S\ref{sec:decomp} exists to isolate. Giving each closure its native profile
-instead changes the $\sigma$-averaging convention. We report the fair comparison and treat the
-residual convention difference as a caveat rather than a construction.
+\emph{(ii)}~There is consequently \textbf{no input-fixed design for this comparison, even in
+principle}, and we withdraw the claim that it is insufficiency-free by construction. The $\sigma$-profile
+averaging is part of each model's \emph{definition}---Mullins averaging for 2002, Hsieh averaging for
+2010, as specified by the reference implementation and the models' own
+authors~\cite{bell2020cosmosac}---so a single profile cannot be held fixed across the two kernels
+without violating one of them. Forcing the profile literally identical denies the 2002 kernel two of
+three channels, an input-insufficiency confound in precisely the term the decomposition of
+\S\ref{sec:decomp} exists to isolate; ``insufficiency-free by construction'' is therefore incoherent,
+not merely unverified. Each closure evaluated on its prescribed native profile is the specified use of
+the model, not a convention compromise, so the fair values $1.757$ and $1.911$ are the correct
+comparison rather than caveated ones.
 
 With that settled, the swap is measurable. On the matched corner the fair 2002 $\to$ 2010/dsp swap
 cuts the activity error from $1.757$ to $0.765$ ($n{=}60$; the two-way cluster bootstrap gives
@@ -586,11 +593,20 @@ COSMO-SAC-2010's donor/acceptor typing exists to repair hydrogen bonding---a rea
 have been \emph{larger} where hydrogen bonding matters more, not smaller. The sign of that dependence
 is wrong for a signal.
 
-This is consistent with the published behaviour of the closure family rather than a challenge to it:
-COSMO-SAC-2010's demonstrated gains are in liquid--liquid equilibria and in the temperature dependence
-of the electrostatic term, and its infinite-dilution improvement is known to be modest and
-system-dependent. Our set is $477$ pairs against the ${\sim}29{,}000$-point benchmarks in the
-literature. We claim only that \textbf{we cannot establish a closure-fidelity lever on the data we can
+This is consistent with the published behaviour of the closure family rather than a challenge to it,
+and the comparison itself appears to be new: no large-scale infinite-dilution benchmark of the
+$2002\to2010$ step exists. The comprehensive assessment of this family~\cite{fingerhut2017}
+($29{,}173$ $\gamma^\infty$ points) evaluates COSMO-SAC-2010 and COSMO-SAC-dsp only, and its largest
+documented infinite-dilution step---adding the entire dispersion term, $2010\to$\,dsp---buys a
+${\sim}10$-point mean-absolute-deviation gain ($95\%\to86\%$), with a \emph{reversal} on aqueous
+systems where dsp is worse than 2010 ($203\%$ vs.\ $194\%$). Our null for the smaller $2002\to2010$
+step is in family with those magnitudes, and non-monotone progress across strata is documented
+behaviour, not an anomaly. Two things follow. COSMO-SAC-2010's demonstrated gains are concentrated in
+liquid--liquid equilibria and in the temperature dependence of the electrostatic term, where an
+infinite-dilution corner has no leverage. And the family's \emph{best} infinite-dilution accuracy---%
+$86\%$ MAD on $29{,}173$ points in the hands of its own developers---is itself external evidence that
+the closure is the low-fidelity component: the ceiling we locate is where the field's own benchmark
+places it. We claim only that \textbf{we cannot establish a closure-fidelity lever on the data we can
 compute}, not that the modern closure is not an improvement.
 
 The consequence for the paper is that we have no fix to offer. The ceiling we locate is not disposed
@@ -599,7 +615,9 @@ empty.
 
 \paragraph{The reference is itself imperfect, but conservatively so.} The external ground truth used
 to charge $\Bclos$ against $\Binsuf$ is quantum chemistry, not experiment: the VT-2005 profiles are
-computed for a single reference conformer and protonation state (\S\ref{sec:si-repro}). Any mismatch
+computed for a single reference conformer and protonation state (\S\ref{sec:si-repro}); that this
+matters is documented rather than hypothetical---the successor Delaware database revises the VT-2005
+molecular conformations for about a third of its compounds~\cite{bell2020cosmosac}. Any mismatch
 between that fixed state and the conformer/tautomer population under the measurement conditions enters
 as noise in the reference $\zstar$, and such noise raises $\Binsuf$---the input-sufficiency term---not
 $\Bclos$. It therefore works against the closure-dominance reading rather than for it: a truer,

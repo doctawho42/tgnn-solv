@@ -90,8 +90,9 @@ for the external reference one --- is the object of study in the grounding analy
 
 \paragraph{In-house closures are the primary instrument.} Both closures used in the
 fidelity measurement (\S\ref{sec:measure}) are our own differentiable implementations, so
-that every arm shares one code path and the swap isolates the kernel rather than an engine
-difference. The 2002 layer above reproduces the NIST reference
+that every arm shares one code path, removing the cross-implementation engine confound. Each arm
+consumes its own model-prescribed $\sigma$-averaging (Mullins for 2002, Hsieh for 2010); this is the
+specified use of each closure, and the family admits no input-fixed contrast (\S\ref{sec:measure}). The 2002 layer above reproduces the NIST reference
 COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE $0.003\,\ln\gamma$ on identical VT-2005
 profiles. For the modern arm we implement a differentiable COSMO-SAC-2010/dsp layer --- the
 donor/acceptor-typed three-profile representation, the temperature-dependent electrostatic
