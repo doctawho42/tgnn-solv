@@ -150,14 +150,14 @@ ax.text(mx0 + 0.43, 0.115, "No closure-fidelity lever established.", ha="center"
 # ===================== BOTTOM ROW: the claims ledger =====================
 ledger = [
     (0.02, "CERTIFIED", HELP, "#EAF1EE", [
-        r"Paradox: reference $\sigma$ makes it worse (3 seeds, $n{=}5608$)",
+        r"Symptom: reference $\sigma$ makes solubility worse (3 seeds, $n{=}5608$)",
         r"Exact split $B=B_{\mathrm{closure}}+B_{\mathrm{insuff}}$ (Lemma 2)",
         r"Our 2002 & 2010/dsp layers reproduce NIST ($0.003$/$10^{-4}$)",
     ]),
     (1.03, "LIKELY", AMBER, "#F6EEDD", [
-        r"Closure binds on low-$\gamma$ set: $P_{\mathrm{boot}}{\approx}0.78$",
+        r"Mechanism: latent $=$ low-rank, transferable surrogate ($n{=}44$)",
+        r"Closure is the larger term, low-$\gamma$ set: $P_{\mathrm{boot}}{\approx}0.78$",
         r"Attribution on the matched $n{=}60$ corner (no transfer)",
-        r"Latent $=$ low-rank, transferable surrogate ($n{=}44$)",
     ]),
     (2.04, "OPEN", GRAY, "#F0F0F0", [
         r"No fidelity lever: $2002{\to}2010$/dsp $+3\%$ ($n{=}477$, $P{=}0.62$)",
