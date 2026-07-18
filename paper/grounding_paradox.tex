@@ -270,7 +270,13 @@ near-degenerate information of order $x_2^2$ (numerically, condition number
 $2.3\times10^{5}$; \S\ref{sec:ident}).
 \end{lemma}
 \noindent This is the standard structural-identifiability picture for a
-collinear design \cite{raue2009,villaverde2016}; we prove it in the SLE form
+collinear design \cite{raue2009,villaverde2016}---equivalently the null-space picture of
+regularization theory, in which the component of an inverse fit the data leaves unconstrained
+lives in the null space of the forward map and is fixed only by the prior \cite{engl1996,hansen1998},
+restated for learned reconstruction as null-space networks \cite{schwab2019}. What is specific to our
+setting is that this indeterminate component is not projected out by construction but is left free
+under \emph{end-to-end} training of the SLE-coupled latent, and is closed only by external
+single-component supervision. We prove it in the SLE form
 (App.~\ref{sec:si-proofs}) and audit it numerically in \S\ref{sec:ident}. It is
 \emph{enabling background},
 not our headline: it explains why grounding an under-determined factor on
@@ -730,7 +736,13 @@ to buy.
 
 \paragraph{When a fixed-closure prior helps versus hurts.} The penalty sign rule (Prop.~\ref{prop:tax}) predicts
 \emph{when} to expect these negatives: a fixed-closure prior helps only when the estimation variance it
-saves exceeds its asymptotic bias $\Delta_\infty$ (both measurable). The variance benefit is largest at
+saves exceeds its asymptotic bias $\Delta_\infty$ (both measurable). The ``grounding helps iff the
+closure is well specified'' reading is thus a statement about the \emph{bias} channel ($\Delta_\infty$);
+even a correctly specified or true-valued input need not win on total error, because a fitted nuisance
+can be the more \emph{efficient} estimator---the semiparametric phenomenon by which an estimated
+propensity beats the known-true one \cite{hirano2003}, sharpest where plug-in efficiency is delicate
+\cite{robins1997}---and Prop.~\ref{prop:tax} already carries this, its variance term overturning the
+sign the bias term alone would predict. The variance benefit is largest at
 small $n$ and vanishes as data accumulate or as the black box nears the aleatoric floor, whereas
 $\Delta_\infty$ is set by the closure; a prior is therefore predicted to hurt precisely in the
 mature-data, low-noise, well-covered regime. The synthetic sweep (\S\ref{sec:dial}) and the pKa closure
