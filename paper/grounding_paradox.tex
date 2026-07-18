@@ -894,9 +894,10 @@ split, the controlled grounded-vs-free comparison, the closure--insufficiency de
 $n{=}60$ VT-2005-matchable pairs, the pKa second-domain measurement, and the synthetic fidelity sweep.
 The closure-fidelity contrast (\S\ref{sec:measure}) reports the \emph{fair} full-2002 error
 ($1.757$) from our in-house NIST-validated COSMO-SAC-2002 layer, each closure evaluated on its prescribed
-native averaging; the released code regenerates it from that layer, and the deposited \texttt{cCOSMO}
-cross-check artifact additionally carries the crippled single-channel 2002 diagnostic ($1.263$,
-\S\ref{sec:si-repro}). Two artifacts carry disclosed caveats (\S\ref{sec:si-repro}): the seed-$44$ oracle
+native averaging; \texttt{run\_fidelity\_lever\_fair2002.py} regenerates both the corner
+($1.757\!\to\!0.765$) and the representative ($n{=}477$, $1.911\!\to\!1.855$) contrasts and asserts they
+reproduce these values (with \texttt{cCOSMO} cross-checks), while the earlier deposited \texttt{cCOSMO}
+flip artifact additionally carries the crippled single-channel 2002 diagnostic ($1.263$). Two artifacts carry disclosed caveats (\S\ref{sec:si-repro}): the seed-$44$ oracle
 per-row file is truncated (the run-time three-seed aggregates are unaffected), and the three-seed
 surrogate run's per-run split provenance was not logged (its matched set is the committed $n{=}44$).
 

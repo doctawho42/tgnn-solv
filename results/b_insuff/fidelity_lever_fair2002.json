@@ -1,0 +1,46 @@
+{
+  "provenance": "in-house CosmoSacLayer (Mullins) vs CosmoSac2010Layer (Hsieh); UD native profiles",
+  "corner": {
+    "n": 60,
+    "n_solutes": 41,
+    "n_solvents": 17,
+    "mse_2002_fair": 1.7572443485672047,
+    "mse_2010": 0.7652680337756591,
+    "mse_2010dsp": 7.429199656359231,
+    "P_2010_better": 0.9857142857142858,
+    "ci90_2010": [
+      0.058606075499349417,
+      2.184201630501079
+    ],
+    "P_2010dsp_better": 0.2588972431077694,
+    "ci90_2010dsp": [
+      -18.125499778923427,
+      1.7834378682405772
+    ],
+    "ccosmo_2002_crippled": 1.263074488598969,
+    "ccosmo_2010": 0.765268129369544
+  },
+  "representative": {
+    "n": 477,
+    "n_solutes": 78,
+    "n_solvents": 36,
+    "mse_2002_fair": 1.910752586961005,
+    "mse_2010": 1.9782160906415591,
+    "mse_2010dsp": 1.8546434536736602,
+    "P_2010dsp_better": 0.619,
+    "ci90_2010dsp": [
+      -2.236583432894419,
+      1.3057241437975127
+    ]
+  },
+  "verification": {
+    "corner_fair2002_~1.757": true,
+    "corner_2010_~0.765": true,
+    "ccosmo_crippled_~1.263": true,
+    "our2010_matches_ccosmo2010": true,
+    "representative_fair2002_~1.911": true,
+    "representative_2010dsp_~1.855": true,
+    "representative_n_~477": true
+  },
+  "verified": true
+}
