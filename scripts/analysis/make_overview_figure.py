@@ -133,10 +133,10 @@ ax.text(mx0 + 0.43, 0.80, "The obvious fix---a better closure---\ndoes not hold 
         ha="center", va="center", fontsize=8.0, color=INK)
 # two paired-bar groups: MSE(2002) vs MSE(2010/dsp) on the curated corner and the representative set
 base_y, bw, scale = 0.34, 0.052, 0.165
-groups = [(mx0 + 0.10, "curated\n$n{=}60$", 1.757, 0.765, "$+56\\%$,\ngrazes 0"),
-          (mx0 + 0.52, "represent.\n$n{=}477$", 1.911, 1.855, "$+3\\%$,\nnot sig.")]
-for gx, glab, m02, m10, note in groups:
-    for dx, val, col, lab in [(-0.035, m02, SALMON, "2002"), (0.035, m10, TEAL, "2010/\ndsp")]:
+groups = [(mx0 + 0.10, "curated\n$n{=}60$", 1.757, 0.765, "$+56\\%$,\ngrazes 0", "2010\n(no dsp)"),
+          (mx0 + 0.52, "represent.\n$n{=}477$", 1.911, 1.855, "$+3\\%$,\nnot sig.", "2010/\ndsp")]
+for gx, glab, m02, m10, note, mlab in groups:
+    for dx, val, col, lab in [(-0.035, m02, SALMON, "2002"), (0.035, m10, TEAL, mlab)]:
         ax.add_patch(FancyBboxPatch((gx + dx - bw / 2, base_y), bw, val * scale,
                                     boxstyle="square,pad=0", fc=col, ec=INK, lw=0.7, zorder=3))
         ax.text(gx + dx, base_y + val * scale + 0.016, f"{val:.2f}", ha="center", va="bottom",

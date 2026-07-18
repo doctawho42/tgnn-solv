@@ -118,9 +118,12 @@ Prediction: both persist, because the mechanism is end-to-end training through a
 not the auxiliary terms. Confirmed at the level the ablation measures. The ablation re-measures the
 solubility \emph{paradox} (reference minus learned $\lnx$ MAE), the symptom, not the profile drift
 directly: on the full test set it is $+1.13$ (95\% CI $[0.88,1.38]$) under the minimal objective,
-\emph{larger} than the $+0.30$ ($[0.20,0.39]$) under the full one. The compensation is thus intrinsic and
-strengthens once the activity-grounding auxiliaries, the only pressure toward physics, are removed. This
-is \emph{consistent with} the compensating surrogate being intrinsic to end-to-end training through a
+\emph{larger} than the $+0.30$ ($[0.20,0.39]$) under the full one. This is the \emph{overall},
+solvent-dominated paradox, and it strengthens once the activity-grounding auxiliaries---the only pressure
+toward physics---are removed; on the both-reference subset ($n{=}297$ rows over the ${\approx}7$ VT-covered
+solutes) the sign in fact reverses ($-0.23$ minimal vs $+0.22$ full), so we read the ablation as evidence
+that the overall symptom is loss-robust, not as subset-level confirmation of the mechanism. It is
+\emph{consistent with} the compensating surrogate being intrinsic to end-to-end training through a
 misspecified closure rather than a regularisation artifact; it is an implication of the amplified paradox,
 not a direct re-measurement of $\lVert\hat\sigma-\sigma\rVert$ under the minimal run (the minimal-loss
 checkpoint was not retained, and the larger reference-arm error is consistent with more profile drift but

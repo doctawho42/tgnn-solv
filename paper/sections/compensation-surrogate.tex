@@ -55,8 +55,9 @@ transferable, not diffuse---distinguishes it from a random adaptation collapse.
 
 \paragraph{Why $\sigma$ is under-determined by activity.} The freedom that makes the surrogate possible
 is the closure's geometry. At infinite dilution the aggregate activity Fisher $J^{\top}J$
-($J=\partial\lngi/\partial\sigma$) is rank-one (participation ratio $1.0$, reproduced by finite
-differences), and the per-molecule Fisher that governs the drift has participation ratio ${\approx}1.4$
+($J=\partial\lngi/\partial\sigma$) is rank-one (participation ratio $1.0$ by autograd; finite differences
+decorrelate the redundant flat-profile coordinates and inflate it, \S\ref{sec:si-mech}, so we read
+$\mathrm{PR}$ against a permuted control, not absolutely), and the per-molecule Fisher that governs the drift has participation ratio ${\approx}1.4$
 of $51$ even at full solvent coverage: the activity map concentrates on the one or two hydrogen-bonding
 directions where the closure is least faithful (\S\ref{sec:map}) and is weakly sensitive to the rest,
 so the end-to-end head can move $\sigma$ along the low-sensitivity directions at little cost to the fit

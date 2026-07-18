@@ -154,10 +154,11 @@ across it---but measuring both levers together is future work.
   substitution lands almost entirely on the solvent, so we read it as the symptom that motivates the
   attribution above, not its carrier (\S\ref{sec:paradox}).
   \item \textbf{No established fidelity lever.} A fair, validated comparison of the 2002 and modern
-  (COSMO-SAC-2010/dsp) kernels does \emph{not} establish a fidelity gain on representative
-  infinite-dilution data ($+56\%$ on the curated $n{=}60$ corner with a margin grazing zero, $+3\%$ on
-  the representative $n{=}477$, not certified). We locate a ceiling and offer no fix inside this
-  closure family (\S\ref{sec:measure}).
+  (COSMO-SAC-2010) kernels does \emph{not} establish a fidelity gain on representative infinite-dilution
+  data: a large gain on the curated $n{=}60$ corner ($+56\%$, dispersion off, margin grazing zero) does
+  not carry to the representative $n{=}477$ set, where the modern kernel is no better than 2002 ($+3\%$
+  with dispersion, not certified). We locate a ceiling and offer no fix inside this closure family
+  (\S\ref{sec:measure}).
   \item \textbf{Not fixable downstream.} A post-hoc output residual recovers calibration but not
   accuracy, so the closure binding cannot be undone downstream---a \emph{structural} ceiling within
   this closure family (\S\ref{sec:gateb},~\S\ref{sec:discussion}).
@@ -525,8 +526,10 @@ profile dimensions, with two formamide pairs dropped on a canonical-SMILES tauto
 Bounds, not a point split (Lemma~\ref{prop:decomp}). Convention ``full'' =
 COSMO-SAC with the combinatorial term (size factor $r_i=V_i/r_0$ on the reference
 COSMO cavity volume, VT-2005); ``res'' = residual-only (the deployed default).
-$\Binsuf$ upper bounds are convention-independent estimates of
-$\Ex[\Var(m\mid\zstar)]$. The law-of-total-variance and out-of-fold rows are population \emph{upper}
+All rows are valid upper bounds on $\Binsuf=\Ex[\Var(m\mid\zstar)]$; the out-of-fold (RF/ridge) and
+k\textsc{nn} estimates are convention-independent, while the law-of-total-variance bound bins $g(\zstar)$
+and is convention-\emph{dependent} ($0.53$ full, $0.62$ res). The law-of-total-variance and out-of-fold
+rows are population \emph{upper}
 bounds on $\Binsuf$, so the $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ they feed is conservative
 (its bias runs \emph{against} the separation); the ``k\textsc{nn}'' row is a direct high-dimensional
 estimate that near-duplicate leakage deflates to the smallest value, so it is the least conservative
@@ -632,8 +635,9 @@ silently discards the donor and acceptor profiles while retaining the total area
 figure we previously reported for the 2002 kernel on the UD (University of Delaware) profiles ($\mathrm{MSE}\ 1.26$) is that
 crippled arm, not the reference closure; it is also not comparable to the $1.47$ we report for our own
 layer on the single-profile VT-2005 database. The fair full 2002 on the same UD data scores
-$\mathrm{MSE}\ 1.757$, which we validate two independent ways: our differentiable layer, and the NIST
-reference itself fed the same profile reformatted into the three-profile layout ($1.758$).
+$\mathrm{MSE}\ 1.757$ from our NIST-validated differentiable layer; the released
+\texttt{run\_fidelity\_lever\_fair2002.py} regenerates it and cross-checks the crippled single-channel
+arm ($1.26$) and the 2010 arm against the cCOSMO reference.
 
 \emph{(ii)}~There is consequently \textbf{no input-fixed design for this comparison, even in
 principle}, and we withdraw the claim that it is insufficiency-free by construction. The $\sigma$-profile
@@ -647,22 +651,25 @@ not merely unverified. Each closure evaluated on its prescribed native profile i
 the model, not a convention compromise, so the fair values $1.757$ and $1.911$ are the correct
 comparison rather than caveated ones.
 
-With that settled, the swap is measurable. On the matched corner the fair 2002 $\to$ 2010/dsp swap
-cuts the activity error from $1.757$ to $0.765$ ($n{=}60$; the two-way cluster bootstrap gives
-$P=0.98$ with a $90\%$ margin of $[+0.05,+2.16]$, i.e.\ grazing zero). On a representative
-IDAC$\,\cap\,$UD set---all temperatures, dispersion enabled, every arm validated against the NIST
-reference---the same swap gives $1.911\to1.855$ ($n{=}477$; $P=0.62$, margin $[-2.25,+1.31]$).
+With that settled, the swap is measurable, and it does not point the same way on curated and
+representative data. Across the fair 2002, the modern 2010 kernel with dispersion \emph{off}, and
+2010/dsp, the activity error is $1.757/0.765/0.785$ on the curated corner and $1.911/1.978/1.855$ on a
+representative IDAC$\,\cap\,$UD set (all temperatures, every arm validated against the NIST reference). On
+the corner the modern kernel cuts the error sharply ($1.757\to0.765$ with dispersion off, $n{=}60$;
+two-way cluster bootstrap $P=0.98$, $90\%$ margin $[+0.05,+2.16]$ grazing zero). On the representative set
+it does \emph{not}: with dispersion off the modern kernel is \emph{worse} than 2002 ($1.978$ vs $1.911$),
+and only the dispersion term recovers a marginal $+3\%$ ($1.855$, $P=0.62$, margin $[-2.25,+1.31]$). The
+corner reports the dispersion-off arm and the representative the dispersion arm because our transcribed
+dispersion term diverges from the reference on the corner's high-$\epsilon$ tail; there we take the
+dispersion value from the cCOSMO reference ($0.785$). These are different arms of the modern family, so we
+do not read the corner and the representative as a single small effect.
 
-\textbf{The two measurements are statistically compatible with a single small effect:} each interval
-contains the other's point estimate. The two headline claims do not treat this corner inconsistently.
-Contribution~(b), that the closure is the ceiling, is a property of the \emph{deployed} 2002 kernel,
-whose fair error $1.757$ sits above the insufficiency floor here; it does not depend on any upgrade.
-Contribution~(c), that no fidelity lever is established, is the separate question of whether
-\emph{upgrading} the kernel removes that ceiling---and the corner's large $2002\to2010$/dsp gain
-($1.757\to0.765$, $P=0.98$) does not carry to the representative set ($n{=}477$, $P=0.62$). So the corner
-is authoritative for what the deployed closure does, not for what an upgrade buys. We therefore do not
-read this as a lever that exists on our corner and fails to generalize, but as one small, unestablished
-effect of which the corner supplies a low-power estimate.
+Contribution~(b), that the closure is the ceiling, is a property of the \emph{deployed} 2002 kernel, whose
+fair error $1.757$ sits above the insufficiency floor here and does not depend on any upgrade. On the
+corner the closure upgrade is in fact \emph{better} supported ($P=0.98$) than that closure-dominance
+verdict ($P_{\mathrm{boot}}\approx0.78$); contribution~(c)---that no fidelity lever is established---
+therefore rests on the representative set, where the modern kernel does not beat 2002, not on the curated
+corner.
 
 This is consistent with the published behaviour of the closure family rather than a challenge to it,
 and the comparison itself appears to be new: no large-scale infinite-dilution benchmark of the
@@ -871,8 +878,8 @@ the penalty on representative data. We locate a ceiling and offer no lever; supe
 toward truth may be a second route, which we leave to future work. The mechanism behind the ceiling is
 the paper's central finding: on matched pairs the learned $\sigma$-profile is a closure-compensating
 surrogate rather than the physical quantity---an interpretability cost of physics-informed bottlenecks
-that the external latent makes measurable, a $51\pm2\%$, low-rank, transferable departure from truth
-across three seeds.
+that the external latent makes measurable: a low-rank, transferable departure from truth whose sign and
+structure are seed-stable, of an indicative within-version magnitude (${\sim}50\%$).
 
 \section*{Author contributions}
 \noindent
