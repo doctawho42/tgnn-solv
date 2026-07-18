@@ -55,8 +55,8 @@ def arrow(ax, p0, p1, color=INK, lw=1.6, style="-|>", ls="-", mut=12, rad=0.0):
                                  connectionstyle=f"arc3,rad={rad}"))
 
 
-fig = plt.figure(figsize=(11.4, 6.5))
-gs = fig.add_gridspec(2, 1, height_ratios=[1.0, 0.46], hspace=0.06,
+fig = plt.figure(figsize=(10.2, 6.4))
+gs = fig.add_gridspec(2, 1, height_ratios=[1.0, 0.50], hspace=0.06,
                       left=0.012, right=0.988, top=0.92, bottom=0.02)
 ax = fig.add_subplot(gs[0]); ax.set_xlim(0, 3.0); ax.set_ylim(0, 1.0); ax.axis("off")
 axl = fig.add_subplot(gs[1]); axl.set_xlim(0, 3.0); axl.set_ylim(0, 1.0); axl.axis("off")
@@ -90,7 +90,7 @@ arrow(ax, (0.51, 0.36), (0.52, 0.36), color=INK)
 arrow(ax, (0.59, 0.42), (0.59, 0.54), color=HURT, lw=1.4, style="-|>")
 ax.text(0.075, 0.205, "Premise: truer physical inputs $\\rightarrow$ better.", ha="left",
         va="center", fontsize=8.6, color=GRAY, zorder=2)
-ax.text(0.075, 0.115, "Here, the opposite. So which is wrong —", ha="left", va="center",
+ax.text(0.075, 0.115, "Here, the opposite. So which is wrong:", ha="left", va="center",
         fontsize=8.8, color=HURT, fontweight="bold", zorder=2)
 ax.text(0.075, 0.055, "the closure, or the inputs?", ha="left", va="center",
         fontsize=8.8, color=HURT, fontweight="bold", zorder=2)
@@ -117,7 +117,7 @@ ax.add_patch(FancyBboxPatch((bx + bw * frac, by), bw * (1 - frac), 0.10, boxstyl
 ax.text(bx + bw * frac / 2, by + 0.05, "closure is wrong", ha="center", va="center",
         fontsize=7.8, color=INK, zorder=4)
 ax.text(bx + bw * frac + bw * (1 - frac) / 2, by + 0.05, "inputs\ninsuff.", ha="center",
-        va="center", fontsize=6.0, color="#5F6B66", zorder=4)
+        va="center", fontsize=6.6, color="#5F6B66", zorder=4)
 ax.text(cx + 0.47, 0.29, r"$B_{\mathrm{closure}} > B_{\mathrm{insuff}}$"
         "   ($P_{\\mathrm{boot}}\\approx0.78$)",
         ha="center", va="center", fontsize=9.2, color=INK, fontweight="bold")
@@ -129,7 +129,7 @@ arrow(ax, (1.965, 0.5), (2.04, 0.5), color=INK, lw=2.2, mut=18)
 
 # ===================== ACT 3: no lever found (2002 vs 2010/dsp, two sets) =====================
 mx0 = 2.10
-ax.text(mx0 + 0.43, 0.80, "The obvious fix---a better closure---\ndoes not hold up on representative data.",
+ax.text(mx0 + 0.43, 0.80, "The obvious fix, a better closure,\ndoes not hold up on representative data.",
         ha="center", va="center", fontsize=8.0, color=INK)
 # two paired-bar groups: MSE(2002) vs MSE(2010/dsp) on the curated corner and the representative set
 base_y, bw, scale = 0.34, 0.052, 0.165
@@ -140,33 +140,33 @@ for gx, glab, m02, m10, note, mlab in groups:
         ax.add_patch(FancyBboxPatch((gx + dx - bw / 2, base_y), bw, val * scale,
                                     boxstyle="square,pad=0", fc=col, ec=INK, lw=0.7, zorder=3))
         ax.text(gx + dx, base_y + val * scale + 0.016, f"{val:.2f}", ha="center", va="bottom",
-                fontsize=5.6, color=INK)
-        ax.text(gx + dx, base_y - 0.032, lab, ha="center", va="top", fontsize=5.5, color=col)
-    ax.text(gx, base_y - 0.115, glab, ha="center", va="top", fontsize=6.6, color=INK, fontweight="bold")
-    ax.text(gx, 0.705, note, ha="center", va="bottom", fontsize=5.8, color=GRAY, style="italic")
+                fontsize=6.2, color=INK)
+        ax.text(gx + dx, base_y - 0.032, lab, ha="center", va="top", fontsize=6.0, color=col)
+    ax.text(gx, base_y - 0.120, glab, ha="center", va="top", fontsize=7.0, color=INK, fontweight="bold")
+    ax.text(gx, 0.705, note, ha="center", va="bottom", fontsize=6.2, color=GRAY, style="italic")
 ax.text(mx0 + 0.43, 0.115, "No closure-fidelity lever established.", ha="center", va="center",
         fontsize=8.0, color="#B5654A", fontweight="bold")
 
 # ===================== BOTTOM ROW: the claims ledger =====================
 ledger = [
     (0.02, "CERTIFIED", HELP, "#EAF1EE", [
-        r"Symptom: reference $\sigma$ makes solubility worse (3 seeds, $n{=}5608$)",
+        r"Reference $\sigma$ makes solubility worse (3 seeds, $n{=}5608$)",
         r"Exact split $B=B_{\mathrm{closure}}+B_{\mathrm{insuff}}$ (Lemma 2)",
-        r"pKa oracle-swap flip: meta/para helped, ortho hurt ($19$--$20/20$, $P{\geq}0.99$ both poles)",
+        r"pKa flip: helps meta/para, hurts ortho ($\approx20/20$)",
     ]),
     (1.03, "LIKELY", AMBER, "#F6EEDD", [
-        r"Mechanism: latent $=$ low-rank, transferable surrogate ($n{=}44$)",
-        r"Closure is the larger term, low-$\gamma$ set: $P_{\mathrm{boot}}{\approx}0.78$",
-        r"Attribution on the matched $n{=}60$ corner (no transfer)",
+        r"Latent is a low-rank transferable surrogate ($n{=}44$)",
+        r"Closure is the larger term (low-$\gamma$, $P_{\mathrm{boot}}{\approx}0.78$)",
+        r"Attribution holds on the matched $n{=}60$ corner",
     ]),
     (2.04, "OPEN", GRAY, "#F0F0F0", [
-        r"No fidelity lever: $2002{\to}2010$/dsp $+3\%$ ($n{=}477$, $P{=}0.62$)",
+        r"No fidelity lever: 2010/dsp $+3\%$ ($n{=}477$, $P{=}0.62$)",
         r"Transfer of the attribution to finite composition",
-        r"Whether the drift is the closure's signed inverse $J^{+}(m{-}g)$",
+        r"Whether the drift is the closure's inverse $J^{+}(m{-}g)$",
     ]),
 ]
 axl.text(0.02, 0.955, "What the paper establishes, graded by evidence",
-         ha="left", va="center", fontsize=8.6, color=INK, fontweight="bold")
+         ha="left", va="center", fontsize=9.2, color=INK, fontweight="bold")
 for x0, head, col, band, items in ledger:
     axl.add_patch(FancyBboxPatch((x0, 0.06), 0.94, 0.80,
                                  boxstyle="round,pad=0.006,rounding_size=0.02",
@@ -178,9 +178,9 @@ for x0, head, col, band, items in ledger:
     axl.text(x0 + 0.03, 0.76, head, ha="left", va="center", fontsize=8.6,
              color=col, fontweight="bold", zorder=3)
     for j, it in enumerate(items):
-        yy = 0.52 - j * 0.165
-        axl.scatter([x0 + 0.045], [yy], s=18, color=col, zorder=3, edgecolor="none")
-        axl.text(x0 + 0.075, yy, it, ha="left", va="center", fontsize=6.9,
+        yy = 0.52 - j * 0.170
+        axl.scatter([x0 + 0.042], [yy], s=20, color=col, zorder=3, edgecolor="none")
+        axl.text(x0 + 0.072, yy, it, ha="left", va="center", fontsize=7.8,
                  color=INK, zorder=3)
 
 fig.suptitle("When do reference physical inputs help a learned solubility model?",

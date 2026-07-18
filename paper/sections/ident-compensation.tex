@@ -8,6 +8,7 @@ Lemma~\ref{prop:ident} asserts that the crystal/activity split is not recoverabl
 closure-independent). Solubility alone leaves the crystal parameter
 near-unidentified; external single-component labels close the deficiency.}
 \label{tab:fisher}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrr}
 \toprule
 Supervision regime & $\mathrm{cond}(I)$ & CRLB $\mathrm{sd}(\dHfus)$ [J/mol] \\
@@ -16,7 +17,7 @@ Solubility only & $2.3\times10^{5}$ & $19{,}895$ \\
 \quad $+\ \Tm$ label & $5.4\times10^{3}$ & $3{,}151$ \\
 \quad $+\ \Tm + \dHfus$ & $1.6\times10^{3}$ & $1{,}689$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 Widening or narrowing the temperature window does not rescue the solubility-only case. A $\Delta T$ sweep moves the solubility-only conditioning from $1.7\times10^{3}$ at a wide window to $2.3\times10^{5}$ at $40$~K and to $1.9\times10^{16}$ at $10$~K, so multi-temperature data alone does not resolve the split; the two parameters remain confounded along the ideal-term direction. Restricting the activity slope rather than adding labels helps, but only partially: it cuts $\mathrm{sd}(\dHfus)$ to $8{,}251$~J/mol, still well above the label-supervised regimes. A second, model-side diagnostic must be read with more care, and we keep it out of the load-bearing argument. On the supervised test set, with a group-contribution (Joback) crystal reference, the crystal and activity residuals are strongly anti-correlated ($\mathrm{corr}(\delta\Phicry,\delta\lng)=-0.962$). This is an \emph{accounting artifact}, not evidence of a learned split: the two residuals sum to the (negative) $\lnx$ fit residual, so their correlation tends to $-1$ as the fit improves, a permutation null that destroys any learned coupling still reproduces most of it, and the model's own factors barely co-vary. The large apparent crystal offset is likewise not a usable mis-grounding metric --- it is dominated by reference error, since the Joback reference is physically implausible on these drug-like polycyclics, and capping predicted $\Tm$ at a physical bound collapses the offset from $\approx-7.1$ to $\approx-1.5$.\footnote{Permutation null (learned coupling destroyed) $-0.90$ to $-0.93$; model-factor $\mathrm{corr}(\hat\Phi,\lng)=-0.19$; the Joback reference predicts $\Tm>1000$\,K for a substantial fraction of these polycyclics.} We therefore rest the non-identifiability claim on the reference-free Fisher/CRLB audit above, and relegate the compensation figures to the SI (\S\ref{sec:si-mech}) as a cautionary diagnostic rather than a decomposition-quality measurement.

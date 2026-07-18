@@ -15,9 +15,8 @@ Staverman--Guggenheim normalisers $r_0=66.69$\,\AA$^3$, $q_0=79.53$\,\AA$^2$; th
 $\sigma$-profile grid is $51$ bins on $[-0.025,0.025]$\,e\,\AA$^{-2}$. The segment-activity
 fixed point is damped ($\lambda=0.7$) and run for $16$ iterations at train time and $30$
 at evaluation.
-\paragraph{A usage pitfall in \texttt{cCOSMO} (\texttt{COSMO1} on typed profiles), and a correction
-to our own earlier reading.} The $\mathrm{MSE}\ 1.26$ we previously reported for the 2002 kernel and
-withdraw in \S\ref{sec:measure} was a usage error on our part, worth documenting only because the
+\paragraph{A usage pitfall in \texttt{cCOSMO} (\texttt{COSMO1} on typed profiles).} Handing the 2002
+kernel a typed three-profile base produces a silently-wrong result, worth documenting because the
 library gives no warning. The reference implementation~\cite{bell2020cosmosac} pairs its 2002 model
 (\texttt{COSMO1}) with the single-profile Virginia Tech database; the demonstrated input is one
 untyped, Mullins-averaged profile. When \texttt{COSMO1} is instead handed a typed three-profile
@@ -26,11 +25,11 @@ untyped, Mullins-averaged profile. When \texttt{COSMO1} is instead handed a type
 total cavity area as prefactor, and returns a number without error. The prescribed way to recover a
 single 2002 profile from the typed set is instead their \emph{sum},
 $p=p_{\mathrm{nhb}}+p_{\mathrm{OH}}+p_{\mathrm{OT}}$ (Eq.~9 of Ref.~\cite{bell2020cosmosac}); the
-nonpolar-only read is neither that sum nor a documented mode. The crippled arm scores
-$\mathrm{MSE}\ 1.263$ on our matched corner, whereas the fair full 2002 --- the same molecule fed
+nonpolar-only read is neither that sum nor a documented mode. This single-channel arm scores
+$\mathrm{MSE}\ 1.263$ on the matched corner, whereas the fair full 2002 (the same molecule fed
 either to our differentiable layer or to \texttt{cCOSMO} with the full profile placed in the single
-(nonpolar) channel it actually reads --- scores $1.757/1.758$. We report this as an issue for the library maintainers (a silently-wrong return where
-an error would be safer), not as a defect of any published benchmark.
+nonpolar channel it actually reads) scores $1.757/1.758$. This is an issue for the library maintainers
+(a silently-wrong return where an error would be safer), not a defect of any published benchmark.
 \paragraph{Crystal head.} $\Tm=100+600\,\sigma(\cdot)\in[100,700]$\,K,
 $\dHfus=S_H\,\mathrm{softplus}(\cdot)$; the group-contribution $\Tm$ prior is affine-
 calibrated on the train split before entering the head.
@@ -44,9 +43,9 @@ full model has $5.40$M trainable parameters---capacity that the in-sample linear
 ($R^2\approx0.76$, \S\ref{sec:supporting}) indicates is not the binding constraint. The DirectGNN
 control shares this encoder, interaction, and readout verbatim.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig_architecture.pdf}
+\includegraphics[width=0.82\linewidth]{figs/fig_architecture.pdf}
 \caption{The model and the oracle substitution. Solute and solvent graphs pass
 through a shared encoder to a crystal head (the ideal term $\Phi(T)$) and a
 $\sigma$-profile head; the predicted profile $\hat z$ feeds the fixed COSMO-SAC closure
@@ -57,7 +56,7 @@ $\zstar$ (salmon). DirectGNN (grey) is the matched control---it shares the encod
 drops the closure, so the gap to the physics path is the asymptotic physics penalty
 $R_{\mathrm{phys}}-R_{\mathrm{direct}}$.}
 \label{fig:arch}
-\end{figure}
+\end{figure*}
 
 \paragraph{Encoder backbones.} The shared encoder has three interchangeable backbones: the
 headline message-passing network (MPNN); a hybrid local-message/global-attention graph transformer
@@ -122,15 +121,15 @@ directly: on the full test set it is $+1.13$ (95\% CI $[0.88,1.38]$) under the m
 \emph{larger} than the $+0.30$ ($[0.20,0.39]$) under the full one. This is the \emph{overall},
 solvent-dominated paradox, and it strengthens once the activity-grounding auxiliaries---the only pressure
 toward physics---are removed; on the both-reference subset ($n{=}297$ rows over the ${\approx}7$ VT-covered
-solutes) the sign in fact reverses ($-0.23$ minimal vs $+0.22$ full), so we read the ablation as evidence
-that the overall symptom is loss-robust, not as subset-level confirmation of the mechanism. It is
+solutes) the sign in fact reverses ($-0.23$ minimal vs $+0.22$ full), so the ablation is evidence
+that the overall symptom is loss-robust, not subset-level confirmation of the mechanism. It is
 \emph{consistent with} the compensating surrogate being intrinsic to end-to-end training through a
 misspecified closure rather than a regularisation artifact; it is an implication of the amplified paradox,
 not a direct re-measurement of $\lVert\hat\sigma-\sigma\rVert$ under the minimal run (the minimal-loss
 checkpoint was not retained, and the larger reference-arm error is consistent with more profile drift but
 does not isolate it from closure-path recalibration). The minimal model trains normally (validation
 $\lnx$ MAE $1.87$, within $0.1$ of the full-loss base), ruling out a degenerate-training reading
-(seed $42$; \texttt{scripts/analysis/run\_loss\_ablation\_analysis.py}).
+(seed $42$; \texttt{scripts/\allowbreak analysis/\allowbreak run\_loss\_ablation\_analysis.py}).
 
 \section{Proofs}
 \label{sec:si-proofs}
@@ -139,7 +138,10 @@ $\lnx$ MAE $1.87$, within $0.1$ of the full-loss base), ruling out a degenerate-
 Write $u=1/T$ and $h=\dHfus/\Rgas$, $u_m=1/\Tm$. At infinite dilution and with
 $\Delta C_p=0$ the observable is
 \[
-  \mu(u)=-\Phicry(u)-\lngi(u)=-h(u-u_m)-(c+d\,u)=-(h+d)\,u+(h u_m-c),
+\begin{aligned}
+  \mu(u)=-\Phicry(u)-\lngi(u)&=-h(u-u_m)-(c+d\,u)\\
+  &=-(h+d)\,u+(h u_m-c),
+\end{aligned}
 \]
 using $\lngi(u)=c+d\,u$ (affine in $u$ by hypothesis). Thus $\mu$ depends on the
 parameters $\theta=(\dHfus,\Tm,c,d)$ only through the pair
@@ -253,10 +255,12 @@ does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 
 \noindent The penalty-sign result (Proposition~\ref{prop:tax}, stated in the main text at
 \S\ref{sec:tax}) is proved here.
-\begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the asymptotic physics penalty)]
-Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$, so
-$\mathcal{T}(n)=\Delta_\infty-D(n)$ with $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.
-\emph{(i)} $\mathcal{T}(n)<0\iff D(n)>\Delta_\infty$, immediately.
+\begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the physics penalty)]
+\sloppy\relpenalty=0 \binoppenalty=0
+Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$ and
+$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$, so that
+$\mathcal{T}(n)=\Delta_\infty-D(n)$.
+\emph{(i)} $\mathcal{T}(n)<0$ exactly when $D(n)>\Delta_\infty$, immediately.
 \emph{(ii)} If $\Delta_\infty>0$ and $D(n)\to0$, choose $n^\star$ with $|D(n)|<\Delta_\infty$
 for all $n>n^\star$ (possible since $D(n)\to0$); then $\mathcal{T}(n)=\Delta_\infty-D(n)>0$. Monotonicity
 of $D$ is \emph{not} required for existence of $n^\star$; it is needed only for the stronger
@@ -264,10 +268,10 @@ claim ``$\mathcal{T}(n)>0$ at every $n$,'' which we treat as an empirical observ
 \emph{(iii)} Since $V_{\mathrm{phys}}(n)\ge0$, $D(n)\le V_{\mathrm{direct}}(n)$: the variance a
 prior can save is bounded by the control's own estimation variance. As the black box approaches
 the aleatoric floor $V_{\mathrm{direct}}(n)\to0$, so $\limsup_n D(n)\le0$; with both estimators
-consistent ($V_{\mathrm{phys}},V_{\mathrm{direct}}\to0$) one has $D(n)\to0$ and
-$\mathcal{T}(n)\to\Delta_\infty\ge0$. When the control is asymptotically Bayes ($R_{\mathrm{direct},\infty}
-=R_{\mathrm{free}}$) and A2 holds, $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{free}}=\Bclos-\Gamma$
-by \eqref{eq:gap}.
+consistent, so $V_{\mathrm{phys}},V_{\mathrm{direct}}\to0$, one has $D(n)\to0$ and
+$\mathcal{T}(n)\to\Delta_\infty\ge0$. When the control is asymptotically Bayes, so
+$R_{\mathrm{direct},\infty}=R_{\mathrm{free}}$, and A2 holds, then
+$\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{free}}=\Bclos-\Gamma$ by \eqref{eq:gap}.
 \end{proof}
 
 
@@ -359,6 +363,7 @@ not prove---the conjecture that the same closure misspecification drives the all
 residual-only convention; $\Binsuf^{\mathrm{up}}$ is the leakage-immune LOTV binning bound throughout,
 for even-handedness with the main-text headline). The separation holds in every stratum and grows with $\gamma$.}
 \label{tab:regime}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrr}
 \toprule
 Stratum & $n$ & $\overline{\lngi}$ & $\Binsuf\le$ & $\Bclos\ge$ \\
@@ -367,7 +372,7 @@ lower $\gamma$ ($m\le$ med.) & $30$ & $-0.40$ & $0.08$ & $0.95$ \\
 higher $\gamma$ ($m>$ med.)  & $30$ & $+1.90$ & $0.86$ & $1.07$ \\
 high $\gamma$ ($m>1.5$)      & $17$ & $+2.94$ & $0.67$ & $2.69$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 The closure/insufficiency decomposition (full/res conventions; law-of-total-variance (LOTV), random-forest (RF), ridge, and
