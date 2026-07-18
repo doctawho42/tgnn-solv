@@ -4,6 +4,15 @@ Multi-agent literature sweep (6 sub-literatures + synthesis) to test whether thr
 claims are already known. Verdict below; full agent findings in the workflow journal
 (`subagents/workflows/wf_4bdb7137-20b/journal.jsonl`).
 
+> **CORRECTION (post-review, committed 99efceb).** The CLAIM 1 "math fix" below ("drift-rank <=
+> n-rank(J), drift in ker(J)") is only half right. The drift has TWO orthogonal components: the FREE
+> one in ker(J) (dim ~ n-rank(J), = Lemma 1 non-identifiability, what Schwab/EHN/Hansen cover) and the
+> COMPENSATION in row(J) = ker(J)^perp (dim <= rank(J), low-rank because J is sloppy, = the S6.3
+> surrogate = J+(m-g)). Compensation MUST live in row(J) (cancelling B_closure requires moving g's
+> output), so "<= n-rank(J)" is right only for the free component; the original "<= rank(J)" was right
+> for the surrogate. In the paper the null-space cites now sit at Lemma 1 (the ker side), not
+> S sec:surrogate; the row/ker rank geometry stays out of this paper (ML paper only).
+
 ## CLAIM 1 — compensating drift lives in the null / low-sensitivity directions of the fixed map, selected by the prior
 **ESTABLISHED (renamed classical result). Niche NOT open.**
 - The confinement geometry is 1990s regularization theory: for a forward map, the fit's non-uniqueness
