@@ -55,9 +55,9 @@ def arrow(ax, p0, p1, color=INK, lw=1.6, style="-|>", ls="-", mut=12, rad=0.0):
                                  connectionstyle=f"arc3,rad={rad}"))
 
 
-fig = plt.figure(figsize=(10.2, 6.4))
-gs = fig.add_gridspec(2, 1, height_ratios=[1.0, 0.50], hspace=0.06,
-                      left=0.012, right=0.988, top=0.92, bottom=0.02)
+fig = plt.figure(figsize=(9.5, 6.05))
+gs = fig.add_gridspec(2, 1, height_ratios=[1.0, 0.52], hspace=0.06,
+                      left=0.012, right=0.988, top=0.925, bottom=0.02)
 ax = fig.add_subplot(gs[0]); ax.set_xlim(0, 3.0); ax.set_ylim(0, 1.0); ax.axis("off")
 axl = fig.add_subplot(gs[1]); axl.set_xlim(0, 3.0); axl.set_ylim(0, 1.0); axl.axis("off")
 
@@ -67,33 +67,32 @@ for i, (x0, title) in enumerate([(0.02, "1. The paradox"),
                                   (2.04, "3. No lever found")]):
     ax.add_patch(FancyBboxPatch((x0, 0.03), 0.94, 0.94, boxstyle="round,pad=0.006,rounding_size=0.02",
                                 fc=PAPER, ec="#E4DED8", lw=1.0, zorder=0))
-    ax.text(x0 + 0.03, 0.90, title, ha="left", va="center", fontsize=10.5,
+    ax.text(x0 + 0.03, 0.90, title, ha="left", va="center", fontsize=11.5,
             color=INK, fontweight="bold", zorder=1)
 
 # ===================== ACT 1: the paradox =====================
-# pipeline: molecule -> encoder -> sigma -> closure -> ln x2
-box(ax, 0.06, 0.55, 0.16, 0.12, "solute\n+ solvent", "white", fs=8.0)
-box(ax, 0.29, 0.55, 0.16, 0.12, "encoder\n$h$", TEAL, fs=8.6, tc="white", lw=0)
-box(ax, 0.52, 0.55, 0.14, 0.12, r"$\hat\sigma$", TEAL, fs=10.5, tc="white", lw=0)
-box(ax, 0.72, 0.55, 0.20, 0.12, "COSMO-SAC\nclosure $g$", SALMON, fs=8.2, tc=INK, lw=0)
-arrow(ax, (0.22, 0.61), (0.29, 0.61)); arrow(ax, (0.45, 0.61), (0.52, 0.61))
-arrow(ax, (0.66, 0.61), (0.72, 0.61))
-ax.text(0.965, 0.61, r"$\ln x_2$", ha="left", va="center", fontsize=9.5, color=INK)
-arrow(ax, (0.92, 0.61), (0.955, 0.61))
-ax.text(0.49, 0.72, "fixed, no fitted parameters", ha="center", va="bottom", fontsize=7.4,
+# pipeline (compact, fully inside the block): molecule -> encoder -> sigma -> closure -> ln x2
+box(ax, 0.08, 0.55, 0.16, 0.12, "solute\n+ solvent", "white", fs=7.5)
+box(ax, 0.26, 0.55, 0.155, 0.12, "encoder\n$h$", TEAL, fs=7.5, tc="white", lw=0)
+box(ax, 0.435, 0.55, 0.085, 0.12, r"$\hat\sigma$", TEAL, fs=11.5, tc="white", lw=0)
+box(ax, 0.54, 0.55, 0.24, 0.12, "COSMO-SAC\nclosure $g$", SALMON, fs=7.5, tc=INK, lw=0)
+arrow(ax, (0.24, 0.61), (0.26, 0.61)); arrow(ax, (0.415, 0.61), (0.435, 0.61))
+arrow(ax, (0.52, 0.61), (0.54, 0.61))
+arrow(ax, (0.78, 0.61), (0.805, 0.61))
+ax.text(0.82, 0.61, r"$\ln x_2$", ha="left", va="center", fontsize=11.0, color=INK)
+ax.text(0.50, 0.73, "fixed, no fitted parameters", ha="center", va="bottom", fontsize=7.8,
         color="#C67A54", style="italic")
 
-# the swap: reference sigma -> worse
-box(ax, 0.52, 0.30, 0.14, 0.12, r"$\sigma^\star$", SALMON, fs=10.5, tc=INK, lw=0)
-ax.text(0.44, 0.36, "swap in\nreference $\\sigma$", ha="right", va="center", fontsize=7.6, color=INK)
-arrow(ax, (0.51, 0.36), (0.52, 0.36), color=INK)
-arrow(ax, (0.59, 0.42), (0.59, 0.54), color=HURT, lw=1.4, style="-|>")
-ax.text(0.075, 0.205, "Premise: truer physical inputs $\\rightarrow$ better.", ha="left",
-        va="center", fontsize=8.6, color=GRAY, zorder=2)
-ax.text(0.075, 0.115, "Here, the opposite. So which is wrong:", ha="left", va="center",
-        fontsize=8.8, color=HURT, fontweight="bold", zorder=2)
-ax.text(0.075, 0.055, "the closure, or the inputs?", ha="left", va="center",
-        fontsize=8.8, color=HURT, fontweight="bold", zorder=2)
+# the swap: reference sigma replaces sigma-hat -> makes it worse (red arrow up into the pipeline)
+box(ax, 0.435, 0.30, 0.085, 0.12, r"$\sigma^\star$", SALMON, fs=11.5, tc=INK, lw=0)
+ax.text(0.415, 0.36, "swap in\nreference $\\sigma$", ha="right", va="center", fontsize=7.8, color=INK)
+arrow(ax, (0.4775, 0.42), (0.4775, 0.54), color=HURT, lw=1.6, style="-|>")
+ax.text(0.06, 0.205, "Premise: truer physical inputs $\\rightarrow$ better.", ha="left",
+        va="center", fontsize=9.2, color=GRAY, zorder=2)
+ax.text(0.06, 0.115, "Here, the opposite. So which is wrong:", ha="left", va="center",
+        fontsize=9.4, color=HURT, fontweight="bold", zorder=2)
+ax.text(0.06, 0.05, "the closure, or the inputs?", ha="left", va="center",
+        fontsize=9.4, color=HURT, fontweight="bold", zorder=2)
 
 # chevron 1 -> 2
 arrow(ax, (0.955, 0.5), (1.03, 0.5), color=INK, lw=2.2, mut=18)
@@ -101,9 +100,9 @@ arrow(ax, (0.955, 0.5), (1.03, 0.5), color=INK, lw=2.2, mut=18)
 # ===================== ACT 2: the measurement =====================
 cx = 1.03
 ax.text(cx + 0.47, 0.80, "the reference input has an external oracle (VT-2005),", ha="center",
-        va="center", fontsize=7.8, color=GRAY, style="italic")
+        va="center", fontsize=8.0, color=GRAY, style="italic")
 ax.text(cx + 0.47, 0.735, "so the reference-input error splits exactly:", ha="center",
-        va="center", fontsize=7.8, color=GRAY, style="italic")
+        va="center", fontsize=8.0, color=GRAY, style="italic")
 # B = B_closure + B_insuff bar
 ax.text(cx + 0.47, 0.62, r"$B \;=\; B_{\mathrm{closure}} \;+\; B_{\mathrm{insuff}}$",
         ha="center", va="center", fontsize=12.5, color=INK)
@@ -120,42 +119,42 @@ ax.text(bx + bw * frac + bw * (1 - frac) / 2, by + 0.05, "inputs\ninsuff.", ha="
         va="center", fontsize=6.6, color="#5F6B66", zorder=4)
 ax.text(cx + 0.47, 0.29, r"$B_{\mathrm{closure}} > B_{\mathrm{insuff}}$"
         "   ($P_{\\mathrm{boot}}\\approx0.78$)",
-        ha="center", va="center", fontsize=9.2, color=INK, fontweight="bold")
+        ha="center", va="center", fontsize=9.6, color=INK, fontweight="bold")
 ax.text(cx + 0.47, 0.135, "The ceiling is the CLOSURE,\nnot the inputs.", ha="center",
-        va="center", fontsize=9.0, color="#B5654A", fontweight="bold")
+        va="center", fontsize=9.4, color="#B5654A", fontweight="bold")
 
 # chevron 2 -> 3
 arrow(ax, (1.965, 0.5), (2.04, 0.5), color=INK, lw=2.2, mut=18)
 
 # ===================== ACT 3: no lever found (2002 vs 2010/dsp, two sets) =====================
-mx0 = 2.10
-ax.text(mx0 + 0.43, 0.80, "The obvious fix, a better closure,\ndoes not hold up on representative data.",
-        ha="center", va="center", fontsize=8.0, color=INK)
-# two paired-bar groups: MSE(2002) vs MSE(2010/dsp) on the curated corner and the representative set
-base_y, bw, scale = 0.34, 0.052, 0.165
-groups = [(mx0 + 0.10, "curated\n$n{=}60$", 1.757, 0.765, "$+56\\%$,\ngrazes 0", "2010\n(no dsp)"),
-          (mx0 + 0.52, "represent.\n$n{=}477$", 1.911, 1.855, "$+3\\%$,\nnot sig.", "2010/\ndsp")]
+# block spans [2.04, 2.98], centre 2.51; keep everything symmetric about it
+ax.text(2.51, 0.80, "The obvious fix, a better closure,\ndoes not hold up on representative data.",
+        ha="center", va="center", fontsize=8.2, color=INK)
+# two paired-bar groups centred in the block: MSE(2002) vs MSE(2010) on the curated corner and representative set
+base_y, bw, scale = 0.34, 0.055, 0.165
+groups = [(2.30, "curated\n$n{=}60$", 1.757, 0.765, "$+56\\%$,\ngrazes 0", "2010\n(no dsp)"),
+          (2.72, "represent.\n$n{=}477$", 1.911, 1.855, "$+3\\%$,\nnot sig.", "2010/\ndsp")]
 for gx, glab, m02, m10, note, mlab in groups:
-    for dx, val, col, lab in [(-0.035, m02, SALMON, "2002"), (0.035, m10, TEAL, mlab)]:
+    for dx, val, col, lab in [(-0.042, m02, SALMON, "2002"), (0.042, m10, TEAL, mlab)]:
         ax.add_patch(FancyBboxPatch((gx + dx - bw / 2, base_y), bw, val * scale,
                                     boxstyle="square,pad=0", fc=col, ec=INK, lw=0.7, zorder=3))
         ax.text(gx + dx, base_y + val * scale + 0.016, f"{val:.2f}", ha="center", va="bottom",
-                fontsize=6.2, color=INK)
-        ax.text(gx + dx, base_y - 0.032, lab, ha="center", va="top", fontsize=6.0, color=col)
-    ax.text(gx, base_y - 0.120, glab, ha="center", va="top", fontsize=7.0, color=INK, fontweight="bold")
-    ax.text(gx, 0.705, note, ha="center", va="bottom", fontsize=6.2, color=GRAY, style="italic")
-ax.text(mx0 + 0.43, 0.115, "No closure-fidelity lever established.", ha="center", va="center",
-        fontsize=8.0, color="#B5654A", fontweight="bold")
+                fontsize=6.6, color=INK)
+        ax.text(gx + dx, base_y - 0.032, lab, ha="center", va="top", fontsize=6.4, color=col)
+    ax.text(gx, base_y - 0.125, glab, ha="center", va="top", fontsize=7.4, color=INK, fontweight="bold")
+    ax.text(gx, 0.705, note, ha="center", va="bottom", fontsize=6.6, color=GRAY, style="italic")
+ax.text(2.51, 0.115, "No closure-fidelity lever established.", ha="center", va="center",
+        fontsize=8.2, color="#B5654A", fontweight="bold")
 
 # ===================== BOTTOM ROW: the claims ledger =====================
 ledger = [
     (0.02, "CERTIFIED", HELP, "#EAF1EE", [
-        r"Reference $\sigma$ makes solubility worse (3 seeds, $n{=}5608$)",
+        r"Reference $\sigma$ hurts solubility (3 seeds, $n{=}5608$)",
         r"Exact split $B=B_{\mathrm{closure}}+B_{\mathrm{insuff}}$ (Lemma 2)",
         r"pKa flip: helps meta/para, hurts ortho ($\approx20/20$)",
     ]),
     (1.03, "LIKELY", AMBER, "#F6EEDD", [
-        r"Latent is a low-rank transferable surrogate ($n{=}44$)",
+        r"Latent: low-rank transferable surrogate ($n{=}44$)",
         r"Closure is the larger term (low-$\gamma$, $P_{\mathrm{boot}}{\approx}0.78$)",
         r"Attribution holds on the matched $n{=}60$ corner",
     ]),
@@ -175,16 +174,16 @@ for x0, head, col, band, items in ledger:
     axl.add_patch(FancyBboxPatch((x0, 0.66), 0.94, 0.20,
                                  boxstyle="round,pad=0.006,rounding_size=0.02",
                                  fc=band, ec="none", zorder=1.5))
-    axl.text(x0 + 0.03, 0.76, head, ha="left", va="center", fontsize=8.6,
+    axl.text(x0 + 0.03, 0.76, head, ha="left", va="center", fontsize=9.2,
              color=col, fontweight="bold", zorder=3)
     for j, it in enumerate(items):
         yy = 0.52 - j * 0.170
-        axl.scatter([x0 + 0.042], [yy], s=20, color=col, zorder=3, edgecolor="none")
-        axl.text(x0 + 0.072, yy, it, ha="left", va="center", fontsize=7.8,
+        axl.scatter([x0 + 0.032], [yy], s=20, color=col, zorder=3, edgecolor="none")
+        axl.text(x0 + 0.055, yy, it, ha="left", va="center", fontsize=7.6,
                  color=INK, zorder=3)
 
 fig.suptitle("When do reference physical inputs help a learned solubility model?",
-             fontsize=12.5, color=INK, y=0.975)
+             fontsize=13.5, color=INK, y=0.975)
 for ext in ("pdf", "png"):
     fig.savefig(f"{OUT}.{ext}")
 print(f"wrote {OUT}.pdf / .png")
