@@ -38,6 +38,7 @@ SIGMA = REPO / "notebooks" / "data" / "processed_sigma_aux_stream" / "sigma_trai
 SIGMA_VAL = REPO / "notebooks" / "data" / "processed_sigma_aux_stream" / "sigma_val.csv"
 CRYSTAL = REPO / "notebooks" / "data" / "processed_crystal_aux_stream" / "crystal_train.csv"
 CFG = REPO / "configs" / "cosmo_sac.yaml"
+CFG_MIN = REPO / "configs" / "cosmo_sac_minimal.yaml"  # sol + crystal only; aux/reg loss terms zeroed
 SIGMA_ARTIFACT = REPO / "results" / "sigma_profile_artifact" / "sigma_profiles.csv"  # VT-2005 oracle σ
 
 # Throughput: the config default batch_size=64 with num_workers=0 leaves the GPU
@@ -434,13 +435,17 @@ def do_paradox_2x2(out: Path, device: str, ep_warm: int, ep_sle: int, seed: int 
     base = ck / "grounded_base.pt"; e2e = ck / "endtoend_sle.pt"
     common = ["--config", CFG, "--train-data", DATA / "train.csv", "--val-data", DATA / "val.csv",
               "--test-data", DATA / "test.csv", "--device", device, "--seed", seed]
-    # 1. grounded base: sigma warmup + phase-1 (physical sigma manifold), no SLE yet.
-    run(["python", "scripts/train.py", *common,
-         "--sigma-train-data", SIGMA, "--sigma-steps-per-epoch", "21",
-         "--crystal-train-data", CRYSTAL, "--crystal-steps-per-epoch", "8",
-         "--epochs-phase1", 5, "--epochs-phase2", 0, "--epochs-phase3", 0,
-         "--set", f"sigma_warmup_epochs={ep_warm}", "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET,
-         "--checkpoint", base])
+    # 1. grounded base: sigma warmup + phase-1 (physical sigma manifold), no SLE yet. Skip if already
+    #    trained (lets a restart reuse the base and only re-run the shorter SLE step).
+    if base.exists():
+        print(f"[paradox_2x2] reusing existing grounded base {base}", flush=True)
+    else:
+        run(["python", "scripts/train.py", *common,
+             "--sigma-train-data", SIGMA, "--sigma-steps-per-epoch", "21",
+             "--crystal-train-data", CRYSTAL, "--crystal-steps-per-epoch", "8",
+             "--epochs-phase1", 5, "--epochs-phase2", 0, "--epochs-phase3", 0,
+             "--set", f"sigma_warmup_epochs={ep_warm}", "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET,
+             "--checkpoint", base])
     # 2. end-to-end grounded (the paradox arm): full SLE, sigma head UNFROZEN.
     run(["python", "scripts/train.py", *common, "--resume", base, "--resume-extend",
          "--epochs-phase1", 0, "--epochs-phase2", ep_sle, "--epochs-phase3", 0,
@@ -460,6 +465,62 @@ def do_paradox_2x2(out: Path, device: str, ep_warm: int, ep_sle: int, seed: int 
          {"conditions": ["both_learned", "both_reference", "ref_solvent", "ref_solute"], "seed": seed,
           "analyze": "run_paradox_channel_split-style slice on the both-reference subset; MISMATCH=mean[c,d]-mean[a,b]"})
     print("[paradox_2x2] done -> 4 condition CSVs in", out, flush=True)
+
+
+def do_loss_ablation(out: Path, device: str, ep_warm: int, ep_sle: int, seed: int = 42):
+    """Minimal-loss ablation: does the compensating-surrogate paradox need the ~30-term objective?
+
+    Motivation: of ~32 loss components, 17 sit at weight 0 and most of the rest are small priors.
+    This retrains the WHOLE grounded pipeline under a minimal loss -- sol (task) + crystal (T_m,dH)
+    only, ALL auxiliary-grounding (hansen, gamma_inf) and regularisers zeroed (configs/
+    cosmo_sac_minimal.yaml). The sigma-EMD warmup stream and the crystal pool stream are kept, since
+    those ARE the single-component grounding whose necessity we do not question; what we test is the
+    dense per-pair aux/reg terms. Note hansen/gamma carry weight 0.5 in phase 1 of the full loss (not
+    the ~0.05 of phase 2), so dropping them is a real perturbation to how the sigma head is grounded.
+
+    Pre-registration: reports/PREDICTION_loss_ablation_2026-07-18.md. Emits the same both_learned /
+    both_reference conditions as paradox_2x2 so the paradox magnitude is directly comparable:
+    PARADOX = mean(R2 | both_reference) - mean(R2 | both_learned) on the both-reference subset
+    (negative => learned sigma beats the true reference => paradox present). If |PARADOX_min| stays
+    within ~1 sd of PARADOX_full, the surrogate mechanism is intrinsic, not a byproduct of the loss zoo.
+    """
+    if not SIGMA_ARTIFACT.exists():
+        raise RuntimeError(f"oracle sigma artifact missing: {SIGMA_ARTIFACT}")
+    if not CFG_MIN.exists():
+        raise RuntimeError(f"minimal-loss config missing: {CFG_MIN}")
+    ck = out / "ckpt"; ck.mkdir(parents=True, exist_ok=True)
+    base = ck / "grounded_base_min.pt"; e2e = ck / "endtoend_sle_min.pt"
+    common = ["--config", CFG_MIN, "--train-data", DATA / "train.csv", "--val-data", DATA / "val.csv",
+              "--test-data", DATA / "test.csv", "--device", device, "--seed", seed]
+    # 1. minimal grounded base: sigma warmup + crystal pool, but NO hansen/gamma per-pair grounding.
+    if base.exists():
+        print(f"[loss_ablation] reusing existing minimal base {base}", flush=True)
+    else:
+        run(["python", "scripts/train.py", *common,
+             "--sigma-train-data", SIGMA, "--sigma-steps-per-epoch", "21",
+             "--crystal-train-data", CRYSTAL, "--crystal-steps-per-epoch", "8",
+             "--epochs-phase1", 5, "--epochs-phase2", 0, "--epochs-phase3", 0,
+             "--set", f"sigma_warmup_epochs={ep_warm}", "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET,
+             "--checkpoint", base])
+    # 2. end-to-end grounded under the minimal loss (sigma head unfrozen -> the paradox arm).
+    run(["python", "scripts/train.py", *common, "--resume", base, "--resume-extend",
+         "--epochs-phase1", 0, "--epochs-phase2", ep_sle, "--epochs-phase3", 0,
+         "--set", "freeze_sigma_head_during_sle=false", "sigma_warmup_epochs=0",
+         "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET, "--checkpoint", e2e])
+    # 3. eval the minimal-loss endtoend checkpoint learned-vs-reference (paradox magnitude).
+    for tag, side in [("both_learned", None), ("both_reference", "both")]:
+        cmd = ["python", "scripts/analysis/export_checkpoint_predictions.py",
+               "--checkpoint", e2e, "--data", DATA / "test.csv",
+               "--output", out / f"cond_{tag}.csv", "--model-type", "tgnn", "--device", device,
+               "--summary", out / f"cond_{tag}.summary.json"]
+        if side:
+            cmd += ["--sigma-oracle", "--sigma-oracle-side", side, "--sigma-artifact", SIGMA_ARTIFACT]
+        run(cmd)
+    save(out, "loss_ablation_done.json",
+         {"conditions": ["both_learned", "both_reference"], "seed": seed, "config": str(CFG_MIN.name),
+          "analyze": "PARADOX_min = mean(R2|both_reference) - mean(R2|both_learned) on both-reference subset; "
+                     "compare to PARADOX_full from paradox_2x2"})
+    print("[loss_ablation] done -> 2 condition CSVs in", out, flush=True)
 
 
 def main():
@@ -538,6 +599,8 @@ def main():
         "supervised_sigma": lambda: do_supervised_sigma(args.out / "supervised_sigma", args.device, args.warm, args.sle),
         "paradox_2x2": lambda: do_paradox_2x2(args.out / "paradox_2x2", args.device, args.warm, args.sle,
                                               seed=int(str(args.seeds).split(",")[0])),
+        "loss_ablation": lambda: do_loss_ablation(args.out / "loss_ablation", args.device, args.warm, args.sle,
+                                                  seed=int(str(args.seeds).split(",")[0])),
         "surrogate_seeds": lambda: do_surrogate_seeds(args.out / "surrogate_seeds", args.device, args.warm, args.sle,
                                                        seeds=tuple(int(s) for s in str(args.seeds).split(","))),
     }
