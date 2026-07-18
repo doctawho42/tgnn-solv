@@ -96,14 +96,18 @@ compensating-surrogate mechanism, and a reusable instrument for locating a fixed
 Coupling a graph encoder to an explicit thermodynamic bottleneck is a common recipe for
 out-of-distribution solubility prediction: the model routes its prediction through interpretable
 physical factors, each groundable on abundant single-component data a black box cannot exploit. The
-expectation is that the closer the physical inputs are to the truth, the better the model predicts. On
-the activity branch this fails: feeding our model the external quantum-chemical reference
-$\sigma$-profile makes it \emph{worse}. The reason we dwell on this failure is what its \emph{cause}
-reveals. Because the latent has an external reference, we can \emph{measure} where the ceiling lies and
-attribute it to the closure rather than the inputs (impossible for a fitted latent, which has no
-oracle), and hold the learned latent against its reference---which shows that, trained end-to-end
-through a misspecified closure, the latent is driven off the physical quantity into a systematic,
-low-rank, transferable compensating surrogate (\S\ref{sec:surrogate}). A fair, validated comparison of
+expectation is that the closer the physical inputs are to the truth, the better the model predicts. This
+expectation fails: feeding our model the external quantum-chemical reference $\sigma$-profile makes its
+\emph{solubility} prediction \emph{worse} than its own learned profile does. We treat this
+reference-degradation as the motivating \emph{symptom} and rest the causal claims on the axis where the
+evidence is clean. On solubility the substitution falls almost entirely on the solvent---few drug-like
+solutes have a reference profile---so the clean, per-molecule attribution lives on the activity axis,
+where the latent has an external oracle and matched pairs. There the reference-input activity risk splits,
+with no model fit, into a closure-misspecification term and an input-insufficiency term, and on a matched
+infinite-dilution set the closure term is the larger on the bounds we can compute (\S\ref{sec:measure});
+and holding the learned latent against its reference gives the mechanism---trained end-to-end through a
+misspecified closure, it is driven off the physical quantity into a systematic, low-rank, transferable
+compensating surrogate (\S\ref{sec:surrogate}). A fair, validated comparison of
 the 2002 and modern (COSMO-SAC-2010/dsp) kernels, however, does \emph{not} establish that a
 higher-fidelity closure removes the penalty on representative data (\S\ref{sec:measure}): we locate
 the ceiling but cannot raise it by the standard route. Whether grounding helps is thus tied to
@@ -116,25 +120,30 @@ fidelity---measuring it directly is left to future work.
 
 \paragraph{Contributions.}
 Our thesis is that whether grounding a learned latent in reference physics helps or hurts is determined
-by the \emph{fidelity of the closure} that consumes the grounded inputs. Three findings stand
-cleanly---the paradox, a reusable measurement instrument, and the \emph{structure} of the
+by the \emph{fidelity of the closure} that consumes the grounded inputs. The causal weight rests on the
+activity axis, where the latent has an external oracle and matched pairs: the \emph{structure} of the
 compensating-surrogate mechanism (its sign and low-rank, transferable form robust; its magnitude a
-three-seed estimate, mean$\pm$sd)---while the closure-vs-inputs attribution is a caveated regime
-measurement. A second lever, how the latent is trained, interacts with fidelity---our warmup-manifold
-contrast and the supervised, higher-fidelity TeNNet-SAC \cite{yang2025tennet} point across it---but
-measuring both levers together is future work.
+three-seed estimate, mean$\pm$sd) and a reusable instrument that attributes the ceiling to the closure.
+The reference-degradation itself---the \emph{paradox}---is the motivating symptom; on solubility it is
+real and certified as an effect, but it falls almost entirely on the solvent channel, so we do not rest
+the attribution on it. A second lever, how the latent is trained, interacts with fidelity---our
+warmup-manifold contrast and the supervised, higher-fidelity TeNNet-SAC \cite{yang2025tennet} point
+across it---but measuring both levers together is future work.
 \begin{itemize}
-  \item \textbf{The grounding paradox.} Substituting reference VT-2005 $\sigma$-profiles into the
-  fixed COSMO-SAC closure degrades $\lngi$ and $\lnx$ prediction relative to a free learned head---the
-  opposite of the intended benefit ($3$ seeds, $n{=}5608$, three injection controls; \S\ref{sec:paradox}).
+  \item \textbf{The mechanism where grounding hurts.} Held against its own reference on matched pairs
+  ($n{=}44$), the end-to-end ``physical'' latent is a low-rank, out-of-sample-transferable
+  closure-\emph{compensating} surrogate, not the physical quantity---why grounding hurts here, and why a
+  supervised-$\sigma$ model finds the opposite (\S\ref{sec:surrogate}).
   \item \textbf{A measurement instrument.} Because the latent $\zstar$ (the reference $\sigma$-profile)
-  has external ground truth, the reference-input risk splits \emph{exactly}, with no model fit,
-  as $B=\Bclos+\Binsuf$ (Lemma~\ref{prop:decomp}); on the matched regime the closure term binds
-  (\S\ref{sec:measure}).
-  \item \textbf{The mechanism where grounding hurts.} The end-to-end ``physical'' latent becomes a
-  low-rank, out-of-sample-transferable closure-\emph{compensating} surrogate, not the physical
-  quantity---why grounding hurts here, and why a supervised-$\sigma$ model finds the opposite
-  (\S\ref{sec:surrogate}).
+  has external ground truth, the reference-input activity risk splits \emph{exactly}, with no model fit,
+  as $B=\Bclos+\Binsuf$ (Lemma~\ref{prop:decomp}); on the matched regime ($n{=}60$) the closure term is
+  the larger on the bounds we can compute (likely; $P_{\mathrm{boot}}\approx0.78$, \S\ref{sec:measure}).
+  \item \textbf{The grounding paradox, as motivating symptom.} Substituting reference VT-2005
+  $\sigma$-profiles into the fixed COSMO-SAC closure degrades $\lnx$ prediction relative to a free learned
+  head---the opposite of the intended benefit ($3$ seeds, $n{=}5608$, three injection controls). The
+  effect is certified, but because only a handful of drug-like test solutes have a reference profile the
+  substitution lands almost entirely on the solvent, so we read it as the symptom that motivates the
+  attribution above, not its carrier (\S\ref{sec:paradox}).
   \item \textbf{No established fidelity lever.} A fair, validated comparison of the 2002 and modern
   (COSMO-SAC-2010/dsp) kernels does \emph{not} establish a fidelity gain on representative
   infinite-dilution data ($+56\%$ on the curated $n{=}60$ corner with a margin grazing zero, $+3\%$ on
@@ -160,7 +169,8 @@ quantum-chemical reference $\sigma^\star$ (VT-2005) makes the prediction \emph{w
 head---so which is wrong, the closure or the inputs? \emph{(2)~The measurement:} because the latent
 has an external oracle, the reference-input risk splits \emph{exactly} into a
 closure-misspecification part $\Bclos$ and an input-insufficiency part $\Binsuf$; on the matched
-low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P_{\mathrm{boot}}\approx0.78$). \emph{(3)~No lever found:} on
+low-$\gamma$ set the closure term is the larger on the bounds we can compute ($\Bclos>\Binsuf$, likely;
+$P_{\mathrm{boot}}\approx0.78$). \emph{(3)~No lever found:} on
 representative data a fair, validated comparison of the 2002 and modern (COSMO-SAC-2010/dsp) kernels
 does \emph{not} establish that raising closure fidelity removes the penalty---we locate the ceiling
 but offer no fix inside this closure family. \emph{Bottom:} every claim in the paper graded by strength of evidence
@@ -413,13 +423,13 @@ against known work on model discrepancy \cite{kennedy2001,brynjarsdottir2014}, p
 \section{Results}
 \label{sec:results}
 
-Two results carry the paper: the grounding paradox (\S\ref{sec:paradox}) and its mechanism
-(\S\ref{sec:surrogate})---the end-to-end latent becomes a compensating surrogate that cancels the
-closure's error rather than reporting the physical quantity. The decomposition (\S\ref{sec:measure})
-is the \emph{instrument} that makes the failure legible: on a matched regime it locates the ceiling
-in the low-fidelity closure rather than its inputs; whether a standard higher-fidelity closure
-(COSMO-SAC-2010/dsp) moves it, however, we could not establish on representative data
-(\S\ref{sec:measure}). The remaining sections---the synthetic
+The mechanism (\S\ref{sec:surrogate}) and the instrument that measures it (\S\ref{sec:measure}) carry the
+paper. Held against its reference on matched pairs, the end-to-end latent is a compensating surrogate that
+cancels the closure's error rather than reporting the physical quantity, and the decomposition locates the
+ceiling in the low-fidelity closure rather than its inputs. The grounding paradox (\S\ref{sec:paradox}) is
+the motivating \emph{symptom} that makes the failure visible, not the carrier of the attribution; whether a
+standard higher-fidelity closure (COSMO-SAC-2010/dsp) moves the ceiling we could not establish on
+representative data (\S\ref{sec:measure}). The remaining sections---the synthetic
 sweep (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa closure
 (\S\ref{sec:pka})---stress-test and generalize the account, with further diagnostics in the ESI.
 
@@ -432,20 +442,32 @@ foot of Fig.~\ref{fig:overview}. We make no accuracy claim.
 \label{sec:paradox}
 % Artifacts: results/e5_sigma_grounding/seed_{42,43,44}/comparison.json (3-seed e5 lock, n=5608); aggregate THREE_SEED_SUMMARY.md via run_e5_comparison.py.
 % Triple confirmation: eval-oracle / true-at-train / channel-swap.
-Feeding reference $\sigma$-profiles into the closure degrades it rather than improving it,
-in both the activity and the solubility target, and it fails the way a \emph{misspecified
-map} does---not the way missing information would. In the solubility target the effect
-erases any positive $R^2$ (Fig.~\ref{fig:paradox}): the model predicts solubility better
-\emph{from its own learned $\sigma$-profile} than when \emph{given the external reference one}
-(MAE $1.85$ vs $2.25$, in $\lnx$ units). Two facts pin the cause on the map. First,
-restoring the physically \emph{more} complete Staverman--Guggenheim combinatorial term
-(the entropic contribution from solute--solvent size and shape mismatch) \emph{increases}
-error---what a wrong map does, not what a missing input would. Second, on the activity
-target ($\lngi$, $n{=}60$ matched pairs) the fixed reference-input closure sits about $4\times$
-above the irreducible-variance floor a flexible regressor reaches (\S\ref{sec:measure}),
-under-predicting $\lngi$ with a systematic bias (SI, Fig.~\ref{fig:parity}). The paradox survives three controls---the evaluation-time
-oracle, injection of the reference profile \emph{at training} (MAE $1.98$), and a channel-swap
-($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring artifact.
+Substituting the external reference $\sigma$-profile for the model's learned one degrades its
+\emph{solubility} prediction, and it fails the way a \emph{misspecified map} does---not the way missing
+information would. The effect erases any positive $R^2$ (Fig.~\ref{fig:paradox}): the model predicts
+solubility better \emph{from its own learned $\sigma$-profile} than when \emph{given the external
+reference one} (MAE $1.85$ vs $2.25$, in $\lnx$ units), and it survives three controls---the
+evaluation-time oracle, injection of the reference profile \emph{at training} (MAE $1.98$), and a
+channel-swap ($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring artifact. That the
+fault is a wrong \emph{map} rather than a missing input is established on the activity axis, where the
+reference input is clean: restoring the physically \emph{more} complete Staverman--Guggenheim
+combinatorial term (the entropic contribution from solute--solvent size and shape mismatch)
+\emph{increases} error, and on $n{=}60$ matched pairs the fixed reference-input closure sits about
+$4\times$ above the irreducible-variance floor a flexible regressor reaches (\S\ref{sec:measure}),
+under-predicting $\lngi$ with a systematic bias (SI, Fig.~\ref{fig:parity}).
+
+\paragraph{Why the solubility paradox is a symptom, not the carrier.} The solubility effect is real and
+certified (three seeds, three controls), but it cannot carry the closure-versus-input attribution, for a
+data reason. Drug-like solutes are essentially absent from the VT-2005 reference set, so only a handful of
+test solutes have a reference $\sigma$-profile at all; on solubility the reference substitution therefore
+falls almost entirely on the \emph{solvent} channel, and the both-channel substitution the attribution
+would need is available for too few solutes to support a per-molecule conclusion (a fresh $2\times2$
+channel-substitution test lands on ${\approx}7$ solutes, too few to separate the cause either way).
+Computing reference profiles for drug-like solutes is possible in principle but costs hundreds of
+quantum-chemistry runs on large, multi-conformer molecules, for an effect already certified as a
+phenomenon---not worth it. We therefore carry the causal claim on the activity axis, where the reference
+input is clean and matched: the decomposition ($n{=}60$, \S\ref{sec:measure}) and the compensating
+surrogate ($n{=}44$, \S\ref{sec:surrogate}).
 
 \begin{figure*}[t]
 \centering
@@ -458,8 +480,11 @@ physics closures trail it (the asymptotic physics penalty). Replacing the model'
 $\sigma$-profile with the \emph{reference} VT-2005 profile (the $\sigma$-oracle,
 salmon) gives the \emph{worst} arm, collapsing $R^2$ to $\approx0$ ($-0.03\pm0.04$):
 by MAE the model predicts solubility distinctly better from its invented $\sigma$
-($1.85$) than from the reference one ($2.25$). Per-arm exact values are transcribed
-in the SI.}
+($1.85$) than from the reference one ($2.25$). This is the paper's motivating \emph{symptom}:
+because few drug-like solutes have a reference profile, the substitution here lands almost
+entirely on the solvent, so the closure-versus-input attribution is carried on the clean activity
+axis (\S\ref{sec:measure},~\S\ref{sec:surrogate}), not on this panel. Per-arm exact values are
+transcribed in the SI.}
 \label{fig:paradox}
 \end{figure*}
 
@@ -792,7 +817,9 @@ abundant, low-noise data.
 regimes}: the paradox is a finite-composition solubility effect, but the closure--insufficiency
 measurement is made on the infinite-dilution/$298$\,K/low-$\gamma$ VT-2005-matchable regime, so the
 transfer of the attribution back to the paradox's own regime is argued from in-regime signs, not
-measured there (\S\ref{sec:scope}). (ii)~$\Binsuf$ is upper-bounded, not point-identified (no
+measured there (\S\ref{sec:scope}); moreover, because few drug-like solutes have a VT-2005 reference
+profile, the solubility substitution falls almost entirely on the solvent channel, so the clean
+both-channel evidence is on the activity axis rather than the solubility axis. (ii)~$\Binsuf$ is upper-bounded, not point-identified (no
 replicates at fixed $\zstar$); the smoothness-free Jensen bound assumes $m$ and $g$ share the $\lngi$
 reference state, which we verify (\S\ref{sec:measure}), so the mean offset is genuine decoder bias, not
 a units artifact. (iii)~The constant-offset margin is convention-specific and inverts under the
@@ -821,11 +848,11 @@ practical implication is a caution, not a fix: within this closure, truer
 inputs surface its bias and an output-space correction is inert, and a fair, validated comparison of
 the 2002 and modern (COSMO-SAC-2010/dsp) kernels does not establish that upgrading the closure removes
 the penalty on representative data. We locate a ceiling and offer no lever; supervising the latent
-toward truth may be a second route, which we leave to future work. The same grounding also indicates,
-where the closure binds, that the learned $\sigma$-profile is a closure-compensating surrogate rather
-than the physical quantity---an interpretability cost of physics-informed bottlenecks that the
-external latent makes measurable: a $51\pm2\%$, low-rank, transferable departure from truth across
-three seeds.
+toward truth may be a second route, which we leave to future work. The mechanism behind the ceiling is
+the paper's central finding: on matched pairs the learned $\sigma$-profile is a closure-compensating
+surrogate rather than the physical quantity---an interpretability cost of physics-informed bottlenecks
+that the external latent makes measurable, a $51\pm2\%$, low-rank, transferable departure from truth
+across three seeds.
 
 \section*{Author contributions}
 \noindent
