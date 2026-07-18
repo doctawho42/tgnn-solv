@@ -196,18 +196,20 @@ def rdkit_oracle_demo():
 
 def make_figure(records, fig_dir):
     import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
+    # soft-pastel base palette (shared with make_paradox_figures.py / fig_overview)
+    SALMON, TEAL, BLUE = "#E8A98C", "#7FB5A6", "#8FB3DA"
     fig_dir.mkdir(parents=True, exist_ok=True)
     fid = sorted([r for r in records if r.sweep == "fidelity"], key=lambda r: -r.knob)
     ins = sorted([r for r in records if r.sweep == "insufficiency"], key=lambda r: r.knob)
     fig, ax = plt.subplots(1, 2, figsize=(9.5, 4.2))
-    ax[0].plot([r.knob for r in fid], [r.b_clos_true for r in fid], "s-", label=r"$B_{\rm clos}$ (truth)")
-    ax[0].plot([r.knob for r in fid], [r.gamma for r in fid], "o-", label=r"$\Gamma$ (oracle gap)")
-    ax[0].plot([r.knob for r in fid], [r.b_clos_jensen_lb for r in fid], "^--", label="Jensen LB", alpha=.7)
+    ax[0].plot([r.knob for r in fid], [r.b_clos_true for r in fid], "s-", color=SALMON, label=r"$B_{\rm clos}$ (truth)")
+    ax[0].plot([r.knob for r in fid], [r.gamma for r in fid], "o-", color=TEAL, label=r"$\Gamma$ (oracle gap)")
+    ax[0].plot([r.knob for r in fid], [r.b_clos_jensen_lb for r in fid], "^--", color=BLUE, label="Jensen LB", alpha=.7)
     ax[0].set_xlabel("Hammett closure fidelity  F"); ax[0].set_ylabel(r"pKa$^2$ units")
     ax[0].set_title("Resonance-saturation sweep (loss=0):\n$\\Gamma$ tracks $B_{\\rm clos}$"); ax[0].invert_xaxis()
     ax[0].legend(fontsize=8)
-    ax[1].plot([r.knob for r in ins], [r.b_clos_true for r in ins], "s-", label=r"$B_{\rm clos}$ (=0)")
-    ax[1].plot([r.knob for r in ins], [r.gamma for r in ins], "o-", label=r"$\Gamma$ (oracle gap)")
+    ax[1].plot([r.knob for r in ins], [r.b_clos_true for r in ins], "s-", color=SALMON, label=r"$B_{\rm clos}$ (=0)")
+    ax[1].plot([r.knob for r in ins], [r.gamma for r in ins], "o-", color=TEAL, label=r"$\Gamma$ (oracle gap)")
     ax[1].axhline(0, color="0.6", lw=.8, ls="--")
     ax[1].set_xlabel("ortho/steric insufficiency (fraction)"); ax[1].set_ylabel(r"pKa$^2$ units")
     ax[1].set_title("Ortho-insufficiency sweep (F=1):\n$B_{\\rm clos}=0$ yet $\\Gamma>0$ (Counterexample A)")

@@ -277,12 +277,17 @@ def make_figures(dial: list[DialRecord], conf: list[ConflationRecord], fig_dir: 
     fig, ax = plt.subplots(figsize=(6.0, 4.2))
     pretty = {"linear": "linear", "monotone_nonlinear": "monotone nonlinear",
               "kinetics_exp": "kinetics (exp.)", "pde_field": "PDE field"}
+    # explicit soft-pastel base colours (do not rely on the style cycle, whose 4th
+    # entry is off-palette): SALMON/TEAL/BLUE/PURPLE from make_paradox_figures.py
+    fam_colors = {"kinetics_exp": "#7FB5A6", "linear": "#E8A98C",
+                  "monotone_nonlinear": "#8FB3DA", "pde_field": "#B7A5DC"}
     for fam in fams:
         ys = []
         for F in Fs:
             vals = [r.delta_r2 for r in dial if r.family == fam and r.fidelity == F]
             ys.append(np.mean(vals))
-        ax.plot(Fs, ys, marker="o", label=pretty.get(fam, fam.replace("_", " ")))
+        ax.plot(Fs, ys, marker="o", color=fam_colors.get(fam),
+                label=pretty.get(fam, fam.replace("_", " ")))
     ax.axhline(0, color="0.6", lw=0.8, ls="--")
     ax.set_xlabel("closure fidelity  F   (1 = exact map)")
     ax.set_ylabel(r"true-input penalty  $\Delta R^2 = R^2_{\rm oracle}-R^2_{\rm head}$")
