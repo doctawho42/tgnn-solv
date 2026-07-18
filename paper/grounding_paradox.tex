@@ -135,7 +135,7 @@ measuring both levers together is future work.
   low-rank, out-of-sample-transferable closure-\emph{compensating} surrogate, not the physical
   quantity---why grounding hurts here, and why a supervised-$\sigma$ model finds the opposite
   (\S\ref{sec:surrogate}).
-  \item \textbf{No fidelity lever, established.} A fair, validated comparison of the 2002 and modern
+  \item \textbf{No established fidelity lever.} A fair, validated comparison of the 2002 and modern
   (COSMO-SAC-2010/dsp) kernels does \emph{not} establish a fidelity gain on representative
   infinite-dilution data ($+56\%$ on the curated $n{=}60$ corner with a margin grazing zero, $+3\%$ on
   the representative $n{=}477$, not certified). We locate a ceiling and offer no fix inside this
@@ -382,11 +382,26 @@ the cheap symptom that motivates it}.
 
 \paragraph{When a fixed prior loses; and scope.}\label{sec:tax} The deployed question---does the
 \emph{trained} physics model beat the \emph{trained} black box at sample size $n$?---follows a sign
-rule: writing each trained risk as an asymptote plus estimation variance, a fixed-closure prior helps
-only when the variance it saves exceeds its asymptotic bias $\Delta_\infty$, so if $\Delta_\infty>0$
-there is a critical budget $n^\star$ beyond which physics always loses (Prop.~\ref{prop:tax},
-App.~\ref{sec:si-proofs}). There is no ``optimal grounding'' theorem, and the decomposition does not
-improve out-of-distribution accuracy (\S\ref{sec:results}). Everything here is measured at infinite
+rule. Writing each trained risk as an asymptote plus estimation variance,
+$\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
+$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
+$V(n)\downarrow0$, the \emph{asymptotic physics penalty} is
+$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ with
+$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.
+\begin{proposition}[Sign of the asymptotic physics penalty]\label{prop:tax}
+(i)~$\mathcal{T}(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
+the variance a constrained prior saves must exceed its asymptotic bias. (ii)~If
+$\Delta_\infty>0$ and the variance gap vanishes ($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$),
+there is a critical budget $n^\star$ beyond which $\mathcal{T}(n)>0$ for all $n>n^\star$. (iii)~Since
+$V_{\mathrm{direct}}-V_{\mathrm{phys}}\le V_{\mathrm{direct}}$, as the black box nears the
+aleatoric floor ($V_{\mathrm{direct}}\to0$) the penalty tends to $\Delta_\infty$; this limit is
+$\ge0$ when the control is asymptotically Bayes ($R_{\mathrm{direct},\infty}=R_{\mathrm{free}}$),
+not merely from $V_{\mathrm{direct}}\to0$.
+\end{proposition}
+\noindent The consequence for grounding is~(ii): a fixed-closure prior with strictly positive asymptotic
+bias always loses once the budget passes $n^\star$ (proof in App.~\ref{sec:si-proofs}). There is no
+``optimal grounding'' theorem, and the decomposition does not improve out-of-distribution accuracy
+(\S\ref{sec:results}). Everything here is measured at infinite
 dilution, $298$\,K, on the VT-2005-matchable low-$\gamma$ regime; transfer to the finite-composition
 regime the paradox lives in is a conjecture, not a result (\S\ref{sec:scope}). We read these results
 against known work on model discrepancy \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
@@ -472,8 +487,11 @@ Bounds, not a point split (Lemma~\ref{prop:decomp}). Convention ``full'' =
 COSMO-SAC with the combinatorial term (size factor $r_i=V_i/r_0$ on the reference
 COSMO cavity volume, VT-2005); ``res'' = residual-only (the deployed default).
 $\Binsuf$ upper bounds are convention-independent estimates of
-$\Ex[\Var(m\mid\zstar)]$; ``k\textsc{nn}'' is a direct high-dimensional estimate
-(biased upward), the others are law-of-total-variance / out-of-fold upper bounds.
+$\Ex[\Var(m\mid\zstar)]$. The law-of-total-variance and out-of-fold rows are population \emph{upper}
+bounds on $\Binsuf$, so the $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ they feed is conservative
+(its bias runs \emph{against} the separation); the ``k\textsc{nn}'' row is a direct high-dimensional
+estimate that near-duplicate leakage deflates to the smallest value, so it is the least conservative
+input and is kept out of the load-bearing bound.
 The \emph{load-bearing} separation is the leakage-immune (LOTV)
 $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ row, which exceeds $\Binsuf$ under
 \emph{both} conventions ($1.27$, $0.85>0.62$). The convention-specific constant-offset
@@ -489,7 +507,7 @@ MSE$_{\text{total}}=\Bclos+\Binsuf$ (exact)      & $1.80$ & $1.47$ \\
 $\Bclos$ lower via MSE$-\Binsuf^{\text{up}}$ (LOTV; \emph{leakage-immune, load-bearing}) & $1.27$ & $0.85$ \\
 $\Binsuf$ upper (bin $g$; law of total variance)  & $0.53$ & $0.62$ \\
 $\Binsuf$ upper (RF / Ridge out-of-fold)          & $0.56/0.62$ & same \\
-$\Binsuf$ (k\textsc{nn}-in-$\zstar$, convention-indep., biased up) & $0.40$ & $0.40$ \\
+$\Binsuf$ (k\textsc{nn}-in-$\zstar$, convention-indep., deflated / least conservative) & $0.40$ & $0.40$ \\
 label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{$0$ (assumed)} \\
 \bottomrule
 \end{tabular}
@@ -521,7 +539,10 @@ law-of-total-variance $\Binsuf$ upper bound (the most conservative estimator; th
 $k$-NN/RF estimators are deflated by near-duplicate leakage on the crossed $41$-solute$\times17$-solvent
 design and only \emph{bracket} $\Binsuf$) from the total error gives, on the deployed residual-only
 convention, $\Bclos\gtrsim0.85$ against $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). This is the
-claim we lean on. It is stable---surviving leave-one-solvent, -solute, and -pair folds and adversarial
+claim we lean on. Because that bound subtracts an \emph{upper} estimate of $\Binsuf$, it understates
+$\Bclos$: the estimator error runs against the separation, so a surviving margin survives a fortiori
+(the one estimator that runs the other way, the deflated $k$-NN difference, is for that reason kept out
+of the bound). It is stable---surviving leave-one-solvent, -solute, and -pair folds and adversarial
 deletion of the eight highest-error pairs---but not certified: in a two-way cluster
 bootstrap $\Bclos$ exceeds $\Binsuf$ in $78\%$ of resamples (a resampling frequency $P_{\mathrm{boot}}$,
 not a posterior probability of the inequality), with the $90\%$ margin spanning zero, and with only

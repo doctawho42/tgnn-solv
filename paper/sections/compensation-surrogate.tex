@@ -16,10 +16,17 @@ and only the objective differs; we repeat it over \emph{three seeds} and report 
 grounded base recovers the reference profile to within $36\pm1\%$
 ($\lVert\hat\sigma_{\mathrm{grounded}}-\sigma\rVert/\lVert\sigma\rVert$), so the intermediate
 \emph{can} be physical; solubility fine-tuning then drives it $41\pm3\%$ off the grounded profile, for a
-total departure from truth of $51\pm2\%$. The drift is not per-molecule noise: its first two principal
-components carry $72\pm1\%$ of the variance (isotropic noise over $51$ bins would give ${\approx}4\%$), and
-a single affine distortion $D$ fit on half the molecules predicts the drift on the held-out half
-$4.1\pm0.5\times$ better than identity out-of-sample. So $\hat\sigma$ is a systematic, low-rank,
+total departure from truth of $51\pm2\%$. The drift is not per-molecule noise, and its structure is not a
+constant offset: the first two principal components of the \emph{mean-centred} deviation carry
+$72\pm1\%$ of the variance (isotropic noise over $51$ bins would give ${\approx}4\%$). To test whether that
+structure transfers across molecules we fit one distortion operator $D$, a dense affine map on the $51$-bin
+grid (a $51\times51$ linear part plus a $51$-bin offset, $2652$ parameters). The fit is \emph{regularised},
+not free: each output bin is a ridge regression of $52$ coefficients ($\ell_2$ penalty $10^{-3}$) on $22$ of
+the $44$ molecules, underdetermined without the penalty, so the held-out $22$ carry the claim rather than
+the fit. On that held-out half $D$ predicts the drift $4.1\pm0.5\times$ better than the zero-drift (identity)
+null out-of-sample. That null is deliberately weak: the affine offset lets $D$ absorb the systematic mean
+shift as well, so the transfer ratio alone also credits it for that shift; the evidence that the drift has
+structure \emph{beyond} an offset is the mean-centred low-rank spectrum above. So $\hat\sigma$ is a systematic, low-rank,
 \emph{transferable} closure-compensating surrogate---one generalizable way the intermediate ``lies'' to
 the closure, shared across chemistry, driven by the fitting objective rather than by architecture or a
 lack of grounding.\footnote{Three-seed mean$\pm$sd (seeds $0$--$2$). The load-bearing claim is the
@@ -84,8 +91,9 @@ physical profile. \emph{Left:} the mean deviation $\hat\sigma-\sigma$ (and its d
 transfers area out of the nonpolar bins ($\sigma\!\approx\!0$) into the polar wings---the network makes
 molecules look more polar than they are, inflating the segment interactions the misspecified closure
 under-weights. \emph{Right:} the deviation spectrum is low-rank (top-two modes $72\pm1\%$; noise would be
-flat at ${\approx}4\%$), i.e.\ the distortion is systematic. A single affine distortion transfers
-$4.1\pm0.5\times$ better than identity out-of-sample, so $\hat\sigma$ is a transferable
+flat at ${\approx}4\%$), i.e.\ the distortion is systematic. A single ridge-fit affine distortion
+($2652$ parameters, $22$ train / $22$ held out) transfers $4.1\pm0.5\times$ better than the zero-drift
+null out-of-sample (spectrum mean-removed), so $\hat\sigma$ is a transferable
 closure-compensating surrogate of $\sigma$, not $\sigma$ with noise (confound-free, three seeds,
 $n{=}44$ matched VT-2005 molecules).}
 \label{fig:surrogate}

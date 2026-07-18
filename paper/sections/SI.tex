@@ -236,22 +236,8 @@ $R_{\mathrm{e2e}}=0$ while $R_{\mathrm{orc}}=1$, hence $\Gamma=1>0=\Bclos$. So $
 does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 \end{proof}
 
-\noindent Writing each trained risk as an asymptote plus estimation variance,
-$\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
-$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
-$V(n)\downarrow0$, the \emph{asymptotic physics penalty} is
-$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ with
-$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.
-\begin{proposition}[Sign of the asymptotic physics penalty]\label{prop:tax}
-(i)~$\mathcal{T}(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
-the variance a constrained prior saves must exceed its asymptotic bias. (ii)~If
-$\Delta_\infty>0$ and the variance gap vanishes ($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$),
-there is a critical budget $n^\star$ beyond which $\mathcal{T}(n)>0$ for all $n>n^\star$. (iii)~Since
-$V_{\mathrm{direct}}-V_{\mathrm{phys}}\le V_{\mathrm{direct}}$, as the black box nears the
-aleatoric floor ($V_{\mathrm{direct}}\to0$) the penalty tends to $\Delta_\infty$; this limit is
-$\ge0$ when the control is asymptotically Bayes ($R_{\mathrm{direct},\infty}=R_{\mathrm{free}}$),
-not merely from $V_{\mathrm{direct}}\to0$.
-\end{proposition}
+\noindent The penalty-sign result (Proposition~\ref{prop:tax}, stated in the main text at
+\S\ref{sec:tax}) is proved here.
 \begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the asymptotic physics penalty)]
 Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$, so
 $\mathcal{T}(n)=\Delta_\infty-D(n)$ with $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$.
@@ -609,8 +595,9 @@ grow the matched activity corner: of the $298$\,K ThermoML IDAC pairs, only two 
 profile while their solvent has one, so computing further reference profiles does not materially
 enlarge the matched set---the binding constraint is joint IDAC$\times$profile coverage, not profile
 availability. Second-domain pKa: the OPERA experimental compilation
-\cite{mansouri2019opera} (\texttt{pKa\_QR.sdf}, $6502$ compounds, public-domain US EPA;
-cited, not redistributed). The Bemis--Murcko scaffold split follows the main text; because the seeded
+\cite{mansouri2019opera} (\texttt{pKa\_QR.sdf}, $7904$ QSAR-ready records, public-domain US EPA;
+cited, not redistributed); the uniform net-formal-charge filter reduces this to the $1004$
+Hammett-amenable rows ($158$ meta/para, $846$ ortho/heteroaromatic) analysed in \S\ref{sec:si-pka}. The Bemis--Murcko scaffold split follows the main text; because the seeded
 split is not stable across pipeline versions (\S\ref{sec:framework}), every number in this paper is
 computed on a \emph{single} committed split, whose molecule-level hash is recorded with the released
 artifacts.\footnote{The three-seed surrogate isolation (\S\ref{sec:surrogate}) was produced on a
@@ -629,4 +616,10 @@ committed artifacts. Each figure and table names the script that regenerates it 
 \paragraph{Seeds and determinism.} Controlled comparisons use seeds $\{42,43,44\}$ and
 are reported on a cross-arm intersection lock (rows supervised and finite in every arm); the
 surrogate isolation (\S\ref{sec:surrogate}) uses seeds $\{0,1,2\}$. The decomposition is seed-independent
-(its closure has no learnable parameters).
+(its closure has no learnable parameters). One artifact caveat: a save-time bug truncated the released
+per-row prediction file for the seed-$44$ oracle solubility arm to $295$ rows, a small fraction of the
+test set. The three-seed headline summaries (Fig.~\ref{fig:paradox}, Table~\ref{tab:si-arms}) were
+aggregated at run time, before that file was written, so they are unaffected; only the one on-disk
+artifact is partial, and any per-row re-analysis of the solubility arms therefore uses the two complete
+seeds ($42,43$). The learned-$\sigma$ and DirectGNN solubility files and the activity-level
+($n{=}60$, $n{=}44$) artifacts are complete for every seed.
