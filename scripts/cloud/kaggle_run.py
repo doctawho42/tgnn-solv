@@ -410,6 +410,58 @@ def do_supervised_sigma(out: Path, device: str, ep_warm: int, ep_sle: int):
     print("[supervised_sigma]", res["axis2_verdict"], flush=True)
 
 
+def do_paradox_2x2(out: Path, device: str, ep_warm: int, ep_sle: int, seed: int = 42):
+    """2x2 sigma-substitution channel test for the solubility paradox (review item #1).
+
+    Separates the confound behind the verified solvent-channel finding: is the paradox
+    co-adaptation (channel mixing) or solute chemistry? Pre-registration:
+    reports/PREDICTION_paradox_2x2_channel_2026-07-18.md.
+
+    Train the END-TO-END grounded model (sigma head unfrozen -> drifts into a compensating
+    surrogate; this IS the paradox arm), then evaluate that ONE checkpoint under four sigma
+    conditions on the same test set:
+      (a) both_learned   : learned sigma both channels        (no oracle)
+      (b) both_reference : reference sigma both channels       (--sigma-oracle-side both)
+      (c) ref_solvent    : reference solvent + LEARNED solute  (--sigma-oracle-side solvent)
+      (d) ref_solute     : reference solute  + LEARNED solvent (--sigma-oracle-side solute)
+    Analyze locally on the both-reference subset (solute AND solvent in VT-2005, the only rows
+    where all four are defined): MISMATCH = mean[c,d] - mean[a,b]. >=+0.2 => co-adaptation
+    (headline rewritten); <+0.1 => solute chemistry (paradox real, both-reference-0 = low-B_closure).
+    """
+    if not SIGMA_ARTIFACT.exists():
+        raise RuntimeError(f"oracle sigma artifact missing: {SIGMA_ARTIFACT}")
+    ck = out / "ckpt"; ck.mkdir(parents=True, exist_ok=True)
+    base = ck / "grounded_base.pt"; e2e = ck / "endtoend_sle.pt"
+    common = ["--config", CFG, "--train-data", DATA / "train.csv", "--val-data", DATA / "val.csv",
+              "--test-data", DATA / "test.csv", "--device", device, "--seed", seed]
+    # 1. grounded base: sigma warmup + phase-1 (physical sigma manifold), no SLE yet.
+    run(["python", "scripts/train.py", *common,
+         "--sigma-train-data", SIGMA, "--sigma-steps-per-epoch", "21",
+         "--crystal-train-data", CRYSTAL, "--crystal-steps-per-epoch", "8",
+         "--epochs-phase1", 5, "--epochs-phase2", 0, "--epochs-phase3", 0,
+         "--set", f"sigma_warmup_epochs={ep_warm}", "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET,
+         "--checkpoint", base])
+    # 2. end-to-end grounded (the paradox arm): full SLE, sigma head UNFROZEN.
+    run(["python", "scripts/train.py", *common, "--resume", base, "--resume-extend",
+         "--epochs-phase1", 0, "--epochs-phase2", ep_sle, "--epochs-phase3", 0,
+         "--set", "freeze_sigma_head_during_sle=false", "sigma_warmup_epochs=0",
+         "cosmo_sac_kernel_residual_rank=0", *EXTRA_SET, "--checkpoint", e2e])
+    # 3. eval the ONE endtoend checkpoint under the four sigma conditions.
+    for tag, side in [("both_learned", None), ("both_reference", "both"),
+                      ("ref_solvent", "solvent"), ("ref_solute", "solute")]:
+        cmd = ["python", "scripts/analysis/export_checkpoint_predictions.py",
+               "--checkpoint", e2e, "--data", DATA / "test.csv",
+               "--output", out / f"cond_{tag}.csv", "--model-type", "tgnn", "--device", device,
+               "--summary", out / f"cond_{tag}.summary.json"]
+        if side:
+            cmd += ["--sigma-oracle", "--sigma-oracle-side", side, "--sigma-artifact", SIGMA_ARTIFACT]
+        run(cmd)
+    save(out, "paradox_2x2_done.json",
+         {"conditions": ["both_learned", "both_reference", "ref_solvent", "ref_solute"], "seed": seed,
+          "analyze": "run_paradox_channel_split-style slice on the both-reference subset; MISMATCH=mean[c,d]-mean[a,b]"})
+    print("[paradox_2x2] done -> 4 condition CSVs in", out, flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--do", default="all",
@@ -484,6 +536,8 @@ def main():
                if args.smoke else {})),
         "dosed":    lambda: do_dosed(args.out, args.device),
         "supervised_sigma": lambda: do_supervised_sigma(args.out / "supervised_sigma", args.device, args.warm, args.sle),
+        "paradox_2x2": lambda: do_paradox_2x2(args.out / "paradox_2x2", args.device, args.warm, args.sle,
+                                              seed=int(str(args.seeds).split(",")[0])),
         "surrogate_seeds": lambda: do_surrogate_seeds(args.out / "surrogate_seeds", args.device, args.warm, args.sle,
                                                        seeds=tuple(int(s) for s in str(args.seeds).split(","))),
     }

@@ -36,11 +36,16 @@ print("[bootstrap] CUDA OK:", torch.cuda.get_device_name(0), "| torch", torch.__
 PY
 
 # 4. run: 3-seed surrogate isolation -> mean+/-sd of 33/45/53/73%/3.3x -----
+DO=${DO:-surrogate_seeds}
+case "$DO" in
+  paradox_2x2) OUT=results; SUB=paradox_2x2 ;;
+  *)           OUT=results/sur; SUB=surrogate_seeds ;;
+esac
 KMP_DUPLICATE_LIB_OK=TRUE python scripts/cloud/kaggle_run.py \
-    --do surrogate_seeds --out results/sur --device cuda --warm "$WARM" --sle "$SLE" --seeds "$SEEDS"
+    --do "$DO" --out "$OUT" --device cuda --warm "$WARM" --sle "$SLE" --seeds "$SEEDS"
 
 # 5. show + pack results --------------------------------------------------
-echo "===== surrogate_seeds.json ====="
-cat results/sur/surrogate_seeds/surrogate_seeds.json
-tar czf "$HOME/surrogate_results.tgz" -C results/sur surrogate_seeds
-echo "[bootstrap] DONE -> ~/surrogate_results.tgz  (download it, then DELETE the VM)"
+echo "===== ${SUB} results ====="
+ls -la "${OUT}/${SUB}" 2>/dev/null || true
+tar czf "$HOME/${DO}_results.tgz" -C "$OUT" "$SUB"
+echo "[bootstrap] DONE -> ~/${DO}_results.tgz  (download it, then DELETE the VM)"
