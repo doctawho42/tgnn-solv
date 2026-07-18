@@ -27,22 +27,30 @@ under the minimal loss (5 phase-1 epochs + 15 SLE epochs, seed 42, L4), then the
 checkpoint is evaluated learned-vs-reference exactly as in `paradox_2x2`.
 
 ## Pre-registered quantity and decision rule
-On the both-reference subset (solute AND solvent in VT-2005, the only rows where the reference condition
-is defined), define
-  PARADOX = mean(R2 | both_reference) - mean(R2 | both_learned).
-A NEGATIVE value means the learned profile beats the true reference => paradox present. Let PARADOX_full
-be the same quantity from `paradox_2x2` (the full-loss run, same subset, same seed).
+Metric note (corrected before any ablation run, for comparability): the paradox is scored in **MAE**, not
+R2 -- to match `paradox_2x2` and the e5 channel split (overall paradox ~+0.39 MAE), and because R2 on the
+easy both-reference subset is unstable (low ln x2 variance). The 2x2 channel split established the paradox
+lives on the SOLVENT-substituted rows (~+0.42) and is ~0 on the both-reference subset, so the paradox is
+scored on ALL supervised rows (where the `both` oracle substitutes the solvent for ~99% and the solute for
+~5%), NOT on the near-null both-reference subset. Define
+  PARADOX = MAE(both_reference) - MAE(both_learned)   on all supervised finite rows.
+A POSITIVE value means the learned profile beats the true reference => paradox present. Let PARADOX_full be
+the same quantity computed on the full-loss `paradox_2x2` run (its cond_both_learned / cond_both_reference,
+same test set, same seed). Both are read by run_loss_ablation_analysis.py.
 
-- **H_intrinsic (expected):** PARADOX_min stays the same SIGN and within ~1 sd of PARADOX_full
-  (operationally |PARADOX_min - PARADOX_full| <= 0.05 R2, and both negative on the drift-bearing regime).
+- **H_intrinsic (expected):** PARADOX_min stays clearly POSITIVE and within ~0.1 MAE of PARADOX_full
+  (operationally |PARADOX_min - PARADOX_full| <= 0.10 and PARADOX_min > 0.5 * PARADOX_full).
   Interpretation: the surrogate mechanism is a property of the closure + fitted latent, not the loss zoo.
   => the ~30-term objective is engineering convenience; the SI can say the paradox is loss-robust and the
   minimal loss reproduces it. (Good-news outcome; matches the theory in S4-S6.)
 
-- **H_loss-dependent:** PARADOX_min FLIPS sign or collapses toward 0 (|PARADOX_min| < 0.5 |PARADOX_full|).
+- **H_loss-dependent:** PARADOX_min collapses toward 0 (PARADOX_min < 0.5 * PARADOX_full) or flips negative.
   Interpretation: some dropped term was load-bearing for the drift. => the mechanism claim needs the
   qualifier "under the full objective," and the SI must name which family (aux-grounding vs regulariser)
   by a follow-up drop-one ablation. (Bad-news outcome; do NOT hide it.)
+
+Secondary (consistency, not a hypothesis): report the both-reference-subset paradox for both runs; it
+should be ~0 in BOTH (the low-B_closure regime), confirming the metric behaves as the channel split found.
 
 Guardrail read (sanity, not a hypothesis): the minimal-loss model must still TRAIN -- if val ln x2 does
 not converge to within ~0.3 of the full-loss base (i.e. the crystal+sol-only model is degenerate), the
