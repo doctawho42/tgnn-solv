@@ -12,11 +12,11 @@ compilation \cite{mansouri2019opera}---the canonical full set under a uniform, c
 quality filter that drops pre-ionized input microstates (App.~\ref{sec:si-pka})---this yields a
 \emph{measured} fidelity sweep: the clean meta/para series ($n{=}158$) is well specified (RMSE $0.55$,
 $\Bclos$ below the insufficiency floor), while the ortho/heteroaromatic regime ($n{=}846$) degrades to
-RMSE $2.3$, input-insufficiency dominated---the near-exact-to-degraded transition, measured rather than
+RMSE $2.26$, input-insufficiency dominated---the near-exact-to-degraded transition, measured rather than
 asserted. The decisive test is the
 same oracle swap as on solubility---replace the learned $\hat\sigma$ with the tabulated $\sigma^\star$
-in the same closure and read the sign, per stratum---now certified across $K{=}20$ within-scaffold
-splits with a paired per-molecule, scaffold-cluster bootstrap. It \emph{flips}. On the clean meta/para
+in the same closure and read the sign, per stratum---now certified \emph{in-distribution} across
+$K{=}20$ within-scaffold splits with a paired per-molecule, scaffold-cluster bootstrap. It \emph{flips}. On the clean meta/para
 pole feeding the reference constant \emph{helps} (learned MAE $0.48$ vs oracle $0.315$; oracle better
 in $19/20$ splits, bootstrap $P<0.01$): the ceiling there is the noisy learned estimate, not the
 closure---a real-data grounding-helps corner and an internal positive control. On the ortho pole the
