@@ -70,14 +70,52 @@ expressivity-limited (linear probe train $R^2\approx0.76$, test $R^2\approx0.45$
 under the three-phase curriculum of \S\ref{sec:methods}: $30$ epochs of auxiliary pretraining (P1),
 $70$ of full SLE training (P2), and $10$ of low-rate stabilisation (P3), at learning rates
 $2.6\times10^{-4}$, $8.5\times10^{-5}$, and $8.5\times10^{-6}$ respectively.
-\paragraph{Loss.} Only the following terms are load-bearing for the claims: a bin-weighted Huber on
-\lnx\ (weight $1.0$); crystal $\Tm/\dHfus$ ($0.3$ each), \lngi\ ($0.5$), and Hansen ($0.2$) auxiliary
-losses; a monotonicity regulariser ($0.1$) and a van't~Hoff-slope term (activated in P3); and, when the
-$\sigma$-profile grounding stream is active, an earth-mover distance on the profile---the term whose
-\emph{absence} in the end-to-end arm is what the grounding paradox exploits. The remaining ${\sim}24$
-terms (channel orthogonality, contrastive, mixture-of-experts balance, and assorted priors) carry
-small or zero default weight; the full taxonomy and per-phase overrides are released with the code and
-pinned in each run's resolved configuration.
+\paragraph{Loss.} The objective is a weighted sum. Of its $32$ registered terms, $17$ carry weight
+$0$ by default and never enter training---disabled experimental scaffolding (TIMP channel supervision;
+van't~Hoff / temperature terms, $\times7$; Hansen-contrastive terms, $\times5$; descriptor/group priors;
+an auxiliary direct-solubility term), released with the code for completeness. The $15$ \emph{active}
+terms are below; only the top two groups are load-bearing for the claims, and a loss-simplification
+ablation (\S\ref{sec:si-lossablation}) tests which.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}llr@{}}
+\toprule
+role & term & default wt. \\
+\midrule
+task                 & solubility (bin-weighted Huber on $\lnx$)        & $1.0$ \\
+crystal grounding    & melting point $\Tm$                              & $0.3$ \\
+                     & fusion enthalpy $\dHfus$                         & $0.3$ \\
+$\sigma$/act.\ ground.& infinite-dilution $\lngi$                       & $0.5$ \\
+                     & finite-composition $\lng$                        & $0.5$ \\
+                     & Hansen parameters                                & $0.2$ \\
+                     & $\sigma$-profile EMD (grounding stream on)        & $^\dagger$ \\
+regulariser          & solubility monotonicity in $T$                   & $0.1$ \\
+                     & physics preference                               & $0.1$ \\
+                     & adaptive-correction residual                     & $0.01$ \\
+                     & NRTL $\tau$                                       & $0.01$ \\
+                     & solubility variance                              & cfg \\
+control coupling     & DirectGNN NLL                                    & $0.2$ \\
+                     & DirectGNN regulariser                            & $0.05$ \\
+architecture         & mixture-of-experts balance                       & $0.02$ \\
+\bottomrule
+\end{tabular}
+\caption{The $15$ active loss terms (non-zero default weight). $^\dagger$The $\sigma$-profile
+earth-mover term is the grounding term whose \emph{absence} in the end-to-end arm the paradox exploits.
+A further $17$ registered terms are disabled (weight $0$). Per-phase weight overrides are pinned in each
+run's resolved configuration.}
+\label{tab:loss}
+\end{table}
+
+\paragraph{Loss-simplification ablation.}\label{sec:si-lossablation}
+For a diagnostic result the elaborate objective is a liability: it invites the reading that the paradox
+is an artifact of loss tuning. We test the opposite---that the paradox and the compensating-surrogate
+drift survive a \emph{minimal} objective. Pre-registered before the run: train the end-to-end grounded
+arm with only the task ($\lnx$ Huber), the crystal grounding ($\Tm,\dHfus$), and the $\sigma$-profile
+warmup, \emph{dropping} the activity-grounding auxiliaries ($\lngi$, $\lng$, Hansen) and every
+regulariser, then read the sign of the paradox (oracle vs.\ learned) and the surrogate drift.
+Prediction: both persist, because the mechanism is end-to-end training through a misspecified closure,
+not the auxiliary terms. \pending[minimal-loss paradox sign + surrogate drift: GCP L4 run queued behind the 2x2 test]
 
 \section{Proofs}
 \label{sec:si-proofs}
