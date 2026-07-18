@@ -79,6 +79,7 @@ ablation (\S\ref{sec:si-lossablation}) tests which.
 
 \begin{table}[h]
 \centering\small
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}llr@{}}
 \toprule
 role & term & default wt. \\
@@ -99,7 +100,7 @@ control coupling     & DirectGNN NLL                                    & $0.2$ 
                      & DirectGNN regulariser                            & $0.05$ \\
 architecture         & mixture-of-experts balance                       & $0.02$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{The $15$ active loss terms (non-zero default weight). $^\dagger$The $\sigma$-profile
 earth-mover term is the grounding term whose \emph{absence} in the end-to-end arm the paradox exploits.
 A further $17$ registered terms are disabled (weight $0$). Per-phase weight overrides are pinned in each

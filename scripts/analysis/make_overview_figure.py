@@ -152,7 +152,7 @@ ledger = [
     (0.02, "CERTIFIED", HELP, "#EAF1EE", [
         r"Symptom: reference $\sigma$ makes solubility worse (3 seeds, $n{=}5608$)",
         r"Exact split $B=B_{\mathrm{closure}}+B_{\mathrm{insuff}}$ (Lemma 2)",
-        r"pKa oracle-swap flip: meta/para helped, ortho hurt ($20/20$, $P{=}1.00$)",
+        r"pKa oracle-swap flip: meta/para helped, ortho hurt ($19$--$20/20$, $P{\geq}0.99$ both poles)",
     ]),
     (1.03, "LIKELY", AMBER, "#F6EEDD", [
         r"Mechanism: latent $=$ low-rank, transferable surrogate ($n{=}44$)",
