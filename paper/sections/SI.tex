@@ -382,8 +382,9 @@ COSMO-SAC closure $g(\zstar)$ (salmon) falls systematically below the diagonal a
 larger $\lngi$, under-predicting the activity coefficient (MSE $1.80$, full
 convention). This systematic downward bias is the visible form of the decoder
 misspecification $\Bclos$; for reference a flexible regressor of $\lngi$ on the same
-reference profiles reaches the irreducible-variance floor (MSE $\approx0.40$, our $\Binsuf$
-estimator; \S\ref{sec:measure}), so the closure's excess over that floor is $\Bclos$.}
+reference profiles reaches a floor of MSE $\approx0.40$ (our least-conservative, $k$-NN-adjacent
+$\Binsuf$ estimate; the leakage-immune LOTV upper bound is $0.62$, \S\ref{sec:measure}), so the
+closure's excess over the leakage-immune floor is at least ${\approx}2.4\times$ and is $\Bclos$.}
 \label{fig:parity}
 \end{figure}
 

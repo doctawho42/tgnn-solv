@@ -179,7 +179,7 @@ $P_{\mathrm{boot}}\approx0.78$). \emph{(3)~No lever found:} on
 representative data a fair, validated comparison of the 2002 and modern (COSMO-SAC-2010/dsp) kernels
 does \emph{not} establish that raising closure fidelity removes the penalty---we locate the ceiling
 but offer no fix inside this closure family. \emph{Bottom:} every claim in the paper graded by strength of evidence
-(certified~/~likely~/~exploratory), with the same one-sided-bound and scope caveats made in the text.}
+(certified~/~likely~/~open), with the same one-sided-bound and scope caveats made in the text.}
 \label{fig:overview}
 \end{figure*}
 
@@ -439,9 +439,10 @@ sweep (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and t
 (\S\ref{sec:pka})---stress-test and generalize the account, with further diagnostics in the ESI.
 
 Every claim in this paper is graded by strength of evidence---certified (holds under any closure
-configuration or exactly proved), likely (measured but sub-threshold or one-sidedly bounded on the
-matched $n{=}60$/$n{=}44$ sets), or exploratory (directional or conjectural)---in the ledger at the
-foot of Fig.~\ref{fig:overview}. We make no accuracy claim.
+configuration, exactly proved, or bootstrap-certified with $P\!\to\!1$ across resamples), likely
+(measured but sub-threshold or one-sidedly bounded on the matched $n{=}60$/$n{=}44$ sets), or open
+(unestablished, directional, or conjectural)---in the ledger at the foot of Fig.~\ref{fig:overview}. We
+make no accuracy claim.
 
 \subsection{The grounding paradox}
 \label{sec:paradox}
@@ -453,13 +454,17 @@ information would. The effect erases any positive $R^2$ (Fig.~\ref{fig:paradox})
 solubility better \emph{from its own learned $\sigma$-profile} than when \emph{given the external
 reference one} (MAE $1.85$ vs $2.25$, in $\lnx$ units), and it survives three controls---the
 evaluation-time oracle, injection of the reference profile \emph{at training} (MAE $1.98$), and a
-channel-swap ($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring artifact. That the
+channel-swap ($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring
+artifact.\footnote{The three oracle-application controls (evaluation-only, training-time injection,
+channel-swap; \S\ref{sec:methods}) are computed on the same three-seed cross-arm lock as
+Table~\ref{tab:si-arms}; their per-arm predictions are released with the code.} That the
 fault is a wrong \emph{map} rather than a missing input is established on the activity axis, where the
 reference input is clean: restoring the physically \emph{more} complete Staverman--Guggenheim
 combinatorial term (the entropic contribution from solute--solvent size and shape mismatch)
 \emph{increases} error, and on $n{=}60$ matched pairs the fixed reference-input closure sits about
-$4\times$ above the irreducible-variance floor a flexible regressor reaches (\S\ref{sec:measure}),
-under-predicting $\lngi$ with a systematic bias (SI, Fig.~\ref{fig:parity}).
+$2.4\times$ above the leakage-immune irreducible-variance floor (the load-bearing LOTV bound
+$\Binsuf\!\le\!0.62$; a more flexible regressor reaches a smaller, least-conservative floor near $0.40$,
+\S\ref{sec:measure}), under-predicting $\lngi$ with a systematic bias (SI, Fig.~\ref{fig:parity}).
 
 \paragraph{Why the solubility paradox is a symptom, not the carrier.} The solubility effect is real and
 certified (three seeds, three controls), but it cannot carry the closure-versus-input attribution, for a
@@ -569,13 +574,16 @@ law-of-total-variance $\Binsuf$ upper bound (the most conservative estimator; th
 $k$-NN/RF estimators are deflated by near-duplicate leakage on the crossed $41$-solute$\times17$-solvent
 design and only \emph{bracket} $\Binsuf$) from the total error gives, on the deployed residual-only
 convention, $\Bclos\gtrsim0.85$ against $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). This is the
-claim we lean on. Because that bound subtracts an \emph{upper} estimate of $\Binsuf$, it understates
-$\Bclos$: the estimator error runs against the separation, so a surviving margin survives a fortiori
-(the one estimator that runs the other way, the deflated $k$-NN difference, is for that reason kept out
-of the bound). It is stable---surviving leave-one-solvent, -solute, and -pair folds and adversarial
+claim we lean on. Because that bound subtracts a \emph{population upper} estimate of $\Binsuf$, it
+understates $\Bclos$ in expectation, so a surviving margin survives a fortiori. The finite-sample biases
+run the other way and are controlled: the deflated $k$-NN difference is kept out of the bound, and the
+LOTV binning's per-bin sparsity bias (which can under-estimate $\Binsuf$, and so inflate $\Bclos$) is
+cross-checked against the sparsity-immune RF and ridge out-of-fold estimators (\S\ref{sec:si-tables}). It is stable---surviving leave-one-solvent, -solute, and -pair folds and adversarial
 deletion of the eight highest-error pairs---but not certified: in a two-way cluster
 bootstrap $\Bclos$ exceeds $\Binsuf$ in $78\%$ of resamples (a resampling frequency $P_{\mathrm{boot}}$,
-not a posterior probability of the inequality), with the $90\%$ margin spanning zero, and with only
+not a posterior probability of the inequality), with the $90\%$ margin spanning zero; under one
+deliberately aggressive out-of-fold ridge smoother the ordering even inverts ($\Binsuf{=}0.88>\Bclos{=}0.59$,
+a sensitivity edge, App.~\ref{sec:si-tables}), so ``the larger'' is estimator-conditional. With only
 $17$/$41$ clusters this small-$G$ fraction is a coarse band (mid-$0.7$s to high-$0.8$s), so we present
 the separation as a
 \emph{supporting} measurement---likely but not certified---not a stand-alone certificate. The
@@ -642,12 +650,15 @@ IDAC$\,\cap\,$UD set---all temperatures, dispersion enabled, every arm validated
 reference---the same swap gives $1.911\to1.855$ ($n{=}477$; $P=0.62$, margin $[-2.25,+1.31]$).
 
 \textbf{The two measurements are statistically compatible with a single small effect:} each interval
-contains the other's point estimate. We therefore do not read this as a lever that exists on our
-corner and fails to generalize, but as one small, unestablished effect of which the corner supplies a
-low-power estimate. The chemistry points the same way: the corner is the \emph{lower}-$\gamma$ set, and
-COSMO-SAC-2010's donor/acceptor typing exists to repair hydrogen bonding---a real fidelity gain should
-have been \emph{larger} where hydrogen bonding matters more, not smaller. The sign of that dependence
-is wrong for a signal.
+contains the other's point estimate. The two headline claims do not treat this corner inconsistently.
+Contribution~(b), that the closure is the ceiling, is a property of the \emph{deployed} 2002 kernel,
+whose fair error $1.757$ sits above the insufficiency floor here; it does not depend on any upgrade.
+Contribution~(c), that no fidelity lever is established, is the separate question of whether
+\emph{upgrading} the kernel removes that ceiling---and the corner's large $2002\to2010$/dsp gain
+($1.757\to0.765$, $P=0.98$) does not carry to the representative set ($n{=}477$, $P=0.62$). So the corner
+is authoritative for what the deployed closure does, not for what an upgrade buys. We therefore do not
+read this as a lever that exists on our corner and fails to generalize, but as one small, unestablished
+effect of which the corner supplies a low-power estimate.
 
 This is consistent with the published behaviour of the closure family rather than a challenge to it,
 and the comparison itself appears to be new: no large-scale infinite-dilution benchmark of the
@@ -881,6 +892,13 @@ are the OPERA compilation \cite{mansouri2019opera}. The repository documents the
 reproduces each figure, table, and number from these sources, including the Bemis--Murcko scaffold
 split, the controlled grounded-vs-free comparison, the closure--insufficiency decomposition over the
 $n{=}60$ VT-2005-matchable pairs, the pKa second-domain measurement, and the synthetic fidelity sweep.
+The closure-fidelity contrast (\S\ref{sec:measure}) reports the \emph{fair} full-2002 error
+($1.757$) from our in-house NIST-validated COSMO-SAC-2002 layer, each closure evaluated on its prescribed
+native averaging; the released code regenerates it from that layer, and the deposited \texttt{cCOSMO}
+cross-check artifact additionally carries the crippled single-channel 2002 diagnostic ($1.263$,
+\S\ref{sec:si-repro}). Two artifacts carry disclosed caveats (\S\ref{sec:si-repro}): the seed-$44$ oracle
+per-row file is truncated (the run-time three-seed aggregates are unaffected), and the three-seed
+surrogate run's per-run split provenance was not logged (its matched set is the committed $n{=}44$).
 
 \section*{Acknowledgements}
 \noindent This work was supported by \pending[funder name(s) and grant/award number(s)].

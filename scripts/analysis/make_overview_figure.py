@@ -152,7 +152,7 @@ ledger = [
     (0.02, "CERTIFIED", HELP, "#EAF1EE", [
         r"Symptom: reference $\sigma$ makes solubility worse (3 seeds, $n{=}5608$)",
         r"Exact split $B=B_{\mathrm{closure}}+B_{\mathrm{insuff}}$ (Lemma 2)",
-        r"Our 2002 & 2010/dsp layers reproduce NIST ($0.003$/$10^{-4}$)",
+        r"pKa oracle-swap flip: meta/para helped, ortho hurt ($20/20$, $P{=}1.00$)",
     ]),
     (1.03, "LIKELY", AMBER, "#F6EEDD", [
         r"Mechanism: latent $=$ low-rank, transferable surrogate ($n{=}44$)",
@@ -161,8 +161,8 @@ ledger = [
     ]),
     (2.04, "OPEN", GRAY, "#F0F0F0", [
         r"No fidelity lever: $2002{\to}2010$/dsp $+3\%$ ($n{=}477$, $P{=}0.62$)",
-        r"Transfer to the finite-composition regime",
-        r"pKa second closure as a fidelity cross-check",
+        r"Transfer of the attribution to finite composition",
+        r"Whether the drift is the closure's signed inverse $J^{+}(m{-}g)$",
     ]),
 ]
 axl.text(0.02, 0.955, "What the paper establishes, graded by evidence",
