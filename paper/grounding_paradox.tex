@@ -76,7 +76,7 @@ closure predicts solid--liquid solubility better than feeding external quantum-c
 profiles (VT-2005) through the same closure: substituting the reference collapses the arm's $R^2$
 to ${\approx}0$. Truer physical inputs make the model worse. Which component is at fault---the
 closure, or its inputs? Because the learned latent has an external oracle, the reference-input
-excess risk splits exactly into a closure-misspecification term and an input-insufficiency term; on
+risk splits exactly into a closure-misspecification term and an input-insufficiency term; on
 a matched infinite-dilution regime, the closure term binds. The mechanism follows: trained
 end-to-end through a misspecified closure, the latent becomes a low-rank, out-of-sample-transferable
 surrogate that cancels the closure's error rather than reporting the physical quantity. We looked for
@@ -128,7 +128,7 @@ measuring both levers together is future work.
   fixed COSMO-SAC closure degrades $\lngi$ and $\lnx$ prediction relative to a free learned head---the
   opposite of the intended benefit ($3$ seeds, $n{=}5608$, three injection controls; \S\ref{sec:paradox}).
   \item \textbf{A measurement instrument.} Because the latent $\zstar$ (the reference $\sigma$-profile)
-  has external ground truth, the reference-input excess risk splits \emph{exactly}, with no model fit,
+  has external ground truth, the reference-input risk splits \emph{exactly}, with no model fit,
   as $B=\Bclos+\Binsuf$ (Lemma~\ref{prop:decomp}); on the matched regime the closure term binds
   (\S\ref{sec:measure}).
   \item \textbf{The mechanism where grounding hurts.} The end-to-end ``physical'' latent becomes a
@@ -158,7 +158,7 @@ molecular $\sigma$-profile---that a fixed COSMO-SAC closure $g$ (no fitted param
 solubility. \emph{(1)~The paradox:} replacing the learned $\hat\sigma$ with the external
 quantum-chemical reference $\sigma^\star$ (VT-2005) makes the prediction \emph{worse} than a free learned
 head---so which is wrong, the closure or the inputs? \emph{(2)~The measurement:} because the latent
-has an external oracle, the reference-input excess risk splits \emph{exactly} into a
+has an external oracle, the reference-input risk splits \emph{exactly} into a
 closure-misspecification part $\Bclos$ and an input-insufficiency part $\Binsuf$; on the matched
 low-$\gamma$ set the closure binds ($\Bclos>\Binsuf$, $P_{\mathrm{boot}}\approx0.78$). \emph{(3)~No lever found:} on
 representative data a fair, validated comparison of the 2002 and modern (COSMO-SAC-2010/dsp) kernels
@@ -296,10 +296,10 @@ $\approx1{,}689$\,J/mol.
 \subsection{The closure--insufficiency decomposition: the instrument}
 \label{sec:decomp}
 Let $m$ be the activity target (experimental $\lngi$) and $g(\zstar)$ the closure
-evaluated on the true latent. The excess risk of the reference-input path over the
-best-possible predictor $\Ex[m\mid\cdot]$ (the Bayes predictor) decomposes
-exactly---into a part the intermediate cannot resolve and a part the fixed map gets
-wrong.
+evaluated on the true latent. The risk of the reference-input path---its mean squared error
+$\Ex[(m-g(\zstar))^2]$---decomposes exactly into a part the intermediate cannot resolve (the
+irreducible Bayes term) and a part the fixed map gets wrong; the excess over the Bayes predictor
+$\Ex[m\mid\cdot]$ is the second term alone.
 
 \begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
 For a \emph{fixed} (non-fitted) closure $g$,
@@ -566,7 +566,7 @@ remedy is a better closure. We tested this directly and report a negative result
 Two corrections to our earlier reading come first. \emph{(i)}~The NIST reference implementation of
 COSMO-SAC-2002, when handed a typed three-profile database, reads the nonpolar channel only and
 silently discards the donor and acceptor profiles while retaining the total area as prefactor. The
-figure we previously reported for the 2002 kernel on the UD profiles ($\mathrm{MSE}\ 1.26$) is that
+figure we previously reported for the 2002 kernel on the UD (University of Delaware) profiles ($\mathrm{MSE}\ 1.26$) is that
 crippled arm, not the reference closure; it is also not comparable to the $1.47$ we report for our own
 layer on the single-profile VT-2005 database. The fair full 2002 on the same UD data scores
 $\mathrm{MSE}\ 1.757$, which we validate two independent ways: our differentiable layer, and the NIST
@@ -791,7 +791,7 @@ experiment.
 \label{sec:conclusion}
 Feeding a physics-informed solubility model its reference physical inputs made it
 worse. What the paper contributes is a way to measure that failure: with an
-externally grounded latent, the reference-input excess risk splits into a
+externally grounded latent, the reference-input risk splits into a
 decoder-misspecification term and an input-insufficiency term, and on the
 subset we can measure, the ceiling is most likely
 the closure rather than the inputs ($P_{\mathrm{boot}}\approx0.78$ under two-way clustering, not certified at

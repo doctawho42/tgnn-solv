@@ -18,16 +18,16 @@ same oracle swap as on solubility---replace the learned $\hat\sigma$ with the ta
 in the same closure and read the sign, per stratum---now certified \emph{in-distribution} across
 $K{=}20$ within-scaffold splits with a paired per-molecule, scaffold-cluster bootstrap. It \emph{flips}. On the clean meta/para
 pole feeding the reference constant \emph{helps} (learned MAE $0.48$ vs oracle $0.315$; oracle better
-in $19/20$ splits, bootstrap $P<0.01$): the ceiling there is the noisy learned estimate, not the
+in $19/20$ splits, $P(\text{oracle worse}){<}0.01$): the ceiling there is the noisy learned estimate, not the
 closure---a real-data grounding-helps corner and an internal positive control. On the ortho pole the
 same swap \emph{hurts} (learned $0.83$ vs oracle $1.62$; oracle worse in $\mathbf{20/20}$ splits,
-$P{=}1.00$, $90\%$ CI $[{+}0.6,{+}0.9]$): the freely learned $\hat\sigma$ absorbs the ortho/steric
+$P(\text{oracle worse}){=}1.00$, $90\%$ CI $[{+}0.6,{+}0.9]$): the freely learned $\hat\sigma$ absorbs the ortho/steric
 information the tabulated constant lacks---the compensating-surrogate mechanism of \S\ref{sec:surrogate}
 on a second closure.
 
 Both signs obey one \emph{crossover law}---grounding helps a pole iff the learned arm's error there
 exceeds the fidelity-set oracle error---which a competence sweep confirms
-(App.~\ref{sec:si-pka}): the well-specified pole's oracle threshold ($0.31$) is unbeatable, so grounding
+(App.~\ref{sec:si-pka}): the well-specified pole's oracle threshold (${\approx}0.315$) is unbeatable, so grounding
 helps at every training budget; the misspecified pole's threshold ($1.62$) is high, so the learned arm
 beats it, and grounding hurts, across the whole interpolation range (down to $12\%$ of the data),
 reverting to helps only under scaffold \emph{extrapolation}, where $\hat\sigma$ breaks ($2.6{\pm}2.0$)

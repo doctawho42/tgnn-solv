@@ -94,7 +94,7 @@ that every arm shares one code path, removing the cross-implementation engine co
 consumes its own model-prescribed $\sigma$-averaging (Mullins for 2002, Hsieh for 2010); this is the
 specified use of each closure, and the family admits no input-fixed contrast (\S\ref{sec:measure}). The 2002 layer above reproduces the NIST reference
 COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE $0.003\,\ln\gamma$ on identical VT-2005
-profiles. For the modern arm we implement a differentiable COSMO-SAC-2010/dsp layer --- the
+profiles. For the modern arm we implement a differentiable COSMO-SAC-2010/dsp layer~\cite{hsieh2010,hsieh2014dsp} --- the
 donor/acceptor-typed three-profile representation, the temperature-dependent electrostatic
 misfit $c_{\mathrm{ES}}(T)=A_{\mathrm{ES}}+B_{\mathrm{ES}}/T^2$, the typed hydrogen-bonding
 kernel, and the optional dispersion term --- which reproduces the NIST COSMO-SAC-2010
