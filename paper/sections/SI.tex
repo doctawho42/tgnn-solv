@@ -115,7 +115,13 @@ arm with only the task ($\lnx$ Huber), the crystal grounding ($\Tm,\dHfus$), and
 warmup, \emph{dropping} the activity-grounding auxiliaries ($\lngi$, $\lng$, Hansen) and every
 regulariser, then read the sign of the paradox (oracle vs.\ learned) and the surrogate drift.
 Prediction: both persist, because the mechanism is end-to-end training through a misspecified closure,
-not the auxiliary terms. \pending[minimal-loss paradox sign + surrogate drift: GCP L4 run queued behind the 2x2 test]
+not the auxiliary terms. Confirmed. On the full test set the paradox (reference minus learned $\lnx$ MAE)
+is $+1.13$ (95\% CI $[0.88,1.38]$) under the minimal objective, \emph{larger} than the $+0.30$
+($[0.20,0.39]$) under the full objective: stripping the activity-grounding auxiliaries lets the end-to-end
+latent compensate more freely, so the surrogate is intrinsic to the closure-plus-latent rather than an
+artifact of the loss zoo. The minimal model trains normally (validation $\lnx$ MAE $1.87$, within $0.1$
+of the full-loss base), which rules out a degenerate-training reading (seed $42$;
+\texttt{scripts/analysis/run\_loss\_ablation\_analysis.py}).
 
 \section{Proofs}
 \label{sec:si-proofs}

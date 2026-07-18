@@ -62,7 +62,7 @@
 
 % Previous title (kept for reference): When Reference Physical Inputs Hurt a Learned Solubility Model: The Latent Becomes a Compensating Surrogate
 \title{To Thine Own $\sigma$ Be False:\\[0.2em]
-\large A learned $\sigma$-profile beats its quantum-chemical reference by compensating a misspecified closure}
+\large A network's learned $\sigma$-profile compensates a misspecified closure instead of reporting the molecule's charge distribution}
 \author{N.~L. Polomoshnov\thanks{\pending[affiliation and full postal address]. E-mail: \pending[corresponding-author email]} \and \pending[co-author names and affiliations]}
 \date{\today}
 
@@ -71,19 +71,24 @@
 \begin{@twocolumnfalse}
 \maketitle
 \begin{abstract}
-Feeding a graph network's own learned, imperfect $\sigma$-profiles through a fixed COSMO-SAC
-closure predicts solid--liquid solubility better than feeding external quantum-chemical reference
-profiles (VT-2005) through the same closure: substituting the reference collapses the arm's $R^2$
-to ${\approx}0$. Truer physical inputs make the model worse. Which component is at fault---the
-closure, or its inputs? Because the learned latent has an external oracle, the reference-input
-risk splits exactly into a closure-misspecification term and an input-insufficiency term; on
-a matched infinite-dilution regime, the closure term binds. The mechanism follows: trained
-end-to-end through a misspecified closure, the latent becomes a low-rank, out-of-sample-transferable
-surrogate that cancels the closure's error rather than reporting the physical quantity. We looked for
-the obvious remedy and did not find it: on representative data a fair, validated comparison of the
-2002 and modern (COSMO-SAC-2010/dsp) kernels establishes no fidelity gain, so the standard upgrade
-path does not dispose of the paradox. We make no accuracy claim---the contribution is the paradox, its
-compensating-surrogate mechanism, and a reusable instrument for locating a fixed closure's ceiling.
+Grounding a learned physical latent in reference values a black box cannot exploit is a standard recipe
+for out-of-distribution prediction, on the expectation that truer inputs help. Routed through a fixed,
+misspecified COSMO-SAC closure they do not: a graph network predicts solid--liquid solubility better from
+its own learned $\sigma$-profiles than from the external quantum-chemical reference (VT-2005), which
+collapses the arm's $R^2$ to ${\approx}0$. We treat this reference-degradation as the motivating
+\emph{symptom} and rest the causal claims on the axis where the evidence is clean. Because the learned
+latent has an external oracle, the reference-input activity risk splits exactly, with no model fit, into a
+closure-misspecification term and an input-insufficiency term; on a matched infinite-dilution set the
+closure term is the larger on the bounds we can compute (likely; $P{\approx}0.78$, $n{=}60$). On the same
+footing ($n{=}44$), holding the learned latent against its reference gives the mechanism: trained
+end-to-end through the misspecified closure, the latent is driven off the physical quantity into a
+low-rank, out-of-sample-transferable surrogate that cancels the closure's error rather than reporting the
+charge distribution. On solubility the reference substitution falls almost entirely on the solvent (few
+drug-like solutes have reference profiles), so we read the solubility paradox as a symptom, not the
+carrier of the attribution. We looked for the obvious remedy and did not find it: a fair, validated
+comparison of the 2002 and modern (COSMO-SAC-2010/dsp) kernels does not establish a fidelity gain on
+representative data. We make no accuracy claim; the contribution is the compensating-surrogate mechanism
+and a reusable instrument for locating a fixed closure's ceiling.
 \end{abstract}
 \vspace{1.4em}
 \end{@twocolumnfalse}
