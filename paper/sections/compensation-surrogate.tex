@@ -37,8 +37,12 @@ grounding hurts \emph{here} (\S\ref{sec:paradox}): the pipeline is calibrated to
 $\hat\sigma$, not to physics, so substituting the reference $\sigma$ breaks the compensation. It also means
 the model's ``physical'' intermediate is not the molecule's charge distribution but a surrogate,
 consistent with known cautions that the interpretability of physics-grounded latents is not guaranteed
-under misspecification \cite{brynjarsdottir2014,takeishi2021}; what is
-specific here is the \emph{structure}---the surrogate is low-rank and transferable, not diffuse.
+under misspecification \cite{brynjarsdottir2014,takeishi2021}, and that adapting a representation can
+itself collapse an otherwise physically-faithful latent \cite{interno2026}. Two things are specific
+here. The drift is the mechanism under study rather than an artifact of the evaluation: the adaptation
+is the solubility fine-tuning that \emph{creates} the surrogate, and it is referenced throughout to an
+external profile, not read from an unconstrained probe. And its \emph{structure}---low-rank and
+transferable, not diffuse---distinguishes it from a random adaptation collapse.
 
 \paragraph{Why $\sigma$ is under-determined by activity.} The freedom that makes the surrogate possible
 is the closure's geometry. At infinite dilution the aggregate activity Fisher $J^{\top}J$
