@@ -28,7 +28,12 @@ fi
 # symlink (kaggle_run.py's subprocess calls "python"), are PEP-668 externally-managed,
 # and do not include scikit-learn (used by the analysis scripts).
 command -v python >/dev/null 2>&1 || sudo ln -sf /usr/bin/python3 /usr/local/bin/python
-pip install -q --break-system-packages -e . scikit-learn scipy
+# Recent DLVM images (pytorch-2-x-cu12x) ship torch+CUDA but their pip does NOT support
+# --break-system-packages and rejects editable installs (PEP 660). Install deps explicitly and
+# rely on kaggle_run.run()'s PYTHONPATH=src for the package (no editable/-e needed).
+PIP_BSP=""; pip install --help 2>/dev/null | grep -q -- --break-system-packages && PIP_BSP="--break-system-packages"
+pip install -q $PIP_BSP torch-geometric rdkit scikit-learn scipy pandas pyyaml
+pip install -q $PIP_BSP --no-deps . 2>/dev/null || true   # best-effort; PYTHONPATH=src covers imports
 KMP_DUPLICATE_LIB_OK=TRUE python - <<'PY'
 import torch, torch_geometric, rdkit, sklearn  # noqa: F401
 assert torch.cuda.is_available(), "CUDA not available -- wrong VM image or torch is the CPU build (see runbook)"
