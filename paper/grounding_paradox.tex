@@ -522,23 +522,16 @@ profile dimensions, with two formamide pairs dropped on a canonical-SMILES tauto
 
 \begin{table*}[t]
 \centering
-\caption{Closure--insufficiency decomposition on the reference-input activity path.
-Bounds, not a point split (Lemma~\ref{prop:decomp}). Convention ``full'' =
-COSMO-SAC with the combinatorial term (size factor $r_i=V_i/r_0$ on the reference
-COSMO cavity volume, VT-2005); ``res'' = residual-only (the deployed default).
-All rows are valid upper bounds on $\Binsuf=\Ex[\Var(m\mid\zstar)]$; the out-of-fold (RF/ridge) and
-k\textsc{nn} estimates are convention-independent, while the law-of-total-variance bound bins $g(\zstar)$
-and is convention-\emph{dependent} ($0.53$ full, $0.62$ res). The law-of-total-variance and out-of-fold
-rows are population \emph{upper}
-bounds on $\Binsuf$, so the $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ they feed is conservative
-(its bias runs \emph{against} the separation); the ``k\textsc{nn}'' row is a direct high-dimensional
-estimate that near-duplicate leakage deflates to the smallest value, so it is the least conservative
-input and is kept out of the load-bearing bound.
-The \emph{load-bearing} separation is the leakage-immune (LOTV)
-$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ row, which exceeds $\Binsuf$ under
-\emph{both} conventions ($1.27$, $0.85>0.62$). The convention-specific constant-offset
-(Jensen) bound separates only under ``full'' and inverts under the deployed ``res'';
-its numbers are reported with the convention hedge in App.~\ref{sec:si-tables}.}
+\caption{Closure--insufficiency decomposition on the reference-input activity path: bounds, not a point
+split (Lemma~\ref{prop:decomp}). Convention ``full'' = COSMO-SAC with the combinatorial term (size factor
+$r_i=V_i/r_0$ on the reference COSMO cavity volume, VT-2005); ``res'' = residual-only (the deployed
+default). All rows are valid $\Binsuf=\Ex[\Var(m\mid\zstar)]$ upper bounds; the RF/ridge and k\textsc{nn}
+estimates are convention-independent, the law-of-total-variance (LOTV) bound convention-\emph{dependent}
+($0.53$ full, $0.62$ res). The \emph{load-bearing} row is the leakage-immune LOTV bound
+$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$, which exceeds $\Binsuf$ under both conventions ($1.27$;
+$0.85>0.62$); the k\textsc{nn} row is deflated by near-duplicate leakage and kept out of it (mechanism and
+the a-fortiori direction in \S\ref{sec:measure}). The constant-offset (Jensen) bound separates only under
+``full'' and inverts under ``res'' (App.~\ref{sec:si-tables}).}
 \label{tab:decomp}
 {\small
 \begin{tabular}{@{}p{0.60\linewidth}rr@{}}
@@ -559,16 +552,14 @@ label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{$0$ (a
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_decomposition.pdf}
-\caption{One-sided bounds on the closure--insufficiency split under the \emph{deployed}
-residual-only COSMO-SAC convention---the configuration the model actually runs. The
-load-bearing, convention-independent bound $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{LOTV}}\approx0.85$
-exceeds every valid $\Binsuf$ upper bound (salmon region); the white gap is a separation that needs
-no smoothness assumption, and the teal region is the closure share of the total error lower-bounded by that margin (deterministic on this $n{=}60$ set; its generalization is the two-way cluster-bootstrap frequency $P_{\mathrm{boot}}\approx0.78$)
-(MSE $=1.47$). We headline the law-of-total-variance (LOTV) binning bound because it conditions on
-the scalar $g(\zstar)$ and is immune to the near-duplicate leakage that deflates the
-$z^\ast$-neighbour estimators ($k$-NN, RF; \S\ref{sec:measure}). The convention-specific constant-offset
-(Jensen) bound inverts under this deployed convention; its numbers are reported with the convention
-hedge in App.~\ref{sec:si-tables}.}
+\caption{One-sided bounds on the closure--insufficiency split under the \emph{deployed} residual-only
+convention. The load-bearing LOTV bound $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{LOTV}}\approx0.85$
+(MSE $=1.47$) exceeds every valid $\Binsuf$ upper bound (salmon); the white gap is the assumption-free
+separation, and the teal region is the closure share it lower-bounds (deterministic on this $n{=}60$ set;
+its generalization is the two-way cluster-bootstrap frequency $P_{\mathrm{boot}}\approx0.78$). The LOTV
+binning bound is headlined because it conditions on the scalar $g(\zstar)$ and is immune to the
+near-duplicate leakage that deflates the $z^\ast$-neighbour estimators (\S\ref{sec:measure}); the
+constant-offset (Jensen) bound inverts here (App.~\ref{sec:si-tables}).}
 \label{fig:decomp}
 \end{figure*}
 
@@ -576,30 +567,24 @@ We separate the load-bearing evidence---a bound that holds under \emph{any} COSM
 configuration---from corroborating checks that are robust across the conventions we tried but not
 strictly independent of the model fit.
 
-\paragraph{The load-bearing separation (leakage-immune).} Subtracting the leakage-immune
-law-of-total-variance $\Binsuf$ upper bound (the most conservative estimator; the $z^\ast$-neighbour
-$k$-NN/RF estimators are deflated by near-duplicate leakage on the crossed $41$-solute$\times17$-solvent
-design and only \emph{bracket} $\Binsuf$) from the total error gives, on the deployed residual-only
-convention, $\Bclos\gtrsim0.85$ against $\Binsuf\lesssim0.62$ (Table~\ref{tab:decomp}). This is the
-claim we lean on. Because that bound subtracts a \emph{population upper} estimate of $\Binsuf$, it
-understates $\Bclos$ in expectation, so a surviving margin survives a fortiori. The finite-sample biases
-run the other way and are controlled: the deflated $k$-NN difference is kept out of the bound, and the
-LOTV binning's per-bin sparsity bias (which can under-estimate $\Binsuf$, and so inflate $\Bclos$) is
-cross-checked against the sparsity-immune RF and ridge out-of-fold estimators (\S\ref{sec:si-tables}). It is stable---surviving leave-one-solvent, -solute, and -pair folds and adversarial
-deletion of the eight highest-error pairs---but not certified: in a two-way cluster
-bootstrap $\Bclos$ exceeds $\Binsuf$ in $78\%$ of resamples (a resampling frequency $P_{\mathrm{boot}}$,
-not a posterior probability of the inequality), with the $90\%$ margin spanning zero; under one
-deliberately aggressive out-of-fold ridge smoother the ordering even inverts ($\Binsuf{=}0.88>\Bclos{=}0.59$,
-a sensitivity edge, App.~\ref{sec:si-tables}), so ``the larger'' is estimator-conditional. With only
-$17$/$41$ clusters this small-$G$ fraction is a coarse band (mid-$0.7$s to high-$0.8$s), so we present
-the separation as a
-\emph{supporting} measurement---likely but not certified---not a stand-alone certificate. The
-convention, leakage, $\gamma$-stratification, and leverage stress-tests are in
-App.~\ref{sec:si-tables}. Label noise is unestimable here (replicate-free) and assumed zero; the bounds
-are invariant to zero-mean noise, and between-method bias does not arise because the matched IDAC is
-essentially single-method ($158/165$ gas chromatography), leaving only a within-method systematic
-exposure that against the ${\approx}0.23\,(\ln\gamma)^2$ margin would have to be implausibly large to
-close the separation.
+\paragraph{The load-bearing separation (leakage-immune).} On the deployed residual-only convention, the
+leakage-immune law-of-total-variance bound gives $\Bclos\gtrsim0.85$ against $\Binsuf\lesssim0.62$
+(Table~\ref{tab:decomp}). This is the claim we lean on, and it is conservative by construction: the bound
+subtracts a \emph{population upper} estimate of $\Binsuf$, understating $\Bclos$, so a surviving margin
+survives a fortiori. The finite-sample biases run the other way and are controlled---the deflated $k$-NN
+difference is kept out of the bound, and the LOTV binning's per-bin sparsity bias is cross-checked against
+the sparsity-immune RF and ridge out-of-fold estimators (\S\ref{sec:si-tables}).
+
+The separation is stable but \emph{not certified}. It survives leave-one-solvent, -solute, and -pair folds
+and deletion of the eight highest-error pairs, but a two-way cluster bootstrap places $\Bclos>\Binsuf$ in
+only $78\%$ of resamples ($P_{\mathrm{boot}}$, a resampling frequency, not a posterior probability of the
+inequality; $90\%$ margin spanning zero), and one deliberately aggressive out-of-fold ridge smoother
+inverts it ($\Binsuf{=}0.88>\Bclos{=}0.59$). So ``the larger'' is estimator-conditional and likely, not
+certain; with $17$/$41$ clusters the band is coarse (mid-$0.7$s to high-$0.8$s). One threat we can bound:
+label noise is unestimable here and assumed zero, but the bounds are invariant to zero-mean noise and the
+matched IDAC is essentially single-method ($158/165$ gas chromatography), so a within-method systematic
+large enough to close the ${\approx}0.23\,(\ln\gamma)^2$ margin is implausible. The convention, leakage,
+$\gamma$-stratification, and leverage stress-tests are in App.~\ref{sec:si-tables}.
 
 \paragraph{The closure defect is low-rank and correctable.} That $\Bclos$ dominates locates the
 ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. A small

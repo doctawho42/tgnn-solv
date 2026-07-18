@@ -301,43 +301,39 @@ COSMO-SAC, reference $\sigma$ ($\sigma$-oracle)     & $2.25\pm0.02$ & $-0.03\pm0
 \end{tabular}
 \end{table*}
 
-\paragraph{Robustness of the closure/insufficiency separation.} We stress the
-deployed-convention verdict $\Bclos>\Binsuf$ (\S\ref{sec:measure}) three ways on the
-$n{=}60$ set. \emph{(i)~Estimator sensitivity.} The
-$\Binsuf$ upper bounds of Table~\ref{tab:decomp} are $0.40$ ($k$-NN), $0.62$ (binning/LOTV), $0.56$
-(random forest), and $0.62$ (ridge out-of-fold). With $\mathrm{MSE}_{\mathrm{res}}=1.47$ the verdict
-$\Bclos>\Binsuf$ (equivalently $\Binsuf<\mathrm{MSE}/2=0.74$) holds under \emph{all four}. The local
-$k$-NN value is the smallest and hence the \emph{least} conservative input to
-$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$, so we headline the leakage-immune LOTV bound rather than
-it. The LOTV bound bins $g(\zstar)$, so like any plug-in within-bin variance it is finite-sample
-downward-biased when points per bin are few (the mechanism we flag for the thin high-$\gamma$ strata
-below), which would \emph{inflate} $\Bclos$ favourably; the two non-binning upper bounds---random
-forest ($0.56$) and ridge out-of-fold ($0.62$)---are immune to that per-bin sparsity and reproduce the
-$0.62$ value, so the headline separation does not rest on the binning estimator's finite-sample
-behaviour. The sole non-certifying configuration is a deliberately more aggressive ridge regularization,
-which lifts $\Binsuf$ to $0.88$ (then $\Bclos\ge0.59<0.88$)---a sensitivity edge, not a refutation,
-consistent with the clustered-bootstrap ``likely but not certified'' reading below. \emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the
-verdict holds in \emph{all} $17$ folds under the law-of-total-variance bound; under the
-random-forest estimator it holds in only $2/17$, because a random forest over-fits conditional
-variance in $102$ dimensions at $n{=}60$ (its out-of-fold MSE approaches $\Var(m)$), so its
-leave-one-out estimate is unstable---an estimator artifact, not a sign flip. \emph{(iii)~Label
-noise.} Injecting zero-mean Gaussian noise $\sigma_\eta\in\{0.2,\dots,0.8\}$ into $m$ leaves the
-estimated $\Bclos$ lower bound stable ($0.84\to0.70$), as expected since
-$\Bclos=\mathrm{MSE}-\Ex[\Var(m\mid\zstar)]$ is invariant to zero-mean noise. The separation is
-thus robust under a principled insufficiency estimator and noise-stable, but its numerical
-strength is estimator-dependent. \emph{(iv)~Clustered-bootstrap interval.} A solvent-clustered
-bootstrap ($3000$ resamples of the $17$ solvents, LOTV bound) makes the confidence explicit: the
-$\Bclos$ lower bound has median $0.93$ (CI$_{90}$ $[0.40,\,1.62]$) and the certification margin
-$\Bclos-\Binsuf$ has median $0.36$ (CI$_{90}$ $[-0.22,\,+0.97]$), with $P(\Bclos>\Binsuf)\approx0.89$
-(solvent-clustered, single-axis; the more conservative two-way solute$\times$solvent bootstrap that
-also charges for repeated solutes gives $\approx0.78$, the value the main text headlines).
-With only $G=17$ solvent (and $41$ solute) clusters this sits in the small-$G$ regime, where
-cluster-bootstrap interval coverage is known to be optimistic; the finite-cluster correction points
-the same way we already conclude---less confidence, hence non-certification---so we treat the $P$
-values as a coarse band, not two-decimal quantities.
-The separation is therefore \emph{likely} but not certified at the $90\%$ level---consistent with
-the earlier $\approx0.85$ figure (hedge~3)---which is why the main text treats it as supporting
-rather than decisive.
+\paragraph{Robustness of the closure/insufficiency separation.} We stress the deployed-convention verdict
+$\Bclos>\Binsuf$ (\S\ref{sec:measure})---equivalently $\Binsuf<\mathrm{MSE}/2=0.74$ at
+$\mathrm{MSE}_{\mathrm{res}}=1.47$---four ways on the $n{=}60$ set.
+
+\emph{(i)~Estimator sensitivity.} The four $\Binsuf$ upper bounds of Table~\ref{tab:decomp}---$0.40$
+($k$-NN), $0.62$ (binning/LOTV), $0.56$ (random forest), $0.62$ (ridge out-of-fold)---all clear the bar.
+The $k$-NN value is the smallest and least conservative input to $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$,
+so we headline the leakage-immune LOTV bound instead. The LOTV bound bins $g(\zstar)$ and is therefore
+finite-sample downward-biased when points per bin are few, which would \emph{inflate} $\Bclos$ favourably;
+but the two non-binning bounds (RF $0.56$, ridge $0.62$) are immune to that per-bin sparsity and reproduce
+$0.62$, so the headline does not rest on the binning estimator. The sole non-certifying configuration is a
+deliberately aggressive ridge, which lifts $\Binsuf$ to $0.88$ (then $\Bclos\ge0.59<0.88$): a sensitivity
+edge, not a refutation.
+
+\emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the verdict holds in all
+$17$ folds under the LOTV bound. Under the random-forest estimator it holds in only $2/17$, because an RF
+over-fits conditional variance in $102$ dimensions at $n{=}60$ (its out-of-fold MSE approaches $\Var(m)$),
+so its leave-one-out estimate is unstable---an estimator artifact, not a sign flip.
+
+\emph{(iii)~Label noise.} Injecting zero-mean Gaussian noise $\sigma_\eta\in\{0.2,\dots,0.8\}$ into $m$
+leaves the $\Bclos$ lower bound stable ($0.84\to0.70$), as expected since
+$\Bclos=\mathrm{MSE}-\Ex[\Var(m\mid\zstar)]$ is invariant to zero-mean noise.
+
+\emph{(iv)~Clustered-bootstrap interval.} A solvent-clustered bootstrap ($3000$ resamples of the $17$
+solvents, LOTV bound) makes the confidence explicit: the $\Bclos$ lower bound has median $0.93$
+(CI$_{90}$ $[0.40,\,1.62]$), and the margin $\Bclos-\Binsuf$ has median $0.36$ (CI$_{90}$ $[-0.22,\,+0.97]$)
+with $P(\Bclos>\Binsuf)\approx0.89$ (single-axis; the conservative two-way solute$\times$solvent bootstrap,
+which also charges for repeated solutes, gives $\approx0.78$, the value the main text headlines). With
+$G=17$ solvent and $41$ solute clusters this small-$G$ regime has optimistic interval coverage, and the
+finite-cluster correction points the way we already conclude: less confidence, non-certification. We
+therefore treat the $P$ values as a coarse band, not two-decimal quantities. The separation is
+\emph{likely} but not certified at the $90\%$ level, consistent with the $\approx0.85$ figure, which is
+why the main text treats it as supporting rather than decisive.
 
 \paragraph{In-regime ($\gamma$-stratified) separation.} The $n{=}60$ measurement is matched at low $\gamma$,
 while the paradox spans all $\gamma$. Stratifying the $n{=}60$ set by $\lngi$
