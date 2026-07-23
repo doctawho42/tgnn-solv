@@ -4,7 +4,7 @@ This appendix gives the full second-closure instantiation summarized in \S\ref{s
 Hammett linear-free-energy relationship (LFER) $g(\sigma)=\mathrm pK_{a,0}-\rho\,\sigma$ over the
 Hammett substituent constant $\sigma$ (with $\mathrm pK_{a,0},\rho$ the per-scaffold
 Hansch--Leo--Taft reaction-series constants), for which Hansch--Leo tabulated constants provide an
-external oracle $\zstar$. The analogy is tight: as with the $\sigma$-profile through COSMO-SAC, a
+external oracle $\zstar$. The analogy is close: as with the $\sigma$-profile through COSMO-SAC, a
 learnable physical descriptor is pushed through a fixed, approximate, differentiable map. The two
 classic LFER failure modes fall cleanly onto the two error channels of Lemma~\ref{prop:decomp}:
 \emph{resonance saturation}---a curvature in $\sigma$ that the linear closure structurally cannot
@@ -17,7 +17,7 @@ and anilinium ions are the near-exact ($\Bclos\!\approx\!0$) regime, ortho
 This decomposition is directly visible before any training. Pushed through the fixed Hammett
 closure, $p$-nitrophenol reads $\mathrm pK_a\!\approx\!8.3$ against an experimental $\approx7.1$
 (and $p$-nitroaniline overshoots similarly): the linear closure is off by $\sim1$ unit exactly
-where through-conjugation ($\sigma^-$) breaks it---$\Bclos$ in the wild.
+where through-conjugation ($\sigma^-$) breaks it---$\Bclos$ observed in practice.
 
 A controlled semi-synthetic construction on real tabulated $\sigma$ (known ground-truth
 channels) validates the estimator and reproduces the paper's central distinction in this second
@@ -26,7 +26,7 @@ grounding gap $\Gamma$ tracks $\Bclos$ (the plug-in estimate recovers the truth 
 percent, e.g.\ $0.20$ vs $0.21$, $0.81$ vs $0.81$), the case where Theorem~\ref{thm:gap}'s
 proxy is valid. Sweeping the ortho/steric channel with a \emph{well-specified} closure gives
 $\Bclos=0$ throughout yet $\Gamma>0$ and growing---the pKa realization of the conflation that
-makes $\Gamma$ a symptom rather than a certificate. The oracle-$\sigma$ pipeline
+makes $\Gamma$ an indicator rather than a certificate. The oracle-$\sigma$ pipeline
 (scaffold-resolved substituent$\to\sigma$ assignment) and this validation extend directly to real
 data. On the OPERA experimental $\mathrm pK_a$ compilation \cite{mansouri2019opera} ($7{,}904$
 records under the same net-neutral filter), applying the same decomposition to the fixed Hammett
@@ -47,7 +47,7 @@ near-exact-to-degraded transition the closure is meant to show, now measured rat
 in its clean regime. \paragraph{Data quality control (uniform, closure-independent).} The trained runs use the canonical
 full OPERA set ($7904$ records). A handful of entries are supplied as pre-ionized microstates---an
 $[\mathrm{NH}^+]$-protonated aminopyridine at $\mathrm pK_a=-7.78$, a pyrylium $[\mathrm O^+]$, and a
-few others---inconsistent with a neutral-scaffold Hammett assignment, and they wreck the clean pole
+few others---inconsistent with a neutral-scaffold Hammett assignment, and they degrade the clean pole
 (pyridinium RMSE $0.63\!\to\!3.83$). We drop them with one rule, \emph{net formal charge} $\neq0$,
 applied uniformly to both strata. It is closure-independent (it never references the oracle residual,
 so it cannot be circular) and keeps net-neutral substituents such as nitro $[\mathrm N^+][\mathrm O^-]{=}\mathrm O$.
@@ -79,13 +79,10 @@ second-domain results are the decomposition above and the certified flip.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_pka_hammett.pdf}
-\caption{The diagnostic transfers to a second real closure (pKa through a Hammett LFER), on a
-controlled construction with known ground-truth channels. \emph{Left:} varying closure fidelity
-with a sufficient intermediate, the grounding gap $\Gamma$ tracks the closure bias $\Bclos$
-(the assumption-light Jensen bound is flat here because the misspecification carries no mean
-offset). \emph{Right:} varying an ortho/steric insufficiency channel with a \emph{well-specified}
-closure, $\Bclos=0$ throughout while $\Gamma>0$ grows---the pKa realization of the two-cause
-conflation of \S\ref{sec:gap}, and the reason certification rests on the decomposition, not on
-$\Gamma$.}
+\caption{pKa through a Hammett LFER, on a controlled construction with known ground-truth
+channels. \emph{Left:} closure fidelity varied with a sufficient intermediate; grounding gap
+$\Gamma$, closure bias $\Bclos$, and the assumption-light Jensen bound. \emph{Right:} an
+ortho/steric insufficiency channel varied with a \emph{well-specified} closure; $\Bclos=0$
+throughout while $\Gamma>0$ and grows.}
 \label{fig:pka}
 \end{figure}

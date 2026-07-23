@@ -163,41 +163,43 @@ def fig_decomposition(decomp_json: Path, out_dir: Path) -> list[str]:
         "RF out-of-fold (deflated)": bi["rf_oof_upper"],
         "kNN-in-$z^\\ast$ (deflated)": bi["knn_in_zstar_biased_up"],
     }
-    max_upper = max(uppers.values())
+    # One bar of the total error, split into the two terms it decomposes into: the
+    # input-insufficiency share (at most b_lotv) and the model-misspecification share
+    # (at least mse - b_lotv). Reading the two as shares of one total is the point.
+    fig, ax = plt.subplots(figsize=(8.0, 3.1))
+    ybar, h = 0.66, 0.26
+    ax.barh(ybar, b_lotv, height=h, left=0.0, color=SALMON,
+            edgecolor=INK, linewidth=0.9, zorder=3)
+    ax.barh(ybar, b_clos_lb, height=h, left=b_lotv, color=TEAL,
+            edgecolor=INK, linewidth=0.9, zorder=3)
+    ax.text(b_lotv / 2, ybar, f"input insufficiency\n$\\leq {b_lotv:.2f}$",
+            ha="center", va="center", fontsize=8.6, color=INK, zorder=4)
+    ax.text(b_lotv + b_clos_lb / 2, ybar,
+            f"model misspecification\n$\\geq {b_clos_lb:.2f}$",
+            ha="center", va="center", fontsize=9.6, color=INK,
+            fontweight="bold", zorder=4)
+    ax.annotate(f"total error $= {mse:.2f}$", (mse, ybar + h / 2), xytext=(0, 6),
+                textcoords="offset points", ha="right", va="bottom",
+                fontsize=8.6, color=INK)
+    ax.plot([b_lotv, b_lotv], [ybar - h / 2, 0.34], color=INK, lw=0.9, ls=":", zorder=2)
 
-    fig, ax = plt.subplots(figsize=(8.8, 4.3))
-    # salmon region = every valid B_insuff upper bound; teal region = certified closure share
-    ax.axvspan(0, max_upper, color=SALMON, alpha=0.22, zorder=0)
-    ax.axvspan(b_clos_lb, mse, color=TEAL, alpha=0.20, zorder=0)
-    # B_insuff estimators as points on one row
-    ys = np.linspace(0.50, 0.80, len(uppers))
-    for (name, val), y in zip(uppers.items(), ys):
-        ax.scatter(val, y, s=70, color=SALMON, edgecolor=INK, linewidth=0.6, zorder=3)
-        # label to the left of the marker so it stays inside the B_insuff (salmon) region,
-        # never crossing the B_closure line into the certified-closure block
-        ax.annotate(f"{name} = {val:.2f}", (val, y), xytext=(-8, 0),
-                    textcoords="offset points", va="center", ha="right",
-                    fontsize=8.5, color=INK)
-    # load-bearing convention-independent lower bound on B_closure
-    ax.axvline(b_clos_lb, color=INK, lw=1.6, zorder=4)
-    ax.annotate(f"$B_{{\\rm closure}}\\geq$ MSE$-B_{{\\rm insuff}}^{{\\rm LOTV}}={b_clos_lb:.2f}$\n(load-bearing)",
-                (b_clos_lb, 0.32), xytext=(8, 0), textcoords="offset points",
-                va="center", fontsize=9, color=INK, fontweight="bold")
-    # total MSE
-    ax.axvline(mse, color=INK, lw=1.2, ls="--", alpha=0.7, zorder=4)
-    ax.annotate(f"MSE$_{{\\rm total}}={mse:.2f}$", (mse, 0.14), xytext=(-6, 0),
-                textcoords="offset points", va="center", ha="right",
-                fontsize=9, color=INK)
-    # (the convention-specific Jensen constant-offset bound, which inverts under this deployed
-    #  residual-only convention, is reported in the SI, not shown here)
-    ax.set_xlim(0, mse + 0.30)
-    ax.set_ylim(0, 1.0)
+    # every valid upper bound on the input-insufficiency term lies at or below the split
+    ax.text(0.0, 0.32, "valid upper bounds on the input-insufficiency term:",
+            ha="left", va="bottom", fontsize=8.0, color=GRAY)
+    for i, (name, val) in enumerate(uppers.items()):
+        y = 0.24 - i * 0.070
+        ax.scatter(val, y, s=44, color=SALMON, edgecolor=INK, linewidth=0.6, zorder=4)
+        ax.annotate(f"{name} $= {val:.2f}$", (val, y), xytext=(7, 0),
+                    textcoords="offset points", va="center", ha="left",
+                    fontsize=7.8, color=INK)
+
+    ax.set_xlim(0, mse * 1.06)
+    ax.set_ylim(-0.06, 0.92)
     ax.set_yticks([])
     ax.set_xlabel("error magnitude  ($\\ln\\gamma$ units$^2$)")
-    ax.set_title("Closure–insufficiency bounds, deployed residual-only COSMO-SAC ($n{=}60$): "
-                 "$B_{\\rm closure}$ dominates (leakage-immune bound)")
-    ax.text(max_upper / 2, 0.94, "$B_{\\rm insuff}$ upper bounds",
-            ha="center", va="bottom", fontsize=9, color="#B5654A")
+    ax.set_title("Closure–insufficiency split, deployed residual-only COSMO-SAC ($n{=}60$)")
+    for side in ("top", "right", "left"):
+        ax.spines[side].set_visible(False)
     fig.tight_layout()
     return _save(fig, out_dir, "fig_decomposition")
 

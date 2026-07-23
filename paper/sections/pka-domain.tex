@@ -3,7 +3,7 @@
 The machinery is not specific to COSMO-SAC. In a second real domain---aqueous $\mathrm pK_a$ of
 substituted aromatics---the fixed closure is a Hammett linear-free-energy relationship
 $g(\sigma)=\mathrm pK_{a,0}-\rho\,\sigma$ over the Hammett substituent constant $\sigma$ (\emph{not}
-the $\sigma$-profile of \S\ref{sec:setup}), for which Hansch--Leo tabulated constants supply the
+the $\sigma$-profile of \S\ref{sec:framework}), for which Hansch--Leo tabulated constants supply the
 external oracle. The two classic LFER failure modes fall cleanly onto the two channels of
 Lemma~\ref{prop:decomp}: \emph{resonance saturation} (a curvature the linear closure cannot
 represent) lands in $\Bclos$, while \emph{ortho/steric} effects, absent from the tabulated
@@ -27,7 +27,7 @@ on a second closure.
 
 Both signs obey one \emph{crossover law}---grounding helps a pole iff the learned arm's error there
 exceeds the fidelity-set oracle error---which a competence sweep confirms
-(App.~\ref{sec:si-pka}): the well-specified pole's oracle threshold (${\approx}0.315$) is unbeatable, so grounding
+(App.~\ref{sec:si-pka}): the well-specified pole's oracle threshold (${\approx}0.315$) is not beaten by the learned arm, so grounding
 helps at every training budget; the misspecified pole's threshold ($1.62$) is high, so the learned arm
 beats it, and grounding hurts, across the whole interpolation range (down to $12\%$ of the data),
 reverting to helps only under scaffold \emph{extrapolation}, where $\hat\sigma$ breaks ($2.6{\pm}2.0$)
@@ -36,7 +36,7 @@ scope boundary is predicted by the same law. It is the sharp, two-sided form of 
 (Prop.~\ref{prop:tax}); its ``a fitted intermediate can beat the true one'' half is a known
 phenomenon---from plug-in efficiency under correct specification \cite{hirano2003} to pseudo-true
 fitting under misspecification \cite{white1982}---that the crossover sharpens into a fidelity-set
-threshold. The weaker trained physics-vs-DirectGNN comparison is a complement we do not lean on
+threshold. The weaker trained physics-vs-DirectGNN comparison is a complement we do not rely on
 (App.~\ref{sec:si-pka}). On an independent chemical closure the diagnostic separates a certified
 helps-corner from a certified hurts-corner.
 The full construction, the semi-synthetic estimator validation, the measured OPERA sweep, and the

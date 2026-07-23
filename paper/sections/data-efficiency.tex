@@ -9,7 +9,7 @@ the physics-grounded model and DirectGNN on the identical subsample, evaluated o
 test (Table~\ref{tab:data-eff}, seed 42). The physics arm is \emph{worse at every fraction}, and
 against the hypothesis the gap is \emph{smallest} at the least data ($\Delta\mathrm{MAE}=+0.08$ at
 $5\%$) and \emph{grows} with more ($+1.0$ at full); its $R^2$ is negative throughout. We do not
-over-read a single-seed sweep with non-monotone physics-arm MAEs, and the light per-fraction budget
+draw strong conclusions from a single-seed sweep with non-monotone physics-arm MAEs, and the light per-fraction budget
 leaves the physics arm more under-converged than the control, so we take this as \emph{consistent
 with}, not a sharp confirmation of, the sign rule (Prop.~\ref{prop:tax}). The one inverting metric is
 top-1 solvent ranking ($0.42$ vs $0.23$ at $5\%$; the ranking-versus-accuracy split of
@@ -21,10 +21,7 @@ explanation.
 \begin{table}[t]
 \centering
 \caption{Data-efficiency sweep (train subsampled by solute, fixed scaffold test,
-seed 42). The physics-grounded arm trails DirectGNN at every fraction; the gap is
-smallest at the least data and large thereafter. $\Delta\mathrm{MAE}=\mathrm{MAE(physics)}-\mathrm{MAE(direct)}>0$
-means physics is worse. Absolute errors here exceed the headline runs (a lighter
-per-fraction budget); the valid signal is the within-budget physics$-$direct gap.}
+seed 42). $\Delta\mathrm{MAE}=\mathrm{MAE(physics)}-\mathrm{MAE(direct)}$.}
 \label{tab:data-eff}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrrr}
@@ -45,9 +42,7 @@ $1.00$ & $2.98$ & $1.97$ & $+1.01$ & $-0.79$ & $+0.22$ \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.7\linewidth]{figs/fig_data_efficiency.pdf}
-\caption{Data-efficiency curve. The physics-grounded arm (salmon) trails the DirectGNN
-black box (teal) at every training-data fraction; the gap is smallest at the least data
-and large thereafter---the opposite of the low-data advantage a physics prior is
-supposed to provide.}
+\caption{Data-efficiency curve: physics-grounded arm (salmon) and DirectGNN (teal)
+as a function of training-data fraction.}
 \label{fig:data-eff}
 \end{figure}

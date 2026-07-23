@@ -10,7 +10,7 @@ measure the ceiling (\S\ref{sec:measure}) also lets us test this directly, compa
 profile $\hat\sigma$ against the reference VT-2005 profile $\sigma$ molecule by molecule ($n{=}44$).
 
 \paragraph{The learned profile is a systematic, low-rank, transferable surrogate---confound-free.}
-We use the cleanest test available: a grounded model checkpointed before and after
+We use the most controlled test available: a grounded model checkpointed before and after
 solubility fine-tuning (the $\sigma$ head unfrozen), so architecture and initialisation are held fixed
 and only the objective differs; we repeat it over \emph{three seeds} and report mean$\pm$sd. The
 grounded base recovers the reference profile to within $36\pm1\%$
@@ -29,13 +29,14 @@ the fit. On that held-out half $D$ predicts the drift $4.1\pm0.5\times$ better t
 null out-of-sample. That null is deliberately weak: the affine offset lets $D$ absorb the systematic mean
 shift as well, so the transfer ratio alone also credits it for that shift; the evidence that the drift has
 structure \emph{beyond} an offset is the mean-centred low-rank spectrum above. So $\hat\sigma$ is a systematic, low-rank,
-\emph{transferable} closure-compensating surrogate---one generalizable way the intermediate ``lies'' to
-the closure, shared across chemistry, driven by the fitting objective rather than by architecture or a
-lack of grounding.\footnote{Three-seed mean$\pm$sd (seeds $0$--$2$). The load-bearing claim is the
+\emph{transferable} closure-compensating surrogate---one generalizable way the intermediate departs from
+the physical profile to compensate the closure, shared across chemistry, driven by the fitting objective
+rather than by architecture or a
+lack of grounding.\footnote{Three-seed mean$\pm$sd (seeds $0$--$2$). The central claim is the
 \emph{sign} and the low-rank, transferable \emph{structure}, both seed-stable; the \emph{magnitude} has
 moved across pipeline versions over the project---a short run reached only ${\sim}16\%$, and earlier
 confounded/two-model analyses over-stated the departure (${\sim}82\%$) and transfer ($16$--$26\times$)---so
-we report it but do not lean on it (with $n{=}3$ the sd is itself only indicative, not a precision).}
+we report it but do not draw strong conclusions from it (with $n{=}3$ the sd is itself only indicative, not a precision).}
 
 \paragraph{Dominant mode and consequence.} The dominant drift mode (Fig.~\ref{fig:surrogate}) transfers
 area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and \emph{into} the polar wings: the network
@@ -65,12 +66,12 @@ so the end-to-end head can move $\sigma$ along the low-sensitivity directions at
 We state this narrowly---participation ratio is a concentration statistic, not a hard count, and it is
 measured at infinite dilution, so its transfer to the finite-composition regime that generates the drift
 is not established (the same scope gap as $\Bclos$, \S\ref{sec:scope}); the external reference here is
-itself \emph{computed} (VT-2005 quantum chemistry), not experimental, so we do not claim recovery is
-impossible in principle.
+itself \emph{computed} (VT-2005 quantum chemistry), not experimental, so this does not establish that
+recovery is impossible in principle.
 
 Whether the drift is additionally the closure's \emph{signed} first-order inverse $J^{+}(m-g)$ is
-under-resolved on this sparse, near-rank-one problem---a signed null we report but do not build on
-(App.~\ref{sec:si-failed-diagnostics}); the load-bearing claim is the under-determination above, not the
+under-resolved on this sparse, near-rank-one problem---a signed null we report but do not rely on
+(App.~\ref{sec:si-failed-diagnostics}); the central claim is the under-determination above, not the
 geometry of the drift.
 
 \paragraph{The contrast that fixes the sign, and how the axes interact.} The sign of grounding is not
@@ -89,16 +90,13 @@ it across (\S\ref{sec:discussion}).
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.86\linewidth]{figs/fig_compensation_surrogate.pdf}
-\caption{The learned $\sigma$-profile is a systematic closure-compensating surrogate, not the
-physical profile. \emph{Left:} the mean deviation $\hat\sigma-\sigma$ (and its dominant PCA mode)
-transfers area out of the nonpolar bins ($\sigma\!\approx\!0$) into the polar wings---the network makes
-molecules look more polar than they are, inflating the segment interactions the misspecified closure
-under-weights. \emph{Right:} the deviation spectrum is low-rank (top-two modes $72\pm1\%$, $4.8\times$ the
-finite-sample isotropic null of ${\approx}15\%$ at $n{=}44$, $p{=}51$), i.e.\ the distortion is
-systematic. A single ridge-fit affine distortion
+\caption{Deviation of the learned $\sigma$-profile $\hat\sigma$ from the reference VT-2005 profile
+$\sigma$. \emph{Left:} the mean deviation $\hat\sigma-\sigma$ (and its dominant PCA mode), which
+transfers area out of the nonpolar bins ($\sigma\!\approx\!0$) into the polar wings. \emph{Right:} the
+deviation spectrum (top-two modes $72\pm1\%$, $4.8\times$ the
+finite-sample isotropic null of ${\approx}15\%$ at $n{=}44$, $p{=}51$). A single ridge-fit affine distortion
 ($2652$ parameters, $22$ train / $22$ held out) transfers $4.1\pm0.5\times$ better than the zero-drift
-null out-of-sample (spectrum mean-removed), so $\hat\sigma$ is a transferable
-closure-compensating surrogate of $\sigma$, not $\sigma$ with noise (confound-free, three seeds,
-$n{=}44$ matched VT-2005 molecules).}
+null out-of-sample (spectrum mean-removed); three seeds,
+$n{=}44$ matched VT-2005 molecules.}
 \label{fig:surrogate}
 \end{figure*}

@@ -4,6 +4,33 @@
 \appendix
 \section*{Supplementary Information}
 
+\section{Notation}
+\label{sec:si-notation}
+\begin{table}[h]
+\centering
+\caption{Notation and coined terms used throughout.}
+\label{tab:notation}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lp{0.62\linewidth}@{}}
+\toprule
+Symbol / term & Meaning \\
+\midrule
+$g$ (closure)          & fixed, non-fitted physical map (COSMO-SAC; a Hammett LFER for pKa) \\
+$h$ (encoder)          & learned graph network, $x\mapsto z$ \\
+$\zstar$, $\hat z$     & reference (oracle) vs.\ learned physical intermediate (the $\sigma$-profile) \\
+$m$                    & activity target (experimental $\lngi$) \\
+$\Bclos$               & closure misspecification, $\Ex[(\Ex[m\mid\zstar]-g(\zstar))^2]$ \\
+$\Binsuf$              & input insufficiency, $\Ex[\Var(m\mid\zstar)]$ \\
+$\Gamma$ (grounding gap) & $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$: oracle risk minus best end-to-end risk \\
+$\Delta_\infty$ (physics penalty) & asymptotic risk of the physics arm minus the matched control \\
+full / res             & COSMO-SAC with / without the Staverman--Guggenheim combinatorial term \\
+$R_{\mathrm{orc}},R_{\mathrm{e2e}},R_{\mathrm{free}}$ & oracle / best end-to-end / free black-box population risks (they define $\Gamma$) \\
+compensating surrogate & a learned $\hat z$ that \emph{cancels} the closure's error instead of matching $\zstar$; here low-rank and out-of-sample transferable \\
+$P_{\mathrm{boot}}$    & clustered-bootstrap frequency of $\Bclos>\Binsuf$ on the matched set (a resampling frequency, not a posterior probability) \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
 \section{Supplementary methods}
 \label{sec:si-methods}
 \paragraph{COSMO-SAC constants.} The differentiable COSMO-SAC layer uses the standard
@@ -16,8 +43,8 @@ $\sigma$-profile grid is $51$ bins on $[-0.025,0.025]$\,e\,\AA$^{-2}$. The segme
 fixed point is damped ($\lambda=0.7$) and run for $16$ iterations at train time and $30$
 at evaluation.
 \paragraph{A usage pitfall in \texttt{cCOSMO} (\texttt{COSMO1} on typed profiles).} Handing the 2002
-kernel a typed three-profile base produces a silently-wrong result, worth documenting because the
-library gives no warning. The reference implementation~\cite{bell2020cosmosac} pairs its 2002 model
+kernel a typed three-profile base produces a silently-wrong result that the library returns without
+warning. The reference implementation~\cite{bell2020cosmosac} pairs its 2002 model
 (\texttt{COSMO1}) with the single-profile Virginia Tech database; the demonstrated input is one
 untyped, Mullins-averaged profile. When \texttt{COSMO1} is instead handed a typed three-profile
 (Hsieh, \texttt{sigma3}) base --- tempting when a 2002 and a 2010 arm are to share one profile source
@@ -53,8 +80,7 @@ $g$, which returns $\ln\gamma_2$, and an SLE solver combines the two into $\lnx$
 insufficiency $\Binsuf$ enters at the intermediate $\hat z$ and closure misspecification
 $\Bclos$ at $g$. The $\sigma$-oracle replaces $\hat z$ with the reference VT-2005 profile
 $\zstar$ (salmon). DirectGNN (grey) is the matched control---it shares the encoder but
-drops the closure, so the gap to the physics path is the asymptotic physics penalty
-$R_{\mathrm{phys}}-R_{\mathrm{direct}}$.}
+drops the closure.}
 \label{fig:arch}
 \end{figure*}
 
@@ -101,14 +127,14 @@ architecture         & mixture-of-experts balance                       & $0.02$
 \bottomrule
 \end{tabular}}
 \caption{The $15$ active loss terms (non-zero default weight). $^\dagger$The $\sigma$-profile
-earth-mover term is the grounding term whose \emph{absence} in the end-to-end arm the paradox exploits.
+earth-mover term is active only when the grounding stream is on.
 A further $17$ registered terms are disabled (weight $0$). Per-phase weight overrides are pinned in each
 run's resolved configuration.}
 \label{tab:loss}
 \end{table}
 
 \paragraph{Loss-simplification ablation.}\label{sec:si-lossablation}
-For a diagnostic result the elaborate objective is a liability: it invites the reading that the paradox
+For a diagnostic result the elaborate objective is a potential confound: it could be read as indicating that the paradox
 is an artifact of loss tuning. We test the opposite---that the paradox and the compensating-surrogate
 drift survive a \emph{minimal} objective. Pre-registered before the run: train the end-to-end grounded
 arm with only the task ($\lnx$ Huber), the crystal grounding ($\Tm,\dHfus$), and the $\sigma$-profile
@@ -116,13 +142,13 @@ warmup, \emph{dropping} the activity-grounding auxiliaries ($\lngi$, $\lng$, Han
 regulariser, then read the sign of the paradox (oracle vs.\ learned) and the surrogate drift.
 Prediction: both persist, because the mechanism is end-to-end training through a misspecified closure,
 not the auxiliary terms. Confirmed at the level the ablation measures. The ablation re-measures the
-solubility \emph{paradox} (reference minus learned $\lnx$ MAE), the symptom, not the profile drift
+solubility \emph{paradox} (reference minus learned $\lnx$ MAE), the observable effect, not the profile drift
 directly: on the full test set it is $+1.13$ (95\% CI $[0.88,1.38]$) under the minimal objective,
 \emph{larger} than the $+0.30$ ($[0.20,0.39]$) under the full one. This is the \emph{overall},
 solvent-dominated paradox, and it strengthens once the activity-grounding auxiliaries---the only pressure
 toward physics---are removed; on the both-reference subset ($n{=}297$ rows over the ${\approx}7$ VT-covered
 solutes) the sign in fact reverses ($-0.23$ minimal vs $+0.22$ full), so the ablation is evidence
-that the overall symptom is loss-robust, not subset-level confirmation of the mechanism. It is
+that the overall observable effect is loss-robust, not subset-level confirmation of the mechanism. It is
 \emph{consistent with} the compensating surrogate being intrinsic to end-to-end training through a
 misspecified closure rather than a regularisation artifact; it is an implication of the amplified paradox,
 not a direct re-measurement of $\lVert\hat\sigma-\sigma\rVert$ under the minimal run (the minimal-loss
@@ -288,8 +314,7 @@ of a misspecified map (\S\ref{sec:measure}).
 \begin{table*}[h]
 \centering
 \caption{Per-arm scaffold-split metrics (3 seeds, $n{=}5608$ cross-arm lock).
-Ordered by MAE; the physics closures trail DirectGNN and the reference-$\sigma$ oracle is
-worst.}
+Ordered by MAE.}
 \label{tab:si-arms}
 \begin{tabular}{lrr}
 \toprule
@@ -315,7 +340,7 @@ The $k$-NN value is the smallest and least conservative input to $\Bclos\ge\math
 so we headline the leakage-immune LOTV bound instead. The LOTV bound bins $g(\zstar)$ and is therefore
 finite-sample downward-biased when points per bin are few, which would \emph{inflate} $\Bclos$ favourably;
 but the two non-binning bounds (RF $0.56$, ridge $0.62$) are immune to that per-bin sparsity and reproduce
-$0.62$, so the headline does not rest on the binning estimator. The sole non-certifying configuration is a
+$0.62$, so the headline does not depend on the binning estimator. The sole non-certifying configuration is a
 deliberately aggressive ridge, which lifts $\Binsuf$ to $0.88$ (then $\Bclos\ge0.59<0.88$): a sensitivity
 edge, not a refutation.
 
@@ -360,8 +385,7 @@ not prove---the conjecture that the same closure misspecification drives the all
 \begin{table}[h]
 \centering
 \caption{Closure/insufficiency verdict across $\lngi$ strata of the matched set (deployed
-residual-only convention; $\Binsuf^{\mathrm{up}}$ is the leakage-immune LOTV binning bound throughout,
-for even-handedness with the main-text headline). The separation holds in every stratum and grows with $\gamma$.}
+residual-only convention; $\Binsuf^{\mathrm{up}}$ is the leakage-immune LOTV binning bound throughout).}
 \label{tab:regime}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrr}
@@ -383,13 +407,9 @@ tabulated in \S\ref{sec:measure}.
 \centering
 \includegraphics[width=0.72\linewidth]{figs/fig_parity.pdf}
 \caption{Activity-coefficient parity on the $n{=}60$ matched pairs. The reference-$\sigma$
-COSMO-SAC closure $g(\zstar)$ (salmon) falls systematically below the diagonal at
+COSMO-SAC closure $g(\zstar)$ (salmon) falls below the diagonal at
 larger $\lngi$, under-predicting the activity coefficient (MSE $1.80$, full
-convention). This systematic downward bias is the visible form of the decoder
-misspecification $\Bclos$; for reference a flexible regressor of $\lngi$ on the same
-reference profiles reaches a floor of MSE $\approx0.40$ (our least-conservative, $k$-NN-adjacent
-$\Binsuf$ estimate; the leakage-immune LOTV upper bound is $0.62$, \S\ref{sec:measure}), so the
-closure's excess over the leakage-immune floor is at least ${\approx}2.4\times$ and is $\Bclos$.}
+convention).}
 \label{fig:parity}
 \end{figure}
 
@@ -423,8 +443,8 @@ but sharpened its scope:
   regime (matched mean $\lngi=0.75$ vs $3.56$ for VT-2005-unmatchable pairs, $t=-7.44$;
   the strongly non-ideal amide-solvent regime is untested because VT-2005 lacks those
   profiles). This narrows scope but is \emph{conservative}, since the untested regime is
-  a harder closure test. The target is $\lngi$ at 298\,K, so the numeric ceiling is not
-  claimed to transfer unchanged to the finite-composition solubility regime.
+  a harder closure test. The target is $\lngi$ at 298\,K, so the numeric ceiling does not
+  necessarily transfer unchanged to the finite-composition solubility regime.
 \end{enumerate}
 
 \section{External baselines and ablations}
@@ -435,8 +455,8 @@ by-solute test split (\texttt{test\_solute.csv}, $n\approx10$--$12$k). In $\lnx$
 reach MAE $1.94$ (FastSolv, $R^2\,0.23$) and $2.34$ (SolProp, calibrated,
 $R^2\,{-}0.18$); in $\log_{10}S$, $0.87$ and $1.04$. These are on a \emph{by-solute} split that is
 \emph{not comparable} to our scaffold numbers (Table~\ref{tab:si-arms}): they bound the task's
-difficulty, not a head-to-head ranking, so we do \emph{not} read our scaffold-split DirectGNN
-($1.70$) as beating them, and a like-for-like scaffold evaluation of the external models is left to
+difficulty, not a head-to-head ranking, so this does \emph{not} establish that our scaffold-split DirectGNN
+($1.70$) beats them, and a like-for-like scaffold evaluation of the external models is left to
 the deposited artifacts. What \emph{is} comparable is the internal ordering: the physics-informed
 SolProp trails the direct FastSolv---the same ordering we find between our physics closures and
 DirectGNN. The regime-level reading is that on this corpus no
@@ -492,8 +512,7 @@ model.
 \begin{table}[h]
 \centering
 \caption{Same-pair high-temperature extrapolation ($n=3343$, train $T\le309.75$\,K).
-Structured $1/T$ classes extrapolate; a descriptor regressor and constant baselines do
-not. ``dir.'' is the fraction of pairs whose high-$T$ shift direction is predicted
+``dir.'' is the fraction of pairs whose high-$T$ shift direction is predicted
 correctly.}
 \label{tab:si-temp}
 \begin{tabular}{lrrr}
@@ -525,13 +544,8 @@ per-pair mean                   & $1.46$ & $0.56$ & $0.01$ \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\linewidth]{figs/fig_picard_test.pdf}
-\caption{The measured drift does not match the closure's \emph{signed} first-order inverse: the
-per-molecule cosine between the measured drift $\hat\sigma-\sigma$ and the first-order closure compensation
-$J^{+}(m-g)$ is centred on zero (median $-0.00$). We report this as a signed negative only. On the sparse
-matched set (median one pair per molecule, hence a one-dimensional per-molecule Jacobian subspace) the
-dimension-matched controls we ran are uninformative---a resolved direction common across molecules makes a
-molecule's ``own'' and ``other'' subspaces coincide---so we do not lean on the drift's geometry
-(this section).}
+\caption{Per-molecule cosine between the measured drift $\hat\sigma-\sigma$ and the first-order closure compensation
+$J^{+}(m-g)$; the distribution is centred on zero (median $-0.00$).}
 \label{fig:picard}
 \end{figure}
 
