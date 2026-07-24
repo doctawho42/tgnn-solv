@@ -80,8 +80,8 @@ solubility more accurately from its own learned molecular charge-density profile
 quantum-chemical reference profiles fed to the same fixed activity-coefficient model (COSMO-SAC).
 Because the learned latent has an external reference, the error incurred by using reference inputs can be
 separated, without fitting any model, into a term due to misspecification of the fixed model and a term
-due to insufficiency of the learned inputs; the misspecification term is the larger, so the fixed model,
-not the learned inputs, sets the accuracy ceiling. Trained end to end through the misspecified model, the
+due to insufficiency of the learned inputs; the misspecification term appears to be the larger, so the
+fixed model, not the learned inputs, sets the accuracy ceiling. Trained end to end through the misspecified model, the
 latent departs from the physical quantity it nominally represents and becomes a low-rank, transferable
 surrogate that compensates for the model's error. As a result, more accurate physical inputs expose the
 model's bias instead of improving prediction, and increasing the model's fidelity does not remove the
@@ -865,7 +865,10 @@ surrogate run's per-run split provenance was not logged (its matched set is the 
 \section*{Acknowledgements}
 \noindent This work was supported by \pending[funder name(s) and grant/award number(s)].
 \pending[Compute resources and any non-author acknowledgements.]
-\pending[RSC policy: if a generative-AI tool was used in preparing this manuscript, declare it here; otherwise delete this sentence.]
+\noindent During the preparation of this work the authors used generative artificial-intelligence
+tools (large language models, including Anthropic's Claude) to assist with literature search, drafting
+and editing of the text, writing and debugging of analysis code, and generating figures. All content
+was reviewed, verified, and edited by the authors, who take full responsibility for the manuscript.
 
 \input{sections/SI}
 

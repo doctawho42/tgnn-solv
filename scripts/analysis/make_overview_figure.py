@@ -151,7 +151,7 @@ ledger = [
     (0.02, "CERTIFIED", HELP, "#EAF1EE", [
         r"Reference $\sigma$ hurts solubility (3 seeds, $n{=}5608$)",
         r"Exact split $B=B_{\mathrm{closure}}+B_{\mathrm{insuff}}$ (Lemma 2)",
-        r"pKa flip: helps meta/para, hurts ortho ($\approx20/20$)",
+        r"pKa flip: helps meta/para, hurts ortho ($19$--$20/20$)",
     ]),
     (1.03, "LIKELY", AMBER, "#F6EEDD", [
         r"Latent: low-rank transferable surrogate ($n{=}44$)",
