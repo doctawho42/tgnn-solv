@@ -72,24 +72,24 @@
 \begin{@twocolumnfalse}
 \maketitle
 \begin{abstract}
-Grounding a learned physical latent in reference values that a black-box model cannot exploit is a
-common recipe for out-of-distribution prediction, on the expectation that more accurate physical inputs
-yield more accurate predictions. We show that this expectation fails when the grounded inputs are
-consumed by a fixed, misspecified thermodynamic model. A graph neural network predicts solid--liquid
-solubility more accurately from its own learned molecular charge-density profiles than from external
-quantum-chemical reference profiles fed to the same fixed activity-coefficient model (COSMO-SAC).
-Because the learned latent has an external reference, the error incurred by using reference inputs can be
-separated, without fitting any model, into a term due to misspecification of the fixed model and a term
-due to insufficiency of the learned inputs; the misspecification term appears to be the larger, so the
-fixed model, not the learned inputs, sets the accuracy ceiling. Trained end to end through the misspecified model, the
-latent departs from the physical quantity it nominally represents and becomes a low-rank, transferable
-surrogate that compensates for the model's error. As a result, more accurate physical inputs expose the
-model's bias instead of improving prediction, and increasing the model's fidelity does not remove the
-penalty. The same behaviour arises in a controlled synthetic family of models and in a second chemical
-domain, the prediction of acid dissociation constants. We introduce a general, fitting-free instrument
-that separates model misspecification from input insufficiency for any predictor that composes a fixed
-physical model over a learned intermediate, and we show that the interpretability such physically
-grounded latents appear to offer is not guaranteed when the fixed model is misspecified.
+Physics-informed models route a prediction through interpretable physical quantities, on the expectation
+that grounding those quantities in accurate reference values improves accuracy. Whether it does depends on
+the fixed physical model that consumes them, a dependence that has been difficult to measure. We make it
+measurable for solid--liquid solubility: we implement the COSMO-SAC family of activity-coefficient models
+as differentiable layers and, using an external reference for the model's learned input, separate the
+prediction error---without fitting any further model---into a term due to misspecification of the fixed
+model and a term due to insufficiency of the learned input. Applied to a graph neural network that predicts
+solubility through a learned molecular charge-density ($\sigma$) profile, the instrument reveals a
+counterintuitive effect: the network predicts more accurately from its own learned profiles than from
+external quantum-chemical reference profiles, because the misspecification term appears to be the larger
+and the learned profile, trained end to end through the misspecified model, has become a low-rank,
+transferable surrogate that compensates for the model's error rather than reporting the physical quantity.
+More accurate inputs therefore expose the model's bias, and raising the model's fidelity does not remove
+the penalty. The same behaviour arises in a controlled synthetic family of models and, with an
+in-distribution test that certifies it, in a second chemical domain, the prediction of acid dissociation
+constants. The instrument applies to any predictor that composes a fixed physical model over a learned
+intermediate, and shows that the interpretability such grounded latents appear to offer is not guaranteed
+when the fixed model is misspecified.
 \end{abstract}
 \vspace{1.4em}
 \end{@twocolumnfalse}
@@ -127,30 +127,32 @@ methodological result is that when the learned intermediate has an external refe
 separate exactly, without fitting any further model, and the separation attributes the accuracy ceiling
 to the fixed model rather than to the inputs. We then show that the compensating behaviour of the learned
 intermediate is systematic and transferable, that raising the fidelity of the fixed model does not lift
-the ceiling, and that the same phenomenon arises in a controlled synthetic setting and in a second
-chemical domain. Together these results qualify a common assumption of physics-informed modelling:
+the ceiling, and that the same phenomenon arises in a controlled synthetic setting and, with an
+in-distribution test that certifies it, in a second chemical domain. Together these results qualify a
+common assumption of physics-informed modelling:
 grounding a learned latent on reference values helps only when the model that consumes it is faithful,
 and the interpretability such a latent appears to offer is not guaranteed when it is not.
 
 \paragraph{Contributions.} This article makes the following contributions.
 \begin{itemize}
-  \item We report a grounding paradox in physics-informed solubility prediction: a graph neural network
-  predicts solubility more accurately from its own learned $\sigma$-profiles than from external
-  quantum-chemical reference profiles supplied to the same fixed COSMO-SAC model, reversing the expected
-  benefit of more accurate physical inputs.
-  \item We introduce a fitting-free instrument that uses an external reference for the learned latent to
-  split the prediction error into a model-misspecification term and an input-insufficiency term, and we
-  use it to show that the misspecification of the fixed model is the larger term and sets the accuracy
-  ceiling.
-  \item We identify the mechanism behind the paradox: trained end to end through the misspecified model,
-  the learned latent becomes a low-rank, transferable surrogate that compensates for the model's error
-  instead of reporting the physical quantity, which is why more accurate inputs hurt.
+  \item We implement the COSMO-SAC family of activity-coefficient models as differentiable layers and
+  build a fitting-free instrument that, using an external reference for a model's learned input, splits
+  the prediction error into a model-misspecification term and an input-insufficiency term. The instrument
+  requires no further model fit and applies to any predictor that composes a fixed physical model over a
+  learned intermediate.
+  \item Using the instrument, we report a grounding paradox in physics-informed solubility prediction: a
+  graph neural network predicts solubility more accurately from its own learned $\sigma$-profiles than
+  from external quantum-chemical reference profiles supplied to the same fixed COSMO-SAC model, because
+  the misspecification of the fixed model is the larger error term and sets the accuracy ceiling.
+  \item We identify the mechanism: trained end to end through the misspecified model, the learned latent
+  becomes a low-rank, transferable surrogate that compensates for the model's error instead of reporting
+  the physical quantity, which is why more accurate inputs reduce accuracy.
   \item We show that the ceiling is a property of the fixed model rather than of downstream processing: a
   higher-fidelity fixed model does not remove the penalty on representative data, and a post-hoc
   correction of the model's output restores calibration but not accuracy.
-  \item We show that the account is general. It applies to any predictor that composes a fixed physical
-  model over a learned intermediate, and the same behaviour appears in a controlled synthetic family of
-  models and in a second chemical domain, the prediction of acid dissociation constants.
+  \item We show that the account is general: the same behaviour appears in a controlled synthetic family
+  of models and, in a second chemical domain (the prediction of acid dissociation constants), an
+  in-distribution test certifies the same reversal of the grounding effect.
 \end{itemize}
 
 The remainder of this article is organised as follows. Section~\ref{sec:related} reviews data-driven and
