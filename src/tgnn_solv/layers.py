@@ -1509,8 +1509,13 @@ class CosmoSacLayer(nn.Module):
         self.kernel_rank = R
         self.kernel_smooth_penalty = g("cosmo_sac_kernel_residual_penalty", 0.0)
         if R > 0:
-            self.kernel_B = nn.Parameter(torch.zeros(n_bins, R))   # 51·R params (persistent)
-            self.kernel_a = nn.Parameter(torch.zeros(R))           #    R params
+            # kernel_B needs a small non-zero init: the residual (B*a)@B^T is quadratic in B, so at
+            # B=0 the gradient w.r.t. B vanishes and the residual would never co-train (dead init).
+            # kernel_a stays 0 so the residual is exactly 0 at init (nested with exact COSMO-SAC),
+            # yet d(residual)/d(a) = B_r B_r^T != 0 bootstraps training. (run_local_closure_fix.py
+            # re-inits kernel_B the same way before its post-hoc fit.)
+            self.kernel_B = nn.Parameter(0.01 * torch.randn(n_bins, R))  # 51·R params (persistent)
+            self.kernel_a = nn.Parameter(torch.zeros(R))                 #    R params
             D2 = torch.zeros(n_bins - 2, n_bins)                   # 2nd-difference smoothness op
             idx = torch.arange(n_bins - 2)
             D2[idx, idx], D2[idx, idx + 1], D2[idx, idx + 2] = 1.0, -2.0, 1.0
