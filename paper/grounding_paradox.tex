@@ -138,8 +138,7 @@ and the interpretability such a latent appears to offer is not guaranteed when i
   \item We implement the COSMO-SAC family of activity-coefficient models as differentiable layers and
   build a fitting-free instrument that, using an external reference for a model's learned input, splits
   the prediction error into a model-misspecification term and an input-insufficiency term. The instrument
-  requires no further model fit and applies to any predictor that composes a fixed physical model over a
-  learned intermediate.
+  applies to any predictor that composes a fixed physical model over a learned intermediate.
   \item Using the instrument, we report a grounding paradox in physics-informed solubility prediction: a
   graph neural network predicts solubility more accurately from its own learned $\sigma$-profiles than
   from external quantum-chemical reference profiles supplied to the same fixed COSMO-SAC model, because
@@ -168,14 +167,12 @@ Section~\ref{sec:conclusion} concludes.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_overview.pdf}
-\caption{\textbf{Overview.} A learned encoder $h$ predicts a molecular charge-density profile that a
-fixed, parameter-free thermodynamic model $g$ (COSMO-SAC) turns into a solubility. \emph{(1)~The
-paradox:} replacing the learned profile $\hat\sigma$ with an external quantum-chemical reference profile
-$\sigma^\star$ makes the prediction worse. \emph{(2)~The measurement:} the error from using reference
-inputs is split into a model-misspecification term $\Bclos$ and an input-insufficiency term $\Binsuf$,
-with the misspecification term the larger. \emph{(3)~No fidelity lever:} a higher-fidelity model does
-not remove the penalty on representative data. The lower panel lists the paper's findings, graded by
-strength of evidence.}
+\caption{\textbf{Overview.} \textbf{(a)}~A learned encoder predicts a molecular charge-density
+profile $\hat\sigma$, which a fixed thermodynamic model converts into a solubility; substituting an
+external quantum-chemical reference profile $\sigma^\star$ for $\hat\sigma$ makes the prediction
+worse. \textbf{(b)}~The error incurred when the reference profile is used, split into a
+model-misspecification term and an input-insufficiency term, with the misspecification term
+the larger.}
 \label{fig:overview}
 \end{figure*}
 
@@ -205,8 +202,8 @@ quantum-chemically computed screening-charge profiles for ${\sim}1{,}400$
 compounds \cite{mullins2006}), and $g(\zstar)$ for the closure output when fed the
 reference profile. The model's own head instead predicts a \emph{learned} profile
 $\hat z$ and evaluates $g(\hat z)$; a matched \emph{DirectGNN} control shares the
-encoder but emits $\lnx$ with no closure, and is the reference for ``what the
-physics bottleneck costs'' (schematic in SI, Fig.~\ref{fig:arch}).
+encoder but emits $\lnx$ with no closure, and is the reference against which the
+cost of the physics bottleneck is measured (schematic in SI, Fig.~\ref{fig:arch}).
 
 \paragraph{The oracle substitution.} Feeding $\zstar$ in place of $\hat z$
 (a $\sigma$-oracle) isolates the closure from encoder error: if the closure were
@@ -229,7 +226,7 @@ encoder but drops $g$. Solubility, with $g$ the COSMO-SAC closure and $z$ the
 $\sigma$-profile, is one instance; \S\ref{sec:pka} gives a second (pKa through a fixed
 Hammett closure), and \S\ref{sec:dial} a controlled synthetic family. Nothing in
 Lemmas~\ref{prop:ident}--\ref{prop:decomp}, Theorem~\ref{thm:gap}, or
-Proposition~\ref{prop:tax} is specific to COSMO-SAC. Two quantities organize the section:
+Proposition~\ref{prop:tax} is specific to COSMO-SAC. Two quantities organise the section:
 the closure/insufficiency split $B=\Bclos+\Binsuf$, which is the assumption-light
 \emph{instrument}, and the observable grounding gap $\Gamma$, which is an \emph{indicator} of
 closure misspecification whose validity we characterise.
@@ -256,14 +253,14 @@ $2.3\times10^{5}$; \S\ref{sec:ident}).
 \end{lemma}
 \noindent This is the standard structural-identifiability picture for a
 collinear design \cite{raue2009,villaverde2016}---equivalently the null-space picture of
-regularization theory, in which the component of an inverse fit the data leaves unconstrained
+regularisation theory, in which the component of an inverse fit the data leaves unconstrained
 lives in the null space of the forward map and is fixed only by the prior \cite{engl1996,hansen1998},
 restated for learned reconstruction as null-space networks \cite{schwab2019}. What is specific to our
 setting is that this indeterminate component is not projected out by construction but is left free
 under \emph{end-to-end} training of the SLE-coupled latent. We prove it in the SLE form
 (App.~\ref{sec:si-proofs}) and audit it numerically in \S\ref{sec:ident}. It is
-\emph{enabling background},
-not our headline: it explains why grounding an under-determined factor on
+\emph{enabling background}
+rather than a principal claim: it explains why grounding an under-determined factor on
 external single-component data is necessary, and why compensation between the
 factors is expected. By itself it says nothing about whether grounding helps.
 That depends on whether the closure that consumes the grounded inputs is
@@ -273,7 +270,7 @@ The non-identifiability is not binary but graded by the activity class: the effi
 information for $\dHfus$ is zero when the activity nuisance spans the crystal score's directions
 $\{1,1/T\}$ and strictly positive (a finite Cram\'er--Rao bound) when the slope is constrained
 (Lemma~\ref{prop:semiparam}, App.~\ref{sec:si-proofs}). The numerical audit (\S\ref{sec:ident})
-shows the honest corollary: merely restricting the activity slope leaves
+shows the corollary: merely restricting the activity slope leaves
 $\mathrm{sd}(\dHfus)\approx8{,}251$\,J/mol---finite but unusable---whereas external crystal labels,
 which contribute a score direction outside the activity tangent space, close it to
 $\approx1{,}689$\,J/mol.
@@ -283,7 +280,7 @@ $\approx1{,}689$\,J/mol.
 Let $m$ be the activity target (experimental $\lngi$) and $g(\zstar)$ the closure
 evaluated on the true latent. The risk of the reference-input path---its mean squared error
 $\Ex[(m-g(\zstar))^2]$---decomposes exactly into a part the intermediate cannot resolve (the
-irreducible Bayes term) and a part the fixed map gets wrong; the excess over the Bayes predictor
+irreducible Bayes term) and a part attributable to error in the fixed map; the excess over the Bayes predictor
 $\Ex[m\mid\cdot]$ is the second term alone.
 
 \begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
@@ -305,14 +302,14 @@ smoother whose choice affects the verdict (\S\ref{sec:measure}).
 \noindent Equation~\eqref{eq:decomp} is a bias--variance split of model
 discrepancy in the sense of Kennedy--O'Hagan \cite{kennedy2001,brynjarsdottir2014}:
 $\Bclos$ is the systematic discrepancy of a fixed physical map, and its dominance over
-$\Binsuf$ is the empirical content of ``the ceiling is the closure, not the inputs.'' We
-do not claim \eqref{eq:decomp} as new. The affordance is that an externally grounded
-$\zstar$ lets us \emph{measure} the split rather than assume it: unlike
+$\Binsuf$ is the empirical content of the claim that the accuracy ceiling is set by the closure
+rather than by the inputs. The decomposition itself is standard; what an externally grounded
+$\zstar$ adds is that the split can be \emph{measured} rather than assumed: unlike
 model-discrepancy calibration, which \emph{fits} a correction from held-out
 observations, here $g$ is fixed and $\zstar$ externally observed, so the map's error is
 \emph{attributed}, not corrected---available only where an external latent oracle exists
-(LFERs, COSMO / group-contribution closures, thermodynamic cycles), not in gray-box or
-PINN hybrids. \textbf{Exactness is contingent on $g$ being fixed}: for a \emph{fitted}
+(linear free-energy relationships, or LFERs; COSMO and group-contribution closures; thermodynamic
+cycles), not in gray-box or physics-informed neural-network hybrids. \textbf{Exactness is contingent on $g$ being fixed}: for a \emph{fitted}
 decoder the cross term does not vanish and a plug-in point split is invalid (a spurious
 $-0.36$ cross term appears when $\Ex[m\mid\zstar]$ is replaced by a fitted estimate). We
 therefore report \emph{one-sided bounds}, not a point split (each proved in
@@ -327,7 +324,7 @@ App.~\ref{sec:si-proofs}):
   coarsens $\zstar$).
 \end{itemize}
 The Jensen constant-offset bound is convention-specific---it separates under the full combinatorial
-convention but inverts under the deployed residual-only default---so the headline separation in
+convention but inverts under the deployed residual-only default---so the separation reported in
 \S\ref{sec:measure} rests on the leakage-immune law-of-total-variance bound, and the Jensen numbers
 are reported in App.~\ref{sec:si-tables}.
 Because $\Binsuf=\Ex[\Var(m\mid\zstar)]$ depends only on $(m,\zstar)$, it is
@@ -347,7 +344,7 @@ one-sidedness above is a consequence of this ratio, not a modelling choice. Wher
 low-dimensional the same instrument point-identifies: the pKa Hammett constant is a \emph{scalar}
 with $n{=}1004$ ($\dim(\zstar)/n\approx10^{-3}$), so $\Binsuf$ is a point estimate (\S\ref{sec:pka}),
 not a bound. The decomposition is identifiable exactly where $\dim(\zstar)/n$ is small---which is why
-the pKa domain, not the solubility case, is where the split is pinned rather than bounded.
+the pKa domain, not the solubility case, is where the split is point-identified rather than bounded.
 
 \subsection{What the instrument resolves, and what it does not}
 \label{sec:gap}
@@ -366,7 +363,7 @@ decomposition, which needs neither assumption: \emph{the decomposition is the in
 the inexpensive indicator that motivates it}.
 
 \paragraph{When a fixed prior loses; and scope.}\label{sec:tax} The deployed question---does the
-\emph{trained} physics model beat the \emph{trained} black box at sample size $n$?---follows a sign
+\emph{trained} physics model outperform the \emph{trained} black box at sample size $n$?---follows a sign
 rule. Writing each trained risk as an asymptote plus estimation variance,
 $\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
 $\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
@@ -388,8 +385,8 @@ bias always loses once the budget passes $n^\star$ (proof in App.~\ref{sec:si-pr
 ``optimal grounding'' theorem, and the decomposition does not improve out-of-distribution accuracy
 (\S\ref{sec:results}). Everything here is measured at infinite
 dilution, $298$\,K, on the VT-2005-matchable low-$\gamma$ regime; transfer to the finite-composition
-regime the paradox lives in is a conjecture, not a result (\S\ref{sec:scope}). We read these results
-against known work on model discrepancy \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
+regime in which the paradox is observed is a conjecture, not a result (\S\ref{sec:scope}). We read these
+results against existing work on model discrepancy \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
 \cite{transtrum2015,gutenkunst2007}, identifiability \cite{raue2009,villaverde2016}, misspecification
 \cite{white1982}, and underspecification \cite{damour2022}.
 
@@ -398,8 +395,8 @@ against known work on model discrepancy \cite{kennedy2001,brynjarsdottir2014}, p
 \section{Results}
 \label{sec:results}
 
-The mechanism (\S\ref{sec:surrogate}) and the instrument that measures it (\S\ref{sec:measure}) carry the
-paper. Held against its reference on matched pairs, the end-to-end latent is a compensating surrogate that
+The mechanism (\S\ref{sec:surrogate}) and the instrument that measures it (\S\ref{sec:measure}) are the
+paper's load-bearing contributions. Held against its reference on matched pairs, the end-to-end latent is a compensating surrogate that
 cancels the closure's error rather than reporting the physical quantity, and the decomposition locates the
 ceiling in the low-fidelity closure rather than its inputs. The grounding paradox (\S\ref{sec:paradox}) is
 the observable effect that makes the failure visible, but does not by itself carry the attribution; whether a
@@ -411,7 +408,7 @@ sweep (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and t
 Every claim in this paper is graded by strength of evidence---certified (holds under any closure
 configuration, exactly proved, or bootstrap-certified with $P\!\to\!1$ across resamples), likely
 (measured but sub-threshold or one-sidedly bounded on the matched $n{=}60$/$n{=}44$ sets), or open
-(unestablished, directional, or conjectural)---in the ledger at the foot of Fig.~\ref{fig:overview}. We
+(unestablished, directional, or conjectural)---and each claim carries its grade where it is stated. We
 make no accuracy claim.
 
 \subsection{The grounding paradox}
@@ -424,7 +421,7 @@ information would. The effect erases any positive $R^2$ (Fig.~\ref{fig:paradox})
 solubility better \emph{from its own learned $\sigma$-profile} than when \emph{given the external
 reference one} (MAE $1.85$ vs $2.25$, in $\lnx$ units), and it survives three controls---the
 evaluation-time oracle, injection of the reference profile \emph{at training} (MAE $1.98$), and a
-channel-swap ($2.08$), all worse than the learned-$\sigma$ arm---ruling out a wiring
+channel-swap ($2.08$), all worse than the learned-$\sigma$ arm---ruling out an implementation
 artifact.\footnote{The three oracle-application controls (evaluation-only, training-time injection,
 channel-swap; \S\ref{sec:methods}) are computed on the same three-seed cross-arm lock as
 Table~\ref{tab:si-arms}; their per-arm predictions are released with the code.} That the
@@ -441,11 +438,11 @@ certified (three seeds, three controls), but it cannot carry the closure-versus-
 data reason. Drug-like solutes are essentially absent from the VT-2005 reference set, so only a handful of
 test solutes have a reference $\sigma$-profile at all; on solubility the reference substitution therefore
 falls almost entirely on the \emph{solvent} channel, and the both-channel substitution the attribution
-would need is available for too few solutes to support a per-molecule conclusion (a fresh $2\times2$
-channel-substitution test lands on ${\approx}7$ solutes, too few to separate the cause either way).
+would need is available for too few solutes to support a per-molecule conclusion (a $2\times2$
+channel-substitution test covers only ${\approx}7$ solutes, too few to separate the cause either way).
 Computing reference profiles for drug-like solutes is possible in principle but costs hundreds of
-quantum-chemistry runs on large, multi-conformer molecules, for an effect already certified as a
-phenomenon---not worth it. We therefore carry the causal claim on the activity axis, where the reference
+quantum-chemistry runs on large, multi-conformer molecules, which is not warranted for an effect
+already certified as a phenomenon. We therefore carry the causal claim on the activity axis, where the reference
 input is clean and matched: the decomposition ($n{=}60$, \S\ref{sec:measure}) and the compensating
 surrogate ($n{=}44$, \S\ref{sec:surrogate}).
 
@@ -476,7 +473,7 @@ works, not a re-confirmation of this verdict. Here $\zstar$ is
 the reference concatenated solute/solvent $\sigma$-profiles and $m$ the experimental $\lngi$;
 Table~\ref{tab:decomp} reports the bounds. In this regime too the ceiling sits in the
 \emph{low-fidelity} closure rather than its inputs. The set spans 41 solutes and 17 solvents in $102$
-profile dimensions, with two formamide pairs dropped on a canonical-SMILES tautomer mismatch.
+profile dimensions, with two formamide pairs excluded owing to a canonical-SMILES tautomer mismatch.
 
 \begin{table*}[t]
 \centering
@@ -519,7 +516,7 @@ strictly independent of the model fit.
 
 \paragraph{The load-bearing separation (leakage-immune).} On the deployed residual-only convention, the
 leakage-immune law-of-total-variance bound gives $\Bclos\gtrsim0.85$ against $\Binsuf\lesssim0.62$
-(Table~\ref{tab:decomp}). This is the claim we lean on, and it is conservative by construction: the bound
+(Table~\ref{tab:decomp}). This is the load-bearing claim, and it is conservative by construction: the bound
 subtracts a \emph{population upper} estimate of $\Binsuf$, understating $\Bclos$, so a surviving margin
 survives a fortiori. The finite-sample biases run the other way and are controlled---the deflated $k$-NN
 difference is kept out of the bound, and the LOTV binning's per-bin sparsity bias is cross-checked against
@@ -546,9 +543,10 @@ the $\Binsuf$ floor) at \emph{rank one} ($52$ parameters; rank~2 adds
 nothing, rank~3 over-fits). At $52$ parameters against $n{=}60$ this is provisional, and we have not
 separated the kernel correction from a per-solvent offset. So $\Bclos$ is not diffuse model error but
 a low-dimensional, correctable defect of the map---addressable with a handful of parameters on the
-closure, whereas the same error is only made worse by feeding the inputs truthfully
+closure, whereas the same error is only made worse by supplying the inputs truthfully
 (\S\ref{sec:paradox}) and untouched by an output residual (\S\ref{sec:gateb}); whether an end-to-end
-model realises the gain is a compute-gated question we leave open.
+model realises the gain remains open, because the experiment that would settle it exceeds the compute
+available to us.
 
 \paragraph{Where the closure fails, chemically.} The residual error is not an implementation
 artifact: our differentiable layer reproduces the NIST benchmark COSMO-SAC-2002~\cite{bell2020cosmosac}
@@ -576,7 +574,7 @@ the model, not a convention compromise, so the fair values $1.757$ (2002) and $1
 correct comparison.
 
 The fair 2002 value depends on one implementation detail. The NIST reference implementation of
-COSMO-SAC-2002, handed a typed three-profile database, reads the nonpolar channel only and
+COSMO-SAC-2002, given a typed three-profile database, reads the nonpolar channel only and
 silently discards the donor and acceptor profiles while retaining the total area as prefactor; on the
 UD (University of Delaware) profiles this single-channel arm scores $\mathrm{MSE}\ 1.26$, which is not the
 reference closure and is not comparable to the $1.47$ our own layer reaches on the single-profile
@@ -608,21 +606,20 @@ This is consistent with the published behaviour of the closure family rather tha
 and the comparison itself appears to be new: no large-scale infinite-dilution benchmark of the
 $2002\to2010$ step exists. The comprehensive assessment of this family~\cite{fingerhut2017}
 ($29{,}173$ $\gamma^\infty$ points) evaluates COSMO-SAC-2010 and COSMO-SAC-dsp only, and its largest
-documented infinite-dilution step---adding the entire dispersion term, $2010\to$\,dsp---buys a
+documented infinite-dilution step---adding the entire dispersion term, $2010\to$\,dsp---yields a
 ${\sim}10$-point mean-absolute-deviation gain ($95\%\to86\%$), with a \emph{reversal} on aqueous
 systems where dsp is worse than 2010 ($203\%$ vs.\ $194\%$). Our null for the smaller $2002\to2010$
 step is in family with those magnitudes, and non-monotone progress across strata is documented
 behaviour, not an anomaly. Two things follow. COSMO-SAC-2010's demonstrated gains are concentrated in
 liquid--liquid equilibria and in the temperature dependence of the electrostatic term, where an
 infinite-dilution corner has no leverage. And the family's \emph{best} infinite-dilution accuracy---%
-$86\%$ MAD on $29{,}173$ points in the hands of its own developers---is itself external evidence that
+$86\%$ MAD on $29{,}173$ points, achieved by its own developers---is itself external evidence that
 the closure is the low-fidelity component: the ceiling we locate is where the field's own benchmark
 places it. We claim only that \textbf{we cannot establish a closure-fidelity lever on the data we can
 compute}, not that the modern closure is not an improvement.
 
 The consequence for the paper is that we have no fix to offer. The ceiling we locate is not disposed
-of by the standard upgrade path, and the search for a remedy inside this closure family came back
-empty.
+of by the standard upgrade path, and no remedy was found inside this closure family.
 
 \paragraph{The reference is itself imperfect, but conservatively so.} The external ground truth used
 to charge $\Bclos$ against $\Binsuf$ is quantum chemistry, not experiment: the VT-2005 profiles are
@@ -639,19 +636,20 @@ is conservative to this defect.
 transfer to the finite-composition regime the paradox lives in (\S\ref{sec:scope}); the full audit is
 in App.~\ref{sec:si-tables}.
 
-\subsection{Isn't this just a bad closure?}
+\subsection{The status of the closure's known defects}
 \label{sec:badclosure}
-Yes---and that is the contribution, not the objection. COSMO-SAC-2002 has a documented
-single-parameter hydrogen-bond kernel, and the 2010/dsp closure was built to fix exactly that defect;
-we do not dispute this---it is a well-documented defect, though on our data upgrading the closure did
-not establish a fidelity gain (\S\ref{sec:measure}). But the 2002 kernel is not an exotic choice---it is the closure a
-practitioner reaches for, and its fidelity is \emph{not knowable in advance} on a new system. The field
+That COSMO-SAC-2002 is a low-fidelity closure is the contribution rather than a qualification of the
+result.
+Its single-parameter hydrogen-bond kernel is a documented defect, and the 2010/dsp closure was built
+to correct exactly that defect; on our data, upgrading the closure did not establish a fidelity gain
+(\S\ref{sec:measure}). The 2002 kernel is not an exotic choice---it is the closure a
+practitioner adopts by default, and its fidelity is \emph{not knowable in advance} on a new system. The field
 routinely composes an expressive learned encoder with a fixed mechanistic map and assumes the map is
-good enough. What we show is what happens when it is not: the encoder silently compensates, the
+good enough. This paper reports what follows when it is not: the encoder silently compensates, the
 resulting latent is a surrogate rather than the physical quantity it is named after
 (\S\ref{sec:surrogate}), and the interpretability the bottleneck appeared to buy is absent---none of it
-visible without an external oracle. Our decomposition is how you make it visible on \emph{your} closure,
-before its misspecification has quietly eaten your result. The practical consequence inverts the usual
+visible without an external oracle. The decomposition makes this visible on a given closure before its
+misspecification has propagated into the result. The practical consequence inverts the usual
 instinct: before investing in richer inputs, measure the split---within a closure family the payoff is
 in the closure.
 
@@ -680,14 +678,14 @@ rough magnitude of the empirical paradox, not a precise fidelity value.}
 If the closure binding were merely a bad point estimate, a learned output-space
 correction on top of the physics prediction should recover accuracy. It does not.
 An additive bounded residual with a learned confidence gate
-($\hat y=\hat y_{\text{phys}}+(1-c)\,r$, with $y=\lnx$) leaves the valve
+($\hat y=\hat y_{\text{phys}}+(1-c)\,r$, with $y=\lnx$) leaves the gate
 effectively shut (applied
 residual $\approx0$). Forcing the gate open removes the systematic
 \emph{bias} ($+0.45\to+0.06$) but recovers little \emph{accuracy} ($R^2$
 $0.236\to0.274$ on the same rows, a marginal rise that leaves the fit far short of usable). This is the classical calibration-versus-accuracy
 separation: when the upstream map is misspecified, a monotone or affine post-hoc
-map can fix reliability but not resolution. Recalibration buys calibration
-without buying accuracy, which is what we expect if the closure, rather than the
+map can fix reliability but not resolution. Recalibration improves calibration
+without improving accuracy, which is what we expect if the closure, rather than the
 estimate, is the binding constraint.
 
 \input{sections/pka-domain}
@@ -697,7 +695,7 @@ estimate, is the binding constraint.
 \subsection{What we do not measure, and why}
 \label{sec:scope}
 The paper's strongest claim and its causal attribution live in \emph{different regimes}, and we state
-the gap plainly rather than distribute it across scope footnotes. The grounding paradox is measured
+the gap plainly. The grounding paradox is measured
 where the model operates---finite composition, all $\gamma$, $n{=}5608$. Its \emph{cause}---the
 closure/insufficiency attribution (\S\ref{sec:measure}) and the compensating-surrogate mechanism
 (\S\ref{sec:surrogate})---is measured only on the matched external-reference regime: infinite
@@ -719,7 +717,7 @@ The result is a cautionary measurement for physics-informed modeling: grounding 
 model on truer physical inputs is only as good as the closure that consumes them,
 and when that closure is a fixed map of unknown fidelity---one the standard route does not
 improve---better inputs surface its bias rather than help. The external latent does not make
-the physics path win. Used as an instrument on the regime we can measure, the decomposition places
+the physics path more accurate. Used as an instrument on the regime we can measure, the decomposition places
 the ceiling in the closure rather than its inputs; but that ceiling is not a lever: a fair, fully
 validated comparison of the 2002 and 2010/dsp kernels on representative
 infinite-dilution data does not establish a fidelity gain. We locate a ceiling and offer no lever. This attribution is a demonstration on a low-$\gamma$,
@@ -739,14 +737,14 @@ supplies exactly that test as a certified, in-distribution sign-flip (\S\ref{sec
 oracle-on-a-fixed-operator affordance is what the concept-leakage literature lacks
 \cite{parisini2025,espinosa2025leakage}, where the intermediate has no ground truth and leakage is inferred
 only indirectly. The solubility results---closure-dominance (\S\ref{sec:measure}) and the compensating
-surrogate (\S\ref{sec:surrogate})---are the instrument's first application; we grade them \emph{likely}
-and do not claim their transfer out of the matched regime. We therefore rest the paper on the instrument
+surrogate (\S\ref{sec:surrogate})---are the instrument's first application; we grade them \emph{likely},
+and their transfer out of the matched regime is not established. We therefore rest the paper on the instrument
 and its certified cross-domain demonstration, and report the solubility attribution at its measured
 strength.
 
 \paragraph{The accuracy case, and its boundary.} That the physics prior does not improve accuracy has
 no confirmed exception: the grounded model trails the matched black box on the full corpus, the
-external SOTA (FastSolv, SolProp) does no better on a difficulty-bounding by-solute split
+external state-of-the-art models (FastSolv, SolProp) do no better on a difficulty-bounding by-solute split
 (App.~\ref{sec:si-baselines}), and grounding the crystal factor on external labels did not move the
 ceiling (\S\ref{sec:e2}). The one place the physical \emph{structure} helps is temperature
 extrapolation---but as a hypothesis-class property the trained models do not exploit
@@ -755,15 +753,15 @@ non-identifiable from solubility alone (Lemma~\ref{prop:ident}), and the activit
 misspecified where we can measure it (\S\ref{sec:measure}), so within this family better inputs, more
 data, and auxiliary grounding do not recover an accuracy the factorization cannot express. What a
 misspecified closure costs is thus accuracy and, more consequentially, the interpretability the
-bottleneck appeared to buy.
+bottleneck appeared to provide.
 
 \paragraph{When a fixed-closure prior helps versus hurts.} The penalty sign rule (Prop.~\ref{prop:tax}) predicts
 \emph{when} to expect these negatives: a fixed-closure prior helps only when the estimation variance it
 saves exceeds its asymptotic bias $\Delta_\infty$ (both measurable). The ``grounding helps iff the
 closure is well specified'' reading is thus a statement about the \emph{bias} channel ($\Delta_\infty$);
-even a correctly specified or true-valued input need not win on total error, because a fitted nuisance
-can be the more \emph{efficient} estimator---the semiparametric phenomenon by which an estimated
-propensity beats the known-true one \cite{hirano2003}, sharpest where plug-in efficiency is delicate
+even a correctly specified or true-valued input need not yield the lower total error, because a fitted
+nuisance can be the more \emph{efficient} estimator---the semiparametric phenomenon by which an
+estimated propensity outperforms the known-true one \cite{hirano2003}, sharpest where plug-in efficiency is delicate
 \cite{robins1997}---and Prop.~\ref{prop:tax} already carries this, its variance term overturning the
 sign the bias term alone would predict. The variance benefit is largest at
 small $n$ and vanishes as data accumulate or as the black box nears the aleatoric floor, whereas
@@ -774,7 +772,7 @@ shaped by \emph{two} axes---closure fidelity and how the latent is trained (supe
 end-to-end); characterising that plane in full, and sweeping each axis directly on real systems, is deferred
 to future work.
 
-\paragraph{The novelty inversion (exploratory).} The sharpest---and most unexpected---confirmation of
+\paragraph{The novelty inversion (exploratory).} The sharpest confirmation of
 the penalty sign rule runs opposite to the usual coverage intuition. Resolving the asymptotic physics penalty by solute
 novelty, the closure is neutral on the most \emph{novel} solutes (nearest-train Tanimoto $\le0.3$:
 $\Delta\mathrm{MAE}=-0.04\pm0.18$) and heaviest on the most \emph{familiar}, best-covered ones
@@ -783,15 +781,16 @@ a prior saves vanishes precisely where the black box is already accurate, leavin
 bias as the dominant residual. The penalty likewise concentrates in strongly hydrogen-bonding solvents
 (water $+0.52\pm0.35$) and reverses sign in the acceptor-dominated amides ($-0.22\pm0.11$) the closure
 was built for (\S\ref{sec:map}). Both patterns are exploratory---no multiplicity control across strata
-families---but they land where the penalty sign rule predicts, and where much of modern machine learning
-operates. We claim no universal boundary; we \emph{propose}, but do not here cleanly validate, a diagnostic for the sign of the asymptotic physics penalty:
+families---but they fall where the penalty sign rule predicts, and where much of modern machine learning
+operates. No universal boundary is established here, and a diagnostic for the sign of the asymptotic
+physics penalty is \emph{proposed} rather than validated:
 measure $\Bclos$ through the decomposition, read $\Delta_\infty$ off the large-$n$ asymptote, and
 the sign should follow. In this sense the failure is not idiosyncratic to
 solubility; it recurs whenever a misspecified closure is coupled to an expressive encoder on
 abundant, low-noise data.
 
 
-\paragraph{Limitations.} (i)~The phenomenon and its causal attribution live in \emph{different
+\paragraph{Limitations.} (i)~The phenomenon and its causal attribution lie in \emph{different
 regimes}: the paradox is a finite-composition solubility effect, but the closure--insufficiency
 measurement is made on the infinite-dilution/$298$\,K/low-$\gamma$ VT-2005-matchable regime, so the
 transfer of the attribution back to the paradox's own regime is argued from in-regime signs, not
@@ -810,7 +809,8 @@ accuracy is encoder-bound but well \emph{above} the inter-lab noise floor ($0.15
 \S\ref{sec:supporting}), so label noise does not explain the ceiling. (v)~The compensating-surrogate
 result is three-seed mean$\pm$sd ($n{=}44$; \S\ref{sec:surrogate}); its load-bearing content is the
 \emph{sign} and low-rank, transferable \emph{structure}, with the magnitudes
-($51\pm2\%$/$72\pm1\%$/$4.1\pm0.5\times$) reported but varying across pipeline versions.
+($51\pm2\%$/$72\pm1\%$/$4.1\pm0.5\times$) reported but not stable across revisions of the analysis
+pipeline.
 (vi)~The probe result on the unconstrained control (\S\ref{sec:blackbox}) is bounded by the same
 reference scarcity. Its crystal-term and temperature tests rest on $13$ held-out solutes, and that
 sample cannot be enlarged: the molecules carrying both a measured crystal and a measured activity
@@ -870,7 +870,7 @@ The closure-fidelity contrast (\S\ref{sec:measure}) reports the \emph{fair} full
 native averaging; \texttt{run\_fidelity\_lever\_fair2002.py} regenerates both the corner
 ($1.757\!\to\!0.765$) and the representative ($n{=}477$, $1.911\!\to\!1.855$) contrasts and asserts they
 reproduce these values (with \texttt{cCOSMO} cross-checks), while the earlier deposited \texttt{cCOSMO}
-flip artifact additionally carries the crippled single-channel 2002 diagnostic ($1.263$). Two artifacts carry disclosed caveats (\S\ref{sec:si-repro}): the seed-$44$ oracle
+flip artifact additionally carries the restricted single-channel 2002 diagnostic ($1.263$). Two artifacts carry disclosed caveats (\S\ref{sec:si-repro}): the seed-$44$ oracle
 per-row file is truncated (the run-time three-seed aggregates are unaffected), and the three-seed
 surrogate run's per-run split provenance was not logged (its matched set is the committed $n{=}44$).
 

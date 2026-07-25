@@ -42,18 +42,18 @@ Staverman--Guggenheim normalisers $r_0=66.69$\,\AA$^3$, $q_0=79.53$\,\AA$^2$; th
 $\sigma$-profile grid is $51$ bins on $[-0.025,0.025]$\,e\,\AA$^{-2}$. The segment-activity
 fixed point is damped ($\lambda=0.7$) and run for $16$ iterations at train time and $30$
 at evaluation.
-\paragraph{A usage pitfall in \texttt{cCOSMO} (\texttt{COSMO1} on typed profiles).} Handing the 2002
-kernel a typed three-profile base produces a silently-wrong result that the library returns without
+\paragraph{A usage pitfall in \texttt{cCOSMO} (\texttt{COSMO1} on typed profiles).} Supplying the 2002
+kernel with a typed three-profile base produces a silently-wrong result that the library returns without
 warning. The reference implementation~\cite{bell2020cosmosac} pairs its 2002 model
 (\texttt{COSMO1}) with the single-profile Virginia Tech database; the demonstrated input is one
-untyped, Mullins-averaged profile. When \texttt{COSMO1} is instead handed a typed three-profile
-(Hsieh, \texttt{sigma3}) base --- tempting when a 2002 and a 2010 arm are to share one profile source
---- it silently reads the nonpolar channel only, discards the donor and acceptor channels, keeps the
+untyped, Mullins-averaged profile. When \texttt{COSMO1} is instead supplied with a typed three-profile
+(Hsieh, \texttt{sigma3}) base --- the configuration that arises when a 2002 and a 2010 arm share one
+profile source --- it silently reads the nonpolar channel only, discards the donor and acceptor channels, keeps the
 total cavity area as prefactor, and returns a number without error. The prescribed way to recover a
 single 2002 profile from the typed set is instead their \emph{sum},
 $p=p_{\mathrm{nhb}}+p_{\mathrm{OH}}+p_{\mathrm{OT}}$ (Eq.~9 of Ref.~\cite{bell2020cosmosac}); the
 nonpolar-only read is neither that sum nor a documented mode. This single-channel arm scores
-$\mathrm{MSE}\ 1.263$ on the matched corner, whereas the fair full 2002 (the same molecule fed
+$\mathrm{MSE}\ 1.263$ on the matched corner, whereas the fair full 2002 (the same molecule supplied
 either to our differentiable layer or to \texttt{cCOSMO} with the full profile placed in the single
 nonpolar channel it actually reads) scores $1.757/1.758$. This is an issue for the library maintainers
 (a silently-wrong return where an error would be safer), not a defect of any published benchmark.
@@ -88,7 +88,7 @@ drops the closure.}
 headline message-passing network (MPNN); a hybrid local-message/global-attention graph transformer
 (GPS \cite{rampasek2022}); and a physics-channelled variant, Thermodynamically-Informed Message
 Passing (TIMP), which splits messages into dispersive, polar, and hydrogen-bonding channels
-supervised toward the Hansen parameters to prevent channel collapse. TIMP does not beat the plain
+supervised toward the Hansen parameters to prevent channel collapse. TIMP does not outperform the plain
 MPNN across our runs, consistent with the encoder being transfer-limited rather than
 expressivity-limited (linear probe train $R^2\approx0.76$, test $R^2\approx0.45$).
 \paragraph{Optimisation.} Adam (weight decay $5\times10^{-4}$, gradient clipping at $2.0$, batch $64$)
@@ -134,8 +134,8 @@ run's resolved configuration.}
 \end{table}
 
 \paragraph{Loss-simplification ablation.}\label{sec:si-lossablation}
-For a diagnostic result the elaborate objective is a potential confound: it could be read as indicating that the paradox
-is an artifact of loss tuning. We test the opposite---that the paradox and the compensating-surrogate
+For a diagnostic result the elaborate objective is a potential confound: the paradox
+could be an artifact of loss tuning. We test the opposite---that the paradox and the compensating-surrogate
 drift survive a \emph{minimal} objective. Pre-registered before the run: train the end-to-end grounded
 arm with only the task ($\lnx$ Huber), the crystal grounding ($\Tm,\dHfus$), and the $\sigma$-profile
 warmup, \emph{dropping} the activity-grounding auxiliaries ($\lngi$, $\lng$, Hansen) and every
@@ -330,14 +330,14 @@ COSMO-SAC, reference $\sigma$ ($\sigma$-oracle)     & $2.25\pm0.02$ & $-0.03\pm0
 \end{tabular}
 \end{table*}
 
-\paragraph{Robustness of the closure/insufficiency separation.} We stress the deployed-convention verdict
+\paragraph{Robustness of the closure/insufficiency separation.} We stress-test the deployed-convention verdict
 $\Bclos>\Binsuf$ (\S\ref{sec:measure})---equivalently $\Binsuf<\mathrm{MSE}/2=0.74$ at
 $\mathrm{MSE}_{\mathrm{res}}=1.47$---four ways on the $n{=}60$ set.
 
 \emph{(i)~Estimator sensitivity.} The four $\Binsuf$ upper bounds of Table~\ref{tab:decomp}---$0.40$
-($k$-NN), $0.62$ (binning/LOTV), $0.56$ (random forest), $0.62$ (ridge out-of-fold)---all clear the bar.
-The $k$-NN value is the smallest and least conservative input to $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$,
-so we headline the leakage-immune LOTV bound instead. The LOTV bound bins $g(\zstar)$ and is therefore
+($k$-NN), $0.62$ (binning/LOTV), $0.56$ (random forest), $0.62$ (ridge out-of-fold)---all fall below the
+$0.74$ threshold. The $k$-NN value is the smallest and least conservative input to $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$,
+so we take the leakage-immune LOTV bound as the headline instead. The LOTV bound bins $g(\zstar)$ and is therefore
 finite-sample downward-biased when points per bin are few, which would \emph{inflate} $\Bclos$ favourably;
 but the two non-binning bounds (RF $0.56$, ridge $0.62$) are immune to that per-bin sparsity and reproduce
 $0.62$, so the headline does not depend on the binning estimator. The sole non-certifying configuration is a
@@ -357,9 +357,9 @@ $\Bclos=\mathrm{MSE}-\Ex[\Var(m\mid\zstar)]$ is invariant to zero-mean noise.
 solvents, LOTV bound) makes the confidence explicit: the $\Bclos$ lower bound has median $0.93$
 (CI$_{90}$ $[0.40,\,1.62]$), and the margin $\Bclos-\Binsuf$ has median $0.36$ (CI$_{90}$ $[-0.22,\,+0.97]$)
 with $P(\Bclos>\Binsuf)\approx0.89$ (single-axis; the conservative two-way solute$\times$solvent bootstrap,
-which also charges for repeated solutes, gives $\approx0.78$, the value the main text headlines). With
+which also charges for repeated solutes, gives $\approx0.78$, the value reported in the main text). With
 $G=17$ solvent and $41$ solute clusters this small-$G$ regime has optimistic interval coverage, and the
-finite-cluster correction points the way we already conclude: less confidence, non-certification. We
+finite-cluster correction acts in the direction of less confidence and non-certification. We
 therefore treat the $P$ values as a coarse band, not two-decimal quantities. The separation is
 \emph{likely} but not certified at the $90\%$ level, consistent with the $\approx0.85$ figure, which is
 why the main text treats it as supporting rather than decisive.
@@ -370,11 +370,11 @@ tests whether closure-dominance is a regime artifact. It is
 not: the verdict $\Bclos>\Binsuf$ (leakage-immune LOTV binning bound) holds in every
 stratum and \emph{strengthens} toward higher $\gamma$ (Table~\ref{tab:regime})---in the highest
 stratum ($\overline{\lngi}=2.94$, approaching the non-ideal regime) $\Bclos\ge2.69$ exceeds
-$\Binsuf\le0.67$ several-fold. We caution that the high-$\gamma$ strata are small
+$\Binsuf\le0.67$ several-fold. The high-$\gamma$ strata are small
 ($n=17$--$30$ in $102$ dimensions): the law-of-total-variance bound can be pushed toward zero by
 too-few-points-per-bin, which mechanically widens the margin exactly where data is thinnest, so
 it is the several-fold separations rather than the precise values that carry the
-qualitative reading. One boundary deserves an explicit note: the $m>\overline{m}$ stratum separates
+qualitative reading. The $m>\overline{m}$ stratum separates
 through its upper (high-$\gamma$) half, and the \emph{isolated} moderate band
 ($\overline{m}<m\le1.5$) does \emph{not} separate. This is not a counter-example. The total error there
 is only ${\approx}0.06$, so $\Bclos\le\mathrm{MSE}\approx0.06$ assumption-free (since $\Binsuf\ge0$),
@@ -413,8 +413,8 @@ convention).}
 \label{fig:parity}
 \end{figure}
 
-\paragraph{The four hedges (full).} The adversarial audit could not invert the verdict
-but sharpened its scope:
+\paragraph{The four hedges (full).} The adversarial audit does not invert the verdict
+but sharpens its scope:
 \begin{enumerate}
   \item \emph{Convention.} The deployed default is residual-only. Under it the
   \emph{constant-offset} (Jensen) lower bound inverts
@@ -425,14 +425,14 @@ but sharpened its scope:
   the full-convention margin (the sharpened $\mathrm{MSE}-\Binsuf$ bound,
   $1.27$ vs $0.53$) is a full-COSMO-SAC-only result. What separates under the deployed
   convention is the leakage-immune bound
-  $\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{LOTV}}\approx0.85>0.62$, on which
-  we headline, together with the combinatorial Tier~2 fact.
+  $\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{LOTV}}\approx0.85>0.62$, which carries
+  the headline claim, together with the combinatorial Tier~2 fact.
   \item \emph{Confound.} The closure error is predominantly a \emph{between-solvent}
   systematic bias ($\sim$64\% of total error); within the largest single-solvent stratum
   (pyridine, $n{=}20$) the closure is nearly correct (stratum MSE $0.07$). Because
   solvent $\sigma$ is part of $\zstar$, these offsets are still decoder error and give an
   independent solvent-conditional lower bound $\Bclos\ge0.89$ (full)/$0.56$ (res).
-  \item \emph{Confidence.} Honest confidence on the full-convention constant-offset
+  \item \emph{Confidence.} Confidence on the full-convention constant-offset
   separation is the solvent-clustered bootstrap $P(\Bclos{>}\Binsuf)\approx0.85$ ($0.83$
   vs the random-forest upper bound, $0.89$ vs the law-of-total-variance bound); we report
   the solvent-clustered scheme rather than the less conservative i.i.d.-pair one because
@@ -449,14 +449,14 @@ but sharpened its scope:
 
 \section{External baselines and ablations}
 \label{sec:si-baselines}
-We retrained the direct SOTA (FastSolv \cite{osanloo2024}) and the physics-informed
-SOTA (SolProp \cite{vermeire2022solprop}) on our corpus and evaluated them on a
+We retrained the direct state-of-the-art model (FastSolv \cite{osanloo2024}) and the
+physics-informed state-of-the-art model (SolProp \cite{vermeire2022solprop}) on our corpus and evaluated them on a
 by-solute test split (\texttt{test\_solute.csv}, $n\approx10$--$12$k). In $\lnx$ they
 reach MAE $1.94$ (FastSolv, $R^2\,0.23$) and $2.34$ (SolProp, calibrated,
 $R^2\,{-}0.18$); in $\log_{10}S$, $0.87$ and $1.04$. These are on a \emph{by-solute} split that is
 \emph{not comparable} to our scaffold numbers (Table~\ref{tab:si-arms}): they bound the task's
-difficulty, not a head-to-head ranking, so this does \emph{not} establish that our scaffold-split DirectGNN
-($1.70$) beats them, and a like-for-like scaffold evaluation of the external models is left to
+difficulty, not a ranking of the models against one another, so this does \emph{not} establish that our
+scaffold-split DirectGNN ($1.70$) outperforms them, and a like-for-like scaffold evaluation of the external models is left to
 the deposited artifacts. What \emph{is} comparable is the internal ordering: the physics-informed
 SolProp trails the direct FastSolv---the same ordering we find between our physics closures and
 DirectGNN. The regime-level reading is that on this corpus no
@@ -488,14 +488,15 @@ error cancels exactly in the comparison. It is thus orthogonal to the activity c
 source of the paradox.
 \paragraph{Fusion-supervision scarcity.} Direct $\dHfus$ labels are extremely sparse:
 $1279$ training rows across $31$ solutes, and essentially none in validation or test.
-This is the quantitative backbone of the identifiability argument---there is almost no
+This is the quantitative basis of the identifiability argument---there is almost no
 signal with which to pin the crystal term from data.
 \paragraph{The NRTL branch trains (a trainability check).} The asymptotic physics penalty is not an
 under-training artifact of the activity branch. In the headline NRTL arm the head produces
 solvent-varying interaction parameters---$\tau_{12}$ over the $n{=}8103$ test pairs has mean
 $0.97$ and std $2.5$ (range $[-2.6,22]$), far from collapsed---yet the arm still trails the
 closure-free DirectGNN ($1.80$ vs $1.70$; Table~\ref{tab:si-arms}). A trained, non-degenerate
-activity branch beaten by the control is evidence that the penalty is structural, not a dead branch.
+activity branch that the control still outperforms is evidence that the penalty is structural, not a
+failure to train the branch.
 (The core closure-misspecification result---the $\sigma$-oracle and the decomposition---is in
 any case training-\emph{independent}: it feeds the reference VT-2005 profiles through the fixed
 closure with no encoder optimization, so it cannot be a training pathology.)
@@ -550,14 +551,14 @@ $J^{+}(m-g)$; the distribution is centred on zero (median $-0.00$).}
 \end{figure}
 
 \paragraph{The drift is not the closure's signed first-order inverse---but the test is under-resolved.}
-One might hope the compensating drift is the closure's linear-response inverse,
+A candidate account of the compensating drift is the closure's linear-response inverse,
 $\hat\sigma-\sigma\approx J^{+}(m-g(\sigma))$ (with $J=\partial g/\partial\sigma$), predictable a priori
 from $J$ before any solubility training. On the matched set the per-molecule drift shows no signed
 alignment with $J^{+}(m-g)$ (median cosine $-0.00$; Fig.~\ref{fig:picard}).\footnote{The residual
 COSMO-SAC closure runs a segment-activity fixed point, so its autograd Jacobian is numerically unstable
 ($\lVert\partial g/\partial\sigma_{\text{solvent}}\rVert\!\sim\!10^{15}$ at infinite dilution); $J$ is
 computed by finite differences on the converged closure.} We read this as a signed negative only, and do
-not build on it, for two reasons the test cannot escape. First, the matched set is sparse (median one
+not build on it, for two reasons intrinsic to the test. First, the matched set is sparse (median one
 pair per molecule), so each per-molecule Jacobian subspace is one-dimensional and the dimension-matched
 row-space controls are uninformative---a resolved direction common across molecules makes a molecule's
 ``own'' and ``other'' subspaces coincide. Second, and more fundamentally, the single-pair $J^{+}(m-g)$
@@ -569,8 +570,8 @@ by activity (\S\ref{sec:surrogate}), not the geometry of the drift.
 
 The instrument behind \S\ref{sec:surrogate}---the rank of the activity Fisher $J^{\top}J$
 ($J=\partial\lngi/\partial\sigma$), read as a participation ratio
-$\mathrm{PR}=(\sum_i\lambda_i)^2/\sum_i\lambda_i^2$---is cheap and oracle-free, which is its appeal for
-probing any physics-grounded latent. It is also easy to misread in three ways that inflate a null or a rank
+$\mathrm{PR}=(\sum_i\lambda_i)^2/\sum_i\lambda_i^2$---is computationally inexpensive and oracle-free, which
+is its appeal for probing any physics-grounded latent. It is also easy to misread in three ways that inflate a null or a rank
 in the flattering direction, silently; we record them because the corrections are not obvious.
 
 \paragraph{(i)~Finite differences inflate the participation ratio.} $\mathrm{PR}$ is a \emph{tail} statistic,
@@ -583,8 +584,9 @@ $\mathrm{PR}=1.00$ and $1.25$---a $25\%$ inflation from noise alone, though the 
 ignores the typing (2002) has $102$ exactly-redundant coordinates that finite differences decorrelate into a
 spurious floor, inflating its $\mathrm{PR}$ from $1.0$ toward $2.0$, while a closure that uses the typing
 (2010) has no such redundancy---so the same step inflates the two \emph{asymmetrically} and can manufacture a
-rank ordering with no physical content. \emph{Use autograd where the closure is differentiable; with only
-finite differences, read $\mathrm{PR}$ against a known-rank or permuted control, never absolutely.}
+rank ordering with no physical content. \emph{Autograd is the appropriate instrument where the closure is
+differentiable; with only finite differences, $\mathrm{PR}$ is interpretable against a known-rank or
+permuted control, never absolutely.}
 
 \paragraph{(ii)~``Own vs.\ other'' controls are powerless when the resolved direction is common.} A
 dimension- and smoothness-matched control aligns a molecule's drift against its own predicted compensation and
@@ -592,9 +594,9 @@ against other molecules'. It has power only if the predictions differ. But when 
 rank-one (\S\ref{sec:surrogate}) the resolved direction is \emph{common}, so ``own'' and ``other'' point
 almost the same way and the diagonal must sit inside the null---$p\approx0.5$ regardless of the truth. On the
 matched set sparsity compounds this: a median of one pair per molecule makes each per-molecule Jacobian
-subspace one-dimensional, so ``own'' and ``other'' subspaces coincide exactly. \emph{Verify a control has
-power before reading its null: if the compared predictions have median cosine near one, the test cannot
-reject.}
+subspace one-dimensional, so ``own'' and ``other'' subspaces coincide exactly. \emph{A control's null is
+interpretable only once its power is established: if the compared predictions have median cosine near one,
+the test cannot reject.}
 
 \paragraph{(iii)~Energy-in-subspace baselines need the effective rank and a cluster null.} A random zero-mean
 vector in $D$ dimensions places $k_{\mathrm{eff}}/(D{-}1)$ of its energy in a subspace of \emph{effective}
@@ -605,11 +607,11 @@ one-dimensional, so the baseline is ${\approx}2\%$ and the observed $5.5\%$ is a
 because both one-dimensional subspaces are the same common direction, not because the drift avoids the
 resolved one. And with that direction common, $N$ enriched molecules are not $N$ independent draws---the
 enrichment needs a cluster null (\S\ref{sec:measure}), without which its significance is over-stated by
-$\sqrt{N/N_{\mathrm{eff}}}$. We therefore report the $5.5\%$ as evidence in neither direction. \emph{Baseline
-by effective rank; cluster by the shared direction.}
+$\sqrt{N/N_{\mathrm{eff}}}$. We therefore report the $5.5\%$ as evidence in neither direction. \emph{The
+baseline must be set by effective rank, and the null clustered by the shared direction.}
 
-Each failure turns a soft spectral quantity into a hard structural claim---the mode the surviving statements
-of \S\ref{sec:surrogate} are written to avoid, by carrying their null model and a power check inline.
+Each failure turns a soft spectral quantity into a hard structural claim---the mode the surviving
+statements of \S\ref{sec:surrogate} avoid by carrying their null model and a power check inline.
 
 \section{Data provenance and reproducibility}
 \label{sec:si-repro}
@@ -621,11 +623,10 @@ $V_{\mathrm{cosmo}}$ for the combinatorial term). These are quantum-chemically c
 single reference conformer and protonation state; any mismatch to the experimental measurement
 conditions is noise in $\zstar$ that inflates $\Binsuf$ (an imperfect intermediate) rather than
 $\Bclos$, so it is \emph{conservative} for the closure-dominance verdict. Infinite-dilution
-activity coefficients: ThermoML. We checked whether enlarging the reference $\sigma$-profile set would
+activity coefficients: ThermoML. Enlarging the reference $\sigma$-profile set would not materially
 grow the matched activity corner: of the $298$\,K ThermoML IDAC pairs, only two solutes lack a VT-2005
-profile while their solvent has one, so computing further reference profiles does not materially
-enlarge the matched set---the binding constraint is joint IDAC$\times$profile coverage, not profile
-availability. Second-domain pKa: the OPERA experimental compilation
+profile while their solvent has one---the binding constraint is joint IDAC$\times$profile coverage, not
+profile availability. Second-domain pKa: the OPERA experimental compilation
 \cite{mansouri2019opera} (\texttt{pKa\_QR.sdf}, $7904$ QSAR-ready records, public-domain US EPA;
 cited, not redistributed); the uniform net-formal-charge filter reduces this to the $1004$
 Hammett-amenable rows ($158$ meta/para, $846$ ortho/heteroaromatic) analysed in \S\ref{sec:si-pka}. The Bemis--Murcko scaffold split follows the main text; because the seeded
@@ -683,10 +684,10 @@ negative---random target $-0.0006$, molecule-blind constant profile $-0.015$, ra
 descriptors $-0.514$ (set A) and $-0.928$ (set B). Null $p_{95}=+0.105/+0.117/+0.096$ and
 $\max=+0.316/+0.380/+0.346$ over $1000$ draws.
 
-Two features of this table are worth stating because they bear on how such probes should be
+Two features of this table bear on how such probes should be
 read. First, the between-seed spread ($0.616$ range, sd $0.334$) exceeds every individual value:
-a single-seed run would have been unreadable, and seed $43$ alone would have looked like a
-near-miss worth pursuing. Second, a decision rule of the common form
+a single-seed run would have been unreadable, and seed $43$ alone would have read as a
+near-miss. Second, a decision rule of the common form
 $R^{2}(\text{model})-R^{2}(\text{raw})\ge0.10$ would have declared success here on all three
 seeds under descriptor set B---including seed $42$, whose probe is worse than a molecule-blind
 constant---and on two of three under set A. The subtrahend is an unregistered analyst choice

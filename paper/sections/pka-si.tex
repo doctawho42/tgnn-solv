@@ -41,13 +41,13 @@ Hammett constant, so---unlike the solubility regime---$\Binsuf$ is \emph{point}-
 one-sidedly bounded (\S\ref{sec:decomp}): a within-scaffold regression estimator gives $\Binsuf=4.5$
 ($95\%$~CI $[4.0,5.1]$; $\approx89\%$ of the error---the tabulated $\sigma$ carries no ortho
 information, exactly the a-priori channel assignment), leaving a small but certified \emph{point}
-closure misspecification $\Bclos=0.6$ ($[0.3,0.8]$, a stratified within-scaffold molecule bootstrap). We state $\Binsuf$ as a value here,
-and only here, because it is measured, not bounded (see the resolution note in \S\ref{sec:decomp}). This is the
-near-exact-to-degraded transition the closure is meant to show, now measured rather than asserted. This places the pKa closure near the phase-diagram boundary
+closure misspecification $\Bclos=0.6$ ($[0.3,0.8]$, a stratified within-scaffold molecule bootstrap). $\Binsuf$ is stated as a value here,
+and as a bound everywhere else, because only here is it measured (see the resolution note in \S\ref{sec:decomp}). This is the
+near-exact-to-degraded transition, measured rather than asserted. This places the pKa closure near the phase-diagram boundary
 in its clean regime. \paragraph{Data quality control (uniform, closure-independent).} The trained runs use the canonical
-full OPERA set ($7904$ records). A handful of entries are supplied as pre-ionized microstates---an
-$[\mathrm{NH}^+]$-protonated aminopyridine at $\mathrm pK_a=-7.78$, a pyrylium $[\mathrm O^+]$, and a
-few others---inconsistent with a neutral-scaffold Hammett assignment, and they degrade the clean pole
+full OPERA set ($7904$ records). A small number of entries are supplied as pre-ionized microstates---an
+$[\mathrm{NH}^+]$-protonated aminopyridine at $\mathrm pK_a=-7.78$, a pyrylium $[\mathrm O^+]$, among
+others---inconsistent with a neutral-scaffold Hammett assignment, and they degrade the clean pole
 (pyridinium RMSE $0.63\!\to\!3.83$). We drop them with one rule, \emph{net formal charge} $\neq0$,
 applied uniformly to both strata. It is closure-independent (it never references the oracle residual,
 so it cannot be circular) and keeps net-neutral substituents such as nitro $[\mathrm N^+][\mathrm O^-]{=}\mathrm O$.
@@ -57,7 +57,7 @@ manufacture the sign), for $1004$ Hammett-amenable rows.
 
 \paragraph{Certification of the flip.} We train the physics arm (encoder $\to\hat\sigma\to$ fixed LFER)
 on $K{=}20$ stratified $80/20$-within-scaffold splits---a Bemis--Murcko split collapses the meta/para
-pole to two ring systems and is unstable---and read the paired per-molecule error against the
+pole to two ring systems and is unstable---and record the paired per-molecule error against the
 deterministic oracle, per stratum. Meta/para: learned MAE $0.48\pm0.09$ vs oracle $0.315\pm0.07$, gap
 $-0.165$, oracle better in $19/20$ splits (scaffold-cluster and split bootstraps both exclude zero,
 $P(\text{oracle worse})<0.01$). Ortho: learned $0.83\pm0.07$ vs oracle $1.62\pm0.08$, gap $+0.79$, oracle worse in $20/20$
@@ -71,10 +71,10 @@ the $0.31$ oracle threshold, so grounding helps throughout. On ortho the learned
 $1.62$ threshold across the whole interpolation range ($0.85$ at full data, $1.31$ at $12\%$), so
 grounding hurts throughout; only scaffold extrapolation, where $\hat\sigma$ breaks to $2.6\pm2.0$,
 pushes it back above the threshold and reverts the sign. The flip is therefore a within-distribution,
-fidelity-driven crossover, and the extrapolation reversion is predicted by the same law rather than a
-contradiction of it. A trained physics-vs-DirectGNN comparison points the same way overall but has
-weak absolute errors and an untuned control, so we treat it only as a complement; the load-bearing
-second-domain results are the decomposition above and the certified flip.
+fidelity-driven crossover, and the extrapolation reversion is predicted by the same law. A trained
+physics-vs-DirectGNN comparison agrees in direction overall but has weak absolute errors and an
+untuned control; the load-bearing second-domain results are the decomposition above and the certified
+flip.
 
 \begin{figure}[t]
 \centering

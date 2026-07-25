@@ -17,7 +17,7 @@ embed a Gibbs--Helmholtz constraint in a graph network to capture their temperat
 approaches treat the activity coefficient as the regression target, rather than retaining a mechanistic
 model that consumes a predicted molecular property.
 
-The broader question of when a fixed physical structure helps or hurts a learned model is central to
+The broader question of when a fixed physical structure improves or degrades a learned model is central to
 physics-informed machine learning \cite{karniadakis2021}. Its dominant forms impose structure as a
 differentiable object: physics-informed neural networks enforce a governing equation through the loss
 \cite{raissi2019}, while physics-guided and gray-box hybrids compose learned components with fixed
@@ -55,11 +55,11 @@ What this literature lacks is a way to \emph{measure}, rather than merely diagno
 physical model or its learned inputs limits a composed predictor's accuracy, and to test whether the
 learned intermediate has become a surrogate that compensates for the model's error. The concept-leakage
 literature identifies the phenomenon but has no external reference against which to quantify it, and the
-neural-solver work has a fixed operator but only a numerical, unreferenced error term. We supply the
-missing ingredient: an external reference for the learned intermediate---a reference $\sigma$-profile
+neural-solver work has a fixed operator but only a numerical, unreferenced error term. We supply what
+is missing: an external reference for the learned intermediate---a reference $\sigma$-profile
 for solubility, and tabulated substituent constants for a second chemical domain---which turns the
 qualitative concern into a model-free measurement that separates model misspecification from input
 insufficiency. Using it, we show on a fixed thermodynamic model that the learned intermediate becomes a
 low-rank, transferable surrogate, and that grounding it on reference values can therefore reduce
 accuracy. Our data are drawn from BigSolDB~2.0 \cite{krasnov2025bigsoldb}; FastSolv and SolProp remain
-the accuracy reference points, which we do not contest.
+the accuracy reference points for this task.

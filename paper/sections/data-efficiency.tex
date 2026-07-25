@@ -1,22 +1,22 @@
-\subsection{Grounding does not pay off in the low-data regime either}
+\subsection{Grounding does not improve accuracy in the low-data regime either}
 \label{sec:data-efficiency}
 % Artifact: results/data_efficiency/summary.json via run_data_efficiency_summary.py
 % over the Modal run (volume tgnn-e5, seed 42); ΔMAE = physics − DirectGNN.
 The strongest a-priori case for a physics prior is data scarcity: with few training molecules, an
-inductive bias toward the correct factorization should beat a data-hungry black box. We test it
+inductive bias toward the correct factorization should outperform a data-hungry black box. We test it
 directly, subsampling the training set \emph{by solute} at fractions $0.05$--$1.0$ and training both
 the physics-grounded model and DirectGNN on the identical subsample, evaluated on the fixed scaffold
 test (Table~\ref{tab:data-eff}, seed 42). The physics arm is \emph{worse at every fraction}, and
 against the hypothesis the gap is \emph{smallest} at the least data ($\Delta\mathrm{MAE}=+0.08$ at
-$5\%$) and \emph{grows} with more ($+1.0$ at full); its $R^2$ is negative throughout. We do not
-draw strong conclusions from a single-seed sweep with non-monotone physics-arm MAEs, and the light per-fraction budget
-leaves the physics arm more under-converged than the control, so we take this as \emph{consistent
-with}, not a sharp confirmation of, the sign rule (Prop.~\ref{prop:tax}). The one inverting metric is
+$5\%$) and \emph{grows} with more ($+1.0$ at full); its $R^2$ is negative throughout. The sweep is
+single-seed, the physics-arm MAEs are non-monotone, and the light per-fraction budget
+leaves the physics arm more under-converged than the control; the result is therefore \emph{consistent
+with} the sign rule (Prop.~\ref{prop:tax}) rather than a sharp confirmation of it. The one inverting metric is
 top-1 solvent ranking ($0.42$ vs $0.23$ at $5\%$; the ranking-versus-accuracy split of
-\S\ref{sec:supporting}), which does not translate into lower error. This is the last regime a physics
-prior should plausibly help; that it does not is consistent with the broad accuracy null, alongside
-the structural account---a non-identifiable split through a misspecified closure---as the operative
-explanation.
+\S\ref{sec:supporting}), which does not translate into lower error. This is the last regime in which a
+physics prior should plausibly help; that it does not is consistent with the broad accuracy null and
+with the structural account---a non-identifiable split through a misspecified closure---as the
+operative explanation.
 
 \begin{table}[t]
 \centering

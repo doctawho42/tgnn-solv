@@ -10,7 +10,7 @@ measure the ceiling (\S\ref{sec:measure}) also lets us test this directly, compa
 profile $\hat\sigma$ against the reference VT-2005 profile $\sigma$ molecule by molecule ($n{=}44$).
 
 \paragraph{The learned profile is a systematic, low-rank, transferable surrogate---confound-free.}
-We use the most controlled test available: a grounded model checkpointed before and after
+The comparison is within a single grounded model, checkpointed before and after
 solubility fine-tuning (the $\sigma$ head unfrozen), so architecture and initialisation are held fixed
 and only the objective differs; we repeat it over \emph{three seeds} and report mean$\pm$sd. The
 grounded base recovers the reference profile to within $36\pm1\%$
@@ -33,27 +33,27 @@ structure \emph{beyond} an offset is the mean-centred low-rank spectrum above. S
 the physical profile to compensate the closure, shared across chemistry, driven by the fitting objective
 rather than by architecture or a
 lack of grounding.\footnote{Three-seed mean$\pm$sd (seeds $0$--$2$). The central claim is the
-\emph{sign} and the low-rank, transferable \emph{structure}, both seed-stable; the \emph{magnitude} has
-moved across pipeline versions over the project---a short run reached only ${\sim}16\%$, and earlier
-confounded/two-model analyses over-stated the departure (${\sim}82\%$) and transfer ($16$--$26\times$)---so
-we report it but do not draw strong conclusions from it (with $n{=}3$ the sd is itself only indicative, not a precision).}
+\emph{sign} and the low-rank, transferable \emph{structure}, both seed-stable; the \emph{magnitude} is
+stable only within a fixed analysis configuration---a shortened run gives only ${\sim}16\%$, and uncontrolled
+two-model comparisons over-state both the departure (${\sim}82\%$) and the transfer ($16$--$26\times$)---so
+it supports no strong conclusion (with $n{=}3$ the sd is itself only indicative, not a precision).}
 
-\paragraph{How far is $51\%$? A reference ladder.} A relative deviation is hard to read on its own, so we
+\paragraph{A reference ladder for the $51\%$ departure.} A relative deviation carries no absolute scale, so we
 calibrate it against predictors of known molecular content on the same $44$ molecules and the same metric
 (\texttt{scripts/experiments/rho\_control\_ladder.py}). A leave-one-out corpus-mean profile---one fixed
 shape reused for every molecule, carrying \emph{no} molecular information---sits at $0.493$. Assigning each
 molecule the true reference profile of a different, randomly chosen molecule sits at $0.651$--$0.684$ over
 five derangements, and a uniform profile at $0.889$. Against that ladder the grounded base ($0.364$) is
-clearly molecule-specific, comfortably inside the constant baseline; the fine-tuned latent ($0.507$) is
+clearly molecule-specific, well inside the constant baseline; the fine-tuned latent ($0.507$) is
 not. After solubility fine-tuning the ``physical'' intermediate is no closer to the reference profile than
 a shape that ignores which molecule it describes. The ladder is a yardstick, not a competitor---its rungs
 are built from the reference profiles themselves and are unavailable to any predictor---but it fixes the
-scale on which the drift should be read, and it says the drift consumes essentially all of the molecular
-specificity that grounding had bought.
+scale on which the drift should be read: the drift consumes essentially all of the molecular
+specificity that grounding had provided.
 
 \paragraph{Dominant mode and consequence.} The dominant drift mode (Fig.~\ref{fig:surrogate}) transfers
 area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and \emph{into} the polar wings: the network
-makes molecules look more polar than they are, inflating the segment interactions the misspecified
+represents molecules as more polar than they are, inflating the segment interactions the misspecified
 exchange kernel under-weights and thereby cancelling part of $\Bclos$---the input compensating the map,
 exactly as the non-identifiability of the split predicts (Lemma~\ref{prop:ident}). This re-explains why
 grounding hurts \emph{here} (\S\ref{sec:paradox}): the pipeline is calibrated to the compensated
@@ -76,14 +76,14 @@ of $51$ even at full solvent coverage: the activity map concentrates on the one 
 directions where the closure is least faithful (\S\ref{sec:map}) and is weakly sensitive to the rest,
 so the end-to-end head can move $\sigma$ along the low-sensitivity directions at little cost to the fit
 (the concrete, $\sigma$-profile form of the non-identifiability of Lemma~\ref{prop:ident}).
-We state this narrowly---participation ratio is a concentration statistic, not a hard count, and it is
+The participation ratio is a concentration statistic, not a hard count, and it is
 measured at infinite dilution, so its transfer to the finite-composition regime that generates the drift
 is not established (the same scope gap as $\Bclos$, \S\ref{sec:scope}); the external reference here is
 itself \emph{computed} (VT-2005 quantum chemistry), not experimental, so this does not establish that
 recovery is impossible in principle.
 
 Whether the drift is additionally the closure's \emph{signed} first-order inverse $J^{+}(m-g)$ is
-under-resolved on this sparse, near-rank-one problem---a signed null we report but do not rely on
+under-resolved on this sparse, near-rank-one problem
 (App.~\ref{sec:si-failed-diagnostics}); the central claim is the under-determination above, not the
 geometry of the drift.
 
@@ -97,8 +97,8 @@ is still the low-fidelity COSMO-SAC-2002 and the warmup $\sigma$ is itself only 
 full flip needs supervision \emph{and} fidelity together: the recent TeNNet-SAC model
 \cite{yang2025tennet}, which supervises its $\sigma$-profiles toward quantum-chemistry values
 \emph{and} learns its segment-activity closure, outperforms COSMO-SAC and gains from truer profiles. So
-the two axes interact---supervision moves the system toward the helps-regime, closure fidelity carries
-it across (\S\ref{sec:discussion}).
+the two axes interact---supervision moves the system toward the regime in which grounding helps, and
+closure fidelity carries it across (\S\ref{sec:discussion}).
 
 \begin{figure*}[t]
 \centering

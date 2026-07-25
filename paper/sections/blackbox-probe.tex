@@ -11,15 +11,15 @@ against the same external references. It does not.
 
 \paragraph{The crystal term is not recoverable from the representation.} The probe target is the
 measured ideal-solubility term $\Phi^{*}(\text{mol},T)$; the input is the $788$-dimensional pair
-representation entering the prediction head, located by a forward pre-hook and measured rather
-than inferred from configuration. Ridge regression is fitted on $152$ solutes and scored on $13$
+representation entering the prediction head, captured from the forward pass rather than inferred
+from configuration. Ridge regression is fitted on $152$ solutes and scored on $13$
 held out with no solute in common, with the penalty chosen by solute-grouped cross-validation on
-the fitting split alone and read against a $1000$-draw null that permutes molecular identity while
+the fitting split alone and compared against a $1000$-draw null that permutes molecular identity while
 preserving each solute's temperatures. Held-out $R^{2}$ is $-0.51$, $+0.11$ and $+0.03$ across the
 three seeds, none significant, with the jackknife over held-out solutes changing sign in two seeds.
 The same probe applied to quantities the representation necessarily carries recovers the model's
-own prediction at $R^{2}=0.98$ and temperature at $R^{2}=0.9997$, which establishes that the
-extraction and the estimator are sound and the null is a property of the representation. The
+own prediction at $R^{2}=0.98$ and temperature at $R^{2}=0.9997$; the extraction and the estimator
+are therefore sound, and the null is a property of the representation. The
 permutation null itself reaches $R^{2}\approx0.32$--$0.38$ at this sample size, so the result is an
 upper bound: an effect of $R^{2}\gtrsim0.30$ would have been detected.
 
@@ -43,7 +43,7 @@ $0.59$--$0.61$: scaffold captures $99.8$--$100.3\%$ of what full molecular ident
 every seed. The representation does not resolve molecules that share a scaffold, and the effect is
 specific to scaffold rather than to any partition of the solutes ($+0.082$ against a solute-level
 null, the same value in all three seeds). Solvent identity accounts for $0.27$--$0.30$, temperature
-for $0.03$--$0.04$, and crude physical character for less: $\log P$, topological polar surface area
+for $0.03$--$0.04$, and coarse physical descriptors for less: $\log P$, topological polar surface area
 and molecular weight each take under $14\%$ of the solute-level structure.
 
 This is the mechanism of the transfer limitation reported in \S\ref{sec:gap}. A test molecule on an

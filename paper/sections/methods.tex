@@ -18,12 +18,12 @@ melting-point-independent miscibility/structure filter, and crystal $\Tm$,
 $\dHfus$, Hansen parameters, and infinite-dilution activity coefficients \lngi\
 are merged on as per-solute labels where available. Two data hazards are handled
 explicitly. Melting-point tables arrive in either $^\circ$C or Kelvin and are
-auto-detected by column median (a past double-conversion inflated every $\Tm$ by
+auto-detected by column median (an undetected double conversion inflates every $\Tm$ by
 $273$\,K, which propagates directly into the ideal term); and the seeded scaffold
 split is not stable across pipeline versions, so every regeneration is treated as
 a new split with all downstream artifacts recomputed. Crystal supervision is
 scarce: the test and validation splits contain essentially no measured $\dHfus$,
-which is the quantitative backbone of the identifiability argument
+which is the quantitative basis of the identifiability argument
 (\S\ref{sec:framework}). External single-component data used for grounding are an
 open crystal-property pool ($\sim$15{,}000 melting points), the VT-2005
 $\sigma$-profile database, and ThermoML infinite-dilution activity coefficients;
@@ -31,10 +31,10 @@ each is filtered to exclude any molecule whose scaffold appears in the
 validation or test split.
 
 \subsection{Graph encoder and pair representation}
-Solute and solvent are encoded by a \emph{shared} message-passing graph network; two other
+Solute and solvent are encoded by a \emph{shared} message-passing neural network (MPNN); two other
 interchangeable backbones (a graph-transformer and a physics-channelled variant that supervises
 message channels toward the Hansen parameters) are described in the SI (\S\ref{sec:si-methods}) and
-do not outperform the headline MPNN. Small hydride
+do not outperform the primary MPNN. Small hydride
 solvents such as water are given explicit hydrogens so the polar and
 hydrogen-bond channels activate. Solute and solvent embeddings interact through a
 bipartite cross-attention/message-passing block and a physics-aware readout, and
@@ -61,7 +61,7 @@ configuration, all differentiable and all consuming the same pair representation
 \paragraph{Two baseline closures.} NRTL (Non-Random Two-Liquid \cite{renon1968}), the most
 expressive of the three, predicts two interaction energies with a $1/T$ temperature law and a
 non-randomness factor, optionally regularised by a UNIFAC group-contribution prior
-\cite{fredenslund1975}; both are standard and serve mainly as baselines. Its symmetric
+\cite{fredenslund1975}; both are standard and are used here primarily as baselines. Its symmetric
 one-parameter collapse \texttt{gamma\_inf} gives the analytic infinite-dilution law
 $\lng(x_2,T)=\lngi(T)\,(1-x_2)^2$ with $\lngi$ affine in $1/T$, the minimal model in which the
 identifiability analysis is cleanest (\S\ref{sec:framework}).
@@ -84,14 +84,14 @@ $\lng^{\mathrm{res}}=(A_2/a_{\mathrm{eff}})\sum_m p_2^{\mathrm{pure}}(\sigma_m)
 an optional Staverman--Guggenheim combinatorial term uses the molecular cavity
 volume and area. The combinatorial size factor $r_i=V_i/r_0$ takes the
 \emph{reference} COSMO cavity volume ($V_{\mathrm{cosmo}}$) so that it shares the cavity
-basis of the area $A_i$. This closure --- COSMO-SAC evaluated over a network-
-\emph{predicted} $\sigma$-profile, and the intervention that swaps that profile
-for the external reference one --- is the object of study in the grounding analysis
-(\S\ref{sec:paradox}).
+basis of the area $A_i$. This closure --- COSMO-SAC evaluated over a
+network-\emph{predicted} $\sigma$-profile, and the intervention that swaps that
+profile for the external reference profile --- is the object of study in the
+grounding analysis (\S\ref{sec:paradox}).
 
 \paragraph{In-house closures are the primary instrument.} Both closures used in the
 fidelity measurement (\S\ref{sec:measure}) are our own differentiable implementations, so
-that every arm shares one code path, removing the cross-implementation engine confound. Each arm
+that every arm shares one code path, removing the cross-implementation confound. Each arm
 consumes its own model-prescribed $\sigma$-averaging (Mullins for 2002, Hsieh for 2010); this is the
 specified use of each closure, and the family admits no input-fixed contrast (\S\ref{sec:measure}). The 2002 layer above reproduces the NIST reference
 COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE $0.003\,\ln\gamma$ on identical VT-2005
@@ -116,7 +116,7 @@ paths. Rather than backpropagating through the iterations, gradients use the
 implicit-function theorem at the converged $x_2^\star$ (with $\eta=\partial\lng/\partial x_2$):
 exact at the fixed point, memory-constant in the iteration count, and well conditioned unless
 $1+x_2^\star\eta\to0$, an explicit stability criterion. Iteration counts (train $16$, eval $30$) were set by a
-convergence audit --- a shorter $n{=}8$ schedule failed a $5.86$-\lnx\ convergence
+convergence audit --- a shorter $n{=}8$ schedule fails a $5.86$-\lnx\ convergence
 test on strongly non-ideal pairs (SI \S\ref{sec:si-methods}).
 
 \subsection{Adaptive correction and the oracle substitution}
@@ -124,7 +124,7 @@ A bounded, gated ``adaptive physics correction'' perturbs the physical parameter
 ($\Tm,\dHfus,\tau$) rather than the output and re-solves the SLE, keeping the correction in parameter
 space to preserve the physical decomposition. The \emph{oracle substitution} replaces the predicted
 $\sigma$-profile $\hat z$ with the reference VT-2005 profile $\zstar$ before the closure (matched by
-canonical SMILES); it is applied three ways to rule out wiring artifacts---at evaluation only, injected
+canonical SMILES); it is applied three ways to rule out implementation artifacts---at evaluation only, injected
 at training time so the model co-adapts, and as a channel-swap control---and an analogous override
 substitutes reference crystal targets. The activity target for the decomposition (\S\ref{sec:measure})
 is the infinite-dilution $\lngi=\lim_{x_2\to0}\lng$ at $298$\,K.
@@ -142,7 +142,7 @@ a mandatory scaffold-leak guard excluding any pool molecule whose scaffold is in
 validation or test. The reference streams ground the crystal factor (melting-point
 pool) and the activity factor ($\sigma$-profile database); this
 single-component-grounding pattern is the mechanism by which an otherwise
-non-identifiable factor (\S\ref{sec:framework}) is pinned by abundant external
+non-identifiable factor (\S\ref{sec:framework}) is identified by abundant external
 data a black-box predictor cannot use.
 
 \subsection{Objective}
