@@ -1,0 +1,48 @@
+{
+  "prereg": "reports/PREREG_fix_g_2026-07-19.md",
+  "anchors": {
+    "rho_free": 0.51,
+    "rho_grounded": 0.36,
+    "GO_threshold": 0.46,
+    "NOGO_threshold": 0.5
+  },
+  "per_checkpoint": [
+    {
+      "label": "fixg",
+      "checkpoint": "out/fixg_s0.pt",
+      "kernel_residual_rank": 1,
+      "rho": 0.8840441739991752,
+      "dropone_min": 0.8823174813387651,
+      "dropone_max": 0.8864111641383048,
+      "n": 44
+    },
+    {
+      "label": "free",
+      "checkpoint": "out/free_s0.pt",
+      "kernel_residual_rank": 0,
+      "rho": 0.8843929804942801,
+      "dropone_min": 0.8826840402181007,
+      "dropone_max": 0.8867449641380415,
+      "n": 44
+    }
+  ],
+  "summary": {
+    "fixg": {
+      "n_seeds": 1,
+      "rho_mean": 0.8840441739991752,
+      "rho_sd": 0.0,
+      "rho_seeds": [
+        0.8840441739991752
+      ]
+    },
+    "free": {
+      "n_seeds": 1,
+      "rho_mean": 0.8843929804942801,
+      "rho_sd": 0.0,
+      "rho_seeds": [
+        0.8843929804942801
+      ]
+    }
+  },
+  "gate1_verdict": "NO-GO (rho >= 0.50; unmoved from free 0.51)"
+}
