@@ -1,0 +1,36 @@
+{
+  "ceiling_train": 0.2389040053212098,
+  "ceiling_holdout": -0.12502196432161333,
+  "ceiling_holdout_p": 0.581,
+  "pairs": 66,
+  "solutes": 13,
+  "seeds": {
+    "directgnn_seed42.pt": {
+      "r_fair": 0.29438285713458473,
+      "p_fair": 0.069,
+      "r_crystal": 0.0661614548586791,
+      "p_crystal": 0.7205,
+      "fraction_of_ceiling": null,
+      "ceiling_significant": false,
+      "median_abs_slope_error": 1329.3145533499355
+    },
+    "directgnn_seed43.pt": {
+      "r_fair": 0.40615095293047804,
+      "p_fair": 0.075,
+      "r_crystal": -0.28342495496915693,
+      "p_crystal": 0.2435,
+      "fraction_of_ceiling": null,
+      "ceiling_significant": false,
+      "median_abs_slope_error": 1087.9463546651443
+    },
+    "directgnn_seed44.pt": {
+      "r_fair": 0.19527109425567346,
+      "p_fair": 0.3575,
+      "r_crystal": -0.028127683818789943,
+      "p_crystal": 0.9055,
+      "fraction_of_ceiling": null,
+      "ceiling_significant": false,
+      "median_abs_slope_error": 1007.3473170911302
+    }
+  }
+}
