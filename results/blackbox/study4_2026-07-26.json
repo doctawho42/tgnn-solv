@@ -1,0 +1,260 @@
+{
+  "n_rows": 5608,
+  "n_solutes": 147,
+  "n_solvents": 70,
+  "n_scaffolds": 124,
+  "seeds": {
+    "directgnn_seed42.pt": {
+      "solvent identity": {
+        "stat": 0.29002029528908846,
+        "null": 0.012214854812827589,
+        "excess": 0.2778054404762609,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 70,
+        "null_level": "row"
+      },
+      "solute identity": {
+        "stat": 0.6387638827507018,
+        "null": 0.026060628192825473,
+        "excess": 0.6127032545578763,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 147,
+        "null_level": "row"
+      },
+      "solute scaffold": {
+        "stat": 0.6362999052043548,
+        "null": 0.02201675964319042,
+        "excess": 0.6142831455611644,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 124,
+        "null_level": "row",
+        "share_of_solute_ceiling": 1.0025785582033966
+      },
+      "solute scaffold | solute-level null": {
+        "stat": 0.6362999052043548,
+        "null": 0.5480003553126251,
+        "excess": 0.08829954989172961,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 124,
+        "null_level": "solute"
+      },
+      "temperature": {
+        "stat": 0.04026234433824984,
+        "null": 0.0001883744631938716,
+        "excess": 0.04007396987505597,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "row"
+      },
+      "logP(solute)": {
+        "stat": 0.08914422695274278,
+        "null": 0.005926468043319628,
+        "excess": 0.08321775890942315,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "solute",
+        "share_of_solute_ceiling": 0.13582065753751002
+      },
+      "TPSA(solute)": {
+        "stat": 0.06064677872283087,
+        "null": 0.005318989488717599,
+        "excess": 0.05532778923411327,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "solute",
+        "share_of_solute_ceiling": 0.09030111856356554
+      },
+      "MolWt(solute)": {
+        "stat": 0.03740841866683717,
+        "null": 0.005022634678344035,
+        "excess": 0.032385783988493136,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "solute",
+        "share_of_solute_ceiling": 0.052857209011991556
+      },
+      "Phi* (measured, subset)": {
+        "stat": 0.16850212553565586,
+        "null": 0.06908026348064436,
+        "excess": 0.0994218620550115,
+        "p": 0.015,
+        "kind": "VE",
+        "n_rows": 331,
+        "solute_ceiling_on_subset": 0.5440870322451434,
+        "share_of_subset_ceiling": 0.18273154139467904
+      }
+    },
+    "directgnn_seed43.pt": {
+      "solvent identity": {
+        "stat": 0.3133912776162274,
+        "null": 0.01230341599644742,
+        "excess": 0.30108786161978,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 70,
+        "null_level": "row"
+      },
+      "solute identity": {
+        "stat": 0.6126884231874823,
+        "null": 0.025965882035939306,
+        "excess": 0.586722541151543,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 147,
+        "null_level": "row"
+      },
+      "solute scaffold": {
+        "stat": 0.608315588282051,
+        "null": 0.02196591396658573,
+        "excess": 0.5863496743154653,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 124,
+        "null_level": "row",
+        "share_of_solute_ceiling": 0.9993644920555704
+      },
+      "solute scaffold | solute-level null": {
+        "stat": 0.608315588282051,
+        "null": 0.5260915867638635,
+        "excess": 0.08222400151818754,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 124,
+        "null_level": "solute"
+      },
+      "temperature": {
+        "stat": 0.028922101270068896,
+        "null": 0.00018997091205618776,
+        "excess": 0.028732130358012708,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "row"
+      },
+      "logP(solute)": {
+        "stat": 0.05457763757924622,
+        "null": 0.006248079222602407,
+        "excess": 0.04832955835664381,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "solute",
+        "share_of_solute_ceiling": 0.08237208385038151
+      },
+      "TPSA(solute)": {
+        "stat": 0.06618965169982773,
+        "null": 0.0056715918642597715,
+        "excess": 0.060518059835567954,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "solute",
+        "share_of_solute_ceiling": 0.10314596012757742
+      },
+      "MolWt(solute)": {
+        "stat": 0.018575752674880392,
+        "null": 0.005308512957560689,
+        "excess": 0.013267239717319704,
+        "p": 0.01,
+        "kind": "VE",
+        "null_level": "solute",
+        "share_of_solute_ceiling": 0.022612459530326694
+      },
+      "Phi* (measured, subset)": {
+        "stat": 0.3193428433062599,
+        "null": 0.07029634723086624,
+        "excess": 0.24904649607539364,
+        "p": 0.0,
+        "kind": "VE",
+        "n_rows": 331,
+        "solute_ceiling_on_subset": 0.586484131720377,
+        "share_of_subset_ceiling": 0.4246431959631154
+      }
+    },
+    "directgnn_seed44.pt": {
+      "solvent identity": {
+        "stat": 0.28281389574929666,
+        "null": 0.01227259101560941,
+        "excess": 0.27054130473368726,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 70,
+        "null_level": "row"
+      },
+      "solute identity": {
+        "stat": 0.6225660613019296,
+        "null": 0.026058519046056335,
+        "excess": 0.5965075422558732,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 147,
+        "null_level": "row"
+      },
+      "solute scaffold": {
+        "stat": 0.6171645346408176,
+        "null": 0.022035172900273316,
+        "excess": 0.5951293617405442,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 124,
+        "null_level": "row",
+        "share_of_solute_ceiling": 0.9976895840912304
+      },
+      "solute scaffold | solute-level null": {
+        "stat": 0.6171645346408176,
+        "null": 0.5350490333772058,
+        "excess": 0.08211550126361178,
+        "p": 0.0,
+        "kind": "eta2",
+        "n_levels": 124,
+        "null_level": "solute"
+      },
+      "temperature": {
+        "stat": 0.03725010200833102,
+        "null": 0.00018575890729053662,
+        "excess": 0.03706434310104048,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "row"
+      },
+      "logP(solute)": {
+        "stat": 0.03411288897866258,
+        "null": 0.006179162785388501,
+        "excess": 0.027933726193274083,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "solute",
+        "share_of_solute_ceiling": 0.04682878960362223
+      },
+      "TPSA(solute)": {
+        "stat": 0.04806195663828646,
+        "null": 0.00562897902273273,
+        "excess": 0.04243297761555373,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "solute",
+        "share_of_solute_ceiling": 0.07113569336454761
+      },
+      "MolWt(solute)": {
+        "stat": 0.02417977763801559,
+        "null": 0.005695050942411217,
+        "excess": 0.018484726695604373,
+        "p": 0.0,
+        "kind": "VE",
+        "null_level": "solute",
+        "share_of_solute_ceiling": 0.03098825310020189
+      },
+      "Phi* (measured, subset)": {
+        "stat": 0.18235313277565693,
+        "null": 0.0776227843040877,
+        "excess": 0.10473034847156923,
+        "p": 0.0,
+        "kind": "VE",
+        "n_rows": 331,
+        "solute_ceiling_on_subset": 0.5823772706839222,
+        "share_of_subset_ceiling": 0.17983247929401125
+      }
+    }
+  }
+}
