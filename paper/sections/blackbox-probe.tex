@@ -1,0 +1,68 @@
+\subsection{Does the black-box control carry the thermodynamics instead?}
+\label{sec:blackbox}
+% Artifacts: results/blackbox/{RESULT_study1a_2026-07-26,RESULT_study2,RESULT_study4}.md and the
+% JSONs beside them, via scripts/experiments/blackbox_study{1a,2,4}.py on the same three
+% current-split DirectGNN checkpoints used for the controlled comparison (\S\ref{sec:paradox}).
+The physics arm's intermediate is a compensating surrogate (\S\ref{sec:surrogate}). A natural
+reply is that the thermodynamics has not disappeared but moved: the unconstrained control might
+represent the two SLE terms implicitly, having been given the freedom to do so. We tested that on
+the same three DirectGNN checkpoints, the same scaffold split, using the same external oracles,
+and the answer is no---with the bound stated, because the oracle is small.
+
+\paragraph{The crystal term is not recoverable from the representation.} We probe the $788$-bin
+pair representation entering the prediction head\footnote{Located by a forward pre-hook; the model
+exposes no pooled ``pair'' module, and its dimension is measured rather than inferred from
+configuration.} for the measured ideal-solubility term $\Phi^{*}(\text{mol},T)$, fitting on $152$
+solutes and scoring on $13$ held out with zero solute overlap. Ridge, $\alpha$ chosen by
+solute-grouped cross-validation on the fitting split alone, read against a $1000$-draw null that
+permutes molecular \emph{identity} while preserving each solute's temperatures. Held-out
+$R^{2}=-0.51/+0.11/+0.03$ across seeds; no seed is significant, and the jackknife over held-out
+solutes changes sign in two of the three. What licenses reading this as a negative rather than as
+a broken pipeline is a positive control on the same rows: the same probe recovers the model's own
+prediction at $R^{2}=0.98$ and temperature at $R^{2}=0.9997$. The null itself reaches
+$R^{2}\approx0.32$--$0.38$ at this sample size, so the claim is a bound, not a point---an effect of
+$R^{2}\gtrsim0.30$ would have been seen and was not, and a weaker one is beyond what $13$ solutes
+can resolve.
+
+\paragraph{Neither is it visible in the temperature response, and the data barely expose it.} The
+sharper form of the question---does $\partial\lnx/\partial(1/T)$ recover $-\Delta H_{\text{fus}}/R$
+---turns out to be a question about the corpus before it is one about the model, since the SLE
+identity puts the activity term in the same slope. Measured on the data alone, over $1353$
+solute--solvent pairs spanning $151$ solutes, the empirical slope correlates with
+$-\Delta H_{\text{fus}}/R$ at only $r=+0.24$; the slopes themselves are sharply determined (median
+$|\text{slope}|/\mathrm{SE}=49$, one pair of $1353$ wrong-signed), so this is structure and not
+noise. A model reproducing the data exactly would therefore score $+0.24$, not $1$. On the $13$
+held-out solutes that ceiling is not distinguishable from zero, so the model-side test is
+unanswerable there; what can be said is that the model tracks the observed slope loosely
+($r=0.20$--$0.41$, $\approx30\%$ median error) and that its response is about three times more
+curved in $1/T$ than the measurements, so it is not representing solubility in a van't Hoff-like
+form.
+
+\paragraph{What the representation \emph{is} organised by: scaffold.} Freed from the oracle, the
+same question runs on the whole test set ($5608$ rows, $147$ solutes, $124$ Bemis--Murcko
+scaffolds, $70$ solvents). Reporting each factor's share of representation variance as an excess
+over a permutation null matched to the level at which that factor varies,\footnote{The level
+matters: $\eta^{2}$ is invariant to relabelling groups, so permuting an identity factor at its own
+level is a no-op, while a row-level null for a factor that is constant within a solute destroys
+the block structure and inflates it. Identity factors take the row-level null, factors derived
+from identity the solute-level one.} solute identity accounts for $0.59$--$0.61$ and scaffold for
+$0.59$--$0.61$: scaffold captures $99.8$--$100.3\%$ of what full molecular identity captures, in
+every seed. The representation does not resolve molecules sharing a scaffold, and the effect is
+specifically scaffold rather than any solute partition ($+0.082$ against a solute-level null, the
+same value in all three seeds). Solvent identity accounts for $0.27$--$0.30$, and crude physical
+character for very little---$\log P$, TPSA and molecular weight each take under $14\%$ of the
+solute-level structure.
+
+This supplies the mechanism behind a limitation we asserted but did not explain
+(\S\ref{sec:gap}): the encoder is transfer-limited because a test molecule on an unseen scaffold
+is not a mild extrapolation but a point off the axis along which the representation is organised
+at all. It also separates two things that probing work often conflates. Temperature is decodable
+from this vector at $R^{2}=0.9997$ and occupies $3$--$4\%$ of its variance; both are true, and
+only the second describes how the model is arranged. A probe recovering a quantity is not evidence
+that the representation is built around it.
+
+\paragraph{Scope.} The oracle-based half of this rests on $13$ held-out solutes and cannot be
+enlarged: the molecules carrying both a measured crystal and a measured activity reference are
+$25$ common solvents supplying $66\%$ of the training rows, so they cannot be held out of a
+solubility model at all. The scaffold result does not depend on the oracle and is measured at full
+test size. Full tables, nulls and controls are in App.~\ref{sec:si-blackbox}.

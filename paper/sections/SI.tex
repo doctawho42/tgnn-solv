@@ -654,3 +654,89 @@ aggregated at run time, before that file was written, so they are unaffected; on
 artifact is partial, and any per-row re-analysis of the solubility arms therefore uses the two complete
 seeds ($42,43$). The learned-$\sigma$ and DirectGNN solubility files and the activity-level
 ($n{=}60$, $n{=}44$) artifacts are complete for every seed.
+
+\section{Black-box probe programme: full tables}
+\label{sec:si-blackbox}
+% Artifacts: results/blackbox/*.md and *.json; scripts/experiments/blackbox_study{1a,2,4}.py.
+All three studies use the same current-split DirectGNN checkpoints (seeds $42/43/44$, test MAE
+$1.749/1.674/1.684$) whose manifests pin the train/val/test SHA-256 to the split on disk. Every
+figure is CPU-computed; no number here required a GPU.
+
+\paragraph{Crystal-term decodability (Study 1a).} Probe fitted on $152$ solutes / $14{,}348$ rows,
+scored on $13$ held-out solutes / $527$ rows, solute overlap zero. $\Phi^{*}$ is $92.2\%$
+between-solute variance, so the effective $n$ is $13$ clusters.
+
+\begin{center}\small
+\begin{tabular}{lccccc}
+\toprule
+seed & $R^{2}$(model) & perm.\ $p$ & jackknife range & sign flips & top-3 leverage \\
+\midrule
+42 & $-0.506$ & $0.894$ & $[-1.151,\,-0.228]$ & $0/13$ & $56.2\%$ \\
+43 & $+0.111$ & $0.055$ & $[-0.286,\,+0.333]$ & $3/13$ & $59.8\%$ \\
+44 & $+0.027$ & $0.177$ & $[-0.253,\,+0.237]$ & $6/13$ & $57.2\%$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Controls: positive---model's own prediction $R^{2}=0.980$, temperature $R^{2}=0.9997$;
+negative---random target $-0.0006$, molecule-blind constant profile $-0.015$, raw RDKit
+descriptors $-0.514$ (set A) and $-0.928$ (set B). Null $p_{95}=+0.105/+0.117/+0.096$ and
+$\max=+0.316/+0.380/+0.346$ over $1000$ draws.
+
+Two features of this table are worth stating because they bear on how such probes should be
+read. First, the between-seed spread ($0.616$ range, sd $0.334$) exceeds every individual value:
+a single-seed run would have been unreadable, and seed $43$ alone would have looked like a
+near-miss worth pursuing. Second, a decision rule of the common form
+$R^{2}(\text{model})-R^{2}(\text{raw})\ge0.10$ would have declared success here on all three
+seeds under descriptor set B---including seed $42$, whose probe is worse than a molecule-blind
+constant---and on two of three under set A. The subtrahend is an unregistered analyst choice
+worth more than the effect; we report $R^{2}(\text{raw})$ as a level beside $R^{2}$(model) and
+never as a difference.
+
+\paragraph{Temperature structure (Study 2).} Slopes are fitted at fixed (solute, solvent); a slope
+pooled across solvents would confound activity differences with temperature. Ceiling, measured on
+the data before any model: $r=+0.239$ on train ($1353$ pairs / $151$ solutes) and $-0.125$ held
+out ($66$ pairs / $13$ solutes, permutation $p=0.581$).
+
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+ & seed 42 & seed 43 & seed 44 \\
+\midrule
+corr(model, empirical slope) & $+0.294$ & $+0.406$ & $+0.195$ \\
+corr(model, $-\Delta H/R$)   & $+0.066$ & $-0.283$ & $-0.028$ \\
+median $|$model $-$ empirical$|$ slope & $1329$ & $1088$ & $1007$ \\
+curvature in $1/T$ (data: $6.8\times10^{5}$) & $2.0\times10^{6}$ & $2.1\times10^{6}$ & $2.3\times10^{6}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Organisation of the representation (Study 4).} Excess over a permutation null matched
+to the factor's level, on the full test set.
+
+\begin{center}\small
+\begin{tabular}{lcccl}
+\toprule
+factor & seed 42 & seed 43 & seed 44 & null level \\
+\midrule
+solute identity (147 levels) & $+0.613$ & $+0.587$ & $+0.597$ & row \\
+solute scaffold (124 levels) & $+0.614$ & $+0.586$ & $+0.595$ & row \\
+scaffold beyond arbitrary solute grouping & $+0.082$ & $+0.082$ & $+0.082$ & solute \\
+solvent identity (70 levels) & $+0.278$ & $+0.301$ & $+0.271$ & row \\
+temperature & $+0.040$ & $+0.029$ & $+0.037$ & row \\
+$\log P$ (solute) & $+0.089$ & $+0.048$ & $+0.028$ & solute \\
+TPSA (solute) & $+0.060$ & $+0.061$ & $+0.042$ & solute \\
+MolWt (solute) & $+0.032$ & $+0.013$ & $+0.018$ & solute \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent As a share of the solute-identity ceiling: scaffold $100.3/99.9/99.8\%$, $\log P$
+$13.6/8.2/4.7\%$, TPSA $9.0/10.3/7.1\%$, MolWt $5.3/2.3/3.1\%$.
+
+On the $331$ rows carrying a measured $\Phi^{*}$, $\Phi^{*}$ accounts for $18.3/42.5/18.0\%$ of
+that subset's own solute-identity ceiling. This does not contradict the held-out null above.
+$\Phi^{*}$ is a solute-level quantity and the representation is organised by solute identity, so
+any solute-level variable shares variance with it in sample; Study 1a asks the different and
+sharper question of whether the mapping transfers to solutes the probe never saw. In sample the
+organisation is partly $\Phi^{*}$-aligned; out of sample that alignment does not carry.
