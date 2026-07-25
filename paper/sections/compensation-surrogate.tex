@@ -38,6 +38,19 @@ moved across pipeline versions over the project---a short run reached only ${\si
 confounded/two-model analyses over-stated the departure (${\sim}82\%$) and transfer ($16$--$26\times$)---so
 we report it but do not draw strong conclusions from it (with $n{=}3$ the sd is itself only indicative, not a precision).}
 
+\paragraph{How far is $51\%$? A reference ladder.} A relative deviation is hard to read on its own, so we
+calibrate it against predictors of known molecular content on the same $44$ molecules and the same metric
+(\texttt{scripts/experiments/rho\_control\_ladder.py}). A leave-one-out corpus-mean profile---one fixed
+shape reused for every molecule, carrying \emph{no} molecular information---sits at $0.493$. Assigning each
+molecule the true reference profile of a different, randomly chosen molecule sits at $0.651$--$0.684$ over
+five derangements, and a uniform profile at $0.889$. Against that ladder the grounded base ($0.364$) is
+clearly molecule-specific, comfortably inside the constant baseline; the fine-tuned latent ($0.507$) is
+not. After solubility fine-tuning the ``physical'' intermediate is no closer to the reference profile than
+a shape that ignores which molecule it describes. The ladder is a yardstick, not a competitor---its rungs
+are built from the reference profiles themselves and are unavailable to any predictor---but it fixes the
+scale on which the drift should be read, and it says the drift consumes essentially all of the molecular
+specificity that grounding had bought.
+
 \paragraph{Dominant mode and consequence.} The dominant drift mode (Fig.~\ref{fig:surrogate}) transfers
 area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and \emph{into} the polar wings: the network
 makes molecules look more polar than they are, inflating the segment interactions the misspecified
