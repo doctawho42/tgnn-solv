@@ -30,13 +30,21 @@
 % BIB: murphy1973 / degroot1983 (calibration refinement) and white1982 (QMLE under
 % misspecification) are present in references_verified.bib and cited.
 % =====================================================================
-\documentclass[twocolumn]{article}   % Digital Discovery two-column format
+% ---------------------------------------------------------------------
+% FORMAT: J. Chem. Inf. Model. (ACS). The journal code jcisd8 and the
+% permitted manuscript types (article, suppinfo) come from
+% achemso-jcisd8.cfg; the class supplies geometry (2.54 cm margins) and
+% natbib itself, so neither is loaded here.
+% The JCIM configuration calls \SectionNumbersOff. We restore numbering
+% with the class's own \SectionNumbersOn because the manuscript carries
+% 135 numbered cross-references to its own sections.
+% ---------------------------------------------------------------------
+\documentclass[journal=jcisd8,manuscript=article]{achemso}
+\SectionNumbersOn
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{xcolor}
-\usepackage[margin=0.8in]{geometry}
-\usepackage[super,sort&compress,comma]{natbib}  % DD/RSC superscript citations
 \usepackage{hyperref}
 
 \newtheorem{theorem}{Theorem}
@@ -61,15 +69,34 @@
 \newcommand{\Var}{\ensuremath{\mathrm{Var}}}
 
 % Previous title (kept for reference): When Reference Physical Inputs Hurt a Learned Solubility Model: The Latent Becomes a Compensating Surrogate
-\title{To Thine Own $\sigma$ Be False:\\[0.2em]
-\large A network's learned $\sigma$-profile compensates for a misspecified closure rather than reporting the molecule's charge distribution}
-\author{N.~L. Polomoshnov\thanks{\pending[affiliation and full postal address]. E-mail: \pending[corresponding-author email]} \and \pending[co-author names and affiliations]}
-\date{\today}
+\title{To Thine Own $\sigma$ Be False: A Network's Learned $\sigma$-Profile
+Compensates for a Misspecified Closure Rather Than Reporting the Molecule's
+Charge Distribution}
+
+% NOTE: achemso re-typesets the arguments of \affiliation and \email, which breaks the
+% \pending macro (optional argument + \color). Placeholders here are plain text and must
+% be replaced before submission, together with the co-author block below.
+\author{N.~L. Polomoshnov}
+\affiliation{[TO BE COMPLETED: department, institution, full postal address]}
+\email{[TO BE COMPLETED: corresponding-author email]}
+% \author{[co-author]}
+% \affiliation{[co-author department, institution, full postal address]}
+
+\abbreviations{SLE, solid--liquid equilibrium; IDAC, infinite-dilution activity
+coefficient; LFER, linear free-energy relationship; MAD, mean absolute deviation}
+\keywords{solubility prediction, physics-informed machine learning, COSMO-SAC,
+model misspecification, representation probing}
 
 \setlength{\emergencystretch}{2.5em}
 \begin{document}
-\twocolumn[
-\begin{@twocolumnfalse}
+
+% ACS requires a table-of-contents graphic. Panel (a) of the overview figure is
+% the self-contained one: it shows the pipeline and the substitution that makes
+% the prediction worse, which is the paper in one image.
+\begin{tocentry}
+\includegraphics[width=\linewidth]{figs/fig_toc.pdf}
+\end{tocentry}
+
 \maketitle
 \begin{abstract}
 Physics-informed models route a prediction through interpretable physical quantities, on the expectation
@@ -91,9 +118,6 @@ constants. The instrument applies to any predictor that composes a fixed physica
 intermediate, and shows that the interpretability such grounded latents appear to offer is not guaranteed
 when the fixed model is misspecified.
 \end{abstract}
-\vspace{1.4em}
-\end{@twocolumnfalse}
-]
 
 \section{Introduction}
 \label{sec:intro}
@@ -874,17 +898,26 @@ flip artifact additionally carries the restricted single-channel 2002 diagnostic
 per-row file is truncated (the run-time three-seed aggregates are unaffected), and the three-seed
 surrogate run's per-run split provenance was not logged (its matched set is the committed $n{=}44$).
 
-\section*{Acknowledgements}
-\noindent This work was supported by \pending[funder name(s) and grant/award number(s)].
+\begin{acknowledgement}
+This work was supported by \pending[funder name(s) and grant/award number(s)].
 \pending[Compute resources and any non-author acknowledgements.]
-\noindent During the preparation of this work the authors used generative artificial-intelligence
+During the preparation of this work the authors used generative artificial-intelligence
 tools (large language models, including Anthropic's Claude) to assist with literature search, drafting
 and editing of the text, writing and debugging of analysis code, and generating figures. All content
 was reviewed, verified, and edited by the authors, who take full responsibility for the manuscript.
+\end{acknowledgement}
+
+\begin{suppinfo}
+The Supporting Information contains the notation table; supplementary methods, including the
+architecture and the loss weights; proofs of the lemmas and of the grounding-gap theorem; per-arm
+tables and the robustness of the decomposition; external baselines and ablations; supplementary
+mechanism results; the second-domain pKa analysis; and the full tables of the black-box probe
+programme.
+\end{suppinfo}
 
 \input{sections/SI}
 
-\bibliographystyle{unsrtnat}   % natbib numeric; swap for rsc.bst at submission
+% achemso selects achemso.bst automatically; no \bibliographystyle is given.
 \bibliography{references_verified}
 
 \end{document}
