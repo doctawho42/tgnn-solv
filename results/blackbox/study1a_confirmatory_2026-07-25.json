@@ -1,0 +1,60 @@
+{
+  "fit_solutes": 152,
+  "holdout_solutes": 13,
+  "holdout_rows": 527,
+  "between_solute_var_share": 0.9216507621081715,
+  "n_perm": 1000,
+  "seeds": {
+    "directgnn_seed42.pt": {
+      "hbb_dim": 788,
+      "r2_model": -0.505637995394123,
+      "alpha": 46415.888336127726,
+      "perm_p": 0.894,
+      "null_median": -0.05725876730995094,
+      "null_p95": 0.10511858242180093,
+      "null_max": 0.3161699387503941,
+      "jk_min": -1.1506758686993837,
+      "jk_max": -0.22807807934060365,
+      "sign_flips": 0,
+      "leverage_top1": 0.20674021883832233,
+      "leverage_top3": 0.5624079263627738,
+      "random_target_r2": -0.0006279081299789269,
+      "verdict": "KILL (not distinguishable from chance at this n)"
+    },
+    "directgnn_seed43.pt": {
+      "hbb_dim": 788,
+      "r2_model": 0.11058589450545919,
+      "alpha": 10000.0,
+      "perm_p": 0.055,
+      "null_median": -0.0545474457503623,
+      "null_p95": 0.11709186882424917,
+      "null_max": 0.38029328431674414,
+      "jk_min": -0.28567953637014454,
+      "jk_max": 0.3325543415079485,
+      "sign_flips": 3,
+      "leverage_top1": 0.2701696461297521,
+      "leverage_top3": 0.598116263658736,
+      "random_target_r2": -0.0006328757278446506,
+      "verdict": "KILL (not distinguishable from chance at this n)"
+    },
+    "directgnn_seed44.pt": {
+      "hbb_dim": 788,
+      "r2_model": 0.027244120627963442,
+      "alpha": 46415.888336127726,
+      "perm_p": 0.177,
+      "null_median": -0.060590019135888906,
+      "null_p95": 0.09637550036435828,
+      "null_max": 0.34633798301996166,
+      "jk_min": -0.25314685822403504,
+      "jk_max": 0.23668460815013037,
+      "sign_flips": 6,
+      "leverage_top1": 0.23301674136921627,
+      "leverage_top3": 0.5719422072097697,
+      "random_target_r2": -0.0005115578695285006,
+      "verdict": "KILL (not distinguishable from chance at this n)"
+    }
+  },
+  "raw_A": -0.5142806516890008,
+  "raw_B": -0.9284337585280018,
+  "constant": -0.015079812703857831
+}

@@ -302,6 +302,31 @@ def main() -> None:
 
         Hh32 = np.ascontiguousarray(Hh, dtype=np.float32)
         plan = CVPlan(Hf, gf, np.random.default_rng(0))
+
+        # POSITIVE CONTROL, run before the target. A row-misalignment bug in extraction is
+        # indistinguishable from "the target is not decodable" -- both give R2 near zero. So
+        # first probe two quantities h_BB provably carries: the model's own prediction (h_BB
+        # feeds prediction_head directly) and temperature (an input). If these are not near 1,
+        # the extraction is broken and any null below is void.
+        ck_pc = torch.load(ck, map_location="cpu", weights_only=False)
+        from tgnn_solv.baselines.direct_gnn import DirectGNN
+        from tgnn_solv.config import TGNNSolvConfig
+        m_pc = DirectGNN(cfg=TGNNSolvConfig(**dict(ck_pc["config"])))
+        m_pc.load_state_dict(ck_pc.get("model_state_dict") or ck_pc.get("model_state"),
+                             strict=False)
+        m_pc.eval()
+        with torch.no_grad():
+            yhat_f = m_pc.prediction_head(torch.from_numpy(Hf)).squeeze(-1).numpy()
+            yhat_h = m_pc.prediction_head(torch.from_numpy(Hh)).squeeze(-1).numpy()
+        pc_yhat = plan.score(yhat_f, Hh32, yhat_h)[0]
+        pc_T = plan.score(fit_rows["temperature"].to_numpy(), Hh32,
+                          ho_rows["temperature"].to_numpy())[0]
+        print(f"positive control  y_hat R2 = {pc_yhat:+.4f} | temperature R2 = {pc_T:+.4f}")
+        if pc_yhat < 0.8:
+            raise SystemExit(
+                f"POSITIVE CONTROL FAILED (y_hat R2 = {pc_yhat:.3f}). h_BB is probably "
+                "misaligned with its rows; any negative result below would be an artifact.")
+
         obs, alpha = plan.score(yf, Hh32, yh)
         print(f"held-out R2(model) = {obs:+.4f}   (alpha {alpha:g})")
 
