@@ -60,12 +60,38 @@ def dropone_range(sig_hat: np.ndarray, sig_true: np.ndarray) -> tuple[float, flo
     return float(min(vals)), float(max(vals))
 
 
-def verdict(mean_rho: float) -> str:
-    if mean_rho <= 0.46:
-        return "GO (rho <= 0.46)"
-    if mean_rho >= 0.50:
-        return "NO-GO (rho >= 0.50; unmoved from free 0.51)"
-    return "PARTIAL (0.46 < rho < 0.50)"
+# Control ladder measured on the same n=44 set by scripts/experiments/rho_control_ladder.py.
+# These are what a rho value has to BEAT to mean anything.
+CONTROLS = {
+    "molecule_blind_constant": 0.4926,  # leave-one-out corpus-mean profile
+    "wrong_molecule_permutation": 0.6505,  # best of 5 derangement seeds
+    "uniform_flat_profile": 0.8886,
+}
+# Superseded absolute thresholds. The original prereg rule (GO <= 0.46, NO-GO >= 0.50) was
+# retired on 2026-07-25: its anchor (rho_free=0.51) came from a sigma-GROUNDED-then-drifted
+# model (surrogate_seeds.json, recipe ep_warm=40), not from the never-grounded arm this
+# experiment trains, and its decision band [0.46, 0.50] straddles 0.4926 -- a predictor
+# carrying zero molecular information. See results/fix_g/gate1_prelim_2026-07-19.md.
+
+
+def verdict(rho_fixg: float, rho_free: float | None) -> str:
+    """Contrast rule: both arms fork from one parent, so the comparison is Delta-rho.
+
+    GO      : the residual moves the latent AND the latent becomes molecule-specific.
+    PARTIAL : the residual moves the latent but it stays in the molecule-blind regime.
+    NULL    : no movement -- a bounded negative, not a kill (basin-confounded).
+    """
+    if rho_free is None:
+        return "NO CONTRAST (need both 'fixg' and 'free' checkpoints from the same fork)"
+    delta = rho_free - rho_fixg
+    if delta >= 0.05 and rho_fixg < CONTROLS["wrong_molecule_permutation"]:
+        return f"GO (delta={delta:+.3f} >= 0.05 and rho_fixg={rho_fixg:.3f} beats permutation)"
+    if delta >= 0.02:
+        return (
+            f"PARTIAL (delta={delta:+.3f} >= 0.02 but rho_fixg={rho_fixg:.3f} "
+            f"stays in the molecule-blind regime)"
+        )
+    return f"NULL (delta={delta:+.3f} < 0.02; bounded negative, not a kill)"
 
 
 def main() -> None:
@@ -120,14 +146,24 @@ def main() -> None:
                           "rho_sd": float(arr.std(ddof=1)) if len(arr) > 1 else 0.0,
                           "rho_seeds": [float(x) for x in arr]}
     out = {"prereg": "reports/PREREG_fix_g_2026-07-19.md",
-           "anchors": {"rho_free": 0.51, "rho_grounded": 0.36, "GO_threshold": 0.46, "NOGO_threshold": 0.50},
+           "prereg_amendment": "reports/PREREG_fix_g_AMENDMENT_2026-07-25.md",
+           "controls": CONTROLS,
+           "decision_rule": "contrast: delta = rho_free - rho_fixg (see verdict())",
            "per_checkpoint": per_ckpt, "summary": summary}
     if "fixg" in summary:
-        out["gate1_verdict"] = verdict(summary["fixg"]["rho_mean"])
-        print(f"\nGate 1 (fix-g mean rho = {summary['fixg']['rho_mean']:.3f}): {out['gate1_verdict']}")
-        if "free" in summary:
-            print(f"  free-baseline mean rho = {summary['free']['rho_mean']:.3f} "
-                  f"(anchor 0.51); grounded anchor 0.36")
+        rho_fixg = summary["fixg"]["rho_mean"]
+        rho_free = summary["free"]["rho_mean"] if "free" in summary else None
+        out["gate1_verdict"] = verdict(rho_fixg, rho_free)
+        out["delta_rho"] = (rho_free - rho_fixg) if rho_free is not None else None
+        print(f"\nfix-g  mean rho = {rho_fixg:.4f}")
+        if rho_free is not None:
+            print(f"free   mean rho = {rho_free:.4f}")
+            print(f"delta  (free - fixg) = {rho_free - rho_fixg:+.4f}")
+        print("controls: molecule-blind constant %.4f | wrong-molecule %.4f | flat %.4f"
+              % (CONTROLS["molecule_blind_constant"],
+                 CONTROLS["wrong_molecule_permutation"],
+                 CONTROLS["uniform_flat_profile"]))
+        print(f"Gate 1: {out['gate1_verdict']}")
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(out, indent=2))
     print(f"wrote {args.out_json}")

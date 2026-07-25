@@ -1249,12 +1249,38 @@ def main() -> None:
                 print(
                     "   Ignoring Stage 0 options because --resume loads a full model checkpoint."
                 )
-            model.load_state_dict(
-                resume_checkpoint.get(
-                    "model_state_dict",
-                    resume_checkpoint["model_state"],
-                )
+            saved_state = resume_checkpoint.get(
+                "model_state_dict",
+                resume_checkpoint["model_state"],
             )
+            # A fork may deliberately add parameters the parent never had (e.g. turning
+            # cosmo_sac_kernel_residual_rank 0 -> 1 adds kernel_B/kernel_a). Load by
+            # presence+shape and report the difference, so a genuine architecture
+            # mismatch cannot slip through as a silent strict=False.
+            current_state = model.state_dict()
+            compatible = {
+                k: v
+                for k, v in saved_state.items()
+                if k in current_state and tuple(current_state[k].shape) == tuple(v.shape)
+            }
+            fresh = [k for k in current_state if k not in compatible]
+            dropped = [k for k in saved_state if k not in compatible]
+            if not fresh and not dropped:
+                model.load_state_dict(saved_state)
+            else:
+                if fresh:
+                    n_fresh = sum(current_state[k].numel() for k in fresh)
+                    print(
+                        f"   Fork: {len(fresh)} parameter tensor(s) "
+                        f"({n_fresh:,} values) absent from the checkpoint, "
+                        f"freshly initialized: {fresh}"
+                    )
+                if dropped:
+                    print(
+                        f"   WARNING: {len(dropped)} checkpoint tensor(s) do not fit "
+                        f"this model and were DROPPED (name or shape mismatch): {dropped}"
+                    )
+                model.load_state_dict(compatible, strict=False)
         if config.use_descriptor_augmentation:
             if descriptor_mean is None or descriptor_std is None:
                 raise ValueError(
