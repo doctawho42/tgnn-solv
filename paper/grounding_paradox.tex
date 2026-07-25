@@ -109,7 +109,7 @@ descriptors or learned representations; they are at present the most accurate on
 they are opaque and offer no account of why a given prediction succeeds or fails. Physics-informed models
 instead route the prediction through interpretable thermodynamic quantities---an activity coefficient
 that describes the solute--solvent interaction, and the melting properties of the crystalline solid---each
-of which can be anchored to abundant single-component reference data that a black-box regressor cannot
+of which can be calibrated against abundant single-component reference data that a black-box regressor cannot
 exploit. The appeal of this second strategy rests on a widely held expectation: that supplying a model
 with physical inputs closer to their true values should make its predictions more accurate.
 
@@ -811,7 +811,15 @@ accuracy is encoder-bound but well \emph{above} the inter-lab noise floor ($0.15
 result is three-seed mean$\pm$sd ($n{=}44$; \S\ref{sec:surrogate}); its load-bearing content is the
 \emph{sign} and low-rank, transferable \emph{structure}, with the magnitudes
 ($51\pm2\%$/$72\pm1\%$/$4.1\pm0.5\times$) reported but varying across pipeline versions.
-(vi)~The closure-fidelity contrast is measured on the activity axis; we have \emph{not} tested whether
+(vi)~The probe result on the unconstrained control (\S\ref{sec:blackbox}) is bounded by the same
+reference scarcity. Its crystal-term and temperature tests rest on $13$ held-out solutes, and that
+sample cannot be enlarged: the molecules carrying both a measured crystal and a measured activity
+reference are $25$ common solvents supplying $66\%$ of the training rows, so they cannot be held out
+of a solubility model at all. The negative is therefore an upper bound at $R^{2}\approx0.30$ rather
+than a demonstration that no crystal information is present, and the crystal-slope test is
+additionally limited by the corpus itself, whose empirical slope carries $-\Delta H_{\text{fus}}/R$
+at $r=+0.24$. The scaffold-organisation result does not depend on the external reference and is
+measured at full test size. (vii)~The closure-fidelity contrast is measured on the activity axis; we have \emph{not} tested whether
 the \emph{solubility} paradox itself survives a modern $2010$/dsp closure. That test needs a typed
 (donor/acceptor) $\sigma$-profile head and a UD$\,\cap\,$BigSolDB matched set, and is the natural next
 experiment.
