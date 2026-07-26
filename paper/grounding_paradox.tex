@@ -409,7 +409,7 @@ bias always loses once the budget passes $n^\star$ (proof in App.~\ref{sec:si-pr
 ``optimal grounding'' theorem, and the decomposition does not improve out-of-distribution accuracy
 (\S\ref{sec:results}). Everything here is measured at infinite
 dilution, $298$\,K, on the VT-2005-matchable low-$\gamma$ regime; transfer to the finite-composition
-regime in which the paradox is observed is a conjecture, not a result (\S\ref{sec:scope}). We read these
+regime in which the paradox is observed is a conjecture, not a result (\S\ref{sec:discussion}). We read these
 results against existing work on model discrepancy \cite{kennedy2001,brynjarsdottir2014}, parameter sloppiness
 \cite{transtrum2015,gutenkunst2007}, identifiability \cite{raue2009,villaverde2016}, misspecification
 \cite{white1982}, and underspecification \cite{damour2022}.
@@ -429,11 +429,6 @@ representative data (\S\ref{sec:measure}). The remaining sections---the syntheti
 sweep (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa closure
 (\S\ref{sec:pka})---stress-test and generalize the account, with further diagnostics in the ESI.
 
-Every claim in this paper is graded by strength of evidence---certified (holds under any closure
-configuration, exactly proved, or bootstrap-certified with $P\!\to\!1$ across resamples), likely
-(measured but sub-threshold or one-sidedly bounded on the matched $n{=}60$/$n{=}44$ sets), or open
-(unestablished, directional, or conjectural)---and each claim carries its grade where it is stated. We
-make no accuracy claim.
 
 \subsection{The grounding paradox}
 \label{sec:paradox}
@@ -657,7 +652,7 @@ condition-matched reference would lower $\Binsuf$ and widen the margin we alread
 is conservative to this defect.
 
 \paragraph{Scope.} This measurement is a low-$\gamma$/$298$\,K/VT-2005-matchable regime and does not
-transfer to the finite-composition regime the paradox lives in (\S\ref{sec:scope}); the full audit is
+transfer to the finite-composition regime the paradox lives in (\S\ref{sec:discussion}); the full audit is
 in App.~\ref{sec:si-tables}.
 
 \subsection{The status of the closure's known defects}
@@ -714,27 +709,6 @@ estimate, is the binding constraint.
 
 \input{sections/pka-domain}
 
-\input{sections/blackbox-probe}
-
-\subsection{What we do not measure, and why}
-\label{sec:scope}
-The paper's strongest claim and its causal attribution live in \emph{different regimes}, and we state
-the gap plainly. The grounding paradox is measured
-where the model operates---finite composition, all $\gamma$, $n{=}5608$. Its \emph{cause}---the
-closure/insufficiency attribution (\S\ref{sec:measure}) and the compensating-surrogate mechanism
-(\S\ref{sec:surrogate})---is measured only on the matched external-reference regime: infinite
-dilution, $298$\,K, low $\gamma$, $n{=}60$ (attribution) and $n{=}44$ (mechanism). So the cause of the
-headline result is \emph{not} measured in the headline's own regime; we transfer it by in-regime
-signs---the more-physics-worse effect on the full $n{=}5608$ set and the chemistry-resolved structure
-(\S\ref{sec:map})---which is a conjecture rather than a measured fact, and is the principal open
-question here. Two structural limits prevent us from closing it. The external-reference regime cannot be
-enlarged: only $74$ VT-2005-matchable IDAC pairs exist ($60$ at $298$\,K plus $14$ off-temperature),
-so the $n{=}60$ attribution cannot be pushed to significance on this data; and the matched IDAC is
-essentially single-method (gas chromatography), so a method-stratified re-estimate is unavailable.
-We therefore present the attribution as a bounded demonstration on the matched corner and mark both
-its regime transfer and the absence of an established closure-fidelity lever (\S\ref{sec:measure}) as
-the open questions.
-
 \section{Discussion}
 \label{sec:discussion}
 The result is a cautionary measurement for physics-informed modeling: grounding a
@@ -749,6 +723,8 @@ infinite-dilution regime, not a certificate: it need not transfer unchanged to t
 finite-composition regime the paradox spans, where its shared closure-misspecification cause is a
 conjecture supported by in-regime signs (the more-physics-worse effect on the full $n{=}5608$ set and
 the chemistry-resolved structure), not a measured fact.
+
+\input{sections/blackbox-probe}
 
 \paragraph{What is load-bearing here.} The unit of contribution is the \emph{instrument}, not any single
 measurement. Its two ingredients are individually standard: the closure--insufficiency split is a
@@ -814,11 +790,23 @@ solubility; it recurs whenever a misspecified closure is coupled to an expressiv
 abundant, low-noise data.
 
 
+\paragraph{How the claims are graded.} Each claim carries its grade where it is stated:
+certified (holds under any closure configuration, exactly proved, or bootstrap-certified with
+$P\!\to\!1$ across resamples), likely (measured but sub-threshold or one-sidedly bounded on the
+matched $n{=}60$/$n{=}44$ sets), or open (unestablished, directional, or conjectural). We make no
+accuracy claim.
+
 \paragraph{Limitations.} (i)~The phenomenon and its causal attribution lie in \emph{different
-regimes}: the paradox is a finite-composition solubility effect, but the closure--insufficiency
-measurement is made on the infinite-dilution/$298$\,K/low-$\gamma$ VT-2005-matchable regime, so the
-transfer of the attribution back to the paradox's own regime is argued from in-regime signs, not
-measured there (\S\ref{sec:scope}); moreover, because few drug-like solutes have a VT-2005 reference
+regimes}: the paradox is measured where the model operates (finite composition, all $\gamma$,
+$n{=}5608$), but the closure--insufficiency attribution and the compensating-surrogate mechanism are
+measured only on the matched external-reference regime (infinite dilution, $298$\,K, low $\gamma$,
+$n{=}60$ and $n{=}44$). The transfer of the attribution back to the paradox's own regime is argued
+from in-regime signs---the more-physics-worse effect on the full $n{=}5608$ set and the
+chemistry-resolved structure---and is a conjecture rather than a measured fact; it is the principal
+open question here. Two structural limits prevent us from closing it: only $74$ VT-2005-matchable
+IDAC pairs exist ($60$ at $298$\,K plus $14$ off-temperature), so the $n{=}60$ attribution cannot be
+pushed to significance on this data, and the matched IDAC is essentially single-method (gas
+chromatography), so a method-stratified re-estimate is unavailable. Moreover, because few drug-like solutes have a VT-2005 reference
 profile, the solubility substitution falls almost entirely on the solvent channel, so the clean
 both-channel evidence is on the activity axis rather than the solubility axis. The attribution that the
 misspecification term is the larger rests on a one-sided bound with clustered-bootstrap support
@@ -835,7 +823,7 @@ result is three-seed mean$\pm$sd ($n{=}44$; \S\ref{sec:surrogate}); its load-bea
 \emph{sign} and low-rank, transferable \emph{structure}, with the magnitudes
 ($51\pm2\%$/$72\pm1\%$/$4.1\pm0.5\times$) reported but not stable across revisions of the analysis
 pipeline.
-(vi)~The probe result on the unconstrained control (\S\ref{sec:blackbox}) is bounded by the same
+(vi)~The probe result on the unconstrained control is bounded by the same
 reference scarcity. Its crystal-term and temperature tests rest on $13$ held-out solutes, and that
 sample cannot be enlarged: the molecules carrying both a measured crystal and a measured activity
 reference are $25$ common solvents supplying $66\%$ of the training rows, so they cannot be held out

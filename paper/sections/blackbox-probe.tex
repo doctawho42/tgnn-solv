@@ -1,54 +1,20 @@
-\subsection{Whether the unconstrained control represents the thermodynamics}
-\label{sec:blackbox}
-% Artifacts: results/blackbox/{RESULT_study1a_2026-07-26,RESULT_study2,RESULT_study4}.md and the
-% JSONs beside them, via scripts/experiments/blackbox_study{1a,2,4}.py on the same three
-% current-split DirectGNN checkpoints used for the controlled comparison (\S\ref{sec:paradox}).
-The physics arm's intermediate is a compensating surrogate rather than the quantity it is named
-after (\S\ref{sec:surrogate}). The unconstrained control is free to represent the same
-thermodynamics implicitly, and whether it does is a separate, testable question. We tested it on
-the three DirectGNN checkpoints of the controlled comparison, on the same scaffold split and
-against the same external references. It does not.
-
-\paragraph{The crystal term is not recoverable from the representation.} The probe target is the
-measured ideal-solubility term $\Phi^{*}(\text{mol},T)$; the input is the $788$-dimensional pair
-representation entering the prediction head, captured from the forward pass rather than inferred
-from configuration. Ridge regression is fitted on $152$ solutes and scored on $13$
-held out with no solute in common, with the penalty chosen by solute-grouped cross-validation on
-the fitting split alone and compared against a $1000$-draw null that permutes molecular identity while
-preserving each solute's temperatures. Held-out $R^{2}$ is $-0.51$, $+0.11$ and $+0.03$ across the
-three seeds, none significant, with the jackknife over held-out solutes changing sign in two seeds.
-The same probe applied to quantities the representation necessarily carries recovers the model's
-own prediction at $R^{2}=0.98$ and temperature at $R^{2}=0.9997$; the extraction and the estimator
-are therefore sound, and the null is a property of the representation. The
-permutation null itself reaches $R^{2}\approx0.32$--$0.38$ at this sample size, so the result is an
-upper bound: an effect of $R^{2}\gtrsim0.30$ would have been detected.
-
-\paragraph{The temperature response does not expose it either, and neither do the data.} The
-sharper form of the question is whether $\partial\lnx/\partial(1/T)$ recovers
-$-\Delta H_{\text{fus}}/R$. The SLE identity places the activity term in the same slope, so this is
-a property of the corpus before it is a property of any model. Over $1353$ solute--solvent pairs
-spanning $151$ solutes, the empirical slope correlates with $-\Delta H_{\text{fus}}/R$ at
-$r=+0.24$. The slopes are sharply determined (median $|\text{slope}|/\mathrm{SE}=49$, one pair of
-$1353$ wrong-signed), so the weak correlation is structural and not a resolution limit: a model
-reproducing the data exactly would score $+0.24$. The model tracks the observed slope at
-$r=0.20$--$0.41$ with a median error near $30\%$, and its response is about three times more curved
-in $1/T$ than the measurements, so it does not represent solubility in a van't Hoff form.
-
-\paragraph{The representation is organised by scaffold.} This question needs no external
-reference and is therefore measured at full test size: $5608$ rows, $147$ solutes, $124$
-Bemis--Murcko scaffolds, $70$ solvents. Each factor's share of representation variance is reported
-as an excess over a permutation null matched to the level at which that factor varies
-(App.~\ref{sec:si-blackbox}). Solute identity accounts for $0.59$--$0.61$ and scaffold for
-$0.59$--$0.61$: scaffold captures $99.8$--$100.3\%$ of what full molecular identity captures, in
-every seed. The representation does not resolve molecules that share a scaffold, and the effect is
-specific to scaffold rather than to any partition of the solutes ($+0.082$ against a solute-level
-null, the same value in all three seeds). Solvent identity accounts for $0.27$--$0.30$, temperature
-for $0.03$--$0.04$, and coarse physical descriptors for less: $\log P$, topological polar surface area
-and molecular weight each take under $14\%$ of the solute-level structure.
-
-This is the mechanism of the transfer limitation reported in \S\ref{sec:gap}. A test molecule on an
-unseen scaffold is not a small extrapolation but a point off the axis along which the
-representation is organised. The same measurement separates two properties that are easily
-conflated: temperature is decodable from this vector at $R^{2}=0.9997$ while occupying $3$--$4\%$
-of its variance. Decodability of a quantity is therefore not evidence that a representation is
-organised around it.
+% Condensed from a full Results subsection; the tables, nulls and controls are in
+% App.~\ref{sec:si-blackbox}. Artifacts: results/blackbox/RESULT_study{1a,2,4}*.md via
+% scripts/experiments/blackbox_study{1a,2,4}.py on the three checkpoints of \S\ref{sec:paradox}.
+\paragraph{The unconstrained control does not carry the thermodynamics either.} If the physics arm's
+intermediate is a surrogate, the thermodynamics might still be present implicitly in the control,
+which is free to represent it. It is not. A ridge probe of the $788$-dimensional pair representation,
+fitted on $152$ solutes and scored on $13$ held out, does not recover the measured ideal-solubility
+term: $R^{2}=-0.51/{+}0.11/{+}0.03$ across the three seeds, none significant against a $1000$-draw
+identity-permutation null, while the same probe recovers the model's own prediction at $R^{2}=0.98$
+and temperature at $R^{2}=0.9997$ on the same rows. The permutation null reaches
+$R^{2}\approx0.32$--$0.38$ at this sample size, so this bounds the effect at $R^{2}\lesssim0.30$
+rather than excluding a weaker one. What the representation is organised by instead is measurable at
+full test size, needing no external reference: scaffold identity accounts for $99.8$--$100.3\%$ of
+what full molecular identity accounts for, in every seed. The representation does not resolve
+molecules that share a Bemis--Murcko scaffold, which is the mechanism of the transfer limitation
+noted in \S\ref{sec:gap}---a test molecule on an unseen scaffold is not a small extrapolation but a
+point off the axis along which the representation is organised. The same measurement separates two
+properties that are easily conflated: temperature is decodable from this vector at $R^{2}=0.9997$
+while occupying $3$--$4\%$ of its variance, so decodability of a quantity is not evidence that a
+representation is organised around it (App.~\ref{sec:si-blackbox}).
