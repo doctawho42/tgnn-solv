@@ -4,49 +4,64 @@
 % surrogate_vs_true.json via scripts/analysis/run_compensation_surrogate.py, n=44 matched VT-2005.
 This is the \emph{mechanism} behind the low-fidelity, end-to-end regime of the map
 (\S\ref{sec:discussion}): when a $\sigma$-profile head is trained \emph{end-to-end} through a fixed,
-misspecified closure---never supervised toward the reference profile---it is under pressure not to be
-physically faithful but to \emph{cancel} the closure's error. The external ground truth that lets us
-measure the ceiling (\S\ref{sec:measure}) also lets us test this directly, comparing the predicted
-profile $\hat\sigma$ against the reference VT-2005 profile $\sigma$ molecule by molecule ($n{=}44$).
+misspecified closure---with no $\sigma$ supervision in that phase---it is under pressure not to be
+physically faithful but to \emph{cancel} the closure's error. The external ground truth that fixes the
+ceiling (\S\ref{sec:measure}) also lets us test this: we compare the predicted profile $\hat\sigma$
+against the reference VT-2005 profile $\sigma$ molecule by molecule ($n{=}44$).
 
-\paragraph{The learned profile is a systematic, low-rank, transferable surrogate---confound-free.}
-The comparison is within a single grounded model, checkpointed before and after
+\paragraph{The learned profile is a systematic, low-rank surrogate whose distortion transfers only
+modestly---confound-free.} The comparison is within a single grounded model, checkpointed before and after
 solubility fine-tuning (the $\sigma$ head unfrozen), so architecture and initialisation are held fixed
-and only the objective differs; we repeat it over \emph{three seeds} and report mean$\pm$sd. The
-grounded base recovers the reference profile to within $36\pm1\%$
-($\lVert\hat\sigma_{\mathrm{grounded}}-\sigma\rVert/\lVert\sigma\rVert$), so the intermediate
-\emph{can} be physical; solubility fine-tuning then drives it $41\pm3\%$ off the grounded profile, for a
+and only the objective differs; we repeat it over \emph{three seeds} and report mean$\pm$sd. Under
+$\sigma$ supervision the head reproduces the reference profile to within $36\pm1\%$
+($\lVert\hat\sigma_{\mathrm{grounded}}-\sigma\rVert/\lVert\sigma\rVert$), so the intermediate \emph{can}
+carry the physical shape---though as an in-sample fit, not a recovery estimate: all $44$ probe molecules
+lie in the $\sigma$-grounding pool ($40$ in its training file, $4$ in its validation file), and with no
+separate $\sigma$ validation set supplied the warmup early-stops on that pool, so no out-of-sample
+recovery estimate exists here.
+Solubility fine-tuning then drives the profile $41\pm3\%$ off the grounded one, for a
 total departure from truth of $51\pm2\%$. The drift is not per-molecule noise, and its structure is not a
 constant offset: the first two principal components of the \emph{mean-centred} deviation carry
 $72\pm1\%$ of the variance. That share must be read against a null that shares the deviation's own
-smoothness, not against an isotropic one: any smooth function on the $51$-bin grid has a concentrated
-spectrum, and smoothing isotropic noise alone reaches a top-two share of $0.25$ to $0.83$ as the
-correlation length grows from one bin to eight. We therefore compare against a
+smoothness, not against an isotropic one: smoothing isotropic noise alone reaches a top-two share of
+$0.25$ to $0.83$ as the correlation length grows from one bin to eight. We therefore compare against a
 \emph{phase-randomised} null, which preserves each deviation's amplitude spectrum exactly and
-destroys only the alignment between molecules---which is what a shared compensating direction
+destroys only the between-molecule alignment that a shared compensating direction
 asserts. On a grounded checkpoint's deviation from the reference the observed share exceeds that
-null ($0.399$ against $0.221\pm0.011$, $p<0.001$), so a direction shared across molecules is
+null ($0.399$ against $0.221\pm0.011$, $p<0.001$), so a shared direction is
 present, at roughly $1.8\times$ a smoothness-matched null.\footnote{The isolation drift that carries
-the $72\pm1\%$ has not itself been re-tested this way: it is a three-seed cloud run and the two
-locally available checkpoints share a $\sigma$ head, so their drift is identically zero. The
-smoothness-matched comparison above is on the $\hat\sigma$-versus-reference deviation, a different
-quantity, and the two values are not comparable.} To test whether that
+the $72\pm1\%$ has not itself been re-tested this way (the two locally available checkpoints share a
+$\sigma$ head, so their drift is identically zero); the comparison above is on the
+$\hat\sigma$-versus-reference deviation, a different quantity, and the two are not comparable.} To test whether that
 structure transfers across molecules we fit one distortion operator $D$, a dense affine map on the $51$-bin
 grid (a $51\times51$ linear part plus a $51$-bin offset, $2652$ parameters). The fit is \emph{regularised},
 not free: each output bin is a ridge regression of $52$ coefficients ($\ell_2$ penalty $10^{-3}$) on $22$ of
-the $44$ molecules, underdetermined without the penalty, so the held-out $22$ carry the claim rather than
+the $44$ molecules, so the held-out $22$ carry the claim rather than
 the fit. On that held-out half $D$ predicts the drift $4.1\pm0.5\times$ better than the zero-drift (identity)
 null out-of-sample. That null is deliberately weak: the affine offset lets $D$ absorb the systematic mean
-shift as well, so the transfer ratio alone also credits it for that shift; the evidence that the drift has
-structure \emph{beyond} an offset is the mean-centred low-rank spectrum above. So $\hat\sigma$ is a systematic, low-rank,
-\emph{transferable} closure-compensating surrogate---one generalizable way the intermediate departs from
-the physical profile to compensate the closure, shared across chemistry, driven by the fitting objective
+shift, and a molecule-independent constant offset---the mean drift---buys most of the ratio. The seed runs
+record the ratio alone, so that control exists only as a post hoc reconstruction from the mean shift of a
+companion run of the same recipe, whose own transfer is $3.3\times$: there the offset alone reaches
+${\approx}2.6\times$ and $D$'s margin over it is ${\approx}1.3\times$. Running it in place would need the
+seed checkpoints, which were not retained. Two
+limits sit on the $4.1$ itself: the $\pm0.5$ spans three model seeds sharing one fixed
+$22/22$ partition, so split-to-split variability is excluded; and the set is
+homologue-saturated (six $n$-alkanes, four halobenzenes, five pyridines, four butyl and hexyl amines), so
+the median held-out molecule sits $0.048$ in $L_2$ from its nearest training-half neighbour---about
+$16\%$ of its own profile norm, making ``held out'' largely within-cluster interpolation. Structure \emph{beyond} an offset
+therefore rests on the mean-centred spectrum, not the ratio---and mean-centred structure is equally what a
+shrinkage of each profile toward the corpus-mean shape would produce, which these statistics do not
+exclude (the reference profiles themselves sit at $0.77$ mean-centred, so any drift linear in the profile
+inherits that concentration). So $\hat\sigma$ is a systematic, low-rank closure-compensating surrogate whose
+distortion generalises across molecules---modestly beyond a constant, on a set whose halves are chemically
+close---driven by the fitting objective
 rather than by architecture or a
 lack of grounding.\footnote{Three-seed mean$\pm$sd (seeds $0$--$2$). The central claim is the
-\emph{sign} and the low-rank, transferable \emph{structure}, both seed-stable; the \emph{magnitude} is
+\emph{sign} and the low-rank \emph{structure}, both seed-stable; the \emph{magnitude} is
 stable only within a fixed analysis configuration---a shortened run gives only ${\sim}16\%$, and uncontrolled
 two-model comparisons over-state both the departure (${\sim}82\%$) and the transfer ($16$--$26\times$)---so
-it supports no strong conclusion (with $n{=}3$ the sd is itself only indicative, not a precision).}
+it supports no strong conclusion (with $n{=}3$ the sd is itself only indicative, not a precision). In the
+shortened run the transfer, $1.7\times$, is at or below its own implied constant-offset value.}
 
 \paragraph{A reference ladder for the $51\%$ departure.} A relative deviation carries no absolute scale, so we
 calibrate it against predictors of known molecular content on the same $44$ molecules and the same
@@ -54,10 +69,11 @@ metric. A leave-one-out corpus-mean profile---one fixed
 shape reused for every molecule, carrying \emph{no} molecular information---sits at $0.493$. Assigning each
 molecule the true reference profile of a different, randomly chosen molecule sits at $0.651$--$0.684$ over
 five derangements, and a uniform profile at $0.889$. Against that ladder the grounded base ($0.364$) is
-clearly molecule-specific, well inside the constant baseline; the fine-tuned latent ($0.507$) is
-not. After solubility fine-tuning the ``physical'' intermediate is no closer to the reference profile than
-a shape that ignores which molecule it describes. The ladder is a yardstick, not a competitor---its rungs
-are built from the reference profiles themselves and are unavailable to any predictor---but it fixes the
+molecule-specific, well inside the constant rung; the fine-tuned latent ($0.507$) is not---after
+fine-tuning the ``physical'' intermediate is no closer to the reference than a shape that ignores which
+molecule it describes, as a collapse toward that shape would also look. The
+ladder is a yardstick, not a competitor---its rungs are built from the reference profiles themselves, and
+the grounded arm had its own privileged access to them through the $\sigma$ supervision---but it fixes the
 scale on which the drift should be read: the drift consumes essentially all of the molecular
 specificity that grounding had provided.
 
@@ -71,11 +87,13 @@ $\hat\sigma$, not to physics, so substituting the reference $\sigma$ breaks the 
 the model's ``physical'' intermediate is not the molecule's charge distribution but a surrogate,
 consistent with known cautions that the interpretability of physics-grounded latents is not guaranteed
 under misspecification \cite{brynjarsdottir2014,takeishi2021}, and that adapting a representation can
-itself collapse an otherwise physically-faithful latent \cite{interno2026}. Two things are specific
-here. The drift is the mechanism under study rather than an artifact of the evaluation: the adaptation
-is the solubility fine-tuning that \emph{creates} the surrogate, and it is referenced throughout to an
-external profile, not read from an unconstrained probe. And its \emph{structure}---low-rank and
-transferable, not diffuse---distinguishes it from a random adaptation collapse.
+itself collapse an otherwise physically-faithful latent \cite{interno2026}. What is specific here is that
+the drift is the mechanism under study rather than an artifact of the evaluation: the adaptation
+is the solubility fine-tuning that \emph{creates} the surrogate, referenced throughout to an
+external profile rather than an unconstrained probe. Its \emph{structure}---low-rank rather than
+diffuse---excludes a random collapse but not the structured shrinkage above; only the drift's
+\emph{sign} would separate those, and that comparison needs the seed checkpoints, which were not
+retained. The dominant mode is therefore consistent with compensation without being separated from it.
 
 \paragraph{Why $\sigma$ is under-determined by activity.} The freedom that makes the surrogate possible
 is the closure's geometry. At infinite dilution the aggregate activity Fisher $J^{\top}J$
@@ -98,7 +116,7 @@ under-resolved on this sparse, near-rank-one problem
 geometry of the drift.
 
 \paragraph{The contrast that fixes the sign, and how the axes interact.} The sign of grounding is not
-universal, and it turns on \emph{both} axes. On our own model, holding the $\sigma$ head at its
+universal, and it turns on \emph{both} axes. Holding the $\sigma$ head at its
 supervised warmup manifold instead of letting it drift end-to-end cuts the reference-input penalty by
 $65\%$ ($\Delta\mathrm{MAE}$ from $+0.40$ to $+0.14$ over $n{=}5571$ matched test rows): a
 near-physical intermediate makes the pipeline far more robust to substituting the reference $\sigma$. But
@@ -119,7 +137,8 @@ transfers area out of the nonpolar bins ($\sigma\!\approx\!0$) into the polar wi
 deviation spectrum (top-two modes $72\pm1\%$; read against a
 phase-randomised rather than an isotropic null, \S\ref{sec:surrogate}). A single ridge-fit affine distortion
 ($2652$ parameters, $22$ train / $22$ held out) transfers $4.1\pm0.5\times$ better than the zero-drift
-null out-of-sample (spectrum mean-removed); three seeds,
-$n{=}44$ matched VT-2005 molecules.}
+null out-of-sample (spectrum mean-removed); on the companion run that permits the control it beats a
+constant offset by only ${\approx}1.3\times$. One fixed split of a homologue-saturated set; three seeds,
+$n{=}44$ matched VT-2005 molecules, all inside the $\sigma$-grounding pool.}
 \label{fig:surrogate}
 \end{figure*}

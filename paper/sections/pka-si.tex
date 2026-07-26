@@ -55,13 +55,32 @@ This removes $5$ of $163$ meta/para rows (restoring the clean pole to RMSE ${\ap
 of $1198$ ortho rows (leaving $846$; the ortho RMSE is essentially unchanged, so the filter does not
 manufacture the sign), for $1004$ Hammett-amenable rows.
 
-\paragraph{Certification of the flip.} We train the physics arm (encoder $\to\hat\sigma\to$ fixed LFER)
+\paragraph{Evidence for the flip.} We train the physics arm (encoder $\to\hat\sigma\to$ fixed LFER)
 on $K{=}20$ stratified $80/20$-within-scaffold splits---a Bemis--Murcko split collapses the meta/para
 pole to two ring systems and is unstable---and record the paired per-molecule error against the
 deterministic oracle, per stratum. Meta/para: learned MAE $0.48\pm0.09$ vs oracle $0.315\pm0.07$, gap
-$-0.165$, oracle better in $19/20$ splits (scaffold-cluster and split bootstraps both exclude zero,
-$P(\text{oracle worse})<0.01$). Ortho: learned $0.83\pm0.07$ vs oracle $1.62\pm0.08$, gap $+0.79$, oracle worse in $20/20$
-splits ($P(\text{oracle worse})=1.00$, $90\%$ CI $[+0.57,+0.95]$).
+$-0.165$, oracle better in $19/20$ splits, $90\%$ CI $[-0.28,-0.04]$. Ortho: learned $0.83\pm0.07$ vs
+oracle $1.62\pm0.08$, gap $+0.79$, oracle worse in $20/20$ splits, $90\%$ CI $[+0.57,+0.95]$ (both
+intervals from the scaffold-cluster bootstrap).
+
+\paragraph{What the two bootstraps do and do not resolve.} We report the sign statements above rather
+than the bootstrap $P$ values, because neither bootstrap here carries the resolution a two-decimal $P$
+implies. The cluster unit is the Hammett reaction series, and only $G{=}4$ exist (benzoic acid,
+phenol, anilinium, pyridinium): the resampling law then has $\binom{7}{4}{=}35$ distinct outcomes and
+a finest atom $(1/4)^4{\approx}0.004$, so the cluster-bootstrap $P(\text{oracle worse}){=}1.00$ on
+ortho is exactly the statement that all four series means favour the learned arm, and $P{=}0.004$ on
+meta/para that exactly one of them does, the other three favouring the oracle. Read as a sign test on
+four units those are $p{=}1/16$ and $p{\approx}0.31$; the interval endpoints quoted above are
+percentiles of the same $35$-outcome law and are no finer. This is the same small-$G$ caution applied
+on the solubility side (\S\ref{sec:si-tables}), where the $P$ values are likewise read as a coarse
+band rather than as two-decimal quantities. The split bootstrap adds nothing independent: the $20$
+splits resample train/test assignments over the same molecules (each molecule lands in ${\approx}4$
+test sets), so it prices split-to-split noise rather than molecule sampling, and with all $20$ ortho
+gaps positive it returns $1.000$ by construction---a restatement of the $20/20$, not a second
+confirmation. What the flip rests on is therefore the sign consistency across splits and series and
+the size of the ortho gap ($+0.79$ against an oracle MAE of $1.62$, ${\approx}49\%$), not on a $P$
+value. A leave-one-series-out refit, the estimate that would settle the series-level question at
+$G{=}4$, was not run.
 
 \paragraph{The crossover law and its scope boundary.} A competence sweep (train fraction
 $\in\{1.0,0.5,0.25,0.12\}$ and, as the low-competence extreme, scaffold extrapolation; six seeds each)
@@ -73,8 +92,8 @@ grounding hurts throughout; only scaffold extrapolation, where $\hat\sigma$ brea
 pushes it back above the threshold and reverts the sign. The flip is therefore a within-distribution,
 fidelity-driven crossover, and the extrapolation reversion is predicted by the same law. A trained
 physics-vs-DirectGNN comparison agrees in direction overall but has weak absolute errors and an
-untuned control; the load-bearing second-domain results are the decomposition above and the certified
-flip.
+untuned control; the load-bearing second-domain results are the decomposition above and the
+sign-consistent flip.
 
 \begin{figure}[t]
 \centering

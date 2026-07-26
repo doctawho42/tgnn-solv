@@ -330,6 +330,35 @@ COSMO-SAC, reference $\sigma$ ($\sigma$-oracle)     & $2.25\pm0.02$ & $-0.03\pm0
 \end{tabular}
 \end{table*}
 
+% Schedule: configs/cosmo_sac.yaml (freeze_sigma_head_during_sle, warmup 40, 30/70/10 epochs)
+% + scripts/experiments/run_e5_sigma_grounding.sh (per-arm invocations).
+\paragraph{$\sigma$-head schedule of these arms.} The four COSMO-SAC rows come from three
+training runs under one pinned configuration --- $30$ P1, $70$ P2 and $10$ P3 epochs with
+\texttt{freeze\_sigma\_head\_during\_sle} on, so the $\sigma$ head's weights are held from P2
+onward. The two grounded rows precede that with a $\sigma$ warm-up on the grounding pool (up to $40$
+epochs, early-stopped on a held-out tenth of the pool) and interleave the pool through P1; under the
+freeze the stream is inactive in P2/P3. The ungrounded row sets warm-up and stream budget to zero,
+so its $\sigma$ head is shaped in P1 by the corpus-internal \lngi\ auxiliary loss alone, never by an
+external $\sigma$ label, and is frozen from P2 in the same way. The $\sigma$-oracle row is the grounded
+checkpoint re-evaluated with $\zstar$ injected, so it shares the grounded schedule exactly. Because
+the freeze holds the head and not the encoder that feeds it, the predicted profile is not pinned at
+its warm-up value in these arms; we have not run the surrogate isolation (\S\ref{sec:surrogate}) on
+these checkpoints, so how far their latent drifted is not measured, and the supervision contrast
+quoted there ($+0.40\to+0.14$) is a separate matched pair of runs --- one warm-up-plus-short-P1 base
+resumed twice for SLE, with the freeze off and on, on $n{=}5571$ matched rows --- and not these arms.
+
+% Artifacts: results/e5_sigma_grounding/seed_42/{grounded_a_truetrain,channel_swap}_predictions.csv
+% (seed 42 only; no seed_43/seed_44 counterpart), scored on the same n=5608 cross-arm lock.
+\paragraph{Oracle-application controls: two of the three are single-seed.} Of the three oracle
+applications (\S\ref{sec:methods}), only the evaluation-only substitution is a three-seed result.
+Training-time injection (MAE $1.98$) and the channel swap (MAE $2.08$) were run at seed $42$ alone,
+so their matched comparator is the seed-$42$ learned-$\sigma$ value $1.80$ on the same $n{=}5608$
+lock, not the three-seed mean $1.85$ of Table~\ref{tab:si-arms}. Both exceed the worst of the three
+learned-$\sigma$ seeds ($1.80/1.92/1.81$), so the direction of both survives a worst-case seed
+comparison. The channel-swap margin ($+0.28$) is $2.3$ times the learned arm's full between-seed
+range; the training-time margin ($+0.18$) is one and a half times it, so that control fixes a sign
+rather than an effect size.
+
 \paragraph{Robustness of the closure/insufficiency separation.} We stress-test the deployed-convention verdict
 $\Bclos>\Binsuf$ (\S\ref{sec:measure})---equivalently $\Binsuf<\mathrm{MSE}/2=0.74$ at
 $\mathrm{MSE}_{\mathrm{res}}=1.47$---four ways on the $n{=}60$ set.
@@ -339,8 +368,13 @@ $\mathrm{MSE}_{\mathrm{res}}=1.47$---four ways on the $n{=}60$ set.
 $0.74$ threshold. The $k$-NN value is the smallest and least conservative input to $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$,
 so we take the leakage-immune LOTV bound as the headline instead. The LOTV bound bins $g(\zstar)$ and is therefore
 finite-sample downward-biased when points per bin are few, which would \emph{inflate} $\Bclos$ favourably;
-but the two non-binning bounds (RF $0.56$, ridge $0.62$) are immune to that per-bin sparsity and reproduce
-$0.62$, so the headline does not depend on the binning estimator. The sole non-certifying configuration is a
+The two non-binning bounds (RF $0.56$, ridge $0.62$) are immune to that particular per-bin sparsity,
+but they do not provide independent corroboration: under random folds every held-out row shares its
+solvent or its solute with a training row, so both can borrow strength from a near-twin,
+anti-conservatively and in the same direction as the binning (\S\ref{sec:measure}). Blocking folds on
+both molecules leaves no informative estimator on this set. The headline should therefore be read as
+resting on the leakage-immune LOTV bound alone, not on agreement between three estimators.
+The sole non-certifying configuration is a
 deliberately aggressive ridge, which lifts $\Binsuf$ to $0.88$ (then $\Bclos\ge0.59<0.88$): a sensitivity
 edge, not a refutation.
 
@@ -449,17 +483,29 @@ but sharpens its scope:
 
 \section{External baselines and ablations}
 \label{sec:si-baselines}
-We retrained the direct state-of-the-art model (FastSolv \cite{osanloo2024}) and the
-physics-informed state-of-the-art model (SolProp \cite{vermeire2022solprop}) on our corpus and evaluated them on a
-by-solute test split (\texttt{test\_solute.csv}, $n\approx10$--$12$k). In $\lnx$ they
+% Artifacts: results/external_baselines/solute/{fastsolv,solprop_calibrated,solprop_native}_contract_v2/metrics.json.
+We evaluated the direct state-of-the-art model (FastSolv \cite{osanloo2024}) and the
+physics-informed state-of-the-art model (SolProp \cite{vermeire2022solprop}) on a
+by-solute test split (\texttt{test\_solute.csv}, $n\approx10$--$12$k). The two arms are not obtained
+the same way, and the difference matters below: FastSolv is retrained on our corpus, whereas SolProp
+is the released pretrained thermodynamic cycle---the arm that instantiates the physics---mapped onto
+our target by a three-parameter linear recalibration fitted on the training rows, not by retraining.
+That cycle is run at $298$\,K on every row, so the temperature of a measurement reaches the SolProp
+arm only through the calibrator's temperature term. In $\lnx$ they
 reach MAE $1.94$ (FastSolv, $R^2\,0.23$) and $2.34$ (SolProp, calibrated,
 $R^2\,{-}0.18$); in $\log_{10}S$, $0.87$ and $1.04$. These are on a \emph{by-solute} split that is
 \emph{not comparable} to our scaffold numbers (Table~\ref{tab:si-arms}): they bound the task's
 difficulty, not a ranking of the models against one another, so this does \emph{not} establish that our
-scaffold-split DirectGNN ($1.70$) outperforms them, and a like-for-like scaffold evaluation of the external models is left to
-the deposited artifacts. What \emph{is} comparable is the internal ordering: the physics-informed
-SolProp trails the direct FastSolv---the same ordering we find between our physics closures and
-DirectGNN. The regime-level reading is that on this corpus no
+scaffold-split DirectGNN ($1.70$) outperforms them; a like-for-like scaffold evaluation of the
+external models was not run, the deposited external runs being by-solute and pair-random only.
+The internal ordering---the physics-informed SolProp trailing the direct FastSolv, the same
+ordering we find between our physics closures and DirectGNN---is therefore a
+comparison of the \emph{cycle} against a direct model, and it reverses when SolProp's encoder is
+instead retrained directly on $\lnx$ with the cycle discarded: that arm reaches MAE $1.63$
+($R^2\,0.39$) in $\lnx$ and $0.76$ in $\log_{10}S$ on the $n{=}10{,}287$ rows FastSolv is scored on,
+against FastSolv's $1.94$ and $0.87$. We quote the cycle as the physics-informed arm because only it
+assembles the separately learned components; the retrained arm measures what discarding the closure
+buys on this corpus, not a better physics-informed model. The regime-level reading is that on this corpus no
 black box, ours or external, escapes the accuracy ceiling---consistent with the
 structural account of \S\ref{sec:discussion}. Per-arm ablations (NRTL vs COSMO-SAC,
 combinatorial on/off) are in Table~\ref{tab:si-arms}.
@@ -637,6 +683,36 @@ separate run whose per-run split provenance was not logged; its matched set is t
 molecules, derivable from the committed split independently of the model, so it is consistent with the
 reported split. We record the split hash in the runner so future runs are auditable directly.}
 Melting-point tables are auto-detected as $^\circ$C or K to avoid a $+273$\,K double-conversion.
+% Artifact: notebooks/data/processed_sigma_aux_stream/summary.json (exclude_scaffolds_from points at
+% a debug split; n_excluded_scaffolds 48 vs 2702 in the crystal stream's summary.json); guard in
+% scripts/data/build_sigma_profile_aux_stream.py.
+\paragraph{Grounding-stream provenance, and one build that violates the guard.} The
+$\sigma$-stream builder drops any pool molecule whose Bemis--Murcko scaffold appears in the
+validation or test split and aborts rather than proceed when a split file is missing; a correct
+build retains $1319$ of the $1427$ VT-2005 molecules that parse into the pool. The stream file was
+subsequently rebuilt with the exclusion pointed at the splits of a small debug dataset: it carries
+$1425$ rows, of which $106$ ($99$ train, $7$ validation) have a scaffold in the real
+test$\,\cup\,$validation union of $2702$ scaffolds. The overlap is not confined to scaffold
+relatives: $91$ of those $106$ rows are themselves held-out solutes by canonical SMILES --- $65$
+test solutes and $26$ validation solutes --- and the correctly guarded build leaves none of them.
+The crystal stream's build on disk
+records the correct $2702$-scaffold exclusion, so among the streams feeding the runs reported here
+the defect is confined to the $\sigma$ one. Per-run stream provenance was not logged, so the
+artifacts cannot certify which build fed which arm. The rebuilt file postdates every prediction file
+behind Fig.~\ref{fig:paradox} and Table~\ref{tab:si-arms} and predates the two single-seed
+oracle-application controls (\S\ref{sec:si-tables}) and the output-residual arms
+(\S\ref{sec:gateb}); that ordering is consistent with the headline arms having used the guarded
+build and the later controls the leaking one, but these are timestamps on local copies of
+cloud-run outputs and settle nothing on their own. Three facts bound what the leak can do. It is
+common-mode across the paradox contrast, the learned-$\sigma$ and $\sigma$-oracle rows being one
+checkpoint evaluated two ways, so it cannot generate the gap between them; DirectGNN uses no
+grounding stream, so a leak can only flatter the physics arm that loses to it; and on the $n{=}44$
+matched set of \S\ref{sec:surrogate} a correct guard would have removed one molecule (piperidine).
+What it does compromise is auditability, and with it the reach of the split guarantee: an arm
+trained on that build would have had reference $\sigma$-profiles --- though no solubility labels ---
+for $65$ test solutes, and the guarantee stated in \S\ref{sec:methods} is therefore a property of the
+released builder rather than of every stream file we trained on. Closing this requires hashing each
+stream build beside the split hash, which was not done for these runs.
 \paragraph{Compute ledger.} The headline $\sigma$-grounding comparison
 (Fig.~\ref{fig:paradox}, Table~\ref{tab:si-arms}) is a full-corpus GPU run (three seeds);
 the closure/insufficiency decomposition (\S\ref{sec:measure}), the
@@ -647,7 +723,9 @@ committed artifacts. Each figure and table names the script that regenerates it 
 (\pending[Zenodo DOI]) rather than in the repository.
 \paragraph{Seeds and determinism.} Controlled comparisons use seeds $\{42,43,44\}$ and
 are reported on a cross-arm intersection lock (rows supervised and finite in every arm); the
-surrogate isolation (\S\ref{sec:surrogate}) uses seeds $\{0,1,2\}$. The decomposition is seed-independent
+surrogate isolation (\S\ref{sec:surrogate}) uses seeds $\{0,1,2\}$; the training-time and
+channel-swap oracle controls and the output-residual arms (\S\ref{sec:gateb}) are seed $42$ only.
+The decomposition is seed-independent
 (its closure has no learnable parameters). One artifact caveat: a save-time bug truncated the released
 per-row prediction file for the seed-$44$ oracle solubility arm to $295$ rows, a small fraction of the
 test set. The three-seed headline summaries (Fig.~\ref{fig:paradox}, Table~\ref{tab:si-arms}) were

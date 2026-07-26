@@ -6,9 +6,9 @@ explicit thermodynamic bottleneck (\emph{TGNNSolv}) or a direct regressor
 gap between them measures the cost or benefit of the bottleneck. This section
 describes the shared backbone, the three interchangeable activity closures, the
 solid--liquid-equilibrium (SLE) solver and its implicit differentiation, the
-oracle substitution, and the training protocol. Exact architecture and optimisation
+oracle substitution, and the training protocol. Architecture and optimisation
 hyperparameters and the load-bearing loss weights are in the SI (\S\ref{sec:si-methods}); the full
-feature list and the complete ${\sim}30$-term loss taxonomy are released with the code.
+feature list and the ${\sim}30$-term loss taxonomy are released with the code.
 
 \subsection{Data, splits, and labels}
 Solubility measurements are drawn from BigSolDB~2.0 \cite{krasnov2025bigsoldb} and
@@ -19,16 +19,20 @@ $\dHfus$, Hansen parameters, and infinite-dilution activity coefficients \lngi\
 are merged on as per-solute labels where available. Two data hazards are handled
 explicitly. Melting-point tables arrive in either $^\circ$C or Kelvin and are
 auto-detected by column median (an undetected double conversion inflates every $\Tm$ by
-$273$\,K, which propagates directly into the ideal term); and the seeded scaffold
+$273$\,K, propagating into the ideal term); and the seeded scaffold
 split is not stable across pipeline versions, so every regeneration is treated as
-a new split with all downstream artifacts recomputed. Crystal supervision is
+a new split with downstream artifacts recomputed. Crystal supervision is
 scarce: the test and validation splits contain essentially no measured $\dHfus$,
 which is the quantitative basis of the identifiability argument
 (\S\ref{sec:framework}). External single-component data used for grounding are an
 open crystal-property pool ($\sim$15{,}000 melting points), the VT-2005
 $\sigma$-profile database, and ThermoML infinite-dilution activity coefficients;
-each is filtered to exclude any molecule whose scaffold appears in the
-validation or test split.
+the stream builder excludes any pool molecule whose scaffold appears in validation
+or test and aborts on a missing split file. One $\sigma$-stream build on disk was
+nonetheless generated against the wrong split files and leaves $106$ of its $1425$
+rows overlapping the test$\,\cup\,$validation union by scaffold, $91$ of them
+held-out solutes themselves; \S\ref{sec:si-repro} audits which arms that build can
+reach and what it does and does not compromise.
 
 \subsection{Graph encoder and pair representation}
 Solute and solvent are encoded by a \emph{shared} message-passing neural network (MPNN); two other
@@ -125,7 +129,8 @@ A bounded, gated ``adaptive physics correction'' perturbs the physical parameter
 space to preserve the physical decomposition. The \emph{oracle substitution} replaces the predicted
 $\sigma$-profile $\hat z$ with the reference VT-2005 profile $\zstar$ before the closure (matched by
 canonical SMILES); it is applied three ways to rule out implementation artifacts---at evaluation only, injected
-at training time so the model co-adapts, and as a channel-swap control---and an analogous override
+at training time so the model co-adapts, and as a channel-swap control, the last two at seed $42$ only
+(\S\ref{sec:si-tables})---and an analogous override
 substitutes reference crystal targets. The activity target for the decomposition (\S\ref{sec:measure})
 is the infinite-dilution $\lngi=\lim_{x_2\to0}\lng$ at $298$\,K.
 
@@ -137,13 +142,17 @@ crystal$\to$pair weight ramp; (P3) low-learning-rate stabilisation with
 monotonicity and van't~Hoff regularisers. External single-component data enter
 through \emph{grounding streams}: each stream is a sidecar of \emph{self-solvent}
 rows ($\mathrm{solvent}=\mathrm{solute}$, no solubility label, only the target
-factor's mask active), interleaved into P1/P2 at a configurable step budget, with
-a mandatory scaffold-leak guard excluding any pool molecule whose scaffold is in
-validation or test. The reference streams ground the crystal factor (melting-point
-pool) and the activity factor ($\sigma$-profile database); this
-single-component-grounding pattern is the mechanism by which an otherwise
-non-identifiable factor (\S\ref{sec:framework}) is identified by abundant external
-data a black-box predictor cannot use.
+factor's mask active), interleaved into P1/P2 at a configurable step budget under
+the scaffold-leak guard above. The pinned recipe behind every COSMO-SAC arm of
+Fig.~\ref{fig:paradox} departs from that default: it freezes the $\sigma$ head for
+P2/P3, so the $\sigma$ stream --- used only by the two grounded arms, which begin
+with a warm-up on the pool (up to $40$ epochs, early-stopped on a held-out tenth)
+--- enters that warm-up and P1 only. The freeze holds the head's weights, not the
+shared encoder, so the predicted profile still moves end to end; per-arm schedules
+are in \S\ref{sec:si-tables}. The reference streams ground the crystal factor
+(melting-point pool) and the activity factor ($\sigma$-profile database); this
+pattern identifies an otherwise non-identifiable factor (\S\ref{sec:framework})
+from abundant external data a black-box predictor cannot use.
 
 \subsection{Objective}
 The training loss is a weighted sum with per-phase weights. Only a small set of
@@ -151,21 +160,23 @@ terms is load-bearing for the claims in this paper: a bin-weighted Huber on \lnx
 auxiliary losses on the $\sigma$-profile (an earth-mover distance), on crystal
 $\Tm/\dHfus$, on \lngi, and on Hansen parameters; and structural regularisers for
 temperature monotonicity and the van't~Hoff slope. The remaining terms (channel
-orthogonality, contrastive, mixture-of-experts balance, and various priors) are
-auxiliary; the complete taxonomy and weights are tabulated in the SI
-(\S\ref{sec:si-methods}).
+orthogonality, contrastive, mixture-of-experts balance, priors) are auxiliary; the
+complete taxonomy and weights are in the SI (\S\ref{sec:si-methods}).
 
 \subsection{The DirectGNN control}
 DirectGNN shares the encoder, interaction, readout, and pair representation, adds
 a thermometer temperature encoding, and maps directly to \lnx\ with a
-bin-weighted Huber loss and no heads, closure, or solver. Because it shares
-everything but the thermodynamic bottleneck, the TGNNSolv$-$DirectGNN gap is
-attributable to the bottleneck rather than to representation, and DirectGNN is the
-reference for every asymptotic physics penalty comparison in \S\ref{sec:results}.
+bin-weighted Huber loss and no heads, closure, or solver. Sharing everything but
+the thermodynamic bottleneck, the TGNNSolv$-$DirectGNN gap is attributable to the
+bottleneck rather than to representation; DirectGNN is the reference for every
+asymptotic physics penalty comparison in \S\ref{sec:results}.
 
 \subsection{Reproducibility}
-All controlled comparisons are run at three seeds and reported as mean$\pm$sd on a
-cross-arm intersection lock (rows supervised and finite in every arm). Solver
+Controlled comparisons are run at three seeds and reported as mean$\pm$sd on a
+cross-arm intersection lock (rows supervised and finite in every arm); the
+exceptions --- the training-time and channel-swap oracle controls and the
+output-residual arms (\S\ref{sec:gateb}) --- are single-seed, labelled as such
+(\S\ref{sec:si-tables}). Solver
 iteration counts, COSMO-SAC constants, architecture and optimisation hyperparameters, the
 load-bearing loss weights, and the compute ledger (which results are full-corpus GPU runs versus
 CPU-reproducible proxies) are given in the SI (\S\ref{sec:si-methods},

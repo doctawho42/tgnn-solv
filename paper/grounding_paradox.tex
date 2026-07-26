@@ -117,10 +117,10 @@ counterintuitive effect: the network predicts more accurately from its own learn
 external quantum-chemical reference profiles, because the misspecification term appears to be the larger
 and the learned profile, trained end to end through the misspecified model, has become a low-rank,
 transferable surrogate that compensates for the model's error rather than reporting the physical quantity.
-More accurate inputs therefore expose the model's bias, and raising the model's fidelity does not remove
-the penalty. The same behaviour arises in a controlled synthetic family of models and, with an
-in-distribution test that certifies it, in a second chemical domain, the prediction of acid dissociation
-constants. The instrument applies to any predictor that composes a fixed physical model over a learned
+More accurate inputs therefore expose the model's bias, and on representative reference data raising the
+model's fidelity does not measurably lower its error. The same behaviour arises in a controlled synthetic family of
+models and, with an in-distribution test that certifies it, in a second chemical domain, the prediction of
+acid dissociation constants. The instrument applies to any predictor that composes a fixed physical model over a learned
 intermediate, and shows that the interpretability such grounded latents appear to offer is not guaranteed
 when the fixed model is misspecified.
 \end{abstract}
@@ -171,14 +171,16 @@ and the interpretability such a latent appears to offer is not guaranteed when i
   applies to any predictor that composes a fixed physical model over a learned intermediate.
   \item Using the instrument, we report a grounding paradox in physics-informed solubility prediction: a
   graph neural network predicts solubility more accurately from its own learned $\sigma$-profiles than
-  from external quantum-chemical reference profiles supplied to the same fixed COSMO-SAC model, because
-  the misspecification of the fixed model is the larger error term and sets the accuracy ceiling.
+  from external quantum-chemical reference profiles supplied to the same fixed COSMO-SAC model. On the
+  matched activity axis, where solute and solvent alike carry a reference profile, the misspecification
+  term is likely the larger and sets the ceiling; its transfer to the solubility regime is argued, not
+  measured.
   \item We identify the mechanism: trained end to end through the misspecified model, the learned latent
   becomes a low-rank, transferable surrogate that compensates for the model's error instead of reporting
   the physical quantity, which is why more accurate inputs reduce accuracy.
-  \item We show that the ceiling is a property of the fixed model rather than of downstream processing: a
-  higher-fidelity fixed model does not remove the penalty on representative data, and a post-hoc
-  correction of the model's output restores calibration but not accuracy.
+  \item We show that the ceiling is a property of the fixed model rather than of downstream processing:
+  raising the fixed model's fidelity does not measurably lower its error on representative data, and a
+  post-hoc correction of the model's output restores calibration but not accuracy.
   \item We show that the account is general: the same behaviour appears in a controlled synthetic family
   of models and, in a second chemical domain (the prediction of acid dissociation constants), an
   in-distribution test certifies the same reversal of the grounding effect.
@@ -231,9 +233,12 @@ $\sigma$-profile from the VT-2005 database (the Virginia Tech 2005 compilation o
 quantum-chemically computed screening-charge profiles for ${\sim}1{,}400$
 compounds \cite{mullins2006}), and $g(\zstar)$ for the closure output when fed the
 reference profile. The model's own head instead predicts a \emph{learned} profile
-$\hat z$ and evaluates $g(\hat z)$; a matched \emph{DirectGNN} control shares the
-encoder but emits $\lnx$ with no closure, and is the reference against which the
-cost of the physics bottleneck is measured (schematic in SI, Fig.~\ref{fig:arch}).
+$\hat z$ and evaluates $g(\hat z)$; a \emph{DirectGNN} control shares the
+encoder, interaction, readout, capacity and epoch budget but emits $\lnx$ with no
+closure, and is the reference against which the cost of the physics bottleneck is
+measured (schematic in SI, Fig.~\ref{fig:arch}). Their optimisation settings---dropout,
+learning rate, gradient clipping, weight decay---were tuned per arm and differ, so the
+gap is not attributable to the bottleneck alone.
 
 \paragraph{The oracle substitution.} Feeding $\zstar$ in place of $\hat z$
 (a $\sigma$-oracle) isolates the closure from encoder error: if the closure were
@@ -370,7 +375,8 @@ estimating it from $n$ observations is a nonparametric problem governed by $\dim
 solubility regime $\zstar$ is a $102$-bin $\sigma$-profile with $n{=}60$ matched pairs
 ($\dim(\zstar)/n\approx1.7$): the conditional variance is unestimable, so every $\Binsuf$ entry of
 Table~\ref{tab:decomp} is a one-sided \emph{bound} and $\Bclos$ is only lower-bounded---the
-one-sidedness above is a consequence of this ratio, not a modelling choice. Where the latent is
+one-sidedness above is a consequence of this ratio and of the design's clustering
+(\S\ref{sec:measure}), not a modelling choice. Where the latent is
 low-dimensional the same instrument point-identifies: the pKa Hammett constant is a \emph{scalar}
 with $n{=}1004$ ($\dim(\zstar)/n\approx10^{-3}$), so $\Binsuf$ is a point estimate (\S\ref{sec:pka}),
 not a bound. The decomposition is identifiable exactly where $\dim(\zstar)/n$ is small---which is why
@@ -486,27 +492,37 @@ values are tabulated in the SI.}
 \subsection{The closure-fidelity axis: locating the ceiling, and moving it}
 \label{sec:measure}
 % Artifact: results/b_insuff/decomposition.json via scripts/analysis/run_b_insuff_decomposition.py.
+% Bin-count / Bessel sweep and the blocked-fold and distinct-pair estimators:
+% results/b_insuff/keystone_robustness.json via scripts/analysis/run_b_insuff_keystone_robustness.py.
+% Design composition of the matched set: results/b_insuff/matched_pairs.csv and
+% results/b_insuff/leverage_robustness.json.
 The cause is cleanest in the form that needs no bounds and no small-set variance estimation. The
-externally-referenced decomposition of \S\ref{sec:decomp} acts as an \emph{instrument} on the
-$n{=}60$ matched regime: it asks whether a fixed closure's ceiling sits in
-the map or in its inputs. We demonstrate it on the $n{=}60$ matchable activity pairs (298\,K, infinite
-dilution)---a regime where $\dim(\zstar)/n\approx102/60$ leaves the split behind one-sided bounds
-(\S\ref{sec:decomp}), read as a bounded demonstration, not a certificate. Its point-identified
+externally-referenced decomposition of \S\ref{sec:decomp} acts as an \emph{instrument}: it asks
+whether a fixed closure's ceiling sits in the map or in its inputs. We apply it to the $n{=}60$
+matchable activity pairs (298\,K, infinite dilution), where $\dim(\zstar)/n\approx102/60$ leaves the
+split behind one-sided bounds---a bounded demonstration, not a certificate. Its point-identified
 counterpart is the scalar-latent pKa domain (\S\ref{sec:pka}), where the same instrument resolves the
 split and recovers the a-priori channel assignment (there, insufficiency)---evidence the instrument
 works, not a re-confirmation of this verdict. Here $\zstar$ is
 the reference concatenated solute/solvent $\sigma$-profiles and $m$ the experimental $\lngi$;
 Table~\ref{tab:decomp} reports the bounds. In this regime too the ceiling sits in the
 \emph{low-fidelity} closure rather than its inputs. The set spans 41 solutes and 17 solvents in $102$
-profile dimensions, with two formamide pairs excluded owing to a canonical-SMILES tautomer mismatch.
+profile dimensions (two formamide pairs excluded for a canonical-SMILES tautomer mismatch), and it is
+strongly unbalanced: methanol occupies $25$ of the $60$ rows ($12$ as solute, $13$ as solvent),
+pyridine is the largest solvent stratum ($20$ rows), and the two worst-fit pairs carry $34\%$ of the
+squared error. That concentration is part of the phenomenon---the closure is least faithful in
+strongly and directionally hydrogen-bonding solvents---but these are not $60$ exchangeable
+observations, and the folds below hinge on the same molecules.
 
 \begin{table*}[t]
 \centering
 \caption{Closure--insufficiency decomposition on the reference-input activity path, reported as bounds
 rather than a point split, under the ``full'' (with Staverman--Guggenheim combinatorial term) and
 ``res'' (residual-only, deployed) conventions. All input-insufficiency ($\Binsuf$) rows are valid upper
-bounds; the load-bearing row is the leakage-immune law-of-total-variance bound on the
-model-misspecification term $\Bclos$.}
+bounds; the load-bearing row is the law-of-total-variance bound on the
+model-misspecification term $\Bclos$, which fits no model to the data. The LOTV rows use eight equal-count
+bins of $g(\zstar)$ and the maximum-likelihood within-bin variance; their sensitivity to both choices, and
+the fold-leakage caveat on the out-of-fold rows, are given in the text.}
 \label{tab:decomp}
 {\small
 \begin{tabular}{@{}p{0.60\linewidth}rr@{}}
@@ -514,9 +530,10 @@ model-misspecification term $\Bclos$.}
 Quantity & full & res \\
 \midrule
 MSE$_{\text{total}}=\Bclos+\Binsuf$ (exact)      & $1.80$ & $1.47$ \\
-$\Bclos$ lower via MSE$-\Binsuf^{\text{up}}$ (LOTV; \emph{leakage-immune, load-bearing}) & $1.27$ & $0.85$ \\
-$\Binsuf$ upper (bin $g$; law of total variance)  & $0.53$ & $0.62$ \\
-$\Binsuf$ upper (RF / Ridge out-of-fold)          & $0.56/0.62$ & same \\
+$\Bclos$ lower via MSE$-\Binsuf^{\text{up}}$ (LOTV; \emph{load-bearing}) & $1.27$ & $0.85$ \\
+$\Binsuf$ upper (bin $g$, $8$ bins; law of total variance)  & $0.53$ & $0.62$ \\
+\quad both LOTV rows, Bessel-corrected within-bin variance ($\Bclos$ lower / $\Binsuf$ upper) & $1.19/0.61$ & $0.76/0.71$ \\
+$\Binsuf$ upper (RF / Ridge out-of-fold, random folds)     & $0.56/0.62$ & same \\
 $\Binsuf$ (k\textsc{nn}-in-$\zstar$, convention-indep., deflated / least conservative) & $0.40$ & $0.40$ \\
 label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{$0$ (assumed)} \\
 \bottomrule
@@ -529,9 +546,11 @@ label noise $\sigma_\eta^2$ (IDAC, unestimable here) & \multicolumn{2}{c}{$0$ (a
 \includegraphics[width=\linewidth]{figs/fig_decomposition.pdf}
 \caption{One-sided bounds on the closure--insufficiency split under the residual-only convention. The
 lower bound on the model-misspecification term ($\Bclos\ge\mathrm{MSE}-\Binsuf\approx0.85$, with
-MSE $=1.47$) exceeds every valid upper bound on the input-insufficiency term $\Binsuf$ (salmon markers);
-the white gap is the assumption-free separation, and the teal region is the share of the error the bound
-attributes to the fixed model.}
+MSE $=1.47$) exceeds the upper bounds on the input-insufficiency term $\Binsuf$ shown (salmon markers);
+the white gap is the separation, and the teal region is the share of the error the bound
+attributes to the fixed model. The plotted LOTV bound uses eight equal-count bins and the
+maximum-likelihood within-bin variance; a coarser binning, the Bessel correction and the leakage-blocked
+estimators are valid but weaker bounds, some of which close the gap (text).}
 \label{fig:decomp}
 \end{figure*}
 
@@ -539,24 +558,53 @@ We separate the load-bearing evidence---a bound that holds under \emph{any} COSM
 configuration---from corroborating checks that are robust across a range of conventions but not
 strictly independent of the model fit.
 
-\paragraph{The load-bearing separation (leakage-immune).} On the deployed residual-only convention, the
-leakage-immune law-of-total-variance bound gives $\Bclos\gtrsim0.85$ against $\Binsuf\lesssim0.62$
-(Table~\ref{tab:decomp}). This is the load-bearing claim, and it is conservative by construction: the bound
-subtracts a \emph{population upper} estimate of $\Binsuf$, understating $\Bclos$, so a surviving margin
-survives a fortiori. The finite-sample biases run the other way and are controlled---the deflated $k$-NN
-difference is kept out of the bound, and the LOTV binning's per-bin sparsity bias is cross-checked against
-the sparsity-immune RF and ridge out-of-fold estimators (\S\ref{sec:si-tables}).
+\paragraph{The load-bearing separation.} On the deployed residual-only convention, the
+law-of-total-variance bound gives $\Bclos\gtrsim0.85$ against $\Binsuf\lesssim0.62$
+(Table~\ref{tab:decomp}). It is conservative at the \emph{population} level---it subtracts a population
+upper estimate of $\Binsuf$---and fits no model to the data, which is all \emph{leakage-immune} means
+here, not that it is unbiased. Two finite-sample biases run the other way, and neither is controlled by the
+cross-checks. The bound bins $g(\zstar)$ into eight equal-count bins with the maximum-likelihood within-bin
+variance; the Bessel-corrected variance gives $\Binsuf^{\text{up}}{=}0.71$ and $\Bclos\gtrsim0.76$ (full:
+$0.61$ and $1.19$), and over a $3$--$20$ bin sweep the bound clears $\mathrm{MSE}/2{=}0.74$ at five bins
+and finer under either variance convention but not at three or four, where the coarser conditioning is a
+valid but weaker bound. And the RF and ridge out-of-fold estimators do not control that bias
+independently: under random folds every held-out row shares its solvent ($78\%$ of rows) or its solute
+($42\%$) with a training row, and two pairs sharing a molecule agree on $51$ of the $102$ $\zstar$
+coordinates exactly, so both can borrow strength from a near-twin, anti-conservatively and in the same
+direction as the binning. Blocking folds on both molecules leaves no informative estimator here (RF
+$3.65$, above $\Var(m){=}2.47$; ridge divergent; $k$-NN on a distinct pair or solvent, $1.83$ and $1.46$):
+three exceed the total MSE $1.47$, beyond which an upper bound on $\Binsuf$ constrains $\Bclos$ vacuously,
+so they blunt the instrument rather than refute the separation---but none supports it either.
 
-The separation is stable but \emph{not certified}. It survives leave-one-solvent, -solute, and -pair folds
-and deletion of the eight highest-error pairs, but a two-way cluster bootstrap places $\Bclos>\Binsuf$ in
-only $78\%$ of resamples ($P_{\mathrm{boot}}$, a resampling frequency, not a posterior probability of the
-inequality; $90\%$ margin spanning zero), and one deliberately aggressive out-of-fold ridge smoother
-inverts it ($\Binsuf{=}0.88>\Bclos{=}0.59$). So ``the larger'' is estimator-conditional and likely, not
-certain; with $17$/$41$ clusters the band is coarse (mid-$0.7$s to high-$0.8$s). One threat we can bound:
-label noise is unestimable here and assumed zero, but the bounds are invariant to zero-mean noise and the
-matched IDAC is essentially single-method ($158/165$ gas chromatography), so a within-method systematic
-large enough to close the ${\approx}0.23\,(\ln\gamma)^2$ margin is implausible. The convention, leakage,
-$\gamma$-stratification, and leverage stress-tests are in App.~\ref{sec:si-tables}.
+% Fold and leverage stress-tests: results/b_insuff/keystone_robustness.json and
+% results/b_insuff/leverage_robustness.json via scripts/analysis/run_b_insuff_keystone_robustness.py
+% and scripts/analysis/run_b_insuff_leverage.py.
+% The both-roles methanol deletion (n=35) is in neither file; it is recomputed from
+% results/b_insuff/matched_pairs.csv with lotv_binning() of run_b_insuff_decomposition.py
+% (res convention): margin MSE-2*B_insuff = 0.346 -> 0.106 at 6 bins, 0.236 -> 0.003 at 8.
+The separation is stable but \emph{not certified}. It survives all $17$ leave-one-solvent and all $60$
+leave-one-pair folds and deletion of the eight highest-error pairs, but only $40$ of $41$
+leave-one-solute folds (fold bounds at six equal-count bins): the exception drops methanol, the
+maximum-leverage solute ($12$ pairs), and inverts the verdict ($\Binsuf{=}0.79$ against
+$\mathrm{MSE}/2{=}0.66$), as does dropping methanol as solute together with pyridine as solvent
+($n{=}28$; $1.29$ against $1.11$, though the anti-conservative random-forest bound holds there);
+deleting methanol from both roles ($n{=}35$) holds only marginally: against the full set the margin
+falls from $0.35$ to $0.11$ at six bins and from $0.24$ to $0.003$ at eight. A two-way cluster bootstrap places
+$\Bclos>\Binsuf$ in only $78\%$ of resamples ($P_{\mathrm{boot}}$, a resampling frequency, not a
+posterior probability of the inequality; $90\%$ margin spanning zero), and one deliberately aggressive
+out-of-fold ridge smoother inverts it ($\Binsuf{=}0.88>\Bclos{=}0.59$). So ``the larger'' is estimator-conditional and likely, not
+certain; with $17$/$41$ clusters the band is coarse (mid-$0.7$s to high-$0.8$s). One threat we can bound
+only partly: label noise is unestimable here and assumed zero. Zero-mean noise raises $\mathrm{MSE}$ and
+$\Binsuf^{\text{up}}$ alike, leaving the $\Bclos$ bound unchanged and shrinking the margin
+$\mathrm{MSE}-2\Binsuf^{\text{up}}$ by $\sigma_\eta^2$, so it can understate the separation but not create
+it. The margin instead bounds a label systematic tracking $\zstar$, which enters $\Bclos$ rather than
+$\Binsuf$ and closes the separation at root-mean-square $0.49\,\ln\gamma$ on the maximum-likelihood
+binning, but at only ${\approx}0.21$ on the Bessel-corrected one, and at ${\approx}0.59$ and
+${\approx}0.47$ on the RF and ridge bounds. The matched IDAC is essentially single-method ($158/165$ gas chromatography), which makes a
+within-method systematic of $0.5\,\ln\gamma$ implausible; one of $0.21$ is not, so on the corrected binning
+that threat is not excluded. The
+convention, leakage and $\gamma$-stratification stress-tests are in App.~\ref{sec:si-tables}; the
+leverage tests are the folds above.
 
 \paragraph{Whether the closure defect is correctable: within a solvent, not across one.} That
 $\Bclos$ dominates locates the ceiling in the map; it does not say the map is \emph{fixably} wrong.
@@ -581,7 +629,12 @@ molecule-disjoint holdout does not exist on this set at any fold design.
 
 $\Bclos$ is therefore a defect that a handful of kernel parameters can absorb \emph{within} a
 solvent, and that we have not shown to be correctable across solvents. That is weaker than a
-general repair, and it is the honest reading of what $n{=}60$ single-method pairs support.
+general repair, and it is the honest reading of what $n{=}60$ single-method pairs support. The fitted
+correction also buys nothing over a free one on these rows: the parameter-free 2010 kernel reaches $0.765$
+on the same $60$ pairs (below) against the $52$-parameter residual's random-fold $0.79$. The two run on
+different profile databases---VT-2005 here, UD-native there---so the near-equality is indicative rather
+than a head-to-head; but both stay above the insufficiency ceiling under either binning convention
+($\Binsuf\lesssim0.62$--$0.71$), so neither erases $\Bclos$.
 
 \paragraph{Where the closure fails, chemically.} The residual error is not an implementation
 artifact: our differentiable layer reproduces the NIST benchmark COSMO-SAC-2002~\cite{bell2020cosmosac}
@@ -594,8 +647,10 @@ donor/acceptor-typed 2010 closure was built to fix. Convention-robustly, adding 
 on size-asymmetric pairs---what a misspecified map does, not what missing information would (details in
 App.~\ref{sec:si-tables}).
 
+% Artifacts: results/b_insuff/fidelity_lever_fair2002.json via scripts/analysis/run_fidelity_lever_fair2002.py; results/b_insuff/closure_flip_ci.json via scripts/analysis/run_closure_flip_ci.py.
 \paragraph{No closure-fidelity lever.} If the ceiling is the closure, the obvious
-remedy is a better closure. A direct test returns a negative result.
+remedy is a better closure. A direct test returns a negative result on representative data, and a
+positive one on the curated corner.
 
 The comparison has \textbf{no input-fixed design, even in principle}. The $\sigma$-profile
 averaging is part of each model's \emph{definition} (Mullins averaging for 2002, Hsieh averaging for
@@ -605,8 +660,9 @@ without violating one of them. Forcing the profile literally identical denies th
 three channels, an input-insufficiency confound in precisely the term the decomposition of
 \S\ref{sec:decomp} exists to isolate: an ``insufficiency-free by construction'' contrast is incoherent
 here, not merely unverified. Each closure evaluated on its prescribed native profile is the specified use of
-the model, not a convention compromise, so the fair values $1.757$ (2002) and $1.911$ (2010) are the
-correct comparison.
+the model, not a convention compromise, so the correct comparison is fair 2002 against the modern kernel
+\emph{within} each evaluation set: $1.757$ against $0.765$ on the curated corner, and $1.911$ against
+$1.978$ (or $1.855$ with dispersion) on the representative set.
 
 The fair 2002 value depends on one implementation detail. The NIST reference implementation of
 COSMO-SAC-2002, given a typed three-profile database, reads the nonpolar channel only and
@@ -614,13 +670,14 @@ silently discards the donor and acceptor profiles while retaining the total area
 UD (University of Delaware) profiles this single-channel arm scores $\mathrm{MSE}\ 1.26$, which is not the
 reference closure and is not comparable to the $1.47$ our own layer reaches on the single-profile
 VT-2005 database. The fair full 2002 on the same UD data scores $\mathrm{MSE}\ 1.757$ from our
-NIST-validated differentiable layer. The released code regenerates this value and cross-checks both
-the single-channel arm ($1.26$) and the 2010 arm against the cCOSMO reference.
+NIST-validated differentiable layer. The released code regenerates it and cross-checks the single-channel
+and 2010 arms against the cCOSMO reference.
 
 The swap is then measurable, and it does not point the same way on curated and
 representative data. Across the fair 2002, the modern 2010 kernel with dispersion \emph{off}, and
 2010/dsp, the activity error is $1.757/0.765/0.785$ on the curated corner and $1.911/1.978/1.855$ on a
-representative IDAC$\,\cap\,$UD set (all temperatures, every arm validated against the NIST reference). On
+representative IDAC$\,\cap\,$UD set ($n{=}477$ over $78$ solutes and $36$ solvents, all temperatures,
+every arm validated against the NIST reference). On
 the corner the modern kernel cuts the error sharply ($1.757\to0.765$ with dispersion off, $n{=}60$;
 two-way cluster bootstrap $P=0.98$, $90\%$ margin $[+0.05,+2.16]$ grazing zero). On the representative set
 it does \emph{not}: with dispersion off the modern kernel is \emph{worse} than 2002 ($1.978$ vs $1.911$),
@@ -628,14 +685,22 @@ and only the dispersion term recovers a marginal $+3\%$ ($1.855$, $P=0.62$, marg
 corner reports the dispersion-off arm and the representative the dispersion arm because the transcribed
 dispersion term diverges from the reference on the corner's high-$\epsilon$ tail, where the
 dispersion value is taken from the cCOSMO reference ($0.785$). These are different arms of the modern
-family; the corner and the representative are not a single small effect.
+family, not a single small effect.
 
 Contribution~(b), that the closure is the ceiling, is a property of the \emph{deployed} 2002 kernel, whose
-fair error $1.757$ sits above the insufficiency floor here and does not depend on any upgrade. On the
-corner the closure upgrade is in fact \emph{better} supported ($P=0.98$) than that closure-dominance
-verdict ($P_{\mathrm{boot}}\approx0.78$); contribution~(c)---that no fidelity lever is established---
-therefore rests on the representative set, where the modern kernel does not beat 2002, not on the curated
-corner.
+fair error $1.757$ clears twice the insufficiency bound here ($2\Binsuf\lesssim1.24$, the separation
+threshold) and does not depend on any upgrade. Under the modern kernel it does not: $0.765$ ($0.785$ with
+dispersion) leaves only $\Bclos\gtrsim0.15$ against $\Binsuf\lesssim0.62$, so on the corner the
+closure-dominance certificate is lost ($P\approx0.79$ that it fails), and the upgrade is in fact
+\emph{better} supported ($P=0.98$) than the closure-dominance verdict itself
+($P_{\mathrm{boot}}\approx0.78$). That is loss of certification, not a certified flip to the inputs: that
+would need a \emph{lower} bound on $\Binsuf$, which $\dim(\zstar)/n\approx1.7$ denies. Both floor checks
+are also cross-database, pairing a VT-2005 $\Binsuf$ with a UD-profile MSE; and because the modern kernel
+redefines $\zstar$ through its own
+$\sigma$-averaging (\S\ref{sec:decomp}), $\Binsuf$ is not re-estimated on the latent that kernel
+consumes---a computation we have not run. Contribution~(c)---that no fidelity lever is
+established---therefore rests on the representative set, where the modern kernel does not measurably beat
+2002, not on the curated corner.
 
 This is consistent with the published behaviour of the closure family rather than a challenge to it,
 and the comparison itself appears to be new: no large-scale infinite-dilution benchmark of the
@@ -653,19 +718,24 @@ the closure is the low-fidelity component: the ceiling we locate is where the fi
 places it. We claim only that \textbf{we cannot establish a closure-fidelity lever on the data we can
 compute}, not that the modern closure is not an improvement.
 
-The consequence for the paper is that we have no fix to offer. The ceiling we locate is not disposed
-of by the standard upgrade path, and no remedy was found inside this closure family.
+The consequence for the paper is that we have no fix to offer on representative data: the ceiling is not
+disposed of there by the standard upgrade path, and the fitted kernel residual does not transfer across
+solvents. On the curated corner both corrections cut the error by about half---$0.765$ free, $0.79$
+fitted---and neither carries off those $60$ pairs.
 
-\paragraph{The reference is itself imperfect, but conservatively so.} The external ground truth used
+\paragraph{The reference is itself imperfect.} The external ground truth used
 to charge $\Bclos$ against $\Binsuf$ is quantum chemistry, not experiment: the VT-2005 profiles are
 computed for a single reference conformer and protonation state (\S\ref{sec:si-repro}); that this
-matters is documented rather than hypothetical---the successor Delaware database revises the VT-2005
-molecular conformations for about a third of its compounds~\cite{bell2020cosmosac}. Any mismatch
+matters is documented---the successor Delaware database revises those
+conformations for about a third of its compounds~\cite{bell2020cosmosac}. Mismatch
 between that fixed state and the conformer/tautomer population under the measurement conditions enters
-as noise in the reference $\zstar$, and such noise raises $\Binsuf$---the input-sufficiency term---not
-$\Bclos$. It therefore works against the closure-dominance reading rather than for it: a truer,
-condition-matched reference would lower $\Binsuf$ and widen the margin we already find, so the verdict
-is conservative to this defect.
+as noise in $\zstar$, which inflates $\Binsuf$---but not $\Binsuf$ alone. If the true
+latent is $\zstar$ displaced by a mean-zero (Berkson-type) $\varepsilon$, then even a perfectly
+specified $g$ has $\Bclos=\Ex\big[(\Ex_\varepsilon[g(\zstar{+}\varepsilon)]-g(\zstar))^2\big]$, a pure
+curvature effect that vanishes only for affine $g$---and under classical rather than Berkson error,
+not even then. The defect is conservative only if that curvature share is small against the $\Bclos$
+we report, which we do not bound; we therefore treat it as an unsigned limitation rather than as
+support for the closure-dominance reading.
 
 \paragraph{Scope.} This measurement is a low-$\gamma$/$298$\,K/VT-2005-matchable regime and does not
 transfer to the finite-composition regime the paradox lives in (\S\ref{sec:discussion}); the full audit is
@@ -733,7 +803,7 @@ improve---better inputs surface its bias rather than help. The external latent d
 the physics path more accurate. Used as an instrument on the regime we can measure, the decomposition places
 the ceiling in the closure rather than its inputs; but that ceiling is not a lever: a fair, fully
 validated comparison of the 2002 and 2010/dsp kernels on representative
-infinite-dilution data does not establish a fidelity gain. We locate a ceiling and offer no lever. This attribution is a demonstration on a low-$\gamma$,
+infinite-dilution data does not establish a fidelity gain. We locate a ceiling and, on that data, offer no lever. This attribution is a demonstration on a low-$\gamma$,
 infinite-dilution regime, not a certificate: it need not transfer unchanged to the
 finite-composition regime the paradox spans, where its shared closure-misspecification cause is a
 conjecture supported by in-regime signs (the more-physics-worse effect on the full $n{=}5608$ set and
@@ -848,9 +918,11 @@ of a solubility model at all. The negative is therefore an upper bound at $R^{2}
 than a demonstration that no crystal information is present, and the crystal-slope test is
 additionally limited by the corpus itself, whose empirical slope carries $-\Delta H_{\text{fus}}/R$
 at $r=+0.24$. The scaffold-organisation result does not depend on the external reference and is
-measured at full test size. (vii)~The closure-fidelity contrast is measured on the activity axis; we have \emph{not} tested whether
-the \emph{solubility} paradox itself survives a modern $2010$/dsp closure. That test needs a typed
-(donor/acceptor) $\sigma$-profile head and a UD$\,\cap\,$BigSolDB matched set, and is the natural next
+measured at full test size. (vii)~The closure-fidelity contrast compares \emph{oracle-input} activity error across kernels. The
+penalty $\Gamma$ itself is therefore not measured under a modern closure on either axis, and we have
+\emph{not} tested whether the \emph{solubility} paradox survives a $2010$/dsp closure. Both require a
+typed (donor/acceptor) $\sigma$-profile head trained end to end through the modern kernel, and the
+solubility test a UD$\,\cap\,$BigSolDB matched set; we have neither, and that is the natural next
 experiment.
 
 \section{Conclusion}
