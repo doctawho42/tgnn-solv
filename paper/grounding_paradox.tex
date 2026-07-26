@@ -38,6 +38,12 @@
 % The JCIM configuration calls \SectionNumbersOff. We restore numbering
 % with the class's own \SectionNumbersOn because the manuscript carries
 % 135 numbered cross-references to its own sections.
+%
+% LAYOUT. `layout=twocolumn' is the published-article measure and is what the
+% 22-page main-text figure refers to. ACS expects the double-spaced
+% single-column measure at submission: drop `,layout=twocolumn' for that (the
+% same content then runs to about 43 pages of main text, which is normal for
+% the submission format and is not a content change).
 % ---------------------------------------------------------------------
 \documentclass[journal=jcisd8,manuscript=article,layout=twocolumn]{achemso}
 \SectionNumbersOn
