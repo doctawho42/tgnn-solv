@@ -1,0 +1,12 @@
+{
+  "deviation": "deviation from the VT-2005 reference",
+  "n": 44,
+  "bins": 51,
+  "observed_top2_evr": 0.39937043875371303,
+  "isotropic_null_mean": 0.15144142531701943,
+  "phase_randomised_null_mean": 0.22058116412446033,
+  "phase_randomised_p": 0.0,
+  "wrong_molecule_null_mean": 0.7720652019288531,
+  "wrong_molecule_p": 1.0,
+  "exceeds_structured_null": false
+}

@@ -60,11 +60,14 @@ def build_tensors(pairs, table):
     return p2, A2, p1, A1, T, m
 
 
-def fit_kernel(R, tr, p2, A2, p1, A1, T, m, steps=400, lr=5e-2, wd=1e-2):
+def fit_kernel(R, tr, p2, A2, p1, A1, T, m, steps=400, lr=5e-2, wd=1e-2, seed=0):
     """Fit the rank-R residual on the train rows; return the layer + train/all MSE fn."""
     cfg = TGNNSolvConfig(activity_model="cosmo_sac", cosmo_sac_kernel_residual_rank=R)
     layer = CosmoSacLayer(cfg=cfg)
     layer.train()
+    # The residual init must be seeded: without it the reported held-out MSE is one
+    # unreproducible draw and the rank ordering is not stable across draws.
+    torch.manual_seed(seed)
     if R > 0:
         with torch.no_grad():
             layer.kernel_B.normal_(0, 1e-2)
@@ -90,6 +93,11 @@ def main() -> None:
     ap.add_argument("--sigma-profiles", default="results/sigma_profile_artifact/sigma_profiles.csv")
     ap.add_argument("--ranks", type=int, nargs="+", default=[1, 2, 3])
     ap.add_argument("--folds", type=int, default=5)
+    ap.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2],
+                    help="fit seeds; the spread over these is reported, not hidden")
+    ap.add_argument("--group-by", choices=["none", "solvent"], default="none",
+                    help="none = random pair folds; solvent = no solvent shared "
+                         "between train and test, which is the leakage-free design")
     ap.add_argument("--sigma-checkpoint", default="checkpoints/cosmo_sac/tgnn_cosmo.pt",
                     help="for the A3 convergence: where sigma_hat deviates from sigma_true")
     ap.add_argument("--out-json", type=Path, default=Path("results/compensation/local_closure_fix.json"))
@@ -109,25 +117,57 @@ def main() -> None:
     base = base_mse(np.arange(n))
     print(f"baseline B_clos (fixed closure, true sigma): MSE = {base:.3f}")
 
-    # cross-validated correction per rank
+    # ---- fold design -------------------------------------------------------------
+    # Random pair folds put the same solvent on both sides of the split. Since the closure
+    # error is predominantly a between-solvent systematic, that is leakage, and the 60 matched
+    # pairs form a single connected component under shared solute/solvent identity, so no
+    # molecule-disjoint holdout exists at all. --group-by solvent is the leakage-free design.
     rng = np.random.default_rng(0)
-    perm = rng.permutation(n)
-    folds = np.array_split(perm, args.folds)
-    results = {"n": n, "baseline_mse": base, "ranks": {}}
+    if args.group_by == "solvent":
+        solv = np.array([str(x) for x in pairs["solvent_key"]]) if "solvent_key" in pairs \
+            else np.array([str(x) for x in pairs.iloc[:, 1]])
+        uniq, counts = np.unique(solv, return_counts=True)
+        order = uniq[np.argsort(-counts)]
+        buckets = [[] for _ in range(args.folds)]
+        for u in order:                       # greedy balance by size
+            buckets[int(np.argmin([sum(len(np.where(solv == v)[0]) for v in b) for b in buckets]))].append(u)
+        folds = [np.concatenate([np.where(solv == v)[0] for v in b]) if b else np.array([], int)
+                 for b in buckets]
+        print(f"fold design: solvent-grouped, sizes {[len(f) for f in folds]}")
+    else:
+        folds = np.array_split(rng.permutation(n), args.folds)
+        print(f"fold design: random pair folds, sizes {[len(f) for f in folds]}")
+
+    results = {"n": n, "baseline_mse": base, "fold_design": args.group_by,
+               "seeds": list(args.seeds), "ranks": {}}
     for R in args.ranks:
-        oos, ins = [], []
-        for f in range(args.folds):
-            te = folds[f]; tr = np.concatenate([folds[j] for j in range(args.folds) if j != f])
-            _, mse = fit_kernel(R, tr, p2, A2, p1, A1, T, m)
-            oos.append(mse(te)); ins.append(mse(tr))
-        oos_mse = float(np.mean(oos)); ins_mse = float(np.mean(ins))
+        per_seed_oos, per_seed_ins, fold_spread = [], [], []
+        for sd in args.seeds:
+            oos, ins = [], []
+            for f in range(args.folds):
+                te = folds[f]
+                tr = np.concatenate([folds[j] for j in range(args.folds) if j != f])
+                if len(te) == 0 or len(tr) == 0:
+                    continue
+                _, mse = fit_kernel(R, tr, p2, A2, p1, A1, T, m, seed=sd)
+                oos.append(mse(te)); ins.append(mse(tr))
+            per_seed_oos.append(float(np.mean(oos))); per_seed_ins.append(float(np.mean(ins)))
+            fold_spread.append(float(np.std(oos)))
+        oos_mse = float(np.mean(per_seed_oos)); ins_mse = float(np.mean(per_seed_ins))
+        sd_seed = float(np.std(per_seed_oos))
         results["ranks"][R] = {
             "K": 52 * R, "heldout_mse": oos_mse, "train_mse": ins_mse,
+            "heldout_mse_per_seed": per_seed_oos,
+            "heldout_sd_over_seeds": sd_seed,
+            "heldout_sd_over_folds": float(np.mean(fold_spread)),
             "heldout_reduction_vs_fixed": float(base - oos_mse),
             "heldout_reduction_pct": float(100 * (base - oos_mse) / base),
+            "reduction_pct_per_seed": [float(100 * (base - v) / base) for v in per_seed_oos],
         }
-        print(f"  R={R} (K={52*R}): held-out MSE {oos_mse:.3f} (train {ins_mse:.3f})  "
-              f"=> held-out B_clos reduction {100*(base-oos_mse)/base:+.1f}%")
+        print(f"  R={R} (K={52*R}): held-out MSE {oos_mse:.3f} "
+              f"+/- {sd_seed:.3f} over seeds (+/- {np.mean(fold_spread):.3f} over folds)"
+              f"  => reduction {100*(base-oos_mse)/base:+.1f}% "
+              f"[per seed: {', '.join(f'{100*(base-v)/base:+.0f}%' for v in per_seed_oos)}]")
 
     # fit the best small rank on ALL data for the deformation map + A3
     bestR = args.ranks[0]

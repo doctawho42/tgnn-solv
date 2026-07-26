@@ -558,20 +558,30 @@ matched IDAC is essentially single-method ($158/165$ gas chromatography), so a w
 large enough to close the ${\approx}0.23\,(\ln\gamma)^2$ margin is implausible. The convention, leakage,
 $\gamma$-stratification, and leverage stress-tests are in App.~\ref{sec:si-tables}.
 
-\paragraph{The closure defect is low-rank and correctable.} That $\Bclos$ dominates locates the
-ceiling in the map; it does not say the map is \emph{fixably} wrong. It is. A small
-structure-preserving residual on the fixed COSMO-SAC exchange-energy kernel
-($\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric, zero-initialised), fit on
-the \emph{reference} VT-2005 profiles, removes $49\%$ of the total reference-input error out-of-sample (five-fold
-cross-validated, activity MSE $1.47\!\to\!0.75$---most of the reducible closure component above
-the $\Binsuf$ floor) at \emph{rank one} ($52$ parameters; rank~2 adds
-nothing, rank~3 over-fits). At $52$ parameters against $n{=}60$ this is provisional, and we have not
-separated the kernel correction from a per-solvent offset. So $\Bclos$ is not diffuse model error but
-a low-dimensional, correctable defect of the map---addressable with a handful of parameters on the
-closure, whereas the same error is only made worse by supplying the inputs truthfully
-(\S\ref{sec:paradox}) and untouched by an output residual (\S\ref{sec:gateb}); whether an end-to-end
-model realises the gain remains open, because the experiment that would settle it exceeds the compute
-available to us.
+\paragraph{Whether the closure defect is correctable: within a solvent, not across one.} That
+$\Bclos$ dominates locates the ceiling in the map; it does not say the map is \emph{fixably} wrong.
+We tested this with a small structure-preserving residual on the fixed COSMO-SAC exchange-energy
+kernel ($\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric,
+zero-initialised), fit on the \emph{reference} VT-2005 profiles and cross-validated five-fold over
+five fit seeds. The answer depends entirely on the fold design, and only one of the two designs is
+free of leakage.
+
+With random folds over the $60$ matched pairs, a rank-one residual ($52$ parameters) removes
+$46\pm6\%$ of the reference-input error out of sample (activity MSE $1.47\!\to\!0.79$). But the same
+solvent then appears in training and test, and the closure error is predominantly a
+between-solvent systematic. Under folds grouped so that no solvent is shared, the reduction is
+$-5\pm16\%$ at rank one and $+2\pm15\%$ at rank two: the correction does not transfer to an unseen
+solvent. The apparent $46\%$ is a within-solvent effect.
+
+Two further cautions apply to both designs. The spread across cross-validation folds
+($\mathrm{sd}\approx0.5$ in MSE) is an order of magnitude larger than the gaps between ranks
+($\le0.06$), so these data do not resolve a rank ordering, and we make no claim of one. And the $60$
+pairs form a single connected component under shared solute and solvent identity, so a
+molecule-disjoint holdout does not exist on this set at any fold design.
+
+$\Bclos$ is therefore a defect that a handful of kernel parameters can absorb \emph{within} a
+solvent, and that we have not shown to be correctable across solvents. That is weaker than a
+general repair, and it is the honest reading of what $n{=}60$ single-method pairs support.
 
 \paragraph{Where the closure fails, chemically.} The residual error is not an implementation
 artifact: our differentiable layer reproduces the NIST benchmark COSMO-SAC-2002~\cite{bell2020cosmosac}
@@ -825,9 +835,11 @@ more-physics-worse effect. (iv)~Absolute scaffold
 accuracy is encoder-bound but well \emph{above} the inter-lab noise floor ($0.15$--$0.31$ in $\lnx$;
 \S\ref{sec:supporting}), so label noise does not explain the ceiling. (v)~The compensating-surrogate
 result is three-seed mean$\pm$sd ($n{=}44$; \S\ref{sec:surrogate}); its load-bearing content is the
-\emph{sign} and low-rank, transferable \emph{structure}, with the magnitudes
+\emph{sign} and the presence of a transferable shared direction, with the magnitudes
 ($51\pm2\%$/$72\pm1\%$/$4.1\pm0.5\times$) reported but not stable across revisions of the analysis
-pipeline.
+pipeline. The top-two share exceeds a smoothness-matched null by about $1.8\times$, not the
+$4.8\times$ an isotropic null would suggest, and the isolation drift has not itself been re-tested
+against that null.
 (vi)~The probe result on the unconstrained control is bounded by the same
 reference scarcity. Its crystal-term and temperature tests rest on $13$ held-out solutes, and that
 sample cannot be enlarged: the molecules carrying both a measured crystal and a measured activity
