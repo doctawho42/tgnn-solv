@@ -166,10 +166,14 @@ complete taxonomy and weights are in the SI (\S\ref{sec:si-methods}).
 \subsection{The DirectGNN control}
 DirectGNN shares the encoder, interaction, readout, and pair representation, adds
 a thermometer temperature encoding, and maps directly to \lnx\ with a
-bin-weighted Huber loss and no heads, closure, or solver. Sharing everything but
-the thermodynamic bottleneck, the TGNNSolv$-$DirectGNN gap is attributable to the
-bottleneck rather than to representation; DirectGNN is the reference for every
-asymptotic physics penalty comparison in \S\ref{sec:results}.
+bin-weighted Huber loss and no heads, closure, or solver. The two arms therefore share
+their representation but not their inputs or their tuning: the control receives an
+explicit temperature encoding the physics arm does not, seeing $T$ instead through
+$\Phi(T)$ and the closure, and the optimisation settings were tuned per arm and differ.
+The TGNNSolv$-$DirectGNN gap is accordingly a comparison of two separately tuned
+pipelines that differ in the thermodynamic bottleneck, not an isolation of the
+bottleneck; DirectGNN is the reference for every asymptotic physics penalty comparison
+in \S\ref{sec:results}, and those comparisons carry that caveat.
 
 \subsection{Reproducibility}
 Controlled comparisons are run at three seeds and reported as mean$\pm$sd on a

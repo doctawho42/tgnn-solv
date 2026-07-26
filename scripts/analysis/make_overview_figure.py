@@ -9,8 +9,10 @@ evidence belongs to the Discussion.
   (a) the pipeline and the paradox -- a learned encoder produces a charge-density profile that
       a fixed thermodynamic model turns into a solubility; substituting an external reference
       profile for the learned one makes the prediction worse.
-  (b) where the error sits -- that error splits into a misspecified-model part and an
-      insufficient-input part, and the model part is the larger.
+  (b) where the error sits -- one-sided bounds on the misspecified-model and
+      insufficient-input parts in the deployed residual-only convention. Bounds, never a
+      point split: the conditional variance is unestimable, so B_insuff is only ever an
+      upper bound and B_closure only lower-bounded.
 
     MPLBACKEND=Agg python scripts/analysis/make_overview_figure.py
 """
@@ -89,19 +91,27 @@ axa.text(0.06, 0.10, "Either the fixed model is wrong, or the learned profile\n"
 
 # ---------------- (b) the split ----------------
 bx, by, bw, bh = 0.09, 0.46, 0.82, 0.14
-frac = 0.72
-axb.add_patch(FancyBboxPatch((bx, by), bw * frac, bh, boxstyle="square,pad=0",
+# Deployed residual-only convention, the one the text says carries the claim: an upper bound
+# on the input term and the lower bound it implies for the model term. Drawn as bounds with
+# open ends, never as a point split.
+lo, hi = 0.42, 0.58          # B_insuff <= 0.62 and B_closure >= 0.85 of MSE 1.47
+axb.add_patch(FancyBboxPatch((bx, by), bw * lo, bh, boxstyle="square,pad=0",
+                             fc="#DDE7E3", ec=INK, lw=0.9, zorder=3))
+axb.add_patch(FancyBboxPatch((bx + bw * lo, by), bw * hi, bh, boxstyle="square,pad=0",
                              fc=SALMON, ec=INK, lw=0.9, zorder=3))
-axb.add_patch(FancyBboxPatch((bx + bw * frac, by), bw * (1 - frac), bh,
-                             boxstyle="square,pad=0", fc="#DDE7E3", ec=INK, lw=0.9, zorder=3))
-axb.text(bx + bw * frac / 2, by + bh / 2, "the model is\nmisspecified", ha="center",
+axb.text(bx + bw * lo / 2, by + bh / 2, "inputs\ninsufficient", ha="center",
+         va="center", fontsize=7.2, color="#5F6B66", zorder=4)
+axb.text(bx + bw * lo + bw * hi / 2, by + bh / 2, "the model is\nmisspecified", ha="center",
          va="center", fontsize=8.4, color=INK, zorder=4)
-axb.text(bx + bw * frac + bw * (1 - frac) / 2, by + bh / 2, "inputs\ninsufficient",
-         ha="center", va="center", fontsize=7.2, color="#5F6B66", zorder=4)
-axb.text(bx, by + bh + 0.06, "error when the reference profile is used",
-         ha="left", va="bottom", fontsize=8.6, color=GRAY)
-axb.text(0.50, 0.235, "The misspecification term is the larger.", ha="center", va="center",
-         fontsize=9.2, color=HURT)
+axb.text(bx, by + bh + 0.10, "error when the reference profile is used", ha="left",
+         va="bottom", fontsize=8.6, color=GRAY)
+axb.text(bx + bw * lo, by + bh + 0.045, r"$\leq$", ha="right", va="bottom",
+         fontsize=8.4, color="#5F6B66")
+axb.text(bx + bw * lo, by + bh + 0.045, r"  $\geq$", ha="left", va="bottom",
+         fontsize=8.4, color=HURT)
+axb.text(0.50, 0.235, "The bounds do not overlap: on this set the\n"
+                      "misspecification term is the larger.", ha="center", va="center",
+         fontsize=8.6, color=HURT)
 axb.text(0.50, 0.115, "An external reference for the profile is what\nmakes the two "
                       "terms separately measurable.", ha="center", va="center",
          fontsize=8.4, color=GRAY)

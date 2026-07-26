@@ -59,7 +59,7 @@ ax.add_patch(FancyArrowPatch((0.52, 0.37), (0.52, 0.585), arrowstyle="-|>",
                              color=HURT, lw=1.4, mutation_scale=9, zorder=2))
 ax.text(0.60, 0.285, "prediction gets worse", ha="left", va="center",
         fontsize=7.2, color=HURT)
-ax.text(0.5, 0.055, "The fixed model, not the input, sets the ceiling.",
+ax.text(0.5, 0.055, "The fixed model, not the input, appears to set the ceiling.",
         ha="center", va="center", fontsize=7.0, color=INK)
 
 for ext in ("pdf", "png"):
