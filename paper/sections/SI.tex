@@ -426,7 +426,7 @@ but sharpens its scope:
   $1.27$ vs $0.53$) is a full-COSMO-SAC-only result. What separates under the deployed
   convention is the leakage-immune bound
   $\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{LOTV}}\approx0.85>0.62$, which carries
-  the headline claim, together with the combinatorial Tier~2 fact.
+  the headline claim, together with the combinatorial argument above.
   \item \emph{Confound.} The closure error is predominantly a \emph{between-solvent}
   systematic bias ($\sim$64\% of total error); within the largest single-solvent stratum
   (pyridine, $n{=}20$) the closure is nearly correct (stratum MSE $0.07$). Because
@@ -663,7 +663,7 @@ All three studies use the same current-split DirectGNN checkpoints (seeds $42/43
 $1.749/1.674/1.684$) whose manifests pin the train/val/test SHA-256 to the split on disk. Every
 figure is CPU-computed; no number here required a GPU.
 
-\paragraph{Crystal-term decodability (Study 1a).} Probe fitted on $152$ solutes / $14{,}348$ rows,
+\paragraph{Crystal-term decodability.} Probe fitted on $152$ solutes / $14{,}348$ rows,
 scored on $13$ held-out solutes / $527$ rows, solute overlap zero. $\Phi^{*}$ is $92.2\%$
 between-solute variance, so the effective $n$ is $13$ clusters.
 
@@ -678,7 +678,7 @@ seed & $R^{2}$(model) & perm.\ $p$ & jackknife range & sign flips & top-3 levera
 44 & $+0.027$ & $0.177$ & $[-0.253,\,+0.237]$ & $6/13$ & $57.2\%$ \\
 \bottomrule
 \end{tabular}
-\caption{Study 1a: crystal-term decodability per seed, with the permutation null, the drop-one-solute jackknife and the leverage carried by the worst solutes.}
+\caption{Crystal-term decodability per seed, with the permutation null, the drop-one-solute jackknife and the leverage carried by the worst solutes.}
 \end{table*}
 
 \noindent Controls: positive---model's own prediction $R^{2}=0.980$, temperature $R^{2}=0.9997$;
@@ -696,7 +696,7 @@ constant---and on two of three under set A. The subtrahend is an unregistered an
 worth more than the effect; we report $R^{2}(\text{raw})$ as a level beside $R^{2}$(model) and
 never as a difference.
 
-\paragraph{Temperature structure (Study 2).} Slopes are fitted at fixed (solute, solvent); a slope
+\paragraph{Temperature structure.} Slopes are fitted at fixed (solute, solvent); a slope
 pooled across solvents would confound activity differences with temperature. Ceiling, measured on
 the data before any model: $r=+0.239$ on train ($1353$ pairs / $151$ solutes) and $-0.125$ held
 out ($66$ pairs / $13$ solutes, permutation $p=0.581$).
@@ -713,10 +713,10 @@ median $|$model $-$ empirical$|$ slope & $1329$ & $1088$ & $1007$ \\
 curvature in $1/T$ (data: $6.8\times10^{5}$) & $2.0\times10^{6}$ & $2.1\times10^{6}$ & $2.3\times10^{6}$ \\
 \bottomrule
 \end{tabular}
-\caption{Study 2: the model's temperature response against the empirical slope and against $-\Delta H_{\text{fus}}/R$, with the curvature of both in $1/T$.}
+\caption{The model's temperature response against the empirical slope and against $-\Delta H_{\text{fus}}/R$, with the curvature of both in $1/T$.}
 \end{table*}
 
-\paragraph{Organisation of the representation (Study 4).} Excess over a permutation null matched
+\paragraph{Organisation of the representation.} Excess over a permutation null matched
 to the factor's level, on the full test set.
 
 \begin{table*}[t]
@@ -735,7 +735,7 @@ TPSA (solute) & $+0.060$ & $+0.061$ & $+0.042$ & solute \\
 MolWt (solute) & $+0.032$ & $+0.013$ & $+0.018$ & solute \\
 \bottomrule
 \end{tabular}
-\caption{Study 4: share of representation variance per organising factor, as an excess over a permutation null matched to the level at which that factor varies.}
+\caption{Share of representation variance per organising factor, as an excess over a permutation null matched to the level at which that factor varies.}
 \end{table*}
 
 \noindent As a share of the solute-identity ceiling: scaffold $100.3/99.9/99.8\%$, $\log P$
@@ -744,7 +744,7 @@ $13.6/8.2/4.7\%$, TPSA $9.0/10.3/7.1\%$, MolWt $5.3/2.3/3.1\%$.
 On the $331$ rows carrying a measured $\Phi^{*}$, $\Phi^{*}$ accounts for $18.3/42.5/18.0\%$ of
 that subset's own solute-identity ceiling. This does not contradict the held-out null above.
 $\Phi^{*}$ is a solute-level quantity and the representation is organised by solute identity, so
-any solute-level variable shares variance with it in sample; Study 1a asks the different and
+any solute-level variable shares variance with it in sample; the decodability probe above asks the different and
 sharper question of whether the mapping transfers to solutes the probe never saw. In sample the
 organisation is partly $\Phi^{*}$-aligned; out of sample that alignment does not carry.
 
