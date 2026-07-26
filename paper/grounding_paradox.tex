@@ -258,7 +258,7 @@ The results below are stated for a general \emph{composed predictor} $\hat y=g(h
 in which a fixed, non-fitted map $g$---the \emph{closure}---consumes a learned physical
 intermediate $z=h(x)$, and are compared against a matched free predictor that shares the
 encoder but drops $g$. Solubility, with $g$ the COSMO-SAC closure and $z$ the
-$\sigma$-profile, is one instance; \S\ref{sec:pka} gives a second (pKa through a fixed
+$\sigma$-profile, is one instance; App.~\ref{sec:pka} gives a second (pKa through a fixed
 Hammett closure), and App.~\ref{sec:dial} a controlled synthetic family. Nothing in
 Lemmas~\ref{prop:ident}--\ref{prop:decomp}, Theorem~\ref{thm:gap}, or
 Proposition~\ref{prop:tax} is specific to COSMO-SAC. Two quantities organise the section:
@@ -378,7 +378,7 @@ Table~\ref{tab:decomp} is a one-sided \emph{bound} and $\Bclos$ is only lower-bo
 one-sidedness above is a consequence of this ratio and of the design's clustering
 (\S\ref{sec:measure}), not a modelling choice. Where the latent is
 low-dimensional the same instrument point-identifies: the pKa Hammett constant is a \emph{scalar}
-with $n{=}1004$ ($\dim(\zstar)/n\approx10^{-3}$), so $\Binsuf$ is a point estimate (\S\ref{sec:pka}),
+with $n{=}1004$ ($\dim(\zstar)/n\approx10^{-3}$), so $\Binsuf$ is a point estimate (App.~\ref{sec:pka}),
 not a bound. The decomposition is identifiable exactly where $\dim(\zstar)/n$ is small---which is why
 the pKa domain, not the solubility case, is where the split is point-identified rather than bounded.
 
@@ -393,7 +393,7 @@ would certify $\Bclos>0$ (Theorem~\ref{thm:gap}, App.~\ref{sec:si-proofs}). But 
 doubtful (the encoder is transfer-limited: a linear probe drops from train $R^2\approx0.76$ to test
 $R^2\approx0.45$) and A2 is unverifiable and physically dubious; when A2 fails, $\Gamma>0$ conflates
 closure misspecification with input insufficiency---a well-specified closure with a lossy latent gives
-$\Bclos=0$ yet $\Gamma>0$ (App.~\ref{sec:dial}, and the pKa ortho sweep of \S\ref{sec:pka}). We therefore
+$\Bclos=0$ yet $\Gamma>0$ (App.~\ref{sec:dial}, and the pKa ortho sweep of App.~\ref{sec:pka}). We therefore
 read $\Gamma$ as corroborating \emph{evidence} and base the model-dominance conclusion on the
 decomposition, which needs neither assumption: \emph{the decomposition is the instrument; $\Gamma$ is
 the inexpensive indicator that motivates it}.
@@ -439,7 +439,7 @@ the observable effect that makes the failure visible, but does not by itself car
 standard higher-fidelity closure (COSMO-SAC-2010/dsp) moves the ceiling we could not establish on
 representative data (\S\ref{sec:measure}). The remaining sections---the synthetic
 sweep (App.~\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa closure
-(\S\ref{sec:pka})---stress-test and generalize the account, with further diagnostics in the ESI.
+(App.~\ref{sec:pka})---stress-test and generalize the account, with further diagnostics in the ESI.
 
 
 \subsection{The grounding paradox}
@@ -501,7 +501,7 @@ externally-referenced decomposition of \S\ref{sec:decomp} acts as an \emph{instr
 whether a fixed closure's ceiling sits in the map or in its inputs. We apply it to the $n{=}60$
 matchable activity pairs (298\,K, infinite dilution), where $\dim(\zstar)/n\approx102/60$ leaves the
 split behind one-sided bounds---a bounded demonstration, not a certificate. Its point-identified
-counterpart is the scalar-latent pKa domain (\S\ref{sec:pka}), where the same instrument resolves the
+counterpart is the scalar-latent pKa domain (App.~\ref{sec:pka}), where the same instrument resolves the
 split and recovers the a-priori channel assignment (there, insufficiency)---evidence the instrument
 works, not a re-confirmation of this verdict. Here $\zstar$ is
 the reference concatenated solute/solvent $\sigma$-profiles and $m$ the experimental $\lngi$;
@@ -792,8 +792,6 @@ map can fix reliability but not resolution. Recalibration improves calibration
 without improving accuracy, which is what we expect if the closure, rather than the
 estimate, is the binding constraint.
 
-\input{sections/pka-domain}
-
 \section{Discussion}
 \label{sec:discussion}
 The result is a cautionary measurement for physics-informed modeling: grounding a
@@ -818,7 +816,7 @@ law-of-total-variance identity, and the sign of grounding's effect follows the m
 is not. What is new is their combination into a usable measurement. Because a learned physical latent
 admits an \emph{external oracle}, the two error terms separate on a \emph{fixed} operator with no model
 fit, and the resulting sign rule can be tested \emph{a priori} and \emph{bidirectionally}; the pKa domain
-supplies exactly that test as a certified, in-distribution sign-flip (\S\ref{sec:pka}). This
+supplies exactly that test as a certified, in-distribution sign-flip (App.~\ref{sec:pka}). This
 oracle-on-a-fixed-operator affordance is what the concept-leakage literature lacks
 \cite{parisini2025,espinosa2025leakage}, where the intermediate has no ground truth and leakage is inferred
 only indirectly. The solubility results---closure-dominance (\S\ref{sec:measure}) and the compensating
@@ -852,7 +850,7 @@ sign the bias term alone would predict. The variance benefit is largest at
 small $n$ and vanishes as data accumulate or as the black box nears the aleatoric floor, whereas
 $\Delta_\infty$ is set by the closure; a prior is therefore predicted to hurt precisely in the
 mature-data, low-noise, well-covered regime. The synthetic sweep (App.~\ref{sec:dial}) and the pKa closure
-(\S\ref{sec:pka}) exercise the fidelity and sufficiency behaviour directly. Whether grounding helps is
+(App.~\ref{sec:pka}) exercise the fidelity and sufficiency behaviour directly. Whether grounding helps is
 shaped by \emph{two} axes---closure fidelity and how the latent is trained (supervised vs.\
 end-to-end); characterising that plane in full, and sweeping each axis directly on real systems, is deferred
 to future work.
