@@ -667,7 +667,8 @@ figure is CPU-computed; no number here required a GPU.
 scored on $13$ held-out solutes / $527$ rows, solute overlap zero. $\Phi^{*}$ is $92.2\%$
 between-solute variance, so the effective $n$ is $13$ clusters.
 
-\begin{center}\small
+\begin{table*}[t]
+\centering\footnotesize
 \begin{tabular}{lccccc}
 \toprule
 seed & $R^{2}$(model) & perm.\ $p$ & jackknife range & sign flips & top-3 leverage \\
@@ -677,7 +678,8 @@ seed & $R^{2}$(model) & perm.\ $p$ & jackknife range & sign flips & top-3 levera
 44 & $+0.027$ & $0.177$ & $[-0.253,\,+0.237]$ & $6/13$ & $57.2\%$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{Study 1a: crystal-term decodability per seed, with the permutation null, the drop-one-solute jackknife and the leverage carried by the worst solutes.}
+\end{table*}
 
 \noindent Controls: positive---model's own prediction $R^{2}=0.980$, temperature $R^{2}=0.9997$;
 negative---random target $-0.0006$, molecule-blind constant profile $-0.015$, raw RDKit
@@ -699,7 +701,8 @@ pooled across solvents would confound activity differences with temperature. Cei
 the data before any model: $r=+0.239$ on train ($1353$ pairs / $151$ solutes) and $-0.125$ held
 out ($66$ pairs / $13$ solutes, permutation $p=0.581$).
 
-\begin{center}\small
+\begin{table*}[t]
+\centering\footnotesize
 \begin{tabular}{lccc}
 \toprule
  & seed 42 & seed 43 & seed 44 \\
@@ -710,12 +713,14 @@ median $|$model $-$ empirical$|$ slope & $1329$ & $1088$ & $1007$ \\
 curvature in $1/T$ (data: $6.8\times10^{5}$) & $2.0\times10^{6}$ & $2.1\times10^{6}$ & $2.3\times10^{6}$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{Study 2: the model's temperature response against the empirical slope and against $-\Delta H_{\text{fus}}/R$, with the curvature of both in $1/T$.}
+\end{table*}
 
 \paragraph{Organisation of the representation (Study 4).} Excess over a permutation null matched
 to the factor's level, on the full test set.
 
-\begin{center}\small
+\begin{table*}[t]
+\centering\footnotesize
 \begin{tabular}{lcccl}
 \toprule
 factor & seed 42 & seed 43 & seed 44 & null level \\
@@ -730,7 +735,8 @@ TPSA (solute) & $+0.060$ & $+0.061$ & $+0.042$ & solute \\
 MolWt (solute) & $+0.032$ & $+0.013$ & $+0.018$ & solute \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{Study 4: share of representation variance per organising factor, as an excess over a permutation null matched to the level at which that factor varies.}
+\end{table*}
 
 \noindent As a share of the solute-identity ceiling: scaffold $100.3/99.9/99.8\%$, $\log P$
 $13.6/8.2/4.7\%$, TPSA $9.0/10.3/7.1\%$, MolWt $5.3/2.3/3.1\%$.
