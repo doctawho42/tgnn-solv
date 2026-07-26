@@ -248,7 +248,7 @@ in which a fixed, non-fitted map $g$---the \emph{closure}---consumes a learned p
 intermediate $z=h(x)$, and are compared against a matched free predictor that shares the
 encoder but drops $g$. Solubility, with $g$ the COSMO-SAC closure and $z$ the
 $\sigma$-profile, is one instance; \S\ref{sec:pka} gives a second (pKa through a fixed
-Hammett closure), and \S\ref{sec:dial} a controlled synthetic family. Nothing in
+Hammett closure), and App.~\ref{sec:dial} a controlled synthetic family. Nothing in
 Lemmas~\ref{prop:ident}--\ref{prop:decomp}, Theorem~\ref{thm:gap}, or
 Proposition~\ref{prop:tax} is specific to COSMO-SAC. Two quantities organise the section:
 the closure/insufficiency split $B=\Bclos+\Binsuf$, which is the assumption-light
@@ -381,7 +381,7 @@ would certify $\Bclos>0$ (Theorem~\ref{thm:gap}, App.~\ref{sec:si-proofs}). But 
 doubtful (the encoder is transfer-limited: a linear probe drops from train $R^2\approx0.76$ to test
 $R^2\approx0.45$) and A2 is unverifiable and physically dubious; when A2 fails, $\Gamma>0$ conflates
 closure misspecification with input insufficiency---a well-specified closure with a lossy latent gives
-$\Bclos=0$ yet $\Gamma>0$ (\S\ref{sec:dial}, and the pKa ortho sweep of \S\ref{sec:pka}). We therefore
+$\Bclos=0$ yet $\Gamma>0$ (App.~\ref{sec:dial}, and the pKa ortho sweep of \S\ref{sec:pka}). We therefore
 read $\Gamma$ as corroborating \emph{evidence} and base the model-dominance conclusion on the
 decomposition, which needs neither assumption: \emph{the decomposition is the instrument; $\Gamma$ is
 the inexpensive indicator that motivates it}.
@@ -426,7 +426,7 @@ ceiling in the low-fidelity closure rather than its inputs. The grounding parado
 the observable effect that makes the failure visible, but does not by itself carry the attribution; whether a
 standard higher-fidelity closure (COSMO-SAC-2010/dsp) moves the ceiling we could not establish on
 representative data (\S\ref{sec:measure}). The remaining sections---the synthetic
-sweep (\S\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa closure
+sweep (App.~\ref{sec:dial}), the output-residual control (\S\ref{sec:gateb}), and the pKa closure
 (\S\ref{sec:pka})---stress-test and generalize the account, with further diagnostics in the ESI.
 
 
@@ -674,7 +674,6 @@ in the closure.
 
 \input{sections/compensation-surrogate}
 
-\input{sections/synthetic-dial}
 
 \begin{figure}[t]
 \centering
@@ -766,7 +765,7 @@ estimated propensity outperforms the known-true one \cite{hirano2003}, sharpest 
 sign the bias term alone would predict. The variance benefit is largest at
 small $n$ and vanishes as data accumulate or as the black box nears the aleatoric floor, whereas
 $\Delta_\infty$ is set by the closure; a prior is therefore predicted to hurt precisely in the
-mature-data, low-noise, well-covered regime. The synthetic sweep (\S\ref{sec:dial}) and the pKa closure
+mature-data, low-noise, well-covered regime. The synthetic sweep (App.~\ref{sec:dial}) and the pKa closure
 (\S\ref{sec:pka}) exercise the fidelity and sufficiency behaviour directly. Whether grounding helps is
 shaped by \emph{two} axes---closure fidelity and how the latent is trained (supervised vs.\
 end-to-end); characterising that plane in full, and sweeping each axis directly on real systems, is deferred
@@ -867,24 +866,15 @@ N.~L. Polomoshnov: \pending[CRediT roles, e.g.\ Conceptualization, Methodology, 
 \noindent There are no conflicts to declare.
 
 \section*{Data availability}
-All code and the intermediate result artifacts needed to regenerate every figure, table, and
-reported number are available at \pending[repository URL]\ (commit \pending[hash]), released under
-\pending[license]; the large model checkpoints and full per-arm prediction files are deposited at
-\pending[Zenodo DOI]. Every data source is public: the solubility corpus is BigSolDB~2.0
-\cite{krasnov2025bigsoldb}, the reference $\sigma$-profiles are the VT-2005 database, the experimental
-infinite-dilution activity coefficients are compiled from ThermoML, and the second-domain pKa data
-are the OPERA compilation \cite{mansouri2019opera}. The repository documents the exact command that
-reproduces each figure, table, and number from these sources, including the Bemis--Murcko scaffold
-split, the controlled grounded-vs-free comparison, the closure--insufficiency decomposition over the
-$n{=}60$ VT-2005-matchable pairs, the pKa second-domain measurement, and the synthetic fidelity sweep.
-The closure-fidelity contrast (\S\ref{sec:measure}) reports the \emph{fair} full-2002 error
-($1.757$) from our in-house NIST-validated COSMO-SAC-2002 layer, each closure evaluated on its prescribed
-native averaging; \texttt{run\_fidelity\_lever\_fair2002.py} regenerates both the corner
-($1.757\!\to\!0.765$) and the representative ($n{=}477$, $1.911\!\to\!1.855$) contrasts and asserts they
-reproduce these values (with \texttt{cCOSMO} cross-checks), while the earlier deposited \texttt{cCOSMO}
-flip artifact additionally carries the restricted single-channel 2002 diagnostic ($1.263$). Two artifacts carry disclosed caveats (\S\ref{sec:si-repro}): the seed-$44$ oracle
-per-row file is truncated (the run-time three-seed aggregates are unaffected), and the three-seed
-surrogate run's per-run split provenance was not logged (its matched set is the committed $n{=}44$).
+All code and the intermediate artifacts needed to regenerate every figure, table and reported number
+are available at \pending[repository URL]\ (commit \pending[hash]) under \pending[license]; the model
+checkpoints and full per-arm prediction files are deposited at \pending[Zenodo DOI]. Every data source
+is public: the solubility corpus is BigSolDB~2.0 \cite{krasnov2025bigsoldb}, the reference
+$\sigma$-profiles are the VT-2005 database, the infinite-dilution activity coefficients are compiled
+from ThermoML, and the second-domain pKa data are the OPERA compilation \cite{mansouri2019opera}. The
+repository gives the command that reproduces each number from these sources. Two deposited artifacts
+carry disclosed caveats, recorded in App.~\ref{sec:si-repro}: the seed-$44$ oracle per-row file is
+truncated, and the three-seed surrogate run's per-run split provenance was not logged.
 
 \begin{acknowledgement}
 This work was supported by \pending[funder name(s) and grant/award number(s)].
