@@ -8,9 +8,19 @@ directly, subsampling the training set \emph{by solute} at fractions $0.05$--$1.
 the physics-grounded model and DirectGNN on the identical subsample, evaluated on the fixed scaffold
 test (Table~\ref{tab:data-eff}, seed 42). The physics arm is \emph{worse at every fraction}, and
 against the hypothesis the gap is \emph{smallest} at the least data ($\Delta\mathrm{MAE}=+0.08$ at
-$5\%$) and \emph{grows} with more ($+1.0$ at full); its $R^2$ is negative throughout. The sweep is
-single-seed, the physics-arm MAEs are non-monotone, and the light per-fraction budget
-leaves the physics arm more under-converged than the control; the result is therefore \emph{consistent
+$5\%$); its $R^2$ is negative throughout. We do not read the growth of the gap with data
+($+1.0$ at full) as a data-scale effect, because the sweep's endpoint does not reproduce the
+headline comparison: its physics arm carries the NRTL closure, and at fraction $1.0$ it gives
+$2.98$ against $1.97$ (control) on the same scaffold test where the three-seed runs of
+Table~\ref{tab:si-arms} give $1.80$ against $1.70$---$\Delta\mathrm{MAE}$ an order of magnitude
+apart ($+1.01$ here, $+0.10$ there). Both arms are worse here than their headline
+counterparts and the physics arm much the more so ($+1.18$ against $+0.27$ MAE), so the trend
+measures how the light per-fraction budget interacts with training-set size at least as much as how
+the physics prior does. The sweep is also
+single-seed, its physics-arm MAEs are non-monotone, and its two arms differ from each other in
+capacity and in the per-arm optimisation settings of \S\ref{sec:framework}, and both are wider
+than the headline arms (hidden width $256$ and $128$ here, $64$ there). What survives is the level and not the trend---the physics arm is
+worse at every fraction under a matched light budget---which is \emph{consistent
 with} the sign rule (Prop.~\ref{prop:tax}) rather than a sharp confirmation of it. The one inverting metric is
 top-1 solvent ranking ($0.42$ vs $0.23$ at $5\%$; the ranking-versus-accuracy split of
 \S\ref{sec:supporting}), which does not translate into lower error. This is the last regime in which a

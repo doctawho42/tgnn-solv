@@ -12,7 +12,12 @@ compilation \cite{mansouri2019opera}---the canonical full set under a uniform, c
 quality filter that drops pre-ionized microstates (App.~\ref{sec:si-pka})---this yields a
 \emph{measured} fidelity sweep: the clean meta/para series ($n{=}158$) is well specified (RMSE $0.55$,
 $\Bclos$ below the insufficiency floor), while the ortho/heteroaromatic regime ($n{=}846$) degrades to
-RMSE $2.26$, input-insufficiency dominated---the near-exact-to-degraded transition. The decisive test is the
+RMSE $2.26$, of which a within-scaffold estimator places at most $4.5$ of the $5.1$ total in input
+insufficiency and hence at least $0.6$ in the closure. That estimator is an out-of-fold residual, so
+both figures are one-sided, and the a-priori
+channel assignment---ortho information the tabulated constant lacks---is consistent with the
+measurement rather than certified by it (App.~\ref{sec:si-pka}); the sweep is the
+near-exact-to-degraded transition. The decisive test is the
 same oracle swap as on solubility---the learned $\hat\sigma$ replaced by the tabulated $\sigma^\star$
 in the same closure, the sign of the change recorded per stratum---measured \emph{in-distribution} across
 $K{=}20$ within-scaffold splits. It \emph{flips}. On the clean meta/para
@@ -21,15 +26,19 @@ in $19/20$ splits and in three of the four reaction series): the ceiling there i
 closure---a real-data grounding-helps corner and an internal positive control. On the ortho pole the
 same swap \emph{hurts} (learned $0.83$ vs oracle $1.62$; oracle worse in $\mathbf{20/20}$ splits and in
 all four series, gap $90\%$ CI $[{+}0.57,{+}0.95]$): the freely learned $\hat\sigma$ absorbs the ortho/steric
-information the tabulated constant lacks---the compensating-surrogate mechanism of \S\ref{sec:surrogate}
-on a second closure. The clustering unit is the Hammett reaction series, of which only $G{=}4$ exist,
-so the accompanying bootstrap resolves nothing finer than series-level sign agreement and is quoted
-as such (App.~\ref{sec:si-pka}).
+information the tabulated constant lacks. What reverses here is the sign of the grounding penalty; it
+reverses through the insufficiency channel---consistent with the one-sided bound above, though not
+isolated by it---rather than through the closure-error cancellation of \S\ref{sec:surrogate}: a second
+instance of the sign rule, not of that mechanism.
+The clustering unit is the Hammett reaction series, of which only $G{=}4$ exist,
+so the accompanying bootstrap resolves nothing finer than series-level sign agreement---read as a
+sign test on four units, $p{=}1/16$ on the ortho pole and $p{\approx}0.31$ on the clean one---and is
+quoted as such (App.~\ref{sec:si-pka}).
 
 Both signs obey one \emph{crossover law}---grounding helps a pole iff the learned arm's error there
 exceeds the fidelity-set oracle error---which a competence sweep confirms
 (App.~\ref{sec:si-pka}): the well-specified pole's threshold (${\approx}0.315$) is never beaten by the learned arm, so grounding
-helps at every training budget; the misspecified pole's threshold ($1.62$) is high, so the learned arm
+helps at every training budget; the degraded pole's threshold ($1.62$) is high, so the learned arm
 beats it, and grounding hurts, across the whole interpolation range (down to $12\%$ of the data),
 reverting to helps only under scaffold \emph{extrapolation}, where $\hat\sigma$ breaks ($2.6{\pm}2.0$)
 back above the threshold. The flip is thus a within-distribution, fidelity-driven crossover whose one

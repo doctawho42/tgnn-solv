@@ -6,8 +6,8 @@ figures always reflect the corrected n=60 keystone:
 
   fig_paradox.pdf       6-arm controlled comparison (MAE + R2, mean+/-sd over the
                         3 e5 seeds) from results/e5_sigma_grounding/seed_{42,43,44}/
-                        comparison.json. The sigma-oracle (true-input) arm is salmon.
-  fig_parity.pdf        ln gamma_inf parity on the n=60 matched pairs: the true-
+                        comparison.json. The sigma-oracle (reference-input) arm is salmon.
+  fig_parity.pdf        ln gamma_inf parity on the n=60 matched pairs: the reference-
                         sigma COSMO-SAC closure g(z*) (full convention) vs the
                         diagonal, from results/b_insuff/matched_pairs.csv. (The CSV
                         has no free-head prediction, so only the closure is drawn.)
@@ -17,6 +17,10 @@ figures always reflect the corrected n=60 keystone:
                         B_insuff upper bounds (LOTV / RF / Ridge / kNN), against total
                         MSE. (The convention-specific Jensen constant-offset bound,
                         which inverts under this convention, is reported in the SI.)
+                        Colour convention for the two error terms is shared with
+                        fig_overview panel (b) (make_overview_figure.py), which shows the
+                        same split: SALMON = model misspecification, TEAL = input
+                        insufficiency. Do not invert one without the other.
 
 Does NOT touch fig_dial.pdf (separate synthetic generator) and edits no .tex.
 
@@ -86,7 +90,7 @@ def _save(fig, out_dir: Path, stem: str) -> list[str]:
 def fig_paradox(e5_dir: Path, seeds, out_dir: Path) -> list[str]:
     arms = ["nrtl", "directgnn", "ungrounded", "grounded_a", "grounded_b", "oracle"]
     labels = ["NRTL", "DirectGNN", "ungrounded", "grounded (learn $\\sigma$)",
-              "grounded (+comb.)", "$\\sigma$-oracle (true $\\sigma$)"]
+              "grounded (+comb.)", "$\\sigma$-oracle (reference $\\sigma$)"]
     mae = {a: [] for a in arms}
     r2 = {a: [] for a in arms}
     for s in seeds:
@@ -117,7 +121,10 @@ def fig_paradox(e5_dir: Path, seeds, out_dir: Path) -> list[str]:
         ax.set_xticks(x)
         ax.set_xticklabels(labels, fontsize=8.5, rotation=22, ha="right")
         ax.margins(x=0.02)
-    fig.suptitle("The grounding paradox: true $\\sigma$-profiles give the worst arm "
+    # "reference", not "true": the VT-2005 profiles are quantum chemistry, not experiment
+    # (main text, "The reference is itself imperfect"), and SI Fig. fig:parity's caption
+    # already calls this arm the reference-sigma closure.
+    fig.suptitle("The grounding paradox: reference $\\sigma$-profiles give the worst arm "
                  "(3 seeds, $n{=}5608$)", fontsize=12)
     fig.tight_layout(rect=(0, 0, 1, 0.96))
     return _save(fig, out_dir, "fig_paradox")
@@ -134,7 +141,7 @@ def fig_parity(matched_csv: Path, out_dir: Path) -> list[str]:
     ax.plot([lo, hi], [lo, hi], ls="--", lw=1.2, color=INK, alpha=0.7, zorder=1)
     ax.scatter(m, g, s=42, color=SALMON, edgecolor="white", linewidth=0.5,
                alpha=0.9, zorder=2,
-               label=f"true-$\\sigma$ COSMO-SAC $g(z^\\ast)$  (MSE {mse:.2f})")
+               label=f"reference-$\\sigma$ COSMO-SAC $g(z^\\ast)$  (MSE {mse:.2f})")
     ax.set_xlim(lo, hi)
     ax.set_ylim(lo, hi)
     ax.set_aspect("equal")
@@ -166,11 +173,13 @@ def fig_decomposition(decomp_json: Path, out_dir: Path) -> list[str]:
     # One bar of the total error, split into the two terms it decomposes into: the
     # input-insufficiency share (at most b_lotv) and the model-misspecification share
     # (at least mse - b_lotv). Reading the two as shares of one total is the point.
+    # Colours follow fig_overview panel (b), which draws the same two terms:
+    # TEAL = input insufficiency, SALMON = model misspecification (the fixed closure).
     fig, ax = plt.subplots(figsize=(8.0, 3.1))
     ybar, h = 0.66, 0.26
-    ax.barh(ybar, b_lotv, height=h, left=0.0, color=SALMON,
+    ax.barh(ybar, b_lotv, height=h, left=0.0, color=TEAL,
             edgecolor=INK, linewidth=0.9, zorder=3)
-    ax.barh(ybar, b_clos_lb, height=h, left=b_lotv, color=TEAL,
+    ax.barh(ybar, b_clos_lb, height=h, left=b_lotv, color=SALMON,
             edgecolor=INK, linewidth=0.9, zorder=3)
     ax.text(b_lotv / 2, ybar, f"input insufficiency\n$\\leq {b_lotv:.2f}$",
             ha="center", va="center", fontsize=8.6, color=INK, zorder=4)
@@ -183,12 +192,14 @@ def fig_decomposition(decomp_json: Path, out_dir: Path) -> list[str]:
                 fontsize=8.6, color=INK)
     ax.plot([b_lotv, b_lotv], [ybar - h / 2, 0.34], color=INK, lw=0.9, ls=":", zorder=2)
 
-    # every valid upper bound on the input-insufficiency term lies at or below the split
-    ax.text(0.0, 0.32, "valid upper bounds on the input-insufficiency term:",
+    # Every one of these upper-bounds B_insuff at the population level; the out-of-fold ones
+    # are anti-conservative in finite samples (near-twin leakage), so "valid" is dropped here
+    # and the qualification is carried in the caption and text.
+    ax.text(0.0, 0.32, "upper bounds on the input-insufficiency term:",
             ha="left", va="bottom", fontsize=8.0, color=GRAY)
     for i, (name, val) in enumerate(uppers.items()):
         y = 0.24 - i * 0.070
-        ax.scatter(val, y, s=44, color=SALMON, edgecolor=INK, linewidth=0.6, zorder=4)
+        ax.scatter(val, y, s=44, color=TEAL, edgecolor=INK, linewidth=0.6, zorder=4)
         ax.annotate(f"{name} $= {val:.2f}$", (val, y), xytext=(7, 0),
                     textcoords="offset points", va="center", ha="left",
                     fontsize=7.8, color=INK)

@@ -1,20 +1,30 @@
 % Condensed from a full Results subsection; the tables, nulls and controls are in
 % App.~\ref{sec:si-blackbox}. Artifacts: results/blackbox/RESULT_study{1a,2,4}*.md via
 % scripts/experiments/blackbox_study{1a,2,4}.py on the three checkpoints of \S\ref{sec:paradox}.
+% Within-scaffold measure: results/blackbox/within_scaffold_discriminability.json via
+% scripts/analysis/run_within_scaffold_discriminability.py on the same three checkpoints.
 \paragraph{The unconstrained control does not carry the thermodynamics either.} If the physics arm's
 intermediate is a surrogate, the thermodynamics might still be present implicitly in the control,
 which is free to represent it. It is not. A ridge probe of the $788$-dimensional pair representation,
 fitted on $152$ solutes and scored on $13$ held out, does not recover the measured ideal-solubility
 term: $R^{2}=-0.51/{+}0.11/{+}0.03$ across the three seeds, none significant against a $1000$-draw
 identity-permutation null, while the same probe recovers the model's own prediction at $R^{2}=0.98$
-and temperature at $R^{2}=0.9997$ on the same rows. The permutation null reaches
+on the same rows. The permutation null reaches
 $R^{2}\approx0.32$--$0.38$ at this sample size, so this bounds the effect at $R^{2}\lesssim0.30$
-rather than excluding a weaker one. What the representation is organised by instead is measurable at
-full test size, needing no external reference: scaffold identity accounts for $99.8$--$100.3\%$ of
-what full molecular identity accounts for, in every seed. The representation does not resolve
-molecules that share a Bemis--Murcko scaffold, which is the mechanism of the transfer limitation
-noted in \S\ref{sec:gap}---a test molecule on an unseen scaffold is not a small extrapolation but a
-point off the axis along which the representation is organised. The same measurement separates two
-properties that are easily conflated: temperature is decodable from this vector at $R^{2}=0.9997$
-while occupying $3$--$4\%$ of its variance, so decodability of a quantity is not evidence that a
-representation is organised around it (App.~\ref{sec:si-blackbox}).
+rather than excluding a weaker one. What it is organised by instead is measurable on
+the whole test split, needing no external reference: scaffold identity accounts for
+$99.8$--$100.3\%$ of what full molecular identity accounts for, in every seed. The design pins that
+ratio near one: only $34$ of the $147$ test solutes share a Bemis--Murcko scaffold with another
+($11$ multi-member scaffolds, $8.8\%$ of rows), the raw between-group variance share is
+slightly \emph{lower} for scaffold than for solute in every seed ($0.636$ against $0.639$ at
+seed~42), and the ratio reaches one only through the two size-matched permutation nulls ($0.022$
+against $0.026$), with no interval on the $0.4$--$0.9\%$ raw gap they close. It bounds rather than
+measures, and a direct measure on those $34$ solutes sizes what it bounds: two same-scaffold
+solutes in a common solvent sit at $0.21$--$0.40$ of the between-scaffold representation distance
+across the three seeds ($112$ pairs over $11$ scaffolds; $90\%$ scaffold-cluster intervals inside
+$[0.14,0.57]$). Molecules sharing a scaffold are compressed, not unresolved: the representation
+buys little beyond scaffold, not nothing. So read, it is consistent with the transfer
+limitation of \S\ref{sec:gap}: a test molecule on an unseen scaffold is not a small extrapolation but a point off
+the axis along which the representation is organised. Temperature is decodable from this vector at
+$R^{2}=0.9997$ yet occupies $3$--$4\%$ of its variance: decodability of a quantity is not evidence
+that a representation is organised around it (App.~\ref{sec:si-blackbox}).

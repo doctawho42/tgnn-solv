@@ -22,10 +22,10 @@ $m$                    & activity target (experimental $\lngi$) \\
 $\Bclos$               & closure misspecification, $\Ex[(\Ex[m\mid\zstar]-g(\zstar))^2]$ \\
 $\Binsuf$              & input insufficiency, $\Ex[\Var(m\mid\zstar)]$ \\
 $\Gamma$ (grounding gap) & $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$: oracle risk minus best end-to-end risk \\
-$\Delta_\infty$ (physics penalty) & asymptotic risk of the physics arm minus the matched control \\
+$\Delta_\infty$ (physics penalty) & asymptotic risk of the physics arm minus the capacity- and budget-matched control \\
 full / res             & COSMO-SAC with / without the Staverman--Guggenheim combinatorial term \\
 $R_{\mathrm{orc}},R_{\mathrm{e2e}},R_{\mathrm{free}}$ & oracle / best end-to-end / free black-box population risks (they define $\Gamma$) \\
-compensating surrogate & a learned $\hat z$ that \emph{cancels} the closure's error instead of matching $\zstar$; here low-rank and out-of-sample transferable \\
+compensating surrogate & a learned $\hat z$ that \emph{cancels} the closure's error instead of matching $\zstar$; here concentrated in a direction shared across molecules, and transferable between them only modestly (\S\ref{sec:surrogate}) \\
 $P_{\mathrm{boot}}$    & clustered-bootstrap frequency of $\Bclos>\Binsuf$ on the matched set (a resampling frequency, not a posterior probability) \\
 \bottomrule
 \end{tabular}}
@@ -57,6 +57,16 @@ $\mathrm{MSE}\ 1.263$ on the matched corner, whereas the fair full 2002 (the sam
 either to our differentiable layer or to \texttt{cCOSMO} with the full profile placed in the single
 nonpolar channel it actually reads) scores $1.757/1.758$. This is an issue for the library maintainers
 (a silently-wrong return where an error would be safer), not a defect of any published benchmark.
+The kernel arms of \S\ref{sec:measure} are deposited across two artifacts, and which file holds a
+value does not follow the set. The dispersion-\emph{off} values ($1.757$ and $0.765$ on the corner, $1.911$ and $1.978$ on
+the representative set) are our differentiable layers on each kernel's native profiles
+(\texttt{fidelity\_lever\_fair2002.json}). Both dispersion values are \texttt{cCOSMO}'s own
+\texttt{COSMO3} call: the corner's $0.785$ from \texttt{closure\_flip\_ci.json}, where the reference
+returns no dispersion for the three bromine/iodine pairs and that arm therefore scores on $n{=}57$;
+the representative set's $1.855$ from the \texttt{mse\_2010dsp} field of
+\texttt{fidelity\_lever\_fair2002.json}, whose corner counterpart in the same file is instead our own
+layer's $7.43$. That $7.43$ is the measure of the gap: our transcribed dispersion term is not
+validated against the reference, which is why the dsp arm is deferred to \texttt{cCOSMO} throughout.
 \paragraph{Crystal head.} $\Tm=100+600\,\sigma(\cdot)\in[100,700]$\,K,
 $\dHfus=S_H\,\mathrm{softplus}(\cdot)$; the group-contribution $\Tm$ prior is affine-
 calibrated on the train split before entering the head.
@@ -68,7 +78,8 @@ $512$-dimensional pair representation $[\,g_s,g_v,g_s\!\odot g_v,|g_s-g_v|\,]$ (
 the crystal head, the $51$-bin $\sigma$-profile head, and the parameter-free COSMO-SAC closure. The
 full model has $5.40$M trainable parameters---capacity that the in-sample linear probe
 ($R^2\approx0.76$, \S\ref{sec:supporting}) indicates is not the binding constraint. The DirectGNN
-control shares this encoder, interaction, and readout verbatim.
+control shares this encoder, interaction, and readout verbatim, and adds a thermometer encoding of
+$T$ in place of the temperature dependence the physics arm receives through $\Phi(T)$ and the closure.
 
 \begin{figure*}[t]
 \centering
@@ -79,8 +90,8 @@ $\sigma$-profile head; the predicted profile $\hat z$ feeds the fixed COSMO-SAC 
 $g$, which returns $\ln\gamma_2$, and an SLE solver combines the two into $\lnx$. Input
 insufficiency $\Binsuf$ enters at the intermediate $\hat z$ and closure misspecification
 $\Bclos$ at $g$. The $\sigma$-oracle replaces $\hat z$ with the reference VT-2005 profile
-$\zstar$ (salmon). DirectGNN (grey) is the matched control---it shares the encoder but
-drops the closure.}
+$\zstar$ (salmon). DirectGNN (grey) is the capacity- and budget-matched control---it shares the
+encoder but drops the closure; its optimisation settings were tuned separately (\S\ref{sec:framework}).}
 \label{fig:arch}
 \end{figure*}
 
@@ -91,10 +102,19 @@ Passing (TIMP), which splits messages into dispersive, polar, and hydrogen-bondi
 supervised toward the Hansen parameters to prevent channel collapse. TIMP does not outperform the plain
 MPNN across our runs, consistent with the encoder being transfer-limited rather than
 expressivity-limited (linear probe train $R^2\approx0.76$, test $R^2\approx0.45$).
-\paragraph{Optimisation.} Adam (weight decay $5\times10^{-4}$, gradient clipping at $2.0$, batch $64$)
+\paragraph{Optimisation, and the two arms' settings.} The physics arm uses Adam (weight decay
+$5\times10^{-4}$, gradient clipping at $2.0$, batch $64$)
 under the three-phase curriculum of \S\ref{sec:methods}: $30$ epochs of auxiliary pretraining (P1),
 $70$ of full SLE training (P2), and $10$ of low-rate stabilisation (P3), at learning rates
-$2.6\times10^{-4}$, $8.5\times10^{-5}$, and $8.5\times10^{-6}$ respectively.
+$2.6\times10^{-4}$, $8.5\times10^{-5}$, and $8.5\times10^{-6}$ respectively. The DirectGNN control
+was tuned separately and its settings differ: dropout $0.174$ against $0.012$, P2 learning rate
+$8.6\times10^{-4}$ against $8.5\times10^{-5}$, weight decay $4.2\times10^{-5}$ against
+$5\times10^{-4}$, gradient clipping $2.54$ against $2.0$, over $110$ P2 epochs equal to the physics
+arm's total budget at the same width ($64$) and depth ($3$). Width, depth, batch size and epoch
+budget are therefore matched and the optimisation is not, so $\Delta_\infty$ and every per-arm
+$\Delta\mathrm{MAE}$ in this paper is a difference between two separately tuned pipelines and is not
+attributable to the thermodynamic bottleneck alone (\S\ref{sec:framework}). A
+hyperparameter-matched control was not run.
 \paragraph{Loss.} The objective is a weighted sum. Of its $32$ registered terms, $17$ carry weight
 $0$ by default and never enter training---disabled experimental scaffolding (TIMP channel supervision;
 van't~Hoff / temperature terms, $\times7$; Hansen-contrastive terms, $\times5$; descriptor/group priors;
@@ -395,7 +415,7 @@ which also charges for repeated solutes, gives $\approx0.78$, the value reported
 $G=17$ solvent and $41$ solute clusters this small-$G$ regime has optimistic interval coverage, and the
 finite-cluster correction acts in the direction of less confidence and non-certification. We
 therefore treat the $P$ values as a coarse band, not two-decimal quantities. The separation is
-\emph{likely} but not certified at the $90\%$ level, consistent with the $\approx0.85$ figure, which is
+\emph{likely} but not certified at the $90\%$ level under either clustering, which is
 why the main text treats it as supporting rather than decisive.
 
 \paragraph{In-regime ($\gamma$-stratified) separation.} The $n{=}60$ measurement is matched at low $\gamma$,
@@ -408,7 +428,11 @@ $\Binsuf\le0.67$ several-fold. The high-$\gamma$ strata are small
 ($n=17$--$30$ in $102$ dimensions): the law-of-total-variance bound can be pushed toward zero by
 too-few-points-per-bin, which mechanically widens the margin exactly where data is thinnest, so
 it is the several-fold separations rather than the precise values that carry the
-qualitative reading. The $m>\overline{m}$ stratum separates
+qualitative reading. The bound here bins each stratum into three equal-count bins (against eight in
+the main text) and uses the maximum-likelihood within-bin variance, as in the
+headline row of Table~\ref{tab:decomp}; recomputed with the unbiased (Bessel) one it rises to
+$0.08/0.95/0.81$ across the three strata, so each still separates, but the middle stratum only
+marginally ($0.95$ against its own $\mathrm{MSE}/2=0.96$). The $m>\overline{m}$ stratum separates
 through its upper (high-$\gamma$) half, and the \emph{isolated} moderate band
 ($\overline{m}<m\le1.5$) does \emph{not} separate. This is not a counter-example. The total error there
 is only ${\approx}0.06$, so $\Bclos\le\mathrm{MSE}\approx0.06$ assumption-free (since $\Binsuf\ge0$),
@@ -419,7 +443,8 @@ not prove---the conjecture that the same closure misspecification drives the all
 \begin{table}[h]
 \centering
 \caption{Closure/insufficiency verdict across $\lngi$ strata of the matched set (deployed
-residual-only convention; $\Binsuf^{\mathrm{up}}$ is the leakage-immune LOTV binning bound throughout).}
+residual-only convention; $\Binsuf^{\mathrm{up}}$ is the leakage-immune LOTV binning bound throughout,
+at the maximum-likelihood within-bin variance).}
 \label{tab:regime}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrr}
@@ -667,13 +692,24 @@ $\Tm/\dHfus$: an open melting-point pool plus a group-contribution prior. True
 $\sigma$-profiles: the VT-2005 database (ingested to
 \texttt{sigma\_profiles.csv}, $1432$ compounds, with the COSMO cavity volume
 $V_{\mathrm{cosmo}}$ for the combinatorial term). These are quantum-chemically computed for a
-single reference conformer and protonation state; any mismatch to the experimental measurement
-conditions is noise in $\zstar$ that inflates $\Binsuf$ (an imperfect intermediate) rather than
-$\Bclos$, so it is \emph{conservative} for the closure-dominance verdict. Infinite-dilution
+single reference conformer and protonation state; mismatch to the experimental measurement
+conditions is noise in $\zstar$ that inflates $\Binsuf$, but under a Berkson-type displacement it
+also loads onto $\Bclos$ through the curvature of $g$, so we treat it as an unsigned limitation and
+\emph{not} as conservative for the closure-dominance verdict (\S\ref{sec:measure}). Infinite-dilution
 activity coefficients: ThermoML. Enlarging the reference $\sigma$-profile set would not materially
 grow the matched activity corner: of the $298$\,K ThermoML IDAC pairs, only two solutes lack a VT-2005
 profile while their solvent has one---the binding constraint is joint IDAC$\times$profile coverage, not
-profile availability. Second-domain pKa: the OPERA experimental compilation
+profile availability. What does enlarge the corner is a broader extraction on the IDAC side: the
+expanded ThermoML pull released with the code matches $115$ pairs at $298$\,K, which we do not adopt
+because its verdict is quality-cut sensitive (\S\ref{sec:discussion}).
+The corner is matched to VT-2005 by RDKit canonical SMILES on solute and
+solvent, the rule the deployed $\sigma$-oracle itself uses; matching by InChIKey instead admits $85$
+pairs over $46$ solutes and $19$ solvents at $298$\,K in place of $60/41/17$ (both counts are recorded
+in \texttt{decomposition.json}). We keep the stricter rule so that the $\zstar$ charged against each
+label is the profile the deployed pipeline would supply, rather than one imported across a tautomer or
+protonation variant---the same mismatch that makes the reference imperfect above. The decomposition
+was not re-estimated on the InChIKey-matched set; whether the verdict moves on those $25$ extra pairs
+is untested. Second-domain pKa: the OPERA experimental compilation
 \cite{mansouri2019opera} (\texttt{pKa\_QR.sdf}, $7904$ QSAR-ready records, public-domain US EPA;
 cited, not redistributed); the uniform net-formal-charge filter reduces this to the $1004$
 Hammett-amenable rows ($158$ meta/para, $846$ ortho/heteroaromatic) analysed in \S\ref{sec:si-pka}. The Bemis--Murcko scaffold split follows the main text; because the seeded
@@ -818,7 +854,14 @@ MolWt (solute) & $+0.032$ & $+0.013$ & $+0.018$ & solute \\
 \end{table*}
 
 \noindent As a share of the solute-identity ceiling: scaffold $100.3/99.9/99.8\%$, $\log P$
-$13.6/8.2/4.7\%$, TPSA $9.0/10.3/7.1\%$, MolWt $5.3/2.3/3.1\%$.
+$13.6/8.2/4.7\%$, TPSA $9.0/10.3/7.1\%$, MolWt $5.3/2.3/3.1\%$. The scaffold share is pinned near one
+by the split rather than by the representation: only $34$ of the $147$ test solutes share a
+Bemis--Murcko scaffold with another ($11$ multi-member scaffolds, $492$ of the $5608$ rows), so the two
+partitions coincide on $91\%$ of the data. The raw variance shares in fact run the other way
+(seed~$42$: scaffold $0.636$ against solute $0.639$), and the ratio reaches one only through the
+differing size-matched permutation nulls ($0.022$ against $0.026$); no interval is attached to the
+$0.2$--$0.9\%$ gap. The row therefore bounds what the representation adds beyond scaffold and does not
+measure within-scaffold discriminability (\S\ref{sec:discussion}).
 
 On the $331$ rows carrying a measured $\Phi^{*}$, $\Phi^{*}$ accounts for $18.3/42.5/18.0\%$ of
 that subset's own solute-identity ceiling. This does not contradict the held-out null above.
