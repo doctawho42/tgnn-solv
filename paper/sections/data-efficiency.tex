@@ -7,16 +7,16 @@
 % Artifact: results/data_efficiency/summary.json via run_data_efficiency_summary.py
 % over the Modal run (volume tgnn-e5, seed 42); ΔMAE = physics − DirectGNN.
 The strongest a-priori case for a physics prior is data scarcity: with few training molecules, an
-inductive bias toward the correct factorization should outperform a data-hungry black box. We test it
+inductive bias toward the correct factorisation should outperform a data-hungry black box. We test it
 directly, subsampling the training set \emph{by solute} at fractions $0.05$--$1.0$ and training both
 the physics-grounded model and DirectGNN on the identical subsample, evaluated on the fixed scaffold
 test (Table~\ref{tab:data-eff}, seed 42). The physics arm is \emph{worse at every fraction}, and
 against the hypothesis the gap is \emph{smallest} at the least data ($\Delta\mathrm{MAE}=+0.08$ at
 $5\%$); its $R^2$ is negative throughout. We do not read the growth of the gap with data
 ($+1.0$ at full) as a data-scale effect, because the sweep's endpoint does not reproduce the
-headline comparison: its physics arm carries the NRTL closure, and at fraction $1.0$ it gives
+headline comparison. Its physics arm carries the NRTL closure, and at fraction $1.0$ it gives
 $2.98$ against $1.97$ (control) on the same scaffold test where the three-seed runs of
-Table~\ref{tab:si-arms} give $1.7950$ against $1.7022$---$\Delta\mathrm{MAE}$ an order of magnitude
+Table~\ref{tab:si-arms} give $1.7950$ against $1.7022$: $\Delta\mathrm{MAE}$ an order of magnitude
 apart ($+1.01$ here, $+0.09$ there; the second is taken from the unrounded means, since the rounded
 column would give $+0.10$, \S\ref{sec:si-tables}). Both arms are worse here than their headline
 counterparts and the physics arm much the more so ($+1.18$ against $+0.27$ MAE), so the trend

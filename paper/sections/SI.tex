@@ -4,7 +4,7 @@
 \appendix
 % Equations declared from here on are S-numbered, so a main-text pointer to Eq. (S1) cannot be
 % mistaken for the main text's own (1)-(2).  Without this the segment-activity equation printed
-% as "(3)" twenty pages after (2), and Table 1 and Sec. 4.2 both send a reader looking for it.
+% as "(3)" twenty pages after (2), while Table 1 and Sec. 4.2 both point at it.
 \setcounter{equation}{0}
 \renewcommand{\theequation}{S\arabic{equation}}
 \section*{Supplementary Information}
@@ -196,22 +196,22 @@ is zero through the configuration.}
 
 \paragraph{Loss-simplification ablation.}
 For a diagnostic result the elaborate objective is a potential confound: the paradox
-could be an artifact of loss tuning. We test the opposite---that the paradox and the latent's
-drift survive a \emph{minimal} objective. Pre-registered before the run: train the end-to-end grounded
-arm with only the task ($\lnx$ Huber), the crystal grounding ($\Tm,\dHfus$), and the $\sigma$-profile
-warmup, \emph{dropping} the activity-grounding auxiliaries ($\lngi$, $\lng$, Hansen) and every
-regulariser, then read the sign of the paradox (oracle vs.\ learned) and the surrogate drift.
-Prediction: both persist, because the mechanism is end-to-end training through a misspecified closure,
-not the auxiliary terms. Confirmed at the level the ablation measures. The ablation re-measures the
+could be an artifact of loss tuning. The test registered in advance of the run trains the end-to-end
+grounded arm with only the task ($\lnx$ Huber), the crystal grounding ($\Tm,\dHfus$), and the
+$\sigma$-profile warmup, \emph{dropping} the activity-grounding auxiliaries ($\lngi$, $\lng$, Hansen)
+and every regulariser, and then reads the sign of the paradox (oracle vs.\ learned) and the surrogate
+drift. The registered prediction was that both persist, the mechanism being end-to-end training
+through a misspecified closure rather than the auxiliary terms, and both do at the level the ablation
+measures. The ablation re-measures the
 solubility \emph{paradox} (reference minus learned $\lnx$ MAE), the observable effect, not the profile drift
 directly: on the full test set it is $+1.13$ (95\% CI $[0.88,1.38]$) under the minimal objective,
 \emph{larger} than the $+0.30$ ($[0.20,0.39]$) under the full one. This is the \emph{overall},
 solvent-dominated paradox, and it strengthens once the activity-grounding auxiliaries---the only pressure
 toward physics---are removed; on the both-reference subset ($n{=}297$ rows over the ${\approx}7$ VT-covered
-solutes) the sign in fact reverses ($-0.23$ minimal vs $+0.22$ full), so the ablation is evidence
+solutes) the sign reverses ($-0.23$ minimal vs $+0.22$ full), so the ablation is evidence
 that the overall observable effect is loss-robust, not subset-level confirmation of the mechanism. It is
 \emph{consistent with} the drift being intrinsic to end-to-end training through a
-misspecified closure rather than a regularisation artifact; it is an implication of the amplified paradox,
+misspecified closure rather than a regularisation artifact. It is an implication of the amplified paradox,
 not a direct re-measurement of $\lVert\hat\sigma-\sigma\rVert$ under the minimal run (the minimal-loss
 checkpoint was not retained, and the larger reference-arm error is consistent with more profile drift but
 does not isolate it from closure-path recalibration). The minimal model trains normally (validation
@@ -332,6 +332,19 @@ finite samples the minimum of two estimates is biased low even when each is vali
 and do not headline it (\S\ref{sec:measure}(i)).
 \end{proof}
 
+\noindent Two consequences of this one-sidedness reconcile the bounding apparatus with the
+injectivity of the design, and are stated in the main text at \S\ref{sec:decomp}. First, because
+every reported $\Binsuf$ is an \emph{upper} bound and every $\Bclos$ the matching \emph{lower} one,
+the bounds are conservative in one direction only: were the superpopulation variance
+negligible, the finding would be the stronger $\Bclos=\mathrm{MSE}$. Nothing reported can therefore be an
+artifact of having over-estimated $\Binsuf$, and no entry in any table is the share of the error the
+inputs contribute. Second, the resampling frequencies are statements about the \emph{instrument} and
+not about the superpopulation: the clustered-bootstrap frequency $P_{\mathrm{boot}}$ is the fraction
+of cluster resamples in which the \emph{measured bound} still falls below half the total error,
+$\mathrm{MSE}/2$ being the threshold that orders the two terms. It measures whether this design
+resolves the ordering, not the probability that an inequality between two population quantities
+holds, so a low $P_{\mathrm{boot}}$ is loss of resolution and never evidence for the inputs.
+
 \begin{theorem}[Grounding-gap sandwich]\label{thm:gap}
 Assume all risks are finite ($m,g(\zstar)\in L^2$; $g$ and each $h\in\mathcal E$
 measurable), (A1) the true encoder is representable, $\phi^\star\in\mathcal E$ with
@@ -371,7 +384,7 @@ $0\le\Ggap\le0$, i.e.\ $\Ggap=0$; contrapositively, under A1--A2, $\Ggap>0\Right
 \emph{(e) A2 is necessary for the certificate.} If A2 fails, take $x\in\{a,b\}$ equiprobable,
 $\zstar\equiv0$ (so A1 holds), $m(a)=+1,m(b)=-1$, and $g$ with $g(0)=0=\Ex(m\mid\zstar)$ so
 $\Bclos=0$; an encoder $h^\dagger(a)=1,h^\dagger(b)=-1$ with $g(\pm1)=\pm1$ gives
-$R_{\mathrm{e2e}}=0$ while $R_{\mathrm{orc}}=1$, hence $\Ggap=1>0=\Bclos$. So $\Ggap>0$ alone
+$R_{\mathrm{e2e}}=0$ while $R_{\mathrm{orc}}=1$, hence $\Ggap=1>0=\Bclos$. Thus $\Ggap>0$ alone
 does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 \end{proof}
 
@@ -387,8 +400,7 @@ $\mathcal{T}(n)=\Delta_\infty-D(n)$.
 for all $n>n^\star$ (possible since $D(n)\to0$); then $\mathcal{T}(n)=\Delta_\infty-D(n)>0$. Monotonicity
 of $D$ is \emph{not} required for existence of $n^\star$; it is needed only for the stronger
 claim ``$\mathcal{T}(n)>0$ at every $n$,'' which we treat as an empirical observation.
-\emph{(iii)~A limiting refinement, stated and proved here rather than in the main text, where no
-later passage invokes it.} Since $V_{\mathrm{phys}}(n)\ge0$, $D(n)\le V_{\mathrm{direct}}(n)$: the variance a
+\emph{(iii)~A limiting refinement.} Since $V_{\mathrm{phys}}(n)\ge0$, $D(n)\le V_{\mathrm{direct}}(n)$: the variance a
 prior can save is bounded by the control's own estimation variance. As the black box approaches
 the aleatoric floor $V_{\mathrm{direct}}(n)\to0$, so $\limsup_n D(n)\le0$; with both estimators
 consistent, so $V_{\mathrm{phys}},V_{\mathrm{direct}}\to0$, one has $D(n)\to0$ and
@@ -470,15 +482,17 @@ so its $\sigma$ head is shaped in P1 by the corpus-internal \lngi\ auxiliary los
 external $\sigma$ label, and is frozen from P2 in the same way. The $\sigma$-oracle row is the grounded
 checkpoint re-evaluated with $\zstar$ injected, so it shares the grounded schedule exactly. Because
 the freeze holds the head and not the encoder that feeds it, the predicted profile is not pinned at
-its warm-up value in these arms; we have not run the surrogate isolation (\S\ref{sec:surrogate}) on
-these checkpoints, so how far their latent drifted is not measured, and the supervision contrast
+its warm-up value in these arms. We have not run the surrogate isolation (\S\ref{sec:surrogate}) on
+these checkpoints, so how far their latent drifted is not measured. The supervision contrast
 quoted there ($+0.40\to+0.14$) is a separate matched pair of runs --- one warm-up-plus-short-P1 base
 resumed twice for SLE, with the freeze off and on, on $n{=}5571$ matched rows --- and not these arms.
 
 % Artifacts: results/e5_sigma_grounding/seed_42/{grounded_a_truetrain,channel_swap}_predictions.csv
 % (seed 42 only; no seed_43/seed_44 counterpart), scored on the same n=5608 cross-arm lock.
-\paragraph{Oracle-application controls: two of the three are single-seed.} Of the three oracle
-applications (\S\ref{sec:methods}), only the evaluation-only substitution is a three-seed result.
+\paragraph{Oracle-application controls: two of the three are single-seed.} All three oracle
+applications (evaluation-only, training-time injection, channel-swap; \S\ref{sec:methods}) are
+computed on the same three-seed cross-arm row set as Table~\ref{tab:si-arms}, and their per-arm
+predictions are released with the code. Only the evaluation-only substitution is a three-seed result.
 Training-time injection (MAE $1.98$) and the channel swap (MAE $2.08$) were run at seed $42$ alone,
 so their matched comparator is the seed-$42$ learned-$\sigma$ value $1.803$ on the same $n{=}5608$
 lock, not the three-seed mean $1.8457$ of Table~\ref{tab:si-arms}. Both exceed the worst of the three
@@ -513,18 +527,18 @@ $+0.18$.
 Table~\ref{tab:grid} reports every combination of them rather than one setting of each. The margin is
 positive in $66$ of the $72$ cells. The six exceptions are the coarsest conditionings---three bins
 under either combinatorial convention and four bins residual-only---where the law-of-total-variance
-bound is valid but weakest. Two opposing biases make the grid something other than a menu to choose
-from. Coarser bins condition on less, so the bound is weaker; finer bins condition on more but leave
-few points per bin, and the within-bin variance is then downward-biased in finite samples, which
-inflates the margin favourably. Neither end is the honest one. We headline the eight-bin cell under
+bound is valid but weakest. The grid is not a set of interchangeable settings, because two opposing
+biases run across it. Coarser bins condition on less, so the bound is weaker; finer bins condition on
+more but leave few points per bin, and the within-bin variance is then downward-biased in finite
+samples, which inflates the margin favourably. Neither end is unbiased. We headline the eight-bin cell under
 the \emph{unbiased} within-bin variance on an occupancy rule fixed in advance of the grid---the
 coarsest binning that still leaves fewer than eight rows per bin, here $7.5$ at $n{=}60$---and we
 carry the same \emph{bin count} to the broad IDAC set, so the two are conditioned at the same
 granularity. On $477$ rows that is not the same occupancy rule (which would call for about $60$ bins)
-and is deliberately conservative: the broad set's margin grows with bin count over the grid as a
-whole, though not cell by cell---in the deployed convention under the unbiased variance it falls from
+and is deliberately conservative. The broad set's margin grows with bin count over the grid as a
+whole, though not cell by cell: in the deployed convention under the unbiased variance it falls from
 $+0.10$ at three bins to $+0.01$ at four, from $+0.57$ at seven to $+0.51$ at eight, and from $+0.83$
-at twenty to $+0.82$ at twenty-four---and the endpoints are what the choice turns on: $+0.51$ at
+at twenty to $+0.82$ at twenty-four. The endpoints are what the choice turns on: $+0.51$ at
 eight bins against $+0.96$ at forty-eight. Eight bins therefore gives a looser bound and a smaller
 margin there than the occupancy rule would. It is \emph{not} the least favourable cell of the
 middle range: seven bins residual-only under the
@@ -598,7 +612,8 @@ cluster-bootstrap frequency that the margin is positive.}
 \end{table}
 
 \noindent The same grid on the broad IDAC set is Table~\ref{tab:grid-rep}, now with its own
-per-cell bootstrap frequency rather than a bare range of point margins. No cell is negative. Within
+per-cell bootstrap frequency rather than a bare range of point margins. None of its $56$ cells is
+negative. Within
 the \emph{deployed} residual-only convention the margin runs from $+0.01$ (four bins) and $+0.10$
 (three bins) up to $+0.96$, with the eight-bin unbiased headline at $+0.51$; the frequencies at the
 two coarsest cells, $0.65$ and $0.42$, say that those conditionings do not resolve the ordering, and
@@ -639,6 +654,121 @@ cluster-bootstrap frequency that the margin is positive. Regenerates from
 \texttt{results/b\_insuff/convention\_audit.json}.}
 \end{table}
 
+\paragraph{The decomposition on both sets, and the three kernel arms.}
+Table~\ref{tab:decomp} is the closure--insufficiency decomposition of \S\ref{sec:measure}(i)--(ii)
+on both sets under both conventions, with the maximum-likelihood variance variant, the
+constant-offset (Jensen) row and the bootstrap bands. Table~\ref{tab:kernels} is the three
+COSMO-SAC arms of \S\ref{sec:measure}(iii) on both sets under both conventions, with the
+bootstrap frequencies, the $90\%$ margins and the block split of the $2002\to2010$ contrast into
+the $57$ pairs shared with the corner, the complementary $420$ and the $80$ of those at
+$298$\,K. Every claim either table carries has a row in Table~\ref{tab:claims} with its set,
+value and grade.
+
+% Shortening the caption and moving the corroborating-estimator rows to Table~\ref{tab:bounds}
+% cut this table to about half a page, so it now sets as a two-column top float with body
+% text beneath it. It previously carried `p' as well and took a float page of its own;
+% restore `!tp' if a later edit regrows it past the top-float height limit.
+\begin{table*}[!t]
+\centering
+\caption{Closure--insufficiency decomposition on the reference-input activity path, as bounds rather
+than a point split. \textbf{The headline columns are the deployed residual-only ones on \emph{both}
+sets}, one rule applied throughout; the full-convention columns are the
+comparison.}
+\label{tab:decomp}
+% Width: the tabular must fit \textwidth (504.5 pt) inside table*. The stub is 0.34\linewidth
+% and the body \footnotesize; the qualifications that used to sit in the stub (the corner's
+% single bootstrap clustering, the estimator list, the label-noise statement) are lettered
+% notes under the rule. Put a phrase back in the stub and the last column leaves the page.
+{\footnotesize
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{@{}L{0.34\linewidth}rrrr@{}}
+\toprule
+ & \multicolumn{2}{c}{broad IDAC ($477$)\tnk{a}} & \multicolumn{2}{c}{corner ($60$)\tnk{a}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Quantity & \textbf{res}\tnk{b} & full\tnk{b} & \textbf{res}\tnk{b} & full\tnk{b} \\
+\midrule
+MSE$_{\text{total}}=\Bclos+\Binsuf$ (exact)      & $1.90$ & $1.91$ & $1.47$ & $1.80$ \\
+$\Binsuf$ upper bound (LOTV)\tnk{c} & $0.70$ & $0.48$ & $0.71$ & $0.61$ \\
+$\Bclos$ lower bound\tnk{d} & $1.21$ & $1.43$ & $0.76$ & $1.19$ \\
+$\Bclos$ lower, constant-offset (Jensen)\tnk{e} & $0.18$ & $0.71$ & $0.43$ & $0.72$ \\
+\quad separation margin\tnk{f} & $\mathbf{+0.51}$ & $+0.95$ & $\mathbf{+0.05}$ & $+0.58$ \\
+\quad \dots\ bootstrap band\tnk{g} & $>\!0.95/{\approx}0.9/{\approx}0.9$ & $>\!0.95$ (all three) & ${\approx}0.7$ & ${\approx}0.9$ \\
+\quad \dots\ maximum-likelihood variance\tnk{h} & $0.68/{+}0.53$ & $0.47/{+}0.96$ & $0.62/{+}0.24$ & $0.53/{+}0.74$ \\
+\quad \dots\ tighter of the two conventions\tnk{i} & \multicolumn{2}{c}{$0.48/{+}0.94$} & \multicolumn{2}{c}{$0.61/{+}0.26$} \\
+Further $\Binsuf$ upper bounds\tnk{j} & \multicolumn{4}{c}{Table~\ref{tab:bounds}} \\
+Label noise $\sigma_\eta^2$ (IDAC) & \multicolumn{4}{l}{already inside every row above\tnk{k}} \\
+\bottomrule
+\end{tabular}
+\tabnotes{%
+\tnk{a}\,Broad IDAC, $n{=}477$ on UD profiles; corner, $n{=}60$ on VT-2005 profiles throughout
+(\S\ref{sec:measure}(iii) scores the same pairs on UD).\quad
+\tnk{b}\,\emph{full}, with the Staverman--Guggenheim combinatorial term; \emph{res},
+residual-only.\quad
+\tnk{c}\,Law of total variance, at eight equal-count bins of $g(\zstar,T)$ under the unbiased
+(Bessel-corrected) within-bin variance. It fits no model to the data.\quad
+\tnk{d}\,$\mathrm{MSE}-\Binsuf^{\mathrm{up}}$; this row decides the ordering.\quad
+\tnk{e}\,$(\Ex[m]-\Ex[g])^2$.\quad
+\tnk{f}\,$\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$, the quantity that orders the two terms.\quad
+\tnk{g}\,Pair\,/\,two-way\,/\,source clusters. The corner supports the two-way clustering only, so it
+carries one entry per column.\quad
+\tnk{h}\,Same rows and bins, maximum-likelihood within-bin variance, as $\Binsuf$ upper\,/\,margin.\quad
+\tnk{i}\,Charged against the deployed MSE, as $\Binsuf$ upper\,/\,margin. Not headlined.\quad
+\tnk{j}\,The marks of Fig.~\ref{fig:decomp}: out-of-fold RF and ridge (random and blocked folds),
+$k$NN-in-$\zstar$, and the binning-free $\Ex[\Var(m\mid\text{pair})]$. Not a paper-wide inventory:
+the bin grids behind the LOTV selection are Tables~\ref{tab:grid} and~\ref{tab:grid-rep}, and the
+$\lngi$-stratified bounds, computed on corner subsets, are Table~\ref{tab:regime}.\quad
+\tnk{k}\,A \emph{component} of $\Binsuf$, not a term beside it (\S\ref{sec:decomp}).}}
+\end{table*}
+
+% Relocated from prose (move 12 of the 2026-07-28 relocation plan): nine multi-value comparisons
+% across three kernels, two sets and two conventions. The sweeps behind it stay in App. C.
+\begin{table*}[t]
+\centering
+\caption{Activity error (MSE, $\lngi$ units) of the three COSMO-SAC arms, and the block split that
+reads the $2002\to2010$ reversal against profile database and temperature held fixed.}
+\label{tab:kernels}
+{\footnotesize
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & \multicolumn{2}{c}{corner ($60$), UD\tnk{b}} & \multicolumn{2}{c}{broad IDAC ($477$), UD\tnk{b}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+(a) Arm\tnk{a} & full\tnk{b} & res\tnk{b} & full\tnk{b} & res\tnk{b} \\
+\midrule
+fair 2002                    & $1.757$ & $1.436$ & $1.911$ & $1.902$ \\
+2010, dispersion off         & $0.765$ & $0.831$ & $1.978$ & $2.893$ \\
+2010, dispersion on          & $0.785$\tnk{e} & ---\tnk{d}     & $1.855$ & ---     \\
+\addlinespace[2pt]
+$P$ ($2010$ better)\tnk{c}, dispersion off & $>\!0.95$ & --- & ${\approx}0.6$ & ${\approx}0.2$ \\
+\quad $90\%$ margin\tnk{c}          & $[+0.06,+2.18]$ & --- & $[-1.95,+0.93]$ & $[-3.06,+0.70]$ \\
+$P$ ($2010$ better)\tnk{c}, dispersion on & ---      & --- & ${\approx}0.6$ & --- \\
+\quad $90\%$ margin\tnk{c}          & ---       & --- & $[-2.24,+1.31]$ & --- \\
+\midrule
+(b) Block (UD profiles, full convention) & \multicolumn{2}{c}{$2002\to2010$, dispersion off} & $P$\tnk{c} & $90\%$ margin\tnk{c} \\
+\midrule
+shared with the corner ($57$)      & \multicolumn{2}{c}{$1.783\to0.767$} & $>\!0.95$ & $[+0.06,+2.36]$ \\
+complementary ($420$)              & \multicolumn{2}{c}{$1.928\to2.143$} & ${\approx}0.5$ & $[-2.41,+0.87]$ \\
+\quad \dots\ of these, at $298$\,K ($80$) & \multicolumn{2}{c}{$0.796\to1.284$} & ${\approx}0.3$ & --- \\
+\bottomrule
+\end{tabular}
+\tabnotes{%
+\tnk{a}\,The three arms, named here and in the text: \emph{fair 2002}, COSMO-SAC-2002 in our
+NIST-validated layer reading all three profile channels; \emph{2010, dispersion off} and \emph{2010,
+dispersion on}, COSMO-SAC-2010 without and with the dispersion term (\S\ref{sec:measure}(iii)).\quad
+\tnk{b}\,\emph{full}\,/\,\emph{res} as in Table~\ref{tab:decomp}. \emph{Both} sets are scored on UD
+profiles here, the corner included---Table~\ref{tab:decomp} scores the corner on VT-2005 instead,
+and that database difference is the whole difference between its corner/full $1.80$ and the $1.757$
+here (\S\ref{sec:measure}(iii)). Within a set, each arm uses the $\sigma$-profile averaging its own
+model prescribes (Mullins for 2002, Hsieh for 2010).\quad
+\tnk{c}\,$P$ is the two-way cluster-bootstrap frequency that the $2010$ arm is the better one, with
+the $90\%$ margin on the paired squared-error difference beneath it.\quad
+\tnk{d}\,A dash marks a cell the deposited artifacts do not carry.\quad
+\tnk{e}\,This one cell is $n{=}57$, not $60$: \texttt{cCOSMO} tabulates no dispersion $\epsilon$ for
+the three bromine- or iodine-containing corner pairs. On those common $57$ the \emph{dispersion off}
+arm scores $0.767$, so the $0.765$-versus-$0.785$ ordering is not an artifact of the differing $n$,
+and no claim rests on that ordering (\S\ref{sec:measure}(iii)).}}
+\end{table*}
+
 \paragraph{The bounds Fig.~\ref{fig:decomp} draws, named and valued.} Table~\ref{tab:bounds} lists
 one row per mark in that figure, together with the
 corroborating estimators Table~\ref{tab:decomp} points here for instead of listing them row by
@@ -649,9 +779,9 @@ corner rather than on either whole set and are not marks in the figure. It regen
 run with \texttt{-{}-dump-bounds}, which prints the inventory the figure draws, so the table can be
 re-checked against the marks. The regeneration's guard against an artifact changing under the
 inventory is \emph{not} the same on the two sets, and we state which is which rather than claim one
-rule: on the corner it stops both ways---on an estimator the artifact records and the inventory does
-not name, and on a named one the artifact no longer records---and it additionally checks the entries
-that set's two audit artifacts share against each other; on the broad set it stops only the first
+rule. On the corner it stops both ways: on an estimator the artifact records and the inventory does
+not name, and on a named one the artifact no longer records. It additionally checks the entries
+that set's two audit artifacts share against each other. On the broad set it stops only the first
 way, so a named estimator absent from that set's audit artifact would be dropped rather than raised.
 In both panels of Fig.~\ref{fig:decomp} the bar's two blocks are contiguous shares of one total, so
 what separates the terms is the margin $\mathrm{MSE}-2\Binsuf^{\text{up}}$ and not a gap on the
@@ -774,7 +904,7 @@ separation rests on the law-of-total-variance bound alone, which is what \S\ref{
 \paragraph{The broad set's matching rule, and two bounds we decline to headline.} Three details of
 \S\ref{sec:measure}(i) follow. \emph{(a)~The matching asymmetry.} The corner is
 matched to VT-2005 by canonical SMILES, a rule we defend there on the ground that a profile imported
-across a tautomer or protonation variant is the wrong $\zstar$; the broad IDAC set is matched to UD
+across a tautomer or protonation variant is the wrong $\zstar$. The broad IDAC set is matched to UD
 by InChIKey with a first-block fallback, which is looser, and a wrong $\zstar$ inflates
 $\mathrm{MSE}$ and so $\Bclos$---that is, it runs against the ordering we claim. The exposure is
 small and we measure it rather than argue it: of the $90$ distinct molecules there, $86$ resolve by
@@ -803,8 +933,8 @@ kernel ($\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetr
 zero-initialised), fit on the \emph{reference} VT-2005 profiles and cross-validated five-fold over
 five fit seeds. The answer depends on the fold design, and only one design is free of leakage.
 With random folds over the $60$ matched pairs, a rank-one residual ($52$ parameters) removes
-$46\pm5\%$ of the reference-input error out of sample (activity MSE $1.47\!\to\!0.79$). But the same
-solvent then appears in training and test, and the closure error is predominantly a
+$46\pm5\%$ of the reference-input error out of sample (activity MSE $1.47\!\to\!0.79$). The same
+solvent, however, then appears in training and test, and the closure error is predominantly a
 between-solvent systematic. Under folds grouped so that no solvent is shared, the reduction is
 $-5\pm16\%$ at rank one and $+2\pm15\%$ at rank two. Each $\pm$ is a standard error over the five fit
 seeds on one fixed $60$-pair set and prices optimiser noise only; the held-out spread across folds is
@@ -818,15 +948,21 @@ data do not resolve a rank ordering; and the $60$ pairs form a single connected 
 shared molecule identity, so a molecule-disjoint holdout does not exist at any fold design.
 $\Bclos$ is therefore a defect that a handful of kernel parameters can absorb \emph{within} a
 solvent, and that we have not shown to be correctable across solvents---weaker than a
-general repair. The fitted correction also buys nothing over a free one: the parameter-free 2010
+general repair. The fitted correction also gains nothing over a free one: the parameter-free 2010
 kernel reaches $0.765$ on the same molecule pairs (\S\ref{sec:measure}(iii)) against the
-$52$-parameter residual's random-fold $0.79$---but the residual's leakage-free number is the
-grouped-fold one, a $-5\pm16\%$ reduction, i.e.\ no reduction at all, so the honest comparison is a
-free $2002\to2010$ step against a fitted correction that does not transfer. The two also run on different
+$52$-parameter residual's random-fold $0.79$. The residual's leakage-free number, however, is the
+grouped-fold one, a $-5\pm16\%$ reduction, i.e.\ no reduction at all, so the comparison that holds is
+a free $2002\to2010$ step against a fitted correction that does not transfer. The two also run on different
 profile sources and conventions (residual-only on VT-2005 here, full on the University of Delaware
 (UD) profiles there~\cite{fingerhut2017}), so this is indicative rather than a head-to-head; but each
 stays above its own convention's insufficiency ceiling ($0.62$--$0.71$ residual-only, $0.53$--$0.61$
 full), so neither erases $\Bclos$.
+
+\emph{Where the residual error sits chemically.} The composition audit behind
+\S\ref{sec:measure}: $90\%$ of the corner's squared error falls on the strong hydrogen-bond-donor
+solvents, $84\%$ once the two doubted amine/methanol pairs are deleted, and the acceptor-only
+solvents are near-exact. That localisation is what places $\Bclos$ in COSMO-SAC-2002's
+single-parameter hydrogen-bonding kernel rather than spreading it over the profile.
 
 % Artifacts: results/b_insuff/fidelity_lever_inputfixed.json via
 % scripts/analysis/run_fidelity_lever_inputfixed.py (arms A/B/C and both bootstrap contrasts;
@@ -837,9 +973,16 @@ a single 2002 profile is its sum $p=p_{\mathrm{nhb}}+p_{\mathrm{OH}}+p_{\mathrm{
 Ref.~\cite{bell2020cosmosac}), which holds database, cavity area, volume and averaging fixed and
 varies only the kernel. On the corner that contrast is $2.047\to0.765$, two-way cluster bootstrap
 $P>0.95$ with $90\%$ margin $[+0.05,+2.90]$; the averaging step taken alone moves 2002 by $+0.29$ in
-the opposite direction and is not resolved ($P<0.2$, $[-0.79,+0.11]$). The control cannot separate
+the opposite direction and is not resolved ($P<0.2$, $[-0.79,+0.11]$). That averaging term is why
+the control's $2002$ endpoint is $2.047$ and not the $1.757$ of the \emph{fair 2002} arm, and why
+the input-fixed step ($1.28$) is \emph{larger} than the native-input one ($0.99$): the control is
+favourable to the conclusion it supports. The control cannot separate
 the donor/acceptor typing, which the 2002 kernel has no channel to consume and which is therefore
-charged to the kernel by construction.
+charged to the kernel by construction. What fixes the \emph{fair 2002} arm at $1.757$ rather than
+lower is an implementation detail: the NIST reference implementation, handed a typed three-profile
+database, silently reads the nonpolar channel only, an arm scoring $1.26$ on the matched corner
+(\S\ref{sec:si-methods} gives it unrounded), which is not the reference closure, so the arm is taken
+from our own NIST-validated layer instead.
 \emph{(a)~The \emph{2010, dispersion on} arm's coverage.} \texttt{cCOSMO} returns no dispersion value for the three
 bromine- or iodine-containing corner pairs---bromobenzene and iodobenzene in $1,2$-ethanediol, and
 $2$-bromopropane in pyridine---so that arm's corner run scores on $n{=}57$. On those common $57$ the
@@ -859,8 +1002,8 @@ against $\Binsuf\lesssim0.80$, hence $\Bclos\gtrsim2.09$ and a margin of $+1.29$
 Under the literature-standard full convention the same rows give $1.978$ against
 $\Binsuf\lesssim0.60$, margin $+0.78$ at $P\approx0.8$, and the corner $0.765$ against $0.69$, margin
 $-0.61$. The switch to the deployed convention raises the 2010 kernel's broad-set error from
-$1.978$ to $2.893$ and its floor bound from $0.60$ to $0.80$, so the wider margin is bought by a
-worse closure and not by a tighter floor, and the grade does not move. On the broad set the binding
+$1.978$ to $2.893$ and its floor bound from $0.60$ to $0.80$, so the wider margin comes from a
+worse closure and not from a tighter floor, and the grade does not move. On the broad set the binding
 clustering is the source-DOI bootstrap on $15$ clusters, whose $90\%$ interval $[-0.41,+4.53]$ still
 admits zero, as does the two-way one $[-0.24,+4.71]$; only the pair clustering is strictly positive,
 and it was so before the convention switch as well. \emph{(d)~The published comparison.} The
@@ -879,10 +1022,11 @@ of evidence rather than as evidence of absence.
 stated under the deployed residual-only rule with the full-convention reading beside it.
 \emph{(1)}~Broad IDAC set: the fair 2002 error $1.902$ against $2\Binsuf\lesssim1.39$ on the
 \emph{same} UD profiles, margin $+0.51$ at $P\approx0.9$ ($1.911$ against $0.96$, $+0.95$, $P>0.95$
-full). \emph{(2)}~Corner, VT-2005 against VT-2005: $1.472$ against $2\Binsuf\lesssim1.427$, margin
+full). \emph{(2)}~Corner, VT-2005 against VT-2005: $1.472$ against $2\Binsuf\lesssim1.427$, so
+$\Bclos\gtrsim0.759$ against $\Binsuf\lesssim0.713$ and a margin of
 $+0.05$ ($1.80$ against $1.22$, $+0.58$ full; Table~\ref{tab:decomp}). The $1.757$ of~(a$'$) is those
 same $60$ pairs scored on \emph{UD} profiles, which is the whole difference between $1.80$ and
-$1.757$; charged against a UD-native floor recomputed for those pairs, the deployed convention gives
+$1.757$. Charged against a UD-native floor recomputed for those pairs, the deployed convention gives
 $1.436$ against $\Binsuf\lesssim0.71$, a margin of $+0.01$ at $P\approx0.8$, against $1.757$ versus a
 UD-native $\Binsuf\lesssim0.54$ and a margin of $+0.69$ full---so on UD profiles the corner's own
 floor check is, under the rule we deploy, at zero.
@@ -902,7 +1046,7 @@ value is the one Table~\ref{tab:bounds} and Fig.~\ref{fig:decomp} carry, because
 is what the inclusion rule names; both are below the threshold and neither is the headline.
 The $k$-NN value is the smallest and least conservative input to $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$,
 so we take the leakage-immune LOTV bound as the headline instead. The LOTV bound bins $g(\zstar)$ and is therefore
-finite-sample downward-biased when points per bin are few, which would \emph{inflate} $\Bclos$ favourably;
+finite-sample downward-biased when points per bin are few, which would \emph{inflate} $\Bclos$ favourably.
 The two non-binning bounds (RF $0.62$, ridge $0.62$) are immune to that particular per-bin sparsity,
 but they do not provide independent corroboration: under random folds every held-out row shares its
 solvent or its solute with a training row, so both can borrow strength from a near-twin,
@@ -918,7 +1062,8 @@ edge, not a refutation.
 
 \emph{(0)~The corner's design.} The $60$ pairs span $41$ solutes and $17$ solvents; two
 formamide pairs are excluded for a canonical-SMILES tautomer mismatch. Methanol occupies $25$ of the
-$60$ rows ($12$ as solute, $13$ as solvent) and pyridine is the largest solvent stratum ($20$ rows).
+$60$ rows ($12$ as solute, $13$ as solvent) and pyridine is the largest solvent stratum ($20$ rows);
+$\Var(m)=2.47$ across the set.
 The two worst-fit pairs, $1$-hexanamine and cyclohexylamine in methanol, carry $34\%$ of the squared
 error; both rest on a single record, and $1$-hexanamine sits far off its own homologous series
 ($\lngi{=}2.62$ against $-0.78$ for $1$-butanamine in the same solvent), which is why we do not read
@@ -963,7 +1108,7 @@ $G=17$ solvent and $41$ solute clusters this small-$G$ regime has optimistic int
 finite-cluster correction acts in the direction of less confidence and non-certification. We
 therefore treat the $P$ values as a coarse band, not two-decimal quantities, and the main text quotes
 them as bands (rounded to one decimal, with $>0.95$ and $<0.2$ closing the ends) throughout; the
-two-decimal values live in the deposited artifacts and in the tables here, where the estimator that
+two-decimal values are in the deposited artifacts and in the tables here, where the estimator that
 produced each is named. The separation on the corner is
 \emph{likely} but not certified at the $90\%$ level under either clustering, which is
 why the main text treats it as supporting rather than decisive. On the broad IDAC set, with $78$
@@ -972,7 +1117,10 @@ something; but they do not all clear. Under the deployed residual-only conventio
 bootstraps to $P>0.95$ over the $185$ molecule pairs ($90\%$ margin $[+0.23,+1.16]$) and only
 ${\approx}0.9$ two-way over the $78\times36$ solute/solvent clusters ($[-0.08,+2.16]$) and over the
 $15$ sources ($[-0.07,+1.74]$), with two
-of the three $90\%$ intervals grazing zero, so that set is graded \emph{likely} as well. It is only
+of the three $90\%$ intervals extending just below zero, so that set is graded \emph{likely} as well. Read as a
+ratio, the broad set's $+0.51$ is $1.1$ times its own $90\%$ bootstrap half-width under pair
+clustering and $0.46$ times it under the two-way one, which is the sense in which \S\ref{sec:measure}
+calls that margin unresolved. It is only
 under the full convention that all three clear ($P>0.95$), in the same order: $[+0.71,+1.27]$ over
 pairs, $[+0.48,+1.85]$ two-way, $[+0.50,+1.57]$ over sources.
 
@@ -1009,7 +1157,7 @@ marginally ($0.95$ against its own $\mathrm{MSE}/2=0.96$). The $m>$ med.\ stratu
 through its upper (high-$\gamma$) half, and the \emph{isolated} moderate band
 (med.$<m\le1.5$, $n{=}13$) does \emph{not} separate. This is not a counter-example. The total error there
 is only ${\approx}0.06$, so $\Bclos\le\mathrm{MSE}\approx0.06$ assumption-free (since $\Binsuf\ge0$),
-and there is simply nothing to attribute---near ideality the target is small and the split is
+and there is nothing to attribute---near ideality the target is small and the split is
 uninformative. We read no closure-quality claim from it in either direction. This supports---but does
 not prove---the conjecture that the same closure misspecification drives the all-$\gamma$ paradox.
 
@@ -1046,10 +1194,10 @@ convention).}
 \label{fig:parity}
 \end{figure}
 
-\paragraph{The four hedges (full).} Four hedges qualify the decomposition of
-\S\ref{sec:measure}. None of them inverts the verdict; each sharpens its scope:
+\paragraph{Four qualifications on the decomposition (full).} Four qualifications bear on the
+decomposition of \S\ref{sec:measure}. None of them inverts the verdict; each sharpens its scope.
 \begin{enumerate}
-  \item \emph{Convention.} The deployed default is residual-only. Under it the
+  \item The deployed combinatorial default is residual-only. Under it the
   \emph{constant-offset} (Jensen) lower bound inverts
   ($\Bclos\ge0.43<\Binsuf\le0.71$; it separates only under the full convention,
   $\Bclos\ge0.72$ against $\Binsuf\le0.61$), so that assumption-free bound does not separate under
@@ -1061,19 +1209,19 @@ convention).}
   the headline claim, together with the combinatorial argument above. Every $\Binsuf$ ceiling quoted
   in this item is the unbiased within-bin variance, the headline setting of Table~\ref{tab:decomp};
   the maximum-likelihood pair ($0.85$ against $0.62$) is the demoted variant and is not quoted here.
-  \item \emph{Confound.} The closure error is predominantly a \emph{between-solvent}
+  \item The closure error is predominantly a \emph{between-solvent}
   systematic bias ($\sim$64\% of total error); within the largest single-solvent stratum
   (pyridine, $n{=}20$) the closure is nearly correct (stratum MSE $0.07$). Because
   solvent $\sigma$ is part of $\zstar$, these offsets are still decoder error and give an
   independent solvent-conditional lower bound $\Bclos\ge0.89$ (full)/$0.56$ (res).
-  \item \emph{Confidence.} Confidence on the full-convention constant-offset
+  \item Confidence on the full-convention constant-offset
   separation is the solvent-clustered bootstrap $P(\Bclos{>}\Binsuf)\approx0.85$ ($0.83$
   vs the random-forest upper bound, $0.89$ vs the law-of-total-variance bound); we report
   the solvent-clustered scheme rather than the less conservative i.i.d.-pair one because
   solvent dependence dominates. The leakage-immune margin ($0.76$ vs $0.71$) is a
   point estimate. The decomposition is checkpoint/seed-independent (the closure has zero
   learnable parameters).
-  \item \emph{Selection/scope.} The 60 matchable pairs are the low-to-moderate $\gamma$
+  \item The 60 matchable pairs are the low-to-moderate $\gamma$
   regime (matched mean $\lngi=0.75$ vs $3.56$ for VT-2005-unmatchable pairs, $t=-7.44$;
   the strongly non-ideal amide-solvent regime is untested because VT-2005 lacks those
   profiles). This narrows scope but is \emph{conservative}, since the untested regime is
@@ -1096,16 +1244,16 @@ reach MAE $1.94$ (FastSolv, $R^2\,0.23$) and $2.34$ (SolProp, calibrated,
 $R^2\,{-}0.18$); in $\log_{10}S$, $0.87$ and $1.04$. These are on a \emph{by-solute} split that is
 \emph{not comparable} to our scaffold numbers (Table~\ref{tab:si-arms}): they bound the task's
 difficulty, not a ranking of the models against one another, so this does \emph{not} establish that our
-scaffold-split DirectGNN ($1.70$) outperforms them; a like-for-like scaffold evaluation of the
+scaffold-split DirectGNN ($1.70$) outperforms them. A like-for-like scaffold evaluation of the
 external models was not run, the deposited external runs being by-solute and pair-random only.
 The internal ordering---the physics-informed SolProp trailing the direct FastSolv, the same
 ordering we find between our physics closures and DirectGNN---is therefore a
-comparison of the \emph{cycle} against a direct model, and it reverses when SolProp's encoder is
+comparison of the \emph{cycle} against a direct model. It reverses when SolProp's encoder is
 instead retrained directly on $\lnx$ with the cycle discarded: that arm reaches MAE $1.63$
 ($R^2\,0.39$) in $\lnx$ and $0.76$ in $\log_{10}S$ on the $n{=}10{,}287$ rows FastSolv is scored on,
 against FastSolv's $1.94$ and $0.87$. We quote the cycle as the physics-informed arm because only it
 assembles the separately learned components; the retrained arm measures what discarding the closure
-buys on this corpus, not a better physics-informed model. The regime-level reading is that on this corpus no
+achieves on this corpus, not a better physics-informed model. The regime-level reading is that on this corpus no
 black box, ours or external, escapes the accuracy ceiling---consistent with the
 structural account of \S\ref{sec:discussion}. Per-arm ablations (NRTL vs COSMO-SAC,
 combinatorial on/off) are in Table~\ref{tab:si-arms}.
@@ -1116,13 +1264,36 @@ combinatorial on/off) are in Table~\ref{tab:si-arms}.
 dilution the aggregate activity Fisher $J^{\top}J$ ($J=\partial\lngi/\partial\sigma$) is rank-one
 (participation ratio $1.0$ by autograd; finite differences decorrelate the redundant flat-profile
 coordinates and inflate it, App.~\ref{sec:si-failed-diagnostics}, so we read $\mathrm{PR}$ against a
-permuted control and not absolutely), and the per-molecule Fisher that governs the drift has
+permuted control and not absolutely). The per-molecule Fisher that governs the drift has
 participation ratio ${\approx}1.4$ of $51$ even at full solvent coverage. The participation ratio is
-a concentration statistic and not a hard count; it is measured at infinite dilution, so its transfer
+a concentration statistic and not an exact count. It is measured at infinite dilution, so its transfer
 to the finite-composition regime that generates the drift is not established, the same scope gap that
-qualifies $\Bclos$ (\S\ref{sec:discussion}); and the external reference is itself \emph{computed}
+qualifies $\Bclos$ (\S\ref{sec:discussion}). The external reference is itself \emph{computed}
 (VT-2005 quantum chemistry) rather than experimental, so none of this establishes that recovery of
 the physical profile is impossible in principle.
+\paragraph{Why the top-two share is read against a phase-randomised null, and how unstable the
+magnitudes are.} A top-two explained-variance share is not interpretable against an isotropic null,
+because smoothness alone concentrates a spectrum: smoothing isotropic noise reaches a top-two share
+of $0.25$ to $0.83$ as the correlation length grows from one bin to eight, spanning the observed
+value without any between-molecule alignment at all. The \emph{phase-randomised} null of
+\S\ref{sec:surrogate} preserves each deviation's amplitude spectrum exactly---and so its
+smoothness---and destroys only the alignment across molecules that a shared compensating direction
+asserts; the observed $0.399$ against its $0.221\pm0.011$ is therefore a statement about alignment
+and not about smoothness. The wrong-molecule null ($0.772\pm0.023$), which the observed share does
+\emph{not} clear, is a difference between two points on the reference manifold and inherits that
+manifold's own concentration, so it demands more alignment than a shared direction implies. That is
+the argument for preferring the phase-randomised one, and \S\ref{sec:surrogate} states that if it is
+not accepted the spectrum is uninformative rather than supporting. In each case the $\pm$ is the
+null's spread over resamples, not an uncertainty on the observed value.
+The three magnitudes \S\ref{sec:surrogate} reports but does not carry move in both directions across
+analysis configurations: a shortened run gives only ${\sim}16\%$ departure and a transfer of
+$1.7\times$, below what a constant offset alone reaches on the one run where that control can be
+computed, while uncontrolled two-model comparisons over-state both the departure (${\sim}82\%$) and
+the transfer ($16$--$26\times$). With $n{=}3$ the $\pm$ on the three-seed figures is indicative and
+not a precision. Nor does mean-centred low-rank structure exclude a shrinkage of each profile toward
+the corpus-mean shape: the reference profiles themselves sit at $0.77$ mean-centred, so any drift
+linear in the profile inherits that concentration.
+
 \paragraph{The drift spectrum, and the null it lacks.} Figure~\ref{fig:drift-spectrum} is the
 spectrum of the drift whose mean and dominant mode are Fig.~\ref{fig:surrogate}. Its top two modes
 carry $72.9\%$ in the companion run plotted there and $71.8\pm1.3\%$ over the three seeds (quoted as
@@ -1148,7 +1319,11 @@ have identically zero drift between them.
 \label{fig:drift-spectrum}
 \end{figure}
 
-\paragraph{The grounded warm-up checkpoint's $0.73$.} The comparison of \S\ref{sec:surrogate} run on
+\paragraph{The grounded warm-up checkpoint's $0.73$, and the power of the two-MSE check.} The
+direct cancellation check of \S\ref{sec:surrogate} has almost no power in the direction that
+matters. On the corner, $18.75$ against $\Var(m)=2.47$ is $7.6\times$ worse than predicting the
+mean, the signature of a broken profile rather than of a partly compensating one, so the comparison
+separates ``no cancellation'' from ``large cancellation'' and not from ``some cancellation''. The same comparison run on
 a grounded warm-up checkpoint, whose profile sits $28\%$ from the reference, scores $0.73$ where the
 end-to-end SLE-trained checkpoint scores $18.75$. That is a statement about the closure's
 sensitivity to profile roughness and about an in-sample fit to $\zstar$ on molecules inside the
@@ -1162,7 +1337,9 @@ $m=+0.75$. Sweeping its hydrogen-bond coefficient at zero, one and two times the
 gives mean squared errors $2.42/2.83/10.15$ on the strong-donor pairs: raising the coefficient makes
 them worse and zeroing it makes them better, so a \emph{more} polar profile moves $g$ further from
 $m$, which is the direction opposite to a compensating drift.
-\paragraph{The reference ladder.} The rungs calibrating the $51\%$ departure of
+\paragraph{The reference ladder.} A relative deviation carries no absolute scale, which is what the
+ladder supplies. Its rungs are built from the reference profiles the grounded arm was supervised on,
+so it calibrates that deviation rather than competing with it. The rungs calibrating the $51\%$ departure of
 \S\ref{sec:surrogate}, all on the same $44$ molecules and the same relative-$L_2$ metric: a
 leave-one-out corpus-mean profile (one fixed shape reused for every molecule, carrying no molecular
 information) $0.493$; each molecule assigned another molecule's reference profile, $0.651$--$0.684$
@@ -1204,8 +1381,8 @@ $1441$ of $1525$ solutes ($108{,}287$ rows), so this is a bounded model-form
 approximation. It cannot produce either headline result. The closure/insufficiency
 decomposition is measured on the activity target ($\lngi$, at $298$\,K on the corner and at each
 row's own temperature over $273$--$403$\,K on the broad IDAC set), where $\Delta C_p$
-does not enter at all on either set---the ideal term is not evaluated in the decomposition, so no
-temperature range of it is at issue; and the grounding paradox is an arm-to-arm difference (learned-$\sigma$
+does not enter at all on either set: the ideal term is not evaluated in the decomposition, so no
+temperature range of it is at issue. The grounding paradox is an arm-to-arm difference (learned-$\sigma$
 vs.\ oracle-$\sigma$) whose two arms share the \emph{identical} crystal term, so any $\Delta C_p$
 error cancels exactly in the comparison. It is thus orthogonal to the activity closure, not a
 source of the paradox.
@@ -1222,7 +1399,7 @@ activity branch that the control still outperforms is evidence that the penalty 
 failure to train the branch.
 (The core closure-misspecification result---the $\sigma$-oracle and the decomposition---is in
 any case training-\emph{independent}: it feeds the reference VT-2005 profiles through the fixed
-closure with no encoder optimization, so it cannot be a training pathology.)
+closure with no encoder optimisation, so it cannot be a training pathology.)
 
 \paragraph{Structured temperature extrapolation.} Withholding \emph{temperature} rather
 than structure (train at $T\le309.75$\,K, test at higher $T$; $n=3343$), the
@@ -1293,8 +1470,9 @@ by activity (\S\ref{sec:surrogate}), not the geometry of the drift.
 The instrument behind \S\ref{sec:surrogate}---the rank of the activity Fisher $J^{\top}J$
 ($J=\partial\lngi/\partial\sigma$), read as a participation ratio
 $\mathrm{PR}=(\sum_i\lambda_i)^2/\sum_i\lambda_i^2$---is computationally inexpensive and oracle-free, which
-is its appeal for probing any physics-grounded latent. It is also easy to misread in three ways that inflate a null or a rank
-in the flattering direction, silently; we record them because the corrections are not obvious.
+is its appeal for probing any physics-grounded latent. It is also easy to misread in three ways that
+inflate a null or a rank in the favourable direction without any warning sign; we record them
+because the corrections are not self-evident.
 
 \paragraph{(i)~Finite differences inflate the participation ratio.} $\mathrm{PR}$ is a \emph{tail} statistic,
 governed by the small eigenvalues. A closure evaluated by an unrolled fixed point carries a small,
@@ -1302,18 +1480,18 @@ step-\emph{independent} gradient noise (from the convergence tolerance, not trun
 differences lift the exactly- and near-zero eigenvalues onto a floor and $\mathrm{PR}$ rises. On the
 differentiable COSMO-SAC-2002 layer, autograd and finite differences on \emph{identical} profiles give
 $\mathrm{PR}=1.00$ and $1.25$---a $25\%$ inflation from noise alone, though the per-gradient cosine is $0.995$
-(the direction is right, the tail is not). It is worse on a typed ($3\times51$) profile basis: a closure that
+(the direction is right, the tail is not). It is worse on a typed ($3\times51$) profile basis. A closure that
 ignores the typing (2002) has $102$ exactly-redundant coordinates that finite differences decorrelate into a
 spurious floor, inflating its $\mathrm{PR}$ from $1.0$ toward $2.0$, while a closure that uses the typing
-(2010) has no such redundancy---so the same step inflates the two \emph{asymmetrically} and can manufacture a
-rank ordering with no physical content. \emph{Autograd is the appropriate instrument where the closure is
+(2010) has no such redundancy. The same step therefore inflates the two \emph{asymmetrically} and can
+manufacture a rank ordering with no physical content. \emph{Autograd is the appropriate instrument where the closure is
 differentiable; with only finite differences, $\mathrm{PR}$ is interpretable against a known-rank or
 permuted control, never absolutely.}
 
 \paragraph{(ii)~``Own vs.\ other'' controls are powerless when the resolved direction is common.} A
 dimension- and smoothness-matched control aligns a molecule's drift against its own predicted compensation and
-against other molecules'. It has power only if the predictions differ. But when the aggregate Fisher is
-rank-one (\S\ref{sec:surrogate}) the resolved direction is \emph{common}, so ``own'' and ``other'' point
+against other molecules'. It has power only if the predictions differ. When the aggregate Fisher is
+rank-one (\S\ref{sec:surrogate}), however, the resolved direction is \emph{common}, so ``own'' and ``other'' point
 almost the same way and the diagonal must sit inside the null---$p\approx0.5$ regardless of the truth. On the
 matched set sparsity compounds this: a median of one pair per molecule makes each per-molecule Jacobian
 subspace one-dimensional, so ``own'' and ``other'' subspaces coincide exactly. \emph{A control's null is
@@ -1327,13 +1505,14 @@ rows is far below the nominal row count. On the matched set the per-molecule sub
 one-dimensional, so the baseline is ${\approx}2\%$ and the observed $5.5\%$ is a two-to-threefold
 \emph{enrichment}, not the ``no concentration'' a raw own-versus-other equality suggests: own equals other
 because both one-dimensional subspaces are the same common direction, not because the drift avoids the
-resolved one. And with that direction common, $N$ enriched molecules are not $N$ independent draws---the
+resolved one. With that direction common, $N$ enriched molecules are not $N$ independent draws---the
 enrichment needs a cluster null (\S\ref{sec:measure}), without which its significance is over-stated by
 $\sqrt{N/N_{\mathrm{eff}}}$. We therefore report the $5.5\%$ as evidence in neither direction. \emph{The
 baseline must be set by effective rank, and the null clustered by the shared direction.}
 
-Each failure turns a soft spectral quantity into a hard structural claim---the mode the surviving
-statements of \S\ref{sec:surrogate} avoid by carrying their null model and a power check inline.
+Each failure converts a spectral concentration statistic into a structural claim it does not support.
+The surviving statements of \S\ref{sec:surrogate} avoid that conversion by carrying their null model
+and a power check inline.
 
 \input{sections/pka-domain}
 \input{sections/pka-si}
@@ -1426,8 +1605,8 @@ $\Var(m)$ and thirteen times tighter than the binning bound on those same rows (
 $0.39$ full). We report it and do not promote it, because all $67$ multi-row pairs come from a
 \emph{single} publication each: those rows are one laboratory's temperature series, so the bound omits
 the between-determination component of the superpopulation (\S\ref{sec:decomp}) while the binning
-bound, whose eight bins mix all $15$ sources, does not. It bounds a sub-component, and the honest
-reading is that the binning bound is slack rather than that $\Binsuf$ is near zero. The same fact
+bound, whose eight bins mix all $15$ sources, does not. It bounds a sub-component, so the reading
+that holds is that the binning bound is slack rather than that $\Binsuf$ is near zero. The same fact
 ---that the temperature axis carries under $1\%$ of $\Var(m)$ at a fixed profile pair---makes the
 choice between conditioning on $\zstar$ and on $(\zstar,T)$ numerically immaterial on this set,
 though only the latter is licensed by Lemma~\ref{prop:decomp} and it is the one we use. Collapsing to one
@@ -1469,7 +1648,7 @@ activity coefficients: ThermoML, the NIST/IUPAC archive of experimental thermoph
 grow the matched activity corner: of the $298$\,K ThermoML IDAC pairs, only two solutes lack a VT-2005
 profile while their solvent has one---the binding constraint is joint IDAC$\times$profile coverage, not
 profile availability. What does enlarge the corner is a broader extraction on the IDAC side: the
-expanded ThermoML pull released with the code matches $115$ pairs at $298$\,K, which we do not adopt
+expanded ThermoML pull released with the code matches $115$ pairs at $298$\,K. We do not adopt it
 as a replacement corner because its verdict is quality-cut sensitive: it widens the margin from
 $0.24$ to $0.35$ but \emph{inverts} it to $-0.13$ on the $100$ pairs labelled gas chromatography, and
 that sensitivity is unresolved at $298$\,K. It is not a verdict on the extraction, which matters
@@ -1494,7 +1673,7 @@ different standards; that asymmetry is quantified above (four molecules, $12$ ro
 on the exactly matched subset) rather than left implicit. Second-domain pKa: the OPERA experimental compilation
 \cite{mansouri2019opera} (\texttt{pKa\_QR.sdf}, $7904$ QSAR-ready records, public-domain US EPA;
 cited, not redistributed); the uniform net-formal-charge filter reduces this to the $1004$
-Hammett-amenable rows ($158$ meta/para, $846$ ortho/heteroaromatic) analysed in \S\ref{sec:si-pka}. The Bemis--Murcko scaffold split follows the main text; because the seeded
+Hammett-amenable rows ($158$ meta/para, $846$ ortho/heteroaromatic) analysed in \S\ref{sec:si-pka}. The Bemis--Murcko scaffold split follows the main text. Because the seeded
 split is not stable across pipeline versions (\S\ref{sec:framework}), the numbers in this paper are
 computed on a \emph{single, pinned} split, whose per-file SHA-256 each run's manifest records and
 whose files are deposited with the checkpoints rather than versioned---with the one run whose split
@@ -1522,12 +1701,12 @@ the defect is confined to the $\sigma$ one. Per-run stream provenance was not lo
 artifacts cannot certify which build fed which arm. The rebuilt file postdates every prediction file
 behind Fig.~\ref{fig:paradox} and Table~\ref{tab:si-arms} and predates the two single-seed
 oracle-application controls (\S\ref{sec:si-tables}) and the output-residual arms
-(\S\ref{sec:gateb}); that ordering is consistent with the headline arms having used the guarded
+(\S\ref{sec:gateb}). That ordering is consistent with the headline arms having used the guarded
 build and the later controls the leaking one, but these are timestamps on local copies of
 cloud-run outputs and settle nothing on their own. Three facts bound what the leak can do. It is
 common-mode across the paradox contrast, the learned-$\sigma$ and $\sigma$-oracle rows being one
 checkpoint evaluated two ways, so it cannot generate the gap between them; DirectGNN uses no
-grounding stream, so a leak can only flatter the physics arm that loses to it; and on the $n{=}44$
+grounding stream, so a leak can only favour the physics arm that loses to it; and on the $n{=}44$
 matched set of \S\ref{sec:surrogate} a correct guard would have removed one molecule (piperidine).
 What it does compromise is auditability, and with it the reach of the split guarantee: an arm
 trained on that build would have had reference $\sigma$-profiles --- though no solubility labels ---
@@ -1537,19 +1716,22 @@ stream build beside the split hash, which was not done for these runs.
 \paragraph{The two decomposition sets, deposited row by row.} Because the closure/insufficiency
 verdict rests on a newly constructed set, and because the repository record is a
 placeholder (limitation~(x)), both sets are deposited with the Supporting Information as row-level tables
-that need no code to inspect. \textbf{Table~S1} (\texttt{broad\_idac\_set\_477.csv}) carries one
+that need no code to inspect. The results the placeholder leaves uncheckable are, specifically, the
+broad IDAC set with its design and provenance audit, the 2010 kernel's own-latent floors, the fitted
+kernel residual and the estimator grid. \textbf{Table~S1} (\texttt{broad\_idac\_set\_477.csv}) carries one
 row per measurement: pair identifier, solute and solvent SMILES, the UD compound key matched to each
 and which rule matched it (full InChIKey or first-block fallback), temperature, the experimental
 $\lngi$, the \emph{four} closure outputs---2002 and 2010-dispersion-off, each in the full and the
 residual-only combinatorial convention, so that the deployed-convention kernel contrast of
 \S\ref{sec:measure}(iii) is recomputable from the file---the
 ThermoML method field, the source DOI and journal, and a flag for the $57$ rows shared with the
-corner. \textbf{Table~S2} (\texttt{corner\_set\_60.csv}, printed in full as
+corner. Some analysis artifacts label that same table \texttt{representative\_set\_477.csv}.
+\textbf{Table~S2} (\texttt{corner\_set\_60.csv}, printed in full as
 Table~\ref{tab:corner-rows}) carries the same fields for the $60$ corner pairs, with three
-differences that follow from how the corner is defined: its closure outputs are the VT-2005 ones the
+differences that follow from how the corner is defined. Its closure outputs are the VT-2005 ones the
 deployed $\sigma$-oracle uses (columns \texttt{g\_full}, \texttt{g\_res}) alongside the four
-UD-profile outputs that make it commensurable with Table~S1; its matching rule is canonical SMILES
-throughout, so it carries neither the per-row match-rule columns nor the UD compound keys; and it
+UD-profile outputs that make it commensurable with Table~S1. Its matching rule is canonical SMILES
+throughout, so it carries neither the per-row match-rule columns nor the UD compound keys. It also
 names each compound in words as well as in SMILES. It additionally carries a per-row record count,
 $1$ throughout. All $60$ rows sit at $298$\,K, all are
 chromatographic, and their three source DOIs divide the set $33/20/7$. The counts, margins,
@@ -1748,7 +1930,7 @@ range is the organisation measure \S\ref{sec:discussion} points here for. The sc
 by the split rather than by the representation: of the $124$ scaffolds spanned by the $147$ test
 solutes only $11$ hold more than one solute, so only $34$ solutes share a Bemis--Murcko scaffold
 with another, carrying $492$ of the $5608$ rows ($8.8\%$), and the two
-partitions coincide on $91\%$ of the data. The raw variance shares in fact run the other way
+partitions coincide on $91\%$ of the data. The raw variance shares run the other way
 (seed~$42$: scaffold $0.636$ against solute $0.639$), so the \emph{raw} ratio falls short of one by
 $0.4/0.7/0.9\%$ across the three seeds, and it reaches one only through the differing size-matched
 permutation nulls ($0.022$ against $0.026$); no interval is attached to that
@@ -1782,18 +1964,21 @@ O'Hagan \cite{kennedy2001} and its calibration critique \cite{brynjarsdottir2014
 frame the paper works in. Four further literatures bear on it without being that frame.
 Separating whether predictions are right on average from whether
 they are sharp is Murphy and DeGroot's reliability--resolution decomposition
-\cite{murphy1973,degroot1983}: the closure/insufficiency split is the same kind of object, an
+\cite{murphy1973,degroot1983}: the closure/insufficiency split is an object of the same kind, an
 identity that partitions a squared error, but on a \emph{fixed} operator with an external reference
 for the intermediate rather than on a forecast--outcome pair. A misspecified model still converges
 to a pseudo-true limit under White's quasi-maximum-likelihood account \cite{white1982}, which is
 what $\Delta_\infty$ of Proposition~\ref{prop:tax} names for a composed predictor. That a
 decomposition may be only weakly constrained by the data is the subject of parameter sloppiness
 \cite{transtrum2015,gutenkunst2007} and of structural versus practical identifiability
-\cite{raue2009,villaverde2016}---the setting of Lemma~\ref{prop:ident}. And that apparent skill may
+\cite{raue2009,villaverde2016}---the setting of Lemma~\ref{prop:ident}. That apparent skill may
 reflect pipeline choices rather than physics is the concern of underspecification
 \cite{damour2022}, leakage \cite{kapoor2023} and compositional risk \cite{mahajan2025crm}, which is
 why every arm difference in this paper is reported as a difference between two separately tuned
-pipelines (\S\ref{sec:grading}).
+pipelines (\S\ref{sec:grading}). Finally, that a constrained prior lowers variance at the cost of a
+bias confined to the directions the data leave undetermined is the null-space reading of
+regularisation \cite{engl1996,hansen1998} and of null-space priors in inverse problems
+\cite{schwab2019}, which is the frame in which Proposition~\ref{prop:tax} is stated.
 
 % Last flush before \bibliography. Without it the deferred float queue (Fig.~\ref{fig:dial} is
 % the last entry) empties into the middle of the reference list. This used to sit at the end of

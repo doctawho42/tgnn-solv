@@ -20,9 +20,11 @@ learns its input. COSMO-SAC \cite{lin2002} is a segment-activity reformulation o
 and the $\sigma$-profile it consumes --- screening-charge density over a molecule's cavity --- is
 that framework's construct, tabulated from quantum chemistry \cite{mullins2006}. Predicting it from
 structure removes that calculation from the pipeline; TeNNet-SAC \cite{yang2025tennet} does so while
-also learning the segment-activity kernel, and gains from truer profiles. Our $\sigma$-profile head
-is of this kind but holds the kernel fixed, which leaves the tabulated profile free as an
-external reference for the learned one.
+also learning the segment-activity kernel, and gains from truer profiles.
+% The sentence that described the present work here ("Our sigma-profile head is of this kind but
+% holds the kernel fixed ...") was deleted in the 2026-07-29 pass: criterion (5) allows this section
+% to describe the present work only in its closing sentences. Its content is restated in the closing
+% paragraph below and stated properly in Methods, Sec. 4.2. Do not reintroduce it here.
 
 When a fixed physical structure improves or degrades a learned model is the broader question of
 physics-informed machine learning \cite{karniadakis2021}, whose dominant forms impose structure as a
@@ -50,16 +52,17 @@ critique \cite{brynjarsdottir2014}; App.~\ref{sec:si-positioning} situates the i
 the forecast-decomposition, quasi-maximum-likelihood, identifiability and pipeline-validity
 literatures.
 
-What this literature lacks is a way to \emph{measure}, not merely diagnose, whether a fixed
-physical model or its learned inputs limits a composed predictor's accuracy, and whether the
-learned intermediate has become a surrogate for the model's error; the concept-leakage
-literature in particular has no external reference against which to quantify the phenomenon. We supply
+% CLOSING PARAGRAPH. Criterion (5) of the 2026-07-29 pass: this section states what the present work
+% does only here, and only as what the literature lacks. The six clauses of results that used to
+% stand here -- the 44 matched molecules, the grades likely and open, the phase-randomised and
+% zero-drift nulls, the pointer to Table 2 -- live in Sec. 5.4, in the Mechanism block of Table 2 and
+% in Discussion limitation (v). The duplicated "FastSolv and SolProp remain the accuracy reference
+% points" sentence is gone: paragraph 1 already ends on that point.
+What this literature lacks is a way to \emph{measure}, rather than merely diagnose, whether a fixed
+physical model or its learned inputs limits a composed predictor's accuracy, and whether the learned
+intermediate has stopped reporting the quantity it is named after; in the concept-bottleneck case
+there is no external reference against which either question could be settled. This work supplies
 one---a reference $\sigma$-profile for solubility, tabulated substituent constants for a second
-chemical domain---turning the qualitative concern into a model-free measurement that separates model
-misspecification from input insufficiency. Using it, we measure on a fixed thermodynamic model that
-the learned intermediate's deviation from the reference is shared across molecules---\emph{likely},
-on $44$ matched molecules over three seeds, and beyond the deviation's own smoothness on one
-checkpoint against a phase-randomised null---while whether that shared direction transfers to
-molecules outside the fit is measured against a zero-drift null only and graded \emph{open}
-(Table~\ref{tab:claims}); and that grounding the intermediate on reference values can reduce
-accuracy. FastSolv and SolProp remain the accuracy reference points for this task.
+chemical domain---and holds the mechanistic kernel fixed, so the tabulated value stays available as
+an external reference for the learned one. That is what turns a qualitative concern into a
+measurement.

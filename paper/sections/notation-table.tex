@@ -1,8 +1,19 @@
-% Notation table. Moved from the SI to the main text (2026-07-27) so that the symbols and the
-% coined vocabulary are defined before the Results section uses them.
+% Notation table. Moved from the SI to the main text (2026-07-27) so that the symbols and the coined
+% vocabulary are defined before the Results use them, and set at the end of the theory section
+% (2026-07-29) when the separate notation-and-grading section was dissolved (criterion 7).
+%
+% SIMPLIFIED 2026-07-29 under criterion (8). It is a glossary, not a second methods section: one line
+% per symbol, the qualification that belongs to a measurement kept where the measurement is made
+% (Sec. 5.2, Tables 2-4, App. C). What left this table and where it now stands:
+%   - the sets' sizes, temperature and heavy-atom ceiling, and the deposited file names -> Sec. 5.2(i)-(ii)
+%   - "label noise is inside B_insuff, not beside it" -> Sec. 3.2 and Table 3, note k
+%   - the margin's bootstrap-resolution rule -> the grading rule at the head of Sec. 5
+%   - the full inventory of subscripted sigmas (Fisher design, cutoff, derivative) -> App. F, App. G
+%   - "deflated" -> App. C, where the deflated estimators are tabulated
+% Keep it to one line per row; a row that grows to three is a paragraph in the wrong place.
 \begin{table*}[t]
 \centering
-\caption{Notation and coined terms used throughout.}
+\caption{Symbols and coined terms used throughout.}
 \label{tab:notation}
 {\footnotesize
 \begin{tabular}{@{}lp{0.68\linewidth}@{}}
@@ -10,17 +21,17 @@
 Symbol / term & Meaning \\
 \midrule
 $g$ (closure), $h$ (encoder) & fixed, non-fitted physical map (COSMO-SAC; a Hammett linear free-energy relation, LFER, for pKa); learned graph network $x\mapsto z$ \\
-$\zstar$, $\hat z$, $m$ & reference (oracle) vs.\ learned $\sigma$-profile; activity target (experimental $\lngi$). $\zstar$ is the concatenated profile pair; where $g$ reads a temperature the closure's argument is written $(\zstar,T)$ (\S\ref{sec:decomp}) \\
-$\Bclos$, $\Binsuf$    & closure misspecification $\Ex[(\Ex[m\mid\zstar]-g(\zstar))^2]$; input insufficiency $\Ex[\Var(m\mid\zstar)]$, over the measurement superpopulation of \S\ref{sec:decomp}. Experimental label noise is \emph{inside} $\Binsuf$, not a term beside it \\
-separation margin      & $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$; positive is what witnesses $\Bclos>\Binsuf$ on the sample measured, and how far that witness is graded is set by its bootstrap resolution and not by its sign (\S\ref{sec:grading}); negative loses the ordering rather than reversing it \\
-the corner / the broad IDAC set & the $n{=}60$ IDAC\,$\cap$\,VT-2005 pairs at $298$\,K / the $477$ measurements matched to the University of Delaware (UD) $\sigma$-profile database, over $185$ distinct pairs, at all temperatures (\S\ref{sec:measure}). \emph{Broad} is relative to the $\gamma^\infty$ literature, not to the solubility corpus: no solute in it exceeds $12$ heavy atoms. Deposited as \texttt{broad\_idac\_set\_477.csv} \\
-LOTV; leakage-immune; deflated & law of total variance, the model-free binning bound on $\Binsuf$; fits no model, so no held-out row borrows strength from a near-twin; biased low by the crossed design \\
+$\zstar$, $\hat z$, $m$ & reference (oracle) vs.\ learned $\sigma$-profile; activity target (experimental $\lngi$). $\zstar$ is the closure's whole argument: the concatenated profile pair, written $(\zstar,T)$ where $g$ also reads a temperature \\
+$\Bclos$, $\Binsuf$    & closure misspecification $\Ex[(\Ex[m\mid\zstar]-g(\zstar))^2]$; input insufficiency $\Ex[\Var(m\mid\zstar)]$, over the measurement superpopulation of \S\ref{sec:decomp} \\
+separation margin      & $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$; positive witnesses $\Bclos>\Binsuf$ on the sample measured, negative loses that ordering rather than reversing it \\
+the corner / the broad IDAC set & the two activity data sets the instrument is run on: the VT-2005-matchable pairs at one temperature, and the larger set matched to the University of Delaware (UD) $\sigma$-profile database across temperatures (\S\ref{sec:measure}) \\
+LOTV; leakage-immune & law of total variance, the model-free binning bound on $\Binsuf$; \emph{leakage-immune}, fitting no model, so no held-out row borrows strength from a near-twin \\
 \Ggap\ (grounding gap) & $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$: oracle risk minus best end-to-end risk ($R_{\mathrm{free}}$ is the free black box's) \\
-$\Gamma_{S}$; \hammett; $\sigma_\eta$ & COSMO-SAC segment activity coefficient, Eq.~\eqref{eq:cosmo} in App.~\ref{sec:si-methods}; Hammett substituent constant (App.~\ref{sec:pka}); experimental label noise. Standing alone, $\sigma$ is the charge-density profile, and so are the $\sigma_m,\sigma_n$ of Eq.~\eqref{eq:cosmo} (segment charge densities), its cutoff $\sigma_{\mathrm{hb}}$, the $\sigma_{\text{solvent}}$ of a derivative and the predicted $\hat\sigma_{\mathrm{grounded}}$; the noise scales are the $\sigma_{\lnx},\sigma_{\Tm},\sigma_{\dHfus}$ of the Fisher design (App.~\ref{sec:ident}) and the bare $\sigma$ of Lemma~\ref{lem:fisher}. $\Gamma_{S}$ is not the grounding gap \Ggap, and $\sigma(\cdot)$ with an argument is the generated $\sigma$-algebra \\
+$\Gamma_{S}$; \hammett; $\sigma_\eta$ & COSMO-SAC segment activity coefficient (Eq.~\eqref{eq:cosmo}), \emph{not} the grounding gap \Ggap; Hammett substituent constant, renamed from $\sigma$; experimental label noise. Standing alone, $\sigma$ is the charge-density profile, and $\sigma(\cdot)$ with an argument is the generated $\sigma$-algebra \\
 $\Delta_\infty$ (physics penalty) & asymptotic risk of the physics arm minus the budget-matched control \\
 full / res             & COSMO-SAC with / without the Staverman--Guggenheim combinatorial term \\
-compensating surrogate & a learned $\hat z$ that would \emph{cancel} the closure's error instead of matching $\zstar$; the hypothesis of \S\ref{sec:surrogate}, whose antecedent (a shared drift direction) is measured and whose cancellation is not \\
-$P_{\mathrm{boot}}$    & clustered-bootstrap frequency that the \emph{measured} separation margin stays positive: the instrument's resolution on this design, not a posterior probability of a population inequality \\
+compensating surrogate & a learned $\hat z$ that would \emph{cancel} the closure's error instead of matching $\zstar$; the hypothesis of \S\ref{sec:surrogate} \\
+$P_{\mathrm{boot}}$    & clustered-bootstrap frequency that the \emph{measured} separation margin stays positive: the instrument's resolution on this design, not a posterior probability \\
 \bottomrule
 \end{tabular}}
 \end{table*}

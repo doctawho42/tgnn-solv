@@ -13,23 +13,23 @@ partitioned by Bemis--Murcko scaffold so every test solute is unseen at
 training; row membership is set by a
 melting-point-independent miscibility/structure filter, and crystal $\Tm$,
 $\dHfus$, Hansen parameters, and infinite-dilution activity coefficients \lngi\
-are merged on as per-solute labels where available. Two data hazards are handled
-explicitly: melting-point tables arrive in either $^\circ$C or Kelvin and are unit-detected by
-column median (an undetected double conversion inflates every $\Tm$ by $273$\,K), and the seeded
-scaffold split is not stable across pipeline versions, so every regeneration is treated as
-a new split. Crystal supervision is scarce---the test and validation splits contain essentially no
+are merged on as per-solute labels where available. Two data hazards handled explicitly in the
+pipeline---melting-point unit detection and the instability of the seeded scaffold split across
+pipeline versions---are recorded in \S\ref{sec:si-repro}.
+Crystal supervision is scarce---the test and validation splits contain essentially no
 measured $\dHfus$, the quantitative basis of the identifiability argument
 (\S\ref{sec:framework}). External single-component data used for grounding are an
 open crystal-property pool ($\sim$15{,}000 melting points), the VT-2005
-$\sigma$-profile database, and ThermoML infinite-dilution activity coefficients.
+$\sigma$-profile database, and ThermoML infinite-dilution activity coefficients
+\cite{frenkel2011thermoml}.
 The released stream builder excludes any pool molecule whose scaffold appears in validation
 or test and aborts on a missing split file --- but that is a property of the builder, not a
 certified property of the runs reported here. One $\sigma$-stream build on disk was
 generated against the wrong split files, $91$ of its $1425$ rows being held-out solutes by
 canonical SMILES, and per-run stream provenance was not logged, so the artifacts cannot certify
-which build fed which arm (\S\ref{sec:si-repro} gives the file-order evidence, the three facts that
+which build fed which arm. \S\ref{sec:si-repro} gives the file-order evidence, the three facts that
 bound what a leak could do, and the one molecule it touches in the $n{=}44$ analysis of
-\S\ref{sec:surrogate}). We therefore do not assert the scaffold guarantee for these runs.
+\S\ref{sec:surrogate}. We therefore do not assert the scaffold guarantee for these runs.
 
 \subsection{Encoder, heads, and the closure under study}
 Solute and solvent are encoded by a \emph{shared} message-passing neural network, interact through a
@@ -42,12 +42,12 @@ $\Phicry(T)$ of Eq.~\eqref{eq:sle} with the constant-$\Delta C_p$ correction omi
 optionally regularised by a UNIFAC group-contribution
 prior \cite{fredenslund1975}; its symmetric one-parameter collapse gives
 $\lng(x_2,T)=\lngi(T)(1-x_2)^2$, the minimal model in which the identifiability analysis is cleanest
-(\S\ref{sec:framework}). The closure under study is instead parameter-free: a $\sigma$-profile head
+(\S\ref{sec:framework}). The closure under study is instead parameter-free. A $\sigma$-profile head
 emits a $51$-bin screening-charge-density profile $p(\sigma)$ per molecule (area per bin, summing to
 the cavity area $A$), and a COSMO-SAC layer (Lin--Sandler / VT-2005 conventions,
 Eq.~\eqref{eq:cosmo} in App.~\ref{sec:si-methods}) maps the profile pair to \lng\ through a damped fixed point for the segment
-activity coefficient $\Gamma_{S}$ (distinct from the grounding gap $\Ggap$), with an optional
-Staverman--Guggenheim combinatorial term---the full/residual-only distinction on which
+activity coefficient $\Gamma_{S}$ (distinct from the grounding gap $\Ggap$). The layer carries an
+optional Staverman--Guggenheim combinatorial term---the full/residual-only distinction on which
 Table~\ref{tab:claims} and \S\ref{sec:measure} turn (\S\ref{sec:si-methods}). This closure over a
 network-\emph{predicted} $\sigma$-profile, and the intervention that swaps it for the external
 reference, is the object of study (\S\ref{sec:paradox}).
@@ -60,20 +60,16 @@ reference, is the object of study (\S\ref{sec:paradox}).
 The dispersion-off closures in the
 fidelity measurement (\S\ref{sec:measure}) are our own differentiable implementations, so those
 arms share one code path, and each consumes its own model-prescribed $\sigma$-averaging (Mullins for
-2002, Hsieh for 2010), the specified use of each closure; an input-fixed control that varies the
-kernel alone is reported in \S\ref{sec:measure}(iii). The 2002 layer reproduces the NIST reference
-COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE $0.0035\,\ln\gamma$ on identical VT-2005 profiles, and
-our differentiable COSMO-SAC-2010/dsp layer~\cite{hsieh2010,hsieh2014dsp}---built on the
-\emph{typed} latent, three donor/acceptor-resolved $\sigma$-profiles per molecule in place of one,
-read by a matching typed hydrogen-bonding kernel---reproduces the NIST 2010
-reference to RMSE $1.4\times10^{-4}\,\ln\gamma$ with dispersion \emph{off}, that second figure
-quoted from its validation run's console output, which deposited no artifact. The dispersion term is
-\emph{not} validated to that standard --- it carries the tabulated coefficient at a single sign, and
-no $\epsilon$ is tabulated for the three matched bromine- or iodine-containing pairs --- which is why
-every dispersion-off contrast is computed on our layers and cross-checked against the NIST
-\texttt{cCOSMO} reference while the \emph{2010, dispersion on} runs are quoted from \texttt{cCOSMO} itself. The
-layer definitions, the validation figures and the full scope of the dispersion caveat are in
-\S\ref{sec:si-methods}.
+2002, Hsieh for 2010), the specified use of each closure. The 2002 layer---called the \emph{fair
+2002} arm wherever the kernels are compared, because it reads all three profile channels---reproduces
+the NIST reference COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE $0.0035\,\ln\gamma$ on identical
+VT-2005 profiles. Our COSMO-SAC-2010/dsp layer~\cite{hsieh2010,hsieh2014dsp}---built on the \emph{typed}
+latent, three donor/acceptor-resolved $\sigma$-profiles per molecule in place of one, read by a
+matching typed hydrogen-bonding kernel---reproduces the NIST 2010 reference with dispersion
+\emph{off}. The dispersion term is \emph{not} validated to that standard, which is why every
+dispersion-off contrast is computed on our layers while the \emph{2010, dispersion on} runs are
+quoted from \texttt{cCOSMO}. Layer definitions, validation figures and the full scope of the
+dispersion caveat are in \S\ref{sec:si-methods}.
 
 \subsection{Solver, oracle substitution, and training}
 Given $\Phicry(T)$ and a closure for \lng, the saturated mole fraction solves
@@ -119,7 +115,7 @@ explicit temperature encoding the physics arm does not, seeing $T$ instead throu
 $\Phi(T)$ and the closure, and the optimisation settings were tuned per arm and differ.
 The TGNNSolv$-$DirectGNN gap is accordingly a comparison of two separately tuned
 pipelines that differ in the thermodynamic bottleneck, not an isolation of the
-bottleneck; DirectGNN is the reference for every asymptotic physics penalty comparison
+bottleneck. DirectGNN is the reference for every asymptotic physics penalty comparison
 in \S\ref{sec:results}, and those comparisons carry that caveat.
 The controlled comparisons of \S\ref{sec:paradox} are run at three seeds and reported as
 mean$\pm$sd on a cross-arm row set (rows supervised and finite in every arm). Single-seed, and

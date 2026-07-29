@@ -12,3 +12,29 @@
 1.92   precision: the worst learned-sigma seed is 1.921, now printed at the three decimals of Table 6's per-seed triple 1.803/1.921/1.813 rather than rounded to 1.92.
 6%     corrected: the random-fold correctability figure's uncertainty is a standard error over the five fit seeds (the convention the same paragraph states), and results/compensation/local_closure_fix_seeded_random.json ranks.1.reduction_pct_per_seed = [56.512, 28.462, 55.164, 41.754, 48.869] gives mean 46.152 with sd(ddof=1) 11.491, i.e. se 5.14. The manuscript now prints 46 +- 5%. The two grouped-design figures beside it, -5 +- 16% and +2 +- 15% (se 15.91 and 15.24), already matched and are unchanged.
 0.089  corrected: the seed-42 logP cell of the representation-variance table printed the raw eta-squared statistic where the caption promises an excess over the permutation null. results/blackbox/study4_2026-07-26.json seeds.directgnn_seed42."logP(solute)" has stat 0.08914 and excess 0.08322, so the cell now prints +0.083. Its share-of-ceiling line below the table (13.6%) was already computed from the excess, 0.0832/0.6127.
+
+# The four entries below are SUBSECTION NUMERALS, not measurements. The 2026-07-29 readability pass
+# dissolved the separate "Notation, and how the claims are graded" section (criterion 7: the notation
+# table moved to the end of the theory section, the grading rule to the head of the Results), which
+# renumbered Results from 6 to 5. Every "\S6.x" cross-reference is therefore now "\S5.x": the checker
+# keeps "6.1" as tier A because it carries a decimal point, and its cross-reference rule drops only
+# unsigned integers after a structural noun. Each is confirmed to have had no non-cross-reference
+# occurrence in the baseline, and the target prints the 5.x counterpart in the same sentences. If a
+# later draft ever prints one of these values as a measurement, delete the corresponding line here.
+6.1    section-number churn: the old \S6.1 (the grounding paradox) is now \S5.1; every baseline occurrence was a cross-reference, and the target prints 5.1 in the same sentences (baseline x12 -> target x0, gained 5.1).
+6.2    section-number churn: the old \S6.2 (the closure-fidelity axis) is now \S5.2; every baseline occurrence was a cross-reference, and the target prints 5.2 in the same sentences (baseline x66 -> target x0, gained 5.2).
+6.4    section-number churn: the old \S6.4 (the latent's departure from its reference) is now \S5.4; every baseline occurrence was a cross-reference, and the target prints 5.4 in the same sentences (baseline x35 -> target x0, gained 5.4).
+6.5    section-number churn: the old \S6.5 (the gated output residual) is now \S5.5; every baseline occurrence was a cross-reference, and the target prints 5.5 in the same sentences (baseline x6 -> target x0, gained 5.5).
+
+# NOT ENTRIES, a note. The 2026-07-29 front-matter pass (criteria 2, 3, 9, 10) emptied the abstract,
+# the introduction, the contributions and the conclusion of numbers, grades and modalities, and cut
+# the grade/scope blocks out of the Figure 1, Figure 2 and Figure 4 captions and the cross-reference
+# out of Table 3's. Every value it removed is still printed in the body, so the checker reports them
+# all under section 2 ("this statement no longer prints it") and section 1 stays empty; none of them
+# belongs in this allowlist, which is only for numbers gone from the document altogether. If a later
+# pass makes one of 0.51, 0.99, 2.04, 1.85, 2.25, 1.80, 1.98, 0.05, 44, 60, 477, 185 or 90% show up
+# in section 1, that is a real loss and not this pass's doing.
+
+# 2026-07-29 Results cut. The per-arm hyperparameter triple left the Discussion for App. A
+# (the plan's 90-word move); every one of its six values still prints in \S\ref{sec:si-methods}.
+4.2    rendering, not a loss: the control's weight decay 4.2e-5 still prints in App. A ("weight decay 4.2 x 10^-5 against 5 x 10^-4"), but there pdftotext spaces the mantissa from the "x 10" so the checker folds it into the single number 4.2e-05 and the bare mantissa disappears. In the baseline the Discussion's copy of the same pair rendered without that space, so "4.2" was also counted on its own. The value is in the document, at the same precision, in the paragraph that now owns it; only the unfolded token is gone.

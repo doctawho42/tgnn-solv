@@ -34,12 +34,12 @@ intermediate leaves the oracle marginally ahead. The oracle-$\hammett$ pipeline
 (scaffold-resolved substituent$\to\hammett$ assignment) and this validation extend directly to real
 data. On the OPERA experimental $\mathrm pK_a$ compilation \cite{mansouri2019opera} ($7{,}904$
 records under the same net-neutral filter), applying the same decomposition to the fixed Hammett
-closure yields a \emph{measured} fidelity sweep: on the clean meta/para series ($n{=}158$) the closure
-predicts experimental $\mathrm pK_a$ to RMSE $0.55$ with the closure at the input-insufficiency floor:
+closure yields a \emph{measured} fidelity sweep. On the clean meta/para series ($n{=}158$) the closure
+predicts experimental $\mathrm pK_a$ to RMSE $0.55$, with the closure at the input-insufficiency floor:
 the leakage-immune lower bound $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ is $-0.2$ ($95\%$~CI $[-0.4,-0.0]$),
 i.e.\ below zero, as a lower bound on the non-negative $\Bclos$ must sit when the LFER predicts as well
-as a flexible within-scaffold regressor---$\Bclos$ is not separately resolvable and is consistent with a
-well-specified closure (per-scaffold systematic offsets $\le0.18$). The ortho/heteroaromatic regime ($n{=}846$)
+as a flexible within-scaffold regressor. There $\Bclos$ is not separately resolvable and is consistent
+with a well-specified closure (per-scaffold systematic offsets $\le0.18$). The ortho/heteroaromatic regime ($n{=}846$)
 degrades to RMSE $2.26$, dominated by input insufficiency. Here the pKa latent is a \emph{scalar}
 Hammett constant, so---unlike the solubility regime---$\Binsuf$ is estimated \emph{directly} rather
 than through a coarsening of the closure's argument (\S\ref{sec:decomp}): a within-scaffold

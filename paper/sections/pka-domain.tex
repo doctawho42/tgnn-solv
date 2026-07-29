@@ -11,8 +11,8 @@ represent) lands in $\Bclos$, while \emph{ortho/steric} effects, absent from the
 constants, are information the intermediate lacks and land in $\Binsuf$. On the OPERA experimental
 compilation \cite{mansouri2019opera}---the canonical full set under a uniform, closure-independent
 quality filter that drops pre-ionized microstates (App.~\ref{sec:si-pka})---this yields a
-\emph{measured} fidelity sweep: the clean meta/para series ($n{=}158$) is well specified (RMSE $0.55$,
-$\Bclos$ below the insufficiency floor), while the ortho/heteroaromatic regime ($n{=}846$) degrades to
+\emph{measured} fidelity sweep. The clean meta/para series ($n{=}158$) is well specified (RMSE $0.55$,
+$\Bclos$ below the insufficiency floor). The ortho/heteroaromatic regime ($n{=}846$) degrades to
 RMSE $2.26$, of which a within-scaffold estimator places at most $4.5$ of the $5.1$ total in input
 insufficiency and hence at least $0.6$ in the closure. That estimator is an out-of-fold residual, so
 both figures are one-sided, and the a-priori
@@ -38,11 +38,11 @@ quoted as such (App.~\ref{sec:si-pka}).
 
 Both signs obey one \emph{crossover law}---grounding helps a pole iff the learned arm's error there
 exceeds the fidelity-set oracle error---which a competence sweep confirms
-(App.~\ref{sec:si-pka}): the well-specified pole's threshold (${\approx}0.315$) is never beaten by the learned arm, so grounding
-helps at every training budget; the degraded pole's threshold ($1.62$) is high, so the learned arm
-beats it, and grounding hurts, across the whole interpolation range (down to $12\%$ of the data),
-reverting to helps only under scaffold \emph{extrapolation}, where $\hat\sigma_{\mathrm H}$ breaks ($2.6{\pm}2.0$)
-back above the threshold. The flip is thus a within-distribution, fidelity-driven crossover whose one
+(App.~\ref{sec:si-pka}). The well-specified pole's threshold (${\approx}0.315$) is never beaten by
+the learned arm, so grounding helps at every training budget. The degraded pole's threshold ($1.62$)
+is high, so the learned arm beats it, and grounding hurts, across the whole interpolation range
+(down to $12\%$ of the data), reverting to helps only under scaffold \emph{extrapolation}, where
+$\hat\sigma_{\mathrm H}$ breaks ($2.6{\pm}2.0$) back above the threshold. The flip is thus a within-distribution, fidelity-driven crossover whose one
 scope boundary is predicted by the same law. It is the sharp, two-sided form of the penalty sign rule
 (Prop.~\ref{prop:tax}); its ``a fitted intermediate can beat the true one'' half is known---plug-in
 efficiency under correct specification \cite{hirano2003}, pseudo-true fitting under misspecification
