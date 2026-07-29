@@ -32,6 +32,15 @@ results/*
 results/b_insuff/*
 !results/b_insuff/matched_pairs.csv
 !results/b_insuff/decomposition.json
+# Named as its source by App. C (the input-fixed kernel control) and by the binning
+# enumeration the main text quotes; tracked so a reader can open what the paper cites.
+!results/b_insuff/fidelity_lever_inputfixed.json
+!results/b_insuff/binning_conventions.json
+# The constant-offset control that qualifies the transfer ratio of Sec. 6.4 / App. E.
+# Small, and it is the only source for a number the paper prints, so it is versioned.
+!results/compensation
+results/compensation/*
+!results/compensation/offset_control.json
 figures/*
 !figures/.gitkeep
 
@@ -77,4 +86,10 @@ notebooks/data/processed_*/
 *.bbl
 *.blg
 paper/*.log
+reports/*.log
 *.out
+*.xdv
+*.toc
+# achemso writes an auto-generated <jobname> bib stub next to the manuscript; its own first
+# line says it may safely be deleted.
+paper/acs-*.bib

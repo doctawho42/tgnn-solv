@@ -1,0 +1,35 @@
+{
+  "provenance": "in-house CosmoSacLayer (2002 kernel) and CosmoSac2010Layer (2010 kernel, dispersion off) on UD profiles; arm B applies Eq. 9 of Bell et al. 2020 (p = p_nhb + p_OH + p_OT) to the Hsieh sigma3 profile so that database, cavity area, volume and averaging are held fixed across the kernel step",
+  "set": "corner (results/b_insuff/matched_pairs.csv resolved to UD), all rows at 298.15 K",
+  "n": 60,
+  "n_solutes": 41,
+  "n_solvents": 17,
+  "mse_2002_mullins_native": 1.7572443485672047,
+  "mse_2002_summed_hsieh": 2.046722657755912,
+  "mse_2010_typed_hsieh": 0.765268033775659,
+  "kernel_step_input_fixed": {
+    "contrast": "2002 kernel on summed Hsieh -> 2010 kernel on typed Hsieh",
+    "margin_mse": 1.281454623980253,
+    "P_2010_better": 0.9704260651629073,
+    "ci90": [
+      0.04697429204149593,
+      2.9015982511143825
+    ]
+  },
+  "averaging_step_alone": {
+    "contrast": "2002 kernel on native Mullins -> 2002 kernel on summed Hsieh",
+    "margin_mse": -0.2894783091887072,
+    "P_summed_better": 0.13884711779448622,
+    "ci90": [
+      -0.7846666059181968,
+      0.10641417640619218
+    ]
+  },
+  "bootstrap": "two-way solute x solvent cluster bootstrap, 4000 draws, seed 0, CI90 = 5th/95th pct",
+  "verification": {
+    "n_is_60": true,
+    "armA_reproduces_deposited_fair2002": true,
+    "armC_reproduces_deposited_2010": true
+  },
+  "verified": true
+}

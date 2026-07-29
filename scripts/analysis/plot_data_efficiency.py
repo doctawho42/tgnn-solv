@@ -25,7 +25,9 @@ def main() -> None:
             "grid.color": "#D9D9D9", "axes.edgecolor": INK, "font.size": 11,
         })
 
-    fig, ax = plt.subplots(figsize=(5.2, 3.6))
+    # Canvas = \columnwidth (240.7 pt = 3.34 in), the width the section sets it at, so the
+    # PDF prints at 1:1 instead of the 0.50x reduction that put its ticks at 5.0 pt.
+    fig, ax = plt.subplots(figsize=(3.72, 2.72))
     for model, color, label, marker in (
         ("physics", SALMON, "physics-grounded", "o"),
         ("direct", TEAL, "DirectGNN (black box)", "s"),
@@ -33,14 +35,26 @@ def main() -> None:
         keys = sorted(d[model].keys(), key=float)
         fr = [float(k) for k in keys]
         mae = [d[model][k]["mae"] for k in keys]
-        ax.plot(fr, mae, marker=marker, color=color, lw=2.0, ms=7, label=label)
+        ax.plot(fr, mae, marker=marker, color=color, lw=1.6, ms=5, label=label)
     ax.set_xscale("log")
     ax.set_xticks([0.05, 0.1, 0.25, 0.5, 1.0])
     ax.set_xticklabels(["0.05", "0.1", "0.25", "0.5", "1.0"])
-    ax.set_xlabel("training fraction (by solute)")
-    ax.set_ylabel(r"scaffold-test MAE ($\ln x_2$)")
-    ax.set_title("Physics grounding loses at every data budget", color=INK, fontsize=11)
-    ax.legend(frameon=False, loc="upper left")
+    # The y-label's "2" is a mathtext subscript, which matplotlib sets at 0.7x the base, so
+    # the base has to clear 6/0.7 pt on the page for the subscript to clear 6 pt.  The canvas
+    # prints at 0.89x (270.5 pt native into the 240.7 pt column), so the base must clear
+    # 6/0.7/0.89 = 9.6 pt; 10.2 leaves the subscript at 6.3 pt on the page.
+    ax.set_xlabel("training fraction (by solute)", fontsize=10.2)
+    ax.set_ylabel(r"scaffold-test MAE ($\ln x_2$)", fontsize=10.2)
+    # Factual enumeration only. The paper makes no accuracy claim in either direction
+    # (Sec. 5; Table 2 grades the physics-vs-DirectGNN row "no claim"), so this title must
+    # not assert one -- it names the axes, the seed count and the arms, and nothing else.
+    # Set on two lines: at 6.6 pt it fitted on one, but 6.6 x 0.89 = 5.9 pt on the page is
+    # below the 6 pt floor, and 7.6 pt on one line would widen the canvas and undo the gain.
+    ax.set_title("Scaffold-test MAE by training fraction,\n"
+                 "two separately tuned arms, one seed",
+                 color=INK, fontsize=7.6)
+    ax.tick_params(labelsize=7.6)
+    ax.legend(frameon=False, loc="upper left", fontsize=7.6)
     out = REPO / "paper/figs"
     out.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):

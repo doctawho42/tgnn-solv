@@ -29,11 +29,11 @@ Scaffold is reported under both, because both questions matter.
 |---|---|---|---|---|
 | solute identity (147 levels) | **+0.613** | +0.587 | +0.597 | row |
 | solute scaffold (124 levels) | **+0.614** | +0.586 | +0.595 | row |
-| scaffold beyond an arbitrary solute grouping | +0.082 | +0.082 | +0.082 | solute |
+| scaffold beyond an arbitrary solute grouping | +0.088 | +0.082 | +0.082 | solute |
 | solvent identity (70 levels) | +0.278 | +0.301 | +0.271 | row |
 | temperature | +0.040 | +0.029 | +0.037 | row |
-| logP (solute) | +0.089 | +0.048 | +0.028 | solute |
-| TPSA (solute) | +0.060 | +0.061 | +0.042 | solute |
+| logP (solute) | +0.083 | +0.048 | +0.028 | solute |
+| TPSA (solute) | +0.055 | +0.061 | +0.042 | solute |
 | MolWt (solute) | +0.032 | +0.013 | +0.018 | solute |
 
 All p ≤ 0.01 except where noted. As a share of the solute-identity ceiling:
@@ -51,7 +51,7 @@ All p ≤ 0.01 except where noted. As a share of the solute-identity ceiling:
 account for 99.8–100.3 % of what 147 individual solutes account for, across all three seeds. The
 representation does not resolve molecules that share a Bemis–Murcko scaffold. It is also
 specifically scaffold rather than "some solute grouping": against a solute-level null the excess
-is +0.082 in every seed.
+is +0.088/+0.082/+0.082 across the three seeds.
 
 This is a direct, measured explanation of the project's scaffold-transfer limit. A test molecule
 on an unseen scaffold is not a mild extrapolation for this model — it is outside the axis along

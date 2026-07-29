@@ -1,0 +1,77 @@
+{
+  "target": "iso",
+  "n_pairs": 60,
+  "n_molecules": 44,
+  "n_constrained": 44,
+  "lambda": 0.01,
+  "per_molecule_cosine": {
+    "median": -0.0036430564857767734,
+    "mean": -0.0014244451491507838,
+    "frac_positive": 0.4772727272727273,
+    "q25": -0.029825761587288273,
+    "q75": 0.02384390482390866
+  },
+  "wrong_molecule_control": {
+    "diag_mean_cos": -0.0014244451491507806,
+    "offdiag_mean_cos": -0.010808306563746296,
+    "gap": 0.009383861414595516,
+    "perm_p_value": 0.16691654172913542,
+    "n_perm": 2000
+  },
+  "rowspace_concentration": {
+    "own_mean": 0.055113748762657115,
+    "other_mean": 0.05041019517051519,
+    "gap": 0.004703553592141923,
+    "median_subspace_dim": 1.0,
+    "sign_p_value": 0.7555555555555555
+  },
+  "residual_permutation": {
+    "real_pooled_cos": -0.0014244451491507838,
+    "null_mean": -0.0005429434336232967,
+    "p_value": 0.5304695304695305,
+    "n_perm": 1000
+  },
+  "pooled_r2_optimal_scale": 7.354483108734655e-05,
+  "optimal_scale_alpha": 16.924658036400658,
+  "verdict": "NULL",
+  "figure": "paper/figs/fig_picard_test.pdf",
+  "histogram": {
+    "bin_edges": [
+      -0.208085799,
+      -0.1833340029,
+      -0.1585822068,
+      -0.1338304107,
+      -0.1090786146,
+      -0.0843268184,
+      -0.0595750223,
+      -0.0348232262,
+      -0.0100714301,
+      0.014680366,
+      0.0394321621,
+      0.0641839583,
+      0.0889357544,
+      0.1136875505,
+      0.1384393466,
+      0.1631911427
+    ],
+    "counts": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      7,
+      12,
+      10,
+      9,
+      2,
+      2,
+      0,
+      0,
+      1
+    ],
+    "median": -0.0036430564857767734,
+    "provenance": "recovered from paper/figs/fig_picard_test.pdf by scripts/analysis/recover_picard_histogram.py (bar paths + tick calibration); every later run of run_picard_compensation_test.py writes this block directly from cos_diag"
+  }
+}

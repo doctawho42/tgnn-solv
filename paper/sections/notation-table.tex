@@ -1,0 +1,26 @@
+% Notation table. Moved from the SI to the main text (2026-07-27) so that the symbols and the
+% coined vocabulary are defined before the Results section uses them.
+\begin{table*}[t]
+\centering
+\caption{Notation and coined terms used throughout.}
+\label{tab:notation}
+{\footnotesize
+\begin{tabular}{@{}lp{0.68\linewidth}@{}}
+\toprule
+Symbol / term & Meaning \\
+\midrule
+$g$ (closure), $h$ (encoder) & fixed, non-fitted physical map (COSMO-SAC; a Hammett linear free-energy relation, LFER, for pKa); learned graph network $x\mapsto z$ \\
+$\zstar$, $\hat z$, $m$ & reference (oracle) vs.\ learned $\sigma$-profile; activity target (experimental $\lngi$). $\zstar$ is the concatenated profile pair; where $g$ reads a temperature the closure's argument is written $(\zstar,T)$ (\S\ref{sec:decomp}) \\
+$\Bclos$, $\Binsuf$    & closure misspecification $\Ex[(\Ex[m\mid\zstar]-g(\zstar))^2]$; input insufficiency $\Ex[\Var(m\mid\zstar)]$, over the measurement superpopulation of \S\ref{sec:decomp}. Experimental label noise is \emph{inside} $\Binsuf$, not a term beside it \\
+separation margin      & $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$; positive is what witnesses $\Bclos>\Binsuf$ on the sample measured, and how far that witness is graded is set by its bootstrap resolution and not by its sign (\S\ref{sec:grading}); negative loses the ordering rather than reversing it \\
+the corner / the broad IDAC set & the $n{=}60$ IDAC\,$\cap$\,VT-2005 pairs at $298$\,K / the $477$ measurements matched to the University of Delaware (UD) $\sigma$-profile database, over $185$ distinct pairs, at all temperatures (\S\ref{sec:measure}). \emph{Broad} is relative to the $\gamma^\infty$ literature, not to the solubility corpus: no solute in it exceeds $12$ heavy atoms. Deposited as \texttt{broad\_idac\_set\_477.csv} \\
+LOTV; leakage-immune; deflated & law of total variance, the model-free binning bound on $\Binsuf$; fits no model, so no held-out row borrows strength from a near-twin; biased low by the crossed design \\
+\Ggap\ (grounding gap) & $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$: oracle risk minus best end-to-end risk ($R_{\mathrm{free}}$ is the free black box's) \\
+$\Gamma_{S}$; \hammett; $\sigma_\eta$ & COSMO-SAC segment activity coefficient, Eq.~\eqref{eq:cosmo} in App.~\ref{sec:si-methods}; Hammett substituent constant (App.~\ref{sec:pka}); experimental label noise. Standing alone, $\sigma$ is the charge-density profile, and so are the $\sigma_m,\sigma_n$ of Eq.~\eqref{eq:cosmo} (segment charge densities), its cutoff $\sigma_{\mathrm{hb}}$, the $\sigma_{\text{solvent}}$ of a derivative and the predicted $\hat\sigma_{\mathrm{grounded}}$; the noise scales are the $\sigma_{\lnx},\sigma_{\Tm},\sigma_{\dHfus}$ of the Fisher design (App.~\ref{sec:ident}) and the bare $\sigma$ of Lemma~\ref{lem:fisher}. $\Gamma_{S}$ is not the grounding gap \Ggap, and $\sigma(\cdot)$ with an argument is the generated $\sigma$-algebra \\
+$\Delta_\infty$ (physics penalty) & asymptotic risk of the physics arm minus the budget-matched control \\
+full / res             & COSMO-SAC with / without the Staverman--Guggenheim combinatorial term \\
+compensating surrogate & a learned $\hat z$ that would \emph{cancel} the closure's error instead of matching $\zstar$; the hypothesis of \S\ref{sec:surrogate}, whose antecedent (a shared drift direction) is measured and whose cancellation is not \\
+$P_{\mathrm{boot}}$    & clustered-bootstrap frequency that the \emph{measured} separation margin stays positive: the instrument's resolution on this design, not a posterior probability of a population inequality \\
+\bottomrule
+\end{tabular}}
+\end{table*}

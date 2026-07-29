@@ -5,7 +5,7 @@ Reproducible, domain-free demonstration of the two structural facts behind the
 "grounding paradox" (paper ``paper/grounding_paradox.tex``, memo
 ``paper/GENERAL_THEORY_MEMO.md``):
 
-  DIAL (parts a,b): closure *fidelity* alone sets the true-input penalty.
+  DIAL (parts a,b): closure *fidelity* alone sets the reference-input penalty.
       A teacher draws a latent z* and a target m = T(z*)+noise via a known map T.
       A FIXED candidate closure g_F reconstructs the target from z* under a tunable
       misspecification (fidelity F: F=1 -> g_F=T exactly; F falls -> further off).
@@ -272,56 +272,83 @@ def make_figures(dial: list[DialRecord], conf: list[ConflationRecord], fig_dir: 
     written: list[str] = []
 
     # Fig 1: dial dR2(F) per teacher family, averaged over misspecification shapes
+    #
+    # This is the only figure of this script the paper prints (App. sec:dial), and it is set in a
+    # SINGLE column (measure 239.3 pt = 3.32 in).  A 6.0-in canvas there scales by 0.43, which put
+    # the legend at ~3.5 pt and the tick labels at ~4.4 pt -- below any publisher minimum.  The
+    # canvas is therefore drawn at the printed size, so the point sizes set here are point sizes on
+    # the page, and the two long strings are wrapped to fit that measure.
     fams = sorted({r.family for r in dial})
     Fs = sorted({r.fidelity for r in dial}, reverse=True)
-    fig, ax = plt.subplots(figsize=(6.0, 4.2))
+    # The y-label carries mathtext sub/superscripts, which matplotlib sets at 0.7x the base.
+    # The canvas is not in fact drawn at 1:1 -- the title's second line was the widest object
+    # on it and pushed the saved width to 277 pt, so \columnwidth reduced it by 0.87 and the
+    # subscripts printed at 5.4 pt.  The title is now wrapped to three short lines (which is
+    # what returns the canvas to its figsize) and the label base raised to 9.6, so the
+    # sub/superscripts clear 6 pt on the page.  Raise the base, not the canvas, if that moves.
+    dial_rc = {"font.size": 8.8, "axes.labelsize": 9.6, "axes.titlesize": 8.8,
+               "xtick.labelsize": 7.6, "ytick.labelsize": 7.6, "legend.fontsize": 7.4,
+               "legend.title_fontsize": 7.4}
     pretty = {"linear": "linear", "monotone_nonlinear": "monotone nonlinear",
               "kinetics_exp": "kinetics (exp.)", "pde_field": "PDE field"}
     # explicit soft-pastel base colours (do not rely on the style cycle, whose 4th
     # entry is off-palette): SALMON/TEAL/BLUE/PURPLE from make_paradox_figures.py
     fam_colors = {"kinetics_exp": "#7FB5A6", "linear": "#E8A98C",
                   "monotone_nonlinear": "#8FB3DA", "pde_field": "#B7A5DC"}
-    for fam in fams:
-        ys = []
-        for F in Fs:
-            vals = [r.delta_r2 for r in dial if r.family == fam and r.fidelity == F]
-            ys.append(np.mean(vals))
-        ax.plot(Fs, ys, marker="o", color=fam_colors.get(fam),
-                label=pretty.get(fam, fam.replace("_", " ")))
-    ax.axhline(0, color="0.6", lw=0.8, ls="--")
-    ax.set_xlabel("closure fidelity  F   (1 = exact map)")
-    ax.set_ylabel(r"true-input penalty  $\Delta R^2 = R^2_{\rm oracle}-R^2_{\rm head}$")
-    ax.set_title("Fidelity sets the true-input penalty (all domains, all shapes)")
-    ax.invert_xaxis()
-    ax.legend(fontsize=8, title="teacher family")
-    fig.tight_layout()
-    for ext in ("pdf", "png"):
-        p = fig_dir / f"fig_fidelity_dial.{ext}"
-        fig.savefig(p, dpi=150, bbox_inches="tight")
-        written.append(str(p))
-    plt.close(fig)
+    with plt.rc_context(dial_rc):
+        fig, ax = plt.subplots(figsize=(3.45, 2.75))
+        for fam in fams:
+            ys = []
+            for F in Fs:
+                vals = [r.delta_r2 for r in dial if r.family == fam and r.fidelity == F]
+                ys.append(np.mean(vals))
+            ax.plot(Fs, ys, marker="o", ms=3.4, lw=1.3, color=fam_colors.get(fam),
+                    label=pretty.get(fam, fam.replace("_", " ")))
+        ax.axhline(0, color="0.6", lw=0.8, ls="--")
+        ax.set_xlabel("closure fidelity  F   (1 = exact map)")
+        ax.set_ylabel("reference-input penalty\n"
+                      r"$\Delta R^2 = R^2_{\rm oracle}-R^2_{\rm head}$")
+        # No generality claim in the panel: the four curves coincide because the teacher factor
+        # carries no information in THIS construction (see the caption's caveat), not because the
+        # effect is domain-general. Title states what is swept, not what it proves.
+        ax.set_title("Reference-input penalty against closure fidelity\n"
+                     "(four synthetic teacher families,\n"
+                     "six misspecification forms)")
+        ax.invert_xaxis()
+        ax.legend(title="teacher family", frameon=False, handlelength=1.4,
+                  labelspacing=0.3, borderpad=0.2)
+        fig.tight_layout()
+        for ext in ("pdf", "png"):
+            p = fig_dir / f"fig_fidelity_dial.{ext}"
+            fig.savefig(p, dpi=150, bbox_inches="tight")
+            written.append(str(p))
+        plt.close(fig)
 
-    # Fig 2: conflation — Gamma vs B_clos (A2 holds) | B_clos=0 but Gamma>0 (A2 violated)
+    # Fig 2: conflation — G vs B_clos (A2 holds) | B_clos=0 but G>0 (A2 violated).
+    # The grounding gap is \Ggap = \mathcal{G} (paper preamble), renamed off \Gamma so that
+    # \Gamma_S keeps its COSMO-SAC meaning as the segment activity coefficient.
+    GGAP = r"$\mathcal{G}$"
     fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.2))
     a2 = [r for r in conf if r.regime == "A2_holds"]
     a2 = sorted(a2, key=lambda r: -r.knob)
-    axes[0].plot([r.knob for r in a2], [r.b_clos for r in a2], marker="s", label=r"$B_{\rm clos}$ (measured)")
-    axes[0].plot([r.knob for r in a2], [r.gamma for r in a2], marker="o", label=r"$\Gamma$ (oracle gap)")
+    axes[0].plot([r.knob for r in a2], [r.b_clos for r in a2], marker="s", label=r"$B_{\mathrm{closure}}$ (measured)")
+    axes[0].plot([r.knob for r in a2], [r.gamma for r in a2], marker="o", label=GGAP + " (oracle gap)")
     axes[0].set_xlabel("closure fidelity  F")
     axes[0].set_ylabel("risk units")
-    axes[0].set_title("A2 holds: $\\Gamma$ tracks $B_{\\rm clos}$\n($\\Gamma$ is a valid proxy)")
+    axes[0].set_title("A2 holds: " + GGAP + " tracks $B_{\\mathrm{closure}}$\n(" + GGAP + " is a valid proxy)")
     axes[0].invert_xaxis()
-    axes[0].legend(fontsize=8)
+    axes[0].legend(fontsize=8.8)
 
     av = [r for r in conf if r.regime == "A2_violated"]
     av = sorted(av, key=lambda r: r.knob)
-    axes[1].plot([r.knob for r in av], [r.b_clos for r in av], marker="s", label=r"$B_{\rm clos}$ (=0, well-spec.)")
-    axes[1].plot([r.knob for r in av], [r.gamma for r in av], marker="o", label=r"$\Gamma$ (oracle gap)")
+    axes[1].plot([r.knob for r in av], [r.b_clos for r in av], marker="s", label=r"$B_{\mathrm{closure}}$ (=0, well-spec.)")
+    axes[1].plot([r.knob for r in av], [r.gamma for r in av], marker="o", label=GGAP + " (oracle gap)")
     axes[1].axhline(0, color="0.6", lw=0.8, ls="--")
     axes[1].set_xlabel("fraction of target variance discarded")
     axes[1].set_ylabel("risk units")
-    axes[1].set_title("A2 violated, closure well-specified:\n$B_{\\rm clos}=0$ yet $\\Gamma>0$ (Counterexample A)")
-    axes[1].legend(fontsize=8)
+    axes[1].set_title("A2 violated, closure well-specified:\n$B_{\\mathrm{closure}}=0$ yet "
+                      + GGAP + "$\\,>0$")
+    axes[1].legend(fontsize=8.8)
     fig.tight_layout()
     for ext in ("pdf", "png"):
         p = fig_dir / f"fig_grounding_conflation.{ext}"

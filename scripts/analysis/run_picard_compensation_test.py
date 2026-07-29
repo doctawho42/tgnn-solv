@@ -197,6 +197,52 @@ def rowspace_fraction(basis, d):
     return float((proj @ proj) / (d @ d))
 
 
+def draw_figure(hist: dict, fig_dir) -> str:
+    """Draw fig_picard_test from the recorded histogram.
+
+    Single panel: the signed per-molecule cosine, which is the load-bearing negative.  The
+    wrong-molecule and exemplar panels were dropped -- on the sparse matched set (1-D
+    per-molecule subspaces, common resolved direction) those controls are uninformative.
+
+    The canvas is one \\columnwidth (240.7 pt = 3.34 in), the width the SI sets the figure at,
+    so the PDF prints at 1:1.  It used to be a 4.97 in canvas reduced 0.55x on the page, which
+    put the tick labels there at 5.5 pt.  If the figure is ever set at another width, change
+    this canvas with it rather than letting \\includegraphics scale the type.
+    """
+    from pathlib import Path as _Path
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    _st = _Path.home() / ".claude/skills/repo-to-paper/assets/softpastel.mplstyle"
+    if _st.exists():
+        plt.style.use(str(_st))
+    edges = np.asarray(hist["bin_edges"], float)
+    counts = np.asarray(hist["counts"], float)
+    med_cos = float(hist["median"])
+
+    fig, ax = plt.subplots(figsize=(3.50, 2.45))
+    ax.bar(edges[:-1], counts, width=np.diff(edges), align="edge",
+           color="#8FB3DA", alpha=0.85, linewidth=0)
+    ax.axvline(0, color="0.6", lw=0.8)
+    ax.axvline(med_cos, color="#E8A98C", lw=1.6, label=f"median {med_cos:+.2f}")
+    # The x-label's i subscripts and + superscript are set by mathtext at 0.7x the base, so
+    # the base has to clear 6/0.7 pt on the page for them to clear 6 pt.
+    ax.set_xlabel(r"$\cos(d_i,\ J^{+}(m-g)_i)$", fontsize=8.8)
+    ax.set_ylabel("molecules", fontsize=8.8)
+    ax.set_title("Measured drift vs. closure first-order inverse", fontsize=8.8)
+    ax.tick_params(labelsize=7.6)
+    # counts are molecules; a 2.5-molecule gridline is not a thing
+    ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+    ax.legend(fontsize=7.4)
+    fig.tight_layout()
+    fig_dir = _Path(fig_dir)
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    for ext in ("pdf", "png"):
+        fig.savefig(fig_dir / f"fig_picard_test.{ext}", dpi=150)
+    plt.close(fig)
+    return str(fig_dir / "fig_picard_test.pdf")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--matched-csv", default="results/b_insuff/matched_pairs.csv")
@@ -210,7 +256,19 @@ def main() -> None:
     ap.add_argument("--n-perm", type=int, default=2000)
     ap.add_argument("--out-json", type=Path, default=Path("results/compensation/picard_test.json"))
     ap.add_argument("--fig-dir", type=Path, default=Path("paper/figs"))
+    ap.add_argument("--redraw-from-json", action="store_true",
+                    help="Redraw the figure from the histogram recorded in --out-json and "
+                         "exit; needs no checkpoints, so a canvas or a type size can be "
+                         "corrected without them.")
     args = ap.parse_args()
+
+    if args.redraw_from_json:
+        rec = json.loads(Path(args.out_json).read_text())
+        if "histogram" not in rec:
+            raise SystemExit(f"{args.out_json} carries no `histogram` block; run the test "
+                             f"itself once (it records one) before redrawing.")
+        print("redrew", draw_figure(rec["histogram"], args.fig_dir))
+        return
 
     from tgnn_solv.config import TGNNSolvConfig
     from tgnn_solv.layers import CosmoSacLayer
@@ -352,30 +410,15 @@ def main() -> None:
     print(f"\nVERDICT: {verdict}")
 
     # ---- figure ----
+    # The histogram goes into the artifact as counts + edges, not only onto the canvas, so the
+    # figure can be redrawn (--redraw-from-json) on a machine that does not hold the two
+    # checkpoints.  A canvas or a type size can then be corrected without them.
+    counts, edges = np.histogram(cos_diag, bins=15)
+    res["histogram"] = {"bin_edges": [float(x) for x in edges],
+                        "counts": [int(c) for c in counts],
+                        "median": float(med_cos)}
     try:
-        import matplotlib
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-        from pathlib import Path as _Path
-        _st = _Path.home() / ".claude/skills/repo-to-paper/assets/softpastel.mplstyle"
-        if _st.exists():
-            plt.style.use(str(_st))
-        # single panel: the signed per-molecule cosine (the load-bearing negative). The
-        # wrong-molecule and exemplar panels were dropped -- on the sparse matched set (1-D
-        # per-molecule subspaces, common resolved direction) those controls are uninformative.
-        fig, ax = plt.subplots(figsize=(5.2, 3.6))
-        ax.hist(cos_diag, bins=15, color="#8FB3DA", alpha=0.85)
-        ax.axvline(0, color="0.6", lw=0.8)
-        ax.axvline(med_cos, color="#E8A98C", lw=2, label=f"median {med_cos:+.2f}")
-        ax.set_xlabel(r"$\cos(d_i,\ J^{+}(m-g)_i)$"); ax.set_ylabel("molecules")
-        ax.set_title(r"Measured drift vs. closure first-order inverse")
-        ax.legend(fontsize=9)
-        fig.tight_layout()
-        args.fig_dir.mkdir(parents=True, exist_ok=True)
-        for ext in ("pdf", "png"):
-            fig.savefig(args.fig_dir / f"fig_picard_test.{ext}", dpi=150)
-        res["figure"] = str(args.fig_dir / "fig_picard_test.pdf")
-        plt.close(fig)
+        res["figure"] = draw_figure(res["histogram"], args.fig_dir)
     except Exception as e:  # noqa: BLE001
         res["figure_error"] = str(e)
 

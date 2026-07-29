@@ -1,13 +1,26 @@
-# Digital Discovery (RSC) submission checklist
+# Submission checklist
 
-Target journal: **Digital Discovery** (RSC), fully open-access, APC £2,200 (check waiver eligibility).
+> **STALE IN PART, 2026-07-28.** The target journal changed after this file was written. The
+> manuscript is now built for **J. Chem. Inf. Model.** with `achemso` (`journal=jcisd8`,
+> `manuscript=article`, `layout=twocolumn`), compiled with **XeLaTeX**. Everything below under
+> "Mechanical format conversion" and "ESI" describes the superseded RSC *Digital Discovery* route
+> and applies only if the target reverts to it. The author-information items under "What still
+> needs YOUR information" are live and unchanged.
+
+Superseded target: **Digital Discovery** (RSC), fully open-access, APC £2,200 (check waiver eligibility).
 Panel verdict: one-cycle **major revision**, science sound — remaining work is packaging.
 
 ## Status of the manuscript now
-- All referee content revisions (#2–#7) are done and committed; `grounding_paradox.tex` compiles clean (XeLaTeX).
-- The four RSC-mandated end-matter sections are inserted **in the required order** with `\pending[...]` placeholders:
+- All referee content revisions (#2–#7) are done; `grounding_paradox.tex` compiles clean (XeLaTeX,
+  run twice). Measured on the 2026-07-29 build: 28 pages of main text, the Supporting Information
+  beginning on p. 29 (it shares that page with the back matter), out of 71 total; no overfull
+  `\hbox`, and one overfull `\vbox` of 1.33 pt on the TOC-graphic page. These counts move with
+  every pass — read them off the build log, not off this line.
+- The end-matter sections are inserted **in the required order** with `\pending[...]` placeholders:
   Conclusion → **Author contributions** → **Conflicts of interest** → **Data availability** → **Acknowledgements** → references.
-- `\pending[...]` renders as red bracketed text; search the source for `\pending` to find every blank (14 currently).
+- `\pending[...]` renders as red bracketed text; search the source for `\pending` to find every blank
+  (**3** currently: the repository commit hash and the Zenodo DOI in Data availability, and the same
+  Zenodo DOI in the SI compute ledger — these are limitation (x) of the Discussion).
 
 ## What still needs YOUR information (fill the `\pending` blanks)
 - [ ] **Author line + affiliation + corresponding email** (`\author{...}`, line ~64).

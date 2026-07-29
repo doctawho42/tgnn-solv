@@ -13,7 +13,7 @@ physics-informed cycle trails it.
 Learned surrogates for the activity coefficient---the quantity a solubility model must supply---have
 advanced quickly. Winter et al.\ \cite{winter2022} predict infinite-dilution activity coefficients
 \lngi\ directly from SMILES with a language model, and Sanchez-Medina et al.\ \cite{sanchezmedina2023}
-embed a Gibbs--Helmholtz constraint in a graph network to capture their temperature dependence. These
+embed a Gibbs--Helmholtz constraint in a graph network to capture their temperature dependence. Both
 treat the activity coefficient as the regression target rather than retaining a mechanistic
 model that consumes a predicted molecular property. A second line keeps the mechanistic model and
 learns its input. COSMO-SAC \cite{lin2002} is a segment-activity reformulation of Klamt's COSMO-RS,
@@ -29,9 +29,8 @@ physics-informed machine learning \cite{karniadakis2021}, whose dominant forms i
 differentiable object: a governing equation enforced through the loss \cite{raissi2019}, gray-box
 hybrids composing learned components with fixed mechanistic maps \cite{willard2022}, and operator
 learning with a trainable correction to a misspecified equation \cite{ma2026}. The prevailing
-expectation is that more physics improves generalisation, yet in physics-informed networks the same
-structure has documented failure modes in which it makes optimisation or accuracy worse
-\cite{krishnapriyan2021}. In neural
+expectation is that more physics improves generalisation, yet the same structure has documented
+failure modes in which it makes optimisation or accuracy worse \cite{krishnapriyan2021}. In neural
 solvers of partial differential equations, Mohan et al.\ \cite{mohan2024} show that a learnable term
 added to a fixed discretised operator absorbs truncation artifacts rather than physics, so the
 program's apparent interpretability is illusory; their error source is numerical and has no external
@@ -45,26 +44,22 @@ the concept into carrying a dependence the head cannot represent \cite{parisini2
 frozen head's leaked concepts with ground truth can then degrade accuracy
 \cite{espinosa2025leakage}.
 
-Several diagnostic tools are relevant. The gap between a fixed physical map and reality
-is the model-discrepancy problem of Kennedy and O'Hagan \cite{kennedy2001} and its calibration critique
-\cite{brynjarsdottir2014}; separating whether predictions are right on average from whether they are
-sharp is Murphy and DeGroot's reliability--resolution decomposition
-\cite{murphy1973,degroot1983}; and a misspecified model still converges to a pseudo-true
-limit under the quasi-maximum-likelihood account of White \cite{white1982}. That a decomposition may be
-only weakly constrained by the data is the subject of parameter sloppiness
-\cite{transtrum2015,gutenkunst2007} and of structural versus practical identifiability
-\cite{raue2009,villaverde2016}; that apparent skill may reflect pipeline choices rather than
-physics is the concern of underspecification \cite{damour2022}, leakage \cite{kapoor2023}, and
-compositional risk \cite{mahajan2025crm}.
+The gap between a fixed physical map and reality
+is the model-discrepancy problem of Kennedy and O'Hagan \cite{kennedy2001} and its calibration
+critique \cite{brynjarsdottir2014}; App.~\ref{sec:si-positioning} situates the instrument against
+the forecast-decomposition, quasi-maximum-likelihood, identifiability and pipeline-validity
+literatures.
 
 What this literature lacks is a way to \emph{measure}, not merely diagnose, whether a fixed
 physical model or its learned inputs limits a composed predictor's accuracy, and whether the
-learned intermediate has become a surrogate for the model's error. The concept-leakage
-literature has no external reference against which to quantify the phenomenon. We supply
-one for the learned intermediate---a reference $\sigma$-profile
-for solubility, tabulated substituent constants for a second chemical domain---turning the
-qualitative concern into a model-free measurement that separates model misspecification from input
-insufficiency. Using it, we show on a fixed thermodynamic model that the learned intermediate's
-deviation from the reference is shared across molecules beyond its own smoothness and transfers
-between them, and that grounding it on reference values can therefore reduce accuracy. FastSolv and
-SolProp remain the accuracy reference points for this task.
+learned intermediate has become a surrogate for the model's error; the concept-leakage
+literature in particular has no external reference against which to quantify the phenomenon. We supply
+one---a reference $\sigma$-profile for solubility, tabulated substituent constants for a second
+chemical domain---turning the qualitative concern into a model-free measurement that separates model
+misspecification from input insufficiency. Using it, we measure on a fixed thermodynamic model that
+the learned intermediate's deviation from the reference is shared across molecules---\emph{likely},
+on $44$ matched molecules over three seeds, and beyond the deviation's own smoothness on one
+checkpoint against a phase-randomised null---while whether that shared direction transfers to
+molecules outside the fit is measured against a zero-drift null only and graded \emph{open}
+(Table~\ref{tab:claims}); and that grounding the intermediate on reference values can reduce
+accuracy. FastSolv and SolProp remain the accuracy reference points for this task.

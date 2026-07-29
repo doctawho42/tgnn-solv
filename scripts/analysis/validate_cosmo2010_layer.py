@@ -17,6 +17,7 @@ from __future__ import annotations
 import os
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 import argparse
+import json
 from pathlib import Path
 import numpy as np
 import cCOSMO
@@ -50,6 +51,12 @@ def main():
     ap.add_argument("--n-compounds", type=int, default=80)
     ap.add_argument("--n-pairs", type=int, default=400)
     ap.add_argument("--n-iter", type=int, default=200)
+    # The run this figure was first quoted from printed to stdout and deposited nothing, so
+    # the 1.4e-4 in the manuscript is uncheckable against results/. Every future run writes
+    # the comparison here, the way run_closure_reference_validation.py does for the 2002 layer.
+    ap.add_argument("--out-json", type=Path,
+                    default=Path(__file__).resolve().parents[2]
+                    / "results/b_insuff/closure_reference_validation_2010.json")
     args = ap.parse_args()
 
     db = cCOSMO.DelawareProfileDatabase(str(args.ud_dir / "complist.txt"), str(args.ud_dir / "sigma3/"))
@@ -117,10 +124,16 @@ def main():
     ref_res, ref_comb = np.array(ref_res), np.array(ref_comb)
     ref_tot = ref_res + ref_comb
 
+    record = {"n_pairs": int(n), "T_K": T_REF, "n_iter": int(args.n_iter),
+              "ud_dir": str(args.ud_dir), "dispersion": "off"}
+
     def stats(name, a, b):
         d = a - b
-        print(f"  {name:14s} RMSE={np.sqrt(np.mean(d**2)):.5f}  MAE={np.mean(np.abs(d)):.5f}  max|Δ|={np.max(np.abs(d)):.5f}  (range {b.min():.2f}..{b.max():.2f})")
-        return np.sqrt(np.mean(d**2))
+        rmse = float(np.sqrt(np.mean(d ** 2)))
+        print(f"  {name:14s} RMSE={rmse:.5f}  MAE={np.mean(np.abs(d)):.5f}  max|Δ|={np.max(np.abs(d)):.5f}  (range {b.min():.2f}..{b.max():.2f})")
+        record[name] = {"rmse": rmse, "mae": float(np.mean(np.abs(d))),
+                        "max_abs": float(np.max(np.abs(d)))}
+        return rmse
 
     print(f"\n=== CosmoSac2010Layer vs cCOSMO.COSMO3, {n} pairs @ {T_REF} K (float64, {args.n_iter} iters) ===")
     stats("residual", my_res, ref_res)
@@ -132,7 +145,14 @@ def main():
     print("  worst residual pairs (ours vs ref):")
     for i in order:
         print(f"    {keep[i][0]}/{keep[i][1]}: ours={my_res[i]:+.3f} ref={ref_res[i]:+.3f} Δ={dr[i]:.3f}")
-    print("\nVERDICT:", "PASS (RMSE < 0.01)" if r_tot < 0.01 else "CHECK (RMSE >= 0.01)")
+    verdict = "PASS (RMSE < 0.01)" if r_tot < 0.01 else "CHECK (RMSE >= 0.01)"
+    print("\nVERDICT:", verdict)
+
+    record["verdict"] = verdict
+    record["verified"] = bool(r_tot < 0.01)
+    args.out_json.parent.mkdir(parents=True, exist_ok=True)
+    args.out_json.write_text(json.dumps(record, indent=2))
+    print("wrote", args.out_json)
 
 
 if __name__ == "__main__":

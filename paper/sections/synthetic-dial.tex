@@ -1,27 +1,59 @@
 \section{Closure fidelity sets the reference-input penalty: a controlled synthetic family}
 \label{sec:dial}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_fidelity_dial.pdf}
+\caption{Closure-fidelity sweep on synthetic, non-chemical teacher functions. As the
+closure is made more misspecified (fidelity $F$ falling from $1$; axis reversed), the reference-input
+penalty $\Delta R^2=R^2_{\text{oracle}}-R^2_{\text{head}}$ falls monotonically below zero. Each curve
+is one of four teacher families, averaged over six misspecification forms, which the panel does not
+resolve. No point is marked for the real closure. \emph{Caveat:} here $\Delta R^2$ \emph{equals}
+$\Bclos$ by design, so the sweep is a check on the construction and not an independent test of the
+hypothesis; and the four curves are visually coincident because the teacher factor carries no
+information in this construction, not because the effect is domain-general. Scope:
+\S\ref{sec:dial}.}
+\label{fig:dial}
+\end{figure}
+
 % Artifact: results/synthetic_dial/summary.json via scripts/analysis/run_fidelity_dial.py (seed 0).
 To isolate the mechanism we construct a controlled synthetic experiment in which only the closure's
 fidelity varies (input quality, sample size, and estimator held fixed). A teacher draws a latent
 $\zstar$ and a target through a known map $T$; a fixed candidate closure $g_F$ reconstructs it under
 a tunable misspecification of scalar fidelity $F$ ($F=1$ recovers $T$ exactly, smaller $F$ pushes
 $g_F$ away). The reference-input penalty $\Delta R^2 = R^2_{\text{oracle}}-R^2_{\text{head}}$ is a measure
-of $\Bclos$ in this construction---the free head recovers $\Ex[m\mid\zstar]$ while $g_F$ is the misspecified map. As $F$
-falls the penalty grows monotonically and without exception: averaged over six misspecification forms
+of $\Bclos$ in this construction---the free head recovers $\Ex[m\mid\zstar]$ while $g_F$ is the misspecified map. Because
+$\Delta R^2$ \emph{equals} $\Bclos$ by design here, the sweep verifies that the instrument responds to
+fidelity as constructed; it is a check on the construction, not an independent test of the
+hypothesis. As $F$
+falls the penalty grows monotonically: averaged over six misspecification forms
 (linear, quadratic, cubic, absolute-value, sinusoidal, cross-term) $F{=}1.00$ gives
 $\Delta R^2\approx0$, $F{=}0.38$ gives $\approx-0.33$, and an over-rotation stress test ($F{=}{-}0.50$)
-gives $\approx-2.0$ (Fig.~\ref{fig:dial}); the ordering is identical across four unrelated teacher
-families (linear, monotone-nonlinear, kinetics-exponential, PDE-field), so the effect is a property of
-fidelity magnitude, not of any one domain. Placing the real system on the sweep only illustratively
+gives $\approx-2.0$ (Fig.~\ref{fig:dial}); all $24$ family$\,\times\,$form sweeps are individually
+monotone, and the ordering is identical across four unrelated teacher
+families (linear, monotone-nonlinear, kinetics-exponential, PDE-field), whose curves are visually
+coincident. That coincidence says the teacher factor carries no information \emph{in this
+construction}; it is not evidence that the effect is domain-general, and the panel does not resolve
+the six misspecification forms, which do spread (Fig.~\ref{fig:dial}). Placing the real system on the sweep only illustratively
 (the real-closure-to-$F$ map is a synthetic construction, not a calibrated measurement), the COSMO-SAC
 closure over predicted $\sigma$-profiles falls at $F\lesssim0.4$: its solubility $\Delta R^2\approx-0.36$
-is what a closure of this fidelity predicts, consistent with $\Bclos$ dominating $\Binsuf$.
+is what a closure of this fidelity predicts, consistent with $\Bclos$ dominating $\Binsuf$. The two
+$\Delta R^2$ values are measured on different targets---synthetic $m$ on the sweep, $\lnx$ through the
+SLE solver and the crystal head in the real system---which is the other reason the placement carries
+no calibration.
 
 The same construction shows why the grounding gap is an indicator, not a certificate (\S\ref{sec:gap}).
-Closure fidelity and input sufficiency are varied separately: when $\zstar$ is sufficient, $\Gamma$
+Closure fidelity and input sufficiency are varied separately: when $\zstar$ is sufficient, $\Ggap$
 tracks $\Bclos$ as fidelity varies
 (Theorem~\ref{thm:gap}'s proxy is exact); when $\zstar$ is lossy but the closure is \emph{well specified},
-$\Bclos=0$ throughout yet $\Gamma>0$ grows with the discarded variance. A
+$\Bclos=0$ throughout yet $\Ggap>0$ grows with the discarded variance. A
 positive grounding gap can thus be pure input insufficiency, not closure error---so the
-closure-dominance verdict rests on the convention-independent decomposition, which grades it likely
-rather than certified (\S\ref{sec:measure}), and $\Gamma$ only corroborates it.
+closure-dominance verdict rests on the law-of-total-variance bound of the decomposition, computed
+under the deployed convention (the bound is convention-specific even though the estimand it bounds is
+not; \S\ref{sec:decomp}), which grades it likely
+rather than certified (\S\ref{sec:measure}), and $\Ggap$ only corroborates it.
+
+% Fig.~\ref{fig:dial} is the only float declared here, and App. L, which follows, declares none, so
+% the flush that keeps it out of the reference list now sits at the end of sections/SI.tex instead.
+% Flushing here left App. L to start a fresh page and this one 64% blank. Do not reinstate a
+% \clearpage at this point without re-checking the float pages against the .aux.

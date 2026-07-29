@@ -24,10 +24,15 @@ INK = "#4D4D4D"
 HURT = "#B5654A"
 OUT = Path(__file__).resolve().parents[2] / "paper" / "figs" / "fig_toc"
 
+# savefig pad_inches: the default 0.1 in adds 14.4 pt of white to a 234 pt-wide canvas, so
+# \includegraphics[width=\linewidth] then scales the whole graphic by 0.946 and every point
+# size set below prints 5.4% smaller than it reads here.  0.02 in keeps the margin without
+# the reduction: at pad 0.1 the 6.0 pt sentence printed at 5.67 pt.
 plt.rcParams.update({
     "font.family": "serif", "text.usetex": False,
     "figure.facecolor": "white", "savefig.facecolor": "white",
-    "savefig.dpi": 600, "savefig.bbox": "tight", "figure.dpi": 150,
+    "savefig.dpi": 600, "savefig.bbox": "tight", "savefig.pad_inches": 0.02,
+    "figure.dpi": 150,
 })
 
 
@@ -41,26 +46,33 @@ def box(ax, x, y, w, h, text, fc, ec=INK, fs=7.0, tc=INK, lw=1.0):
 fig = plt.figure(figsize=(3.25, 1.75))
 ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis("off")
 
+# Point sizes here are printed point sizes (the canvas is the 3.25 in ACS slot and the
+# tocentry measure is 3.26 in).  Nothing below 6.0 pt, and a mathtext sub/superscript is
+# 0.7x its base, so a label carrying one needs a base of at least 8.6 pt.
 y = 0.60
-box(ax, 0.03, y, 0.19, 0.17, "solute\n+ solvent", "white", fs=6.2)
+box(ax, 0.03, y, 0.19, 0.17, "solute\n+ solvent", "white", fs=6.5)
 box(ax, 0.26, y, 0.17, 0.17, "encoder", TEAL, fs=6.6, tc="white", lw=0)
 box(ax, 0.47, y, 0.10, 0.17, r"$\hat\sigma$", TEAL, fs=9.0, tc="white", lw=0)
-box(ax, 0.61, y, 0.26, 0.17, "fixed\nthermodynamics", SALMON, fs=6.2, tc=INK, lw=0)
+box(ax, 0.61, y, 0.26, 0.17, "fixed\nthermodynamics", SALMON, fs=6.5, tc=INK, lw=0)
 for p0, p1 in ((0.22, 0.26), (0.43, 0.47), (0.57, 0.61)):
     ax.add_patch(FancyArrowPatch((p0, y + 0.085), (p1, y + 0.085), arrowstyle="-|>",
                                  color=INK, lw=1.1, mutation_scale=8, zorder=2))
-ax.add_patch(FancyArrowPatch((0.87, y + 0.085), (0.91, y + 0.085), arrowstyle="-|>",
+ax.add_patch(FancyArrowPatch((0.865, y + 0.085), (0.893, y + 0.085), arrowstyle="-|>",
                              color=INK, lw=1.1, mutation_scale=8, zorder=2))
-ax.text(0.925, y + 0.085, "$\\ln x_2$", ha="left", va="center", fontsize=7.5, color=INK)
+ax.text(0.903, y + 0.085, "$\\ln x_2$", ha="left", va="center", fontsize=9.0, color=INK)
 
 box(ax, 0.47, 0.20, 0.10, 0.17, r"$\sigma^\star$", SALMON, fs=9.0, tc=INK, lw=0)
-ax.text(0.44, 0.285, "reference\nprofile", ha="right", va="center", fontsize=6.2, color=INK)
+ax.text(0.44, 0.285, "reference\nprofile", ha="right", va="center", fontsize=6.5, color=INK)
 ax.add_patch(FancyArrowPatch((0.52, 0.37), (0.52, 0.585), arrowstyle="-|>",
                              color=HURT, lw=1.4, mutation_scale=9, zorder=2))
 ax.text(0.60, 0.285, "prediction gets worse", ha="left", va="center",
         fontsize=7.2, color=HURT)
-ax.text(0.5, 0.055, "The fixed model, not the input, appears to set the ceiling.",
-        ha="center", va="center", fontsize=7.0, color=INK)
+# Broken at the comma, not four words past it: at 6.5 pt the longer first line ran to
+# 237.6 pt, wider than the 234 pt slot, and the tight bbox then scaled the whole graphic
+# down to fit \linewidth -- which is paid for by every point size in the figure.
+ax.text(0.5, 0.055, "On 477 activity measurements over 185 molecule pairs,\n"
+        "the fixed model and not the input is the likelier ceiling (margin $+0.51$).",
+        ha="center", va="center", fontsize=6.2, color=INK)
 
 for ext in ("pdf", "png"):
     fig.savefig(f"{OUT}.{ext}")

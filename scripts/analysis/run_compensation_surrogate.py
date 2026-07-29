@@ -205,14 +205,13 @@ def main() -> None:
         ax[0].plot(SIGMA_GRID, top_mode * S[0] / np.sqrt(len(keep)), color=BLUE, lw=2.2,
                    ls="--", label=f"top PC (EVR {ev[0]:.0%})")
         ax[0].axvline(0, color="0.8", lw=0.7, zorder=0); ax[0].axhline(0, color="0.8", lw=0.7, zorder=0)
-        ax[0].set_xlabel(r"$\sigma$  (e/Å$^2$)"); ax[0].set_ylabel(r"$\hat\sigma-\sigma$  (shape)")
-        ax[0].set_title("How the learned profile deviates from truth")
+        ax[0].set_xlabel(r"$\sigma$  (e/Å$^2$)"); ax[0].set_ylabel(r"$\hat\sigma_{\mathrm{SLE}}-\hat\sigma_{\mathrm{grounded}}$  (shape)")
+        ax[0].set_title("Drift of the learned profile under solubility fine-tuning")
         ax[0].legend(fontsize=8, frameon=False)
         ax[0].spines[["top", "right"]].set_visible(False)
         ax[1].bar(range(1, 6), ev[:5], color=PURPLE, edgecolor="white", linewidth=0.8)
         ax[1].set_xlabel("principal component"); ax[1].set_ylabel("explained variance ratio")
-        ax[1].set_title(f"Deviation spectrum (top-2 = {a1['top2_cum_evr']:.0%})\n"
-                        "low-rank $\\Rightarrow$ systematic")
+        ax[1].set_title(f"Drift spectrum (top-2 = {a1['top2_cum_evr']:.1%})")
         ax[1].spines[["top", "right"]].set_visible(False)
         fig.tight_layout()
         args.fig_dir.mkdir(parents=True, exist_ok=True)

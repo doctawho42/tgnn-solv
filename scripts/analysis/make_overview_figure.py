@@ -14,6 +14,16 @@ evidence belongs to the Discussion.
       point split: the conditional variance is unestimable, so B_insuff is only ever an
       upper bound and B_closure only lower-bounded.
 
+2026-07-28 declutter. Panel (b) used to carry a three-line statistical sentence (separation
+margin, the pair-clustered and two-way bootstrap intervals, the n=60 comparison) and two grey
+footnote lines. Prose set inside axes is unreadable at the printed column width, so all of it
+moved OUT of the figure and into the caption; nothing was weakened and nothing was dropped.
+What replaces it is a shape the eye can take in: because the bar's full width IS the total
+error, the separation threshold MSE/2 is exactly the bar's midpoint, so the reader sees the
+input block ending left of centre instead of reading a number. The caption must still state
+the margin +0.51, both bootstrap intervals, the +0.05 on the n=60 corner, and that the two
+blocks are contiguous shares of one total rather than intervals on an axis.
+
     MPLBACKEND=Agg python scripts/analysis/make_overview_figure.py
 """
 from pathlib import Path
@@ -52,7 +62,11 @@ def arrow(ax, p0, p1, color=INK, lw=1.6, mut=12):
                                  mutation_scale=mut, zorder=2))
 
 
-fig = plt.figure(figsize=(9.2, 3.05))
+# Canvas width.  The figure is set at \linewidth (504.5 pt) across the two columns.  At the old
+# 9.2 in (662 pt) everything shrank by 0.76 on the page, which put the smallest label at ~5.7 pt.
+# 8.0 in (576 pt) prints at 0.88, so nothing here falls below 7 pt.  The height moves with it so
+# the aspect, and therefore every box and arrow position, is unchanged.
+fig = plt.figure(figsize=(8.0, 2.65))
 gs = fig.add_gridspec(1, 2, width_ratios=[1.32, 1.0], wspace=0.10,
                       left=0.015, right=0.985, top=0.86, bottom=0.03)
 axa = fig.add_subplot(gs[0]); axa.set_xlim(0, 1.32); axa.set_ylim(0, 1.0); axa.axis("off")
@@ -90,31 +104,45 @@ axa.text(0.06, 0.10, "Either the fixed model is wrong, or the learned profile\n"
          ha="left", va="center", fontsize=8.6, color=GRAY)
 
 # ---------------- (b) the split ----------------
-bx, by, bw, bh = 0.09, 0.46, 0.82, 0.14
-# Deployed residual-only convention, the one the text says carries the claim: an upper bound
-# on the input term and the lower bound it implies for the model term. Drawn as bounds with
-# open ends, never as a point split.
-lo, hi = 0.42, 0.58          # B_insuff <= 0.62 and B_closure >= 0.85 of MSE 1.47
+bx, by, bw, bh = 0.09, 0.47, 0.82, 0.17
+# Representative set (n=477 IDAC-cap-UD activity measurements over 185 molecule pairs) under the
+# DEPLOYED residual-only combinatorial convention -- one convention rule across both sets, adopted
+# in round 3: MSE 1.902, B_insuff <= 0.697 (LOTV, 8 equal-count bins, UNBIASED within-bin
+# variance), so B_closure >= 1.205 and the separation margin MSE - 2*B_insuff = +0.51.  Drawn as
+# two contiguous SHARES of one total -- never as intervals, and never as a gap on an axis.
+MSE, BINS = 1.902, 0.697
+lo = BINS / MSE
+hi = 1.0 - lo
 axb.add_patch(FancyBboxPatch((bx, by), bw * lo, bh, boxstyle="square,pad=0",
                              fc="#DDE7E3", ec=INK, lw=0.9, zorder=3))
 axb.add_patch(FancyBboxPatch((bx + bw * lo, by), bw * hi, bh, boxstyle="square,pad=0",
                              fc=SALMON, ec=INK, lw=0.9, zorder=3))
+# One type size for both halves.  They are contiguous shares of ONE quantity, so a size
+# difference between them reads as an emphasis the panel does not mean to place.
 axb.text(bx + bw * lo / 2, by + bh / 2, "inputs\ninsufficient", ha="center",
-         va="center", fontsize=7.2, color="#5F6B66", zorder=4)
+         va="center", fontsize=8.6, color="#5F6B66", zorder=4)
 axb.text(bx + bw * lo + bw * hi / 2, by + bh / 2, "the model is\nmisspecified", ha="center",
-         va="center", fontsize=8.4, color=INK, zorder=4)
-axb.text(bx, by + bh + 0.10, "error when the reference profile is used", ha="left",
-         va="bottom", fontsize=8.6, color=GRAY)
-axb.text(bx + bw * lo, by + bh + 0.045, r"$\leq$", ha="right", va="bottom",
+         va="center", fontsize=8.6, color=INK, zorder=4)
+# the design (477 measurements over 185 molecule pairs) is the caption's business; the panel
+# needs only enough to say which quantity is being cut.
+# This header is the widest single run in panel (b) and it is left-aligned on the bar, so it
+# has only (0.99 - bx) = 0.90 axis units -- about 206 pt -- before it leaves the rounded box on
+# the right.  At 8.2 pt it did leave it, by about a point, once the canvas came down to 8.0 in.
+# 7.8 pt and a single space buy back roughly ten points of that run.  Measure the run, not the
+# eye, if this string is ever lengthened.
+axb.text(bx, by + bh + 0.10, "error when the reference profile is used ($n{=}477$)",
+         ha="left", va="bottom", fontsize=7.8, color=GRAY)
+axb.text(bx + bw * lo, by + bh + 0.035, r"$\leq 0.70$", ha="right", va="bottom",
          fontsize=8.4, color="#5F6B66")
-axb.text(bx + bw * lo, by + bh + 0.045, r"  $\geq$", ha="left", va="bottom",
+axb.text(bx + bw * lo, by + bh + 0.035, r"  $\geq 1.21$", ha="left", va="bottom",
          fontsize=8.4, color=HURT)
-axb.text(0.50, 0.235, "The bounds do not overlap: on this set the\n"
-                      "misspecification term is the larger.", ha="center", va="center",
-         fontsize=8.6, color=HURT)
-axb.text(0.50, 0.115, "An external reference for the profile is what\nmakes the two "
-                      "terms separately measurable.", ha="center", va="center",
-         fontsize=8.4, color=GRAY)
+# The bar's full width IS the total error, so the separation threshold MSE/2 is its midpoint:
+# the input block ending left of centre IS the ordering, drawn rather than asserted. The margin
+# itself, its two bootstrap intervals and the n=60 comparison are the caption's business.
+axb.plot([bx + bw / 2] * 2, [by - 0.10, by + bh + 0.015], ls=(0, (3.2, 2.2)), lw=1.2,
+         color=HURT, zorder=5, solid_capstyle="butt")
+axb.text(bx + bw / 2, by - 0.135, "half the total error", ha="center", va="top",
+         fontsize=8.4, color=HURT)
 
 fig.suptitle("When do reference physical inputs help a learned solubility model?",
              fontsize=12.5, color=INK, y=0.985)

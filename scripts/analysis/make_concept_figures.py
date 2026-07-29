@@ -274,8 +274,21 @@ def fig_phase(out_dir: Path) -> None:
 
 
 def fig_arch(out_dir: Path) -> None:
-    fig, ax = plt.subplots(figsize=(11.0, 5.4))
+    # WHAT SETS THE PRINTED TYPE SIZE HERE.  The figure is set at \textwidth (504.5 pt) and
+    # savefig trims to the drawn content, so on the page
+    #     printed box  = (box in data units) x 504.5 / (content extent in data units)
+    #     printed type = (point size below)  x 504.5 / (72 x canvas width in inches)
+    # The first does not involve the canvas and the second does not involve the geometry, so
+    # shrinking the canvas -- or raising a point size -- grows the TYPE relative to the BOXES
+    # and nothing else.  Check the boxes, not only the type sizes, if either moves.  The
+    # cheapest way to buy printed type size is to stop some label overhanging the right edge:
+    # the content extent is in the denominator above, and the boxes end at x = 12.15.
+    fig, ax = plt.subplots(figsize=(9.9, 4.86))
     ax.set_xlim(0, 12.4); ax.set_ylim(0, 6.2); ax.axis("off")
+
+    # 9.8 pt is the smallest base at which a mathtext sub/superscript (0.7x) clears 6 pt on
+    # the page at this figure's scale, so every label carrying one is set at 9.8.
+    FS_SUB = 9.8
 
     # inputs
     _box(ax, (0.15, 4.35), 1.5, 0.7, "solute\ngraph", "white", fs=9)
@@ -290,19 +303,34 @@ def fig_arch(out_dir: Path) -> None:
     # closure
     _box(ax, (6.35, 3.05), 1.7, 0.85, "COSMO-SAC\nclosure $g$", SALMON, fs=9.5)
     _arrow(ax, (5.5, 3.47), (6.35, 3.47))
-    ax.text(5.9, 3.68, "$\\hat z$", fontsize=9, color=INK, ha="center")
-    ax.text(5.9, 3.24, "$B_{\\mathrm{insuff}}$", fontsize=8.6, color=BLUE, ha="center", va="top")
-    ax.text(7.2, 2.95, "$B_{\\mathrm{closure}}$", fontsize=8.6, color="#C67A54", ha="center", va="top")
+    ax.text(5.9, 3.70, "$\\hat z$", fontsize=9, color=INK, ha="center")
+    ax.text(5.9, 3.22, "$B_{\\mathrm{insuff}}$", fontsize=FS_SUB, color=BLUE,
+            ha="center", va="top")
+    ax.text(7.0, 2.96, "$B_{\\mathrm{closure}}$", fontsize=FS_SUB, color="#C67A54",
+            ha="center", va="top")
     # sigma-oracle injection
-    _box(ax, (6.35, 1.35), 1.7, 0.75, "$\\sigma$-oracle $z^\\star$\n(true VT-2005)", "#F3D4C4", ec=SALMON, fs=8.4)
-    _arrow(ax, (7.6, 2.1), (7.6, 3.05), color=SALMON, ls=(0, (3, 2)))
-    ax.text(7.72, 2.5, "replaces $\\hat z$", fontsize=7.8, color="#C67A54", ha="left")
+    # The box is sized to its longest run, "(reference VT-2005)": at 1.7 units and 8.4 pt that
+    # run left the box on both sides.  Its floor sits at 1.60, not 1.35, because the grey
+    # matched-control arc passes under it at y = 1.36 and used to cut its lower-right corner.
+    # Two text objects, not one two-line label: the first line carries the superscript star,
+    # which mathtext sets at 0.7x and which therefore needs a 9.8 pt base, while the second
+    # line at 9.8 pt would be wider than the box.  Neither line has a sub/superscript the
+    # other needs.
+    _box(ax, (6.05, 1.60), 2.3, 0.75, "", "#F3D4C4", ec=SALMON)
+    ax.text(7.20, 2.16, "$\\sigma$-oracle $z^\\star$", ha="center", va="center",
+            fontsize=FS_SUB, color=INK)
+    ax.text(7.20, 1.80, "(reference VT-2005)", ha="center", va="center",
+            fontsize=8.6, color=INK)
+    _arrow(ax, (7.6, 2.35), (7.6, 3.05), color=SALMON, ls=(0, (3, 2)))
+    ax.text(7.72, 2.60, "replaces $\\hat z$", fontsize=8.2, color="#C67A54", ha="left")
     # SLE solver
     _box(ax, (8.75, 3.5), 1.5, 1.25, "SLE\nsolver", PURPLE, fs=9.5)
     _arrow(ax, (5.5, 4.95), (8.75, 4.55), rad=-0.12)     # Phi(T) from crystal head
     ax.text(7.0, 5.02, "$\\Phi(T)$", fontsize=8.8, color=INK, ha="center")
     _arrow(ax, (8.05, 3.47), (8.75, 3.9))                 # ln gamma from closure
-    ax.text(8.35, 3.5, "$\\ln\\gamma_2$", fontsize=8.6, color=INK, ha="center")
+    # Under this arrow, not on it: the shaft crosses y = 3.70 at x = 8.40, and a label whose
+    # baseline sat at 3.50 had the shaft running through its own glyphs.
+    ax.text(8.42, 3.36, "$\\ln\\gamma_2$", fontsize=FS_SUB, color=INK, ha="center", va="top")
     # output
     _box(ax, (10.55, 3.75), 1.6, 0.8, "$\\ln x_2$", "white", fs=10)
     _arrow(ax, (10.25, 4.12), (10.55, 4.15))
@@ -311,12 +339,15 @@ def fig_arch(out_dir: Path) -> None:
     _arrow(ax, (2.75, 2.9), (8.75, 1.55), color=GRAY, lw=1.8, rad=0.42)  # dips below the closure/oracle boxes
     ax.text(5.3, 0.5, "matched control: shares $h$, drops $g$", fontsize=8.2, color=GRAY,
             style="italic", ha="center")
-    _box(ax, (10.55, 1.15), 1.6, 0.8, "$\\ln x_2$\n(direct)", "white", ec=GRAY, tc=GRAY, fs=9)
+    _box(ax, (10.55, 1.15), 1.6, 0.8, "$\\ln x_2$\n(direct)", "white", ec=GRAY, tc=GRAY,
+         fs=FS_SUB)
     _arrow(ax, (10.25, 1.55), (10.55, 1.55), color=GRAY)
     ax.annotate("", xy=(11.35, 3.75), xytext=(11.35, 1.95),
                 arrowprops=dict(arrowstyle="<->", color=INK, lw=1.2))
-    ax.text(11.5, 2.85, "physics tax\n$R_{\\mathrm{phys}}-R_{\\mathrm{direct}}$", fontsize=8.2,
-            color=INK, ha="left", va="center")
+    # Left of the arrow, not right of it: to the right this label overhung the boxes by
+    # 0.7 data units, and that overhang is what the whole graphic was scaled down to fit.
+    ax.text(11.20, 2.85, "physics tax\n$R_{\\mathrm{phys}}-R_{\\mathrm{direct}}$",
+            fontsize=FS_SUB, color=INK, ha="right", va="center", multialignment="right")
     _save(fig, out_dir, "fig_architecture")
 
 

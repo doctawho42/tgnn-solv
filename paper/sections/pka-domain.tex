@@ -2,8 +2,9 @@
 \label{sec:pka}
 The instrument is not specific to COSMO-SAC. In a second real domain---aqueous $\mathrm pK_a$ of
 substituted aromatics---the fixed closure is a Hammett linear-free-energy relationship
-$g(\sigma)=\mathrm pK_{a,0}-\rho\,\sigma$ over the Hammett substituent constant $\sigma$ (\emph{not}
-the $\sigma$-profile of \S\ref{sec:framework}), with Hansch--Leo tabulated constants as the
+$g(\hammett)=\mathrm pK_{a,0}-\rho\,\hammett$ over the Hammett substituent constant \hammett, written
+with its subscript throughout so that it cannot be confused with the $\sigma$-profile of
+\S\ref{sec:framework}, with Hansch--Leo tabulated constants as the
 external oracle. The two classic LFER failure modes fall cleanly onto the two channels of
 Lemma~\ref{prop:decomp}: \emph{resonance saturation} (a curvature the linear closure cannot
 represent) lands in $\Bclos$, while \emph{ortho/steric} effects, absent from the tabulated
@@ -18,14 +19,14 @@ both figures are one-sided, and the a-priori
 channel assignment---ortho information the tabulated constant lacks---is consistent with the
 measurement rather than certified by it (App.~\ref{sec:si-pka}); the sweep is the
 near-exact-to-degraded transition. The decisive test is the
-same oracle swap as on solubility---the learned $\hat\sigma$ replaced by the tabulated $\sigma^\star$
+same oracle swap as on solubility---the learned $\hat\sigma_{\mathrm H}$ replaced by the tabulated $\sigma_{\mathrm H}^\star$
 in the same closure, the sign of the change recorded per stratum---measured \emph{in-distribution} across
 $K{=}20$ within-scaffold splits. It \emph{flips}. On the clean meta/para
 pole feeding the reference constant \emph{helps} (learned MAE $0.48$ vs oracle $0.315$; oracle better
 in $19/20$ splits and in three of the four reaction series): the ceiling there is the noisy learned estimate, not the
 closure---a real-data grounding-helps corner and an internal positive control. On the ortho pole the
 same swap \emph{hurts} (learned $0.83$ vs oracle $1.62$; oracle worse in $\mathbf{20/20}$ splits and in
-all four series, gap $90\%$ CI $[{+}0.57,{+}0.95]$): the freely learned $\hat\sigma$ absorbs the ortho/steric
+all four series, gap $90\%$ CI $[{+}0.57,{+}0.95]$): the freely learned $\hat\sigma_{\mathrm H}$ absorbs the ortho/steric
 information the tabulated constant lacks. What reverses here is the sign of the grounding penalty; it
 reverses through the insufficiency channel---consistent with the one-sided bound above, though not
 isolated by it---rather than through the closure-error cancellation of \S\ref{sec:surrogate}: a second
@@ -40,7 +41,7 @@ exceeds the fidelity-set oracle error---which a competence sweep confirms
 (App.~\ref{sec:si-pka}): the well-specified pole's threshold (${\approx}0.315$) is never beaten by the learned arm, so grounding
 helps at every training budget; the degraded pole's threshold ($1.62$) is high, so the learned arm
 beats it, and grounding hurts, across the whole interpolation range (down to $12\%$ of the data),
-reverting to helps only under scaffold \emph{extrapolation}, where $\hat\sigma$ breaks ($2.6{\pm}2.0$)
+reverting to helps only under scaffold \emph{extrapolation}, where $\hat\sigma_{\mathrm H}$ breaks ($2.6{\pm}2.0$)
 back above the threshold. The flip is thus a within-distribution, fidelity-driven crossover whose one
 scope boundary is predicted by the same law. It is the sharp, two-sided form of the penalty sign rule
 (Prop.~\ref{prop:tax}); its ``a fitted intermediate can beat the true one'' half is known---plug-in

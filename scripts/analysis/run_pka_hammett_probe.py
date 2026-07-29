@@ -201,19 +201,46 @@ def make_figure(records, fig_dir):
     fig_dir.mkdir(parents=True, exist_ok=True)
     fid = sorted([r for r in records if r.sweep == "fidelity"], key=lambda r: -r.knob)
     ins = sorted([r for r in records if r.sweep == "insufficiency"], key=lambda r: r.knob)
-    fig, ax = plt.subplots(1, 2, figsize=(9.5, 4.2))
-    ax[0].plot([r.knob for r in fid], [r.b_clos_true for r in fid], "s-", color=SALMON, label=r"$B_{\rm clos}$ (truth)")
-    ax[0].plot([r.knob for r in fid], [r.gamma for r in fid], "o-", color=TEAL, label=r"$\Gamma$ (oracle gap)")
-    ax[0].plot([r.knob for r in fid], [r.b_clos_jensen_lb for r in fid], "^--", color=BLUE, label="Jensen LB", alpha=.7)
-    ax[0].set_xlabel("Hammett closure fidelity  F"); ax[0].set_ylabel(r"pKa$^2$ units")
-    ax[0].set_title("Resonance-saturation sweep (loss=0):\n$\\Gamma$ tracks $B_{\\rm clos}$"); ax[0].invert_xaxis()
-    ax[0].legend(fontsize=8)
-    ax[1].plot([r.knob for r in ins], [r.b_clos_true for r in ins], "s-", color=SALMON, label=r"$B_{\rm clos}$ (=0)")
-    ax[1].plot([r.knob for r in ins], [r.gamma for r in ins], "o-", color=TEAL, label=r"$\Gamma$ (oracle gap)")
+    # The canvas is the width the figure is SET at: \textwidth of the two-column measure,
+    # 502.7 pt = 6.98 in, so the PDF prints at 1:1 and its type prints at the size chosen
+    # here.  It used to be 9.5 in inside a 3.33 in column -- a 0.35x reduction that put the
+    # legend on the page at 2.8 pt.  If this figure is ever moved back into one column,
+    # shrink the canvas with it; do not rely on \includegraphics to scale it.
+    # The grounding gap is \Ggap = \mathcal{G} (paper preamble): it was renamed off \Gamma on
+    # 2026-07-27 so that \Gamma_S keeps its standard COSMO-SAC meaning as the segment activity
+    # coefficient.  The figure must carry the same symbol its caption does.
+    GGAP = r"$\mathcal{G}$"
+    # Type sizes are printed sizes: the canvas is the \textwidth measure, so the scale is 1.00.
+    # 8.8/9.0 pt are the smallest bases that keep a mathtext subscript (0.7x) above 6 pt.
+    FS, FS_LEG, FS_TICK = 9.0, 8.8, 7.6
+    fig, ax = plt.subplots(1, 2, figsize=(6.98, 3.05))
+    ax[0].plot([r.knob for r in fid], [r.b_clos_true for r in fid], "s-", ms=4, lw=1.4,
+               color=SALMON, label=r"$B_{\mathrm{closure}}$ (truth)")
+    ax[0].plot([r.knob for r in fid], [r.gamma for r in fid], "o-", ms=4, lw=1.4,
+               color=TEAL, label=GGAP + " (oracle gap)")
+    ax[0].plot([r.knob for r in fid], [r.b_clos_jensen_lb for r in fid], "^--", ms=4, lw=1.4,
+               color=BLUE, label="Jensen LB", alpha=.7)
+    ax[0].set_xlabel("Hammett closure fidelity  F", fontsize=FS)
+    ax[0].set_ylabel(r"pKa$^2$ units", fontsize=FS)
+    ax[0].set_title("Resonance-saturation sweep (loss $=0$):\n"
+                    + GGAP + " tracks $B_{\\mathrm{closure}}$", fontsize=FS)
+    ax[0].invert_xaxis()
+    ax[0].legend(fontsize=FS_LEG)
+    ax[1].plot([r.knob for r in ins], [r.b_clos_true for r in ins], "s-", ms=4, lw=1.4,
+               color=SALMON, label=r"$B_{\mathrm{closure}}$ (=0)")
+    ax[1].plot([r.knob for r in ins], [r.gamma for r in ins], "o-", ms=4, lw=1.4,
+               color=TEAL, label=GGAP + " (oracle gap)")
     ax[1].axhline(0, color="0.6", lw=.8, ls="--")
-    ax[1].set_xlabel("ortho/steric insufficiency (fraction)"); ax[1].set_ylabel(r"pKa$^2$ units")
-    ax[1].set_title("Ortho-insufficiency sweep (F=1):\n$B_{\\rm clos}=0$ yet $\\Gamma>0$ (Counterexample A)")
-    ax[1].legend(fontsize=8)
+    ax[1].set_xlabel("ortho/steric insufficiency (fraction)", fontsize=FS)
+    ax[1].set_ylabel(r"pKa$^2$ units", fontsize=FS)
+    # The panel title used to read "B_closure = 0 yet Gamma > 0", which the two lowest knobs
+    # contradict: the oracle gap is negative there and crosses zero near a fraction of 0.25.
+    # Title what the curve does, not a strict sign it does not have everywhere.
+    ax[1].set_title("Ortho-insufficiency sweep ($F=1$):\n"
+                    "$B_{\\mathrm{closure}}=0$, " + GGAP + " rises with insufficiency", fontsize=FS)
+    ax[1].legend(fontsize=FS_LEG)
+    for a in ax:
+        a.tick_params(labelsize=FS_TICK)
     fig.tight_layout()
     outs = []
     for ext in ("pdf", "png"):

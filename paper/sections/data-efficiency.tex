@@ -1,4 +1,8 @@
-\subsection{Grounding does not improve accuracy in the low-data regime either}
+% The heading used to read "Grounding does not improve accuracy in the low-data regime
+% either" -- an accuracy claim in one direction, which Sec. 5 and Table 2 decline to make,
+% and which contradicted the caption below it once that caption was made to carry the
+% no-claim rule. It names the sweep now, and the text carries the observation with its scope.
+\subsection{The data-efficiency sweep, and what survives its confounds}
 \label{sec:data-efficiency}
 % Artifact: results/data_efficiency/summary.json via run_data_efficiency_summary.py
 % over the Modal run (volume tgnn-e5, seed 42); ΔMAE = physics − DirectGNN.
@@ -12,14 +16,16 @@ $5\%$); its $R^2$ is negative throughout. We do not read the growth of the gap w
 ($+1.0$ at full) as a data-scale effect, because the sweep's endpoint does not reproduce the
 headline comparison: its physics arm carries the NRTL closure, and at fraction $1.0$ it gives
 $2.98$ against $1.97$ (control) on the same scaffold test where the three-seed runs of
-Table~\ref{tab:si-arms} give $1.80$ against $1.70$---$\Delta\mathrm{MAE}$ an order of magnitude
-apart ($+1.01$ here, $+0.10$ there). Both arms are worse here than their headline
+Table~\ref{tab:si-arms} give $1.7950$ against $1.7022$---$\Delta\mathrm{MAE}$ an order of magnitude
+apart ($+1.01$ here, $+0.09$ there; the second is taken from the unrounded means, since the rounded
+column would give $+0.10$, \S\ref{sec:si-tables}). Both arms are worse here than their headline
 counterparts and the physics arm much the more so ($+1.18$ against $+0.27$ MAE), so the trend
 measures how the light per-fraction budget interacts with training-set size at least as much as how
 the physics prior does. The sweep is also
 single-seed, its physics-arm MAEs are non-monotone, and its two arms differ from each other in
 capacity and in the per-arm optimisation settings of \S\ref{sec:framework}, and both are wider
-than the headline arms (hidden width $256$ and $128$ here, $64$ there). What survives is the level and not the trend---the physics arm is
+than the headline arms (hidden width $256$ and $128$ here, $64$ there). What survives is the level and
+not the trend (Table~\ref{tab:data-eff}, plotted in Fig.~\ref{fig:data-eff})---the physics arm is
 worse at every fraction under a matched light budget---which is \emph{consistent
 with} the sign rule (Prop.~\ref{prop:tax}) rather than a sharp confirmation of it. The one inverting metric is
 top-1 solvent ranking ($0.42$ vs $0.23$ at $5\%$; the ranking-versus-accuracy split of
@@ -51,8 +57,12 @@ $1.00$ & $2.98$ & $1.97$ & $+1.01$ & $-0.79$ & $+0.22$ \\
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.7\linewidth]{figs/fig_data_efficiency.pdf}
+\includegraphics[width=\linewidth]{figs/fig_data_efficiency.pdf}
 \caption{Data-efficiency curve: physics-grounded arm (salmon) and DirectGNN (teal)
-as a function of training-data fraction.}
+as a function of training-data fraction. \emph{Scope:} one seed, five fractions, under a light
+per-fraction budget whose endpoint does not reproduce the headline comparison; the physics arm's
+MAEs are non-monotone. \emph{Caveat:} the two arms differ in capacity and in per-arm optimisation,
+so nothing drawn here is attributable to the thermodynamic bottleneck, and this paper makes no
+accuracy claim in either direction (\S\ref{sec:grading}, \S\ref{sec:data-efficiency}).}
 \label{fig:data-eff}
 \end{figure}

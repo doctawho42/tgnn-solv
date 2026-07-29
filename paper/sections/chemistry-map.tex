@@ -1,6 +1,14 @@
 \subsection{Chemistry-resolved structure of the asymptotic physics penalty} \label{sec:map}
 
-Across the full test set the two arms are separated by little more than label noise. On the 3-seed scaffold split the DirectGNN control reaches an $\lnx$ MAE of $1.70 \pm 0.03$, while the grounded physics arm (learned-$\sigma$ COSMO-SAC closure) reaches $1.85 \pm 0.05$, for a global $\Delta\mathrm{MAE} = \mathrm{MAE(physics)} - \mathrm{MAE(control)} = +0.14$ (positive meaning the closure adds cost).\footnote{The per-seed $\Delta$MAE spans $+0.05$ to $+0.25$, so the point estimate is an imprecise 3-seed mean; being computed on unrounded per-seed means, the rounded $1.70/1.85$ differ by $0.15$ rather than $0.14$.} At this granularity the physics bottleneck is a small, near-noise penalty on accuracy. Once the error is resolved along chemical axes, that penalty is an average over regimes that disagree in sign.
+\emph{Scope.} The two arms compared in this section differ from each other in capacity and in the
+per-arm optimisation settings of \S\ref{sec:framework}, and no hyperparameter-matched control was
+run, so nothing here is an accuracy claim about the thermodynamic bottleneck:
+Table~\ref{tab:claims} grades that $\Delta\mathrm{MAE}$ \emph{no claim}, and what follows is a
+hypothesis-generating description of where two particular pipelines differ
+(\S\ref{sec:discussion}). ``Physics penalty'' names that measured difference throughout, not an
+effect of the bottleneck.
+
+Across the full test set the two arms are separated by little more than label noise. On the 3-seed scaffold split the DirectGNN control reaches an $\lnx$ MAE of $1.70 \pm 0.03$, while the grounded physics arm (learned-$\sigma$ COSMO-SAC closure) reaches $1.85 \pm 0.05$, for a global $\Delta\mathrm{MAE} = \mathrm{MAE(physics)} - \mathrm{MAE(control)} = +0.14$ (positive meaning the closure adds cost).\footnote{The per-seed $\Delta$MAE spans $+0.05$ to $+0.25$, so the point estimate is an imprecise 3-seed mean; being computed on unrounded per-seed means, the rounded $1.70/1.85$ differ by $0.15$ rather than $0.14$.} At this granularity the difference between the two pipelines is small and near label noise. Once the error is resolved along chemical axes, that difference is an average over regimes that disagree in sign.
 
 The solvent axis is the most pronounced. Binning test pairs by solvent class and recomputing $\Delta\mathrm{MAE}$ per seed (Table~\ref{tab:solvent-map}) shows the cost concentrated in solvents that hydrogen-bond strongly and directionally, precisely the regime in which the COSMO-SAC closure is least faithful and $|\lng|$ is largest. Water carries the heaviest penalty, and the effect decreases monotonically as the donor strength of the class weakens. One class inverts the sign: amide solvents, which are aprotic dipolar hydrogen-bond acceptors and therefore closer to the closure's well-specified regime, are the seed-robust stratum in which the penalty reverses sign ($\Delta\mathrm{MAE}=-0.22 \pm 0.11$ over seeds). This is exploratory rather than a confirmed improvement: across a family of nine simultaneous solvent-class comparisons the amide interval is an uncorrected per-class pair bootstrap, and the three-seed spread alone does not exclude zero; the halogenated class shows a nominal improvement of similar magnitude but is not seed-robust. The robust reading is the \emph{direction} --- the asymptotic physics penalty shrinks and can turn negative as solvent hydrogen-bond donation weakens toward the acceptor-dominated regime the closure was built for --- not the significance of any single class. This solvent-resolved pattern is the chemistry-resolved counterpart of the synthetic closure-fidelity sweep (\S\ref{sec:dial}).
 
@@ -33,8 +41,9 @@ The solute axis shows a compatible but weaker pattern (Table~\ref{tab:solute-map
 \centering
 \caption{Per-solute-class and novelty-stratum asymptotic physics penalty
 $\Delta\mathrm{MAE}=\mathrm{MAE(physics)}-\mathrm{MAE(control)}$ on the scaffold split
-(positive means the closure adds cost). Solute-class entries are point estimates; the
-Tanimoto strata carry the 3-seed spread.}
+(positive means the closure adds cost). Entries carry the 3-seed spread where it was computed:
+the two Tanimoto strata and the charged/salt class. The other four solute classes are point
+estimates.}
 \label{tab:solute-map}
 \begin{tabular}{lr}
 \toprule

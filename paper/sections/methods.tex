@@ -4,6 +4,8 @@ The model is a controlled comparison: a shared graph backbone feeds either an
 explicit thermodynamic bottleneck (\emph{TGNNSolv}) or a direct regressor
 (\emph{DirectGNN}) that emits \lnx\ with no physics. The gap between them is the cost or benefit of
 the bottleneck confounded with the arms' differing inputs and tuning, stated at the control below.
+Architecture, encoder variants, COSMO-SAC constants, solver settings, optimisation settings and the
+full loss taxonomy are in \S\ref{sec:si-methods}.
 
 \subsection{Data, splits, and labels}
 Solubility measurements come from BigSolDB~2.0 \cite{krasnov2025bigsoldb},
@@ -12,163 +14,105 @@ training; row membership is set by a
 melting-point-independent miscibility/structure filter, and crystal $\Tm$,
 $\dHfus$, Hansen parameters, and infinite-dilution activity coefficients \lngi\
 are merged on as per-solute labels where available. Two data hazards are handled
-explicitly. Melting-point tables arrive in either $^\circ$C or Kelvin and are unit-detected by
-column median (an undetected double conversion inflates every $\Tm$ by $273$\,K); and the seeded
+explicitly: melting-point tables arrive in either $^\circ$C or Kelvin and are unit-detected by
+column median (an undetected double conversion inflates every $\Tm$ by $273$\,K), and the seeded
 scaffold split is not stable across pipeline versions, so every regeneration is treated as
-a new split. Crystal supervision is
-scarce: the test and validation splits contain essentially no measured $\dHfus$,
-the quantitative basis of the identifiability argument
+a new split. Crystal supervision is scarce---the test and validation splits contain essentially no
+measured $\dHfus$, the quantitative basis of the identifiability argument
 (\S\ref{sec:framework}). External single-component data used for grounding are an
 open crystal-property pool ($\sim$15{,}000 melting points), the VT-2005
-$\sigma$-profile database, and ThermoML infinite-dilution activity coefficients;
-the stream builder excludes any pool molecule whose scaffold appears in validation
-or test and aborts on a missing split file. One $\sigma$-stream build on disk was
-nonetheless generated against the wrong split files: $106$ of its $1425$ rows
-overlap the test$\,\cup\,$validation union by scaffold, $91$ being held-out solutes;
-\S\ref{sec:si-repro} audits which arms it reaches and what it does and does not compromise.
+$\sigma$-profile database, and ThermoML infinite-dilution activity coefficients.
+The released stream builder excludes any pool molecule whose scaffold appears in validation
+or test and aborts on a missing split file --- but that is a property of the builder, not a
+certified property of the runs reported here. One $\sigma$-stream build on disk was
+generated against the wrong split files, $91$ of its $1425$ rows being held-out solutes by
+canonical SMILES, and per-run stream provenance was not logged, so the artifacts cannot certify
+which build fed which arm (\S\ref{sec:si-repro} gives the file-order evidence, the three facts that
+bound what a leak could do, and the one molecule it touches in the $n{=}44$ analysis of
+\S\ref{sec:surrogate}). We therefore do not assert the scaffold guarantee for these runs.
 
-\subsection{Graph encoder and pair representation}
-Solute and solvent are encoded by a \emph{shared} message-passing neural network (MPNN); two
-interchangeable alternatives (a graph transformer and a variant whose message channels are
-supervised toward the Hansen parameters) are in the SI (\S\ref{sec:si-methods}) and do not
-outperform it. Small hydride solvents such as water carry explicit hydrogens so the polar and
-hydrogen-bond channels activate. Solute and solvent embeddings interact through a
-bipartite cross-attention/message-passing block and a physics-aware readout, and
-are combined into a pair representation
-$[\,g_s,\,g_v,\,g_s\!\odot g_v,\,|g_s-g_v|\,]$ passed through an MLP, optionally
-augmented with RDKit descriptors, Morgan fingerprints, and an ionic-context
-feature. All heads below consume this pair representation.
+\subsection{Encoder, heads, and the closure under study}
+Solute and solvent are encoded by a \emph{shared} message-passing neural network, interact through a
+bipartite cross-attention block, and are combined into a pair representation that all heads consume;
+two interchangeable encoder alternatives do not outperform it (\S\ref{sec:si-methods}). A fusion
+head predicts the two crystal properties under bounded parametrisations, giving the ideal term
+$\Phicry(T)$ of Eq.~\eqref{eq:sle} with the constant-$\Delta C_p$ correction omitted (audited in
+\S\ref{sec:si-mech}). The activity term \lng\ comes from one of three differentiable closures. NRTL
+(Non-Random Two-Liquid \cite{renon1968}), the most expressive, fits interaction parameters per pair,
+optionally regularised by a UNIFAC group-contribution
+prior \cite{fredenslund1975}; its symmetric one-parameter collapse gives
+$\lng(x_2,T)=\lngi(T)(1-x_2)^2$, the minimal model in which the identifiability analysis is cleanest
+(\S\ref{sec:framework}). The closure under study is instead parameter-free: a $\sigma$-profile head
+emits a $51$-bin screening-charge-density profile $p(\sigma)$ per molecule (area per bin, summing to
+the cavity area $A$), and a COSMO-SAC layer (Lin--Sandler / VT-2005 conventions,
+Eq.~\eqref{eq:cosmo} in App.~\ref{sec:si-methods}) maps the profile pair to \lng\ through a damped fixed point for the segment
+activity coefficient $\Gamma_{S}$ (distinct from the grounding gap $\Ggap$), with an optional
+Staverman--Guggenheim combinatorial term---the full/residual-only distinction on which
+Table~\ref{tab:claims} and \S\ref{sec:measure} turn (\S\ref{sec:si-methods}). This closure over a
+network-\emph{predicted} $\sigma$-profile, and the intervention that swaps it for the external
+reference, is the object of study (\S\ref{sec:paradox}).
 
-\subsection{Crystal head and the ideal term}
-A fusion head predicts the two crystal properties defining the ideal (activity-free) solubility under
-bounded parametrisations ($\Tm\in[100,700]$\,K, $\dHfus>0$; optional Walden-entropy and
-group-contribution $\Tm$ modes are in the SI), giving the ideal term
-\begin{equation}
-  \Phicry(T)=\frac{\dHfus}{\Rgas}\!\left(\frac1T-\frac1\Tm\right),
-  \label{eq:phi}
-\end{equation}
-the constant-$\Delta C_p$ correction omitted (audited in \S\ref{sec:si-mech}).
-
-\subsection{Three interchangeable activity closures}
-The activity term \lng\ is produced by one of three closures, all differentiable
-and all consuming the same pair representation.
-
-\paragraph{Two baseline closures.} NRTL (Non-Random Two-Liquid \cite{renon1968}), the most
-expressive of the three, predicts two interaction energies with a $1/T$ temperature law and a
-non-randomness factor, optionally regularised by a UNIFAC group-contribution prior
-\cite{fredenslund1975}. Its symmetric
-one-parameter collapse \texttt{gamma\_inf} gives the analytic infinite-dilution law
-$\lng(x_2,T)=\lngi(T)\,(1-x_2)^2$ with $\lngi$ affine in $1/T$, the minimal model in which the
-identifiability analysis is cleanest (\S\ref{sec:framework}).
-
-\paragraph{Differentiable COSMO-SAC.} A $\sigma$-profile head emits, for each
-molecule, a $51$-bin screening-charge-density profile $p(\sigma)$ (area per bin,
-summing to the cavity area $A$). A parameter-free COSMO-SAC layer (Lin--Sandler /
-VT-2005 conventions) maps the pair of profiles to \lng\ by a damped fixed point
-for the segment activity coefficient $\Gamma_{S}$ (distinct from the grounding gap $\Gamma$),
-\begin{equation}
-  \resizebox{0.98\columnwidth}{!}{$\displaystyle
-  \Gamma_{S}(\sigma_m)=\Big[\textstyle\sum_n p_{\mathrm{norm}}(\sigma_n)\,\Gamma_{S}(\sigma_n)\,
-  \exp\!\big(-\Delta W(\sigma_m,\sigma_n)/RT\big)\Big]^{-1}$},
-  \label{eq:cosmo}
-\end{equation}
-with a precomputed exchange-energy matrix $\Delta W$ (electrostatic misfit plus a
-hydrogen-bonding term); the restoring contribution is
-$\lng^{\mathrm{res}}=(A_2/a_{\mathrm{eff}})\sum_m p_2^{\mathrm{pure}}(\sigma_m)
-[\ln\Gamma_{S,\mathrm{mix}}(\sigma_m)-\ln\Gamma_{S,2}^{\mathrm{pure}}(\sigma_m)]$, and
-an optional Staverman--Guggenheim combinatorial term uses the molecular cavity
-volume and area, its size factor $r_i=V_i/r_0$ taking the \emph{reference} COSMO
-cavity volume so that it shares the cavity basis of the area $A_i$. This closure --- COSMO-SAC over a
-network-\emph{predicted} $\sigma$-profile, and the intervention that swaps it for
-the external reference --- is the object of study in the grounding analysis
-(\S\ref{sec:paradox}).
-
-\paragraph{In-house closures are the primary instrument.} The dispersion-off closures in the
+\paragraph{In-house closures are the primary instrument.}
+% Artifact: results/b_insuff/closure_reference_validation.json (2002, rmse 0.0035) via
+% scripts/analysis/run_closure_reference_validation.py. The 2010 figure has no deposited
+% artifact -- scripts/analysis/validate_cosmo2010_layer.py printed to stdout on the run it
+% comes from -- which the sentence below states.
+The dispersion-off closures in the
 fidelity measurement (\S\ref{sec:measure}) are our own differentiable implementations, so those
-arms share one code path. Each consumes its own model-prescribed $\sigma$-averaging (Mullins for
-2002, Hsieh for 2010), the specified use of each closure. An input-fixed \emph{control} outside
-that use---the 2002 kernel on the prescribed sum of the typed profiles (Eq.~9 of
-Ref.~\cite{bell2020cosmosac})---varies the kernel alone: $\mathrm{MSE}\ 2.047$ against the 2010
-kernel's $0.765$ on the matched set, both with the combinatorial term on, so the
-\S\ref{sec:measure} contrast does not turn on the averaging rule. The 2002 layer reproduces the NIST reference
-COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE $0.003\,\ln\gamma$ on identical VT-2005
-profiles. For the modern arm we implement a differentiable COSMO-SAC-2010/dsp layer~\cite{hsieh2010,hsieh2014dsp} --- the
-donor/acceptor-typed three-profile representation, the temperature-dependent electrostatic
-misfit $c_{\mathrm{ES}}(T)=A_{\mathrm{ES}}+B_{\mathrm{ES}}/T^2$, the typed hydrogen-bonding
-kernel, and an optional dispersion term in the tabulated parameter $\epsilon/k_{\mathrm{B}}$ ---
-which reproduces the NIST COSMO-SAC-2010 reference to RMSE $1.4\times10^{-4}\,\ln\gamma$ with
-dispersion \emph{off}. The dispersion term is not validated to that standard: it carries the
-tabulated coefficient at a single sign, the class-dependent sign reversal of
-Ref.~\cite{hsieh2014dsp} being unimplemented and unexercised on the matched set, which holds no
-water or carboxylic-acid pair; and no $\epsilon$ is tabulated for the three matched pairs
-containing bromine or iodine, which our layer scores at $\epsilon{=}0$. That alone accounts for
-the $\mathrm{MSE}\ 7.43$ it records over all $60$; on the remaining $57$ it returns the reference
-$0.785$, showing no divergence where both are defined. Every dispersion-off contrast is computed on these layers and
-cross-checked against the NIST \texttt{cCOSMO} reference; the two dispersion arms are quoted
-from \texttt{cCOSMO} itself (\S\ref{sec:measure}).
+arms share one code path, and each consumes its own model-prescribed $\sigma$-averaging (Mullins for
+2002, Hsieh for 2010), the specified use of each closure; an input-fixed control that varies the
+kernel alone is reported in \S\ref{sec:measure}(iii). The 2002 layer reproduces the NIST reference
+COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE $0.0035\,\ln\gamma$ on identical VT-2005 profiles, and
+our differentiable COSMO-SAC-2010/dsp layer~\cite{hsieh2010,hsieh2014dsp}---built on the
+\emph{typed} latent, three donor/acceptor-resolved $\sigma$-profiles per molecule in place of one,
+read by a matching typed hydrogen-bonding kernel---reproduces the NIST 2010
+reference to RMSE $1.4\times10^{-4}\,\ln\gamma$ with dispersion \emph{off}, that second figure
+quoted from its validation run's console output, which deposited no artifact. The dispersion term is
+\emph{not} validated to that standard --- it carries the tabulated coefficient at a single sign, and
+no $\epsilon$ is tabulated for the three matched bromine- or iodine-containing pairs --- which is why
+every dispersion-off contrast is computed on our layers and cross-checked against the NIST
+\texttt{cCOSMO} reference while the \emph{2010, dispersion on} runs are quoted from \texttt{cCOSMO} itself. The
+layer definitions, the validation figures and the full scope of the dispersion caveat are in
+\S\ref{sec:si-methods}.
 
-\subsection{The solid--liquid-equilibrium (SLE) solver and implicit differentiation}
+\subsection{Solver, oracle substitution, and training}
 Given $\Phicry(T)$ and a closure for \lng, the saturated mole fraction solves
-$\lnx=-\Phicry(T)-\lng(x_2,T)$, a fixed point in $x_2$ because \lng\ depends on
-composition. We iterate a damped map
-\begin{equation}
-  x_2^{(k+1)}=\lambda\,\exp\!\big(-\Phicry(T)-\lng(x_2^{(k)},T)\big)+(1-\lambda)\,x_2^{(k)},
-  \label{eq:sle-iter}
-\end{equation}
-with closure-specific kernels. Gradients use the implicit-function theorem at the
-converged $x_2^\star$ (with $\eta=\partial\lng/\partial x_2$) rather than backpropagation
-through the iterations: exact at the fixed point, memory-constant in the iteration count,
-and well conditioned unless $1+x_2^\star\eta\to0$. Iteration counts (train $16$, eval $30$)
-follow a convergence audit: a shorter $n{=}8$ schedule fails a $5.86$-\lnx\ convergence test on
-strongly non-ideal pairs (SI \S\ref{sec:si-methods}).
+$\lnx=-\Phicry(T)-\lng(x_2,T)$, a fixed point in $x_2$ that we iterate under damping, taking
+gradients through the implicit-function theorem at the converged $x_2^\star$ rather than through the
+iterations. A bounded, gated ``adaptive physics correction'' perturbs the physical
+parameters ($\Tm,\dHfus,\tau$) rather than the output and re-solves the SLE, so the physical
+decomposition survives it.
 
-\subsection{Adaptive correction and the oracle substitution}
-A bounded, gated ``adaptive physics correction'' perturbs the physical parameters
-($\Tm,\dHfus,\tau$) rather than the output and re-solves the SLE, so the physical
-decomposition survives it. The \emph{oracle substitution} replaces
+The \emph{oracle substitution} replaces
 the predicted $\sigma$-profile $\hat z$ with the reference VT-2005 profile $\zstar$ before the
-closure (matched by canonical SMILES); it is applied three ways to rule out implementation
-artifacts---at evaluation only, injected at training time so the model co-adapts, and as a
-channel-swap control, the last two at seed $42$ only (\S\ref{sec:si-tables})---and an analogous
-override substitutes reference crystal targets. The activity target for the decomposition (\S\ref{sec:measure})
-is the infinite-dilution $\lngi=\lim_{x_2\to0}\lng$ at $298$\,K.
+closure (matched by canonical SMILES). It is applied three ways to rule out implementation
+artifacts: at evaluation only; injected at training time so the model co-adapts; and as a
+channel-swap control, which injects it at training under a coordinate-descent schedule that freezes
+the crystal branch during the SLE phase, so that only the activity branch refits against it. The
+last two are at seed $42$ only
+(\S\ref{sec:si-tables}). An analogous
+override substitutes reference crystal targets. The activity target for the decomposition
+(\S\ref{sec:measure}) is the infinite-dilution $\lngi=\lim_{x_2\to0}\lng$, on two sets that differ in
+their reference database and their regime (\S\ref{sec:measure}(i)--(ii)).
 
-\subsection{Training: three-phase curriculum and single-component grounding}
-Optimisation follows a three-phase curriculum: (P1) auxiliary-property
-pretraining on crystal, Hansen, and \lngi\ targets with no SLE loss; (P2) full
-SLE training, with the adaptive correction unfrozen partway and an optional
-crystal$\to$pair weight ramp; (P3) low-learning-rate stabilisation with
-monotonicity and van't~Hoff regularisers. External single-component data enter
-through \emph{grounding streams}, the training-time sense of grounding and a separate
-operation from the evaluation-time oracle substitution above: each stream is a sidecar
-of \emph{self-solvent} rows ($\mathrm{solvent}=\mathrm{solute}$, no solubility label,
-only the target factor's mask active), interleaved into P1/P2 at a configurable step
-budget under the scaffold-leak guard above. In Fig.~\ref{fig:paradox} the
-\emph{grounded} arms (learned $\sigma$, with and without the combinatorial term) use
-the stream, the \emph{ungrounded} arm sets its budget to zero, and the
-\emph{$\sigma$-oracle} arm is a grounded checkpoint re-evaluated under the substitution.
-The pinned recipe behind those arms departs from the default:
-it freezes the $\sigma$ head for P2/P3, so the $\sigma$ stream --- used only by the
-grounded arms, which begin with a warm-up on the pool (up to $40$ epochs, early-stopped
-on a held-out tenth) --- enters that warm-up and P1 only. The freeze holds the head's
-weights, not the shared encoder, so the predicted profile
-still moves end to end; per-arm schedules are in \S\ref{sec:si-tables}. The streams ground the crystal factor (melting-point
-pool) and the activity factor ($\sigma$-profile database), identifying an otherwise
-non-identifiable factor (\S\ref{sec:framework}) from external data a black-box
-predictor cannot use.
+Optimisation follows a three-phase curriculum---auxiliary pretraining, SLE training,
+stabilisation---under a weighted loss whose taxonomy and per-phase weights are in
+\S\ref{sec:si-methods}. External single-component data enter through \emph{grounding streams}, the
+training-time sense of grounding and a separate operation from the evaluation-time oracle
+substitution above: each stream is a sidecar of \emph{self-solvent} rows
+($\mathrm{solvent}=\mathrm{solute}$, no solubility label, only the target factor's mask active),
+interleaved into training at a configurable step budget under the scaffold-leak guard above. In
+Fig.~\ref{fig:paradox} the \emph{grounded} arms use the stream, the \emph{ungrounded} arm sets its
+budget to zero, and the \emph{$\sigma$-oracle} arm is a grounded checkpoint re-evaluated under the
+substitution. The training schedule used for those arms freezes the $\sigma$ head after phase 1,
+so the $\sigma$ stream enters the warm-up and phase 1 only (per-arm schedules,
+\S\ref{sec:si-tables}). The streams ground the crystal factor (melting-point pool) and the
+activity factor ($\sigma$-profile database), identifying an otherwise non-identifiable factor
+(\S\ref{sec:framework}) from external data a black-box predictor cannot use.
 
-\subsection{Objective}
-The training loss is a weighted sum with per-phase weights. Only a few terms are
-load-bearing here: a bin-weighted Huber on \lnx; auxiliary losses on the
-$\sigma$-profile (an earth-mover distance), on crystal $\Tm/\dHfus$, on \lngi, and on
-Hansen parameters; and structural regularisers for temperature monotonicity and the
-van't~Hoff slope. The remainder (channel orthogonality, contrastive,
-mixture-of-experts balance, priors) is auxiliary; the complete taxonomy and weights
-are in the SI (\S\ref{sec:si-methods}), the full feature list with the code.
-
-\subsection{The DirectGNN control}
+\subsection{The DirectGNN control, and reproducibility}
 DirectGNN shares the encoder, interaction, readout, and pair representation, adds
-a thermometer temperature encoding, and maps directly to \lnx\ with a
+a thermometer (cumulative-threshold) temperature encoding, and maps directly to \lnx\ with a
 bin-weighted Huber loss and no heads, closure, or solver. The two arms therefore share
 their representation but not their inputs or their tuning: the control receives an
 explicit temperature encoding the physics arm does not, seeing $T$ instead through
@@ -177,14 +121,14 @@ The TGNNSolv$-$DirectGNN gap is accordingly a comparison of two separately tuned
 pipelines that differ in the thermodynamic bottleneck, not an isolation of the
 bottleneck; DirectGNN is the reference for every asymptotic physics penalty comparison
 in \S\ref{sec:results}, and those comparisons carry that caveat.
-
-\subsection{Reproducibility}
-Controlled comparisons are run at three seeds and reported as mean$\pm$sd on a
-cross-arm intersection lock (rows supervised and finite in every arm); the
-exceptions --- the training-time and channel-swap oracle controls and the
-output-residual arms (\S\ref{sec:gateb}) --- are single-seed, labelled as such
-(\S\ref{sec:si-tables}). Solver iteration counts, COSMO-SAC constants, architecture and
-optimisation hyperparameters, and the compute ledger
-(full-corpus GPU runs versus CPU-reproducible proxies) are in the SI
-(\S\ref{sec:si-methods}, \S\ref{sec:si-repro}); the released code regenerates every figure and
-table from committed artifacts.
+The controlled comparisons of \S\ref{sec:paradox} are run at three seeds and reported as
+mean$\pm$sd on a cross-arm row set (rows supervised and finite in every arm). Single-seed, and
+labelled as such where each is reported, are the training-time and channel-swap
+oracle controls, the output-residual arms (\S\ref{sec:gateb}), the data-efficiency curve
+(App.~\ref{sec:data-efficiency}) and the loss-simplification ablation
+(App.~\ref{sec:si-methods}). Solver iteration counts and their convergence audit, the curriculum, the
+loss taxonomy, COSMO-SAC constants, architecture and optimisation hyperparameters, and the compute
+ledger are in \S\ref{sec:si-methods} and \S\ref{sec:si-repro}. The two audit runs behind
+\S\ref{sec:measure} are named there with the script and the artifact file of each;
+the repository that would let those scripts be run is a placeholder here, and not every artifact
+they read is small enough to version (limitation~(x), \S\ref{sec:discussion}).

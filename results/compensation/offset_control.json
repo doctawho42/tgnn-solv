@@ -1,0 +1,48 @@
+{
+  "provenance": "constant-offset control on the two-model companion run deposited as results/compensation/isolation.json, via scripts/analysis/run_surrogate_offset_control.py; both checkpoints on disk",
+  "sle_checkpoint": "checkpoints/cosmo_sac/tgnn_cosmo.pt",
+  "grounded_checkpoint": "results/closure_fix/ckpt/arm_base.pt",
+  "set": "44 VT-2005-matched molecules, sigma shape on 51 bins",
+  "split": "seed-0 permutation, 22 train / 22 held out (the deposited run's split)",
+  "control": "one molecule-independent constant shift of the profile, fitted on the training half, applied unchanged to every held-out molecule",
+  "arms": {
+    "vs_true": {
+      "n": 44,
+      "n_train": 22,
+      "n_heldout": 22,
+      "oos_mse_identity": 0.0013292406289668692,
+      "oos_mse_constant_offset": 0.0006363074212977506,
+      "oos_mse_distortion_D": 8.10987004019758e-05,
+      "improvement_ratio_D_over_identity": 16.390406040766653,
+      "offset_ratio_over_identity": 2.088991239888228,
+      "D_ratio_over_offset": 7.846086535836132
+    },
+    "isolation": {
+      "n": 44,
+      "n_train": 22,
+      "n_heldout": 22,
+      "oos_mse_identity": 0.0013104790123179555,
+      "oos_mse_constant_offset": 0.0006101969629526138,
+      "oos_mse_distortion_D": 5.080494082213143e-05,
+      "improvement_ratio_D_over_identity": 25.794322188189426,
+      "offset_ratio_over_identity": 2.1476328003614196,
+      "D_ratio_over_offset": 12.010583086572606
+    }
+  },
+  "not_computable": {
+    "three_seed_headline": "results/sur/surrogate_seeds/surrogate_seeds.json (transfer 4.1+-0.5x): the three seed checkpoints were not retained, so no offset control exists for it",
+    "gpu_companion_run": "results/compensation/isolation_gpu.json (transfer 3.3x): its checkpoint fields point at an ephemeral scratch path that no longer exists"
+  },
+  "scope": "This run is the uncontrolled two-model comparison, which over-states both the departure and the transfer relative to the three-seed within-model contrast; the control bounds the transfer ratio ON THIS RUN and is not a measurement of the three-seed 4.1x.",
+  "verification": {
+    "vs_true_reproduces_oos_mse_identity": true,
+    "vs_true_reproduces_oos_mse_distortion_D": true,
+    "vs_true_reproduces_improvement_ratio": true,
+    "isolation_reproduces_oos_mse_identity": true,
+    "isolation_reproduces_oos_mse_distortion_D": true,
+    "isolation_reproduces_improvement_ratio": true,
+    "n_is_44": true,
+    "factorisation_exact": true
+  },
+  "verified": true
+}
