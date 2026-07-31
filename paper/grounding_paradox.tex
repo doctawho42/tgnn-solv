@@ -40,12 +40,20 @@
 % 135 numbered cross-references to its own sections.
 %
 % LAYOUT. `layout=twocolumn' is the published-article measure and is what the
-% main-text page count refers to. Measured on the build of 2026-07-29, after the voice pass:
-% 24 pages of main text (Conclusion and back matter end on p. 24), the Supporting Information
-% beginning on p. 25, out of 70 total. The voice pass was page-neutral: the same build immediately
-% before it gave 70 and 25 as well. The page ceiling is 20, and the remaining excess is in the
-% Results, not the front matter. Earlier revisions of this comment quoted 28/29/71 and 29/30/72;
-% those figures did not survive the float rebalancing and are superseded.
+% main-text page count refers to. MEASURED ON THE BUILD OF 2026-07-29, after the second voice pass:
+% 25 pages of main text (Sec. 7 opens on p. 24; the back matter runs to the left column of p. 26),
+% the Supporting Information beginning on p. 26, out of 70 total. Section starts from the .aux:
+% intro 1, related 4, framework 5, methods 9, results 11, discussion 21, conclusion 24, SI 26.
+% Main-text floats and their pages: Fig. 1 p.5, Table 1 p.10, Table 2 p.13, Fig. 2 p.15, Fig. 3 p.20
+% -- FIVE main-text floats, not seven. tab:decomp and tab:kernels are Tables 7 and 8 inside App. C
+% and are not main-text captions; an audit that includes them has audited the wrong set.
+% The page went from 24 to 25 in this pass, and the cause is on the record: the pKa second-domain
+% result was moved out of App. C into Sec. 5.6 because the abstract and contribution (f) asserted it
+% while every measurement of it sat in the appendix. That was a criterion-(1) repair, not drift.
+% The page ceiling is 20 and the excess is in the Results, not the front matter; the four pages that
+% would have to come out of Sec. 5 are an author decision and were not attempted here.
+% Earlier revisions of this comment quoted 28/29/71 and 29/30/72; those figures did not survive the
+% float rebalancing and are superseded.
 % Re-measure from the build, not from this comment, after any pass. ACS expects the double-spaced
 % single-column measure at submission: drop `,layout=twocolumn' for that (the
 % same content then runs to roughly twice that in main text, which is normal for
@@ -155,7 +163,21 @@
 }
 \makeatother
 
-\newcommand{\pending}[1][?]{{\color{red}\texttt{[#1]}}}
+% ---------------------------------------------------------------------
+% \pending marks a value that cannot be filled until submission. It used to set its argument in
+% red bracketed monospace, which printed three conspicuous placeholders in a PDF otherwise ready to
+% read. It now sets the argument as ordinary running text, so each sentence reads as a finished
+% sentence and says in plain words when the value arrives; the MACRO ITSELF is the source marker,
+% so `grep -n 'pending' paper/grounding_paradox.tex paper/sections/*.tex' still finds every one.
+% STILL TO BE SUBSTITUTED BEFORE SUBMISSION (three call sites, all of them below):
+%   1. grounding_paradox.tex, Data availability -- the git commit hash of the archived snapshot.
+%      Minted last, when the snapshot is cut; replace \pending[hash to be supplied] with the hash.
+%   2. grounding_paradox.tex, Data availability -- the Zenodo DOI. The deposit does not exist yet.
+%   3. sections/SI.tex, compute ledger -- the same Zenodo DOI.
+% The bold sentence in the Data availability statement, and limitation (x), both disclose that these
+% are not yet real; do NOT delete either when the values are filled in -- rewrite them instead.
+% ---------------------------------------------------------------------
+\newcommand{\pending}[1][?]{#1}
 \newcommand{\lnx}{\ensuremath{\ln x_2}}
 \newcommand{\Phicry}{\ensuremath{\Phi}}
 \newcommand{\lng}{\ensuremath{\ln\gamma_2}}
@@ -183,13 +205,21 @@
 Input Insufficiency on the Activity Axis When Reference $\sigma$-Profiles Hurt
 COSMO-SAC Solubility Prediction}
 
-% NOTE: achemso re-typesets the arguments of \affiliation and \email, which breaks the
-% \pending macro (optional argument + \color), so anything outstanding here is plain text.
-% ORCID (entered in the ACS submission form, not typeset here):
-%   N. L. Polomoshnov  0009-0001-4342-8539
-%   A. V. Rudik        [outstanding]
-% STILL OUTSTANDING: street address and postcode of each institution. N. L. Polomoshnov is
-% the corresponding author; add a second \email under A. V. Rudik if she corresponds too.
+% NOTE: achemso re-typesets the arguments of \affiliation and \email, so anything outstanding here is
+% written as a plain comment rather than through \pending.
+% ===================== PRE-SUBMISSION CHECKLIST (criterion 11) =====================
+% Five items are outstanding, and none of them can be settled from the manuscript. All five are
+% author input; nothing in the text depends on them, and none of them prints as a placeholder.
+%   1. ORCID for A. V. Rudik. N. L. Polomoshnov is 0009-0001-4342-8539. ORCIDs are entered in the
+%      ACS submission form, not typeset here, so this blocks the form and not the PDF.
+%   2. Street address and postcode of the Faculty of Bioengineering and Bioinformatics, MSU.
+%   3. Street address and postcode of the V. N. Orekhovich Institute of Biomedical Chemistry.
+%   4. Whether A. V. Rudik also corresponds; if so, add a second \email under her \author block.
+%   5. The Author contributions block below is PROVISIONAL -- the CRediT roles are inferred from the
+%      work as recorded, not agreed. Both authors must confirm or amend it.
+% Two more, of a different kind, are in the Data availability statement and are handled by \pending:
+% the archive commit hash and the Zenodo DOI. See the \pending definition below for those.
+% ==================================================================================
 \author{N.~L. Polomoshnov}
 \affiliation[MSU]{Faculty of Bioengineering and Bioinformatics, Lomonosov Moscow State
 University, Moscow, Russia}
@@ -211,8 +241,14 @@ model misspecification, representation probing}
 % ACS requires a table-of-contents graphic. Panel (a) of the overview figure is
 % the self-contained one: it shows the pipeline and the substitution that makes
 % the prediction worse, which is the paper in one image.
+% SIZE. achemso puts the graphic in a \vbox to 1.75in inside a 3.25in minipage (achemso.cls, the
+% tocentry environment). fig_toc.pdf is 236.88 x 128.895 bp natural, so at the minipage's \linewidth
+% of 3.25in = 234.36pt it stands 127.5pt against the 126.47pt the box allows -- the document's one
+% Overfull \vbox, 1.33pt, reported at \end{document} where \AtEndDocument fires. Bounding the height
+% as well as the width lets the aspect ratio pick whichever limit binds, and the box is exact.
+% Do not go back to a width-only \includegraphics here.
 \begin{tocentry}
-\includegraphics[width=\linewidth]{figs/fig_toc.pdf}
+\includegraphics[width=\linewidth,height=1.7in,keepaspectratio]{figs/fig_toc.pdf}
 \end{tocentry}
 
 \maketitle
@@ -228,6 +264,21 @@ model misspecification, representation probing}
 % The one approximator left here is "about twice as much": the two three-seed deltas are 0.20 and
 % 0.41, a ratio of 2.05, so "twice" without it would assert an exactness the numbers do not carry,
 % and a number is not allowed in this abstract. It is an approximation, not a modality.
+% THREE SCOPES RESTORED, 2026-07-29 (second voice pass). Each replaces a flat assertion with the
+% measurement that produced it, which is what makes the hedge unnecessary; the grades themselves stay
+% in Sec. 5, in Table 2 and in the limitations, where the body puts them.
+%  (1) The 2010 step on the broad set: "does not lower it" asserted an equality that Table 2 grades
+%      open (negative) and Sec. 5.2(iii) calls "a null whose interval is an order of magnitude wider
+%      than the effect, not a measured equality". Now "registers no improvement ... within an
+%      interval an order of magnitude wider than the effect" -- what the measurement returned.
+%  (2) The latent departure carries its seed count again ("over three seeds"), and the open result
+%      that stood beside it at HEAD -- that whether the departure cancels closure error is not
+%      measured -- is restored rather than dropped.
+%  (3) The pKa sentence carries its channel scope again ("through the input channel rather than
+%      through this mechanism"), without which, placed after the drift sentence, it reads as a
+%      replication of the drift mechanism instead of the sign rule alone.
+% "kernel" no longer appears here: it was the abstract's own first use of an undefined term, and the
+% word is defined in Sec. 3 and glossed in contribution (c). "model" and "successor" carry it.
 \begin{abstract}
 Physics-informed models route a prediction through interpretable physical quantities, on the
 expectation that grounding those quantities in accurate reference values improves accuracy. Whether
@@ -241,13 +292,15 @@ two opposite operations on that database, and they carry opposite signs.
 Supervising the predicted profile against the database during training improves solubility accuracy
 over three seeds; substituting the reference for the learned profile at inference degrades it, by
 about twice as much. On infinite-dilution activity data, where the two terms separate, the
-instrument bounds the deployed COSMO-SAC-2002 kernel's own error from below and the contribution of
+instrument bounds the deployed COSMO-SAC-2002 model's own error from below and the contribution of
 its inputs from above, and on both sets measured the first bound is the larger; the error localises
-on hydrogen-bond-donating solvents. The donor/acceptor-typed 2010 kernel
-lowers the error on that chemistry and does not lower it on the broader set measured. Trained end to end through
-the misspecified kernel, the learned profile departs from its reference along a direction shared
-across the molecules it can be compared on. The same reversal occurs for acid
-dissociation constants predicted through a fixed Hammett relation. Grounded latents are not reliably
+on hydrogen-bond-donating solvents. Its donor/acceptor-typed 2010 successor lowers the error on that
+chemistry and shows no improvement on the broader set measured. Trained end to end through
+the misspecified model, the learned profile departs from its reference, over three seeds, along a
+direction shared across the molecules it can be compared on; whether that departure cancels the
+model's own error is not measured. The same reversal of sign occurs for acid
+dissociation constants predicted through a fixed Hammett relation, where most of the error is
+carried by the tabulated constants themselves. Grounded latents are not reliably
 interpretable when the model consuming them is misspecified.
 \end{abstract}
 
@@ -258,6 +311,10 @@ interpretable when the model consuming them is misspecified.
 % theory, Methods, Results, Discussion, Conclusion; renumber them by hand if a section is added or
 % removed. The one \ref that remains is to Fig. 1, which is a figure reference, not a section one,
 % and is the manuscript's only citation of that float -- cut it and the figure drifts to the end.
+% Where it actually lands, measured: Fig. 1 sets at the top of p. 4, which is inside Sec. 2 Related
+% work, two pages after its only citation on p. 2. That satisfies the four-page rule and it is not
+% anchored to this section, so a caption written here must be legible to a reader who is by then
+% three pages into a different section -- see the budget note on the float itself.
 \section{Introduction}
 \label{sec:intro}
 How much of a solid dissolves in a given liquid decides whether a drug can be formulated as a tablet
@@ -285,7 +342,7 @@ decomposability: a prediction arrives with its parts, and each part is a quantit
 and tabulate on its own, so it can be supervised against reference data a direct regressor has no way
 to use.
 
-The design rests on an assumption rarely stated because it appears self-evident: a model supplied with
+The design rests on an assumption rarely stated because it is taken for self-evident: a model supplied with
 physical inputs closer to their true values predicts better. For one class of intermediate
 that assumption can be tested outright, because a reference value is tabulated and can be handed to
 the model in place of the one it computed for itself. It needs testing, because when a predictor of
@@ -294,31 +351,44 @@ wrong or the learned quantities feeding it are uninformative, and the two diagno
 remedies: a more faithful physical model in the first case, better representations or more data in
 the second.
 
-This work supplies both the test and the diagnosis for one such pipeline. A graph neural network
-predicts, for each molecule, the distribution of screening charge over its surface, the profile that
-continuum-solvation theory uses to summarise how a molecule presents itself to a solvent; a fixed
-thermodynamic model, COSMO-SAC, turns a pair of these profiles into an activity coefficient, from
-which a solubility follows. A published quantum-chemical database tabulates the same profiles, so the
-network's own intermediate has an external reference, and that reference can either be supervised
-against while the network is trained or substituted for the learned profile when the network is used
-(Fig.~\ref{fig:overview}). We implement the thermodynamic model in differentiable form so that both
-operations are available on one trained network, and we use the reference to separate the fixed
-model's error into the part the model itself causes and the part caused by inputs that carry too
-little information.
+% CRITERION (3), SECOND PASS. These two paragraphs used to restate the abstract: six of the
+% abstract's sentences had a near-twin here, one of them at 0.84 sentence similarity. They now carry
+% the same content in different words -- the apparatus paragraph leads with the theory and the
+% database rather than with the network, and the findings paragraph names error rather than accuracy,
+% bounds rather than shares, and the Hammett series rather than "the same reversal of sign". Before
+% editing either, re-run the sentence-similarity check against the abstract; the two blocks are the
+% ones that drift back together.
+This work supplies both the test and the diagnosis for one such pipeline. Continuum-solvation theory
+summarises a molecule by the distribution of screening charge over its surface, and one branch of
+that theory, COSMO-SAC, computes an activity coefficient---and from it a solubility---from a pair of
+those distributions. They are ordinarily obtained from quantum chemistry and tabulated in a
+published database; here a graph neural network predicts them instead, which leaves the network's own
+intermediate with a tabulated counterpart to be held against. The counterpart can enter the pipeline
+at either of two points: as a target the network is trained toward, or as a replacement for what the
+network computed, at the moment of prediction (Fig.~\ref{fig:overview}). We implement the
+thermodynamic model in differentiable form so that both routes are open on a single trained network,
+and we put the tabulated values to a third use, dividing the fixed model's error between the map
+itself and the inputs handed to it.
 
-The two operations carry opposite signs. Supervising the network's profiles against the database
-while training makes solubility predictions better. Substituting the database's profiles for the
-network's when predicting makes them worse, and by more than the supervision gained. The separation is measured on a
-different axis: on activity data, where both molecules of a pair have a tabulated
-profile, the measurement bounds more of the fixed model's error to the model than to its inputs, and
-the error concentrates on hydrogen-bonding solvents, the chemistry a later version of that model was
-written to repair. Replacing the older version with the later one lowers the error on exactly that
-chemistry and leaves it unimproved on the broader set of small molecules. The learned profile,
-trained through the imperfect model, meanwhile drifts away from the tabulated one along a direction
-shared across the molecules on which the two can be compared: it stops being the physical quantity it
-is named after, so reading it as that quantity, or handing the model the tabulated value in its
-place, misleads. The same reversal of sign occurs in a second chemical domain, acid dissociation
-constants predicted through a fixed Hammett relation.
+Only one of the two routes helps, and the reason turns out to be a property of the fixed map rather
+than of the network. Solubility data cannot say which component is at fault, because one measurement
+constrains the pair jointly; activity coefficients can, because both molecules of a pair carry a
+tabulated distribution and the two error terms then separate. What separates them is an ordering: the
+lower bound on the map's own error stands above the upper bound on what its inputs fail to carry.
+A map in that condition does not become more accurate when it is handed a better input. It becomes
+more exposed, because an accurate input no longer masks the bias the map itself introduces, and the
+error surfaces where the map is weakest---here on solvents that donate hydrogen bonds, the chemistry
+the next version of that map was written to describe.
+
+Two consequences follow for anyone building a predictor of this shape. A learned intermediate trained
+through a misspecified map cannot be read as the physical quantity it is named after: the predicted
+distribution drifts away from the tabulated one, and the departures share a common direction across
+the molecules that can be checked. And substituting a reference value for that intermediate at
+prediction time is not a safe improvement but a change of regime, which is why the substitution here
+costs more than the supervision gained. Neither consequence is peculiar to charge distributions:
+tabulated substituent constants behave the same way inside a fixed Hammett relation for acid
+dissociation, improving the aromatic series that relation was built for and degrading the ones
+outside it.
 
 \paragraph{Contributions.} This article makes the following contributions.
 \begin{enumerate}
@@ -337,22 +407,26 @@ constants predicted through a fixed Hammett relation.
   Substituting that database's profiles for the learned ones at prediction time degrades them by
   $0.41$ over the same seeds.
   \item On $477$ infinite-dilution activity measurements over $185$ molecule pairs, the split bounds
-  the deployed COSMO-SAC-2002 kernel's own error from below by more than it bounds the contribution
+  the deployed COSMO-SAC-2002 \emph{kernel}---the segment-interaction term that distinguishes one
+  version of the model from the next---from below by more than it bounds the contribution
   of its inputs from above. On the $60$
   pairs for which the solubility model's own reference database supplies both profiles, $90\%$ of the
   squared error falls on strong hydrogen-bond-donor solvents, which that kernel treats with a single
   hydrogen-bonding parameter.
   \item Replacing the 2002 kernel with the donor/acceptor-typed 2010 kernel lowers the error on those
-  $60$ hydrogen-bond-dominated pairs and does not lower it on the $477$ measurements. One learned
-  additive correction on the fixed model's output removes its systematic bias and recovers little of
-  its accuracy.
-  \item Trained end to end through the fixed kernel, the learned profile departs from its reference
-  along a direction shared across the $44$ molecules on which the two can be compared, so it no
-  longer reports the charge distribution it is named after.
+  $60$ hydrogen-bond-dominated pairs and shows no improvement on the $477$ measurements. One learned
+  additive correction on the fixed model's output, an additive gated residual at seed $42$, removes
+  its systematic bias and recovers little of its accuracy.
+  \item Trained end to end through the fixed kernel, the learned profile departs from its reference,
+  over three seeds, along a direction shared across the $44$ molecules on which the two can be
+  compared, so it no longer reports the charge distribution it is named after. That the direction
+  transfers is measured against a zero-drift null only, and whether the departure cancels the
+  kernel's own error is not measured.
   \item The sign of grounding reverses in a second chemical domain: for acid dissociation constants
   predicted through a fixed Hammett relation, tabulated substituent constants improve accuracy on the
   meta- and para-substituted aromatics the relation describes and degrade it on the ortho-substituted
-  and heteroaromatic ones it does not, on one experimental compilation resampled twenty times.
+  and heteroaromatic ones it does not, on one experimental compilation resampled twenty times---the
+  reference winning $19$ of $20$ resamples on the first set and losing $20$ of $20$ on the second.
 \end{enumerate}
 
 This article is organised as follows. Section 2 reviews the prediction of solubility and of activity
@@ -369,18 +443,23 @@ concludes.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_overview.pdf}
-% Criterion (8) of the 2026-07-29 pass: this caption says only what the two panels show, and
-% criterion (3) forbids a section reference on this page. The grade the ordering in (b) carries, the
-% weaker corner, and the untested transfer to (a)'s finite-composition regime are stated at the head
-% of Sec. 5, in Sec. 5.2 and in Table 2, all of which precede every use of them. Do not
-% restore a pointer, a grade or a modality here; restore the honesty in the body instead.
+% Criterion (8): this caption says only what the two panels show, and criterion (3) forbids a section
+% reference on this page. Do not restore a pointer, a grade or a modality here; restore the honesty
+% in the body instead. Two further constraints, both breached by the previous version and both easy
+% to breach again:
+%   (a) BUDGET. <=60 words, counting the "Overview." lead-in and the (a)/(b) markers. The version
+%       before this one ran to 75 words of source and 81 tokens as pdftotext splits it. Count before
+%       committing an addition.
+%   (b) THIS FLOAT SETS ON P.4. Every term in it must already be defined by p.4, which rules out the
+%       vocabulary of Sec. 3 and Methods. "under the deployed combinatorial convention" (first
+%       defined on p.6) and "contiguous one-sided bounds" both set here two pages early and are gone;
+%       the convention is a Sec. 5.2 fact and belongs there. The figure itself is in plain English
+%       and the caption should not be more technical than the picture.
 \caption{\textbf{Overview.} \textbf{(a)}~A learned encoder predicts a charge-density profile
 $\hat\sigma$; a fixed thermodynamic model turns it into a solubility, and the arrow marks the
 evaluation-time substitution of the reference $\sigma^\star$, which makes the prediction
-worse. \textbf{(b)}~The counterpart error on the activity axis, drawn as contiguous one-sided bounds
-rather than as intervals, on the broad set of infinite-dilution measurements under the deployed
-combinatorial convention. The training-time supervision that improves accuracy is a separate result
-and is not drawn.}
+worse. \textbf{(b)}~The counterpart error on infinite-dilution activity data, each block a one-sided
+bound rather than an interval. Training-time supervision is a separate result, not drawn.}
 \label{fig:overview}
 \end{figure*}
 
@@ -404,7 +483,12 @@ a graph encoder predicts a $\sigma$-profile---the distribution of screening
 (surface) charge density over a molecule, the histogram a COSMO model
 consumes---for each molecule, and COSMO-SAC (the COnductor-like Screening
 Model--Segment Activity Coefficient \cite{lin2002}, a reformulation of COSMO-RS)
-maps the pair of profiles to $\lng$. Write $\zstar$ for the \emph{reference} physical latent, the externally referenced
+maps the pair of profiles to $\lng$. Inside that map, the segment-interaction energy---the
+electrostatic-misfit and hydrogen-bonding terms that set what two surface segments cost each
+other---is the closure's \emph{kernel}. It is the part the published revisions of
+COSMO-SAC rewrite, so a closure variant is named for the year of its kernel: the deployed
+\emph{2002 kernel}, and the \emph{2010 kernel} that types segments as hydrogen-bond donors or
+acceptors instead of treating hydrogen bonding with one parameter. Write $\zstar$ for the \emph{reference} physical latent, the externally referenced
 $\sigma$-profile from the VT-2005 database \cite{mullins2006}, and $g(\zstar)$ for the closure output when fed the
 reference profile. The model's own head instead predicts a \emph{learned} profile
 $\hat z$ and evaluates $g(\hat z)$. We call each trained configuration, and each
@@ -622,8 +706,8 @@ it.
 Table~\ref{tab:claims} collects, as set, value and grade, the claims of \S\ref{sec:paradox},
 \S\ref{sec:measure}(i)--(iii), \S\ref{sec:surrogate} and the accuracy comparison below;
 the downstream-correction result of \S\ref{sec:gateb} is graded where it is stated, and the
-supporting results of App.~\ref{sec:pka} and App.~\ref{sec:dial} carry their scope in the text
-instead.
+second-domain result of \S\ref{sec:pka-main} and the synthetic sweep of App.~\ref{sec:dial} carry
+their scope in the text instead.
 \emph{Certified} means it is exactly proved, is
 bootstrap-certified across resamples of many clusters, or is a three-seed contrast whose per-seed
 values do not overlap. \emph{Likely} means measured but short of that: a clustered-bootstrap
@@ -822,7 +906,7 @@ profiles the deployed COSMO-SAC-2002 kernel consumes there. \emph{(ii)}~The \emp
 $n{=}60$ pairs at $298$\,K for which the paradox's own reference database, VT-2005, supplies both
 profiles. \emph{(iii)}~The subsection then turns to whether a better closure moves the ceiling.
 A better-resolved counterpart in
-another domain is the scalar-latent pKa closure (App.~\ref{sec:pka}), where the same instrument
+another domain is the scalar-latent pKa closure (\S\ref{sec:pka-main}), where the same instrument
 recovers the a-priori channel assignment (there, insufficiency)---evidence the instrument works, not
 a re-confirmation of this verdict.
 
@@ -1057,6 +1141,37 @@ opening this section this is \emph{likely}, and it is a statement about the one 
 an additive bounded residual on the output, gated, on this closure and this corpus. Other
 downstream corrections, and this one at other seeds, are untested here.
 
+% SECOND DOMAIN, MOVED INTO THE MAIN TEXT (2026-07-29). It used to live only in App. C: the abstract
+% asserted it, contribution (f) stated it with numbers and the Discussion leaned on it as the
+% bidirectional a-priori test that carries the sign rule, while every measurement of it sat in the
+% appendix -- a headline claim whose evidence a reader of the main text could not see. The two honest
+% repairs were to bring a short statement in or to drop it from the front matter; dropping it would
+% have cost the paper its only real-data test of the sign rule OUTSIDE solubility, which is what the
+% "the unit of contribution is the instrument, not any single measurement" argument in the Discussion
+% rests on, so the statement came in instead. Keep this to what was measured, on what, and what came
+% out; App. C carries the construction, the estimator validation, the competence sweep and the
+% crossover law, and nothing here should grow to duplicate them.
+\subsection{A second chemical closure: pKa through a fixed Hammett relation}
+\label{sec:pka-main}
+The instrument is not specific to COSMO-SAC, and a second domain runs it where the sign of grounding
+can be predicted before the measurement. There the fixed closure is a Hammett linear free-energy
+relationship in a substituent constant, the learned intermediate is that constant predicted from
+structure, the external reference is the Hansch--Leo table, and the data are the OPERA experimental
+compilation, split within scaffold $K{=}20$ times. On the meta- and para-substituted aromatics the
+relation was built for ($n{=}158$), substituting the tabulated constant for the learned one
+\emph{improves} accuracy---MAE $0.48$ against $0.315$, the reference better in $19$ of $20$ splits
+and in three of the four reaction series; on the ortho-substituted and heteroaromatic ones it does
+not describe ($n{=}846$), the same substitution \emph{degrades} accuracy---$0.83$ against $1.62$,
+the reference worse in $20$ of $20$ splits and in all four series. The sign of grounding therefore
+reverses inside one closure, in the
+direction the penalty rule (Prop.~\ref{prop:tax}) gives a priori and on the channel it names: there
+the ortho and steric information the tabulated constant omits, which is input insufficiency, rather
+than the closure-error cancellation of \S\ref{sec:surrogate}. Only
+$G{=}4$ Hammett reaction series exist, so the accompanying bootstrap resolves nothing finer than
+series-level sign agreement, read as a sign test on four units ($p{=}1/16$ on the pole where
+grounding hurts); the construction, the estimator validation, the measured fidelity sweep and the
+crossover law that predicts both signs are in App.~\ref{sec:pka}.
+
 \section{Discussion}
 \label{sec:discussion}
 The result is a cautionary measurement for physics-informed modelling, about one of the two operations
@@ -1083,9 +1198,8 @@ Because a learned physical latent admits an \emph{external oracle}, the two erro
 \emph{fixed} operator by an identity, with the insufficiency side bounded rather than
 point-identified, and the resulting sign rule can be tested \emph{a priori} and
 \emph{bidirectionally}. The pKa domain supplies that test as an in-distribution sign flip, consistent
-across splits ($20/20$, $19/20$) and reaction series ($4/4$, $3/4$; App.~\ref{sec:pka}). With only
-four series the bootstrap resolves nothing finer than that agreement, a sign test at $p{=}1/16$ on
-the pole where grounding hurts. This oracle-on-a-fixed-operator affordance is what the
+across splits ($20/20$, $19/20$) and reaction series ($4/4$, $3/4$; \S\ref{sec:pka-main}), at the
+resolution four series allow and no better. This oracle-on-a-fixed-operator affordance is what the
 concept-leakage literature lacks \cite{parisini2025,espinosa2025leakage}, where the intermediate has
 no ground truth and leakage is inferred only indirectly. The solubility results are the instrument's
 first application, graded in Table~\ref{tab:claims}; their transfer out of the matched regime is not
@@ -1123,7 +1237,7 @@ precisely in the mature-data, low-noise, well-covered regime, because the varian
 as data accumulate while $\Delta_\infty$ is set by the closure. The synthetic sweep
 (Fig.~\ref{fig:dial}; App.~\ref{sec:dial}) is true by construction there, the penalty and the
 misspecification term being the same quantity, so it verifies the instrument rather than the
-hypothesis, while the pKa closure (App.~\ref{sec:pka}) exercises the sufficiency channel on real
+hypothesis, while the pKa closure (\S\ref{sec:pka-main}) exercises the sufficiency channel on real
 data. Whether grounding helps is shaped by \emph{two} axes, closure fidelity and how the latent
 is trained; characterising that plane on real systems is future work. Where the chemical strata do
 form a pattern---the closure heaviest on the most \emph{familiar} solutes and in strongly
@@ -1231,8 +1345,8 @@ The general statement is a design rule with a test attached. Wherever a predicto
 physical model over a learned intermediate for which an external reference exists, that reference
 measures which of the two limits accuracy, and the answer decides the remedy: a more faithful
 physical model, or better inputs. Here the answer was the model, and the standard route to a more
-faithful one lowered the error on the chemistry it was designed for and not on the broader set
-measured. Whether a
+faithful one lowered the error on the chemistry it was designed for while returning, on the broader
+set measured, an interval too wide to separate a small gain from none. Whether a
 latent trained through an imperfect model becomes, in general, a surrogate for that model's error is
 the prediction this work leaves testable.
 
@@ -1252,12 +1366,13 @@ A.~V. Rudik: Writing -- review \& editing.
 
 \section*{Data availability}
 The analysis code, and those intermediate artifacts small enough to version, are
-available at \url{https://github.com/doctawho42/tgnn-solv} (commit \pending[hash]) under the MIT
+available at \url{https://github.com/doctawho42/tgnn-solv} (commit
+\pending[hash to be supplied at submission]) under the MIT
 licence; the model checkpoints, the processed split, the full per-arm prediction files and the
-larger analysis artifacts---among them the two audit files \S\ref{sec:si-repro} names---are
-deposited at
-\pending[Zenodo DOI]. \textbf{The repository URL, archive DOI and commit hash above are
-placeholders.} An anonymised repository
+larger analysis artifacts---among them the two audit files \S\ref{sec:si-repro} names---will be
+deposited in a Zenodo archive,
+\pending[whose DOI is registered at submission]. \textbf{The repository URL, the archive DOI and the
+commit hash are therefore not yet the final ones.} An anonymised repository
 and an archived snapshot at the commit the reported numbers were produced from will be supplied with
 the manuscript; until then the reproduction commands cannot be run (limitation~(x)). The data
 sources are public: BigSolDB~2.0 \cite{krasnov2025bigsoldb} for solubility,
@@ -1295,6 +1410,21 @@ $477$-row broad IDAC set (Table~S1, \texttt{broad\_idac\_set\_477.csv}) and the 
 corner (Table~S2, \texttt{corner\_set\_60.csv}); their columns are listed in App.~\ref{sec:si-repro}.
 \end{suppinfo}
 
+% READING ORDER: the one structural thing a reader of this PDF trips on, and why it stays. The
+% reference list prints forty-odd pages after the text that cites it -- a reader who meets citation 2
+% on p. 2 finds it near the back -- because the Supporting Information sits inside this same document
+% rather than in a separate file, and \bibliography follows it.
+% MEASURED, 2026-07-29. Swapping the two lines below does seat References directly after the
+% Conclusion (pp. 25-28, appendices from p. 29, still 70 pages) AND BREAKS THE BIBLIOGRAPHY. achemso
+% loads mciteplus, whose entry tracking runs at \bibliography; every key cited only in the SI is then
+% first cited after the list has been built, and the build raises 17 hard errors of the form
+%   ! Package mciteplus Error: Entry Status for cite key `X' under tracking ID `main' is undefined,
+%     treating it as a head entry
+% -- raue2009, villaverde2016, transtrum2015, gutenkunst2007, white1982, hirano2003, robins1997 and
+% the rest of the positioning appendix's keys. Re-running bibtex does not clear them: the errors are
+% induced by the order, not by a stale .bbl. The order below builds with zero errors.
+% The real repair is the one ACS asks for at submission anyway -- the SI as its own document, at
+% which point the question disappears. Do not swap these two lines to fix the reading order.
 \input{sections/SI}
 
 % achemso selects achemso.bst automatically; no \bibliographystyle is given.
