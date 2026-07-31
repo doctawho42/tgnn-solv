@@ -492,12 +492,11 @@ acceptors instead of treating hydrogen bonding with one parameter. Write $\zstar
 $\sigma$-profile from the VT-2005 database \cite{mullins2006}, and $g(\zstar)$ for the closure output when fed the
 reference profile. The model's own head instead predicts a \emph{learned} profile
 $\hat z$ and evaluates $g(\hat z)$. We call each trained configuration, and each
-closure variant we evaluate, an \emph{arm}; a \emph{DirectGNN} control arm shares the
-encoder, interaction, readout, capacity and epoch budget but emits $\lnx$ with no
-closure, and is the reference against which the cost of the physics bottleneck is
-measured (schematic in SI, Fig.~\ref{fig:arch}). Their optimisation settings---dropout,
-learning rate, gradient clipping, weight decay---were tuned per arm and differ, so the
-gap is not attributable to the bottleneck alone.
+closure variant we evaluate, an \emph{arm}; a \emph{DirectGNN} control arm drops the closure and
+emits $\lnx$ directly, and is the reference against which the cost of the physics bottleneck is
+measured (schematic in SI, Fig.~\ref{fig:arch}). The two arms were tuned separately, so the gap
+between them is not attributable to the bottleneck alone (\S\ref{sec:methods}); per-arm settings in
+App.~\ref{sec:si-methods}.
 
 \paragraph{The oracle substitution.} Feeding $\zstar$ in place of $\hat z$
 (a $\sigma$-oracle) isolates the closure from encoder error: if the closure were
@@ -515,8 +514,8 @@ intermediate $z=h(x)$, and are compared against a matched free predictor that sh
 encoder but drops $g$. Solubility, with $g$ the COSMO-SAC closure and $z$ the
 $\sigma$-profile, is one instance; App.~\ref{sec:pka} gives a second (pKa through a fixed
 Hammett closure), and App.~\ref{sec:dial} a controlled synthetic family. Nothing in the decomposition
-of Lemma~\ref{prop:decomp}, in the identifiability and grounding-gap results stated in
-App.~\ref{sec:si-proofs}, or in Proposition~\ref{prop:tax} is specific to COSMO-SAC. Two quantities
+of Lemma~\ref{prop:decomp}, or in the results stated in
+App.~\ref{sec:si-proofs}, is specific to COSMO-SAC. Two quantities
 organise the section:
 the closure/insufficiency split $B=\Bclos+\Binsuf$, which is the assumption-light
 \emph{instrument}, and the observable grounding gap $\Ggap$, which is an \emph{indicator} of
@@ -524,29 +523,25 @@ closure misspecification whose validity we characterise.
 
 \subsection{Why a free head can compensate: structural non-identifiability}
 The crystal/activity split is not identifiable from solubility alone, which is why an unconstrained
-head can silently absorb crystal error into the activity term, and the deficiency is closed only by
-a rank-completing external constraint (Lemma~\ref{prop:ident}, App.~\ref{sec:si-proofs}). What is
-specific to our setting is that this indeterminate component is not projected out by construction
-but is left free under \emph{end-to-end} training of the SLE-coupled latent. It is \emph{enabling
-background} rather than a principal claim: it explains why grounding an under-determined factor on
-external single-component data is necessary, and why compensation between the factors is expected,
-and by itself says nothing about whether grounding helps. That depends on whether the closure
-consuming the grounded inputs is correctly specified, which is the question we make measurable
-next. The design dependence, the graded rather than binary character of the non-identifiability and
-the operating point that fixes it are in App.~\ref{sec:si-proofs} and \S\ref{sec:ident}.
+head can silently absorb crystal error into the activity term---an indeterminate component that
+\emph{end-to-end} training of the SLE-coupled latent leaves free rather than projecting out, and that
+is closed only by a rank-completing external constraint (Lemma~\ref{prop:ident},
+App.~\ref{sec:si-proofs}). It is \emph{enabling background} rather than a principal claim: it
+explains why grounding an under-determined factor on external single-component data is necessary, and
+why compensation between the factors is expected, and by itself says nothing about whether grounding
+helps---which depends on whether the closure consuming the grounded inputs is correctly specified,
+the question we make measurable next. The design dependence, the graded rather than binary character
+of the non-identifiability and the operating point that fixes it are in App.~\ref{sec:si-proofs} and
+\S\ref{sec:ident}.
 
 \subsection{The closure--insufficiency decomposition: the instrument}
 \label{sec:decomp}
 Let $m$ be the activity target (experimental $\lngi$) and $g(\zstar)$ the closure
-evaluated on the true latent. The risk of the reference-input path---its mean squared error
-$\Ex[(m-g(\zstar))^2]$---decomposes exactly into a part the intermediate cannot resolve (the
-irreducible Bayes term) and a part attributable to error in the fixed map; the excess over the Bayes predictor
-$\Ex[m\mid\cdot]$ is the second term alone.
+evaluated on the true latent.
 
 \begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
 For a \emph{fixed} (non-fitted) closure $g$, with $\zstar$ denoting the closure's \emph{entire}
-argument (on the \emph{broad IDAC set}, the larger of the two infinite-dilution activity data sets
-of \S\ref{sec:measure}, the profile pair together with the temperature the closure is evaluated at),
+argument (the profile pair together with the temperature wherever the closure reads one),
 \begin{equation}
 \begin{aligned}
   \underbrace{\Ex\big[(m-g(\zstar))^2\big]}_{\text{ref.-input MSE}}
@@ -555,25 +550,20 @@ of \S\ref{sec:measure}, the profile pair together with the temperature the closu
 \end{aligned}
   \label{eq:decomp}
 \end{equation}
-The cross term vanishes identically because $\Ex[m\mid\zstar]-g(\zstar)$ is
-$\zstar$-measurable and $\Ex[(m-\Ex[m\mid\zstar])\mid\zstar]=0$---which is why $\zstar$ must be the
-closure's whole argument and not a part of it. The split is exact with no fitting of the closure
+The cross term vanishes identically, which is why $\zstar$ must be the
+closure's whole argument and not a part of it (proof, App.~\ref{sec:si-proofs}). The split is exact with no fitting of the closure
 $g$, so the total and $\Bclos$'s Jensen lower bound are
 fit-free. $\Binsuf=\Ex[\Var(m\mid\zstar)]$, however, must be estimated with a conditional-variance
 smoother whose choice affects the verdict (\S\ref{sec:measure}).
 \end{lemma}
-\noindent Equation~\eqref{eq:decomp} is a bias--variance split of model
-discrepancy in the sense of Kennedy--O'Hagan \cite{kennedy2001,brynjarsdottir2014}:
-$\Bclos$ is the systematic discrepancy of a fixed physical map, and its dominance over
+\noindent $\Bclos$ is the systematic discrepancy of a fixed physical map in the sense of
+Kennedy--O'Hagan \cite{kennedy2001,brynjarsdottir2014}, and its dominance over
 $\Binsuf$ is the empirical content of the claim that the accuracy ceiling is set by the closure
-rather than by the inputs. The split itself is standard; what an externally grounded
-$\zstar$ adds is that it can be \emph{measured} rather than assumed. Model-discrepancy
-calibration \emph{fits} a correction from held-out observations, whereas here $g$ is fixed and
-$\zstar$ externally observed, so the map's error is
-\emph{attributed}, not corrected---available only where an external latent oracle exists, not in
-gray-box hybrids. \textbf{Exactness is contingent on $g$ being fixed}: for a \emph{fitted}
-decoder the cross term does not vanish and a plug-in point split is invalid, a spurious
-cross term appearing as soon as $\Ex[m\mid\zstar]$ is replaced by a fitted estimate. We
+rather than by the inputs. Where model-discrepancy calibration \emph{fits} a correction from
+held-out observations, here $g$ is fixed and $\zstar$ externally observed, so the map's error is
+\emph{attributed} rather than corrected---available only where an external latent oracle exists, not in
+gray-box hybrids (App.~\ref{sec:si-positioning}). \textbf{Exactness is contingent on $g$ being fixed}: for a \emph{fitted}
+decoder the cross term does not vanish and a plug-in point split is invalid. We
 therefore report \emph{one-sided bounds}, not a point split (proved in App.~\ref{sec:si-proofs}):
 \begin{itemize}
   \item $\Bclos \ge (\Ex[m]-\Ex[g])^2$ by Jensen: a constant offset between the
@@ -584,65 +574,48 @@ therefore report \emph{one-sided bounds}, not a point split (proved in App.~\ref
   \emph{upper} bound (law of total variance, since a binning of $g(\zstar)$
   coarsens $\zstar$).
 \end{itemize}
-\emph{Bin edges.} We take interpolated (\texttt{numpy} default
-\texttt{linear}) quantile edges of $g(\zstar,T)$ at $j/8$, $j=1,\dots,7$, assigning a value falling
-exactly on an edge to the upper bin. Neither $n$ is divisible by eight, so standard implementations of
-the same phrase disagree: the tie rule is a fourth analyst choice, beside the three of
-\S\ref{sec:measure}. Enumerating every equal-count contiguous partition, the
-choice is immaterial on the broad set and material on the \emph{corner}, the smaller and
-reference-matched of the two, whose margin changes sign inside the
+\emph{Bin edges.} Where the equal-count edges fall is a fourth analyst choice, beside the bin count,
+the within-bin variance convention and the combinatorial convention. Enumerating every equal-count
+contiguous partition, the choice is immaterial on the broad set and material on the \emph{corner},
+whose margin changes sign inside the
 envelope; we accordingly read the corner's $+0.05$ as consistent with zero and carry the claim on the
-broad set (App.~\ref{sec:si-tables}).
-The Jensen constant-offset bound is convention-specific---it separates under the full combinatorial
-convention, the closure evaluated with its Staverman--Guggenheim combinatorial term
-(\S\ref{sec:methods}), and inverts under the deployed residual-only default---so the separation reported in
-\S\ref{sec:measure} rests on the leakage-immune (that is, model-free) law-of-total-variance (LOTV)
-bound, and the Jensen numbers are reported in App.~\ref{sec:si-tables}.
-$\Binsuf$ is one population quantity while the two conventions coarsen two different statistics of
-it, so both bounds are valid on it, and so is the smaller (App.~\ref{sec:si-proofs});
+broad set. The Jensen constant-offset bound is convention-specific---it separates under the full
+combinatorial convention and inverts under the deployed residual-only default---so the separation
+reported in \S\ref{sec:measure} rests on the leakage-immune (that is, model-free)
+law-of-total-variance (LOTV) bound. $\Binsuf$ is one population quantity while the two conventions
+coarsen two different statistics of it, so both bounds are valid on it, and so is the smaller. The
+binning rule and its envelope and the Jensen numbers are in App.~\ref{sec:si-tables} and
+App.~\ref{sec:si-proofs};
 \S\ref{sec:measure}(i) fixes which we headline and \S\ref{sec:measure}(iii) states why the
 2002-vs-2010 contrast is not a fixed-input decoder difference.
 
 \paragraph{What population, what is conditioned on, and what sets the instrument's resolution.}
 $\Binsuf$ is well posed only once the population over which the conditional variance is taken and the
-variable conditioned on are named. The first decides whether it can be non-zero at all; the second
-decides whether the identity and the bound hold.
-
-The population is the \emph{measurement superpopulation}: a draw is a nominal compound pair
-\emph{at a temperature}, together with the conformer, tautomer and protonation state actually
-populated under those measurement conditions, and an independent experimental determination of
-$\lngi$ for it. The conditioning variable is whatever the closure reads---its full argument. Where
-$g$ consumes a temperature as well as a profile pair, as on the broad IDAC set of
-\S\ref{sec:measure}, that argument is $(\zstar,T)$ and every statement below is read against
-$\sigma(\zstar,T)$; conditioning on $\zstar$ alone would leave $g$ non-measurable with respect to the
-conditioning variable, and neither the cross term's vanishing nor the coarsening bound would follow.
-We write $\zstar$ for the argument throughout and name $T$ where it enters.
-Neither the conformational state nor the replicate determination is part of that argument, so
+variable conditioned on are named. The population is the \emph{measurement superpopulation}: a draw
+is a nominal compound pair \emph{at a temperature}, together with the conformer, tautomer and
+protonation state actually populated under those measurement conditions, and an independent
+experimental determination of $\lngi$ for it. The conditioning variable is whatever the closure
+reads---its full argument, $(\zstar,T)$ where $g$ reads a temperature, as on the broad IDAC set.
+Neither the conformational state nor the replicate determination is part of it, so
 $\Var(m\mid\zstar,T)$ is the spread of $\lngi$ across the conformational ensemble and across
-replicate determinations that share a reference profile and a temperature, non-zero for physical
+replicate determinations at one reference profile and temperature, non-zero for physical
 reasons unrelated to sample size. Experimental label noise $\sigma_\eta^2$ is a
 \emph{component} of it, not a term beside it: an independent zero-mean error on $m$ enters
-$\Var(m\mid\zstar,T)$ directly, so it is already inside every bound we report and is never added on.
-What the deployed design cannot do is \emph{observe} it, neither set holding two rows at a common
+$\Var(m\mid\zstar,T)$ directly, so it is inside every bound we report and never added on.
+What the design cannot do is \emph{observe} it, neither set holding two rows at a common
 argument (\S\ref{sec:si-repro}). On these two sets $\Binsuf$ is therefore reached only as an
-\emph{upper bound}---by coarsening in the law-of-total-variance cells the headline reads, and out of
-fold in the fitted estimators listed beside them (App.~\ref{sec:si-tables},
-Table~\ref{tab:bounds})---and $\Bclos$ only lower-bounded.
+\emph{upper bound}, and $\Bclos$ only lower-bounded.
 
 The bounds are conservative in one direction only---were the superpopulation variance negligible the
 finding would be the stronger $\Bclos=\mathrm{MSE}$---so nothing reported can be an artifact of
-over-estimating $\Binsuf$, and no entry is the share of the error the inputs contribute.
-$P_{\mathrm{boot}}$ is a statement about the \emph{instrument}: the fraction of cluster resamples in
-which the measured bound still falls below $\mathrm{MSE}/2$, the threshold that orders the two terms
-(\S\ref{sec:measure}). A low $P_{\mathrm{boot}}$ is loss of resolution, never evidence for the
-inputs (App.~\ref{sec:si-proofs}).
-
-Resolution is governed by $\dim(\zstar)/n$, a conditional variance in $\dim(\zstar)$
-dimensions being a nonparametric problem: the VT-2005 corner supports one-sided bounds only, and the
-broad IDAC set is several times better resolved (\S\ref{sec:measure}(i), App.~\ref{sec:si-repro}).
-Where the latent is a scalar the headline estimate is itself the out-of-fold residual rather than a
-coarsening---an upper estimate too, with $\Bclos$ again only
-lower-bounded (App.~\ref{sec:pka}).
+over-estimating $\Binsuf$, and no entry is the share of the error the inputs contribute. A low
+$P_{\mathrm{boot}}$ (Table~\ref{tab:notation}) is likewise loss of resolution, never
+evidence for the inputs. Resolution is governed by $\dim(\zstar)/n$: the VT-2005 corner supports
+one-sided bounds only, and the broad IDAC set is several times better resolved
+(\S\ref{sec:measure}(i)). What each estimator conditions on, why the
+identity and the coarsening bound both fail if an argument of $g$ is left out of the conditioning
+variable, and the scalar-latent pKa case are in App.~\ref{sec:si-proofs},
+App.~\ref{sec:si-tables} and App.~\ref{sec:pka}.
 
 \subsection{What the instrument resolves, and what it does not}
 \label{sec:gap}
@@ -660,24 +633,13 @@ read $\Ggap$ as corroborating \emph{evidence} and base the model-dominance concl
 decomposition: \emph{the decomposition is the instrument; $\Ggap$ is the indicator that motivates it}.
 
 \paragraph{When a fixed prior loses; and scope.}\label{sec:tax} The deployed question---does the
-\emph{trained} physics model outperform the \emph{trained} black box at sample size $n$?---follows a sign
-rule. Writing each trained risk as an asymptote plus estimation variance,
-$\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
-$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
-$V(n)\downarrow0$, the \emph{physics penalty at budget $n$} is
-$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ with
-$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$ its \emph{asymptotic} part. Each physics-versus-control
-difference reported below is a value of $\mathcal{T}(n)$ at the budget actually trained,
-not of $\Delta_\infty$.
-\begin{proposition}[Sign of the physics penalty]\label{prop:tax}
-(i)~$\mathcal{T}(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
-the variance a constrained prior saves must exceed its asymptotic bias. (ii)~If
-$\Delta_\infty>0$ and the variance gap vanishes ($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$),
-there is a critical budget $n^\star$ beyond which $\mathcal{T}(n)>0$ for all $n>n^\star$.
-\end{proposition}
-\noindent The consequence for grounding is~(ii): a fixed-closure prior with strictly positive asymptotic
-bias always loses once the budget passes $n^\star$ (this and a limiting refinement,
-App.~\ref{sec:si-proofs}). There is no
+\emph{trained} physics model outperform the \emph{trained} black box at sample size $n$?---follows a
+sign rule with two halves. A constrained prior helps only where the estimation variance it saves
+exceeds its asymptotic bias $\Delta_\infty$; and a prior whose asymptotic bias is strictly positive
+always loses once the budget passes a critical size, the variance it saves vanishing as data
+accumulate while $\Delta_\infty$ does not (Proposition~\ref{prop:tax}, its variance decomposition and
+a limiting refinement, App.~\ref{sec:si-proofs}). Each physics-versus-control difference reported
+below is a penalty at the budget actually trained, not an asymptotic one. There is no
 ``optimal grounding'' theorem, and the decomposition does not improve out-of-distribution accuracy
 (\S\ref{sec:results}). Everything here is measured at infinite dilution, on two sets that differ in
 regime (\S\ref{sec:measure}), and transfer of either to the finite-composition
@@ -900,12 +862,10 @@ slot in the right panel. Dashed in the left panel only, the DirectGNN reference.
 % under the 2010 kernel's own typed latent.
 The externally-referenced decomposition of \S\ref{sec:decomp} is an \emph{instrument}: it separates a
 fixed closure's error into a part in the map and a part in its inputs. This subsection runs it on two
-data sets that must not be conflated. \emph{(i)}~The \emph{broad IDAC set} is $n{=}477$
-infinite-dilution activity measurements over $185$ molecule pairs at all temperatures, on the UD
-profiles the deployed COSMO-SAC-2002 kernel consumes there. \emph{(ii)}~The \emph{corner} is the
-$n{=}60$ pairs at $298$\,K for which the paradox's own reference database, VT-2005, supplies both
-profiles. \emph{(iii)}~The subsection then turns to whether a better closure moves the ceiling.
-A better-resolved counterpart in
+data sets that must not be conflated---\emph{(i)}~the \emph{broad IDAC set} ($n{=}477$, UD profiles,
+all temperatures) and \emph{(ii)}~the \emph{corner} ($n{=}60$ at $298$\,K, where the paradox's own
+VT-2005 database supplies both profiles; Table~\ref{tab:notation})---and \emph{(iii)}~then asks
+whether a better closure moves the ceiling. A better-resolved counterpart in
 another domain is the scalar-latent pKa closure (\S\ref{sec:pka-main}), where the same instrument
 recovers the a-priori channel assignment (there, insufficiency)---evidence the instrument works, not
 a re-confirmation of this verdict.
@@ -921,11 +881,11 @@ against a median of $14$ and a maximum of $122$ for the drug-like solids of this
 solubility corpus, and only $0.46\%$ of corpus rows carry a solute from this set. \emph{Broad}
 therefore names the reach of the $\gamma^\infty$ corpus the kernel
 is calibrated and benchmarked on, not coverage of the chemistry a solubility model is deployed
-against: the set covers the solvent side of deployment and not the solute side. It is matched to UD
-by InChIKey with a first-block fallback; a wrong $\zstar$ inflates $\Bclos$, so the looser rule runs
-against the ordering we claim, and on the $465$ exactly matched rows the verdict is unchanged. Its
-construction ladder, composition, provenance audit and deposited table are in
-\S\ref{sec:si-repro}.
+against: the set covers the solvent side of deployment and not the solute side. It is matched to
+UD by InChIKey with a first-block fallback, a looser rule than the corner's; a wrong $\zstar$ inflates
+$\Bclos$, so the looser rule runs against the ordering we claim, and the verdict is unchanged on the
+$465$ exactly matched rows. The construction ladder, composition, provenance audit and deposited
+table are in \S\ref{sec:si-repro}.
 
 \emph{One convention rule, applied to both sets.} The margin depends on the combinatorial convention,
 so we fix the rule before the numbers: headline the \emph{deployed} residual-only convention, pairing
@@ -943,70 +903,65 @@ extend just below zero, so on the deployed convention the broad set's ordering i
 resolved---the grade Table~\ref{tab:claims} carries for it; under the full convention all three
 clear.
 The margin is positive in every cell of the bin-count $\times$ variance $\times$ convention
-grid. Collapsing to one row per distinct pair leaves the sign standing at a smaller margin and a
-weaker band, so the verdict is not an artifact of counting repeated measurements of one pair as
-independent draws. Both sweeps, and the tighter-of-the-two-conventions reading we do not headline,
-are in App.~\ref{sec:si-tables}.
+grid, and collapsing to one row per distinct pair leaves the sign standing at a smaller margin and
+a weaker band, so the verdict is not an artifact of counting repeated measurements of one pair as
+independent draws. Both sweeps, and the
+tighter-of-the-two-conventions reading we do not headline, are in App.~\ref{sec:si-tables}.
 
-Two caveats qualify the corroborating estimators, not the bound. Under random folds they leak---a
-held-out row's own molecule pair sits in the training fold at a neighbouring temperature---and under
-folds blocked on molecules they are uninformative on the corner and split on the broad set, so on
-neither set do they support the separation. The verdict rests on the LOTV bound, which fits no model
-and so has no fold design to leak through, and not on the agreement of three estimators. Nor is the
-binning-free pair bound promoted, thirteen times tighter than the binning bound though it is,
-because its multi-row pairs each come from a \emph{single} publication and it therefore samples no
+Two caveats qualify the corroborating estimators, not the bound. Under random folds they leak, and
+under folds blocked on molecules they are uninformative on the corner and split on the broad set, so
+on neither set do they support the separation. The verdict rests on the LOTV bound, which fits no
+model and so has no fold design to leak through, and not on the agreement of three estimators. Nor
+is the binning-free pair bound promoted, tighter than the binning bound though it is, because its
+multi-row pairs each come from a \emph{single} publication and it therefore samples no
 between-laboratory component. Read together, the two say the binning bound is slack rather than that
-$\Binsuf$ is negligible. Both, in every fold design the audit records and against each set's
-$\mathrm{MSE}/2$ threshold, are in App.~\ref{sec:si-tables} (Fig.~\ref{fig:decomp},
-Table~\ref{tab:bounds}).
+$\Binsuf$ is negligible. The leak's mechanism, and both bounds in every fold design the audit records
+and against each set's $\mathrm{MSE}/2$ threshold, are in App.~\ref{sec:si-tables}
+(Fig.~\ref{fig:decomp}, Table~\ref{tab:bounds}).
 
 The broad set is stratifiable where the corner's $60$ pairs were not: the chromatographic-only cut
 that \emph{inverts} the margin on the enlarged $298$\,K corner (\S\ref{sec:discussion},
 limitation~(i)) does not invert here under either convention. On the chemistry the deployed kernel
-has been most widely exercised on, the ceiling is in the map---a statement about small-molecule
-$\gamma^\infty$ chemistry, and not about the drug-like solids of the solubility corpus, which this
-set does not reach. Method and source composition, the per-stratum values, the squared-error
-composition audit and the DOI- and pair-clustered bootstraps are in \S\ref{sec:si-repro}.
+has been most widely exercised on, the ceiling is in the map---within the scope set above. Method and
+source composition, the per-stratum values, the squared-error composition audit and the DOI- and
+pair-clustered bootstraps are in \S\ref{sec:si-repro}.
 
 \paragraph{(ii) The decomposition on the corner ($n{=}60$).} The corner carries the paper's other
 reference-matched analyses, and it is far weaker: all $60$ rows sit at $298$\,K, so $\zstar$ is
 the profile pair alone and $\dim(\zstar)/n\approx102/60$ leaves the split behind one-sided bounds. It
-is also strongly unbalanced---methanol occupies $25$ of the $60$ rows, and the two worst-fit pairs
-carry $34\%$ of the squared error---and its full composition audit is in App.~\ref{sec:si-tables}.
-Both those pairs rest on a single record, so we do not read that concentration as established
-chemistry. The separation does not survive their deletion at the headline cell (margin $-0.002$). It
-survives at coarser bins, under the maximum-likelihood variance and under the full convention, but a
-corner margin of $+0.05$ cannot absorb $34\%$ of the squared error leaving the sample, and we report
-the deletion as a failure of the headline cell rather than as a robustness pass. These are not $60$
+is also strongly unbalanced---methanol occupies $25$ of the $60$ rows, and the two worst-fit pairs,
+each resting on a single record, carry $34\%$ of the squared error, a concentration we do not read as
+established chemistry. The separation does not survive their deletion at the headline cell (margin
+$-0.002$): a corner margin of $+0.05$ cannot absorb $34\%$ of the squared error leaving the sample,
+and we report the deletion as a failure of the headline cell rather than as a robustness pass. Its
+full composition audit, and the four neighbouring cells that do survive the deletion, are in
+App.~\ref{sec:si-tables}. These are not $60$
 exchangeable observations, and the folds below hinge on the same molecules. Of the $60$ pairs, $57$
 also appear in the broad IDAC set at $298$\,K under UD profiles, so the two are not independent
 samples---the corner is the sub-design on which VT-2005, and therefore the paradox's own oracle, is
 defined.
 
 
-\paragraph{The separation margin, and the choices it depends on.} Since the two terms sum to the
-total, $\Bclos>\Binsuf$ follows whenever $\mathrm{MSE}$ exceeds the \emph{separation threshold}
-$2\Binsuf^{\text{up}}$. The excess $\mathrm{MSE}-2\Binsuf^{\text{up}}$ is the \emph{separation
-margin}, and since the threshold uses an upper bound, a negative margin loses the separation rather
-than reversing it. On the corner, scored against VT-2005 profiles under the deployed residual-only
-convention and the \emph{unbiased} within-bin variance, the LOTV bound gives
-$\Binsuf\lesssim0.713$ and a margin of $\mathbf{+0.05}$. We headline that rather than the
+\paragraph{The separation margin, and the choices it depends on.} On the corner, scored against
+VT-2005 profiles under the deployed residual-only convention and the \emph{unbiased} within-bin
+variance, the LOTV bound gives $\Binsuf\lesssim0.713$ and a separation margin
+(Table~\ref{tab:notation}) of $\mathbf{+0.05}$. We headline that rather than the
 maximum-likelihood variant, which biases the within-bin variance downward and so the margin upward
 to $+0.24$; on the corner the ordering holds by a margin the design
-cannot resolve. Four analyst choices set it---bin count, variance convention, combinatorial
-convention and the bin-edge tie rule---and the separation rests in addition on the maximum-leverage
+cannot resolve. Four analyst choices set it (\S\ref{sec:decomp}), and the separation rests in
+addition on the maximum-leverage
 solute: dropping methanol loses it. Blocked out-of-fold estimators do not support it either, so on
 the corner ``the larger'' is estimator-conditional and the ordering holds by the grade \emph{likely}
 rather than certainly. The verdict rests on the broad IDAC set, whose several times more numerous
 clusters hold the margin above zero in a larger fraction of resamples; that margin is not resolved
 either, being of the order of its own $90\%$ bootstrap half-width. What the corner adds is that the
-ordering is not overturned on the sub-design where VT-2005 is defined. Zero-mean label noise raises $\mathrm{MSE}$ and
-$\Binsuf^{\text{up}}$ alike, so it can understate the separation but not create it
-(\S\ref{sec:decomp}). What the margin does bound is a label systematic tracking $\zstar$, which
-enters $\Bclos$, and that threat is implausible on the maximum-likelihood binning and not excluded
-on the Bessel-corrected one. The leave-one-solvent, leave-one-pair, leave-one-solute and
-leverage-deletion folds, the cell grids, the cluster bootstraps, the label-noise arithmetic and the
-convention, leakage and $\gamma$-stratification stress-tests are in App.~\ref{sec:si-tables}.
+ordering is not overturned on the sub-design where VT-2005 is defined. Zero-mean label noise can
+understate the separation but not create it (\S\ref{sec:decomp}); what the margin does bound is a
+label systematic tracking $\zstar$, implausible on the maximum-likelihood binning and \emph{not
+excluded} on the Bessel-corrected one. The four choices, the leave-one-solvent, leave-one-pair,
+leave-one-solute and leverage-deletion folds, the cell grids, the cluster bootstraps, the label-noise
+arithmetic and the convention, leakage and $\gamma$-stratification stress-tests are in
+App.~\ref{sec:si-tables}.
 
 \paragraph{Whether the closure defect is correctable, and where it fails chemically.} That $\Bclos$
 dominates locates the ceiling in the map; it does not say the map is \emph{fixably} wrong. A small
@@ -1016,16 +971,15 @@ once folds are grouped so that no solvent is shared. Only the grouped design is 
 the closure error being predominantly a between-solvent systematic. Stated as a bound rather than a
 null, that design excludes a cross-solvent reduction above about $30\%$. $\Bclos$ is therefore a
 defect a handful of kernel parameters can absorb \emph{within} a solvent and that we have not shown
-to be correctable across solvents---weaker than a general repair. The fitted correction also gains
-nothing over the free $2002\to2010$ step below (fold design, rank ordering and the standard
-errors' scope in App.~\ref{sec:si-tables}). Nor is the residual error an implementation artifact: our
-differentiable layer reproduces the NIST benchmark COSMO-SAC-2002 (\S\ref{sec:methods}). Yet $90\%$
+to be correctable across solvents---weaker than a general repair. Yet $90\%$
 of the squared error falls on strong hydrogen-bond-donor solvents and is near-exact on acceptor-only
 ones, placing $\Bclos$ in COSMO-SAC's
 documented single-parameter H-bond kernel---the specific defect the donor/acceptor-typed 2010 closure
-was built to fix. Adding the physically \emph{more} complete Staverman--Guggenheim combinatorial
-term \emph{increases} error ($1.47\to1.80$) on size-asymmetric pairs, which is what a misspecified map
-does and not what missing information would.
+was built to fix. The residual's fold design, rank ordering and the scope of its standard errors,
+its failure to gain over the free $2002\to2010$ step below, the NIST reproduction that rules out an
+implementation artifact, and the Staverman--Guggenheim counter-test in which the physically
+\emph{more} complete combinatorial term \emph{increases} error on size-asymmetric pairs are in
+App.~\ref{sec:si-tables}.
 
 % Artifacts: results/b_insuff/fidelity_lever_fair2002.json via scripts/analysis/run_fidelity_lever_fair2002.py; results/b_insuff/closure_flip_ci.json via scripts/analysis/run_closure_flip_ci.py.
 % Round-2: block split of the kernel contrast (shared 57 / complementary 420) and both sets' floors
@@ -1035,16 +989,16 @@ broad set's chemistry.} If the ceiling is the closure, the direct remedy is a be
 standard $2002\to2010$ step delivers one on the corner ($n{=}60$) and not on the broad IDAC set
 ($n{=}477$); the block split below identifies the factor that carries that reversal.
 
-The two kernels have no \emph{prescribed} common input: $\sigma$-profile averaging is part of each
-model's definition (Mullins for 2002, Hsieh for 2010~\cite{bell2020cosmosac}), so evaluating each on
-its native profile is the specified use of the model. An input-fixed \emph{control}---profile
-database, cavity area, volume and averaging held fixed, kernel alone varied---gives
-$2.047\to0.765$ on the corner ($P>0.95$), so the $2002\to2010$ step survives with the input held
-fixed. That control cannot separate the donor/acceptor typing, which the 2002 kernel has no channel
-to consume and which is therefore charged to the kernel by construction. The control is favourable to
-the conclusion it supports, its step being larger than the native-input one, and the re-averaging term
-inside it is itself unresolved. The arithmetic, and the NIST implementation detail that fixes the
-\emph{fair 2002} arm at $1.757$, are in App.~\ref{sec:si-tables}.
+The two kernels have no \emph{prescribed} common input, $\sigma$-profile averaging being part of each
+model's definition, so evaluating each on its native profile is the specified use of the model. An
+input-fixed \emph{control}---profile database, cavity area, volume and averaging held fixed, kernel
+alone varied---gives $2.047\to0.765$ on the corner ($P>0.95$), so the $2002\to2010$ step survives
+with the input held fixed. Three limits sit on it: it cannot separate the donor/acceptor typing,
+which the 2002 kernel has no channel to consume and which is therefore charged to the kernel by
+construction; it is favourable to the conclusion it supports, its step being larger than the
+native-input one; and its re-averaging term is itself unresolved. The arithmetic, and the NIST
+implementation detail that fixes the \emph{fair 2002} arm at $1.757$, are in
+App.~\ref{sec:si-tables}.
 
 The three arms---\emph{fair 2002}, \emph{2010, dispersion off} and \emph{2010, dispersion
 on}---are Table~\ref{tab:kernels} of App.~\ref{sec:si-tables}, on both sets under both conventions.
@@ -1052,48 +1006,40 @@ The standard $2002\to2010$ step more than halves the corner's error under the fu
 ($P>0.95$) and cuts it $42\%$ under the deployed one, so ``more than halves'' is a full-convention
 statement. On the broad IDAC set the same step is not an improvement under either rule, and the
 $3\%$ the dispersion term recovers there is a null whose interval is an order of magnitude wider
-than the effect, not a measured equality. The \emph{2010, dispersion on} arm is quoted from
-\texttt{cCOSMO} and its corner run is on $n{=}57$, three bromine- or iodine-containing pairs having
-no tabulated dispersion value---a coverage limit of the model offered as the lever, and the same
-three pairs the broad set's construction excludes. On those common $57$ the \emph{dispersion off}
-arm scores $0.767$, so the $0.765$-versus-$0.785$ ordering is not an artifact of the differing $n$,
-and no claim rests on it. We run the comparison under the full convention because that is where the
-two kernels' published error figures are reported, and record the deployed-convention reading rather
-than leave the rules mixed.
+than the effect, not a measured equality. That arm's corner run is on $n{=}57$, three halogenated
+pairs having no tabulated dispersion value---a coverage limit of the model offered as the lever; no
+claim rests on the $0.765$-versus-$0.785$ ordering, which App.~\ref{sec:si-tables} shows is not an
+artifact of the differing $n$. The comparison runs under the full convention, where the two kernels'
+published error figures are reported, with the deployed-convention reading recorded beside it rather
+than leaving the rules mixed.
 
 The reversal is the \emph{chemistry} and neither the profile database nor the temperature range.
 With UD profiles, one extraction and one convention throughout, the \emph{2010, dispersion off} arm
 wins on the $57$
 pairs shared with the corner, does not win on the complementary $420$, and still does not win on the
-$80$ complementary rows that are \emph{also} at $298$\,K, so the temperature range does not account
-for it. That block carries $P\approx0.3$ and no interval, and the three blocks were not tested against
+$80$ complementary rows that are \emph{also} at $298$\,K. That last block carries $P\approx0.3$ and
+no interval, the three blocks not having been tested against
 one another (Table~\ref{tab:kernels}). The corner is a low-$\gamma$, hydrogen-bond-dominated
-sub-design---methanol and pyridine touch most of it---which is exactly the regime the
+sub-design, which is exactly the regime the
 donor/acceptor-typed 2010 kernel was built for, and where the error localises above. The lever is
-therefore bounded rather than absent: on the corner's chemistry a
-free $2002\to2010$ step removes most of $\Bclos$, direct evidence that $\Bclos$ \emph{is} reducible
-by a better closure there. What we cannot demonstrate is that the same step reduces it on the
-broad set's chemistry, where it does not.
+therefore bounded rather than absent: on the corner's chemistry a free $2002\to2010$ step removes
+most of $\Bclos$, and on the broad set's chemistry it does not.
 
 The floor checks are same-database, same-latent \emph{and} same-convention, each stated under the
-deployed rule of~(i) with the full-convention reading beside it: $+0.51$ on the
-broad IDAC set, and $+0.05$ on the corner scored VT-2005 against VT-2005.
+deployed rule of~(i) with the full-convention reading beside it.
 The corner's \emph{UD-native} floor check, the one commensurable with the broad set, is at zero
 under the rule we deploy and clears at $+0.69$ under
-the full convention (App.~\ref{sec:si-tables}). Under the 2010 kernel's own typed latent, which
+the full convention. Under the 2010 kernel's own typed latent, which
 is $306$-dimensional and so several times worse resolved, the ordering is \emph{lost} on the corner
-(margin $-0.77$) and holds on the broad set ($+1.29$; \emph{likely}, not certified). Because
-$\Bclos>\Binsuf$ is one-sided in the direction ``the closure error is large'', degrading the closure
-makes the test easier to pass and the grade does not move. Losing the ordering on the corner is loss
-of resolution and not a certified flip to the inputs, a flip needing a \emph{lower} bound on
-$\Binsuf$, which an upper bound that has risen past $\mathrm{MSE}/2$ does not supply. The full arithmetic, under both conventions and all
+(margin $-0.77$) and holds on the broad set ($+1.29$; \emph{likely}, not certified). That loss is
+loss of resolution, not a certified flip to the inputs, which would need a \emph{lower} bound on
+$\Binsuf$ (\S\ref{sec:decomp}). The full arithmetic, under both conventions and all
 three clusterings, is in App.~\ref{sec:si-tables}.
 
 We know of no large-scale infinite-dilution benchmark of the $2002\to2010$ step, and our search was
 not exhaustive, so this is an absence of evidence rather than evidence of absence. The broad-set
-null lies within the range of magnitudes the comprehensive assessment~\cite{fingerhut2017} reports,
-whose own best infinite-dilution accuracy is itself external evidence that the closure is the
-low-fidelity component (search scope and arithmetic,
+null lies within the range of magnitudes the comprehensive assessment~\cite{fingerhut2017} reports
+(search scope and arithmetic,
 App.~\ref{sec:si-tables}). We claim only that \textbf{the fidelity lever we can demonstrate is
 confined to the corner's chemistry}; the broad set's null is additionally a small-molecule and
 glycol-heavy one (composition audit, \S\ref{sec:si-repro}), so on drug-like solids the lever is
@@ -1105,14 +1051,14 @@ external ground truth used to charge $\Bclos$ against $\Binsuf$ is quantum chemi
 the VT-2005 profiles are computed for a single reference conformer and protonation state
 (\S\ref{sec:si-repro}), and the successor Delaware database revises those conformations for about a
 third of its compounds~\cite{fingerhut2017}. That is the gap between $\zstar$ and the state actually
-populated under the measurement, which is why the superpopulation of \S\ref{sec:decomp} has a
-non-degenerate $\Binsuf$ at all---but the mismatch does not load on $\Binsuf$ alone. If the reference
-is displaced from the state actually populated, even a perfectly specified $g$ carries a term in
-$\Bclos$ (\S\ref{sec:si-repro}), whose share we do not bound. That scopes what the attribution is
+populated under the measurement, and the mismatch does not load on $\Binsuf$ alone: if the reference
+is displaced, even a perfectly specified $g$ carries a term in
+$\Bclos$, whose share we do not bound. That scopes what the attribution is
 \emph{about}: $\Bclos$ as measured here is the misspecification of the composite object, the kernel
 applied to one fixed computed conformer, not of the kernel at the true conformational ensemble. The
-deployed pipeline is that same composite, so this is the quantity a practitioner faces; it is not
-a statement about the kernel in isolation. The corner measurement is
+deployed pipeline is that same composite, so this is the quantity a practitioner faces. Why the
+superpopulation has a non-degenerate $\Binsuf$ at all, and the conformer term's own arithmetic, are
+in \S\ref{sec:si-repro}. The corner measurement is
 additionally a low-$\gamma$/$298$\,K one, and neither set transfers to the finite-composition regime
 the paradox lives in (\S\ref{sec:discussion}).
 
@@ -1178,15 +1124,10 @@ The result is a cautionary measurement for physics-informed modelling, about one
 the word ``grounding'' names. Supervising a learned physical latent on reference values during
 training helps; \emph{supplying} those reference values as an input at inference hurts, and it hurts
 because the fixed map that consumes them is misspecified. When that map is of unknown fidelity---and
-the standard route does not improve it---better inputs surface its bias rather than help. Both the
-attribution and the fidelity lever are scoped by what the two sets are. The corner is the sub-design
-on which the paradox's own reference database, and hence its oracle, exists. The broad set is the
-$\gamma^\infty$ chemistry the deployed kernel has been most widely exercised on---no solute above
-$12$ heavy atoms, and glycol-heavy (composition audit, \S\ref{sec:si-repro}). Neither is the
-deployment regime. The fidelity null is therefore a null on small-molecule chemistry, and the lever
-remains untested on drug-like solids. The attribution is an infinite-dilution one whose transfer to
-the finite-composition regime the paradox spans is a conjecture supported by in-regime signs, not a
-measured fact.
+the standard route does not improve it---better inputs surface its bias rather than help. Both sets
+are scoped by the reference database that defines them, and neither is the deployment regime
+(composition audit, \S\ref{sec:si-repro}). The fidelity null is therefore a null on small-molecule
+chemistry, and the lever remains untested on drug-like solids.
 
 \input{sections/blackbox-probe}
 
@@ -1194,14 +1135,12 @@ measured fact.
 measurement. Its two ingredients are individually standard---the closure--insufficiency split is a
 law-of-total-variance identity, and the sign of grounding's effect follows the model-discrepancy principle
 \cite{kennedy2001,brynjarsdottir2014}---and what is new is their combination into a usable measurement.
-Because a learned physical latent admits an \emph{external oracle}, the two error terms separate on a
-\emph{fixed} operator by an identity, with the insufficiency side bounded rather than
-point-identified, and the resulting sign rule can be tested \emph{a priori} and
-\emph{bidirectionally}. The pKa domain supplies that test as an in-distribution sign flip, consistent
-across splits ($20/20$, $19/20$) and reaction series ($4/4$, $3/4$; \S\ref{sec:pka-main}), at the
-resolution four series allow and no better. This oracle-on-a-fixed-operator affordance is what the
-concept-leakage literature lacks \cite{parisini2025,espinosa2025leakage}, where the intermediate has
-no ground truth and leakage is inferred only indirectly. The solubility results are the instrument's
+The split is an identity on a \emph{fixed} operator, with the insufficiency side bounded rather than
+point-identified (\S\ref{sec:decomp}), and the resulting sign rule can be tested \emph{a priori} and
+\emph{bidirectionally}. The pKa domain supplies that test as an in-distribution sign flip
+(\S\ref{sec:pka-main}), at the resolution four series allow and no better---an
+oracle-on-a-fixed-operator affordance the concept-leakage setting lacks, its intermediate having no
+ground truth \cite{parisini2025,espinosa2025leakage}. The solubility results are the instrument's
 first application, graded in Table~\ref{tab:claims}; their transfer out of the matched regime is not
 established.
 
@@ -1217,35 +1156,28 @@ strata are reported in the SI (\S\ref{sec:map}, \S\ref{sec:data-efficiency}) as 
 descriptions of where two particular pipelines differ, each carrying that caveat, and no conclusion in
 this paper rests on them. Running the matched control is the direct repair and we have not run it.
 What survives the confound is every \emph{within-checkpoint} contrast, where the two sides
-share one trained model and one tuning: the $\sigma$-oracle substitution (\S\ref{sec:paradox}), the
-closure/insufficiency decomposition, which uses no trained model at all (\S\ref{sec:measure}), the
-kernel-fidelity and fitted-residual comparisons, the latent's departure from its reference
-(\S\ref{sec:surrogate}), and the output-residual control (\S\ref{sec:gateb}). Separately, and not as
+share one trained model and one tuning: \S\ref{sec:paradox}, \S\ref{sec:measure} (which uses no
+trained model at all), \S\ref{sec:surrogate} and \S\ref{sec:gateb}. Separately, and not as
 an accuracy claim about the bottleneck: we did not find a configuration in which the physics path
 attains a lower error than the control. External state-of-the-art models (FastSolv, SolProp) do no
 better on a by-solute split, which bounds the task's difficulty and does not rank the models against
 one another (App.~\ref{sec:si-baselines}), and grounding the
 crystal factor on external labels did not move the ceiling (\S\ref{sec:e2}). The one place the
 physical \emph{structure} helps is temperature extrapolation, as a hypothesis-class property the
-trained models do not exploit (\S\ref{sec:supporting}). Two structural facts are consistent with
-that: the crystal/activity split is non-identifiable from solubility alone (Lemma~\ref{prop:ident}),
-and the activity closure is misspecified where we can measure it (\S\ref{sec:measure}).
+trained models do not exploit (\S\ref{sec:supporting}).
 
 \paragraph{When a fixed-closure prior helps versus hurts.} The penalty sign rule
 (Prop.~\ref{prop:tax}) predicts \emph{when} to expect these negatives: a prior is predicted to hurt
-precisely in the mature-data, low-noise, well-covered regime, because the variance it saves vanishes
-as data accumulate while $\Delta_\infty$ is set by the closure. The synthetic sweep
-(Fig.~\ref{fig:dial}; App.~\ref{sec:dial}) is true by construction there, the penalty and the
-misspecification term being the same quantity, so it verifies the instrument rather than the
-hypothesis, while the pKa closure (\S\ref{sec:pka-main}) exercises the sufficiency channel on real
+precisely in the mature-data, low-noise, well-covered regime. The synthetic sweep
+(Fig.~\ref{fig:dial}; App.~\ref{sec:dial}) is true by construction there, so it verifies the
+instrument rather than the hypothesis, while the pKa closure (\S\ref{sec:pka-main}) exercises the
+sufficiency channel on real
 data. Whether grounding helps is shaped by \emph{two} axes, closure fidelity and how the latent
-is trained; characterising that plane on real systems is future work. Where the chemical strata do
-form a pattern---the closure heaviest on the most \emph{familiar} solutes and in strongly
-hydrogen-bonding solvents, reversing sign in the acceptor-dominated amides it was built for---it is
-the direction the sign rule would give. Separately tuned pipelines can produce that pattern for
-reasons unrelated to the prior, and there is no multiplicity control across strata families.
-We record it in \S\ref{sec:map} as the experiment a matched control should run, not as evidence, and
-the diagnostic is \emph{proposed} rather than validated.
+is trained; characterising that plane on real systems is future work. The chemical strata form a
+pattern in the direction the sign rule would give; separately tuned pipelines can produce it for
+reasons unrelated to the prior and there is no multiplicity control, so \S\ref{sec:map} records it as
+the experiment a matched control should run, not as evidence, and the diagnostic is \emph{proposed}
+rather than validated.
 
 % Limitation (i) enlarged-corner numbers: run_b_insuff_decomposition.{match_pairs,evaluate_closure,
 % lotv_binning} (res convention, 8 equal-count bins) on notebooks/data/raw/idac_expanded{,_raw}.csv
@@ -1264,15 +1196,14 @@ the diagnostic is \emph{proposed} rather than validated.
 regimes}: the paradox is measured where the model operates (finite composition, all $\gamma$,
 $n{=}5608$), the closure--insufficiency attribution and the latent-departure result only on
 infinite-dilution activity data ($n{=}477$ across temperatures, and the $298$\,K, low-$\gamma$,
-VT-2005-matched $n{=}60$ and $n{=}44$ sets). Transfer back to the paradox's own regime, argued above
+VT-2005-matched $n{=}60$ and $n{=}44$ sets). Transfer back to the paradox's own regime, argued
 from the in-regime signs, is a conjecture rather than a measured fact and is the principal open
 question here. The matched $n{=}60$ set is also narrowly sourced: all by gas chromatography and all
 from three publications, $33$ pairs from one, so neither a method-stratified nor a source-clustered
 re-estimate is available on it. Its margin is also extraction-sensitive: a broader ThermoML
 pull at $298$\,K widens it but \emph{inverts} it on the gas-chromatography subset, a sensitivity we
-leave unresolved and do not read as a verdict on the extraction. The broad IDAC set is built from
-that same pull and does not move the same way under the same cut, its margin surviving clustering on
-sources and on molecule pairs (\S\ref{sec:measure}(i)); the arithmetic, the enlarged-pull values
+leave unresolved and do not read as a verdict on the extraction. The broad IDAC set does not move the
+same way under the same cut (\S\ref{sec:measure}(i)); the arithmetic, the enlarged-pull values
 and the matching-rule alternatives are in \S\ref{sec:si-repro}. Because
 few drug-like solutes carry a VT-2005 profile, the solubility substitution also falls almost entirely
 on the solvent channel; the clean both-channel evidence is on the activity axis. Under the deployed
@@ -1321,10 +1252,9 @@ on are checkable only through code we have not yet been able to release
 (\S\ref{sec:si-repro} names which). The
 objection stands in full for those artifacts, and it reaches much of the verdict, which rests on
 evaluations that cannot be opened without the code. One partial remedy is in place: the two
-decomposition sets are deposited as row-level tables (Tables~S1 and~S2, the latter printed in full
-as Table~\ref{tab:corner-rows}), so the sets and the margins computed on them can be recomputed
-without code. What that does not deliver is the provenance of the closure evaluations in those
-tables, or of the trained arms anywhere else.
+decomposition sets are deposited as row-level tables (Tables~S1 and~S2), so the sets and their
+margins can be recomputed without code. That does not deliver the provenance of the closure
+evaluations in them, or of the trained arms anywhere else.
 
 % CONCLUSION. Criterion (10) of the 2026-07-29 pass: two paragraphs, no numbers, no grades, no
 % qualifications, and not a restatement of the abstract -- it states the consequence and the design
@@ -1345,8 +1275,7 @@ The general statement is a design rule with a test attached. Wherever a predicto
 physical model over a learned intermediate for which an external reference exists, that reference
 measures which of the two limits accuracy, and the answer decides the remedy: a more faithful
 physical model, or better inputs. Here the answer was the model, and the standard route to a more
-faithful one lowered the error on the chemistry it was designed for while returning, on the broader
-set measured, an interval too wide to separate a small gain from none. Whether a
+faithful one did not clear the bar on the broader set measured. Whether a
 latent trained through an imperfect model becomes, in general, a surrogate for that model's error is
 the prediction this work leaves testable.
 
@@ -1381,11 +1310,11 @@ with Ref.~\cite{bell2020cosmosac} for the UD profiles, ThermoML for the infinite
 coefficients, and the OPERA compilation \cite{mansouri2019opera} for the second-domain pKa data.
 Most analysis scripts carry their run commands in their docstrings, and the two audits behind
 \S\ref{sec:measure} are named with the script and the artifact file of each in the compute ledger
-(App.~\ref{sec:si-repro}). Several deposited artifacts
-carry disclosed caveats, recorded in App.~\ref{sec:si-repro} and App.~\ref{sec:si-tables}: the
-seed-$44$ oracle per-row file is truncated, the three-seed surrogate run's per-run split provenance
-was not logged, one $\sigma$-stream build on disk was written against the wrong split files, and the
-two corner audit artifacts disagree on one out-of-fold estimate.
+(App.~\ref{sec:si-repro}). Four deposited artifacts carry disclosed defects, recorded in
+App.~\ref{sec:si-repro} and App.~\ref{sec:si-tables}: the seed-44 oracle per-row file is truncated,
+the three-seed surrogate run's per-run split provenance was not logged, one $\sigma$-stream build on
+disk was written against the wrong split files, and the two corner audit artifacts disagree on one
+out-of-fold estimate.
 
 \begin{acknowledgement}
 This research received no external funding.
@@ -1397,13 +1326,11 @@ was reviewed, verified, and edited by the authors, who take full responsibility 
 \end{acknowledgement}
 
 \begin{suppinfo}
-The Supporting Information contains supplementary methods, including the
-architecture and the loss weights; proofs of the lemmas and of the grounding-gap theorem; per-arm
-tables and the robustness of the decomposition, including its estimator grids on both sets and a
-per-mark table of the input-insufficiency bounds the decomposition figure draws; external
+The Supporting Information contains supplementary methods; proofs; per-arm
+tables and decomposition robustness; external
 baselines and ablations; supplementary mechanism results; supplementary diagnostics and broad
 negatives; the second-domain pKa analysis; data provenance and reproducibility; the
-full tables of the black-box probe programme; the controlled synthetic closure-fidelity family;
+black-box probe tables; the synthetic closure-fidelity family;
 and the positioning against adjacent literatures.
 (The notation table, Table~\ref{tab:notation}, is in the main text.) Two machine-readable tables are deposited with it: the
 $477$-row broad IDAC set (Table~S1, \texttt{broad\_idac\_set\_477.csv}) and the $60$-row

@@ -13,6 +13,10 @@
 6%     corrected: the random-fold correctability figure's uncertainty is a standard error over the five fit seeds (the convention the same paragraph states), and results/compensation/local_closure_fix_seeded_random.json ranks.1.reduction_pct_per_seed = [56.512, 28.462, 55.164, 41.754, 48.869] gives mean 46.152 with sd(ddof=1) 11.491, i.e. se 5.14. The manuscript now prints 46 +- 5%. The two grouped-design figures beside it, -5 +- 16% and +2 +- 15% (se 15.91 and 15.24), already matched and are unchanged.
 0.089  corrected: the seed-42 logP cell of the representation-variance table printed the raw eta-squared statistic where the caption promises an excess over the permutation null. results/blackbox/study4_2026-07-26.json seeds.directgnn_seed42."logP(solute)" has stat 0.08914 and excess 0.08322, so the cell now prints +0.083. Its share-of-ceiling line below the table (13.6%) was already computed from the excess, 0.0832/0.6127.
 
+# 2026-07-31 page-budget pass. The black-box probe paragraph's per-seed triple moved to App. J,
+# which already prints the same three scores unrounded.
+-0.51  rounded restatement, moved: the Discussion paragraph printed the seed-42 crystal-decode probe as -0.51, a rounding of the -0.506 that App. J, Table 15 (tab:crystal-decode) prints from results/blackbox/study4_2026-07-26.json together with its permutation p and jackknife range. The paragraph now carries the claim (the probe recovers the model's own prediction at R^2=0.98 but not the ideal-solubility term) and the bound the negative supports (R^2 <~ 0.30, restated in limitation (vi)), and points at App. J for the seed-by-seed scores and the nulls. The two companion values +0.11 and +0.03 still print elsewhere in the document; only the rounded -0.51 has no surviving occurrence, App. J's -0.514 being the RDKit-descriptor control and a different number.
+
 # The four entries below are SUBSECTION NUMERALS, not measurements. The 2026-07-29 readability pass
 # dissolved the separate "Notation, and how the claims are graded" section (criterion 7: the notation
 # table moved to the end of the theory section, the grading rule to the head of the Results), which

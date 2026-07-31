@@ -388,8 +388,19 @@ $R_{\mathrm{e2e}}=0$ while $R_{\mathrm{orc}}=1$, hence $\Ggap=1>0=\Bclos$. Thus 
 does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 \end{proof}
 
-\noindent The penalty-sign result (Proposition~\ref{prop:tax}, stated in the main text at
-\S\ref{sec:tax}) is proved here.
+\noindent The penalty-sign result is stated and proved here; \S\ref{sec:tax} gives its two halves in
+prose and reads the consequences off them. Writing each trained risk as an asymptote plus estimation
+variance, $\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
+$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
+$V(n)\downarrow0$, the \emph{physics penalty at budget $n$} is
+$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$, with
+$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$ its \emph{asymptotic} part.
+\begin{proposition}[Sign of the physics penalty]\label{prop:tax}
+(i)~$\mathcal{T}(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
+the variance a constrained prior saves must exceed its asymptotic bias. (ii)~If
+$\Delta_\infty>0$ and the variance gap vanishes ($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$),
+there is a critical budget $n^\star$ beyond which $\mathcal{T}(n)>0$ for all $n>n^\star$.
+\end{proposition}
 \begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the physics penalty)]
 \sloppy\relpenalty=0 \binoppenalty=0
 Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$ and
@@ -554,8 +565,9 @@ therefore more conservative: it gives ${\approx}0.78$ (maximum-likelihood) and $
 different things and we report both rather than the higher.
 
 \paragraph{A fourth analyst choice: what ``equal-count'' means when $n$ is not divisible by the bin
-count.} The rule is stated in \S\ref{sec:decomp}: interpolated (\texttt{numpy} default
-\texttt{linear}) quantile edges of $g$ at $j/8$ with a value on an edge assigned to the upper bin.
+count.} The rule this paper deploys, and which \S\ref{sec:decomp} names as the fourth analyst choice
+without restating, is interpolated (\texttt{numpy} default \texttt{linear}) quantile edges of $g$ at
+$j/8$, $j=1,\dots,7$, with a value falling exactly on an edge assigned to the upper bin.
 Neither $n$ divides by eight ($60/8=7.5$, $477/8=59.625$), and that alone is what makes standard
 implementations of the same phrase disagree; there are no exact ties in $g$ on either set under
 either convention, so each of them is a genuine coarsening of $\sigma(g)$ and the bound is valid
@@ -913,7 +925,8 @@ rows matched exactly the verdict is unchanged---deployed convention $\mathrm{MSE
 $\Binsuf\lesssim0.70$, margin $+0.53$ at $P\approx0.9$; full convention $1.926$, $0.49$, $+0.94$ at
 $P>0.95$---so the looser rule is not carrying the result.
 \emph{(b)~The tighter of the two conventions' bounds.} $\Binsuf$ is the same population quantity
-under both conventions (\S\ref{sec:decomp}); what differs is the statistic the coarsening bins on,
+under both conventions (step~(d) of the proof of Lemma~\ref{prop:decomp},
+App.~\ref{sec:si-proofs}); what differs is the statistic the coarsening bins on,
 $g_{\text{full}}(\zstar,T)$ or $g_{\text{res}}(\zstar,T)$, each a deterministic function of the same
 argument and each therefore giving a separately valid upper bound. The smaller of the two is
 consequently also a valid upper bound in population, and charging it against the deployed error gives
@@ -963,6 +976,15 @@ full), so neither erases $\Bclos$.
 solvents, $84\%$ once the two doubted amine/methanol pairs are deleted, and the acceptor-only
 solvents are near-exact. That localisation is what places $\Bclos$ in COSMO-SAC-2002's
 single-parameter hydrogen-bonding kernel rather than spreading it over the profile.
+A counter-test on the same closure points the same way, and is the one \S\ref{sec:measure} cites.
+The Staverman--Guggenheim combinatorial term is the physically \emph{more} complete treatment and
+acts only where the two molecules differ in size; restoring it \emph{increases} the corner's
+reference-input error, $\mathrm{MSE}=1.47$ under the deployed residual-only convention against
+$1.80$ with the term in place (Table~\ref{tab:decomp}), the gap between the two being carried by the
+size-asymmetric pairs. A term that adds physics and costs accuracy is what a misspecified map does
+and not what missing information about the inputs would do. The same signature appears on the
+solubility axis, where restoring the term makes the grounded learned-$\sigma$ arm slightly worse
+(Table~\ref{tab:si-arms}).
 
 % Artifacts: results/b_insuff/fidelity_lever_inputfixed.json via
 % scripts/analysis/run_fidelity_lever_inputfixed.py (arms A/B/C and both bootstrap contrasts;
@@ -1344,7 +1366,12 @@ so it calibrates that deviation rather than competing with it. The rungs calibra
 leave-one-out corpus-mean profile (one fixed shape reused for every molecule, carrying no molecular
 information) $0.493$; each molecule assigned another molecule's reference profile, $0.651$--$0.684$
 over five derangements; a uniform profile $0.889$. Against these, the grounded base sits at $0.364$
-and the fine-tuned latent at $0.507$.
+and the fine-tuned latent at $0.507$. The grounded base is the $\sigma$-supervised recovery
+\S\ref{sec:surrogate} reports as reproducing the reference profile far more closely: it is
+$36\pm1\%$ over the three seeds in the norm ratio
+$\lVert\hat\sigma_{\mathrm{grounded}}-\sigma\rVert/\lVert\sigma\rVert$, and it is an
+\emph{in-sample} fit---all $44$ probe molecules lie in the $\sigma$-grounding pool and the warm-up
+early-stops on it---so no out-of-sample recovery estimate exists on this set.
 \paragraph{The distortion operator $D$.} The transfer test of \S\ref{sec:surrogate} fits a
 dense affine map on the $51$-bin grid: a $51\times51$ linear part plus a $51$-bin offset, $2652$
 parameters, each output bin a ridge regression of $52$ coefficients ($\ell_2$ penalty $10^{-3}$) on

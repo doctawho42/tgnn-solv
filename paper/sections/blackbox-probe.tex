@@ -6,14 +6,10 @@
 \paragraph{The unconstrained control does not carry the thermodynamics either.} If the physics arm's
 intermediate is a surrogate, the thermodynamics might still be present implicitly in the control,
 which is free to represent it. It is not. A ridge probe of the control's pair
-representation, scored
-on $13$ held-out solutes, does not recover the measured ideal-solubility term, while recovering
-the model's own prediction at $R^{2}=0.98$. Across seeds the probe reaches
-$R^{2}=-0.51/{+}0.11/{+}0.03$, none significant against a permutation null that itself
-reaches $R^{2}\approx0.32$--$0.38$ at this sample size, so the negative is an upper bound at
-$R^{2}\lesssim0.30$ rather than an exclusion. What the representation is organised by instead is scaffold identity, which is
+representation recovers the model's own prediction at $R^{2}=0.98$ but not the measured
+ideal-solubility term---an upper bound at $R^{2}\lesssim0.30$ rather than an exclusion
+(limitation~(vi)). What the representation is organised by instead is scaffold identity, which is
 consistent with the transfer limitation of \S\ref{sec:gap}: a test molecule on an unseen scaffold is
-not a small extrapolation but a point off the axis the representation is organised along. That
-measure and its weakness---only $11$ of the $124$ test scaffolds hold more than one solute, so the
-two partitions nearly coincide by construction---are in App.~\ref{sec:si-blackbox}, with the full
-tables, nulls, controls and the temperature probe.
+not a small extrapolation but a point off the axis the representation is organised along. The
+seed-by-seed scores, the permutation nulls, the within-scaffold measure and its weakness, and the
+temperature probe are in App.~\ref{sec:si-blackbox}.
