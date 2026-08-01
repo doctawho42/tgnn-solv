@@ -30,6 +30,25 @@
 6.4    section-number churn: the old \S6.4 (the latent's departure from its reference) is now \S5.4; every baseline occurrence was a cross-reference, and the target prints 5.4 in the same sentences (baseline x35 -> target x0, gained 5.4).
 6.5    section-number churn: the old \S6.5 (the gated output residual) is now \S5.5; every baseline occurrence was a cross-reference, and the target prints 5.5 in the same sentences (baseline x6 -> target x0, gained 5.5).
 
+# The five entries below are the same kind of thing, one pass later. The 2026-08-01 structural pass
+# folded Related work into the Introduction, so it stopped being Section 2 and everything after it
+# moved down one: Setup and theory 3 -> 2, Methods 4 -> 3, Results 5 -> 4, Discussion 6 -> 5,
+# Conclusion 7 -> 6. Every "\S3.x" and "\S5.x" cross-reference is therefore now "\S2.x" and "\S4.x".
+# EACH WAS AUDITED, not assumed. Occurrences of these five values in the baseline PDF, counted with
+# context: 3.2 -> 19 cross-references plus a subsection heading and the "3.2 x 10^6 J/mol" of the
+# Fisher sweep; 3.3 -> 3 plus a heading; 5.2 -> 58 plus a heading; 5.5 -> 5 plus a heading and two
+# "5.5%" enrichment figures; 5.6 -> 5 plus a heading and the "5.6 x 10^3" of the same sweep. The
+# heading numerals are dropped by the section-number rule, the scientific-notation ones are folded
+# into 3.2e6 and 5.6e3, and "5.5%" is a different value because % is part of the identity -- so the
+# tier-A count the checker carries for each is exactly its cross-reference count, and the target
+# prints the renumbered counterpart the same number of times (gained 2.2 +19, 2.3 +3, 4.2 +58,
+# 4.5 +5, 4.6 +5). If a later draft prints one of these as a measurement, delete its line here.
+3.2    section-number churn: the old \S3.2 (the closure--insufficiency decomposition) is now \S2.2; all 19 baseline occurrences were cross-references, and the target prints 2.2 in the same sentences (baseline x19 -> target x0, gained 2.2 x1 -> x20).
+3.3    section-number churn: the old \S3.3 (what the instrument resolves) is now \S2.3; all 3 baseline occurrences were cross-references, and the target prints 2.3 in the same sentences (baseline x3 -> target x0, gained 2.3 x3 -> x6).
+5.2    section-number churn: the old \S5.2 (the closure-fidelity axis) is now \S4.2; all 58 baseline occurrences were cross-references, and the target prints 4.2 in the same sentences (baseline x58 -> target x0, gained 4.2 x0 -> x58).
+5.5    section-number churn: the old \S5.5 (the gated output residual) is now \S4.5; all 5 baseline occurrences were cross-references -- the 5.5% enrichment figures of App. H are a different value and still print -- and the target prints 4.5 in the same sentences (baseline x5 -> target x0, gained 4.5 x3 -> x8).
+5.6    section-number churn: the old \S5.6 (the second chemical closure) is now \S4.6; all 5 baseline occurrences were cross-references, and the target prints 4.6 in the same sentences (baseline x5 -> target x0, gained 4.6 x0 -> x5).
+
 # NOT ENTRIES, a note. The 2026-07-29 front-matter pass (criteria 2, 3, 9, 10) emptied the abstract,
 # the introduction, the contributions and the conclusion of numbers, grades and modalities, and cut
 # the grade/scope blocks out of the Figure 1, Figure 2 and Figure 4 captions and the cross-reference

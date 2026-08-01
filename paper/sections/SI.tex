@@ -104,8 +104,13 @@ COSMO cavity volume so that it shares the cavity basis of the area $A_i$. Small 
 as water carry explicit hydrogens so that the polar and hydrogen-bond channels activate. The pair
 representation is passed through an MLP and may be augmented with RDKit descriptors, Morgan
 fingerprints and an ionic-context feature; the crystal head additionally offers Walden-entropy and
-group-contribution $\Tm$ modes. The NRTL alternative of \S\ref{sec:methods} predicts two interaction
-energies with a $1/T$ law and a non-randomness factor before its symmetric one-parameter collapse.
+group-contribution $\Tm$ modes. The two NRTL control closures of \S\ref{sec:methods} are the
+Non-Random Two-Liquid model \cite{renon1968}, the most expressive closure here, which fits
+interaction parameters per pair --- predicting two interaction energies with a $1/T$ law and a
+non-randomness factor, optionally regularised by a UNIFAC group-contribution prior
+\cite{fredenslund1975} --- and its symmetric one-parameter collapse
+$\lng(x_2,T)=\lngi(T)(1-x_2)^2$, in which the identifiability analysis of \S\ref{sec:framework} is
+cleanest. The crystal head's bounded parametrisations are below.
 \paragraph{Crystal head.} $\Tm=100+600\,\mathrm{logistic}(\cdot)\in[100,700]$\,K,
 $\dHfus=S_H\,\mathrm{softplus}(\cdot)$; the group-contribution $\Tm$ prior is affine-
 calibrated on the train split before entering the head.
@@ -1987,7 +1992,7 @@ organisation is partly $\Phi^{*}$-aligned; out of sample that alignment does not
 % instrument borrows from but does not otherwise use, whose citation keys occur nowhere else.
 \section{Positioning against adjacent literatures}
 \label{sec:si-positioning}
-\S\ref{sec:related} places the instrument against the model-discrepancy problem of Kennedy and
+\S\ref{sec:intro} places the instrument against the model-discrepancy problem of Kennedy and
 O'Hagan \cite{kennedy2001} and its calibration critique \cite{brynjarsdottir2014}, which is the
 frame the paper works in. Four further literatures bear on it without being that frame.
 Separating whether predictions are right on average from whether

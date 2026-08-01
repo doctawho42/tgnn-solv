@@ -40,20 +40,23 @@
 % 135 numbered cross-references to its own sections.
 %
 % LAYOUT. `layout=twocolumn' is the published-article measure and is what the
-% main-text page count refers to. MEASURED ON THE BUILD OF 2026-07-29, after the second voice pass:
-% 25 pages of main text (Sec. 7 opens on p. 24; the back matter runs to the left column of p. 26),
-% the Supporting Information beginning on p. 26, out of 70 total. Section starts from the .aux:
-% intro 1, related 4, framework 5, methods 9, results 11, discussion 21, conclusion 24, SI 26.
-% Main-text floats and their pages: Fig. 1 p.5, Table 1 p.10, Table 2 p.13, Fig. 2 p.15, Fig. 3 p.20
+% main-text page count refers to. MEASURED ON THE BUILD OF 2026-08-01, after the structural pass:
+% 21 pages of main text (Sec. 6 opens on p. 21; the back matter runs into the left column of p. 22),
+% the Supporting Information beginning on p. 22, out of 68 total. Section starts from the .aux:
+% intro 1, framework 4, methods 7, results 9, discussion 19, conclusion 21, SI 22.
+% Main-text floats and their pages: Fig. 1 p.5, Table 1 p.8, Table 2 p.11, Fig. 2 p.13, Fig. 3 p.17
 % -- FIVE main-text floats, not seven. tab:decomp and tab:kernels are Tables 7 and 8 inside App. C
 % and are not main-text captions; an audit that includes them has audited the wrong set.
-% The page went from 24 to 25 in this pass, and the cause is on the record: the pKa second-domain
-% result was moved out of App. C into Sec. 5.6 because the abstract and contribution (f) asserted it
-% while every measurement of it sat in the appendix. That was a criterion-(1) repair, not drift.
-% The page ceiling is 20 and the excess is in the Results, not the front matter; the four pages that
-% would have to come out of Sec. 5 are an author decision and were not attempted here.
-% Earlier revisions of this comment quoted 28/29/71 and 29/30/72; those figures did not survive the
-% float rebalancing and are superseded.
+% The page went from 23 to 21 in this pass, and there is no section 2 any more: the pass deleted
+% three STRUCTURES rather than any content -- the enumerated Contributions list (an ML-conference
+% convention ACS does not use, and a restatement of Table 2), the standalone Related work section
+% (folded into the Introduction, which is where JCIM carries the field review), and the long-form
+% Methods (summarised, with architecture, solver, curriculum, loss and hyperparameters left in
+% App. A, which already held them). The measured saving was 672 + ~40 + ~190 words of prose.
+% The page ceiling is 20 and the remaining page is NOT in the front matter: the Results run p.9-18
+% and every item priced in the previous compression pass is a control, a null, a disclosure or a
+% counterexample. Taking the last page out means spending content, which is an author decision.
+% Earlier revisions of this comment quoted 28/29/71, 29/30/72 and 25/26/70; superseded.
 % Re-measure from the build, not from this comment, after any pass. ACS expects the double-spaced
 % single-column measure at submission: drop `,layout=twocolumn' for that (the
 % same content then runs to roughly twice that in main text, which is normal for
@@ -278,7 +281,7 @@ model misspecification, representation probing}
 %      through this mechanism"), without which, placed after the drift sentence, it reads as a
 %      replication of the drift mechanism instead of the sign rule alone.
 % "kernel" no longer appears here: it was the abstract's own first use of an undefined term, and the
-% word is defined in Sec. 3 and glossed in contribution (c). "model" and "successor" carry it.
+% word is defined and glossed in Sec. 2. "model" and "successor" carry it.
 \begin{abstract}
 Physics-informed models route a prediction through interpretable physical quantities, on the
 expectation that grounding those quantities in accurate reference values improves accuracy. Whether
@@ -293,8 +296,8 @@ Supervising the predicted profile against the database during training improves 
 over three seeds; substituting the reference for the learned profile at inference degrades it, by
 about twice as much. On infinite-dilution activity data, where the two terms separate, the
 instrument bounds the deployed COSMO-SAC-2002 model's own error from below and the contribution of
-its inputs from above, and on both sets measured the first bound is the larger; the error localises
-on hydrogen-bond-donating solvents. Its donor/acceptor-typed 2010 successor lowers the error on that
+its inputs from above, and on the larger of the two sets measured the first bound is
+the larger; the error localises on hydrogen-bond-donating solvents. Its donor/acceptor-typed 2010 successor lowers the error on that
 chemistry and shows no improvement on the broader set measured. Trained end to end through
 the misspecified model, the learned profile departs from its reference, over three seeds, along a
 direction shared across the molecules it can be compared on; whether that departure cancels the
@@ -305,16 +308,18 @@ interpretable when the model consuming them is misspecified.
 \end{abstract}
 
 % INTRODUCTION. Criterion (3) of the 2026-07-29 readability pass: introduce the field, with no
-% technical detail, no qualifications, no numbers and NO SECTION REFERENCES; the closing paragraph is
-% the roadmap. The roadmap's section numbers are written as plain text on purpose -- a \ref would be
-% a section reference and the criterion forbids those here. They are 2..7 for Related work, Setup and
-% theory, Methods, Results, Discussion, Conclusion; renumber them by hand if a section is added or
-% removed. The one \ref that remains is to Fig. 1, which is a figure reference, not a section one,
+% technical detail, no qualifications and no numbers; the closing paragraph is the roadmap. Since the
+% 2026-08-01 fold the field review lives here too, which brings two pointers to App. G with it -- the
+% only cross-references in the section, and pointers to reviewed literature rather than to this
+% paper's results.
+% The roadmap's section numbers are written as plain text on purpose -- a \ref would be a section
+% reference and the criterion forbids those here. They are now 2..6 for Setup and theory,
+% Computational methods, Results, Discussion, Conclusion (they were 2..7 while Related work was its
+% own section); renumber them by hand if a section is added or removed.
+% The one \ref that remains is to Fig. 1, which is a figure reference, not a section one,
 % and is the manuscript's only citation of that float -- cut it and the figure drifts to the end.
-% Where it actually lands, measured: Fig. 1 sets at the top of p. 4, which is inside Sec. 2 Related
-% work, two pages after its only citation on p. 2. That satisfies the four-page rule and it is not
-% anchored to this section, so a caption written here must be legible to a reader who is by then
-% three pages into a different section -- see the budget note on the float itself.
+% Its landing page moves with the fold; the four-page rule and the budget note on the float itself
+% still govern the caption, which must read to someone who meets the figure well after this page.
 \section{Introduction}
 \label{sec:intro}
 How much of a solid dissolves in a given liquid decides whether a drug can be formulated as a tablet
@@ -328,28 +333,87 @@ crystal against the cost of mixing the freed molecules into the solvent, so a pr
 right about two unrelated kinds of chemistry at once, and has to stay right for molecules unlike any
 it was shown.
 
-% Not "two families of methods ... opposite choices about physical structure": Related work opens on
-% that sentence three paragraphs later, and the two stood on facing columns.
+% FIELD REVIEW FOLDED IN HERE (2026-08-01). JCIM does not carry a standalone related-work section, so
+% the former Sec. 2 is now the four review paragraphs below plus the closing "what this literature
+% lacks" paragraph. Two rules carried over from that section and still in force:
+%   (5a) the review describes the present work ONLY in its closing sentences -- the paragraph that
+%        begins "What this literature lacks". A grep for we/our/this work does not catch a breach;
+%        the check has to be for the paper's own named objects too (the instrument, the closure, the
+%        corner), which is how "App. ... situates THE INSTRUMENT against ..." slipped through once.
+%   (5b) the redundant opener is gone for good. Related work used to begin "Two families of methods
+%        dominate ... and they make opposite choices about physical structure", which is the first
+%        sentence of the paragraph immediately below; the two stood on facing columns. Do not
+%        restore it when editing the SolProp/FastSolv paragraph.
+% The appendix pointers the review carries (App. si-positioning) are the one place the Introduction
+% now holds a cross-reference. They are pointers to reviewed literature, not to this paper's own
+% results, and dropping them would strand four literatures with no citation route.
 Predictors of solubility divide by how much physical structure they
 impose. Direct models regress solubility from molecular descriptors or from a
-representation learned off the molecular graph. They are at present the more accurate on solutes
-outside the training set, and they are opaque: the prediction arrives as a single number, with no
+representation learned off the molecular graph: FastSolv \cite{osanloo2024} does so with a deep
+neural network and leads on extrapolation to new solutes. They are at present the more accurate
+there, and they are opaque: the prediction arrives as a single number, with no
 account of which part of the chemistry it captured. Physics-informed models instead compute
 solubility from the thermodynamic quantities the physical picture names, an activity coefficient for
 the solute--solvent interaction and a melting temperature and heat of fusion for the crystal,
-predicting those quantities and combining them through a fixed equation. What that provides is
+predicting those quantities and combining them through a fixed equation; SolProp
+\cite{vermeire2022solprop} assembles such a thermodynamic cycle out of separately learned components
+(solvation free energy, vapour pressure, fusion properties). What that provides is
 decomposability: a prediction arrives with its parts, and each part is a quantity chemists measure
 and tabulate on its own, so it can be supervised against reference data a direct regressor has no way
-to use.
+to use. On accuracy the black box leads and the physics-informed cycle trails it.
 
 The design rests on an assumption rarely stated because it is taken for self-evident: a model supplied with
 physical inputs closer to their true values predicts better. For one class of intermediate
 that assumption can be tested outright, because a reference value is tabulated and can be handed to
 the model in place of the one it computed for itself. It needs testing, because when a predictor of
-this shape is inaccurate there is no established way to tell whether the fixed physical model is
-wrong or the learned quantities feeding it are uninformative, and the two diagnoses call for opposite
-remedies: a more faithful physical model in the first case, better representations or more data in
-the second.
+this shape is inaccurate the fixed physical model may be wrong or the learned quantities feeding it
+may be uninformative, and the two call for opposite remedies: a more faithful physical model in the
+first case, better representations or more data in the second.
+
+Learned surrogates for the activity coefficient---the quantity a solubility model must supply---have
+advanced quickly. Winter et al.\ \cite{winter2022} predict infinite-dilution activity coefficients
+\lngi\ directly from SMILES with a language model, and Sanchez-Medina et al.\ \cite{sanchezmedina2023}
+embed a Gibbs--Helmholtz constraint in a graph network to capture their temperature dependence. Both
+treat the activity coefficient as the regression target rather than retaining a mechanistic
+model that consumes a predicted molecular property. A second line keeps the mechanistic model and
+learns its input. COSMO-SAC \cite{lin2002} is a segment-activity reformulation of Klamt's COSMO-RS,
+and the $\sigma$-profile it consumes --- screening-charge density over a molecule's cavity --- is
+that framework's construct, tabulated from quantum chemistry \cite{mullins2006}. Predicting it from
+structure removes that calculation from the pipeline; TeNNet-SAC \cite{yang2025tennet} does so while
+also learning the segment-activity kernel, and gains from truer profiles.
+
+When a fixed physical structure improves or degrades a learned model is the broader question of
+physics-informed machine learning \cite{karniadakis2021}, whose dominant forms impose structure as a
+differentiable object: a governing equation enforced through the loss \cite{raissi2019}, gray-box
+hybrids composing learned components with fixed mechanistic maps \cite{willard2022}, and operator
+learning with a trainable correction to a misspecified equation \cite{ma2026}. The prevailing
+expectation is that more physics improves generalisation, yet the same structure has documented
+failure modes in which it makes optimisation or accuracy worse \cite{krishnapriyan2021}. In neural
+solvers of partial differential equations, Mohan et al.\ \cite{mohan2024} show that a learnable term
+added to a fixed discretised operator absorbs truncation artifacts rather than physics, so the
+program's apparent interpretability is illusory; their error source is numerical and has no external
+reference.
+
+The same concern appears in concept-bottleneck models as \emph{concept leakage}, in which a learned
+concept silently encodes information beyond its nominal meaning, so its interpretation misleads
+\cite{mahinpei2021,margeloiu2021,havasi2022}. Recent work traces one route to leakage to the downstream
+model: a misspecified head forces the encoder to deform
+the concept into carrying a dependence the head cannot represent \cite{parisini2025}, and overwriting a
+frozen head's leaked concepts with ground truth can then degrade accuracy
+\cite{espinosa2025leakage}. The gap between a fixed physical map and reality
+is the model-discrepancy problem of Kennedy and O'Hagan \cite{kennedy2001} and its calibration
+critique \cite{brynjarsdottir2014}. Four further literatures bear on it---forecast decomposition,
+quasi-maximum likelihood, identifiability, and the validity of composed pipelines---and are reviewed
+in App.~\ref{sec:si-positioning}.
+
+What this literature lacks is a way to \emph{measure}, rather than merely diagnose, whether a fixed
+physical model or its learned inputs limits a composed predictor's accuracy, and whether the learned
+intermediate has stopped reporting the quantity it is named after; in the concept-bottleneck case
+there is no external reference against which either question could be settled. This work supplies
+one---a reference $\sigma$-profile for solubility, tabulated substituent constants for a second
+chemical domain---and holds the mechanistic kernel fixed, so the tabulated value stays available as
+an external reference for the learned one. That is what turns a qualitative concern into a
+measurement.
 
 % CRITERION (3), SECOND PASS. These two paragraphs used to restate the abstract: six of the
 % abstract's sentences had a near-twin here, one of them at 0.84 sentence similarity. They now carry
@@ -358,7 +422,7 @@ the second.
 % bounds rather than shares, and the Hammett series rather than "the same reversal of sign". Before
 % editing either, re-run the sentence-similarity check against the abstract; the two blocks are the
 % ones that drift back together.
-This work supplies both the test and the diagnosis for one such pipeline. Continuum-solvation theory
+The test and the diagnosis are run here on a solubility pipeline of that shape. Continuum-solvation theory
 summarises a molecule by the distribution of screening charge over its surface, and one branch of
 that theory, COSMO-SAC, computes an activity coefficient---and from it a solubility---from a pair of
 those distributions. They are ordinarily obtained from quantum chemistry and tabulated in a
@@ -390,55 +454,32 @@ tabulated substituent constants behave the same way inside a fixed Hammett relat
 dissociation, improving the aromatic series that relation was built for and degrading the ones
 outside it.
 
-\paragraph{Contributions.} This article makes the following contributions.
-\begin{enumerate}
-\renewcommand{\labelenumi}{(\alph{enumi})}
-  \item We build an instrument out of an external reference for a model's learned input: it splits
-  the prediction error of the fixed model that consumes that input into a term for the model being
-  misspecified and a term for the input carrying too little information. The split is an identity
-  whenever the consuming model is fixed rather than fitted; the misspecification side is bounded from
-  below without fitting anything, and the insufficiency side is bounded from above by binning. It
-  applies to any predictor that composes a fixed physical model over a learned intermediate for which
-  an external reference exists. We implement the COSMO-SAC family of activity-coefficient models as
-  differentiable layers, so that one graph network can be trained end to end through the fixed
-  thermodynamic model and then evaluated with the reference substituted for its learned input.
-  \item Supervising the network's charge-density profiles against a quantum-chemical database during
-  training improves its solubility predictions over three seeds, by $0.20$ in mean absolute error.
-  Substituting that database's profiles for the learned ones at prediction time degrades them by
-  $0.41$ over the same seeds.
-  \item On $477$ infinite-dilution activity measurements over $185$ molecule pairs, the split bounds
-  the deployed COSMO-SAC-2002 \emph{kernel}---the segment-interaction term that distinguishes one
-  version of the model from the next---from below by more than it bounds the contribution
-  of its inputs from above. On the $60$
-  pairs for which the solubility model's own reference database supplies both profiles, $90\%$ of the
-  squared error falls on strong hydrogen-bond-donor solvents, which that kernel treats with a single
-  hydrogen-bonding parameter.
-  \item Replacing the 2002 kernel with the donor/acceptor-typed 2010 kernel lowers the error on those
-  $60$ hydrogen-bond-dominated pairs and shows no improvement on the $477$ measurements. One learned
-  additive correction on the fixed model's output, an additive gated residual at seed $42$, removes
-  its systematic bias and recovers little of its accuracy.
-  \item Trained end to end through the fixed kernel, the learned profile departs from its reference,
-  over three seeds, along a direction shared across the $44$ molecules on which the two can be
-  compared, so it no longer reports the charge distribution it is named after. That the direction
-  transfers is measured against a zero-drift null only, and whether the departure cancels the
-  kernel's own error is not measured.
-  \item The sign of grounding reverses in a second chemical domain: for acid dissociation constants
-  predicted through a fixed Hammett relation, tabulated substituent constants improve accuracy on the
-  meta- and para-substituted aromatics the relation describes and degrade it on the ortho-substituted
-  and heteroaromatic ones it does not, on one experimental compilation resampled twenty times---the
-  reference winning $19$ of $20$ resamples on the first set and losing $20$ of $20$ on the second.
-\end{enumerate}
-
-This article is organised as follows. Section 2 reviews the prediction of solubility and of activity
-coefficients, learned surrogates for physical intermediates, and the literatures on model discrepancy
-and on concept bottlenecks. Section 3 sets out the composed predictor, derives the split of its error
-into a model term and an input term, and states which parts of that split are exact and which can
-only be bounded. Section 4 describes the data, the network, the thermodynamic layers and the
-substitution experiment. Section 5 fixes the grades the claims carry and reports the measurements:
-the two senses of grounding and their signs, the split on the two activity data sets, the effect of
-raising the fixed model's fidelity, and the drift of the learned profile away from its reference.
-Section 6 draws out what the results do and do not license and lists the limitations. Section 7
-concludes.
+% THE CONTRIBUTIONS LIST WAS DELETED HERE (2026-08-01), and should not come back. It was a
+% machine-learning conference convention that ACS journals do not use, and by construction it
+% restated the abstract and the Results at a third strength -- which is why four review rounds kept
+% finding a contribution graded differently from the same claim in Table 2 or in the body.
+% Its authoritative counterpart is Table 2, which states every claim with its set, its value and its
+% grade. Before deleting, each of its six items was traced to where the same claim is made in the
+% body and graded in Table 2; nothing in it was unique to it. For the record, where each went:
+%   (a) instrument, identity-on-a-fixed-map, Jensen lower bound, LOTV upper bound -> Sec. 3.2 and
+%       Lemma 1; generality ("nothing here is specific to COSMO-SAC") -> Sec. 3 opening; the
+%       differentiable COSMO-SAC layers -> Methods, Sec. 3 of the Methods.
+%   (b) 0.20 and 0.41 -> Sec. 5.1 (and both rows of Table 2's first block).
+%   (c) 477/185, the bound ordering -> Sec. 5.2(i) and Table 2; the gloss of "kernel" -> Sec. 3;
+%       the corner's 90% on donor solvents and the single-parameter H-bond term -> Sec. 5.2(ii).
+%   (d) 2002->2010 on both sets -> Sec. 5.2(iii) and Table 2; the gated output residual at seed 42
+%       -> Sec. 5.4.
+%   (e) the n=44 shared direction, the zero-drift null, the unmeasured cancellation -> Sec. 5.5 and
+%       the Mechanism block of Table 2.
+%   (f) the pKa sign reversal with 19/20 and 20/20 -> Sec. 5.6.
+This article is organised as follows. Section 2 sets out the composed predictor, derives the split of
+its error into a model term and an input term, and states which parts of that split are exact and
+which can only be bounded. Section 3 describes the data, the network, the thermodynamic layers and
+the substitution experiment. Section 4 fixes the grades the claims carry and reports the
+measurements: the two senses of grounding and their signs, the split on the two activity data sets,
+the effect of raising the fixed model's fidelity, and the drift of the learned profile away from its
+reference. Section 5 draws out what the results do and do not license and lists the limitations.
+Section 6 concludes.
 
 \begin{figure*}[t]
 \centering
@@ -463,7 +504,9 @@ bound rather than an interval. Training-time supervision is a separate result, n
 \label{fig:overview}
 \end{figure*}
 
-\input{sections/related-work}
+% sections/related-work.tex is no longer \input: its content is the four review paragraphs and the
+% "What this literature lacks" closer inside the Introduction (2026-08-01). The file is retained in
+% the repository as the pre-fold record only; do not re-add it here.
 
 \section{Setup and theory}
 \label{sec:framework}
@@ -569,7 +612,7 @@ therefore report \emph{one-sided bounds}, not a point split (proved in App.~\ref
   \item $\Bclos \ge (\Ex[m]-\Ex[g])^2$ by Jensen: a constant offset between the
   decoder's mean output and the target is misspecification, not input insufficiency, and
   this bound needs \emph{no smoothness assumption}. Its one requirement is that $m$ and $g$
-  share the $\lngi$ reference state, which we check directly (\S\ref{sec:measure}).
+  share the $\lngi$ reference state, which the closure validation of \S\ref{sec:methods} establishes.
   \item $\Binsuf \le \Ex[\Var(m\mid \mathrm{bin}(g(\zstar)))]$, a valid
   \emph{upper} bound (law of total variance, since a binning of $g(\zstar)$
   coarsens $\zstar$).
@@ -1088,7 +1131,8 @@ an additive bounded residual on the output, gated, on this closure and this corp
 downstream corrections, and this one at other seeds, are untested here.
 
 % SECOND DOMAIN, MOVED INTO THE MAIN TEXT (2026-07-29). It used to live only in App. C: the abstract
-% asserted it, contribution (f) stated it with numbers and the Discussion leaned on it as the
+% asserted it, the then-extant contributions list (item (f); deleted 2026-08-01) stated it with
+% numbers and the Discussion leaned on it as the
 % bidirectional a-priori test that carries the sign rule, while every measurement of it sat in the
 % appendix -- a headline claim whose evidence a reader of the main text could not see. The two honest
 % repairs were to bring a short statement in or to drop it from the front matter; dropping it would
@@ -1211,7 +1255,8 @@ convention the margin is resolved on neither set, and only the literature-standa
 resolves it, while the headline convention is the deployed one (Table~\ref{tab:claims}). The broad
 IDAC set is in any case not the set on which the paradox's own oracle is defined. (ii)~$\Binsuf$ is upper-bounded, not point-identified (no
 replicates at fixed $\zstar$); the smoothness-free Jensen bound assumes $m$ and $g$ share the $\lngi$
-reference state, which we verify (\S\ref{sec:measure}), so the mean offset is genuine decoder bias, not
+reference state, established by the closure validation of \S\ref{sec:methods}, so the mean offset is
+genuine decoder bias, not
 a units artifact. (iii)~The constant-offset margin is convention-specific and inverts under the
 deployed residual-only default, on both sets; there the separation rests on the law-of-total-variance
 bound and the more-physics-worse effect. That bound is not itself convention-independent---only the
