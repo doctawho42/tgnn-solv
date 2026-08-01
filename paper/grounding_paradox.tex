@@ -238,7 +238,17 @@ $\sigma$-profile database)}
 \keywords{solubility prediction, physics-informed machine learning, COSMO-SAC,
 model misspecification, representation probing}
 
-\setlength{\emergencystretch}{2.5em}
+% Line breaking. emergencystretch 2.5em with the default hyphenation penalties left 240 underfull
+% boxes, 40 of them at badness 10000: loose lines that waste horizontal space. Allowing more
+% hyphenation and less emergency stretch tightens them. Measured on the full document: 240 -> 202
+% underfull, 0 overfull either way, and the main text loses a page (22 -> 21). Raising
+% emergencystretch back to 2em restores the page; lowering hyphenpenalty below 50 starts to
+% produce overfull boxes.
+\setlength{\emergencystretch}{1.5em}
+\tolerance=2000
+\hyphenpenalty=50
+\exhyphenpenalty=50
+\doublehyphendemerits=2500
 \begin{document}
 
 % ACS requires a table-of-contents graphic. Panel (a) of the overview figure is
