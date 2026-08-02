@@ -10,19 +10,29 @@ evidence belongs to the Discussion.
       a fixed thermodynamic model turns into a solubility; substituting an external reference
       profile for the learned one makes the prediction worse.
   (b) where the error sits -- one-sided bounds on the misspecified-model and
-      insufficient-input parts in the deployed residual-only convention. Bounds, never a
-      point split: the conditional variance is unestimable, so B_insuff is only ever an
-      upper bound and B_closure only lower-bounded.
+      insufficient-input parts in the deployed residual-only convention, drawn PER SOLVENT
+      CLASS. Bounds, never a point split: the conditional variance is unestimable, so
+      B_insuff is only ever an upper bound and B_closure only lower-bounded.
 
 2026-07-28 declutter. Panel (b) used to carry a three-line statistical sentence (separation
 margin, the pair-clustered and two-way bootstrap intervals, the n=60 comparison) and two grey
 footnote lines. Prose set inside axes is unreadable at the printed column width, so all of it
 moved OUT of the figure and into the caption; nothing was weakened and nothing was dropped.
-What replaces it is a shape the eye can take in: because the bar's full width IS the total
-error, the separation threshold MSE/2 is exactly the bar's midpoint, so the reader sees the
-input block ending left of centre instead of reading a number. The caption must still state
-the margin +0.51, both bootstrap intervals, the +0.05 on the n=60 corner, and that the two
-blocks are contiguous shares of one total rather than intervals on an axis.
+
+2026-08-02 restratification -- WHY THIS PANEL IS NO LONGER ONE BAR. It drew the whole set's
+split as a single bar cut at B_insuff^up, with the threshold MSE/2 at its midpoint, so the
+reader saw the input block end left of centre and read the aggregate ordering off the shape.
+That aggregate is retired: it does not survive the chemistry cut and the pair unit applied
+together (+0.51 -> -0.38), and it is carried by one publication (leave-one-source-out takes
+it to +0.18 while the other fourteen deletions leave it in [+0.42, +0.87]). The reason is
+structural and is what the panel now draws: B_insuff^up is nearly stratum-independent -- every
+stratum is binned the same way, into eight equal-count bins of one scalar -- while MSE varies
+across strata by a factor of 25, so a single bar is a composition-weighted average of a
+quantity that moves against one that does not. The three classes drawn are exactly the three
+the design can bound at this cell (n >= 40); their values come from
+results/b_insuff/stratified_map_table.csv (set=broad_477, axis=solvent_class, unit=row,
+convention=res) and are the same cells the map figure and Table 2 carry. Do not put the
+aggregate bar back, and do not add a fourth class without checking that it clears n = 40.
 
     MPLBACKEND=Agg python scripts/analysis/make_overview_figure.py
 """
@@ -103,46 +113,58 @@ axa.text(0.06, 0.10, "Either the fixed model is wrong, or the learned profile\n"
                      "carries information the reference does not.",
          ha="left", va="center", fontsize=8.6, color=GRAY)
 
-# ---------------- (b) the split ----------------
-bx, by, bw, bh = 0.09, 0.47, 0.82, 0.17
-# Representative set (n=477 IDAC-cap-UD activity measurements over 185 molecule pairs) under the
-# DEPLOYED residual-only combinatorial convention -- one convention rule across both sets, adopted
-# in round 3: MSE 1.902, B_insuff <= 0.697 (LOTV, 8 equal-count bins, UNBIASED within-bin
-# variance), so B_closure >= 1.205 and the separation margin MSE - 2*B_insuff = +0.51.  Drawn as
-# two contiguous SHARES of one total -- never as intervals, and never as a gap on an axis.
-MSE, BINS = 1.902, 0.697
-lo = BINS / MSE
-hi = 1.0 - lo
-axb.add_patch(FancyBboxPatch((bx, by), bw * lo, bh, boxstyle="square,pad=0",
-                             fc="#DDE7E3", ec=INK, lw=0.9, zorder=3))
-axb.add_patch(FancyBboxPatch((bx + bw * lo, by), bw * hi, bh, boxstyle="square,pad=0",
-                             fc=SALMON, ec=INK, lw=0.9, zorder=3))
-# One type size for both halves.  They are contiguous shares of ONE quantity, so a size
-# difference between them reads as an emphasis the panel does not mean to place.
-axb.text(bx + bw * lo / 2, by + bh / 2, "inputs\ninsufficient", ha="center",
-         va="center", fontsize=8.6, color="#5F6B66", zorder=4)
-axb.text(bx + bw * lo + bw * hi / 2, by + bh / 2, "the model is\nmisspecified", ha="center",
-         va="center", fontsize=8.6, color=INK, zorder=4)
-# the design (477 measurements over 185 molecule pairs) is the caption's business; the panel
-# needs only enough to say which quantity is being cut.
-# This header is the widest single run in panel (b) and it is left-aligned on the bar, so it
-# has only (0.99 - bx) = 0.90 axis units -- about 206 pt -- before it leaves the rounded box on
-# the right.  At 8.2 pt it did leave it, by about a point, once the canvas came down to 8.0 in.
-# 7.8 pt and a single space buy back roughly ten points of that run.  Measure the run, not the
-# eye, if this string is ever lengthened.
-axb.text(bx, by + bh + 0.10, "error when the reference profile is used ($n{=}477$)",
-         ha="left", va="bottom", fontsize=7.8, color=GRAY)
-axb.text(bx + bw * lo, by + bh + 0.035, r"$\leq 0.70$", ha="right", va="bottom",
-         fontsize=8.4, color="#5F6B66")
-axb.text(bx + bw * lo, by + bh + 0.035, r"  $\geq 1.21$", ha="left", va="bottom",
-         fontsize=8.4, color=HURT)
-# The bar's full width IS the total error, so the separation threshold MSE/2 is its midpoint:
-# the input block ending left of centre IS the ordering, drawn rather than asserted. The margin
-# itself, its two bootstrap intervals and the n=60 comparison are the caption's business.
-axb.plot([bx + bw / 2] * 2, [by - 0.10, by + bh + 0.015], ls=(0, (3.2, 2.2)), lw=1.2,
-         color=HURT, zorder=5, solid_capstyle="butt")
-axb.text(bx + bw / 2, by - 0.135, "half the total error", ha="center", va="top",
-         fontsize=8.4, color=HURT)
+# ---------------- (b) the split, per solvent class ----------------
+# Row unit, deployed residual-only convention, one estimator cell for all three (LOTV, eight
+# equal-count bins, UNBIASED within-bin variance).  The three classes that clear n = 40 on the
+# broad IDAC set, in the map's own order (headline margin descending):
+#   name                      n     B_insuff^up   MSE
+#   glycol ethers            182       0.108     2.252
+#   water                    111       0.215     0.477
+#   acceptor-only aprotics    57       0.140     0.089   <- the bound exceeds the total error
+CLASSES = [("glycol ethers", 0.1077, 2.2518),
+           ("water", 0.2150, 0.4765),
+           ("aprotic acceptors", 0.1404, 0.0891)]
+LX, BX0, BX1 = 0.300, 0.320, 0.965      # label right edge; bar span
+SCALE = 2.45                             # ln-gamma units^2 across (BX1 - BX0)
+BH = 0.090
+
+
+def _x(v):
+    return BX0 + (BX1 - BX0) * v / SCALE
+
+
+axb.text(0.045, 0.775, "error when the reference profile is used ($n{=}477$),\n"
+                       "by solvent class", ha="left", va="top", fontsize=7.8, color=GRAY)
+for k, (name, b, mse) in enumerate(CLASSES):
+    yk = 0.545 - k * 0.130
+    axb.text(LX, yk + BH / 2, name, ha="right", va="center", fontsize=8.0, color=INK)
+    if mse > b:                          # the ordinary case: two contiguous blocks
+        axb.add_patch(FancyBboxPatch((_x(0), yk), _x(b) - _x(0), BH,
+                                     boxstyle="square,pad=0", fc="#DDE7E3", ec=INK,
+                                     lw=0.8, zorder=3))
+        axb.add_patch(FancyBboxPatch((_x(b), yk), _x(mse) - _x(b), BH,
+                                     boxstyle="square,pad=0", fc=SALMON, ec=INK,
+                                     lw=0.8, zorder=3))
+    else:                                # the bound runs past the total error: no model block
+        axb.add_patch(FancyBboxPatch((_x(0), yk), _x(b) - _x(0), BH,
+                                     boxstyle="square,pad=0", fc="#DDE7E3", ec=INK,
+                                     lw=0.8, ls=(0, (2.0, 1.3)), zorder=3))
+        axb.plot([_x(mse)] * 2, [yk, yk + BH], lw=1.1, color=INK, zorder=5)
+# The teal blocks line up because every stratum is binned the same way; the salmon ones do not.
+# That contrast IS the panel, so it is drawn and not asserted -- no threshold line, no numbers.
+KY, KH, KW = 0.150, 0.050, 0.038         # legend swatch row: y, height, width
+axb.add_patch(FancyBboxPatch((0.085, KY), KW, KH, boxstyle="square,pad=0",
+                             fc="#DDE7E3", ec=INK, lw=0.7, zorder=3))
+axb.text(0.085 + KW + 0.020, KY + KH / 2, "the inputs, at most", ha="left", va="center",
+         fontsize=7.4, color="#5F6B66")
+axb.add_patch(FancyBboxPatch((0.545, KY), KW, KH, boxstyle="square,pad=0",
+                             fc=SALMON, ec=INK, lw=0.7, zorder=3))
+axb.text(0.545 + KW + 0.020, KY + KH / 2, "the model, at least", ha="left", va="center",
+         fontsize=7.4, color=INK)
+# 25-fold is the MSE ratio across exactly these three classes (0.0891 -> 2.2518 = 25.3), not
+# across all nine: the sentence must describe the rows the panel actually draws.
+axb.text(0.045, 0.070, "The input bound hardly moves; the error moves 25-fold.",
+         ha="left", va="center", fontsize=8.0, color=HURT)
 
 fig.suptitle("When do reference physical inputs help a learned solubility model?",
              fontsize=12.5, color=INK, y=0.985)

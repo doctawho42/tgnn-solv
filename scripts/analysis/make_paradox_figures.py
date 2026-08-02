@@ -11,7 +11,14 @@ figures always reflect the corrected n=60 keystone:
                         sigma COSMO-SAC closure g(z*) (full convention) vs the
                         diagonal, from results/b_insuff/matched_pairs.csv. (The CSV
                         has no free-head prediction, so only the closure is drawn.)
-  fig_decomposition.pdf one-sided bounds (deployed residual-only convention) from
+  fig_bounds_inventory.pdf
+                        RETIRED AS A MANUSCRIPT FIGURE, 2026-08-02, and renamed off the
+                        fig_decomposition stem so a rerun cannot overwrite what took its
+                        place.  The aggregate it draws does not survive the manuscript's
+                        two robustness operations applied together and is carried by one
+                        publication; the figure the SI now sets at that stem is the
+                        stratified map, scripts/analysis/make_stratified_map_figure.py.
+                        What it drew: one-sided bounds (deployed residual-only convention) from
                         results/b_insuff/decomposition.json: the load-bearing,
                         leakage-immune LOTV B_closure lower bound vs the cluster of
                         B_insuff upper bounds (LOTV / RF / Ridge / kNN), against total
@@ -720,7 +727,11 @@ def fig_decomposition(decomp_json: Path, out_dir: Path,
     fig.tight_layout(rect=(0, 0.125, 1, 1))
     for D in deferred:
         _near_threshold_and_connector(**D)
-    return _save(fig, out_dir, "fig_decomposition")
+    # NOT fig_decomposition any more.  That stem now belongs to the stratified map
+    # (scripts/analysis/make_stratified_map_figure.py), which retires the aggregate this
+    # function draws; leaving the old stem here would let a rerun of this script silently
+    # overwrite the map with the figure it replaced.
+    return _save(fig, out_dir, "fig_bounds_inventory")
 
 
 # --------------------------------------------------------------------------- #
