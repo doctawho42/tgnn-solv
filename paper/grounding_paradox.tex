@@ -313,9 +313,17 @@ about twice as much. On infinite-dilution activity data, where the two terms sep
 instrument bounds the deployed COSMO-SAC-2002 model's own error from below and the contribution of
 its inputs from above. The bound on the inputs is nearly the same in every chemical stratum while
 the total error across strata differs by more than an order of magnitude, so the comparison is
-reported as a map rather than as one verdict: the model's own error is the larger term on
-glycol-ether solvents and on water as the dilute solute, and the smaller on acceptor-only aprotic
-solvents, while the whole-set ordering turns on six pairs from a single publication. Its
+reported as a map over $59$ strata rather than as one verdict. One rule decides what that map
+establishes, applied to every stratum alike. Of fifty-nine strata, fifteen are boundable at the
+fixed estimator cell and six are admissible---boundable and sign-stable under deletion of each
+contributing publication, in all four unit\,$\times$\,convention cells. Those six are three distinct
+row sets, of which one is both positive and not contained in another: the glycol-ether solvents.
+There, on $182$ measurements over $43$ molecule pairs from three publications, the model's own error
+is the larger term, by $+2.04$ with a $90\%$ interval of $[+1.27,+2.83]$. Everything else the map
+reports and does not establish, the set taken whole included: too small for the estimator, or losing
+its sign or its estimate when a publication is deleted, or carrying a margin that is not
+positive---which a one-sided bound cannot turn into a reversal---or separating only because most of
+its rows are the glycol ethers under another name. Its
 donor/acceptor-typed 2010 successor lowers the error on the hydrogen-bonding
 chemistry the smaller set is made of and shows no improvement on the broader set measured. Trained end to end through
 the misspecified model, the learned profile departs from its reference, over three seeds, along a
@@ -464,11 +472,16 @@ longer masks the bias the map itself introduces.
 That ordering, however, is a property of the chemistry the map is asked about and not of the map
 alone, and that is what the measurement adds. The upper bound on the inputs barely moves between
 chemical strata, every stratum being summarised the same way, while the map's error moves across
-those same strata by more than an order of magnitude. The instrument therefore returns a map of
-where the fixed model binds---on the flexible hydroxylic solvents and on water carried as the dilute
-solute, and not on the acceptor-only aprotics, where it is already at the scale of the
-measurements. Read as one number for a whole set it is an average weighted by that set's
-composition, and the average here turns on six pairs from one publication.
+those same strata by more than an order of magnitude. The instrument therefore returns a map rather
+than a verdict, and one rule decides what the map establishes, applied to every stratum alike: the
+stratum has to be large enough for the fixed estimator, and its margin has to keep its sign when
+each publication that contributes to it is deleted in turn, in all four unit\,$\times$\,convention
+cells. Fifteen of the fifty-nine strata are large enough to bound and six pass that rule; those six
+are three distinct row sets, of which one is both positive and not contained in another---the
+glycol-ether solvents, where the fixed model's own error is the larger term. Every
+other stratum is reported in the map and not established, the whole set among them: read as one
+number for a whole set the comparison is an average weighted by that set's composition, and it
+depends on which chemistries and which laboratories that set happened to contain.
 
 Two consequences follow for anyone building a predictor of this shape. A learned intermediate trained
 through a misspecified map cannot be read as the physical quantity it is named after: the predicted
@@ -517,6 +530,21 @@ Section 6 concludes.
 %   (a) BUDGET. <=60 words, counting the "Overview." lead-in and the (a)/(b) markers. The version
 %       before this one ran to 75 words of source and 81 tokens as pdftotext splits it. Count before
 %       committing an addition.
+%       RAISED TO 66 ON 2026-08-02, once and for a stated reason: panel (b) draws three solvent
+%       classes and only one of them is established under the admissibility rule of Sec. 4.2(i).
+%       The panel marks the other two and glosses the marks inside the axes; the
+%       caption has to say which way the marks read, or a reader takes three bars for three
+%       findings. That clause is a disclosure and is not tradeable against the budget. Nothing
+%       else may grow on this argument.
+%       RAISED AGAIN TO 72 ON 2026-08-02, in the same currency and for the same kind of reason.
+%       THE TWO MARKS SAY DIFFERENT THINGS and the caption must not collapse them. Water (dagger)
+%       loses its sign when one publication is deleted; the acceptor-only aprotics (double dagger)
+%       survive every deletion in all four cells and are not established because the margin is not
+%       positive and the bound is one-sided. One dagger glossed as laboratory fragility carried
+%       both classes and was FALSE of the second -- do not restore it, and do not buy the six
+%       words back by deleting "each mark carrying its own reason", which is what stops a reader
+%       reading one reason onto both marks. Budget history: 60 -> 66 -> 72, each step a
+%       disclosure the panel forced. No third kind of growth.
 %   (b) THIS FLOAT SETS ON P.4. Every term in it must already be defined by p.4, which rules out the
 %       vocabulary of Sec. 3 and Methods. "under the deployed combinatorial convention" (first
 %       defined on p.6) and "contiguous one-sided bounds" both set here two pages early and are gone;
@@ -529,9 +557,10 @@ Section 6 concludes.
 %       the picture: "by solvent class". Do not restore the single bar or its 0.70/1.21 labels.
 \caption{\textbf{Overview.} \textbf{(a)}~A learned encoder predicts a charge-density profile
 $\hat\sigma$ that a fixed thermodynamic model turns into a solubility; the arrow marks the
-evaluation-time substitution of the reference $\sigma^\star$, which makes the prediction
-worse. \textbf{(b)}~The counterpart error on infinite-dilution activity data, by solvent class, each
-block a one-sided bound rather than an interval. Training-time supervision is not drawn.}
+evaluation-time substitution of the reference $\sigma^\star$, which makes it
+worse. \textbf{(b)}~The counterpart error on infinite-dilution activity data, by solvent class; only
+the unmarked class is established, each mark carrying its own reason, and each block is a one-sided
+bound rather than an interval. Training-time supervision is not drawn.}
 \label{fig:overview}
 \end{figure*}
 
@@ -652,8 +681,9 @@ therefore report \emph{one-sided bounds}, not a point split (proved in App.~\ref
 the within-bin variance convention and the combinatorial convention. Enumerating every equal-count
 contiguous partition, the choice is immaterial on the broad set and material on the \emph{corner},
 whose margin changes sign inside the
-envelope; we accordingly read the corner's $+0.05$ as consistent with zero and carry the claim on the
-broad set. The Jensen constant-offset bound is convention-specific---it separates under the full
+envelope; we accordingly read the corner's $+0.05$ as consistent with zero and carry the claim on
+the broad set \emph{in stratified form}, no aggregate over either set being an output of the
+instrument (\S\ref{sec:measure}(i)). The Jensen constant-offset bound is convention-specific---it separates under the full
 combinatorial convention and inverts under the deployed residual-only default---so the separation
 reported in \S\ref{sec:measure} rests on the leakage-immune (that is, model-free)
 law-of-total-variance (LOTV) bound. $\Binsuf$ is one population quantity while the two conventions
@@ -784,12 +814,12 @@ response is true by construction and so checks the instrument rather than the hy
 % symbols and the two data sets are the notation table's job; and what qualifies a row or a column is
 % keyed to it as a lettered note. Do not append a pointer here.
 \caption{One row per load-bearing claim: what is claimed, the data set and its size, the value
-measured, and the grade the claim carries. Notes \emph{a}--\emph{n} qualify a row or a column.}
+measured, and the grade the claim carries. Notes \emph{a}--\emph{o} qualify a row or a column.}
 \label{tab:claims}
-{\footnotesize
+{\scriptsize
 \setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{0.88}
-\begin{tabular}{@{}L{0.27\linewidth}L{0.18\linewidth}L{0.33\linewidth}l@{}}
+\renewcommand{\arraystretch}{0.86}
+\begin{tabular}{@{}L{0.25\linewidth}L{0.18\linewidth}L{0.35\linewidth}l@{}}
 \toprule
 Claim & Set ($n$)\tnk{a} & Value\tnk{b} & Grade \\
 \midrule
@@ -800,12 +830,13 @@ Reference profiles hurt solubility at evaluation (MAE) & test split ($5608$), 3 
 Training-time $\sigma$ supervision \emph{helps} (MAE) & cross-arm rows\tnk{c}, 3 seeds & $2.04\to1.85$ & certified \\
 \addlinespace[2pt]
 \multicolumn{4}{@{}l@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure}(i)--(ii))}\\
-$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,m} & broad IDAC, $182$ rows & $+2.04$ to $+2.94$, $P>0.95$ in all four cells & likely \\
-\ldots\ on water as solute; on halogenated solvents & broad IDAC, $37$; $30$ & $+6.33$; $+3.39$; $P>0.95$, $n<40$, one and two sources & open \\
-\ldots\ on acceptor-only aprotic solvents\tnk{m} & broad IDAC, $57$ & $-0.19$, $P<0.2$, negative in all four cells & open (negative) \\
-\ldots\ for either set \emph{as a whole} & broad IDAC ($477$); corner ($60$) & $+0.51$; $-0.38$ compounding two cuts; $+0.18$ less one publication; corner $+0.05$ & open (retired)\tnk{n} \\
-$\Binsuf^{\mathrm{up}}$ near stratum-independent, $\mathrm{MSE}$ not & broad IDAC, $9$ classes & $\times2.0$ against $\times25$; $p{=}0.02$ against $2000$ null partitions & likely \\
-$\Bclos>\Binsuf$, 2010 on its \emph{own} typed latent\tnk{n} & broad IDAC ($477$); corner ($60$) & $+1.29$, $P>0.95$\tnk{e}; corner $-0.77$, $P\approx0.3$ & open (fails) \\
+$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,m,o} & broad IDAC, $182$, $3$ sources & $+2.04$ $[+1.27,+2.83]$ to $+2.94$, $P>0.95$ in all four cells; worst deletion $+1.60$ & likely \\
+\ldots\ the same rows on the solute axis, \emph{alkanes}\tnk{o} & broad IDAC, $129$ ($108$ shared) & $+1.38$ $[+0.79,+2.33]$; $84\%$ of these rows are the glycol ethers' and the $21$ outside give $-0.22$ & likely (not a second finding) \\
+\ldots\ on water as solute; on halogenated solvents (\emph{measured, not claimed}) & broad IDAC, $37$; $30$ & $+6.33$; $+3.39$; $n<40$, one source and one unrunnable deletion, one publication in both, $18$ of the halogenated rows being those water rows & open, not stated\tnk{o} \\
+\ldots\ on acceptor-only aprotic solvents\tnk{m,o} & broad IDAC, $57$ & $-0.19$, negative in all four cells, $P<0.2$ deployed, ${\approx}0.3$ full; admissible, not established & open (failure to separate) \\
+\ldots\ for either set \emph{as a whole} & broad IDAC ($477$); corner ($60$) & $+0.51$ (full convention $+0.95$); $-0.38$ compounding two cuts ($+0.01$ full); $+0.18$ less one publication; corner $+0.05$ & open (retired)\tnk{n} \\
+$\Binsuf^{\mathrm{up}}$ near stratum-independent, $\mathrm{MSE}$ not & broad IDAC, $3$ boundable classes; $6$ with an estimate & $\times2.0$ against $\times25$; $\times6.8$ against $\times51$; $p{=}0.02$ against $2000$ null partitions of $9$ classes & likely \\
+$\Bclos>\Binsuf$, 2010 on its \emph{own} typed latent\tnk{n} & broad IDAC ($477$); corner ($60$) & $+1.29$, $P>0.95/{\approx}0.9/{\approx}0.9$\tnk{e}; corner $-0.77$, $P\approx0.3$ & open (fails) \\
 \addlinespace[2pt]
 \multicolumn{4}{@{}l@{}}{\emph{Whether a better closure moves the ceiling} (\S\ref{sec:measure}(iii))}\\
 The $2002\to2010$ step lowers the error & broad IDAC ($477$) & $-0.99$, $P\approx0.2$\tnk{f} & open (negative) \\
@@ -843,15 +874,26 @@ and $+0.06$, $P\approx0.6$ with dispersion on (Table~\ref{tab:kernels}).\quad
 \tnk{i}\,$\pm$ is the null's spread; the fine-tuning drift has no matched null of its own
 (\S\ref{sec:discussion}, limitation~(v)).\quad
 \tnk{j}\,The direct check is under-powered and runs against it (\S\ref{sec:surrogate}).\quad
-\tnk{k}\,Separately tuned arms (\S\ref{sec:methods}).\quad
+\tnk{k}\,Separately tuned arms (\S\ref{sec:methods}). $5608$ is the cross-arm lock: the test rows supervised and finite in every arm, so all arms score identical rows.\quad
 \tnk{l}\,Zero-drift null, with no constant-offset control on these seeds; the $\pm$ spans seeds at
 one partition (\S\ref{sec:surrogate}).\quad
 \tnk{m}\,One estimator cell for every stratum, under a rule reading molecular structure only
-(\S\ref{sec:measure}(i)); a negative margin there is failure to separate, not a certified reversal,
-which would need a \emph{lower} bound on $\Binsuf$.\quad
+(\S\ref{sec:measure}(i)). $\Binsuf$ is bounded above and $\Bclos$ below, so a positive margin
+establishes that the closure's own error exceeds what input insufficiency can account for; a
+non-positive one is failure to separate and licenses nothing, a reversal needing a \emph{lower}
+bound on $\Binsuf$ this instrument cannot give.\quad
 \tnk{n}\,\emph{Retired as an output of the instrument} (\S\ref{sec:measure}(i)): an aggregate margin
-is a composition-weighted average. These rows record what it was and how it fails rather than
-dropping it; the rows above replace it.}}
+is a composition-weighted average, and the deletions and cuts recorded here are failures of the
+headline cell rather than robustness passes. These rows record what it was and how it fails rather
+than dropping it; the rows above replace it.\quad
+\tnk{o}\,\emph{Admissible} (\S\ref{sec:measure}(i), applied alike to every stratum): boundable at the
+fixed cell \emph{and} keeping the margin's sign when each contributing publication is deleted, in all
+four unit\,$\times$\,convention cells. Of fifty-nine strata, fifteen are boundable and six
+admissible; those six are three row sets, of which one is positive and not contained in another, the
+glycol ethers. That row set the map marks \emph{established}, the other two \emph{admissible, not
+established}---the map's verdict, not a grade; the \emph{Grade} column is this table's
+strength-of-evidence scale, on which the same claim is \emph{likely}. What the rule excludes is in
+Tables~\ref{tab:map}--\ref{tab:map-solute} with its reason.}}
 \end{table*}
 
 
@@ -968,9 +1010,9 @@ therefore names the reach of the $\gamma^\infty$ corpus the kernel
 is calibrated and benchmarked on and not coverage of the chemistry a solubility model is deployed
 against---it covers the solvent side of deployment and not the solute side. It is matched to
 UD by InChIKey with a first-block fallback, a looser rule than the corner's; a wrong $\zstar$ inflates
-$\Bclos$, so the looser rule runs against the ordering we claim, and the verdict is unchanged on the
-$465$ exactly matched rows. The construction ladder, composition, provenance audit and deposited
-table are in \S\ref{sec:si-repro}.
+$\Bclos$, so the looser rule runs against the ordering we claim, and the aggregate margin is
+unchanged on the $465$ exactly matched rows. The construction ladder, composition, provenance audit
+and deposited table are in \S\ref{sec:si-repro}.
 
 \emph{One convention rule, applied to both sets.} The margin depends on the combinatorial convention,
 so we fix the rule before the numbers: headline the \emph{deployed} residual-only convention, pairing
@@ -981,11 +1023,10 @@ broad set's margin about half its value.
 
 Under that rule the fair 2002 arm scores $\mathrm{MSE}=1.902$ against $\Var(m)=4.85$, the
 LOTV bound gives $\Binsuf\lesssim0.70$ and hence $\Bclos\gtrsim1.21$, at eight equal-count bins under
-the \emph{unbiased} within-bin variance: a separation margin of $+0.51$ for the set taken whole. The
-full convention on the same rows gives $+0.95$, reported throughout as the comparison rather than the
-headline. The margin is positive in every cell of the bin-count $\times$ variance $\times$ convention
-grid, and collapsing to one row per distinct pair leaves the sign standing at $+0.27$. Two of the
-three bootstrap clusterings extend just below zero. Both sweeps, and the
+the \emph{unbiased} within-bin variance: a separation margin of $+0.51$ for the set taken whole,
+$+0.95$ under the full convention and $+0.27$ collapsed to one row per distinct pair, positive in
+every cell of the bin-count\,$\times$\,variance\,$\times$\,convention grid, with two of the three
+bootstrap clusterings extending just below zero. Both sweeps, and the
 tighter-of-the-two-conventions reading we do not headline, are in App.~\ref{sec:si-tables}.
 
 \emph{That aggregate is not the instrument's output, and we retire it.} Two operations reported
@@ -998,13 +1039,15 @@ the aggregate carried by the set: deleting one source publication at a time,
 \texttt{10.1021/acs.jced.7b00114}---$37$ rows, six molecule pairs, $32\%$ of the set's squared
 error---takes the margin to $+0.18$, while each of the other fourteen deletions leaves it between
 $+0.42$ and $+0.87$ (under the full convention that curve is flat, $[+0.82,+1.07]$ against
-$+0.95$). We report those as failures of the headline cell rather than as robustness passes, and read
-the aggregate margin as what it is: an average weighted by one set's chemical composition.
+$+0.95$). That single deletion loses two thirds of the margin and its resolution and does not
+reverse its sign; the sign reverses only under the compounded cut above. We report both as failures
+of the headline cell rather than as robustness passes, and read the aggregate margin as what it is:
+an average weighted by one set's chemical composition.
 
 Two caveats qualify the corroborating estimators, not the bound. Under random folds they leak, and
 under folds blocked on molecules they are uninformative on the corner and split on the broad set, so
-on neither set do they support the separation. What is reported rests on the LOTV bound, which fits
-no model and so has no fold design to leak through, and not on the agreement of three estimators. Nor
+on neither set do they support the separation; what is reported rests on the LOTV bound, which fits
+no model and so has no fold design to leak through. Nor
 is the binning-free pair bound promoted, tighter than the binning bound though it is, because its
 multi-row pairs each come from a \emph{single} publication and it therefore samples no
 between-laboratory component. Read together, the two say the binning bound is slack rather than that
@@ -1012,36 +1055,194 @@ $\Binsuf$ is negligible. The leak's mechanism, and both bounds in every fold des
 and against each set's $\mathrm{MSE}/2$ threshold, are in App.~\ref{sec:si-tables}
 (Table~\ref{tab:bounds}).
 
+% ---------------------------------------------------------------------------
+% THE MAP, IN TWO FLOATS -- one per axis. It is the instrument's declared output and belongs where
+% the finding is stated, which is why it sits in the main text and not in the appendix; the
+% aggregate apparatus it supersedes was the donor. Both bodies are GENERATED:
+% si_tables/stratified_map_rows{,_solute}.tex are written by
+% scripts/analysis/make_map_table_tex.py from results/b_insuff/admissibility_table.csv, so no cell
+% here was typed. Re-run that script after re-running run_b_insuff_stratified_map.py; do not edit
+% the row files. The split is a page-fit matter and nothing else: at 59 rows plus the source key
+% one float is 316 pt too tall for a page, and two half-page floats place. The source-key note
+% lives on the first of the two and the second points at it.
+% ---------------------------------------------------------------------------
+\begin{table*}[tp]
+\centering
+\caption{\textbf{The map, solvent axis}: every solvent stratum of the broad IDAC set, at one
+estimator cell---eight equal-count bins of $g(\zstar)$, unbiased within-bin variance, row unit,
+deployed residual-only convention---applied identically to all of them. \emph{full} is the same
+cell under the full combinatorial convention. The map runs over $59$ strata in all: the solvent axis
+at three granularities and the solute axis at two, plus their cross-tab and the set as a whole, over
+$477$ rows, $185$ pairs, $78$ solutes, $36$ solvents and $15$ source publications, the solute axis in
+Table~\ref{tab:map-solute}. No cell is selected anywhere, nothing is dropped for being small, and
+every row carries its verdict with the reason.}
+\label{tab:map}
+{\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.72}
+\input{si_tables/stratified_map_rows}
+\tabnotes{\scriptsize%
+\tnk{a}\,Number of source publications, then the largest one and its share of that stratum's squared
+error. The keys, used in both halves of the map, are
+P1~\texttt{10.1016/j.fluid.2013.06.028},
+P2~\texttt{10.1016/j.fluid.2015.01.010},
+P3~\texttt{10.1016/j.fluid.2015.11.037},
+P4~\texttt{10.1016/j.fluid.2016.08.030},
+P5~\texttt{10.1016/j.fluid.2016.10.009},
+P6~\texttt{10.1016/j.jct.2013.05.006},
+P7~\texttt{10.1016/j.jct.2015.12.034},
+P8~\texttt{10.1016/j.jct.2016.10.013},
+P9~\texttt{10.1016/j.jct.2018.05.003},
+P10~\texttt{10.1016/j.jct.2019.05.011},
+P11~\texttt{10.1016/j.tca.2012.02.005},
+P12~\texttt{10.1016/j.tca.2015.11.010},
+P13~\texttt{10.1021/acs.jced.7b00114},
+P14~\texttt{10.1021/acs.jced.9b00726},
+P15~\texttt{10.1021/je020196d}.\quad
+\tnk{b}\,Two-way solute\,$\times$\,solvent cluster bootstrap, $3000$ draws, redrawn at each
+granularity, so one row set's margin repeats exactly while its endpoints differ in the last
+digits.\quad
+\tnk{c}\,In how many of the four unit\,$\times$\,convention cells the stratum is admissible; the
+rule requires all four.\quad
+\tnk{d}\,Three values. \emph{Admissible}: boundable here ($n\ge40$, so eight bins hold five rows)
+\emph{and} the margin keeps its sign under deletion of each contributing publication, in all four
+cells---six of the $59$ strata, three row sets. \emph{Established} is the one of those also positive
+and not contained in another: the glycol ethers, at each of their three granularities, and only what
+is marked so is stated as a finding. The other two row sets read \emph{admissible, not established},
+with the reason and with their overlap, so no row set is counted twice. Every remaining row is not
+admissible and carries the test it fails; a one-source cell cannot be tested, and a deletion leaving
+fewer than $16$ rows leaves the cell undefined. A margin is one-sided: positive establishes
+$\Bclos>\Binsuf$ there, non-positive is failure to separate and licenses nothing
+(Table~\ref{tab:claims}, note~\emph{m}).}}
+\end{table*}
+
+\begin{table*}[tp]
+\centering
+\caption{\textbf{The map, solute axis, the solvent\,$\times$\,solute cross-tab, and the set as a
+whole}---the second half of Table~\ref{tab:map}, at the same estimator cell and under the same
+admissibility rule, whose notes apply here unchanged. The whole-set row is the retired aggregate,
+printed with the rest. Rows at different granularities, and rows on the two axes, can be the same
+measurements: $362$ of the $1711$ stratum pairs share rows, every admissible row carries its overlap
+with the other admissible row sets, and \S\ref{sec:measure}(i) states which of the cells cited
+together overlap and by how much.}
+\label{tab:map-solute}
+{\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.88}
+\input{si_tables/stratified_map_rows_solute}}
+\end{table*}
+
 \emph{The stratification rule, fixed before any margin.} The broad set is stratifiable where the
 corner's $60$ pairs were not, on two axes that are pure functions of molecular structure: an
 ordered nine-class cascade of substructure tests over the solvent, hydrogen-bonding role first and
 dominant functional group second, and the solute's role as water or as an organic. The classifier
 reads a SMILES string and nothing else---never $m$, $g$, the squared error, the source or the
 bootstrap---so no cell can have been chosen on its outcome, which is a property of the code rather
-than an assurance. The estimator is the headline cell above, applied identically to every stratum;
-a stratum is \emph{boundable} at $n\ge40$, and smaller ones are reported in full beside the
-manuscript's own resample-adaptive bin rule, nothing being dropped for being small. The cascade, its
-coarser and finer levels and the tautomer normalisation that makes two N--H donors visible are in
-App.~\ref{sec:si-tables}; the map is Fig.~\ref{fig:decomp} and Table~\ref{tab:map}, every cell of
-which recomputes from the deposited table.
+than an assurance. The estimator is the headline cell above, applied identically to every stratum
+whatever its size: a stratum is \emph{boundable} at $n\ge40$, and the smaller ones are reported at
+that same cell rather than at a rule of their own, with the manuscript's resample-adaptive rule
+$\max(3,\lfloor n/10\rfloor)$ carried beside them in the deposited table, nothing being dropped for
+being small. The cascade, its coarser and finer levels and the tautomer normalisation that makes two
+N--H donors visible are in App.~\ref{sec:si-tables}.
 
-\emph{The map.} Requiring one sign across every available unit\,$\times$\,convention cell with
-$P\ge0.9$ in each, the closure binds hardest on the
-glycol ethers---$182$ rows over $43$ pairs, margin $+2.04$ deployed and $+2.94$ at the pair unit under
-the full convention, $P>0.95$ in all four. It also binds on water carried as the dilute solute ($37$
-rows; $+6.33$ deployed) and on the halogenated solvents ($30$ rows; $+3.39$), neither of them
-boundable and both resting on one or two publications. It does not bind on
-the acceptor-only aprotics: $57$ rows, negative in all four cells at $P\approx0.2$, with an
-$\mathrm{MSE}$ of $0.089$ that is at the scale of the measurements, its ester sub-family negative
-under both conventions and its azine sub-family under the deployed one.
-The rest are not established---water as a \emph{solvent} ($+0.57$
-at $P>0.95$ under the full convention against $+0.05$ at $P\approx0.8$ under the deployed one), the
-mono-alcohols, the N--H protics, the organic-solute subset, and the whole-set row.
+\emph{One admissibility rule, applied to every stratum alike.} A stratum is \emph{admissible} only
+if it is \emph{(a)}~boundable at that fixed cell and \emph{(b)}~robust to
+leave-one-source-out---its margin keeps its sign when each source publication contributing to it is
+deleted in turn---in all four unit\,$\times$\,convention cells, since the map reports all four. That
+last clause is load-bearing and is never dropped: without it the set taken whole passes too. A
+stratum drawing on one publication fails~(b) by non-testability: there is no deletion to perform, so
+the sign was never put at risk. A deletion leaving fewer than $16$ rows leaves the fixed cell
+undefined and the sign unverifiable, which fails~(b) as well. Everything else is \emph{reported in
+the map and not stated}, with its $n$, its sources, its margin, its interval and the reason, and a
+cell failing~(b) is labelled with the publication that carries it. This is the rule the aggregate
+failed, so it governs the strata that replace it and the cells that favour us alike. It tests
+whether a number is stable and not what it means: $\Binsuf$ is bounded above and $\Bclos$ below, so a
+positive margin establishes that the closure's own error exceeds what input insufficiency can account
+for, while a non-positive one is failure to separate and licenses nothing, a reversal needing a
+\emph{lower} bound on $\Binsuf$ that this instrument does not supply (Table~\ref{tab:claims},
+note~\emph{m}). Admissibility is therefore necessary and not sufficient for a finding: an admissible
+stratum whose margin is not positive, and an admissible stratum that is another admissible one
+restated, are both \emph{admissible and not established}.
+
+\emph{The map, and how much of it survives the rule.} The map is Tables~\ref{tab:map}
+and~\ref{tab:map-solute}: $59$ strata of the broad IDAC set---$477$ rows, $185$ pairs, $78$ solutes,
+$36$ solvents, $15$ source publications---on the solvent axis at three granularities and the solute
+axis at two, plus their cross-tab and the set as a whole, every cell recomputing
+from the deposited table, its drawn form and its per-stratum error and bound in
+App.~\ref{sec:si-tables} (Fig.~\ref{fig:decomp}, Table~\ref{tab:map-detail}). Of fifty-nine strata,
+fifteen are boundable at the fixed estimator cell and six are admissible---boundable and sign-stable
+under deletion of each contributing publication, in all four unit\,$\times$\,convention cells. Those
+six are three distinct row sets, of which one is both positive and not contained in another: the
+glycol-ether solvents. \textbf{That row set is the one established finding}: on
+$182$ rows over $43$ pairs from three publications carrying $45\%$ of the set's squared error, the
+closure's own error exceeds what input insufficiency can account for, by $+2.04$ with a $90\%$
+interval of $[+1.27,+2.83]$ at the deployed convention---$+2.94$ at the pair unit under the full
+one---positive in all four cells and under every single-publication deletion, the worst leaving
+$+1.60$ when \texttt{10.1016/j.jct.2016.10.013}, which carries $53\%$ of that stratum's squared
+error, is removed. It is not an artifact of one solute family: the $74$ rows left when its alkane
+solutes are dropped keep the sign at $+1.40$ deployed and $+1.69$ full, under all three deletions.
+
+Three of the six admissible cells are that same row set at three granularities, and the map prints
+all three as \emph{established} because each is that one finding under a different name. Of the
+remaining three cells, which are two row sets, the alkane solutes ($129$ rows, $45$ pairs, $+1.38$,
+$[+0.79,+2.33]$) are $84\%$ the glycol-ether
+rows and return $-0.22$ on the $21$ rows outside them---itself a sub-threshold number, so the
+demotion rests on the overlap arithmetic and not on it---so that cell is the glycol-ether finding
+restated on the solute axis and not a second one; and the acceptor-only aprotics ($57$ rows,
+$-0.19$, negative in all four cells, $P<0.2$ at both units under the deployed convention and
+$P\approx0.3$ under the full one, at an $\mathrm{MSE}$ of $0.089$ that is at the scale of the
+measurements) occupy two cells, pass the rule and license nothing, the instrument being one-sided.
+Their deletion test
+is additionally \emph{anti}-conservative: two of the four deletions leave $n<40$, where the Bessel
+within-bin variance inflates---$0.140$ to $0.258$ on the $n{=}38$ remainder---and drives a negative
+margin further negative. So six admissible cells, three row sets, and one established finding. That
+is the whole of the uniqueness claimed for the glycol ethers: the only row set admissible, positive
+and not contained in another. They are \emph{not} the only admissible stratum and not the only one
+sign-stable under every deletion---the alkane solutes and both acceptor-only cells are each.
+
+\emph{What is measured and not established.} Water carried as the dilute solute is $37$ rows and six
+pairs from \texttt{10.1021/acs.jced.7b00114} alone, which supplies $100\%$ of its rows and $100\%$ of
+its squared error: at $n{=}37$ it is not boundable, and with one publication there is no deletion to
+run, so its $+6.33$ was never put at risk and is not evidence about water solutes. The halogenated
+solvents ($30$ rows, $+3.39$) are not boundable either, and $83\%$ of that cell's squared error is
+the same publication; deleting it leaves $12$ rows, fewer than the fixed cell needs, so the sign
+cannot be verified. Neither may be used to explain a reversal. The coarse acceptor-only class, whose
+$+1.43$ the SI names, is $96\%$ carried by that publication's $13$ aryl-ether rows and goes to
+$-0.19$ when it is removed. Water as a \emph{solvent} ($+0.05$ at $P\approx0.8$ deployed, $+0.57$
+full) flips under two of its three deletions; the coarse donor-and-acceptor-oxygen class---``the
+hydroxylic solvents''---flips to $-0.42$ when \texttt{10.1021/je020196d} is removed, so it is the
+glycol-ether sub-class and not the hydroxylic solvents as a class that carries the finding; the
+organic-solute subset flips to $-0.09$ under the same deletion; the mono-alcohols and the N--H
+protics are unboundable and each has a deletion that cannot be run; the aryl ethers are $13$ rows from
+that same publication and carry no estimate at all; and the ester ($30$ rows, one publication,
+$-0.06$) and azine ($23$ rows, one deletion unverifiable) sub-families, which the acceptor-only
+reading would lean on, are inadmissible on the same grounds. Of the $59$ strata only $15$ are
+boundable at all, and $24$ carry no estimate at any $n$ this set supplies. The whole-set row is
+admissible at the headline cell and fails once the
+pair unit is required, where deleting \texttt{10.1021/acs.jced.7b00114} takes $+0.270$ to $-0.119$;
+the rule therefore does not by itself retire the aggregate at the headline cell, and its retirement
+rests on the composition argument above rather than on this rule.
+
+\emph{The two axes cross, and the map measures the crossing.} $362$ of the $1711$ stratum pairs share
+rows, so cells drawn from the two axes are not independent evidence. All $37$ water-as-solute rows
+and all six of its pairs sit inside three solvent classes and all come from one publication: $18$
+rows in the halogenated class ($60\%$ of it), $13$ in the aryl ethers (all of it) and $6$ in the
+aromatic hydrocarbons. Naming water-as-solute and the halogenated solvents as two findings would
+count those $18$ rows twice, and adding the aryl ethers or the coarse acceptor-only class a further
+$13$. The two positive admissible cells overlap the same way: alkane\,$\cap$\,glycol-ether is $108$
+rows over $24$ pairs and carries the whole effect ($+2.51$ on those rows), while the glycol ethers
+minus the alkanes remain admissible and the alkanes minus the glycol ethers do not. Those rows are
+counted once.
 
 \emph{Why a map and not an average of it.} $\Binsuf^{\mathrm{up}}$ is nearly stratum-independent and
-$\mathrm{MSE}$ is not: across the three boundable classes the bound spans a factor of $2.0$ against
-errors spanning a factor of $25$, and across all six classes on which it exists at all, $6.8$ against
-$51$. The two orderings are unrelated---the glycol ethers carry the lowest bound of any class and the
+$\mathrm{MSE}$ is not. Across the three classes the design can bound---glycol ether, water and the
+acceptor-only aprotics, bounds $0.108$, $0.215$ and $0.140$---the bound spans a factor of $2.0$
+against errors ($2.252$, $0.476$, $0.089$) spanning a factor of $25$; adding the three that carry an
+estimate without being boundable---mono-alcohol $0.733$, halogenated $0.592$, N--H protic
+$0.281$---gives $6.8$ against $51$, that $6.8$ being set by the mono-alcohols' $0.733$, which exceeds
+that stratum's own $\Var(m)=0.604$ and is flagged in the artifact as an invalid law-of-total-variance
+bound on a stratum the boundability criterion has already excluded. The two orderings are
+unrelated---the glycol ethers carry the lowest bound of any class and the
 second-highest error---and against $2000$ random partitions into blocks of the observed class sizes,
 at the same cell, the chemical partition's spread in $\mathrm{MSE}$ exceeds every draw while its
 spread in the bound is unremarkable ($p=0.26$); their ratio gives $p=0.02$. That is the estimator
@@ -1056,14 +1257,17 @@ stratum where it is computed.
 \emph{Concentration, inside the map as well as under it.} Three solvent classes holding $47\%$ of the
 rows carry $74\%$ of the squared error, the $12\%$ of rows that are acceptor-only aprotics carry
 $0.6\%$, and three of fifteen publications carry $76\%$. A map cell can be as source-carried as the
-aggregate was, so each is put through the same deletion (Table~\ref{tab:map}): of the cells with more
-than one source only the glycol ethers survive it, and water as the solute has \emph{one}
-publication and cannot be tested at all---its margin is six pairs from one laboratory and should be
-read as that rather than as evidence about water solutes. At the level of the individual pair the
-broad set is stable, all $185$ leave-one-pair-out margins falling in $[+0.42,+0.72]$, so what the
-aggregate is fragile to is the source and the stratum, which is what a composition effect looks
-like. The chromatographic-only cut that \emph{inverts} the margin on the enlarged $298$\,K corner
-(\S\ref{sec:discussion}, limitation~(i)) does not invert here under either convention.
+aggregate was, so each is put through the same deletion (Tables~\ref{tab:map}--\ref{tab:map-solute}).
+Eleven multi-source cells have every deletion runnable in all four cells and six keep the sign
+throughout---the admissible ones. What singles the glycol ethers out among them is positivity and
+not being another admissible row set restated, not a deletion nobody else survives. On the halogenated solvents and the mono-alcohols only one of the two deletions can be run
+at all---in both, the one that cannot is the one removing the dominant source---and it leaves
+$+5.84$ and $+1.95$, so those two cells are unverified rather than shown to fail. At the level of the
+individual pair the broad set is stable, all $185$ leave-one-pair-out margins falling in
+$[+0.42,+0.72]$, so what the aggregate is fragile to is the source and the stratum, which is what a
+composition effect looks like. The chromatographic-only cut that \emph{inverts} the margin on the
+enlarged $298$\,K corner (\S\ref{sec:discussion}, limitation~(i)) does not invert here under either
+convention.
 
 \paragraph{(ii) The decomposition on the corner ($n{=}60$).} The corner carries the paper's other
 reference-matched analyses, and it is far weaker: all $60$ rows sit at $298$\,K, so $\zstar$ is
@@ -1084,7 +1288,9 @@ The same stratification rule carries the composition half of~(i) here and not th
 half. Its $17$ solvents fall in six of the nine classes---no water, no halogenated solvent, no glycol
 ether beyond ethylene glycol---and none reaches $n{=}40$, the largest being $24$, so the corner
 supports no stratified bound, and its composition is missing two of the three
-classes that carry most of the broad set's error. Within it, scored on UD profiles so that the two
+classes that carry most of the broad set's error. Of its $38$ strata not one is admissible under the
+rule of~(i) in every unit\,$\times$\,convention cell, so no corner stratum is stated as a finding.
+Within it, scored on UD profiles so that the two
 sets are commensurable, the ordering of the error is the broad set's---$2.71$ on the mono-alcohols,
 $3.00$ on the N--H protics and $2.53$ on the glycol ethers against $0.092$ on the acceptor-only
 aprotics, that last cell again returning a negative margin, $-0.05$ at
@@ -1112,7 +1318,8 @@ arithmetic and the convention, leakage and $\gamma$-stratification stress-tests 
 App.~\ref{sec:si-tables}.
 
 \paragraph{Whether the closure defect is correctable, and where it fails chemically.} Where $\Bclos$
-dominates, the ceiling is in the map; that does not say the map is \emph{fixably} wrong. A small
+dominates---on this set, the one row set the rule establishes---the ceiling is in the map; that
+does not say the map is \emph{fixably} wrong. A small
 structure-preserving residual on the fixed COSMO-SAC exchange-energy kernel, fit on the reference
 VT-2005 profiles, removes $46\pm5\%$ of the reference-input error under random folds but $-5\pm16\%$
 once folds are grouped so that no solvent is shared. Only the grouped design is free of leakage,
@@ -1123,11 +1330,18 @@ to be correctable across solvents---weaker than a general repair. Where it fails
 placed, and placed differently on the two sets. On the corner $90\%$ of the squared error falls on
 strong hydrogen-bond-donor solvents and the closure is near-exact on acceptor-only ones, putting
 that set's $\Bclos$ in COSMO-SAC's documented single-parameter H-bond kernel---the specific defect
-the donor/acceptor-typed 2010 closure was built to fix. On the broad set the donor classes carry
-$64\%$ of the squared error on $76\%$ of the rows and so are not enriched in it; what is enriched
-there is the halogenated and aryl-ether solvents, $9\%$ of the rows carrying $29\%$, which the
-2002 kernel has no dispersion term for at all. The H-bond reading is the corner's, and the broad set
-puts a second defect beside it. The residual's fold design, rank ordering and the scope of its standard errors,
+the donor/acceptor-typed 2010 closure was built to fix. On the broad set that reading does not
+reproduce, and neither does its replacement: the donor classes carry $64\%$ of the squared error on
+$76\%$ of the rows, which is no enrichment, while the halogenated and aryl-ether solvents---which
+the 2002 kernel has no dispersion term for at all---carry $29\%$ on $9\%$, which is. But $31$ of
+those $43$ rows are \texttt{10.1021/acs.jced.7b00114}, and they are the same water-as-solute rows
+the map already declines to state; they carry $91\%$ of that $29\%$. Put
+those two shares through the deletion the map applies to every cell and both invert: without that
+publication the halogenated and aryl-ether rows fall to $2.7\%$ of the rows and $3.9\%$ of the
+error, and the donor classes rise to $82\%$ and $94\%$, which \emph{is} the corner's localisation.
+So which of the two defects the broad set points at is decided by one publication in either
+direction, and we state neither; the H-bond reading remains the corner's, and the broad set does not
+independently corroborate it or replace it. The residual's fold design, rank ordering and the scope of its standard errors,
 its failure to gain over the free $2002\to2010$ step below, the NIST reproduction that rules out an
 implementation artifact, and the Staverman--Guggenheim counter-test in which the physically
 \emph{more} complete combinatorial term \emph{increases} error on size-asymmetric pairs are in
@@ -1172,8 +1386,14 @@ no interval, the three blocks not having been tested against
 one another (Table~\ref{tab:kernels}). The corner is a low-$\gamma$, hydrogen-bond-dominated
 sub-design, exactly the regime the
 donor/acceptor-typed 2010 kernel was built for and where its own error localises. The map of~(i)
-agrees from the other side: the two chemistries the closure binds on there are
-the glycol ethers and the halogenated solvents, and the typed 2010 kernel addresses only the first.
+does not corroborate the reversal from the other side, and we do not ask it to: the one row set it
+establishes is the glycol ethers, and the typed kernel is not an improvement on the broad set, of
+whose squared error they carry $45\%$; the classes that would
+explain a reversal---the halogenated solvents, the aryl ethers and water as the solute, which are
+largely one row set, all $13$ aryl-ether rows and $18$ of the $30$ halogenated being
+water-as-solute rows from one publication---are the cells
+the rule excludes. The block split is therefore the whole of the evidence for the reversal being
+chemical.
 
 The floor checks are same-database, same-latent \emph{and} same-convention.
 The corner's \emph{UD-native} check, the one commensurable with the broad set, is at zero
@@ -1218,7 +1438,10 @@ knowable in advance} on a new system, and the field routinely composes an expres
 fixed mechanistic map and assumes the map is good enough. This paper reports what follows when it is
 not---the learned latent silently departs from the quantity it is named after
 (\S\ref{sec:surrogate}), and neither that departure nor its cause is visible without an external
-oracle---and, on the map of \S\ref{sec:measure}(i), which chemistry that failure is confined to.
+oracle---and, on the map of \S\ref{sec:measure}(i), the one row set on which that failure is
+established. The map does not certify an absence of the failure anywhere else: outside that row set
+it reports cells it cannot resolve, or cells that are admissible and not established, not cells in
+which the closure is sound.
 
 \input{sections/compensation-surrogate}
 
@@ -1278,16 +1501,22 @@ are scoped by the reference database that defines them, and neither is the deplo
 (composition audit, \S\ref{sec:si-repro}). The fidelity null is therefore a null on small-molecule
 chemistry, and the lever remains untested on drug-like solids.
 
-Three things are said at once, and the second and third qualify the first. The fixed closure's
-own error exceeds the bound on its inputs on the strata where that closure is documented to fail, and
-there the remedy is a better closure and not a better input. On the remaining
-chemistry the two terms are not separable at this sample size at either unit of analysis, and on
-the acceptor-only aprotics they run the other way at an error already down at the scale
-of the measurements. And the separation on the set taken whole is carried by a few pairs
-from one publication, which is why we report a map and not an aggregate
-(\S\ref{sec:measure}(i)). The useful form of the finding is therefore an instruction about where to
-spend grounding effort rather than a rule about physics-informed models: an average over a set says
-only what that set happened to contain.
+Three things are said at once, and the second and third qualify the first. Of the map's $59$
+chemical strata fifteen are boundable and six admissible, three row sets, and on one of them---the
+glycol-ether solvents---the fixed closure's own error exceeds the
+bound on its inputs under a rule applied to every stratum alike, and there the remedy is a better
+closure and not a better input. On the rest of the map the two terms are not separated: the
+stratum is too small for the fixed estimator, or its margin does not survive the deletion of a
+single publication, or it is admissible without being established---the alkane solutes are $84\%$
+the glycol-ether rows and turn negative outside them, so they restate that finding rather than add
+one, and on the acceptor-only aprotics the margin is robustly non-positive
+at an error already down at the scale of the measurements, which, the instrument being one-sided, is
+failure to separate rather than a demonstration that better inputs would help there. And the set
+taken whole is retired: two cuts the paper reports separately compound to reverse it, and a single
+publication takes two thirds of it, so an aggregate is a statement about that set's composition
+(\S\ref{sec:measure}(i)). The useful form of the finding is therefore one-sided and narrow---a
+place where grounding effort is \emph{not} the remedy, on one row set, rather than an allocation
+across chemistries---and an average over a set says only what that set happened to contain.
 
 \input{sections/blackbox-probe}
 
@@ -1371,8 +1600,14 @@ convention no \emph{aggregate} margin is resolved on either set, and only the li
 convention resolves one, while the headline convention is the deployed one
 (Table~\ref{tab:claims}). The aggregate is retired for a reason stronger than resolution: it does not
 survive the chemistry cut and the pair unit applied together, and six pairs from one publication
-carry a third of the broad set's squared error (\S\ref{sec:measure}(i)). Of the map's cells only the
-glycol ethers survive their own source deletion. The broad
+carry a third of the broad set's squared error (\S\ref{sec:measure}(i)). Of the map's $59$ cells
+fifteen are boundable and six are admissible; those six are three row sets, one of them
+established---the glycol ethers, the only row set admissible, positive and not contained in another.
+They are not the only admissible stratum, not the only one sign-stable under every deletion, and not
+the only multi-source cell whose deletions all run: the alkane solutes and both acceptor-only cells
+are each of those. The halogenated solvents and the mono-alcohols
+keep their sign under the one deletion each admits, but the deletion that would remove their
+dominant source cannot be run at all, so they are unverified rather than shown to fail. The broad
 IDAC set is in any case not the set on which the paradox's own oracle is defined. (ii)~$\Binsuf$ is upper-bounded, not point-identified (no
 replicates at fixed $\zstar$); the smoothness-free Jensen bound assumes $m$ and $g$ share the $\lngi$
 reference state, established by the closure validation of \S\ref{sec:methods}, so the mean offset is
@@ -1416,12 +1651,20 @@ code, and the artifacts those runs read are larger than the repository carries
 decomposition sets are deposited as row-level tables (Tables~S1 and~S2), so the sets and their
 margins can be recomputed without code. That does not deliver the provenance of the closure
 evaluations in them, or of the trained arms anywhere else.
-(xi)~The stratification of \S\ref{sec:measure}(i) is exhaustive, disjoint and a pure function of
-structure, so no cell was selected on its outcome; its \emph{granularity} is an analyst choice, which
-is why three levels are reported (App.~\ref{sec:si-tables}). There is no multiplicity control on the
-per-cell bootstrap frequencies, so one cell's $P$ describes that cell and is not a test corrected for
-the others; the demand of a single sign across every available cell is the only protection in place,
-and three of the nine classes are not boundable at any $n$ this set supplies.
+(xi)~The stratification of \S\ref{sec:measure}(i) is a pure function of structure, so no cell was
+selected on its outcome, and it is exhaustive and disjoint \emph{within} an axis. It is not disjoint
+\emph{across} the two axes or across their granularities: $362$ of the $1711$ stratum pairs share
+rows, all $37$ water-as-solute rows lie inside three solvent classes, and $108$ of the $129$
+alkane-solute rows are glycol-ether rows, so cells from different axes are not independent evidence
+and the paper counts those rows once (Table~\ref{tab:map}): the six admissible cells are three row
+sets, each carrying its overlap there. Granularity is an analyst choice, which is why three solvent
+levels and two solute levels are reported and all of them are in the map. There is no multiplicity control on
+the per-cell bootstrap frequencies, so one cell's $P$ describes that cell and is not a test corrected
+for the others; the admissibility rule---one sign across every available cell, surviving every
+single-publication deletion---is the only protection in place, six of the nine solvent classes
+are not boundable here and three carry no estimate at all. The rule is also one-sided in what it can deliver:
+because $\Binsuf$ is bounded only from above, no cell can ever return ``better inputs would help
+here'', so the map only ever withholds a chemistry from an allocation of grounding effort.
 
 % CONCLUSION. Criterion (10) of the 2026-07-29 pass: two paragraphs, no numbers, no grades, no
 % qualifications, and not a restatement of the abstract -- it states the consequence and the design
@@ -1432,10 +1675,11 @@ and three of the nine classes are not boundable at any $n$ this set supplies.
 Grounding a learned physical intermediate in reference values is two operations, not one, and only
 one of them helped here. Training the intermediate against reference values improved the model.
 Supplying those values at prediction time did not. On the activity data where the two terms can be
-separated, they do not separate the same way in every chemistry: on part of it the bound on the fixed
-thermodynamic model's own error lies above the bound on the contribution of its inputs, which is the
-condition under which more accurate inputs expose a model's bias rather than remove it, and on the
-rest the two cannot be told apart at the sample sizes available. As a single number for a
+separated, they do not separate the same way in every chemistry: on one class of solvent, and under a
+rule applied to every class alike, the bound on the fixed thermodynamic model's own error lies above
+the bound on the contribution of its inputs, which is the condition under which more accurate inputs
+expose a model's bias rather than remove it, and on every other row set of the map the separation is not established---either the two cannot be told apart, or the cell that separates is the glycol ethers under another name
+at the sample sizes and the number of laboratories available. As a single number for a
 whole data set the comparison is an average over that set's composition, which is a property of the
 set and not of the model. The intermediate trained through that model stopped reporting the physical quantity it is
 named after, on the molecules where it can be held against its reference, which is the price of
@@ -1443,11 +1687,11 @@ reading a grounded latent as a measurement.
 
 The general statement is a design rule with a test attached. Wherever a predictor composes a fixed
 physical model over a learned intermediate for which an external reference exists, that reference
-measures which of the two limits accuracy, and the answer decides the remedy: a more faithful
-physical model, or better inputs. The answer comes chemistry by chemistry rather than once for a
-field, so what the measurement returns is where the effort is worth spending. Here it was the model
-on the chemistry that model is documented to fail on, and the standard route to a more
-faithful one did not clear the bar on the broader set measured. Whether a
+measures which of the two limits accuracy, and where it answers, the answer decides the remedy: a
+more faithful physical model, or better inputs. The answer comes chemistry by chemistry rather than
+once for a field, and it comes one-sided, so what the measurement returns is the chemistry on which
+better inputs are not the remedy---here one class of solvent, on which the standard route to a more
+faithful model did not clear the bar either. Whether a
 latent trained through an imperfect model becomes, in general, a surrogate for that model's error is
 the prediction this work leaves testable.
 

@@ -817,7 +817,8 @@ negative-margin cells Table~\ref{tab:grid} sets in bold, and both are listed her
 whole---every bound the inclusion rule keeps, plus one estimator that set cannot
 support, with the value, what each fits and what
 qualifies it. What is included, and what is not: note~\emph{a}. The per-stratum bounds that
-replace the aggregate margin are Fig.~\ref{fig:decomp} and Table~\ref{tab:map}.}
+replace the aggregate margin are Table~\ref{tab:map} in the main text, drawn here as
+Fig.~\ref{fig:decomp} and detailed in Table~\ref{tab:map-detail}.}
 \label{tab:bounds}
 % This table is near the height limit of the text block: at \arraystretch{1} its last rows run
 % past the block and into the folio. The 0.84 below buys back about five lines and leaves the
@@ -997,10 +998,15 @@ $+0.509$: leaving out \texttt{10.1021/acs.jced.7b00114} gives $+0.184$ and leavi
 $+0.503$ to $+0.875$. Under the full convention the same curve is flat, $[+0.821,+1.073]$ against a
 baseline of $+0.947$, so the single-publication dependence is specific to the deployed
 convention. All $185$ leave-one-pair-out margins lie in $[+0.422,+0.721]$ with median $+0.507$ and
-none non-positive, the seven most damaging deletions being the six water-as-solute pairs interleaved
-with two glycol-ether ones. Leave-one-solvent-class-out spans $[+0.352,+1.156]$---removing water
-raises it most and removing the halogenated solvents lowers it most---so every class but the two
-smallest moves the aggregate by more than the aggregate's own distance from zero. Per-stratum
+none non-positive, the seven most damaging deletions being \emph{five} of the six water-as-solute
+pairs interleaved with two glycol-ether ones; the sixth water pair ranks $178$th of $185$, so those
+six rows do not move the aggregate in one direction. Leave-one-solvent-class-out spans
+$[+0.352,+1.156]$---removing water raises it most, by $+0.647$, and removing the halogenated
+solvents lowers it most, by $-0.157$---so exactly one class of the nine moves the aggregate by more
+than the aggregate's own distance from zero, and six of the other eight move it by less than $0.38$.
+The span is wide because one class is; it is not evidence that the aggregate is broadly
+composition-sensitive, and the composition argument of \S\ref{sec:measure}(i) rests on the
+compounded cut and the null-partition test rather than on this curve. Per-stratum
 leave-one-source-out, and the corner's own curves, are in the artifact and summarised in
 \S\ref{sec:measure}(i)--(ii).
 
@@ -1013,69 +1019,64 @@ leave-one-source-out, and the corner's own curves, are in the artifact and summa
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_decomposition.pdf}
-\caption{\textbf{Where the closure binds}, by solvent class and by solute role, on the broad IDAC set
-($477$ rows, $185$ pairs, $78$ solutes, $36$ solvents). Bars, points and shares are at the row unit
+\caption{\textbf{Where the closure binds, and where it is not established}, by solvent class and by
+solute role, on the broad IDAC set
+($477$ rows, $185$ pairs, $78$ solutes, $36$ solvents, $15$ source publications). Bars, points and
+shares are at the row unit
 under the deployed residual-only convention, at one estimator cell for every stratum---eight
 equal-count bins of $g(\zstar)$ with the Bessel within-bin variance. \textbf{(a)}~each stratum's
 input-insufficiency bound and its total error; \textbf{(b)}~the margin between them with its $90\%$
 two-way cluster-bootstrap interval, the other three unit\,$\times$\,convention cells as grey ticks;
 \textbf{(c)}~each stratum's share of the set's squared error, the part carried by its largest source
-publication drawn dark. \emph{Grade:} \emph{likely} for the glycol ethers, positive in all four cells
-at $P>0.95$; \emph{open} for every other row, the aggregate included. \emph{Caveat:} a hollow marker
-is a stratum below $n{=}40$, three classes carry no bound at any $n$, and the two hollow positive
-cells rest on two publications and on one, which panel~(c) shows.}
+publication drawn dark. This is the drawn form of the twelve cells at the reported granularity; the
+map itself, all $59$ strata with their sources, intervals and admissibility, is
+Tables~\ref{tab:map} and~\ref{tab:map-solute} in the main text. The marker in~(b) is the
+admissibility verdict of \S\ref{sec:measure}(i), read off the same deposited columns the tables
+are built from. \emph{Grade:} \emph{likely} for the glycol ethers, the one row set of the map's six
+admissible cells that is both positive and not contained in another, here at $P>0.95$; \emph{open}
+for every other row, the aggregate included. \emph{Caveat:} a hollow marker is a stratum below
+$n{=}40$---four of the
+drawn cells, with margins $+0.78$, $+0.61$, $+3.39$ and $+6.33$, none of them admissible---and
+three classes carry no bound at any $n$. The one established cell and the one admissible cell whose
+margin is not positive are both filled; panel~(c) shows how much of each cell one publication
+carries. The bars on the two axes overlap: all $37$ water-as-solute rows lie inside three solvent
+classes, which is why panel~(c)'s shares do not sum down the column
+(Table~\ref{tab:map-detail}, note~\emph{c}).}
 \label{fig:decomp}
 \end{figure*}
 
-% Every cell below is one row of results/b_insuff/stratified_map_table.csv with set=broad_477,
-% unit=row and convention=res (the "full" column is convention=full on the same rows). Regenerate
-% with scripts/analysis/run_b_insuff_stratified_map.py; do not retype a value from the figure.
+% The map itself moved to the MAIN TEXT (Table~\ref{tab:map}) on 2026-08-02: it is the instrument's
+% declared output and an output that lives in an appendix is not an output. What stays here is the
+% companion -- the per-stratum error, bound, bootstrap band, error share and leave-one-source-out
+% curve, i.e. the columns the main-text map does not carry, for the same 59 strata.
+% Body GENERATED by scripts/analysis/make_map_table_tex.py from
+% results/b_insuff/admissibility_table.csv; do not retype a value.
 \begin{table*}[tp]
 \centering
-\caption{\textbf{The map at the headline cell}: eight equal-count bins of $g(\zstar)$, unbiased
-within-bin variance, row unit, deployed residual-only convention, applied identically to every
-stratum of the broad IDAC set. \emph{full} is the same cell under the full combinatorial convention.
-No cell is selected anywhere, and nothing is dropped for being small.}
-\label{tab:map}
-{\footnotesize
+\caption{\textbf{The map's error, bound and source curve}, stratum by stratum, at the same headline
+cell as Table~\ref{tab:map}---eight equal-count bins of $g(\zstar)$, unbiased within-bin variance,
+row unit, deployed residual-only convention. These are the columns the main text's map does not
+carry, on the same $59$ strata; margins, intervals and admissibility are there.}
+\label{tab:map-detail}
+{\scriptsize
 \setlength{\tabcolsep}{4.5pt}
-\begin{tabular}{@{}lrrrrlrrl@{}}
-\toprule
-Stratum\tnk{a} & $n$ & $\mathrm{MSE}$ & $\Binsuf^{\mathrm{up}}$ & margin & $P$\tnk{b} & $90\%$ margin & full & sources\tnk{c} \\
-\midrule
-\multicolumn{9}{@{}l@{}}{\emph{Solvent class}}\\
-glycol ether\tnk{d}          & $182$ & $2.252$ & $0.108$ & $+2.04$ & $>0.95$ & $[+1.27,+2.83]$ & $+2.23$ & $3$ ($0.53$), $[+1.60,+2.87]$ \\
-water\tnk{d}                 & $111$ & $0.476$ & $0.215$ & $+0.05$ & ${\approx}0.8$ & $[-0.15,+0.39]$ & $+0.57$ & $3$ ($0.75$), $[-0.19,+0.25]$ \\
-aprotic acceptor\tnk{d}      & $57$  & $0.089$ & $0.140$ & $-0.19$ & $<0.2$  & $[-0.44,+0.12]$ & $-0.15$ & $4$ ($0.32$), $[-0.41,-0.13]$ \\
-mono-alcohol                 & $35$  & $2.250$ & $0.733$ & $+0.78$ & $>0.95$ & $[+0.18,+3.24]$ & $+1.09$ & $2$ ($0.55$), one deletion \\
-N--H protic                  & $33$  & $1.175$ & $0.281$ & $+0.61$ & ${\approx}0.9$ & $[-0.27,+1.96]$ & $+0.86$ & $3$ ($0.62$), $[-0.24,+0.87]$ \\
-halogenated                  & $30$  & $4.569$ & $0.592$ & $+3.39$ & $>0.95$ & $[+0.86,+8.12]$ & $+1.95$ & $2$ ($0.83$), one deletion \\
-aromatic hydrocarbon         & $14$  & $4.297$ & ---     & ---     & ---     & ---             & ---     & $2$ ($0.88$) \\
-aryl ether                   & $13$  & $9.582$ & ---     & ---     & ---     & ---             & ---     & $1$ \\
-aliphatic hydrocarbon        & $2$   & $0.011$ & ---     & ---     & ---     & ---             & ---     & $2$ \\
-\addlinespace[2pt]
-\multicolumn{9}{@{}l@{}}{\emph{Solute role}}\\
-organic solute\tnk{d}        & $440$ & $1.400$ & $0.608$ & $+0.18$ & ${\approx}0.8$ & $[-0.23,+1.36]$ & $+0.82$ & $14$ ($0.35$), $[-0.09,+0.41]$ \\
-water as solute              & $37$  & $7.866$ & $0.770$ & $+6.33$ & $>0.95$ & $[+3.97,+9.49]$ & $+3.54$ & $1$, untestable \\
-\addlinespace[2pt]
-\multicolumn{9}{@{}l@{}}{\emph{The set as a whole}---retired as an output (\S\ref{sec:measure}(i))}\\
-whole set\tnk{d}             & $477$ & $1.902$ & $0.697$ & $+0.51$ & ${\approx}0.9$ & $[-0.09,+2.16]$ & $+0.95$ & $15$ ($0.32$), $[+0.18,+0.87]$ \\
-\bottomrule
-\end{tabular}
-\tabnotes{%
-\tnk{a}\,Coarse and fine granularities, the solvent\,$\times$\,solute cross-tab, the solute-family
-axis, the pair unit and the corner's copy of all of it are in the deposited table; the rule is
-above.\quad
+\renewcommand{\arraystretch}{0.72}
+\input{si_tables/stratified_map_rows_detail}
+\tabnotes{\scriptsize%
+\tnk{a}\,A dash is a stratum at which the fixed cell is undefined. Strata with $n\ge40$ are
+\emph{boundable}: eight bins hold at least five rows each. The others are reported anyway, and
+additionally carry the resample-adaptive rule $\max(3,\lfloor n/10\rfloor)$ in the deposited table.
+On the mono-alcohols $\Binsuf^{\mathrm{up}}=0.733$ exceeds that stratum's own $\Var(m)=0.604$, which
+the artifact flags; it is the value that sets the $\times6.8$ span of \S\ref{sec:measure}(i), and it
+occurs only on a stratum already not boundable.\quad
 \tnk{b}\,Two-way solute\,$\times$\,solvent cluster bootstrap, $3000$ draws, quoted as a band by the
 rounding rule of \S\ref{sec:results}.\quad
-\tnk{c}\,Number of source publications, the largest one's share of that stratum's squared error, and
-the leave-one-source-out range of the margin where more than one deletion is possible. A cell with
-one source cannot be tested at all.\quad
-\tnk{d}\,Boundable at this cell: $n\ge40$, so eight bins hold at least five rows each. The others are
-reported anyway, and additionally carry the resample-adaptive rule $\max(3,\lfloor n/10\rfloor)$ in
-the deposited table. On the mono-alcohols $\Binsuf^{\mathrm{up}}=0.733$ exceeds that stratum's own
-$\Var(m)=0.604$, which the artifact flags; it is the value that sets the $\times6.8$ span, and it
-occurs only on a stratum already not boundable.}}
+\tnk{c}\,That stratum's share of the set's squared error. Shares do not sum to $100\%$ down the
+column: the granularities and the two axes overlap, which \S\ref{sec:measure}(i) measures.\quad
+\tnk{d}\,Range of the margin over the deletions that can be run, with how many that is in
+parentheses; a deletion leaving fewer than $16$ rows is not runnable, and a stratum with one source
+has none. Whether the sign survives---which is what admissibility turns on---is in
+Table~\ref{tab:map}.}}
 \end{table*}
 
 \paragraph{The constant-offset (Jensen) bound on both sets.} \S\ref{sec:decomp} promises these here.
@@ -1116,8 +1117,9 @@ margin \emph{there} at $+2.16$ against the $+1.02$ the binning bound gives on th
 promoted because all $67$ multi-row pairs draw their rows from a single publication, so it samples no
 between-laboratory spread (\S\ref{sec:measure}(i)).
 
-\paragraph{Whether the closure defect is correctable: within a solvent, not across one.} That
-$\Bclos$ dominates locates the ceiling in the map; it does not say the map is \emph{fixably} wrong.
+\paragraph{Whether the closure defect is correctable: within a solvent, not across one.} Where
+$\Bclos$ dominates---on this set, the one row set of \S\ref{sec:measure}(i) that is
+established---the ceiling is in the map; that does not say the map is \emph{fixably} wrong.
 We tested this with a small structure-preserving residual on the fixed COSMO-SAC exchange-energy
 kernel ($\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric,
 zero-initialised), fit on the \emph{reference} VT-2005 profiles and cross-validated five-fold over
@@ -1289,8 +1291,10 @@ bins, unbiased variance---the leave-one-solvent count is unchanged at $17/17$ (m
 $+0.03$), the leave-one-pair count falls to $56/60$ (minimum $-0.03$) and the leave-one-solute count
 to $36/41$ (minimum $-0.22$); deletion of the eight highest-error pairs still holds there ($+0.04$).
 
-\emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the verdict holds in all
-$17$ folds under the LOTV bound. Under the random-forest estimator it holds in only $2/17$, because an RF
+\emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the corner's
+aggregate margin stays positive in all
+$17$ folds under the LOTV bound---a fold curve on a quantity \S\ref{sec:measure}(i) retires, so it
+records what that aggregate did and not a robustness pass. Under the random-forest estimator it holds in only $2/17$, because an RF
 over-fits conditional variance in $102$ dimensions at $n{=}60$ (its out-of-fold MSE approaches $\Var(m)$),
 so its leave-one-out estimate is unstable---an estimator artifact, not a sign flip.
 
@@ -1341,8 +1345,9 @@ vacuously.
 \paragraph{In-regime ($\gamma$-stratified) separation.} The $n{=}60$ measurement is matched at low $\gamma$,
 while the paradox spans all $\gamma$. Stratifying the $n{=}60$ set by $\lngi$
 tests whether closure-dominance is a regime artifact. It is
-not: the verdict $\Bclos>\Binsuf$ (leakage-immune LOTV binning bound) holds in every
-stratum and \emph{strengthens} toward higher $\gamma$ (Table~\ref{tab:regime})---in the highest
+not: the ordering $\Bclos>\Binsuf$ (leakage-immune LOTV binning bound) holds in every
+$\gamma$~stratum and \emph{strengthens} toward higher $\gamma$ (Table~\ref{tab:regime})---in the
+highest
 stratum ($\overline{\lngi}=2.94$, approaching the non-ideal regime) $\Bclos\ge2.68$ exceeds
 $\Binsuf\le0.67$ several-fold. The high-$\gamma$ strata are small
 ($n=17$--$30$ in $102$ dimensions): the law-of-total-variance bound can be pushed toward zero by
@@ -1394,7 +1399,10 @@ convention).}
 \end{figure}
 
 \paragraph{Four qualifications on the decomposition (full).} Four qualifications bear on the
-decomposition of \S\ref{sec:measure}. None of them inverts the verdict; each sharpens its scope.
+decomposition of \S\ref{sec:measure}. None of them inverts the sign of the corner's aggregate
+margin; each sharpens its scope. That aggregate is retired on other grounds
+(\S\ref{sec:measure}(i)--(ii)), so these are recorded as what the four choices do and not as
+robustness passes for a live verdict.
 \begin{enumerate}
   \item The deployed combinatorial default is residual-only. Under it the
   \emph{constant-offset} (Jensen) lower bound inverts

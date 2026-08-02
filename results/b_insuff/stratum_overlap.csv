@@ -1,0 +1,363 @@
+axis_a,stratum_a,axis_b,stratum_b,same_axis,rows_a,rows_b,rows_shared,pairs_a,pairs_b,pairs_shared,shared_share_of_a,shared_share_of_b,relation,double_counts_if_cited_as_separate_evidence
+whole_set,all,solute_role,organic_solute,False,477,440,440,185,179,179,0.9224,1.0,b_inside_a,True
+whole_set,all,solvent_class_coarse,hb_donor_acceptor_O,False,477,328,328,185,75,75,0.6876,1.0,b_inside_a,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_role,organic_solute,False,328,440,328,75,179,75,1.0,0.7455,a_inside_b,True
+solvent_class_coarse,hb_donor_acceptor_O,solvent_family_fine,glycol_ether,False,328,182,182,75,43,43,0.5549,1.0,b_inside_a,True
+solvent_class,glycol_ether,solvent_class_x_solute_role,glycol_ether | organic_solute,False,182,182,182,43,43,43,1.0,1.0,identical,True
+solvent_family_fine,glycol_ether,solvent_class_x_solute_role,glycol_ether | organic_solute,False,182,182,182,43,43,43,1.0,1.0,identical,True
+whole_set,all,solvent_class,glycol_ether,False,477,182,182,185,43,43,0.3816,1.0,b_inside_a,True
+solute_role,organic_solute,solvent_class_x_solute_role,glycol_ether | organic_solute,False,440,182,182,179,43,43,0.4136,1.0,b_inside_a,True
+solvent_class_coarse,hb_donor_acceptor_O,solvent_class_x_solute_role,glycol_ether | organic_solute,False,328,182,182,75,43,43,0.5549,1.0,b_inside_a,True
+solvent_class,glycol_ether,solvent_class_coarse,hb_donor_acceptor_O,False,182,328,182,43,75,43,1.0,0.5549,a_inside_b,True
+solvent_class,glycol_ether,solvent_family_fine,glycol_ether,False,182,182,182,43,43,43,1.0,1.0,identical,True
+whole_set,all,solvent_family_fine,glycol_ether,False,477,182,182,185,43,43,0.3816,1.0,b_inside_a,True
+whole_set,all,solvent_class_x_solute_role,glycol_ether | organic_solute,False,477,182,182,185,43,43,0.3816,1.0,b_inside_a,True
+solvent_class,glycol_ether,solute_role,organic_solute,False,182,440,182,43,179,43,1.0,0.4136,a_inside_b,True
+solvent_family_fine,glycol_ether,solute_role,organic_solute,False,182,440,182,43,179,43,1.0,0.4136,a_inside_b,True
+solute_role,organic_solute,solute_family,alkane,False,440,129,129,179,45,45,0.2932,1.0,b_inside_a,True
+whole_set,all,solute_family,alkane,False,477,129,129,185,45,45,0.2704,1.0,b_inside_a,True
+solvent_family_fine,water,solvent_class_x_solute_role,water | organic_solute,False,111,111,111,15,15,15,1.0,1.0,identical,True
+solvent_family_fine,water,solute_role,organic_solute,False,111,440,111,15,179,15,1.0,0.2523,a_inside_b,True
+solvent_class,water,solute_role,organic_solute,False,111,440,111,15,179,15,1.0,0.2523,a_inside_b,True
+solvent_class,water,solvent_family_fine,water,False,111,111,111,15,15,15,1.0,1.0,identical,True
+solvent_class_coarse,hb_donor_acceptor_O,solvent_family_fine,water,False,328,111,111,75,15,15,0.3384,1.0,b_inside_a,True
+solute_role,organic_solute,solvent_class_x_solute_role,water | organic_solute,False,440,111,111,179,15,15,0.2523,1.0,b_inside_a,True
+whole_set,all,solvent_class,water,False,477,111,111,185,15,15,0.2327,1.0,b_inside_a,True
+solvent_class,water,solvent_class_coarse,hb_donor_acceptor_O,False,111,328,111,15,75,15,1.0,0.3384,a_inside_b,True
+whole_set,all,solvent_class_x_solute_role,water | organic_solute,False,477,111,111,185,15,15,0.2327,1.0,b_inside_a,True
+whole_set,all,solvent_family_fine,water,False,477,111,111,185,15,15,0.2327,1.0,b_inside_a,True
+solvent_class_coarse,hb_donor_acceptor_O,solvent_class_x_solute_role,water | organic_solute,False,328,111,111,75,15,15,0.3384,1.0,b_inside_a,True
+solvent_class,water,solvent_class_x_solute_role,water | organic_solute,False,111,111,111,15,15,15,1.0,1.0,identical,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,alkane,False,328,129,108,75,45,24,0.3293,0.8372,partial,True
+solvent_family_fine,glycol_ether,solute_family,alkane,False,182,129,108,43,45,24,0.5934,0.8372,partial,True
+solute_family,alkane,solvent_class_x_solute_role,glycol_ether | organic_solute,False,129,182,108,45,43,24,0.8372,0.5934,partial,True
+solvent_class,glycol_ether,solute_family,alkane,False,182,129,108,43,45,24,0.5934,0.8372,partial,True
+whole_set,all,solute_family,aromatic_hydrocarbon,False,477,71,71,185,32,32,0.1488,1.0,b_inside_a,True
+solute_role,organic_solute,solute_family,aromatic_hydrocarbon,False,440,71,71,179,32,32,0.1614,1.0,b_inside_a,True
+whole_set,all,solvent_class_coarse,hb_acceptor_only,False,477,70,70,185,59,59,0.1468,1.0,b_inside_a,True
+solute_role,organic_solute,solute_family,ketone,False,440,63,63,179,11,11,0.1432,1.0,b_inside_a,True
+whole_set,all,solute_family,ketone,False,477,63,63,185,11,11,0.1321,1.0,b_inside_a,True
+solute_family,ketone,solvent_class_x_solute_role,water | organic_solute,False,63,111,61,11,15,9,0.9683,0.5495,partial,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,ketone,False,328,63,61,75,11,9,0.186,0.9683,partial,True
+solvent_class,water,solute_family,ketone,False,111,63,61,15,11,9,0.5495,0.9683,partial,True
+solvent_family_fine,water,solute_family,ketone,False,111,63,61,15,11,9,0.5495,0.9683,partial,True
+whole_set,all,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,477,57,57,185,57,57,0.1195,1.0,b_inside_a,True
+solvent_class,aprotic_acceptor,solvent_class_coarse,hb_acceptor_only,False,57,70,57,57,59,57,1.0,0.8143,a_inside_b,True
+solvent_class,aprotic_acceptor,solute_role,organic_solute,False,57,440,57,57,179,57,1.0,0.1295,a_inside_b,True
+solvent_class_coarse,hb_acceptor_only,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,70,57,57,59,57,57,0.8143,1.0,b_inside_a,True
+whole_set,all,solvent_class,aprotic_acceptor,False,477,57,57,185,57,57,0.1195,1.0,b_inside_a,True
+solvent_class,aprotic_acceptor,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,57,57,57,57,57,57,1.0,1.0,identical,True
+solvent_class_coarse,hb_acceptor_only,solute_role,organic_solute,False,70,440,57,59,179,57,0.8143,0.1295,partial,True
+solute_role,organic_solute,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,440,57,57,179,57,57,0.1295,1.0,b_inside_a,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,aromatic_hydrocarbon,False,328,71,48,75,32,9,0.1463,0.6761,partial,True
+solvent_family_fine,glycol_ether,solute_family,aromatic_hydrocarbon,False,182,71,48,43,32,9,0.2637,0.6761,partial,True
+solute_family,aromatic_hydrocarbon,solvent_class_x_solute_role,glycol_ether | organic_solute,False,71,182,48,32,43,9,0.6761,0.2637,partial,True
+solvent_class,glycol_ether,solute_family,aromatic_hydrocarbon,False,182,71,48,43,32,9,0.2637,0.6761,partial,True
+solute_role,organic_solute,solute_family,mono_alcohol,False,440,39,39,179,21,21,0.0886,1.0,b_inside_a,True
+whole_set,all,solute_family,mono_alcohol,False,477,39,39,185,21,21,0.0818,1.0,b_inside_a,True
+solute_role,water_solute,solute_family,water,False,37,37,37,6,6,6,1.0,1.0,identical,True
+whole_set,all,solute_role,water_solute,False,477,37,37,185,6,6,0.0776,1.0,b_inside_a,True
+whole_set,all,solute_family,water,False,477,37,37,185,6,6,0.0776,1.0,b_inside_a,True
+solvent_class,mono_alcohol,solvent_class_coarse,hb_donor_acceptor_O,False,35,328,35,17,75,17,1.0,0.1067,a_inside_b,True
+solvent_class_coarse,hb_donor_acceptor_O,solvent_class_x_solute_role,mono_alcohol | organic_solute,False,328,35,35,75,17,17,0.1067,1.0,b_inside_a,True
+solvent_class,mono_alcohol,solvent_family_fine,mono_alcohol,False,35,35,35,17,17,17,1.0,1.0,identical,True
+solvent_class,mono_alcohol,solute_role,organic_solute,False,35,440,35,17,179,17,1.0,0.0795,a_inside_b,True
+solvent_class_coarse,hb_donor_acceptor_O,solvent_family_fine,mono_alcohol,False,328,35,35,75,17,17,0.1067,1.0,b_inside_a,True
+solute_role,organic_solute,solvent_class_x_solute_role,mono_alcohol | organic_solute,False,440,35,35,179,17,17,0.0795,1.0,b_inside_a,True
+solvent_family_fine,mono_alcohol,solute_role,organic_solute,False,35,440,35,17,179,17,1.0,0.0795,a_inside_b,True
+solvent_family_fine,mono_alcohol,solvent_class_x_solute_role,mono_alcohol | organic_solute,False,35,35,35,17,17,17,1.0,1.0,identical,True
+whole_set,all,solvent_family_fine,mono_alcohol,False,477,35,35,185,17,17,0.0734,1.0,b_inside_a,True
+whole_set,all,solvent_class,mono_alcohol,False,477,35,35,185,17,17,0.0734,1.0,b_inside_a,True
+solvent_class,mono_alcohol,solvent_class_x_solute_role,mono_alcohol | organic_solute,False,35,35,35,17,17,17,1.0,1.0,identical,True
+whole_set,all,solvent_class_x_solute_role,mono_alcohol | organic_solute,False,477,35,35,185,17,17,0.0734,1.0,b_inside_a,True
+solvent_class_coarse,hb_donor_N,solvent_class_x_solute_role,nh_protic | organic_solute,False,33,33,33,33,33,33,1.0,1.0,identical,True
+whole_set,all,solvent_class_x_solute_role,nh_protic | organic_solute,False,477,33,33,185,33,33,0.0692,1.0,b_inside_a,True
+solvent_class,nh_protic,solvent_class_x_solute_role,nh_protic | organic_solute,False,33,33,33,33,33,33,1.0,1.0,identical,True
+solvent_class_coarse,hb_donor_N,solute_role,organic_solute,False,33,440,33,33,179,33,1.0,0.075,a_inside_b,True
+whole_set,all,solvent_class,nh_protic,False,477,33,33,185,33,33,0.0692,1.0,b_inside_a,True
+solvent_class,nh_protic,solvent_class_coarse,hb_donor_N,False,33,33,33,33,33,33,1.0,1.0,identical,True
+whole_set,all,solvent_class_coarse,hb_donor_N,False,477,33,33,185,33,33,0.0692,1.0,b_inside_a,True
+solute_role,organic_solute,solvent_class_x_solute_role,nh_protic | organic_solute,False,440,33,33,179,33,33,0.075,1.0,b_inside_a,True
+solvent_class,nh_protic,solute_role,organic_solute,False,33,440,33,33,179,33,1.0,0.075,a_inside_b,True
+whole_set,all,solute_family,alkene,False,477,32,32,185,16,16,0.0671,1.0,b_inside_a,True
+solute_role,organic_solute,solute_family,alkene,False,440,32,32,179,16,16,0.0727,1.0,b_inside_a,True
+solvent_class_coarse,hb_acceptor_only,solvent_family_fine,ester,False,70,30,30,59,30,30,0.4286,1.0,b_inside_a,True
+whole_set,all,solvent_class_coarse,halogenated_nonHB,False,477,30,30,185,7,7,0.0629,1.0,b_inside_a,True
+whole_set,all,solvent_family_fine,ester,False,477,30,30,185,30,30,0.0629,1.0,b_inside_a,True
+solvent_class,aprotic_acceptor,solvent_family_fine,ester,False,57,30,30,57,30,30,0.5263,1.0,b_inside_a,True
+solvent_family_fine,ester,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,30,57,30,30,57,30,1.0,0.5263,a_inside_b,True
+solvent_family_fine,ester,solute_role,organic_solute,False,30,440,30,30,179,30,1.0,0.0682,a_inside_b,True
+solvent_class,halogenated,solvent_class_coarse,halogenated_nonHB,False,30,30,30,7,7,7,1.0,1.0,identical,True
+whole_set,all,solvent_class,halogenated,False,477,30,30,185,7,7,0.0629,1.0,b_inside_a,True
+whole_set,all,solute_family,aldehyde,False,477,29,29,185,3,3,0.0608,1.0,b_inside_a,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,aldehyde,False,328,29,29,75,3,3,0.0884,1.0,b_inside_a,True
+solvent_family_fine,water,solute_family,aldehyde,False,111,29,29,15,3,3,0.2613,1.0,b_inside_a,True
+solvent_class,water,solute_family,aldehyde,False,111,29,29,15,3,3,0.2613,1.0,b_inside_a,True
+solute_family,aldehyde,solvent_class_x_solute_role,water | organic_solute,False,29,111,29,3,15,3,1.0,0.2613,a_inside_b,True
+solute_role,organic_solute,solute_family,aldehyde,False,440,29,29,179,3,3,0.0659,1.0,b_inside_a,True
+solute_role,organic_solute,solute_family,halogenated_aliphatic,False,440,27,27,179,9,9,0.0614,1.0,b_inside_a,True
+whole_set,all,solute_family,halogenated_aliphatic,False,477,27,27,185,9,9,0.0566,1.0,b_inside_a,True
+solvent_family_fine,amide_NH,solute_role,organic_solute,False,25,440,25,25,179,25,1.0,0.0568,a_inside_b,True
+solvent_class_coarse,hb_donor_N,solvent_family_fine,amide_NH,False,33,25,25,33,25,25,0.7576,1.0,b_inside_a,True
+solvent_family_fine,amide_NH,solvent_class_x_solute_role,nh_protic | organic_solute,False,25,33,25,25,33,25,1.0,0.7576,a_inside_b,True
+solvent_class,nh_protic,solvent_family_fine,amide_NH,False,33,25,25,33,25,25,0.7576,1.0,b_inside_a,True
+whole_set,all,solvent_family_fine,amide_NH,False,477,25,25,185,25,25,0.0524,1.0,b_inside_a,True
+solute_family,alkene,solvent_class_x_solute_role,glycol_ether | organic_solute,False,32,182,24,16,43,8,0.75,0.1319,partial,True
+solvent_family_fine,glycol_ether,solute_family,alkene,False,182,32,24,43,16,8,0.1319,0.75,partial,True
+solvent_class,glycol_ether,solute_family,alkene,False,182,32,24,43,16,8,0.1319,0.75,partial,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,alkene,False,328,32,24,75,16,8,0.0732,0.75,partial,True
+whole_set,all,solvent_family_fine,azine,False,477,23,23,185,23,23,0.0482,1.0,b_inside_a,True
+solvent_class_coarse,hb_acceptor_only,solvent_family_fine,azine,False,70,23,23,59,23,23,0.3286,1.0,b_inside_a,True
+solvent_class,aprotic_acceptor,solvent_family_fine,azine,False,57,23,23,57,23,23,0.4035,1.0,b_inside_a,True
+solvent_family_fine,azine,solute_role,organic_solute,False,23,440,23,23,179,23,1.0,0.0523,a_inside_b,True
+solvent_family_fine,azine,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,23,57,23,23,57,23,1.0,0.4035,a_inside_b,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,halogenated_aliphatic,False,328,27,22,75,9,4,0.0671,0.8148,partial,True
+solvent_family_fine,mono_alcohol,solute_family,halogenated_aliphatic,False,35,27,22,17,9,4,0.6286,0.8148,partial,True
+solute_family,halogenated_aliphatic,solvent_class_x_solute_role,mono_alcohol | organic_solute,False,27,35,22,9,17,4,0.8148,0.6286,partial,True
+solvent_class,mono_alcohol,solute_family,halogenated_aliphatic,False,35,27,22,17,9,4,0.6286,0.8148,partial,True
+solvent_class_coarse,halogenated_nonHB,solvent_family_fine,halogenated_aliphatic,False,30,18,18,7,5,5,0.6,1.0,b_inside_a,True
+solute_role,water_solute,solvent_class_x_solute_role,halogenated | water_solute,False,37,18,18,6,3,3,0.4865,1.0,b_inside_a,True
+solvent_class_coarse,halogenated_nonHB,solute_role,water_solute,False,30,37,18,7,6,3,0.6,0.4865,partial,True
+solvent_class_coarse,halogenated_nonHB,solute_family,water,False,30,37,18,7,6,3,0.6,0.4865,partial,True
+solvent_class_coarse,halogenated_nonHB,solvent_class_x_solute_role,halogenated | water_solute,False,30,18,18,7,3,3,0.6,1.0,b_inside_a,True
+solute_family,water,solvent_class_x_solute_role,halogenated | water_solute,False,37,18,18,6,3,3,0.4865,1.0,b_inside_a,True
+solvent_class,halogenated,solute_family,water,False,30,37,18,7,6,3,0.6,0.4865,partial,True
+whole_set,all,solvent_class_x_solute_role,halogenated | water_solute,False,477,18,18,185,3,3,0.0377,1.0,b_inside_a,True
+solvent_class,halogenated,solvent_class_x_solute_role,halogenated | water_solute,False,30,18,18,7,3,3,0.6,1.0,b_inside_a,True
+solvent_class,halogenated,solvent_family_fine,halogenated_aliphatic,False,30,18,18,7,5,5,0.6,1.0,b_inside_a,True
+solvent_class,halogenated,solute_role,water_solute,False,30,37,18,7,6,3,0.6,0.4865,partial,True
+whole_set,all,solvent_family_fine,halogenated_aliphatic,False,477,18,18,185,5,5,0.0377,1.0,b_inside_a,True
+whole_set,all,solvent_class_coarse,hydrocarbon_nonHB,False,477,16,16,185,11,11,0.0335,1.0,b_inside_a,True
+whole_set,all,solvent_class,aromatic_hydrocarbon,False,477,14,14,185,9,9,0.0294,1.0,b_inside_a,True
+solvent_class,aromatic_hydrocarbon,solvent_family_fine,aromatic_hydrocarbon,False,14,14,14,9,9,9,1.0,1.0,identical,True
+solvent_class,aromatic_hydrocarbon,solvent_class_coarse,hydrocarbon_nonHB,False,14,16,14,9,11,9,1.0,0.875,a_inside_b,True
+solvent_class_coarse,hydrocarbon_nonHB,solvent_family_fine,aromatic_hydrocarbon,False,16,14,14,11,9,9,0.875,1.0,b_inside_a,True
+whole_set,all,solvent_family_fine,aromatic_hydrocarbon,False,477,14,14,185,9,9,0.0294,1.0,b_inside_a,True
+solvent_class,aryl_ether,solvent_family_fine,aryl_ether,False,13,13,13,2,2,2,1.0,1.0,identical,True
+solvent_class,aryl_ether,solute_role,water_solute,False,13,37,13,2,6,2,1.0,0.3514,a_inside_b,True
+solvent_class_coarse,hb_acceptor_only,solvent_family_fine,aryl_ether,False,70,13,13,59,2,2,0.1857,1.0,b_inside_a,True
+whole_set,all,solvent_class_x_solute_role,aryl_ether | water_solute,False,477,13,13,185,2,2,0.0273,1.0,b_inside_a,True
+solvent_class,aryl_ether,solvent_class_coarse,hb_acceptor_only,False,13,70,13,2,59,2,1.0,0.1857,a_inside_b,True
+solvent_class_coarse,hb_acceptor_only,solute_role,water_solute,False,70,37,13,59,6,2,0.1857,0.3514,partial,True
+solvent_class_coarse,hb_acceptor_only,solvent_class_x_solute_role,aryl_ether | water_solute,False,70,13,13,59,2,2,0.1857,1.0,b_inside_a,True
+solvent_class_coarse,hb_acceptor_only,solute_family,alkane,False,70,129,13,59,45,13,0.1857,0.1008,partial,True
+whole_set,all,solvent_class,aryl_ether,False,477,13,13,185,2,2,0.0273,1.0,b_inside_a,True
+solvent_class,aryl_ether,solute_family,water,False,13,37,13,2,6,2,1.0,0.3514,a_inside_b,True
+solute_family,alkane,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,129,57,13,45,57,13,0.1008,0.2281,partial,True
+solvent_class,aryl_ether,solvent_class_x_solute_role,aryl_ether | water_solute,False,13,13,13,2,2,2,1.0,1.0,identical,True
+solute_role,water_solute,solvent_class_x_solute_role,aryl_ether | water_solute,False,37,13,13,6,2,2,0.3514,1.0,b_inside_a,True
+solute_family,water,solvent_class_x_solute_role,aryl_ether | water_solute,False,37,13,13,6,2,2,0.3514,1.0,b_inside_a,True
+solvent_family_fine,aryl_ether,solute_role,water_solute,False,13,37,13,2,6,2,1.0,0.3514,a_inside_b,True
+solvent_class,aprotic_acceptor,solute_family,alkane,False,57,129,13,57,45,13,0.2281,0.1008,partial,True
+solvent_class_coarse,hb_acceptor_only,solute_family,water,False,70,37,13,59,6,2,0.1857,0.3514,partial,True
+whole_set,all,solvent_family_fine,aryl_ether,False,477,13,13,185,2,2,0.0273,1.0,b_inside_a,True
+solvent_family_fine,aryl_ether,solute_family,water,False,13,37,13,2,6,2,1.0,0.3514,a_inside_b,True
+solvent_family_fine,aryl_ether,solvent_class_x_solute_role,aryl_ether | water_solute,False,13,13,13,2,2,2,1.0,1.0,identical,True
+solvent_family_fine,halogenated_aliphatic,solute_role,organic_solute,False,18,440,12,5,179,4,0.6667,0.0273,partial,True
+whole_set,all,solvent_class_x_solute_role,halogenated | organic_solute,False,477,12,12,185,4,4,0.0252,1.0,b_inside_a,True
+solvent_family_fine,halogenated_aliphatic,solute_family,mono_alcohol,False,18,39,12,5,21,4,0.6667,0.3077,partial,True
+whole_set,all,solute_family,amine_NH,False,477,12,12,185,12,12,0.0252,1.0,b_inside_a,True
+solute_role,organic_solute,solvent_class_x_solute_role,halogenated | organic_solute,False,440,12,12,179,4,4,0.0273,1.0,b_inside_a,True
+solute_role,organic_solute,solute_family,ether,False,440,12,12,179,4,4,0.0273,1.0,b_inside_a,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,mono_alcohol,False,328,39,12,75,21,2,0.0366,0.3077,partial,True
+solvent_family_fine,halogenated_aromatic,solute_family,water,False,12,37,12,2,6,2,1.0,0.3243,a_inside_b,True
+solute_role,organic_solute,solute_family,amine_NH,False,440,12,12,179,12,12,0.0273,1.0,b_inside_a,True
+solvent_family_fine,halogenated_aliphatic,solvent_class_x_solute_role,halogenated | organic_solute,False,18,12,12,5,4,4,0.6667,1.0,b_inside_a,True
+solvent_class,aprotic_acceptor,solute_family,aromatic_hydrocarbon,False,57,71,12,57,32,12,0.2105,0.169,partial,True
+whole_set,all,solvent_family_fine,halogenated_aromatic,False,477,12,12,185,2,2,0.0252,1.0,b_inside_a,True
+solute_family,aromatic_hydrocarbon,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,71,57,12,32,57,12,0.169,0.2105,partial,True
+solvent_family_fine,halogenated_aromatic,solvent_class_x_solute_role,halogenated | water_solute,False,12,18,12,2,3,2,1.0,0.6667,a_inside_b,True
+solvent_family_fine,halogenated_aromatic,solute_role,water_solute,False,12,37,12,2,6,2,1.0,0.3243,a_inside_b,True
+whole_set,all,solute_family,ether,False,477,12,12,185,4,4,0.0252,1.0,b_inside_a,True
+solute_family,mono_alcohol,solvent_class_x_solute_role,water | organic_solute,False,39,111,12,21,15,2,0.3077,0.1081,partial,True
+solute_family,mono_alcohol,solvent_class_x_solute_role,halogenated | organic_solute,False,39,12,12,21,4,4,0.3077,1.0,b_inside_a,True
+solvent_class_coarse,halogenated_nonHB,solute_family,mono_alcohol,False,30,39,12,7,21,4,0.4,0.3077,partial,True
+solvent_class_coarse,halogenated_nonHB,solvent_family_fine,halogenated_aromatic,False,30,12,12,7,2,2,0.4,1.0,b_inside_a,True
+solvent_class,water,solute_family,mono_alcohol,False,111,39,12,15,21,2,0.1081,0.3077,partial,True
+solvent_class_coarse,halogenated_nonHB,solvent_class_x_solute_role,halogenated | organic_solute,False,30,12,12,7,4,4,0.4,1.0,b_inside_a,True
+solvent_class,halogenated,solvent_family_fine,halogenated_aromatic,False,30,12,12,7,2,2,0.4,1.0,b_inside_a,True
+solvent_class,halogenated,solute_role,organic_solute,False,30,440,12,7,179,4,0.4,0.0273,partial,True
+solvent_class,halogenated,solute_family,mono_alcohol,False,30,39,12,7,21,4,0.4,0.3077,partial,True
+solvent_class_coarse,hb_acceptor_only,solute_family,aromatic_hydrocarbon,False,70,71,12,59,32,12,0.1714,0.169,partial,True
+solvent_family_fine,water,solute_family,mono_alcohol,False,111,39,12,15,21,2,0.1081,0.3077,partial,True
+solvent_class,halogenated,solvent_class_x_solute_role,halogenated | organic_solute,False,30,12,12,7,4,4,0.4,1.0,b_inside_a,True
+solvent_class_coarse,halogenated_nonHB,solute_role,organic_solute,False,30,440,12,7,179,4,0.4,0.0273,partial,True
+solvent_class_coarse,hb_donor_N,solute_family,aromatic_hydrocarbon,False,33,71,11,33,32,11,0.3333,0.1549,partial,True
+solvent_family_fine,amide_NH,solute_family,aromatic_hydrocarbon,False,25,71,11,25,32,11,0.44,0.1549,partial,True
+solvent_class,nh_protic,solute_family,aromatic_hydrocarbon,False,33,71,11,33,32,11,0.3333,0.1549,partial,True
+solute_family,aromatic_hydrocarbon,solvent_class_x_solute_role,nh_protic | organic_solute,False,71,33,11,32,33,11,0.1549,0.3333,partial,True
+solvent_class_coarse,hydrocarbon_nonHB,solute_role,organic_solute,False,16,440,10,11,179,10,0.625,0.0227,partial,True
+solvent_class,water,solute_family,ether,False,111,12,9,15,4,1,0.0811,0.75,partial,True
+solvent_family_fine,water,solute_family,ether,False,111,12,9,15,4,1,0.0811,0.75,partial,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,ether,False,328,12,9,75,4,1,0.0274,0.75,partial,True
+solute_family,ether,solvent_class_x_solute_role,water | organic_solute,False,12,111,9,4,15,1,0.75,0.0811,partial,True
+solvent_class_coarse,hydrocarbon_nonHB,solvent_class_x_solute_role,aromatic_hydrocarbon | organic_solute,False,16,8,8,11,8,8,0.5,1.0,b_inside_a,True
+solvent_class_coarse,hb_donor_N,solute_family,mono_alcohol,False,33,39,8,33,21,8,0.2424,0.2051,partial,True
+solvent_class,aromatic_hydrocarbon,solute_role,organic_solute,False,14,440,8,9,179,8,0.5714,0.0182,partial,True
+solvent_class,aromatic_hydrocarbon,solvent_class_x_solute_role,aromatic_hydrocarbon | organic_solute,False,14,8,8,9,8,8,0.5714,1.0,b_inside_a,True
+solvent_class,nh_protic,solute_family,mono_alcohol,False,33,39,8,33,21,8,0.2424,0.2051,partial,True
+solvent_family_fine,aromatic_hydrocarbon,solvent_class_x_solute_role,aromatic_hydrocarbon | organic_solute,False,14,8,8,9,8,8,0.5714,1.0,b_inside_a,True
+whole_set,all,solvent_class_x_solute_role,aromatic_hydrocarbon | organic_solute,False,477,8,8,185,8,8,0.0168,1.0,b_inside_a,True
+solvent_family_fine,amine_NH,solute_role,organic_solute,False,8,440,8,8,179,8,1.0,0.0182,a_inside_b,True
+solvent_family_fine,amine_NH,solute_family,mono_alcohol,False,8,39,8,8,21,8,1.0,0.2051,a_inside_b,True
+solvent_family_fine,amine_NH,solvent_class_x_solute_role,nh_protic | organic_solute,False,8,33,8,8,33,8,1.0,0.2424,a_inside_b,True
+solvent_family_fine,aromatic_hydrocarbon,solute_role,organic_solute,False,14,440,8,9,179,8,0.5714,0.0182,partial,True
+solute_role,organic_solute,solute_family,halogenated_aromatic,False,440,8,8,179,8,8,0.0182,1.0,b_inside_a,True
+solute_role,organic_solute,solvent_class_x_solute_role,aromatic_hydrocarbon | organic_solute,False,440,8,8,179,8,8,0.0182,1.0,b_inside_a,True
+whole_set,all,solvent_family_fine,amine_NH,False,477,8,8,185,8,8,0.0168,1.0,b_inside_a,True
+solvent_class_coarse,hb_donor_N,solvent_family_fine,amine_NH,False,33,8,8,33,8,8,0.2424,1.0,b_inside_a,True
+solvent_class,nh_protic,solvent_family_fine,amine_NH,False,33,8,8,33,8,8,0.2424,1.0,b_inside_a,True
+solute_family,mono_alcohol,solvent_class_x_solute_role,nh_protic | organic_solute,False,39,33,8,21,33,8,0.2051,0.2424,partial,True
+whole_set,all,solute_family,halogenated_aromatic,False,477,8,8,185,8,8,0.0168,1.0,b_inside_a,True
+solute_family,alkane,solvent_class_x_solute_role,nh_protic | organic_solute,False,129,33,7,45,33,7,0.0543,0.2121,partial,True
+solvent_class_coarse,hb_donor_N,solute_family,alkane,False,33,129,7,33,45,7,0.2121,0.0543,partial,True
+solvent_family_fine,amide_NH,solute_family,alkane,False,25,129,7,25,45,7,0.28,0.0543,partial,True
+solvent_class_coarse,hb_acceptor_only,solute_family,mono_alcohol,False,70,39,7,59,21,7,0.1,0.1795,partial,True
+solvent_class,mono_alcohol,solute_family,amine_NH,False,35,12,7,17,12,7,0.2,0.5833,partial,True
+solute_family,amine_NH,solvent_class_x_solute_role,mono_alcohol | organic_solute,False,12,35,7,12,17,7,0.5833,0.2,partial,True
+solute_family,mono_alcohol,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,39,57,7,21,57,7,0.1795,0.1228,partial,True
+solvent_class,nh_protic,solute_family,alkane,False,33,129,7,33,45,7,0.2121,0.0543,partial,True
+solvent_class,aprotic_acceptor,solute_family,mono_alcohol,False,57,39,7,57,21,7,0.1228,0.1795,partial,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,amine_NH,False,328,12,7,75,12,7,0.0213,0.5833,partial,True
+solvent_family_fine,mono_alcohol,solute_family,amine_NH,False,35,12,7,17,12,7,0.2,0.5833,partial,True
+solute_role,water_solute,solvent_class_x_solute_role,aromatic_hydrocarbon | water_solute,False,37,6,6,6,1,1,0.1622,1.0,b_inside_a,True
+whole_set,all,solute_family,azine,False,477,6,6,185,6,6,0.0126,1.0,b_inside_a,True
+solvent_family_fine,ester,solute_family,alkane,False,30,129,6,30,45,6,0.2,0.0465,partial,True
+solvent_class,aprotic_acceptor,solute_family,alkene,False,57,32,6,57,16,6,0.1053,0.1875,partial,True
+solvent_family_fine,ester,solute_family,aromatic_hydrocarbon,False,30,71,6,30,32,6,0.2,0.0845,partial,True
+solvent_family_fine,halogenated_aliphatic,solute_role,water_solute,False,18,37,6,5,6,1,0.3333,0.1622,partial,True
+solvent_family_fine,halogenated_aliphatic,solvent_class_x_solute_role,halogenated | water_solute,False,18,18,6,5,3,1,0.3333,0.3333,partial,True
+solute_family,water,solvent_class_x_solute_role,aromatic_hydrocarbon | water_solute,False,37,6,6,6,1,1,0.1622,1.0,b_inside_a,True
+solvent_family_fine,halogenated_aliphatic,solute_family,water,False,18,37,6,5,6,1,0.3333,0.1622,partial,True
+solvent_class,aromatic_hydrocarbon,solvent_class_x_solute_role,aromatic_hydrocarbon | water_solute,False,14,6,6,9,1,1,0.4286,1.0,b_inside_a,True
+solvent_family_fine,aromatic_hydrocarbon,solvent_class_x_solute_role,aromatic_hydrocarbon | water_solute,False,14,6,6,9,1,1,0.4286,1.0,b_inside_a,True
+solute_role,organic_solute,solute_family,azine,False,440,6,6,179,6,6,0.0136,1.0,b_inside_a,True
+solvent_class,aromatic_hydrocarbon,solute_role,water_solute,False,14,37,6,9,6,1,0.4286,0.1622,partial,True
+solvent_class_coarse,hydrocarbon_nonHB,solute_role,water_solute,False,16,37,6,11,6,1,0.375,0.1622,partial,True
+solvent_family_fine,aromatic_hydrocarbon,solute_family,water,False,14,37,6,9,6,1,0.4286,0.1622,partial,True
+solvent_class_coarse,hydrocarbon_nonHB,solute_family,water,False,16,37,6,11,6,1,0.375,0.1622,partial,True
+solvent_class_coarse,hydrocarbon_nonHB,solvent_class_x_solute_role,aromatic_hydrocarbon | water_solute,False,16,6,6,11,1,1,0.375,1.0,b_inside_a,True
+solvent_class_coarse,hb_acceptor_only,solute_family,alkene,False,70,32,6,59,16,6,0.0857,0.1875,partial,True
+solute_family,alkene,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,32,57,6,16,57,6,0.1875,0.1053,partial,True
+whole_set,all,solvent_class_x_solute_role,aromatic_hydrocarbon | water_solute,False,477,6,6,185,1,1,0.0126,1.0,b_inside_a,True
+solvent_class,aromatic_hydrocarbon,solute_family,water,False,14,37,6,9,6,1,0.4286,0.1622,partial,True
+solvent_family_fine,aromatic_hydrocarbon,solute_role,water_solute,False,14,37,6,9,6,1,0.4286,0.1622,partial,True
+solute_family,halogenated_aromatic,solvent_class_x_solute_role,nh_protic | organic_solute,False,8,33,5,8,33,5,0.625,0.1515,partial,True
+solvent_class_coarse,hb_donor_N,solute_family,halogenated_aromatic,False,33,8,5,33,8,5,0.1515,0.625,partial,True
+solvent_class,aromatic_hydrocarbon,solute_family,amine_NH,False,14,12,5,9,12,5,0.3571,0.4167,partial,True
+solvent_family_fine,aromatic_hydrocarbon,solute_family,amine_NH,False,14,12,5,9,12,5,0.3571,0.4167,partial,True
+solute_family,halogenated_aliphatic,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,27,57,5,9,57,5,0.1852,0.0877,partial,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,azine,False,328,6,5,75,6,5,0.0152,0.8333,partial,True
+solvent_family_fine,mono_alcohol,solute_family,azine,False,35,6,5,17,6,5,0.1429,0.8333,partial,True
+solvent_class_coarse,hb_acceptor_only,solute_family,halogenated_aliphatic,False,70,27,5,59,9,5,0.0714,0.1852,partial,True
+solute_family,azine,solvent_class_x_solute_role,mono_alcohol | organic_solute,False,6,35,5,6,17,5,0.8333,0.1429,partial,True
+solvent_class,aprotic_acceptor,solute_family,halogenated_aliphatic,False,57,27,5,57,9,5,0.0877,0.1852,partial,True
+solvent_family_fine,amide_NH,solute_family,halogenated_aromatic,False,25,8,5,25,8,5,0.2,0.625,partial,True
+solvent_class,nh_protic,solute_family,halogenated_aromatic,False,33,8,5,33,8,5,0.1515,0.625,partial,True
+solvent_class_coarse,hydrocarbon_nonHB,solute_family,amine_NH,False,16,12,5,11,12,5,0.3125,0.4167,partial,True
+solvent_family_fine,azine,solute_family,alkane,False,23,129,5,23,45,5,0.2174,0.0388,partial,True
+solvent_class,mono_alcohol,solute_family,azine,False,35,6,5,17,6,5,0.1429,0.8333,partial,True
+solute_family,amine_NH,solvent_class_x_solute_role,aromatic_hydrocarbon | organic_solute,False,12,8,5,12,8,5,0.4167,0.625,partial,True
+solvent_family_fine,ester,solute_family,alkene,False,30,32,4,30,16,4,0.1333,0.125,partial,True
+solvent_family_fine,azine,solute_family,mono_alcohol,False,23,39,4,23,21,4,0.1739,0.1026,partial,True
+solute_role,organic_solute,solute_family,tertiary_amine,False,440,4,4,179,4,4,0.0091,1.0,b_inside_a,True
+whole_set,all,solute_family,tertiary_amine,False,477,4,4,185,4,4,0.0084,1.0,b_inside_a,True
+solvent_family_fine,azine,solute_family,aromatic_hydrocarbon,False,23,71,4,23,32,4,0.1739,0.0563,partial,True
+solute_role,organic_solute,solute_family,ester,False,440,3,3,179,3,3,0.0068,1.0,b_inside_a,True
+solvent_class_coarse,hydrocarbon_nonHB,solute_family,tertiary_amine,False,16,4,3,11,4,3,0.1875,0.75,partial,True
+whole_set,all,solute_family,ester,False,477,3,3,185,3,3,0.0063,1.0,b_inside_a,True
+solvent_class,aprotic_acceptor,solute_family,ester,False,57,3,3,57,3,3,0.0526,1.0,b_inside_a,True
+solvent_class_coarse,hb_acceptor_only,solute_family,ester,False,70,3,3,59,3,3,0.0429,1.0,b_inside_a,True
+solvent_class_coarse,hb_acceptor_only,solute_family,ether,False,70,12,3,59,4,3,0.0429,0.25,partial,True
+solute_family,ether,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,12,57,3,4,57,3,0.25,0.0526,partial,True
+solute_family,ester,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,3,57,3,3,57,3,1.0,0.0526,a_inside_b,True
+solvent_class,aprotic_acceptor,solute_family,ether,False,57,12,3,57,4,3,0.0526,0.25,partial,True
+solvent_family_fine,ester,solute_family,halogenated_aliphatic,False,30,27,3,30,9,3,0.1,0.1111,partial,True
+solvent_family_fine,ester,solute_family,mono_alcohol,False,30,39,3,30,21,3,0.1,0.0769,partial,True
+whole_set,all,solvent_family_fine,aliphatic_hydrocarbon,False,477,2,2,185,2,2,0.0042,1.0,b_inside_a,True
+solute_family,tertiary_amine,solvent_class_x_solute_role,aromatic_hydrocarbon | organic_solute,False,4,8,2,4,8,2,0.5,0.25,partial,True
+solute_family,nitrile,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,2,57,2,2,57,2,1.0,0.0351,a_inside_b,True
+solute_role,organic_solute,solvent_class_x_solute_role,aliphatic_hydrocarbon | organic_solute,False,440,2,2,179,2,2,0.0045,1.0,b_inside_a,True
+whole_set,all,solvent_class_x_solute_role,aliphatic_hydrocarbon | organic_solute,False,477,2,2,185,2,2,0.0042,1.0,b_inside_a,True
+solute_family,ketone,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,63,57,2,11,57,2,0.0317,0.0351,partial,True
+solute_family,halogenated_aromatic,solvent_class_x_solute_role,glycol_ether | organic_solute,False,8,182,2,8,43,2,0.25,0.011,partial,True
+whole_set,all,solvent_family_fine,ketone_aldehyde,False,477,2,2,185,2,2,0.0042,1.0,b_inside_a,True
+whole_set,all,solute_family,alkyne,False,477,2,2,185,2,2,0.0042,1.0,b_inside_a,True
+whole_set,all,solute_family,nitrile,False,477,2,2,185,2,2,0.0042,1.0,b_inside_a,True
+solute_role,organic_solute,solute_family,alkyne,False,440,2,2,179,2,2,0.0045,1.0,b_inside_a,True
+solute_role,organic_solute,solute_family,nitrile,False,440,2,2,179,2,2,0.0045,1.0,b_inside_a,True
+whole_set,all,solvent_family_fine,nitrile,False,477,2,2,185,2,2,0.0042,1.0,b_inside_a,True
+solute_family,alkyne,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,2,57,2,2,57,2,1.0,0.0351,a_inside_b,True
+solute_family,alkene,solvent_class_x_solute_role,nh_protic | organic_solute,False,32,33,2,16,33,2,0.0625,0.0606,partial,True
+solvent_family_fine,azine,solute_family,halogenated_aliphatic,False,23,27,2,23,9,2,0.087,0.0741,partial,True
+whole_set,all,solvent_class,aliphatic_hydrocarbon,False,477,2,2,185,2,2,0.0042,1.0,b_inside_a,True
+solvent_family_fine,nitrile,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,2,57,2,2,57,2,1.0,0.0351,a_inside_b,True
+solvent_class,aprotic_acceptor,solvent_family_fine,nitrile,False,57,2,2,57,2,2,0.0351,1.0,b_inside_a,True
+solvent_class_coarse,hb_acceptor_only,solute_family,ketone,False,70,63,2,59,11,2,0.0286,0.0317,partial,True
+solvent_class_coarse,hb_acceptor_only,solute_family,nitrile,False,70,2,2,59,2,2,0.0286,1.0,b_inside_a,True
+solvent_class_coarse,hydrocarbon_nonHB,solvent_family_fine,aliphatic_hydrocarbon,False,16,2,2,11,2,2,0.125,1.0,b_inside_a,True
+solvent_family_fine,ester,solute_family,ether,False,30,12,2,30,4,2,0.0667,0.1667,partial,True
+solvent_class,aromatic_hydrocarbon,solute_family,tertiary_amine,False,14,4,2,9,4,2,0.1429,0.5,partial,True
+solvent_class_coarse,hb_donor_N,solute_family,alkene,False,33,32,2,33,16,2,0.0606,0.0625,partial,True
+solvent_family_fine,aliphatic_hydrocarbon,solvent_class_x_solute_role,aliphatic_hydrocarbon | organic_solute,False,2,2,2,2,2,2,1.0,1.0,identical,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,halogenated_aromatic,False,328,8,2,75,8,2,0.0061,0.25,partial,True
+solvent_family_fine,amide_NH,solute_family,alkene,False,25,32,2,25,16,2,0.08,0.0625,partial,True
+solvent_class,aprotic_acceptor,solute_family,alkyne,False,57,2,2,57,2,2,0.0351,1.0,b_inside_a,True
+solvent_family_fine,azine,solute_family,ester,False,23,3,2,23,3,2,0.087,0.6667,partial,True
+solvent_class,aprotic_acceptor,solute_family,nitrile,False,57,2,2,57,2,2,0.0351,1.0,b_inside_a,True
+solvent_family_fine,azine,solute_family,alkene,False,23,32,2,23,16,2,0.087,0.0625,partial,True
+solvent_class,aprotic_acceptor,solute_family,ketone,False,57,63,2,57,11,2,0.0351,0.0317,partial,True
+solvent_class_coarse,hb_acceptor_only,solute_family,alkyne,False,70,2,2,59,2,2,0.0286,1.0,b_inside_a,True
+solvent_class,aprotic_acceptor,solvent_family_fine,ketone_aldehyde,False,57,2,2,57,2,2,0.0351,1.0,b_inside_a,True
+solvent_class,aliphatic_hydrocarbon,solvent_class_x_solute_role,aliphatic_hydrocarbon | organic_solute,False,2,2,2,2,2,2,1.0,1.0,identical,True
+solvent_class_coarse,hb_acceptor_only,solvent_family_fine,ketone_aldehyde,False,70,2,2,59,2,2,0.0286,1.0,b_inside_a,True
+solvent_class,nh_protic,solute_family,alkene,False,33,32,2,33,16,2,0.0606,0.0625,partial,True
+solvent_family_fine,nitrile,solute_role,organic_solute,False,2,440,2,2,179,2,1.0,0.0045,a_inside_b,True
+solvent_class,glycol_ether,solute_family,halogenated_aromatic,False,182,8,2,43,8,2,0.011,0.25,partial,True
+solvent_class_coarse,hydrocarbon_nonHB,solvent_class_x_solute_role,aliphatic_hydrocarbon | organic_solute,False,16,2,2,11,2,2,0.125,1.0,b_inside_a,True
+solvent_class,aliphatic_hydrocarbon,solvent_class_coarse,hydrocarbon_nonHB,False,2,16,2,2,11,2,1.0,0.125,a_inside_b,True
+solvent_family_fine,ketone_aldehyde,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,2,57,2,2,57,2,1.0,0.0351,a_inside_b,True
+solvent_family_fine,aliphatic_hydrocarbon,solute_role,organic_solute,False,2,440,2,2,179,2,1.0,0.0045,a_inside_b,True
+solvent_family_fine,ketone_aldehyde,solute_role,organic_solute,False,2,440,2,2,179,2,1.0,0.0045,a_inside_b,True
+solvent_class,aliphatic_hydrocarbon,solvent_family_fine,aliphatic_hydrocarbon,False,2,2,2,2,2,2,1.0,1.0,identical,True
+solvent_family_fine,glycol_ether,solute_family,halogenated_aromatic,False,182,8,2,43,8,2,0.011,0.25,partial,True
+solvent_class,aliphatic_hydrocarbon,solute_role,organic_solute,False,2,440,2,2,179,2,1.0,0.0045,a_inside_b,True
+solvent_class_coarse,hb_acceptor_only,solvent_family_fine,nitrile,False,70,2,2,59,2,2,0.0286,1.0,b_inside_a,True
+solvent_family_fine,aromatic_hydrocarbon,solute_family,tertiary_amine,False,14,4,2,9,4,2,0.1429,0.5,partial,True
+solvent_class,aprotic_acceptor,solute_family,halogenated_aromatic,False,57,8,1,57,8,1,0.0175,0.125,partial,True
+solvent_class_coarse,hb_donor_acceptor_O,solute_family,tertiary_amine,False,328,4,1,75,4,1,0.003,0.25,partial,True
+solvent_class_coarse,hb_acceptor_only,solute_family,nitro,False,70,1,1,59,1,1,0.0143,1.0,b_inside_a,True
+solvent_class,aprotic_acceptor,solute_family,nitro,False,57,1,1,57,1,1,0.0175,1.0,b_inside_a,True
+solute_family,halogenated_aromatic,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,8,57,1,8,57,1,0.125,0.0175,partial,True
+solvent_class,aromatic_hydrocarbon,solute_family,azine,False,14,6,1,9,6,1,0.0714,0.1667,partial,True
+solvent_class_coarse,hb_acceptor_only,solute_family,halogenated_aromatic,False,70,8,1,59,8,1,0.0143,0.125,partial,True
+solute_family,nitro,solvent_class_x_solute_role,aprotic_acceptor | organic_solute,False,1,57,1,1,57,1,1.0,0.0175,a_inside_b,True
+solute_family,tertiary_amine,solvent_class_x_solute_role,aliphatic_hydrocarbon | organic_solute,False,4,2,1,4,2,1,0.25,0.5,partial,True
+solute_family,tertiary_amine,solvent_class_x_solute_role,mono_alcohol | organic_solute,False,4,35,1,4,17,1,0.25,0.0286,partial,True
+solute_family,azine,solvent_class_x_solute_role,aromatic_hydrocarbon | organic_solute,False,6,8,1,6,8,1,0.1667,0.125,partial,True
+solvent_family_fine,aromatic_hydrocarbon,solute_family,azine,False,14,6,1,9,6,1,0.0714,0.1667,partial,True
+solvent_class_coarse,hydrocarbon_nonHB,solute_family,alkane,False,16,129,1,11,45,1,0.0625,0.0078,partial,True
+solvent_family_fine,ester,solute_family,ketone,False,30,63,1,30,11,1,0.0333,0.0159,partial,True
+solvent_family_fine,nitrile,solute_family,alkane,False,2,129,1,2,45,1,0.5,0.0078,partial,True
+solvent_family_fine,mono_alcohol,solute_family,tertiary_amine,False,35,4,1,17,4,1,0.0286,0.25,partial,True
+whole_set,all,solute_family,nitro,False,477,1,1,185,1,1,0.0021,1.0,b_inside_a,True
+solvent_family_fine,ketone_aldehyde,solute_family,aromatic_hydrocarbon,False,2,71,1,2,32,1,0.5,0.0141,partial,True
+solvent_family_fine,ketone_aldehyde,solute_family,alkane,False,2,129,1,2,45,1,0.5,0.0078,partial,True
+solvent_class,aliphatic_hydrocarbon,solute_family,alkane,False,2,129,1,2,45,1,0.5,0.0078,partial,True
+solvent_class,aliphatic_hydrocarbon,solute_family,tertiary_amine,False,2,4,1,2,4,1,0.5,0.25,partial,True
+solute_role,organic_solute,solute_family,nitro,False,440,1,1,179,1,1,0.0023,1.0,b_inside_a,True
+solvent_family_fine,ester,solute_family,nitro,False,30,1,1,30,1,1,0.0333,1.0,b_inside_a,True
+solvent_family_fine,ester,solute_family,nitrile,False,30,2,1,30,2,1,0.0333,0.5,partial,True
+solvent_family_fine,ester,solute_family,halogenated_aromatic,False,30,8,1,30,8,1,0.0333,0.125,partial,True
+solvent_class_coarse,hydrocarbon_nonHB,solute_family,azine,False,16,6,1,11,6,1,0.0625,0.1667,partial,True
+solvent_family_fine,ester,solute_family,ester,False,30,3,1,30,3,1,0.0333,0.3333,partial,True
+solvent_family_fine,ester,solute_family,alkyne,False,30,2,1,30,2,1,0.0333,0.5,partial,True
+solvent_family_fine,azine,solute_family,nitrile,False,23,2,1,23,2,1,0.0435,0.5,partial,True
+solvent_family_fine,azine,solute_family,ketone,False,23,63,1,23,11,1,0.0435,0.0159,partial,True
+solvent_family_fine,azine,solute_family,ether,False,23,12,1,23,4,1,0.0435,0.0833,partial,True
+solvent_family_fine,azine,solute_family,alkyne,False,23,2,1,23,2,1,0.0435,0.5,partial,True
+solute_family,alkane,solvent_class_x_solute_role,aliphatic_hydrocarbon | organic_solute,False,129,2,1,45,2,1,0.0078,0.5,partial,True
+solvent_family_fine,nitrile,solute_family,aromatic_hydrocarbon,False,2,71,1,2,32,1,0.5,0.0141,partial,True
+solvent_family_fine,aliphatic_hydrocarbon,solute_family,tertiary_amine,False,2,4,1,2,4,1,0.5,0.25,partial,True
+solvent_family_fine,aliphatic_hydrocarbon,solute_family,alkane,False,2,129,1,2,45,1,0.5,0.0078,partial,True
+solvent_class,mono_alcohol,solute_family,tertiary_amine,False,35,4,1,17,4,1,0.0286,0.25,partial,True

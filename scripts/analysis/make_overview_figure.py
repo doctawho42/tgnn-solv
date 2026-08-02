@@ -117,14 +117,32 @@ axa.text(0.06, 0.10, "Either the fixed model is wrong, or the learned profile\n"
 # Row unit, deployed residual-only convention, one estimator cell for all three (LOTV, eight
 # equal-count bins, UNBIASED within-bin variance).  The three classes that clear n = 40 on the
 # broad IDAC set, in the map's own order (headline margin descending):
-#   name                      n     B_insuff^up   MSE
-#   glycol ethers            182       0.108     2.252
-#   water                    111       0.215     0.477
-#   acceptor-only aprotics    57       0.140     0.089   <- the bound exceeds the total error
-CLASSES = [("glycol ethers", 0.1077, 2.2518),
-           ("water", 0.2150, 0.4765),
-           ("aprotic acceptors", 0.1404, 0.0891)]
-LX, BX0, BX1 = 0.300, 0.320, 0.965      # label right edge; bar span
+#   name                      n     B_insuff^up   MSE     verdict
+#   glycol ethers            182       0.108     2.252    established
+#   water                    111       0.215     0.477    not admissible -- the sign flips under two
+#                                                         of its three leave-one-source-out deletions
+#   acceptor-only aprotics    57       0.140     0.089    admissible, not established -- the bound
+#                                                         exceeds the total error, and a non-positive
+#                                                         margin is failure to separate, not a
+#                                                         certified reversal
+#
+# 2026-08-02.  THE MARKS ARE NOT DECORATION.  Only the first of the three clears the admissibility
+# rule of Sec. 4.2(i) (boundable AND sign-stable under deletion of every contributing publication,
+# in all four unit x convention cells), and a front-matter panel that draws three positive-looking
+# bars with no mark says three things the Results forbid.  The marks and their gloss stay
+# until the rule changes; do not drop them to buy space, and do not add a class without checking
+# both n >= 40 and its admissibility column in results/b_insuff/admissibility_table.csv.
+#
+# THE TWO MARKS ARE DIFFERENT REASONS AND ONE MARK CANNOT CARRY BOTH.  Until this revision both
+# unestablished classes wore a dagger glossed "the ordering here does not survive removing one
+# contributing laboratory", which is true of water and FALSE of the acceptor-only aprotics: that
+# cell is admissible in all four cells and survives every one of its four deletions.  It is not
+# established because its margin is not positive and the instrument is one-sided.  Keep the marks
+# distinct.
+CLASSES = [("glycol ethers", 0.1077, 2.2518, ""),
+           ("water", 0.2150, 0.4765, " $\\dagger$"),
+           ("aprotic acceptors", 0.1404, 0.0891, " $\\ddagger$")]
+LX, BX0, BX1 = 0.365, 0.380, 0.965      # label right edge; bar span
 SCALE = 2.45                             # ln-gamma units^2 across (BX1 - BX0)
 BH = 0.090
 
@@ -133,11 +151,13 @@ def _x(v):
     return BX0 + (BX1 - BX0) * v / SCALE
 
 
-axb.text(0.045, 0.775, "error when the reference profile is used ($n{=}477$),\n"
+axb.text(0.045, 0.800, "error when the reference profile is used ($n{=}477$),\n"
                        "by solvent class", ha="left", va="top", fontsize=7.8, color=GRAY)
-for k, (name, b, mse) in enumerate(CLASSES):
-    yk = 0.545 - k * 0.130
-    axb.text(LX, yk + BH / 2, name, ha="right", va="center", fontsize=8.0, color=INK)
+for k, (name, b, mse, mark) in enumerate(CLASSES):
+    yk = 0.585 - k * 0.120
+    axb.text(LX, yk + BH / 2, name + mark,
+             ha="right", va="center", fontsize=8.0,
+             color=GRAY if mark else INK)
     if mse > b:                          # the ordinary case: two contiguous blocks
         axb.add_patch(FancyBboxPatch((_x(0), yk), _x(b) - _x(0), BH,
                                      boxstyle="square,pad=0", fc="#DDE7E3", ec=INK,
@@ -152,7 +172,7 @@ for k, (name, b, mse) in enumerate(CLASSES):
         axb.plot([_x(mse)] * 2, [yk, yk + BH], lw=1.1, color=INK, zorder=5)
 # The teal blocks line up because every stratum is binned the same way; the salmon ones do not.
 # That contrast IS the panel, so it is drawn and not asserted -- no threshold line, no numbers.
-KY, KH, KW = 0.150, 0.050, 0.038         # legend swatch row: y, height, width
+KY, KH, KW = 0.250, 0.050, 0.038         # legend swatch row: y, height, width
 axb.add_patch(FancyBboxPatch((0.085, KY), KW, KH, boxstyle="square,pad=0",
                              fc="#DDE7E3", ec=INK, lw=0.7, zorder=3))
 axb.text(0.085 + KW + 0.020, KY + KH / 2, "the inputs, at most", ha="left", va="center",
@@ -163,8 +183,13 @@ axb.text(0.545 + KW + 0.020, KY + KH / 2, "the model, at least", ha="left", va="
          fontsize=7.4, color=INK)
 # 25-fold is the MSE ratio across exactly these three classes (0.0891 -> 2.2518 = 25.3), not
 # across all nine: the sentence must describe the rows the panel actually draws.
-axb.text(0.045, 0.070, "The input bound hardly moves; the error moves 25-fold.",
+axb.text(0.045, 0.190, "The input bound hardly moves; the error moves 25-fold.",
          ha="left", va="center", fontsize=8.0, color=HURT)
+axb.text(0.045, 0.150, "$\\dagger$ measured, not established: the ordering here does not survive\n"
+                       "removing one contributing laboratory.  $\\ddagger$ measured, not established:\n"
+                       "this margin is not positive, and the bound is one-sided.",
+         ha="left", va="top", multialignment="left", fontsize=6.4, color=GRAY,
+         linespacing=1.15)
 
 fig.suptitle("When do reference physical inputs help a learned solubility model?",
              fontsize=12.5, color=INK, y=0.985)

@@ -94,6 +94,48 @@ UNITS AND CONVENTIONS.  Every stratum is reported at both units of analysis -- e
 one row per pair taken nearest 298.15 K -- and under both combinatorial conventions, `full' and
 the deployed residual-only `res'.  Four numbers per stratum, all of them printed.
 
+----------------------------------------------------------------------------------------------
+ADMISSIBILITY.  One rule decides what may be STATED as a finding, applied to every stratum
+alike -- the aggregate, the cells that favour the paper, and the cells that do not:
+
+    a stratum may be stated as a finding only if it is (a) BOUNDABLE at the fixed headline
+    cell, and (b) ROBUST TO LEAVE-ONE-SOURCE-OUT: its margin keeps its sign when any single
+    source publication contributing to it is deleted.
+
+Everything else is reported in the map and not stated.  Each stratum carries its n, its source
+publications, its margin, its interval, its admissibility and the reason -- and a cell that
+fails (b) is labelled with the publication that carries it.
+
+Three things this rule needs pinned down, all of them decided here and not per stratum:
+
+  * A stratum drawing on ONE publication fails (b) by non-testability, not by passing it
+    vacuously.  There is no deletion to perform, so the sign was never put at risk.
+  * A deletion that leaves fewer than 2 x n_bins rows leaves the fixed cell UNDEFINED, so the
+    sign is not verifiable and the stratum fails (b).  A deletion that leaves the cell defined
+    but the remainder below the boundable size is counted, reported, and additionally tracked
+    by a STRICT variant of (b) in which every deletion must leave a still-boundable remainder.
+    Both verdicts are deposited; the strict one is the more conservative and is the one to
+    quote when a cell is close.
+  * The rule tests whether a NUMBER is stable, not what it means.  The instrument is one-sided
+    (Lemma `decomp': B_insuff is bounded above, B_clos below), so a positive margin certifies
+    B_clos > 0 while a non-positive one is failure to separate and not a certified reversal --
+    that would need a LOWER bound on B_insuff.  An admissible stratum with a non-positive
+    margin therefore licenses nothing; `licenses' spells this out per stratum.
+
+    Two directional cautions are deposited with the numbers rather than left to the reader.
+    The Bessel within-bin variance inflates as the bins empty, so a deletion that leaves a
+    small remainder biases B_insuff^up UP and the margin DOWN: for a positive-margin stratum
+    that makes (b) conservative, and for a non-positive one it makes (b) ANTI-conservative --
+    a robustly negative sign can be the estimator thinning rather than the chemistry.
+
+OVERLAP.  The two axes are not independent -- a row with water as the dilute solute also has a
+solvent, and a row in a solvent class also has a solute role -- so two admissible strata can be
+the same rows twice.  Every pair of strata is therefore intersected, in rows and in pairs, and
+the containment is named (identical / one inside the other / partial / disjoint).  For the
+strata a reader might cite together the map additionally recomputes the margin on each SIDE of
+the overlap, A \ B and B \ A, at the same fixed cell: that is the measurement of whether the two
+cells carry independent evidence, in place of an assertion that they do.
+
 ESTIMATORS.  lotv() and the two-way (solute x solvent) cluster bootstrap are imported from
 scripts/analysis/run_b_insuff_estimator_grid.py.  There is no second implementation here.
 
@@ -126,6 +168,9 @@ BROAD = ROOT / "paper" / "si_tables" / "broad_idac_set_477.csv"
 CORNER = ROOT / "paper" / "si_tables" / "corner_set_60.csv"
 OUT = ROOT / "results" / "b_insuff" / "stratified_map.json"
 OUT_CSV = ROOT / "results" / "b_insuff" / "stratified_map_table.csv"
+ADM_JSON = ROOT / "results" / "b_insuff" / "admissibility.json"
+ADM_CSV = ROOT / "results" / "b_insuff" / "admissibility_table.csv"
+OVERLAP_CSV = ROOT / "results" / "b_insuff" / "stratum_overlap.csv"
 
 N_BINS = 8          # the manuscript's headline estimator cell ...
 DDOF = 1            # ... 8 equal-count bins, Bessel within-bin variance.
@@ -498,6 +543,285 @@ def loo_curves(d: pd.DataFrame, col: str, by: str) -> list[dict]:
     return sorted(rows, key=lambda r: r["margin"])
 
 
+# --------------------------------------------------------------------------------------------
+# admissibility -- the one rule, applied to every stratum alike
+# --------------------------------------------------------------------------------------------
+ADMISSIBILITY_RULE = (
+    "A stratum may be STATED AS A FINDING only if it is (a) BOUNDABLE at the fixed headline "
+    f"cell (n >= {MIN_BOUNDABLE}, so each of the {N_BINS} equal-count bins holds at least five "
+    "rows) and (b) ROBUST TO LEAVE-ONE-SOURCE-OUT: its margin keeps its sign when any single "
+    "source publication contributing to it is deleted. A stratum drawing on one publication "
+    "fails (b) by non-testability -- there is no deletion to perform, so the sign was never put "
+    f"at risk. A deletion leaving fewer than {2 * N_BINS} rows leaves the fixed cell undefined, "
+    "so the sign is unverifiable and the stratum fails (b) as well. Everything else is reported "
+    "in the map, with its n, its sources, its margin, its interval and the reason, and is not "
+    "stated as a finding."
+)
+
+ONE_SIDEDNESS = (
+    "The rule tests whether a number is stable, not what it means. B_insuff is bounded ABOVE "
+    "and B_clos BELOW, so a positive margin certifies B_clos > 0 while a non-positive margin is "
+    "failure to separate and NOT a certified reversal -- that would need a lower bound on "
+    "B_insuff. An admissible stratum with a non-positive margin therefore licenses nothing."
+)
+
+SMALL_N_BIAS = (
+    "The Bessel within-bin variance inflates as the bins empty, so a deletion leaving a small "
+    "remainder biases B_insuff^up up and the margin down. For a positive-margin stratum that "
+    "makes leave-one-source-out conservative; for a non-positive one it makes it "
+    "ANTI-conservative, and a robustly negative sign can be the estimator thinning rather than "
+    "the chemistry. `loso_n_leaving_unboundable' counts the deletions where this applies and "
+    "the strict variant of (b) refuses them."
+)
+
+
+def source_deletion_curve(sub: pd.DataFrame, col: str, base: float | None) -> list[dict]:
+    """Leave-one-SOURCE-PUBLICATION-out for ONE stratum, at the fixed headline cell."""
+    m = sub["m"].to_numpy(float)
+    g = sub[col].to_numpy(float)
+    src = sub["source_doi"].astype(str).to_numpy()
+    se = (m - g) ** 2
+    tot = float(se.sum())
+    out = []
+    for s in sorted(set(src)):
+        drop = src == s
+        keep = ~drop
+        rec = {
+            "left_out": s,
+            "n_removed": int(drop.sum()),
+            "n_remaining": int(keep.sum()),
+            "share_of_stratum_squared_error_removed": round(
+                float(se[drop].sum()) / max(tot, 1e-12), 4),
+            "remainder_still_boundable": bool(keep.sum() >= MIN_BOUNDABLE),
+        }
+        if keep.sum() >= 2 * N_BINS:
+            mm, gg = m[keep], g[keep]
+            mse = float(np.mean((mm - gg) ** 2))
+            b = lotv(gg, mm, N_BINS, DDOF)
+            rec["mse"] = round(mse, 4)
+            rec["b_insuff_up"] = round(b, 4)
+            rec["margin"] = round(mse - 2 * b, 4)
+            rec["delta_margin"] = None if base is None else round(rec["margin"] - base, 4)
+        else:
+            rec["mse"] = rec["b_insuff_up"] = rec["margin"] = rec["delta_margin"] = None
+        out.append(rec)
+    return out
+
+
+def admissibility(df: pd.DataFrame, conv_cols: dict[str, str], table: dict,
+                  setname: str) -> tuple[list[dict], dict]:
+    """Both tests, for every stratum x {row, pair} x {full, res}, plus the rollup over cells."""
+    units = {"row": df, "pair": pair_unit(df)}
+    recs: list[dict] = []
+    curves: dict[str, list[dict]] = {}
+    for uname, d in units.items():
+        d = d.reset_index(drop=True)
+        for sname, lab, mask in strata_of(d):
+            sub = d[mask.values if hasattr(mask, "values") else mask]
+            if len(sub) == 0:
+                continue
+            key = f"{sname}::{lab}"
+            for cname, col in conv_cols.items():
+                rec = table[key][f"{uname}::{cname}"]
+                base = rec["margin"]
+                curve = source_deletion_curve(sub, col, base)
+                curves[f"{setname}|{key}|{uname}|{cname}"] = curve
+                n_src = len(curve)
+                ev = [c for c in curve if c["margin"] is not None]
+                bd = [c for c in ev if c["remainder_still_boundable"]]
+                sgn = None if base is None else (1.0 if base > 0 else -1.0)
+                if base is None:
+                    ok_b = strict_b = False
+                    why = f"the fixed cell is undefined at n={rec['n']}"
+                elif n_src < 2:
+                    ok_b = strict_b = False
+                    why = (f"one source publication ({curve[0]['left_out']}): "
+                           "leave-one-source-out cannot be run, so the sign was never tested")
+                elif len(ev) < n_src:
+                    ok_b = strict_b = False
+                    bad = [c["left_out"] for c in curve if c["margin"] is None]
+                    why = (f"{len(bad)} of {n_src} deletions leave fewer than {2 * N_BINS} rows "
+                           f"and the fixed cell is then undefined ({', '.join(bad)}), so the "
+                           "sign is not verifiable")
+                else:
+                    flips = [c for c in ev if c["margin"] * sgn <= 0]
+                    ok_b = not flips
+                    strict_b = ok_b and len(bd) == n_src
+                    if flips:
+                        why = "sign does not survive deletion of " + "; ".join(
+                            f"{c['left_out']} ({base:+.3f} -> {c['margin']:+.3f})"
+                            for c in flips)
+                    elif not strict_b:
+                        why = (f"sign holds, but {n_src - len(bd)} of {n_src} deletions leave "
+                               f"n < {MIN_BOUNDABLE}: passes (b) and fails its strict variant")
+                    else:
+                        why = ""
+                ok_a = bool(rec["boundable_at_headline_cell"])
+                why_a = "" if ok_a else f"not boundable: n={rec['n']} < {MIN_BOUNDABLE}"
+                worst = (min(ev, key=lambda c: c["margin"] * sgn) if (ev and sgn) else None)
+                adm = bool(ok_a and ok_b)
+                direction = ("no estimate" if base is None else
+                             "positive" if base > 0 else "non-positive")
+                if not adm:
+                    lic = "nothing: reported in the map, not stated as a finding"
+                elif direction == "positive":
+                    lic = ("B_clos > 0 in this stratum: the closure's own error exceeds what "
+                           "input insufficiency can account for")
+                else:
+                    lic = ("nothing: a non-positive margin is failure to separate, not a "
+                           "certified reversal (that needs a LOWER bound on B_insuff)")
+                reason = "; ".join(x for x in (why_a, why if not (ok_a and ok_b) else "") if x)
+                recs.append({
+                    "set": setname, "axis": sname, "stratum": lab, "unit": uname,
+                    "convention": cname,
+                    "n": rec["n"], "n_pairs": rec["n_pairs"], "n_solutes": rec["n_solutes"],
+                    "n_solvents": rec["n_solvents"],
+                    "n_sources": n_src,
+                    "sources": "|".join(c["left_out"] for c in curve),
+                    "top_source": rec.get("top_source"),
+                    "top_source_share_of_stratum_squared_error": rec.get(
+                        "top_source_share_of_stratum_squared_error"),
+                    "share_of_squared_error": rec.get("share_of_squared_error"),
+                    "mse": rec["mse"], "b_insuff_up": rec["b_insuff_up"], "margin": base,
+                    "P_boot": rec["P_boot"],
+                    "margin_ci90_lo": (rec["margin_ci90"] or [None, None])[0],
+                    "margin_ci90_hi": (rec["margin_ci90"] or [None, None])[1],
+                    "ci90_excludes_zero": (None if rec["margin_ci90"] is None else
+                                           bool(rec["margin_ci90"][0] > 0
+                                                or rec["margin_ci90"][1] < 0)),
+                    "test_a_boundable": ok_a,
+                    "loso_testable": bool(n_src >= 2),
+                    "loso_n_deletions": n_src,
+                    "loso_n_undefined": n_src - len(ev),
+                    "loso_n_leaving_unboundable": n_src - len(bd),
+                    "loso_margin_min": min((c["margin"] for c in ev), default=None),
+                    "loso_margin_max": max((c["margin"] for c in ev), default=None),
+                    "loso_worst_source": worst["left_out"] if worst else None,
+                    "loso_worst_margin": worst["margin"] if worst else None,
+                    "loso_worst_n_remaining": worst["n_remaining"] if worst else None,
+                    "test_b_sign_survives_loso": ok_b,
+                    "test_b_strict_remainder_boundable": strict_b,
+                    "admissible_this_cell": adm,
+                    "admissible_this_cell_strict": bool(ok_a and strict_b),
+                    "direction": direction,
+                    "licenses": lic,
+                    "reason_not_admissible": reason,
+                })
+    roll: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for r in recs:
+        roll[(r["axis"], r["stratum"])].append(r)
+    for group in roll.values():
+        n_cells = len(group)
+        n_adm = sum(r["admissible_this_cell"] for r in group)
+        n_str = sum(r["admissible_this_cell_strict"] for r in group)
+        for r in group:
+            r["cells_reported"] = n_cells
+            r["cells_admissible"] = n_adm
+            r["cells_admissible_strict"] = n_str
+            r["admissible_in_every_cell"] = bool(n_adm == n_cells)
+            r["admissible_in_every_cell_strict"] = bool(n_str == n_cells)
+    return recs, curves
+
+
+def overlap_table(df: pd.DataFrame) -> list[dict]:
+    """Intersect every pair of strata, in rows and in pairs.  Both axes at every level."""
+    d = df.reset_index(drop=True)
+    sets: dict[tuple[str, str], tuple[set, set]] = {}
+    for sname, lab, mask in strata_of(d):
+        mm = mask.values if hasattr(mask, "values") else mask
+        sets[(sname, lab)] = (set(np.flatnonzero(np.asarray(mm)).tolist()),
+                              set(d.loc[mm, "pair_key"]))
+    keys = list(sets)
+    out = []
+    for i, ka in enumerate(keys):
+        ra, pa = sets[ka]
+        for kb in keys[i + 1:]:
+            rb, pb = sets[kb]
+            sr, sp = ra & rb, pa & pb
+            if not sr:
+                rel = "disjoint"
+            elif ra == rb:
+                rel = "identical"
+            elif ra < rb:
+                rel = "a_inside_b"
+            elif rb < ra:
+                rel = "b_inside_a"
+            else:
+                rel = "partial"
+            out.append({
+                "axis_a": ka[0], "stratum_a": ka[1], "axis_b": kb[0], "stratum_b": kb[1],
+                "same_axis": bool(ka[0] == kb[0]),
+                "rows_a": len(ra), "rows_b": len(rb), "rows_shared": len(sr),
+                "pairs_a": len(pa), "pairs_b": len(pb), "pairs_shared": len(sp),
+                "shared_share_of_a": round(len(sr) / len(ra), 4),
+                "shared_share_of_b": round(len(sr) / len(rb), 4),
+                "relation": rel,
+                "double_counts_if_cited_as_separate_evidence": bool(sr),
+            })
+    return out
+
+
+def split_margins(df: pd.DataFrame, conv_cols: dict[str, str],
+                  focus: list[tuple[str, str]]) -> list[dict]:
+    """For overlapping strata a reader might cite together, the margin on EACH SIDE of the
+    overlap at the same fixed cell: the measurement of whether they are independent evidence."""
+    d = df.reset_index(drop=True)
+    sets = {}
+    for sname, lab, mask in strata_of(d):
+        if (sname, lab) in focus:
+            sets[(sname, lab)] = np.asarray(
+                mask.values if hasattr(mask, "values") else mask, dtype=bool)
+    keys = [k for k in focus if k in sets]
+
+    def at(idx: np.ndarray, col: str):
+        """The side of an overlap, carrying its own admissibility so it can be quoted."""
+        sub = d.loc[idx]
+        rec = {"n": int(idx.sum()), "n_pairs": int(sub["pair_key"].nunique()),
+               "n_sources": int(sub["source_doi"].nunique()),
+               "boundable": bool(idx.sum() >= MIN_BOUNDABLE),
+               "mse": None, "b_insuff_up": None, "margin": None,
+               "loso_margin_min": None, "loso_margin_max": None, "loso_worst_source": None,
+               "admissible": False}
+        if idx.sum() < 2 * N_BINS:
+            return rec
+        m = sub["m"].to_numpy(float)
+        g = sub[col].to_numpy(float)
+        mse = float(np.mean((m - g) ** 2))
+        b = lotv(g, m, N_BINS, DDOF)
+        rec["mse"] = round(mse, 4)
+        rec["b_insuff_up"] = round(b, 4)
+        rec["margin"] = round(mse - 2 * b, 4)
+        curve = source_deletion_curve(sub, col, rec["margin"])
+        ev = [c for c in curve if c["margin"] is not None]
+        sgn = 1.0 if rec["margin"] > 0 else -1.0
+        if ev:
+            worst = min(ev, key=lambda c: c["margin"] * sgn)
+            rec["loso_margin_min"] = min(c["margin"] for c in ev)
+            rec["loso_margin_max"] = max(c["margin"] for c in ev)
+            rec["loso_worst_source"] = worst["left_out"]
+        rec["admissible"] = bool(rec["boundable"] and len(curve) >= 2 and len(ev) == len(curve)
+                                 and all(c["margin"] * sgn > 0 for c in ev))
+        return rec
+
+    out = []
+    for i, ka in enumerate(keys):
+        for kb in keys[i + 1:]:
+            a, b = sets[ka], sets[kb]
+            if not (a & b).any():
+                continue
+            row = {"axis_a": ka[0], "stratum_a": ka[1], "axis_b": kb[0], "stratum_b": kb[1],
+                   "rows_shared": int((a & b).sum()),
+                   "pairs_shared": int(d.loc[a & b, "pair_key"].nunique())}
+            for cname, col in conv_cols.items():
+                row[f"A_{cname}"] = at(a, col)
+                row[f"B_{cname}"] = at(b, col)
+                row[f"A_minus_B_{cname}"] = at(a & ~b, col)
+                row[f"B_minus_A_{cname}"] = at(b & ~a, col)
+                row[f"A_and_B_{cname}"] = at(a & b, col)
+            out.append(row)
+    return out
+
+
 def random_partition_null(d: pd.DataFrame, col: str, sizes: list[int], seed: int = 0) -> dict:
     """Is the structural claim -- MSE varies across strata, B_insuff does not -- a property of
     THIS partition, or would any partition of the same block sizes do it?  Random partitions of
@@ -632,6 +956,73 @@ def main() -> int:
     print("[map] corner set ...", flush=True)
     corner_table = build(corner, cconv, "corner")
     out["map_corner"] = corner_table
+
+    # ------------------------------------------------------------------------- admissibility
+    print("[admissibility] applying the rule to every stratum ...", flush=True)
+    adm_rows, adm_curves = [], {}
+    for setname, dset, cmap, tbl in (("broad_477", broad, conv, broad_table),
+                                     ("corner_60", corner, cconv, corner_table)):
+        r, c = admissibility(dset, cmap, tbl, setname)
+        adm_rows += r
+        adm_curves.update(c)
+        # the map itself marks each stratum admissible or not, with the reason
+        for rec in r:
+            cell = tbl[f"{rec['axis']}::{rec['stratum']}"][f"{rec['unit']}::{rec['convention']}"]
+            for k in ("n_sources", "test_a_boundable", "loso_testable", "loso_n_deletions",
+                      "loso_n_undefined", "loso_n_leaving_unboundable", "loso_margin_min",
+                      "loso_margin_max", "loso_worst_source", "loso_worst_margin",
+                      "test_b_sign_survives_loso", "test_b_strict_remainder_boundable",
+                      "admissible_this_cell", "admissible_this_cell_strict",
+                      "cells_admissible", "cells_reported", "admissible_in_every_cell",
+                      "admissible_in_every_cell_strict", "ci90_excludes_zero", "direction",
+                      "licenses", "reason_not_admissible"):
+                cell[k] = rec[k]
+
+    adm = pd.DataFrame(adm_rows)
+    broad_adm = adm[adm["set"] == "broad_477"]
+    passing = sorted({(r.axis, r.stratum) for r in broad_adm.itertuples()
+                      if r.admissible_in_every_cell})
+    passing_pos = sorted({(r.axis, r.stratum) for r in broad_adm.itertuples()
+                          if r.admissible_in_every_cell and r.direction == "positive"})
+    focus = sorted({(r.axis, r.stratum) for r in broad_adm.itertuples()
+                    if r.cells_admissible > 0
+                    or r.axis in ("solvent_class", "solute_role", "whole_set")})
+    ovl = overlap_table(broad)
+    spl = split_margins(broad, conv, focus)
+
+    out["admissibility"] = {
+        "rule": ADMISSIBILITY_RULE,
+        "one_sidedness": ONE_SIDEDNESS,
+        "small_n_bias_of_the_deletion_test": SMALL_N_BIAS,
+        "cells_are_unit_x_convention": ["row::full", "row::res", "pair::full", "pair::res"],
+        "verdict_requires": "both tests, in every reported unit x convention cell",
+        "admissible_in_every_cell_broad": [f"{a}::{s}" for a, s in passing],
+        "admissible_in_every_cell_and_positive_broad": [f"{a}::{s}" for a, s in passing_pos],
+        "admissible_in_every_cell_corner": sorted(
+            {f"{r.axis}::{r.stratum}" for r in adm[adm['set'] == 'corner_60'].itertuples()
+             if r.admissible_in_every_cell}),
+        "n_strata_broad": int(broad_adm.groupby(["axis", "stratum"]).ngroups),
+        "n_strata_admissible_at_headline_cell_only": int(
+            broad_adm[(broad_adm.unit == "row") & (broad_adm.convention == "res")]
+            ["admissible_this_cell"].sum()),
+        "per_stratum_marks": "every stratum record above carries admissible_this_cell, "
+                             "admissible_in_every_cell and reason_not_admissible",
+        "full_table": str(ADM_CSV.relative_to(ROOT)),
+        "deletion_curves_and_overlap": str(ADM_JSON.relative_to(ROOT)),
+    }
+    out["stratum_overlap"] = {
+        "why": "two strata can be the same rows twice; an axis is not an independent axis",
+        "n_pairs_examined": len(ovl),
+        "n_pairs_with_nonzero_overlap": sum(1 for r in ovl if r["rows_shared"] > 0),
+        "table": str(OVERLAP_CSV.relative_to(ROOT)),
+        "margins_on_each_side_of_the_overlap": str(ADM_JSON.relative_to(ROOT)),
+    }
+    adm_detail = {
+        "per_stratum": adm_rows,
+        "leave_one_source_out_curves": adm_curves,
+        "pairs_with_nonzero_overlap": [r for r in ovl if r["rows_shared"] > 0],
+        "margins_on_each_side_of_the_overlap": spl,
+    }
 
     # ------------------------------------------------------------ diagnostics: B_insuff range
     diag = {}
@@ -827,6 +1218,47 @@ def main() -> int:
     rows = flatten(broad_table, "broad_477") + flatten(corner_table, "corner_60")
     tab = pd.DataFrame(rows)
     tab.to_csv(OUT_CSV, index=False)
+
+    adm_cols = ["set", "axis", "stratum", "unit", "convention", "n", "n_pairs", "n_solutes",
+                "n_solvents", "n_sources", "sources", "top_source",
+                "top_source_share_of_stratum_squared_error", "share_of_squared_error",
+                "mse", "b_insuff_up", "margin", "P_boot", "margin_ci90_lo", "margin_ci90_hi",
+                "ci90_excludes_zero", "test_a_boundable", "loso_testable", "loso_n_deletions",
+                "loso_n_undefined", "loso_n_leaving_unboundable", "loso_margin_min",
+                "loso_margin_max", "loso_worst_source", "loso_worst_margin",
+                "loso_worst_n_remaining", "test_b_sign_survives_loso",
+                "test_b_strict_remainder_boundable", "admissible_this_cell",
+                "admissible_this_cell_strict", "cells_reported", "cells_admissible",
+                "cells_admissible_strict", "admissible_in_every_cell",
+                "admissible_in_every_cell_strict", "direction", "licenses",
+                "reason_not_admissible"]
+    adm[adm_cols].sort_values(
+        ["set", "axis", "stratum", "unit", "convention"]).to_csv(ADM_CSV, index=False)
+    ADM_JSON.write_text(json.dumps(
+        {"rule": ADMISSIBILITY_RULE, "one_sidedness": ONE_SIDEDNESS,
+         "small_n_bias_of_the_deletion_test": SMALL_N_BIAS,
+         "estimator_cell_held_fixed": out["estimator_cell_held_fixed"],
+         "verdict": out["admissibility"], **adm_detail}, indent=2))
+    pd.DataFrame([r for r in ovl if r["rows_shared"] > 0]).sort_values(
+        "rows_shared", ascending=False).to_csv(OVERLAP_CSV, index=False)
+
+    print("\n===== admissibility, broad set (both tests, every unit x convention cell)")
+    show = ["axis", "stratum", "unit", "convention", "n", "n_sources", "margin",
+            "margin_ci90_lo", "margin_ci90_hi", "test_a_boundable",
+            "test_b_sign_survives_loso", "loso_margin_min", "loso_margin_max",
+            "loso_worst_source", "admissible_this_cell"]
+    head = broad_adm[(broad_adm.unit == "row") & (broad_adm.convention == "res")]
+    print(head[head.axis.isin(("whole_set", "solvent_class", "solute_role"))]
+          .sort_values("margin", ascending=False)[show].to_string(index=False))
+    print("\n[admissible in every cell] " + (", ".join(f"{a}::{s}" for a, s in passing)
+                                             or "NONE"))
+    print("[of those, positive-margin]  " + (", ".join(f"{a}::{s}" for a, s in passing_pos)
+                                             or "NONE"))
+    for r in sorted(ovl, key=lambda r: -r["rows_shared"])[:12]:
+        if r["rows_shared"]:
+            print(f"[overlap] {r['stratum_a']:24s} n {r['rows_shared']:3d} rows / "
+                  f"{r['pairs_shared']:3d} pairs with {r['stratum_b']:24s} "
+                  f"({r['relation']})")
 
     cols = ["stratum", "unit", "convention", "n", "n_solutes", "n_solvents", "mse",
             "b_insuff_up", "margin", "P_boot", "margin_ci90_lo", "margin_ci90_hi",

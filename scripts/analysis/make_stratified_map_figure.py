@@ -104,7 +104,8 @@ DISPLAY = {
     "all": "whole set",
 }
 
-BINDS, NOBIND, UNSET, NOMEAS = "binds", "does not bind", "not established", "not measurable"
+BINDS, NOBIND, UNSET, NOMEAS = ("established", "admissible, not established",
+                                "not admissible", "not measurable")
 VERDICT_STYLE = {
     BINDS: dict(marker="o", color=SALMON, size=30),
     NOBIND: dict(marker="s", color=TEAL, size=27),
@@ -129,22 +130,37 @@ def apply_style(style: str | None) -> None:
 
 # --------------------------------------------------------------------------- #
 def verdict(cells: pd.DataFrame) -> str:
-    """The manuscript's verdict rule, applied to the cells the artifact actually carries.
+    """The manuscript's ADMISSIBILITY rule, read off the deposited columns.
 
-    BINDS            every available unit x convention cell has a positive margin AND
-                     P_boot >= 0.90 in all of them.
-    DOES NOT BIND    every available cell has a negative margin.  (Sign only: the negative
-                     verdict is not confidence-gated, and the legend says so.)
-    NOT ESTABLISHED  the sign or the confidence fails somewhere.
-    NOT MEASURABLE   the estimator supports no cell at all at this n.
+    Before 2026-08-02 this drew its own rule -- positive margin and P_boot >= 0.90 in every
+    available cell -- which is a weaker bar than the one the manuscript states, and it marked
+    the halogenated and water-as-solute cells as binding when neither survives (or can even
+    be put through) the deletion of its own source publication.  The rule the figure now
+    draws is the manuscript's: boundable at the fixed cell AND the margin keeping its sign
+    under deletion of each contributing publication, in all four unit x convention cells.
+    It is not recomputed here; `admissible_in_every_cell` and `direction` come straight from
+    the artifact, so the figure cannot drift from Table 3 of the manuscript.
+
+    ESTABLISHED                 admissible in every cell, margin positive, and not another
+                                admissible row set restated.
+    ADMISSIBLE, NOT ESTABLISHED admissible in every cell, but the margin is not positive.  The
+                                instrument is one-sided, so this licenses nothing.
+    NOT ADMISSIBLE              fails (a) or (b) somewhere.
+    NOT MEASURABLE              the estimator supports no cell at all at this n.
+
+    THE THIRD CONDITION ON ESTABLISHED IS NOT TESTED HERE, and does not need to be, because the
+    blocks this figure draws -- solvent_class, solute_role and the whole set -- contain no cell
+    that restates another admissible one.  The restatement in the map is the alkane solutes, on
+    the solute_family axis, which this figure does not draw.  If a block is added, bring the
+    test with it (make_map_table_tex.py computes it from stratum_overlap.csv and
+    admissibility.json) or this function will mark a restatement `established' where the map
+    marks it `admissible, not established'.
     """
     ok = cells[np.isfinite(cells["margin"])]
     if ok.empty:
         return NOMEAS
-    if (ok["margin"] > 0).all() and (ok["P_boot"] >= P_GATE).all():
-        return BINDS
-    if (ok["margin"] < 0).all():
-        return NOBIND
+    if bool(cells["admissible_in_every_cell"].iloc[0]):
+        return BINDS if (ok["margin"] > 0).all() else NOBIND
     return UNSET
 
 
@@ -389,11 +405,11 @@ def draw(rows: list[dict], out_dir: Path, stem: str) -> list[str]:
           Patch(facecolor="white", edgecolor=GRAY, linewidth=0.7,
                 linestyle=(0, (2.2, 1.4)), label="no bound at this $n$")]
     kB = [Line2D([], [], ls="", marker="o", ms=4.4, mfc=SALMON, mec=SALMON,
-                 label="binds: all cells $+$, $P\\geq0.90$"),
+                 label="established: admissible, margin $+$"),
           Line2D([], [], ls="", marker="s", ms=4.2, mfc=TEAL, mec=TEAL,
-                 label="does not bind: all cells $-$"),
+                 label="admissible, not established"),
           Line2D([], [], ls="", marker="D", ms=3.8, mfc="white", mec=GRAY,
-                 label="not established"),
+                 label="not admissible"),
           Line2D([], [], ls="", marker="o", ms=4.4, mfc="white", mec=SALMON,
                  label="hollow: $n<40$, not boundable"),
           Line2D([], [], ls="", marker="|", ms=6.0, mew=1.0, color=GRAY,
