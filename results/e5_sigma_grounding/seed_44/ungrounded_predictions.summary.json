@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/ckpt_e5/ungrounded_seed44.pt",
+  "data": "/root/repo/notebooks/data/processed/test.csv",
+  "output": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/results_e5/seed_44/ungrounded_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 2.0934550944041344,
+  "rmse": 2.718262922757921,
+  "r2": 0.17190338754580126,
+  "bias": 0.762695304194939,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.541767491009049,
+  "pred_std_ratio": 0.8509124214894757
+}

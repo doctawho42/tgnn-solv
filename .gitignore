@@ -100,3 +100,16 @@ reports/*.log
 # achemso writes an auto-generated <jobname> bib stub next to the manuscript; its own first
 # line says it may safely be deleted.
 paper/acs-*.bib
+
+# Per-arm metrics behind Figure 2 and its rows of Table 2. The per-row prediction files are ~5 MB
+# each and go to the archive; these summaries are what a reader needs to recompute every number the
+# figure prints, so they are versioned.
+!results/e5_sigma_grounding
+results/e5_sigma_grounding/*
+!results/e5_sigma_grounding/seed_42
+!results/e5_sigma_grounding/seed_43
+!results/e5_sigma_grounding/seed_44
+results/e5_sigma_grounding/seed_4?/*
+!results/e5_sigma_grounding/seed_4?/comparison.json
+!results/e5_sigma_grounding/seed_4?/*.summary.json
+!results/e5_sigma_grounding/THREE_SEED_SUMMARY.md

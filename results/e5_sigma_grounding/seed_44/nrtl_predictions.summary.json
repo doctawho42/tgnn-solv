@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/content/drive/MyDrive/tgnn-solv/ckpt_e5/nrtl_seed44.pt",
+  "data": "/content/tgnn-solv/notebooks/data/processed/test.csv",
+  "output": "/content/drive/MyDrive/tgnn-solv/results_e5/seed_44/nrtl_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 1.8937702472481117,
+  "rmse": 2.5024867935075834,
+  "r2": 0.298154250994775,
+  "bias": 0.6031838909406667,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.7415001082632404,
+  "pred_std_ratio": 0.9177772962663282
+}

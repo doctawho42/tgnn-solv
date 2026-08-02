@@ -1,0 +1,22 @@
+{
+  "checkpoint": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/ckpt_e5/grounded_a_truetrain_residual_v2_seed42.pt",
+  "data": "/root/repo/notebooks/data/processed/test.csv",
+  "output": "/__modal/volumes/vo-HvX9R6SS3FtYLjeg0rjYym/results_e5/seed_42/grounded_a_truetrain_residual_v2_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 2.008704959843361,
+  "rmse": 2.5457852790547517,
+  "r2": 0.27365721476897087,
+  "bias": 0.05673482649615526,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.735539416506895,
+  "pred_std_ratio": 0.9157818239526387,
+  "sigma_oracle": {
+    "n_oracle": 5571,
+    "mae": 2.015302054103236,
+    "rmse": 2.551725898743294,
+    "bias": 0.05904416092444934
+  }
+}

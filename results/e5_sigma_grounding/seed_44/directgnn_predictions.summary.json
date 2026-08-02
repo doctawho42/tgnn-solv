@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/content/drive/MyDrive/tgnn-solv/ckpt_e5/directgnn_seed44.pt",
+  "data": "/content/tgnn-solv/notebooks/data/processed/test.csv",
+  "output": "/content/drive/MyDrive/tgnn-solv/results_e5/seed_44/directgnn_predictions.csv",
+  "model_type": "direct",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 1.683868049016188,
+  "rmse": 2.273794028565572,
+  "r2": 0.4205708652551514,
+  "bias": 0.45371460050182383,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.093576365983221,
+  "pred_std_ratio": 0.7008706112787313
+}
