@@ -1,32 +1,173 @@
-% COMPUTATIONAL METHODS. Summarised 2026-08-01 to the ACS shape: a short section saying what was
-% done, with the construction detail in the Supporting Information. WHAT MAY NOT LEAVE THIS SECTION,
-% however tempting the page saving -- a reader of the main text alone must never be able to conclude
-% that a control was not run:
+% COMPUTATIONAL METHODS.  Since 2026-08-02 this is the whole of Sec. 2: the former "Setup and
+% theory" section was folded in here, because the composed predictor, the error split and the
+% estimator that measures it are the method, and JCIM does not carry a separate theory section.
+% WHAT MAY NOT LEAVE THIS SECTION, however tempting the page saving -- a reader of the main text
+% alone must never be able to conclude that a control was not run:
 %   * the data, the scaffold split, and what the labels are;
 %   * the closure implementation AND its validation, including where the validation stops (the
-%     dispersion term), because the fidelity result of Sec. 4.2(iii) rests on that boundary;
+%     dispersion term), because the fidelity result of Sec. 3.2.3 rests on that boundary;
 %   * the evaluation protocol: the three oracle applications, which results are three-seed and which
 %     single-seed, and on what row set;
+%   * the estimator cell, the convention rule, the stratification rule and the admissibility rule,
+%     all four fixed here, before any margin is reported;
 %   * every disclosure that qualifies a result -- the separately tuned arms, the scaffold-leak guard
 %     being a property of the builder and not of these runs, the wrong-split sigma-stream build, and
 %     the placeholder repository.
-% WHAT LEFT IN THIS PASS, and where each already stood (nothing was moved; this was de-duplication):
-%   solver's damped map, implicit-function gradients, iteration counts and convergence audit,
-%   the three phases by name, the loss taxonomy and per-phase weights, the architecture, the encoder
-%   backbones, the NRTL parametrisation and its collapse formula, the COSMO-SAC constants and the
-%   51-bin grid, the segment-activity fixed point and the Gamma_S / G_gap symbol clash, all
-%   hyperparameters -> App. A (sec:si-methods), with the symbol clash also in Table 1;
-%   split hazards, stream provenance and the full leak audit -> App. F (sec:si-repro);
-%   the per-arm glossary of Fig. 2's bars -> Sec. 4.1, which names every bar where the figure is read.
+% Construction detail (the solver's damped map, implicit-function gradients, the three phases by
+% name, the loss taxonomy and per-phase weights, the architecture, the NRTL parametrisation, the
+% COSMO-SAC constants and the 51-bin grid, all hyperparameters) is in App. A; split hazards, stream
+% provenance and the full leak audit in App. F.
 \section{Computational methods}
 \label{sec:methods}
-The study is a controlled comparison: a shared graph backbone feeds either an explicit thermodynamic
-bottleneck (\emph{TGNNSolv}) or a direct regressor (\emph{DirectGNN}) that emits \lnx\ with no
-physics. Architecture, encoder variants, the solver, the curriculum, the loss taxonomy, the
-COSMO-SAC constants and every hyperparameter are in \S\ref{sec:si-methods}; provenance and the
-audits behind the disclosures below, in \S\ref{sec:si-repro}.
+
+\subsection{The composed predictor and its error split}
+\label{sec:framework}
+For a solute~$s$ in solvent~$v$ at temperature~$T$, the target is $y=\lnx$, the
+log saturated mole fraction. Dissolving a solid trades two costs against each
+other---breaking the crystal lattice ($\Phicry$) and mixing the freed molecules
+against non-ideal solute--solvent interactions ($\lng$)---and solid--liquid
+equilibrium (SLE) sets the log-solubility to their negative sum:
+\begin{equation}
+  \lnx = -\underbrace{\frac{\dHfus}{\Rgas}\!\Big(\tfrac1T-\tfrac1\Tm\Big)}_{\Phicry(T)\ \text{(crystal)}}
+         \;-\;\underbrace{\lng(x_2,T)}_{\text{activity}} ,
+  \label{eq:sle}
+\end{equation}
+with the constant-$\Delta C_p$ (heat-capacity-of-fusion) correction omitted for clarity. The
+activity term is produced by a \emph{differentiable closure} $g$: a graph encoder predicts a
+$\sigma$-profile---the distribution of screening (surface) charge density over a molecule,
+the histogram a COSMO model consumes---for each molecule, and COSMO-SAC \cite{lin2002}, a
+segment-activity reformulation of COSMO-RS, maps the pair of profiles to $\lng$. Inside that
+map the segment-interaction energy---the electrostatic-misfit and hydrogen-bonding terms
+setting what two surface segments cost each other---is the closure's \emph{kernel}, the part
+the published revisions rewrite, so a closure variant is named for the year of its kernel:
+the deployed \emph{2002 kernel}, and the \emph{2010 kernel} that types segments as
+hydrogen-bond donors or acceptors instead of treating hydrogen bonding with one
+parameter. Write $\zstar$ for the \emph{reference} physical latent, the
+$\sigma$-profile tabulated in the VT-2005 database \cite{mullins2006}, and $g(\zstar)$ for the
+closure output when fed it; the model's own head instead predicts a \emph{learned} profile $\hat z$
+and evaluates $g(\hat z)$. Feeding $\zstar$ in place of $\hat z$ (a $\sigma$-oracle) isolates the
+closure from encoder error: if the closure were well specified, $g(\zstar)$ should be the best
+available activity estimate. Each trained configuration, and each closure variant evaluated, is an
+\emph{arm}; a \emph{DirectGNN} control arm drops the closure and emits $\lnx$ directly
+(Fig.~\ref{fig:arch}), and the two were tuned separately, so the gap between them is not
+attributable to the bottleneck alone (\S\ref{sec:eval}; per-arm settings in
+\S\ref{sec:si-methods}).
+
+Everything below is stated for a general \emph{composed predictor} $\hat y=g(h(x))$ in which a
+fixed closure $g$ consumes a learned physical intermediate $z=h(x)$, against a matched free
+predictor that shares the encoder and drops $g$; solubility is one instance, \S\ref{sec:pka} a
+second (pKa through a fixed Hammett closure) and \S\ref{sec:dial} a controlled synthetic family.
+Nothing in Lemma~\ref{prop:decomp} or in \S\ref{sec:si-proofs} is specific to COSMO-SAC.
+
+The crystal/activity split of Eq.~\eqref{eq:sle} is not identifiable from solubility alone, which
+is why an unconstrained head can silently absorb crystal error into the activity term---an
+indeterminate component end-to-end training leaves free rather than projecting out, closed only by
+a rank-completing external constraint (Lemma~\ref{prop:ident}, \S\ref{sec:si-proofs}). That is
+enabling background: it explains why an under-determined factor needs external single-component
+data and why compensation between the factors is expected, and says nothing by itself about
+whether grounding helps.
+
+\subsubsection{The closure--insufficiency decomposition}
+\label{sec:decomp}
+Let $m$ be the activity target---the experimental infinite-dilution activity coefficient
+$\lngi$---and $g(\zstar)$ the closure evaluated on the true latent.
+
+\begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
+For a \emph{fixed} (non-fitted) closure $g$, with $\zstar$ denoting the closure's \emph{entire}
+argument (the profile pair together with the temperature wherever the closure reads one),
+\begin{equation}
+\begin{aligned}
+  \underbrace{\Ex\big[(m-g(\zstar))^2\big]}_{\text{ref.-input MSE}}
+  &= \underbrace{\Ex\big[\Var(m\mid \zstar)\big]}_{\Binsuf\ (\text{irreducible})} \\
+  &\quad + \underbrace{\Ex\big[(\Ex[m\mid\zstar]-g(\zstar))^2\big]}_{\Bclos\ (\text{decoder bias})} .
+\end{aligned}
+  \label{eq:decomp}
+\end{equation}
+The cross term vanishes identically, which is why $\zstar$ must be the
+closure's whole argument and not a part of it (proof, \S\ref{sec:si-proofs}). The split is exact with no fitting of the closure
+$g$, so the total and $\Bclos$'s Jensen lower bound are
+fit-free. $\Binsuf=\Ex[\Var(m\mid\zstar)]$, however, must be estimated with a conditional-variance
+smoother whose choice affects the verdict (\S\ref{sec:estimator}).
+\end{lemma}
+\noindent $\Bclos$ is the systematic discrepancy of a fixed physical map in the sense of
+Kennedy--O'Hagan \cite{kennedy2001,brynjarsdottir2014}, and its dominance over $\Binsuf$ is the
+empirical content of the claim that the accuracy ceiling is set by the closure rather than by the
+inputs. Where model-discrepancy calibration \emph{fits} a correction from held-out observations,
+here $g$ is fixed and $\zstar$ externally observed, so the map's error is \emph{attributed} rather
+than corrected---available only where an external latent oracle exists, not in gray-box hybrids
+(\S\ref{sec:si-positioning}). \textbf{Exactness is contingent on $g$ being fixed}: for a
+\emph{fitted} decoder the cross term does not vanish and a plug-in point split is invalid, so we
+report \emph{one-sided bounds} (proved in \S\ref{sec:si-proofs}):
+\begin{itemize}
+  \item $\Bclos \ge (\Ex[m]-\Ex[g])^2$ by Jensen: a constant offset between the
+  decoder's mean output and the target is misspecification, not input insufficiency, and
+  this bound needs \emph{no smoothness assumption}. Its one requirement is that $m$ and $g$
+  share the $\lngi$ reference state, which the closure validation of \S\ref{sec:model} establishes.
+  \item $\Binsuf \le \Ex[\Var(m\mid \mathrm{bin}(g(\zstar)))]$, a valid
+  \emph{upper} bound (law of total variance, since a binning of $g(\zstar)$
+  coarsens $\zstar$).
+\end{itemize}
+Because $\Binsuf$ is bounded above and $\Bclos$ below, a positive \emph{separation margin}
+$\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$ establishes that the closure's own error exceeds what input
+insufficiency can account for, while a non-positive one is a failure to separate and licenses
+nothing: a reversal would need a \emph{lower} bound on $\Binsuf$, which this instrument does not
+supply.
+
+\paragraph{What population, what is conditioned on, and what sets the resolution.}
+$\Binsuf$ is well posed only once the population and the conditioning variable are named. The
+population is the \emph{measurement superpopulation}: a draw is a nominal compound pair \emph{at a
+temperature}, together with the conformer, tautomer and protonation state actually populated under
+those conditions, and an independent experimental determination of $\lngi$ for it. The conditioning
+variable is the closure's full argument, $(\zstar,T)$ where $g$ reads a temperature. Neither the
+conformational state nor the replicate determination is part of it, so $\Var(m\mid\zstar,T)$ is the
+spread of $\lngi$ across the conformational ensemble and across replicate determinations at one
+reference profile and temperature, non-zero for physical reasons unrelated to sample size.
+Experimental label noise is a \emph{component} of it, not a term beside it: an independent
+zero-mean error on $m$ enters $\Var(m\mid\zstar,T)$ directly, so it is inside every bound we report
+and never added on. What the design cannot do is \emph{observe} it, neither set holding two rows at
+a common argument (\S\ref{sec:si-repro}), so $\Binsuf$ is reached only from above and $\Bclos$ only
+from below. The bounds are conservative in one direction only---were the superpopulation variance
+negligible the finding would be the stronger $\Bclos=\mathrm{MSE}$---so nothing reported can be an
+artifact of over-estimating $\Binsuf$, and no entry is the share of the error the inputs
+contribute. A low $P_{\mathrm{boot}}$, the cluster-bootstrap frequency that the measured margin
+stays positive, is likewise loss of resolution and never evidence for the inputs; resolution is
+governed by $\dim(\zstar)/n$.
+
+\subsubsection{The decomposition and the grounding gap}
+\label{sec:gap}
+The decomposition is the measurement the conclusions rest on: assumption-light, needing neither a
+representable encoder nor a lossless bottleneck. Alongside it we report a second, purely observable
+quantity, the \emph{grounding gap} $\Ggap:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, the oracle risk minus
+the best end-to-end risk; the paradox is $\Ggap>0$. Under a representable encoder (A1) and a
+lossless bottleneck (A2) it is sandwiched $0\le\Ggap\le\Bclos$, so $\Ggap>0$ would certify
+$\Bclos>0$ (Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is empirically doubtful---the encoder
+is transfer-limited, a linear probe dropping from train $R^2\approx0.76$ to test
+$R^2\approx0.45$---and A2 is unverifiable and physically dubious; when A2 fails, $\Ggap>0$ conflates
+closure misspecification with input insufficiency, a well-specified closure with a lossy latent
+giving $\Bclos=0$ yet $\Ggap>0$ (\S\ref{sec:dial}, and the pKa ortho sweep of \S\ref{sec:pka}). We
+therefore read $\Ggap$ as corroborating evidence and base the model-dominance conclusion on the
+decomposition.
+
+\paragraph{The sign rule, and scope.}\label{sec:tax} Whether the \emph{trained} physics model
+outperforms the \emph{trained} black box at sample size $n$ follows a sign rule with two halves: a
+constrained prior helps only where the estimation variance it saves exceeds its asymptotic bias
+$\Delta_\infty$, and a prior whose asymptotic bias is strictly positive always loses once the budget
+passes a critical size, the variance it saves vanishing as data accumulate while $\Delta_\infty$
+does not (Proposition~\ref{prop:tax}, \S\ref{sec:si-proofs}). Each physics-versus-control difference
+below is a penalty at the budget actually trained, not an asymptotic one; there is no ``optimal
+grounding'' theorem, and the decomposition does not improve out-of-distribution accuracy. Everything
+here is measured at infinite dilution on two sets that differ in regime (\S\ref{sec:measure}), and
+transfer of either to the finite-composition regime in which the paradox is observed is a conjecture
+(\S\ref{sec:discussion}). We read these results against the model-discrepancy, sloppiness,
+identifiability, misspecification, underspecification and null-space-prior literatures
+(\S\ref{sec:si-positioning}). Spanning two chemical domains, this paper would otherwise use two
+letters for more than one quantity each; Table~\ref{tab:notation} gives the renamings that separate
+them, and every other symbol is defined where it is used.
+
+\input{sections/notation-table}
 
 \subsection{Data, splits, and labels}
+\label{sec:data}
 Solubility measurements come from BigSolDB~2.0 \cite{krasnov2025bigsoldb}: $127{,}930$ rows over
 $15{,}665$ solutes and $221$ solvents between $243$ and $438$\,K, partitioned by Bemis--Murcko
 scaffold into $111{,}724$ training, $8{,}103$ validation and $8{,}103$ test rows so that every test
@@ -52,6 +193,7 @@ bound what a leak could do, and the one molecule it touches in the $n{=}44$ anal
 \S\ref{sec:surrogate}. We therefore do not assert the scaffold guarantee for these runs.
 
 \subsection{Model, closure, and training}
+\label{sec:model}
 A \emph{shared} message-passing encoder embeds solute and solvent, a bipartite cross-attention block
 lets them interact, and the resulting pair representation feeds every head; two interchangeable
 encoder alternatives do not outperform it. A fusion head predicts $\Tm$ and $\dHfus$, giving the
@@ -68,16 +210,16 @@ study (\S\ref{sec:paradox}).
 
 The saturated mole fraction solves $\lnx=-\Phicry(T)-\lng(x_2,T)$ as a damped fixed point in $x_2$
 (\S\ref{sec:si-methods}); a bounded, gated ``adaptive physics correction'' perturbs the physical
-parameters rather than the output, so the physical decomposition survives it. Training follows a
-three-phase curriculum under a weighted loss. External single-component data enter through
-\emph{grounding streams}---the training-time sense of grounding, and a separate operation from the
-evaluation-time substitution below. Each stream is a sidecar of \emph{self-solvent} rows
-($\mathrm{solvent}=\mathrm{solute}$, no solubility label, only the target factor's mask active),
-interleaved into training under the guard above; the streams ground the crystal factor from the
-melting-point pool and the activity factor from the $\sigma$-profile database, identifying from
-external data a factor that solubility alone leaves non-identifiable (\S\ref{sec:framework}) and
-that a black-box predictor cannot use. Training runs a three-stage curriculum: a warm-up on the auxiliary streams alone, then joint
-training against solubility, then a low-rate stabilisation stage. The schedule pinned for the arms of
+parameters rather than the output, so the physical decomposition survives it. External
+single-component data enter through \emph{grounding streams}---the training-time sense of grounding,
+a separate operation from the evaluation-time substitution below. Each stream is a sidecar of
+\emph{self-solvent} rows ($\mathrm{solvent}=\mathrm{solute}$, no solubility label, only the target
+factor's mask active), interleaved into training under the guard above; the streams ground the
+crystal factor from the melting-point pool and the activity factor from the $\sigma$-profile
+database, identifying from external data a factor that solubility alone leaves non-identifiable
+(\S\ref{sec:framework}) and that a black-box predictor cannot use. Training runs a three-stage
+curriculum under a weighted loss: a warm-up on the auxiliary streams alone, then joint training
+against solubility, then a low-rate stabilisation stage. The schedule pinned for the arms of
 Fig.~\ref{fig:paradox} freezes the $\sigma$ head at the end of the warm-up, so the $\sigma$ stream
 enters the warm-up only (\S\ref{sec:si-tables}).
 
@@ -86,7 +228,7 @@ enters the warm-up only (\S\ref{sec:si-tables}).
 % scripts/analysis/run_closure_reference_validation.py. The 2010 figure has no deposited
 % artifact -- scripts/analysis/validate_cosmo2010_layer.py printed to stdout on the run it
 % comes from -- which the SI states.
-The dispersion-off closures in the fidelity measurement (\S\ref{sec:measure}) are our own
+The dispersion-off closures in the fidelity measurement (\S\ref{sec:fidelity}) are our own
 differentiable implementations, so those arms share one code path, and each consumes its own
 model-prescribed $\sigma$-averaging (Mullins for 2002, Hsieh for 2010). Our 2002 layer---the
 \emph{fair 2002} arm wherever the kernels are compared, because it reads all three profile
@@ -100,6 +242,7 @@ dispersion on} runs are quoted from \texttt{cCOSMO}. Layer definitions, validati
 full scope of the dispersion caveat are in \S\ref{sec:si-methods}.
 
 \subsection{Evaluation protocol, and the DirectGNN control}
+\label{sec:eval}
 The \emph{oracle substitution} replaces the predicted $\sigma$-profile $\hat z$ with the reference
 VT-2005 profile $\zstar$ before the closure, matched by canonical SMILES. It is applied three ways
 to rule out implementation artifacts: at evaluation only; injected at training time so the model
@@ -108,7 +251,7 @@ that freezes the crystal branch during the SLE phase, so that only the activity 
 against it. The last two are at seed $42$ only. An analogous override substitutes reference crystal
 targets. The activity target for the decomposition (\S\ref{sec:measure}) is the infinite-dilution
 $\lngi=\lim_{x_2\to0}\lng$, on two sets that differ in their reference database and their regime
-(\S\ref{sec:measure}(i)--(ii)).
+(\S\ref{sec:broad}--\S\ref{sec:vt2005}).
 
 DirectGNN shares the encoder, interaction, readout and pair representation, adds a thermometer
 (cumulative-threshold) temperature encoding, and maps directly to \lnx\ with no heads, closure or
@@ -116,14 +259,64 @@ solver. The two arms therefore share their representation but not their inputs o
 control receives an explicit temperature encoding the physics arm does not, seeing $T$ instead
 through $\Phi(T)$ and the closure, and the optimisation settings were tuned per arm and differ. The
 TGNNSolv$-$DirectGNN gap is accordingly a comparison of two separately tuned pipelines that differ
-in the thermodynamic bottleneck, not an isolation of the bottleneck, and every asymptotic physics
-penalty comparison in \S\ref{sec:results} carries that caveat.
+in the thermodynamic bottleneck, not an isolation of the bottleneck, and every physics-penalty
+comparison in \S\ref{sec:results} carries that caveat.
 
 The controlled comparisons of \S\ref{sec:paradox} are run at three seeds and reported as
-mean$\pm$sd on a cross-arm row set (rows supervised and finite in every arm). Single-seed, and
-labelled as such where each is reported, are the training-time and channel-swap oracle controls, the
-output-residual arms (\S\ref{sec:gateb}), the data-efficiency curve (App.~\ref{sec:data-efficiency})
-and the loss-simplification ablation (App.~\ref{sec:si-methods}). The two audit runs behind
-\S\ref{sec:measure} are named there with the script and the artifact file of each; not every artifact
-those scripts read is small enough to version, and the larger ones are deposited separately
-(limitation~(x), \S\ref{sec:discussion}).
+mean$\pm$sd on a cross-arm row set; $5608$ is that lock, the test rows supervised and finite in
+every arm, so all arms score identical rows. Single-seed, and labelled as such where each is
+reported, are the training-time and channel-swap oracle controls, the output-residual arms
+(\S\ref{sec:gateb}), the data-efficiency curve (\S\ref{sec:data-efficiency}) and the
+loss-simplification ablation (\S\ref{sec:si-methods}). The two audit runs behind
+\S\ref{sec:measure} are named there with the script and the artifact file of each; not every
+artifact those scripts read is small enough to version, and the larger ones are deposited
+separately (\S\ref{sec:discussion}).
+
+\subsection{Estimating the split: one cell, one convention, one rule}
+\label{sec:estimator}
+Four analyst choices set the law-of-total-variance bound---the bin count, where the equal-count bin
+edges fall, the within-bin variance convention, and the combinatorial convention---and all four are
+fixed here, before any margin is reported.
+
+\emph{The estimator cell.} Eight equal-count bins of $g(\zstar)$, the \emph{unbiased} within-bin
+variance, and the row unit, applied identically to every set and every stratum whatever its size.
+Enumerating every equal-count contiguous partition, the bin-edge choice is immaterial on the broad
+IDAC set and material on the VT-2005-matched set, whose margin changes sign inside the envelope; we
+accordingly read that set's $+0.05$ as consistent with zero and carry the claim on the broad set in
+stratified form. The binning rule and its envelope are in \S\ref{sec:si-tables}.
+
+\emph{The convention rule.} The margin depends on the combinatorial convention, so one rule governs
+both sets: headline the \emph{deployed} residual-only convention, pairing $\mathrm{MSE}$ and the
+bound computed under that same convention. Headlining the deployed convention on the smaller set and
+the full convention on the broad one would be the favourable choice on each set taken separately;
+one rule applied to both costs the broad set's margin about half its value. The Jensen
+constant-offset bound is convention-specific---it separates under the full combinatorial convention
+and inverts under the deployed residual-only default---so the separation reported in
+\S\ref{sec:measure} rests on the model-free law-of-total-variance (LOTV) bound, which fits nothing
+and so lets no held-out row borrow strength from a near-twin. $\Binsuf$ is one population quantity
+while the two conventions coarsen two different statistics of it, so both bounds are valid on it,
+and so is the smaller. The Jensen numbers are in \S\ref{sec:si-tables} and \S\ref{sec:si-proofs}.
+
+\emph{The stratification rule.} The broad set is stratifiable where the VT-2005-matched set's $60$
+pairs are not, on two axes that are pure functions of molecular structure: an ordered nine-class
+cascade of substructure tests over the solvent, hydrogen-bonding role first and dominant functional
+group second, and the solute's role as water or as an organic. The classifier reads a SMILES string
+and nothing else---never $m$, $g$, the squared error, the source or the bootstrap---so no cell can
+have been chosen on its outcome, which is a property of the code rather than an assurance. A stratum
+is \emph{boundable} at $n\ge40$, where eight bins hold five rows; the smaller ones are reported at
+that same cell rather than at a rule of their own, with the resample-adaptive rule
+$\max(3,\lfloor n/10\rfloor)$ carried beside them in the deposited table, nothing being dropped for
+being small.
+
+\emph{The admissibility rule.} A stratum is \emph{admissible} only if it is \emph{(a)}~boundable at
+that fixed cell and \emph{(b)}~robust to leave-one-source-out---its margin keeps its sign when each
+source publication contributing to it is deleted in turn---in all four
+unit\,$\times$\,convention cells, since the map reports all four. That last clause is load-bearing
+and is never dropped: without it the set taken whole passes too. A stratum drawing on one publication
+fails~(b) by non-testability: there is no deletion to perform, so the sign was never put at risk. A
+deletion leaving fewer than $16$ rows leaves the fixed cell undefined and the sign unverifiable,
+which fails~(b) as well. Everything else is \emph{reported in the map and not stated}, with its $n$,
+its sources, its margin, its interval and the reason. The rule governs the cells that favour us and
+those that do not alike, and it tests whether a number is stable and not what it means: an
+admissible stratum whose margin is not positive, and an admissible stratum that is another one
+restated, both establish nothing.

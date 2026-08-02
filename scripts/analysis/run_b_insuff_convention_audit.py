@@ -67,7 +67,7 @@ OUT = ROOT / "results" / "b_insuff" / "convention_audit.json"
 # `representative_set_477.csv' before 2026-07-28; the set is renamed throughout because
 # "representative" names a coverage claim the manuscript retracts (see S4.2(i)).
 TAB_REP = ROOT / "paper" / "si_tables" / "broad_idac_set_477.csv"
-TAB_COR = ROOT / "paper" / "si_tables" / "corner_set_60.csv"
+TAB_COR = ROOT / "paper" / "si_tables" / "vt2005_matched_set_60.csv"
 
 BIN_GRID = (3, 4, 5, 6, 7, 8, 10, 12, 16, 20, 24, 32, 40, 48)
 

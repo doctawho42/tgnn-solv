@@ -60,4 +60,18 @@
 
 # 2026-07-29 Results cut. The per-arm hyperparameter triple left the Discussion for App. A
 # (the plan's 90-word move); every one of its six values still prints in \S\ref{sec:si-methods}.
-4.2    rendering, not a loss: the control's weight decay 4.2e-5 still prints in App. A ("weight decay 4.2 x 10^-5 against 5 x 10^-4"), but there pdftotext spaces the mantissa from the "x 10" so the checker folds it into the single number 4.2e-05 and the bare mantissa disappears. In the baseline the Discussion's copy of the same pair rendered without that space, so "4.2" was also counted on its own. The value is in the document, at the same precision, in the paragraph that now owns it; only the unfolded token is gone.
+4.2    rendering, not a loss: the control's weight decay 4.2e-5 still prints in App. A ("weight decay 4.2 x 10^-5 against 5 x 10^-4"), but there pdftotext spaces the mantissa from the "x 10" so the checker folds it into the single number 4.2e-05 and the bare mantissa disappears. In the baseline the Discussion's copy of the same pair rendered without that space, so "4.2" was also counted on its own. The value is in the document, at the same precision, in the paragraph that now owns it; only the unfolded token is gone. ALSO, since the 2026-08-02 four-section reshape, section-number churn: the old \S4.2 (the closure-fidelity axis) is now \S3.2, so the 77 baseline tier-A occurrences of 4.2 are that pointer plus the weight-decay mantissa above, and the target prints 3.2 in the same sentences.
+
+# 2026-08-02 four-section reshape (Introduction / Computational methods / Results and discussion /
+# Conclusions). The old Sec. 4 (Results) became Sec. 3 and the old Sec. 5 (Discussion) folded into
+# it, so the subsection numerals move again, one link further down the chain the 2026-07-29 entries
+# above record. Both values below are cross-reference churn only: every baseline occurrence is a
+# "SS4.4"/"SS4.6" pointer, the section headings themselves are dropped by the section-number rule,
+# and the target prints the renumbered counterpart in the same sentences. The checker cannot exclude
+# them by its cross-reference rule because pdftotext emits "SS4.4" as ONE word, so the section sign
+# is not the preceding word and "SS" is not alphabetic. Verified against the baseline PDF before
+# adding: the 36 tier-A occurrences of 4.4 are 35 pointers plus one table cell pointer, and no
+# measurement in either revision has either value (the separate token "4.4%" is a different key and
+# still prints).
+4.4    section-number churn: the old \S4.4 (the latent's departure from its reference) is now \S3.3; all 36 baseline occurrences were cross-references, and the target prints 3.3 in the same sentences (baseline x36 -> target x0).
+4.6    section-number churn: the old \S4.6 (the second chemical closure, pKa) is now \S3.5; all 5 baseline occurrences were cross-references, and the target prints 3.5 in the same sentences (baseline x5 -> target x0).

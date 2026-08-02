@@ -1,0 +1,108 @@
+% =====================================================================
+% SUPPORTING INFORMATION -- the second document of this submission.
+% Created 2026-08-02 by splitting the Supporting Information out of
+% grounding_paradox.tex, where it had been \input between the back matter and the
+% bibliography. ACS deposits the SI as a separate file and all three referees asked
+% for the split; the article's own READING ORDER note records the defect it cures.
+%
+% WHAT IS HERE AND WHAT IS NOT. This file is a wrapper: title block, numbering,
+% orientation paragraph, \input{sections/SI}, bibliography. The body did not move --
+% sections/SI.tex and the ten files it \inputs are unchanged in content and are the
+% same files the combined document used, so nothing was retyped and nothing could be
+% dropped in transit. What changed in sections/SI.tex is only its opening: \appendix
+% and the equation-counter renaming moved here (they are document-level settings),
+% and the \section*{Supplementary Information} heading went away because the title
+% block prints that now.
+%
+% NUMBERING. achemso's manuscript=suppinfo already gives S-prefixed pages, figures,
+% tables and schemes, and S-prefixed citation markers. It does NOT renumber sections
+% (the class leaves those to the journal configuration) or equations or theorem
+% environments, so those four are set below. The result is that every numbered thing
+% in this document carries an S and every numbered thing in the article does not,
+% which is what lets the two halves point at each other without a prefix or a sigil.
+%
+% BUILD. Two documents, cross-referencing each other through xr-hyper, so from clean:
+%     xelatex grounding_paradox      xelatex grounding_paradox_si
+%     bibtex  grounding_paradox      bibtex  grounding_paradox_si
+%     xelatex grounding_paradox      xelatex grounding_paradox_si
+%     xelatex grounding_paradox      xelatex grounding_paradox_si
+% (paper/Makefile has this as `make both'.) One pass short and the cross-document
+% references print as `??' with only a warning; grep the logs for "undefined".
+% =====================================================================
+\documentclass[journal=jcisd8,manuscript=suppinfo,layout=twocolumn]{achemso}
+% Shared verbatim with the article; see preamble.tex for what it does and does not hold.
+\input{preamble}
+% The other half of the submission. xr-hyper reads grounding_paradox.aux, so a \ref
+% here to a label defined in the article resolves to the article's own number.
+% `nocite' (the second optional argument) stops it importing the article's \bibcite
+% lines as well: this document numbers its own citations S1, S2, ... and must not
+% inherit the article's numbering for the works both of them cite. See the matching
+% note in grounding_paradox.tex.
+\externaldocument[][nocite]{grounding_paradox}
+
+% ---------------------------------------------------------------------
+% S-NUMBERING for the four counters achemso's suppinfo option does not touch.
+% \thepage, \thefigure, \thetable, \thescheme and the citation markers are already
+% S-prefixed by the class (achemso.cls, the \acs@manuscript@suppinfo branch).
+% The theorem environments are numbered here rather than left to run 1,2,3: the
+% article states Lemma 1 (the closure/insufficiency decomposition) in its own text,
+% so an unprefixed "Lemma 2" in this document would read as the article's next lemma
+% instead of as this document's first. With the renaming the two sequences are
+% Lemma 1 in the article and Lemmas S1, S2, Theorem S1, Proposition S1 here.
+% ---------------------------------------------------------------------
+\renewcommand{\thesection}{S\arabic{section}}
+\renewcommand{\thesubsection}{S\arabic{section}.\arabic{subsection}}
+\renewcommand{\theequation}{S\arabic{equation}}
+\renewcommand{\thelemma}{S\arabic{lemma}}
+\renewcommand{\thetheorem}{S\arabic{theorem}}
+\renewcommand{\theproposition}{S\arabic{proposition}}
+\renewcommand{\thecorollary}{S\arabic{corollary}}
+\renewcommand{\thedefinition}{S\arabic{definition}}
+\renewcommand{\theassumption}{S\arabic{assumption}}
+
+% achemso prepends "Supporting Information:" to this in suppinfo mode, so the title
+% is the article's own title verbatim -- which is also how the two are matched up at
+% deposit. Keep the two \title arguments identical; if the article is retitled,
+% retitle this file in the same pass.
+\title{Substituting Reference $\sigma$-Profiles Degrades Solubility Prediction and
+Separates COSMO-SAC Error from Input Error}
+
+\author{N.~L. Polomoshnov}
+\affiliation[MSU]{Faculty of Bioengineering and Bioinformatics, Lomonosov Moscow State
+University, Moscow, Russia}
+\alsoaffiliation[IBMC]{V.~N. Orekhovich Institute of Biomedical Chemistry, Moscow, Russia}
+\email{nikitapol@fbb.msu.ru}
+\author{A.~V. Rudik}
+\affiliation[IBMC]{V.~N. Orekhovich Institute of Biomedical Chemistry, Moscow, Russia}
+
+\begin{document}
+
+\maketitle
+
+% ORIENTATION. Two things a reader of this document needs and cannot get from a
+% number alone: which document an unprefixed number is in, and that this document
+% establishes nothing the article does not already state. Both are said once, here,
+% rather than repeated at each of the 130 pointers back into the article.
+\noindent
+This document is the Supporting Information for the article named above. Its own
+sections, tables, figures, equations and lemmas carry an S---\S\ref{sec:si-methods},
+Table~\ref{tab:si-arms}, Fig.~\ref{fig:arch}, Eq.~\eqref{eq:cosmo},
+Lemma~\ref{prop:ident}---and a reference without one, such as \S\ref{sec:measure} or
+Table~\ref{tab:claims}, is to the article. Nothing here is a result the article does not
+state: every claim, every set it is measured on, its uncertainty and its scope are in
+the article's own text, and what this document adds is the proof, the per-row table,
+the robustness grid, the control and the negative behind each.
+
+\input{sections/SI}
+
+% Its own bibliography, which is the point of the split as far as the reference list
+% is concerned: keys cited only here (raue2009, villaverde2016, transtrum2015,
+% gutenkunst2007, white1982, hirano2003, robins1997 and the rest of S12's) are now
+% first cited in the document whose \bibliography lists them, so mciteplus's entry
+% tracking never sees a key cited after its list was built. achemso's suppinfo mode
+% sets the markers and the list to (S1), (S2), ...  -- the article's numbering is
+% independent, so the same work can be reference 12 there and S4 here.
+% achemso selects achemso.bst automatically; no \bibliographystyle is given.
+\bibliography{references_verified}
+
+\end{document}

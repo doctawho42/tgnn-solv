@@ -34,7 +34,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 REP = ROOT / "paper" / "si_tables" / "broad_idac_set_477.csv"
-COR = ROOT / "paper" / "si_tables" / "corner_set_60.csv"
+COR = ROOT / "paper" / "si_tables" / "vt2005_matched_set_60.csv"
 OUTDIR = ROOT / "results" / "b_insuff"
 OUT = OUTDIR / "binning_conventions.json"
 OUT_CSV = OUTDIR / "binning_conventions_sweep.csv"

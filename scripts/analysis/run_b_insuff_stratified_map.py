@@ -165,7 +165,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "analysis"))
 from run_b_insuff_estimator_grid import lotv, two_way_margin_boot  # noqa: E402
 
 BROAD = ROOT / "paper" / "si_tables" / "broad_idac_set_477.csv"
-CORNER = ROOT / "paper" / "si_tables" / "corner_set_60.csv"
+CORNER = ROOT / "paper" / "si_tables" / "vt2005_matched_set_60.csv"
 OUT = ROOT / "results" / "b_insuff" / "stratified_map.json"
 OUT_CSV = ROOT / "results" / "b_insuff" / "stratified_map_table.csv"
 ADM_JSON = ROOT / "results" / "b_insuff" / "admissibility.json"

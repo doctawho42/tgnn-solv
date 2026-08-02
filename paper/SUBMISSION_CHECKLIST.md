@@ -11,11 +11,23 @@ Superseded target: **Digital Discovery** (RSC), fully open-access, APC £2,200 (
 Panel verdict: one-cycle **major revision**, science sound — remaining work is packaging.
 
 ## Status of the manuscript now
-- All referee content revisions (#2–#7) are done; `grounding_paradox.tex` compiles clean (XeLaTeX,
-  run twice). Measured on the 2026-07-29 build: 28 pages of main text, the Supporting Information
-  beginning on p. 29 (it shares that page with the back matter), out of 71 total; no overfull
-  `\hbox`, and one overfull `\vbox` of 1.33 pt on the TOC-graphic page. These counts move with
+- **The submission is TWO documents since 2026-08-02**, which is what ACS deposits and what all
+  three referees asked for. `paper/grounding_paradox.tex` is the article; `paper/grounding_paradox_si.tex`
+  is the Supporting Information (`manuscript=suppinfo`, so pages S-1…, Tables S1…, Figures S1…,
+  citations (S1)…, and sections S1… set in its own preamble). They share `paper/preamble.tex` and
+  cross-reference each other through `xr-hyper`, so **both must be built, and each needs a pass after
+  the other has written its `.aux`**: `make` (i.e. `make both`) in `paper/` does it. An undefined
+  cross-reference is only a LaTeX *warning*, so the build's exit status does not prove the references
+  resolved — run `make check` (`scripts/analysis/check_split_refs.py`), which fails on any undefined
+  reference, any `??` in either PDF, and any label name defined in both documents.
+- Both compile clean (XeLaTeX). Measured on the 2026-08-02 build: the article is 32 pages — main text
+  1–28, back matter 28–29, References 29–32 — and the Supporting Information is 49, S-1 to S-46 of
+  text plus References S-47 to S-49. No LaTeX errors, no undefined references. These counts move with
   every pass — read them off the build log, not off this line.
+- `check_number_conservation.py` now builds **both** roots and pools their numbers before comparing,
+  so a number that merely moved between the two documents does not read as a loss. Run it with its
+  default `--tex` arguments; passing a single root compares the article against a baseline that
+  contained the appendices and will report the whole Supporting Information as gone.
 - The end-matter sections are inserted **in the required order** with `\pending[...]` placeholders:
   Conclusion → **Author contributions** → **Conflicts of interest** → **Data availability** → **Acknowledgements** → references.
 - `\pending[...]` renders as red bracketed text; search the source for `\pending` to find every blank
@@ -58,10 +70,15 @@ There is **no `rsc.cls`** — the RSC "Paper" template is the standard `article`
 - [ ] **Copy** `headers/*.eps` RSC logo files into the project; add `\balance` in the last page's first column and `\pageref{LastPage}`.
 
 ## ESI (our SI) — becomes a SEPARATE file
-- [ ] Split `sections/SI.tex` (+ its `\input`ed sub-sections) into a **standalone ESI `.tex`** with its own preamble
+- [x] Split `sections/SI.tex` (+ its `\input`ed sub-sections) into a **standalone ESI `.tex`** with its own preamble
       and **its own reference list** (separate `\bibliography`).
-- [ ] Renumber all SI floats with an **S prefix**: `\setcounter{figure}{0}\renewcommand{\thefigure}{S\arabic{figure}}`
+      *Done 2026-08-02 for the ACS route: `grounding_paradox_si.tex`. Under the RSC route the same
+      wrapper needs its preamble converted with the article's, and `manuscript=suppinfo` replaced by
+      the explicit S-counters below, which is what achemso was doing for it.*
+- [x] Renumber all SI floats with an **S prefix**: `\setcounter{figure}{0}\renewcommand{\thefigure}{S\arabic{figure}}`
       (and likewise table/equation). In-text: "Fig. S1, ESI†".
+      *Done: achemso's `manuscript=suppinfo` supplies figure/table/scheme/page/citation, and the
+      wrapper adds section, subsection, equation and the theorem environments.*
 - [ ] Add a short **table of contents** at the top of the ESI; supply data in open formats where applicable.
 - [ ] If ESI ships: add `$^\dag$` to the title and the `\footnotetext{\dag~Electronic Supplementary Information ...}` note.
 

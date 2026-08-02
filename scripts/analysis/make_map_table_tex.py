@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Emit the main text's map table body from the deposited admissibility table.
+"""Emit the map's table bodies from the deposited admissibility table.
 
-The map is the instrument's declared output, so it prints in the main text and
+The map is the instrument's declared output, so it prints in the article and
 every one of its cells has to come out of the artifact rather than out of a
-typist.  This script writes the ``tabular`` body of Table~\\ref{tab:map} --- one
-row per stratum of the broad IDAC set, at the headline estimator cell (eight
+typist.  This script writes four ``tabular`` bodies (see WHERE EACH TABLE GOES),
+one row per stratum of the broad IDAC set at the headline estimator cell (eight
 equal-count bins of g(z*), Bessel within-bin variance, row unit, deployed
-residual-only convention) --- into
-
-    paper/si_tables/stratified_map_rows.tex
-
-which the manuscript ``\\input``s.  Nothing here is hard-coded: n, pair counts,
+residual-only convention), into ``paper/si_tables/`` for the manuscript to
+``\\input``.  Nothing here is hard-coded: n, pair counts,
 source counts, margins, intervals, the full-convention margin, how many of the
 four unit x convention cells the stratum is admissible in, and the reason it is
 not admissible all come from
@@ -25,37 +22,63 @@ is replaced by its key P1..P15 in the manuscript's own source list.  The
 substitutions are exhaustive and the script raises if a reason string arrives in
 a form it does not recognise, so a new failure mode cannot be silently dropped.
 
-THE VERDICT COLUMN HAS THREE VALUES, NOT TWO
---------------------------------------------
-Until 2026-08-02 this script printed ``established`` for every row that was
-admissible in all four cells with a positive margin, which is FOUR rows -- the
-glycol ethers at three granularities and the alkane solutes -- while every prose
-statement in the manuscript says one stratum is established.  Both counts were
-true of different things and the one word carried them both.  The vocabulary is
-now fixed and the column prints three values:
+WHERE EACH TABLE GOES
+---------------------
+The map is the instrument's declared output and the abstract names it as what
+replaces the retired aggregate verdict, so it may not live only in the
+Supporting Information.  Three bodies are written:
 
-    established              admissible in all four cells, margin positive, and
-                             SELF-CONTAINED (below).  One row set: the glycol
-                             ethers, at each of the three granularities it
-                             appears at.
-    admissible, not          admissible in all four cells, but either the margin
-    established              is not positive (a one-sided bound certifies
-                             nothing) or the row set is a restatement of a
-                             larger admissible one.
-    (a reason)               not admissible: the reason it fails (a) or (b).
+    stratified_map_rows_article.tex   ARTICLE.  The fifteen strata the fixed
+                                      estimator can bound (n >= 40), on both
+                                      axes and at every granularity, with their
+                                      sources, margins, intervals and what each
+                                      shows.  These are the only strata that can
+                                      separate anything, so a reader of the
+                                      article alone sees which chemistry
+                                      separates and which does not.
+    stratified_map_rows.tex           SI, solvent axis, all strata.
+    stratified_map_rows_solute.tex    SI, solute axis, cross-tab, whole set.
+    stratified_map_rows_detail.tex    SI, error/bound/share/deletion columns.
 
-SELF-CONTAINED is computed, not asserted.  A positive admissible cell A is a
-restatement when some other positive admissible cell B holds more rows than A,
-more than half of A's rows are B's, and A-minus-B is not itself admissible --
-i.e. A's margin does not stand outside B.  That is exactly the manuscript's
-argument for demoting the alkane solutes, and both inputs come from the
-artifact: ``stratum_overlap.csv`` for the shared-row counts and
-``admissibility.json``'s ``margins_on_each_side_of_the_overlap`` for the
-complement.  Nothing about which stratum wins is written into this file.
+The SI bodies are the FULL 59 strata, including the 44 the estimator cannot
+bound and the 15 of those that carry no estimate at all; nothing is dropped from
+either place.
 
-Every admissible row additionally carries an OVERLAP FLAG naming the other
-admissible row sets it shares rows with and by how much, so a reader of the map
-alone cannot count one row set twice across the two axes.
+NO VERDICT VOCABULARY: THE CELL STATES THE CONDITION
+----------------------------------------------------
+Until 2026-08-02 the last column printed a three-value taxonomy --
+``established`` / ``admissible, not established`` / a reason -- which is a
+coined scheme a reader has to look up, exactly what the Grade column of the
+claim ledger was retired for.  The column now states, in ordinary language, the
+condition each row is in: what the numbers show, or which test the row fails and
+how.  The computed distinctions below still decide WHICH sentence is printed;
+what changed is that the sentence says the thing rather than naming it.
+
+    positive, robust and not a restatement   "the closure's own error exceeds
+      of a larger row set                     the bound on its inputs; the sign
+                                              holds when any one publication is
+                                              deleted"
+    positive and robust, but most of its     "N% of these rows are the X's and
+      rows belong to a larger such set        the M outside give <margin>, so
+                                              this is those rows again"
+    robust but the margin is not positive    "the margin is not positive, so the
+                                              two terms are not separated here;
+                                              a bound from above cannot show the
+                                              inputs are at fault"
+    otherwise                                the test it fails, with the number
+
+RESTATEMENT is computed, not asserted.  A positive robust cell A restates B when
+B is also positive and robust, B holds more rows, more than half of A's rows are
+B's, and A-minus-B does not itself pass -- i.e. A's margin does not stand
+outside B.  That is exactly the manuscript's argument for demoting the alkane
+solutes, and both inputs come from the artifact: ``stratum_overlap.csv`` for the
+shared-row counts and ``admissibility.json``'s
+``margins_on_each_side_of_the_overlap`` for the complement.  Nothing about which
+stratum wins is written into this file.
+
+Every passing row additionally carries an OVERLAP FLAG naming the other passing
+row sets it shares rows with and by how much, so a reader of the map alone
+cannot count one row set twice across the two axes.
 
     python scripts/analysis/make_map_table_tex.py
 """
@@ -73,6 +96,9 @@ OVERLAP = ROOT / "results" / "b_insuff" / "stratum_overlap.csv"
 SIDES = ROOT / "results" / "b_insuff" / "admissibility.json"
 OUT = ROOT / "paper" / "si_tables" / "stratified_map_rows.tex"
 OUT_SOLUTE = ROOT / "paper" / "si_tables" / "stratified_map_rows_solute.tex"
+OUT_ARTICLE = ROOT / "paper" / "si_tables" / "stratified_map_rows_article.tex"
+OUT_ARTICLE_B = ROOT / "paper" / "si_tables" / "stratified_map_rows_article_solute.tex"
+KEY = ROOT / "paper" / "si_tables" / "map_source_key.tex"
 DETAIL = ROOT / "paper" / "si_tables" / "stratified_map_rows_detail.tex"
 
 SET = "broad_477"
@@ -94,6 +120,17 @@ SOLUTE_AXES = [
     ("whole_set", "The set as a whole"),
 ]
 AXES = SOLVENT_AXES + SOLUTE_AXES
+
+# The SI carries all 59 strata, which is four floats and not two.  At 28 and 31 rows the two
+# earlier floats ran 266 pt and 214 pt past the text block, so their last rows printed over the
+# folio and off the page -- silently, since LaTeX calls that a warning.  The split below is at
+# an axis boundary, never inside one, so no stratum is separated from its neighbours by it.
+SI_GROUPS = [
+    (SOLVENT_AXES[:2], "stratified_map_rows.tex"),
+    (SOLVENT_AXES[2:], "stratified_map_rows_fine.tex"),
+    (SOLUTE_AXES[:2], "stratified_map_rows_solute.tex"),
+    (SOLUTE_AXES[2:], "stratified_map_rows_xtab.tex"),
+]
 
 PRETTY = {
     "glycol_ether": "glycol ether",
@@ -296,31 +333,39 @@ def main() -> None:
         return text
 
     def shorten(r: dict) -> str:
-        """The artifact's reason, in the same content and fewer words."""
+        """What the row is in a position to show, or the test it fails, in words.
+
+        No label: the cell prints the condition itself, so a reader gets the
+        reason without a key.  Which of the four sentences is printed is decided
+        by the artifact (``admissible_in_every_cell``, ``direction``, and the
+        overlap arithmetic above); the wording is the only editorial act.
+        """
         k = (r["axis"], r["stratum"])
         if k in admissible:
             skip = None
             if k in established:
-                body = "\\textbf{established}"
+                body = ("\\textbf{the closure's own error exceeds the bound on its "
+                        "inputs}, and the sign holds when any one publication is deleted")
             elif k in positive:
                 b = restatement_of(k)
                 skip = head_label(b[1])
                 shared = max(share_of(e) for e in overlaps[k] if e["other"] == b)
                 outside = complement[(k, b)][0]
-                body = (f"admissible, not established: ${100 * shared:.0f}\\%$ of these "
-                        f"rows are the {skip}s' and the ${outside['n']}$ outside give "
-                        f"{fmt_signed(str(outside['margin']))}, so this is that finding "
-                        "restated")
+                body = (f"the sign holds under every deletion, but ${100 * shared:.0f}\\%$ "
+                        f"of these rows are the {skip}s' and the ${outside['n']}$ outside "
+                        f"give {fmt_signed(str(outside['margin']))}: these are those rows "
+                        "again")
             else:
-                body = ("admissible, not established: margin not positive, so "
-                        "nothing is certified")
+                body = ("the sign holds under every deletion, but the margin is not "
+                        "positive, so the two terms are not separated here---a bound from "
+                        "above cannot show the inputs are at fault")
             flag = overlap_flag(k, skip)
             return body + ("; " + flag if flag else "")
         reason = keyed(r["reason_not_admissible"])
         parts: list[str] = []
         m = re.search(r"not boundable: n=(\d+) < 40", reason)
         if m:
-            parts.append("$n<40$")
+            parts.append("$n<40$: too few rows for eight bins of five")
             reason = reason[m.end():].lstrip("; ")
         m = re.fullmatch(r"the fixed cell is undefined at n=(\d+)", reason)
         if m:
@@ -330,43 +375,47 @@ def main() -> None:
             r"one source publication \((P\d+)\): leave-one-source-out cannot be run, "
             r"so the sign was never tested", reason)
         if m:
-            parts.append(f"one source ({m.group(1)}), so no deletion to run")
+            parts.append(f"one source ({m.group(1)}), so there is no deletion to run "
+                         "and the sign was never put at risk")
             reason = ""
         m = re.fullmatch(
             r"(\d+) of (\d+) deletions? leave fewer than 16 rows and the fixed cell is then "
             r"undefined \(([^)]*)\), so the sign is not verifiable", reason)
         if m:
-            parts.append(f"{m.group(1)} of {m.group(2)} deletions undefined "
-                         f"({m.group(3).replace(', ', ', ')})")
+            plural = "" if m.group(2) == "1" else "s"
+            parts.append(f"too few rows remain after deleting {m.group(3)} "
+                         f"({m.group(1)} of {m.group(2)} deletion{plural}), so the sign "
+                         "is untested there")
             reason = ""
         m = re.fullmatch(r"sign does not survive deletion of (.*)", reason)
         if m:
             def _arrow(g: "re.Match[str]") -> str:
                 a, b = float(g.group(1)), float(g.group(2))
-                return f"($ {a:+.3f} \\to {b:+.3f} $)"
+                return f"takes $ {a:+.3f} \\to {b:+.3f} $"
             body = re.sub(r"\(([-+0-9.]+) -> ([-+0-9.]+)\)", _arrow, m.group(1))
-            parts.append("sign flips on deleting " + body)
+            parts.append("the margin changes sign when one publication is deleted: "
+                         + body)
             reason = ""
         m = re.fullmatch(
             r"sign holds, but (\d+) of (\d+) deletions leave n < 40: passes \(b\) and fails "
             r"its strict variant", reason)
         if m:
-            parts.append(f"sign holds, but all {m.group(1)} deletions leave $n<40$")
+            parts.append(f"the sign holds, but all {m.group(1)} deletions leave $n<40$")
             reason = ""
         if reason.strip():
             raise SystemExit(f"unrecognised reason for {r['axis']}::{r['stratum']}: {reason!r}")
         if not parts:
-            # Admissible at the printed cell and not in one of the other three, so the
+            # Passes at the printed cell and not in one of the other three, so the
             # reason has to be fetched from the cell that fails.
             others = [q for q in broad if q["axis"] == r["axis"] and q["stratum"] == r["stratum"]
                       and q["admissible_this_cell"] != "True"]
             if others:
                 q = others[0]
-                parts.append(f"admissible here; fails at the {q['unit']} unit "
+                parts.append(f"passes here and fails at the {q['unit']} unit "
                              f"({'deployed' if q['convention'] == 'res' else 'full'} convention), "
                              + shorten_cell(q))
             else:
-                parts.append("admissible here, not in every cell")
+                parts.append("passes here, not in all four cells")
         return "; ".join(parts)
 
     def shorten_cell(q: dict) -> str:
@@ -380,18 +429,24 @@ def main() -> None:
 
     # The WHOLE tabular is generated, not just its rows: TeX cannot start an alignment cell with
     # \input, so a body-only file breaks with "Misplaced \omit" on the first \multicolumn.
-    def write_map(path: Path, axes: list[tuple[str, str]]) -> None:
+    def write_map(path: Path, axes: list[tuple[str, str]],
+                  only_boundable: bool = False) -> None:
         lines: list[str] = []
         lines.append("% GENERATED by scripts/analysis/make_map_table_tex.py from")
         lines.append("% results/b_insuff/admissibility_table.csv. Do not edit; re-run the script.")
-        lines.append(r"\begin{tabular}{@{}L{0.15\linewidth}rrlrlrcL{0.38\linewidth}@{}}")
+        # 0.14 + 0.355 (was 0.15 + 0.38): at the wider pair the tabular ran 13.2 pt past
+        # \textwidth in a table*, which prints as an overhang into the margin.
+        lines.append(r"\begin{tabular}{@{}L{0.14\linewidth}rrlrlrcL{0.355\linewidth}@{}}")
         lines.append(r"\toprule")
         lines.append(r"Stratum & $n$ & pairs & sources\tnk{a} & margin & $90\%$ margin\tnk{b} "
-                     r"& full & cells\tnk{c} & verdict\tnk{d} \\")
+                     r"& full & cells\tnk{c} & what it shows, or the test it fails\tnk{d} \\")
         lines.append(r"\midrule")
+        n_printed = 0
         for axis, heading in axes:
             sel = [r for r in broad if r["axis"] == axis and r["unit"] == UNIT
                    and r["convention"] == "res"]
+            if only_boundable:
+                sel = [r for r in sel if r["test_a_boundable"] == "True"]
             if not sel:
                 continue
             sel.sort(key=lambda r: -int(r["n"]))
@@ -410,13 +465,32 @@ def main() -> None:
                     f"{fmt_ci(r['margin_ci90_lo'], r['margin_ci90_hi'])} & "
                     f"{fmt_signed(full['margin'])} & ${r['cells_admissible']}$ & "
                     f"{shorten(r)} \\\\")
+                n_printed += 1
         lines.append(r"\bottomrule")
         lines.append(r"\end{tabular}")
         path.write_text("\n".join(lines) + "\n")
-        print(f"wrote {path} ({len(lines)} lines)")
+        print(f"wrote {path} ({len(lines)} lines, {n_printed} strata)")
 
-    write_map(OUT, SOLVENT_AXES)
-    write_map(OUT_SOLUTE, SOLUTE_AXES)
+    # The article's map: every stratum the fixed estimator can bound, on both axes and at
+    # every granularity.  A stratum below n=40 has no margin the rule can act on, so the
+    # article loses no separation by carrying these fifteen and no others; the 44 it does
+    # not carry are in the two SI halves, each with the test it fails.
+    # SPLIT BY AXIS, as the SI's halves are, and for the same reason: at fifteen rows plus the
+    # source key one float is ~70 pt too tall for the page and silently runs into the folio,
+    # while two half-page floats place.  The split is the axis boundary, not a selection.
+    write_map(OUT_ARTICLE, SOLVENT_AXES, only_boundable=True)
+    write_map(OUT_ARTICLE_B, SOLUTE_AXES, only_boundable=True)
+    for axes, name in SI_GROUPS:
+        write_map(ROOT / "paper" / "si_tables" / name, axes)
+
+    # The P1..P15 key, written once and \input by the article's table note.  The SI's halves
+    # point at that note rather than repeating fifteen DOIs in a second document.
+    KEY.write_text(
+        "% GENERATED by scripts/analysis/make_map_table_tex.py. Do not edit; re-run the script.\n"
+        + ",\n".join(f"{k}~\\texttt{{{doi}}}" for doi, k in
+                     sorted(doi_key.items(), key=lambda kv: int(kv[1][1:])))
+        + ".\n")
+    print(f"wrote {KEY} ({len(doi_key)} sources)")
 
     # The companion body: the columns the main text's map does not carry, for the same 59 strata.
     det: list[str] = []

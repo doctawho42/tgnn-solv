@@ -23,7 +23,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 TAB_REP = ROOT / "paper" / "si_tables" / "broad_idac_set_477.csv"
-TAB_COR = ROOT / "paper" / "si_tables" / "corner_set_60.csv"
+TAB_COR = ROOT / "paper" / "si_tables" / "vt2005_matched_set_60.csv"
 OUT = ROOT / "results" / "b_insuff" / "kernel_2010_convention.json"
 
 

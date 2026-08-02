@@ -33,6 +33,28 @@ scientific-notation exponents separable from ordinary digits (see below).
     target     the working tree by default (copied to scratch, so the user's
                own build products are never touched), or another git revision.
 
+A SUBMISSION, NOT A FILE
+------------------------
+``--tex`` may be given more than once, and the default gives it twice: the
+manuscript is an article plus a separately-built Supporting Information, and a
+number that moves from one to the other has not left the submission.  Every root
+named is built in the same materialised directory (they share preamble.tex, the
+figures and the .bib, and they read each other's .aux through xr-hyper), and the
+numbers extracted from the resulting PDFs are pooled into ONE set per revision
+before the comparison.  So the check is on the submission as a whole, and the
+2026-08-02 split of the Supporting Information into its own document -- which
+moved forty-odd pages out of one PDF and into a second one -- is invisible to it,
+which is the point: a split is exactly the operation during which a lost number
+would go unnoticed.
+
+The two revisions need not have the same roots.  A root that does not exist in a
+revision is skipped, and the skip is reported at the top of the output beside the
+borrowed-file warnings.  That is what makes the comparison across the split work
+at all: the baseline is a single document and the target is two, and pooling
+handles the rest.  Page numbers in the report are continuous across a revision's
+roots, in the order they were given, and the header prints where each root's
+pages begin so a page number can be traced back to a document.
+
 If the baseline revision cannot build because a file it ``\\input``s was never
 committed, the missing file is copied in from the working tree and the fact is
 reported at the top of the output.  A borrowed file's numbers count as baseline
@@ -64,7 +86,9 @@ adjacent word -- never from the value itself.  Counts per rule are printed at
 the top of the report so the exclusions themselves can be audited.
 
   bibliography      Blocks that are numbered reference entries -- text opening
-                    "(12) Author, A.; ..." -- on a page in the document's tail
+                    "(12) Author, A.; ..." or, in the Supporting Information,
+                    "(S12) Author, A.; ..." (achemso's suppinfo mode S-prefixes
+                    the markers and the list) -- on a page in the document's tail
                     that is built of them (three or more, and at least 40% of
                     the page's blocks).  Within such a page only the span from
                     the first entry to the last is excluded, so text sharing the
@@ -195,6 +219,13 @@ EXAMPLES
     python scripts/analysis/check_number_conservation.py \\
         --baseline v1-submission --target HEAD --allowlist paper/retired_numbers.txt
 
+    # the article alone, when that is really what is meant.  Note that against a
+    # baseline that carried the appendices in the same file this reports every
+    # number of the Supporting Information as gone; that is a true statement
+    # about the article and a false one about the submission.
+    python scripts/analysis/check_number_conservation.py \\
+        --tex paper/grounding_paradox.tex
+
     # the null control: a revision against itself must report nothing at all.
     # Run it after changing any rule in this file -- it is the false-positive
     # floor, and it should stay at zero in every section.
@@ -229,7 +260,10 @@ from typing import Iterable, Sequence
 # defaults
 # --------------------------------------------------------------------------
 
-DEFAULT_TEX = "paper/grounding_paradox.tex"
+# The submission, in reading order.  Both are built and their numbers pooled; see
+# "A SUBMISSION, NOT A FILE" above.  A root absent from a revision is skipped and
+# reported, which is how a baseline predating the 2026-08-02 split still compares.
+DEFAULT_TEX = ["paper/grounding_paradox.tex", "paper/grounding_paradox_si.tex"]
 XELATEX = os.environ.get("XELATEX", "xelatex")
 BIBTEX = os.environ.get("BIBTEX", "bibtex")
 PDFTOTEXT = os.environ.get("PDFTOTEXT", "pdftotext")
@@ -415,7 +449,11 @@ def _tag_scripts(line: list[Word]) -> None:
 # --------------------------------------------------------------------------
 
 
-_ENTRY_RE = re.compile(r"^\(\d{1,3}\)\s")
+# "(12) " in the article, "(S12) " in the Supporting Information: achemso's
+# suppinfo mode sets \bibnumfmt to (S#), so without the optional S the SI's
+# reference list would not be recognised as one and every year, volume and page
+# number in it would count as a printed number of the manuscript.
+_ENTRY_RE = re.compile(r"^\(S?\d{1,3}\)\s")
 
 
 def bibliography_blocks(pages: Sequence[Page]) -> set[tuple[int, int]]:
@@ -700,12 +738,21 @@ def _flags_for(text: str, pos: int, length: int) -> tuple[str, ...]:
 # --------------------------------------------------------------------------
 
 
-def extract_occurrences(pages: Sequence[Page], max_context: int
+def extract_occurrences(pages: Sequence[Page], max_context: int,
+                        page_offset: int = 0
                         ) -> tuple[list[Occurrence], Counter, list[str]]:
     """Every printed number, the per-rule exclusion tally, and every sentence.
 
     The sentence list is what later lets a lost number be shown next to the
     sentence the target now prints in its place.
+
+    ``page_offset`` is added to the reported page number.  A revision may be
+    several documents (article + Supporting Information); their pages are
+    reported as one continuous run so that a page in the report identifies a
+    place in the submission, and the header says where each document starts.
+    The structural rules -- bibliography region, column edges, figure blocks --
+    are all per-page or per-document and are applied before the offset, so
+    pooling cannot change what any of them decides.
     """
     dropped: Counter = Counter()
     out: list[Occurrence] = []
@@ -742,7 +789,7 @@ def extract_occurrences(pages: Sequence[Page], max_context: int
                 tier = "F" if bi in figs else ("A" if t.tierA else "B")
                 out.append(Occurrence(
                     value=_canon(t.dec), percent=t.percent, printed=t.printed,
-                    page=page.number, tier=tier,
+                    page=page.number + page_offset, tier=tier,
                     context=_sentence_around(text, pos, max_context),
                     local=_normalise(text[max(0, pos - 55):pos + len(t.printed) + 55]),
                     flags=_flags_for(text, pos, len(t.printed)),
@@ -871,12 +918,26 @@ def _apply_exclusions(words: list[Word], toks: list[RawToken],
 
 
 @dataclass
+class DocResult:
+    """One built document of a revision."""
+    tex: Path                     # repo-relative root
+    pdf: Path
+    pages: int = 0
+    first_page: int = 1           # its page 1 as numbered in the pooled report
+    errors: list[str] = field(default_factory=list)
+
+
+@dataclass
 class BuildResult:
     label: str
-    pdf: Path
-    pages: int
+    docs: list[DocResult]
     borrowed: list[str]
-    errors: list[str]
+    skipped: list[str]            # roots this revision does not have
+    pages: int = 0                # pooled, filled in after the PDFs are parsed
+
+    @property
+    def errors(self) -> list[str]:
+        return [e for d in self.docs for e in d.errors]
 
 
 def _run(cmd: Sequence[str], cwd: Path) -> subprocess.CompletedProcess:
@@ -889,12 +950,18 @@ def _run(cmd: Sequence[str], cwd: Path) -> subprocess.CompletedProcess:
                           text=True, errors="replace")
 
 
-def materialise(repo: Path, rev: str | None, tex_rel: Path, dest: Path) -> None:
-    """Put the manuscript's directory for ``rev`` (or the working tree) in dest."""
+def materialise(repo: Path, rev: str | None, tex_rels: Sequence[Path],
+                dest: Path) -> None:
+    """Put the manuscript's directory for ``rev`` (or the working tree) in dest.
+
+    One directory for all the roots: they share preamble.tex, the figures, the
+    .bib and -- through xr-hyper -- each other's .aux, so they have to be built
+    side by side, exactly as ``make'' builds them.
+    """
     if dest.exists():
         shutil.rmtree(dest)
     dest.mkdir(parents=True)
-    paper_rel = tex_rel.parent
+    paper_rel = tex_rels[0].parent
     if rev is None:
         shutil.copytree(repo / paper_rel, dest / paper_rel,
                         symlinks=True, dirs_exist_ok=True)
@@ -910,60 +977,98 @@ def materialise(repo: Path, rev: str | None, tex_rel: Path, dest: Path) -> None:
         if untar.returncode != 0:
             raise SystemExit(f"tar failed: {untar.stderr.decode(errors='replace')}")
 
-    stem = tex_rel.stem
-    for suffix in AUX_SUFFIXES + (".pdf",):
-        candidate = dest / paper_rel / (stem + suffix)
-        if candidate.exists():
-            candidate.unlink()
+    for tex_rel in tex_rels:
+        for suffix in AUX_SUFFIXES + (".pdf",):
+            candidate = dest / paper_rel / (tex_rel.stem + suffix)
+            if candidate.exists():
+                candidate.unlink()
 
 
 _MISSING_RE = re.compile(r"File [`'\"]([^'\"`]+)' not found")
 
 
-def build(repo: Path, rev: str | None, tex_rel: Path, workdir: Path,
+def build(repo: Path, rev: str | None, tex_rels: Sequence[Path], workdir: Path,
           label: str, reuse: bool) -> BuildResult:
+    """Build every root this revision has, in one directory, and report them.
+
+    Roots the revision does not carry are skipped rather than fatal: comparing
+    across the split means comparing a one-document revision with a two-document
+    one, and refusing to would defeat the check.
+
+    The pass order is the one paper/Makefile uses -- xelatex over all roots,
+    bibtex over all roots, then two more xelatex sweeps -- because with xr-hyper
+    each document reads the other's .aux at the start of its run, so a root has
+    to be revisited after its neighbour has written one.  A single-root build
+    degenerates to the familiar xelatex/bibtex/xelatex/xelatex.
+    """
     dest = workdir / label
-    paper_dir = dest / tex_rel.parent
-    pdf = paper_dir / (tex_rel.stem + ".pdf")
-    logfile = paper_dir / (tex_rel.stem + ".log")
-    if reuse and pdf.exists():
-        return BuildResult(label, pdf, _page_count(pdf), [], [])
+    paper_dir = dest / tex_rels[0].parent
 
-    materialise(repo, rev, tex_rel, dest)
+    present, skipped = [], []
+    for t in tex_rels:
+        exists = (repo / t).exists() if rev is None else _in_rev(repo, rev, t)
+        (present if exists else skipped).append(t)
+    if not present:
+        raise SystemExit(f"[{label}] none of the manuscript roots exist: "
+                         + ", ".join(str(t) for t in tex_rels))
+
+    docs = [DocResult(tex=t, pdf=paper_dir / (t.stem + ".pdf")) for t in present]
+    if reuse and all(d.pdf.exists() for d in docs):
+        for d in docs:
+            d.pages = _page_count(d.pdf)
+        return BuildResult(label, docs, [], [str(s) for s in skipped])
+
+    materialise(repo, rev, tex_rels, dest)
     borrowed: list[str] = []
-    tex_name = tex_rel.name
 
-    for _ in range(25):
-        _run([XELATEX, "-interaction=nonstopmode", tex_name], paper_dir)
-        log = logfile.read_text(encoding="utf-8", errors="replace") \
-            if logfile.exists() else ""
-        missing = [m for m in _MISSING_RE.findall(log)]
-        fixed = False
-        for name in missing:
-            for cand in (name, name + ".tex", name + ".pdf"):
-                src = repo / tex_rel.parent / cand
-                if src.exists():
-                    dst = paper_dir / cand
-                    dst.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(src, dst)
-                    borrowed.append(cand)
-                    fixed = True
-                    break
-        if not fixed:
-            break
+    # First sweep, with the missing-file repair loop the single-document version
+    # had.  A file borrowed for one root is on disk for the others too.
+    for d in docs:
+        for _ in range(25):
+            _run([XELATEX, "-interaction=nonstopmode", d.tex.name], paper_dir)
+            logfile = paper_dir / (d.tex.stem + ".log")
+            log = logfile.read_text(encoding="utf-8", errors="replace") \
+                if logfile.exists() else ""
+            fixed = False
+            for name in _MISSING_RE.findall(log):
+                for cand in (name, name + ".tex", name + ".pdf"):
+                    src = repo / d.tex.parent / cand
+                    if src.exists():
+                        dst = paper_dir / cand
+                        dst.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(src, dst)
+                        borrowed.append(cand)
+                        fixed = True
+                        break
+            if not fixed:
+                break
 
-    _run([BIBTEX, tex_rel.stem], paper_dir)
-    _run([XELATEX, "-interaction=nonstopmode", tex_name], paper_dir)
-    _run([XELATEX, "-interaction=nonstopmode", tex_name], paper_dir)
+    for d in docs:
+        _run([BIBTEX, d.tex.stem], paper_dir)
+    for _ in range(2):
+        for d in docs:
+            _run([XELATEX, "-interaction=nonstopmode", d.tex.name], paper_dir)
 
-    errors: list[str] = []
-    if logfile.exists():
-        log = logfile.read_text(encoding="utf-8", errors="replace")
-        errors = [ln.strip() for ln in log.splitlines()
-                  if ln.startswith("!")][:10]
-    if not pdf.exists():
-        raise SystemExit(f"[{label}] build produced no PDF; first errors: {errors}")
-    return BuildResult(label, pdf, _page_count(pdf), sorted(set(borrowed)), errors)
+    for d in docs:
+        logfile = paper_dir / (d.tex.stem + ".log")
+        if logfile.exists():
+            log = logfile.read_text(encoding="utf-8", errors="replace")
+            d.errors = [ln.strip() for ln in log.splitlines()
+                        if ln.startswith("!")][:10]
+        if not d.pdf.exists():
+            raise SystemExit(f"[{label}] {d.tex} produced no PDF; "
+                             f"first errors: {d.errors}")
+        d.pages = _page_count(d.pdf)
+    return BuildResult(label, docs, sorted(set(borrowed)),
+                       [str(s) for s in skipped])
+
+
+def _in_rev(repo: Path, rev: str, path: Path) -> bool:
+    """Does ``rev`` carry ``path``?  Used to skip a root the revision predates."""
+    p = subprocess.run(["git", "cat-file", "-e", f"{rev}:{path}"],
+                       cwd=str(repo), stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+    return p.returncode == 0
 
 
 def _page_count(pdf: Path) -> int:
@@ -1300,6 +1405,17 @@ def render(base_build: BuildResult, now_build: BuildResult,
                f"{len(base_occ)} numbers printed")
     out.append(f"  target   : {now_build.label}  ->  {now_build.pages} pages, "
                f"{len(now_occ)} numbers printed")
+    # Which documents each revision is, and where each one's pages start in the
+    # pooled numbering.  A revision may be one document or several; the numbers
+    # are compared pooled, so this is how a reported page is traced to a file.
+    for b in (base_build, now_build):
+        if len(b.docs) > 1 or b.skipped:
+            out.append(f"  {b.label} is {len(b.docs)} document(s):")
+            for d in b.docs:
+                out.append(f"      {str(d.tex):<38} pages "
+                           f"{d.first_page}-{d.first_page + d.pages - 1}")
+            for s in b.skipped:
+                out.append(f"      {s:<38} not in this revision (skipped)")
     for b in (base_build, now_build):
         if b.borrowed:
             out.append("")
@@ -1402,8 +1518,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                    help="git revision to compare against (default: HEAD)")
     p.add_argument("--target", default=None, metavar="REV",
                    help="git revision to check; omit to check the working tree")
-    p.add_argument("--tex", default=DEFAULT_TEX, metavar="PATH",
-                   help=f"manuscript root, repo-relative (default: {DEFAULT_TEX})")
+    p.add_argument("--tex", action="append", default=None, metavar="PATH",
+                   help="manuscript root, repo-relative; repeatable, and the "
+                        "numbers of all of them are pooled into one submission "
+                        "before comparing. A root a revision does not have is "
+                        "skipped and reported. Default: "
+                        + " + ".join(DEFAULT_TEX))
     p.add_argument("--allowlist", default=None, metavar="FILE",
                    help="numbers deliberately retired; 'VALUE  one-line reason' per line")
     p.add_argument("--workdir", default=None, metavar="DIR",
@@ -1429,9 +1549,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("not inside a git repository", file=sys.stderr)
         return 2
 
-    tex_rel = Path(args.tex)
-    if not (repo / tex_rel).exists() and args.target is None:
-        print(f"manuscript not found: {repo / tex_rel}", file=sys.stderr)
+    tex_rels = [Path(t) for t in (args.tex or DEFAULT_TEX)]
+    if len({t.parent for t in tex_rels}) != 1:
+        print("all --tex roots must sit in the same directory: they share a "
+              "preamble, a .bib and each other's .aux", file=sys.stderr)
+        return 2
+    if args.target is None and not any((repo / t).exists() for t in tex_rels):
+        print("no manuscript root found: "
+              + ", ".join(str(repo / t) for t in tex_rels), file=sys.stderr)
         return 2
 
     try:
@@ -1445,9 +1570,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     workdir.mkdir(parents=True, exist_ok=True)
 
     try:
-        base_build = build(repo, args.baseline, tex_rel, workdir,
+        base_build = build(repo, args.baseline, tex_rels, workdir,
                            "baseline", args.reuse_build)
-        now_build = build(repo, args.target, tex_rel, workdir,
+        now_build = build(repo, args.target, tex_rels, workdir,
                           "target", args.reuse_build)
     except SystemExit as exc:
         print(exc, file=sys.stderr)
@@ -1456,13 +1581,32 @@ def main(argv: Sequence[str] | None = None) -> int:
     base_build.label = f"{args.baseline} ({_describe(repo, args.baseline)})"
     now_build.label = args.target or "working tree"
 
-    base_pages = read_pdf(base_build.pdf, workdir, "baseline")
-    now_pages = read_pdf(now_build.pdf, workdir, "target")
-    base_build.pages = len(base_pages) or base_build.pages
-    now_build.pages = len(now_pages) or now_build.pages
+    def harvest(bres: BuildResult) -> tuple[list[Occurrence], Counter, list[str]]:
+        """Pool one revision's documents into a single set of occurrences.
 
-    base_occ, base_drop, _ = extract_occurrences(base_pages, args.context_chars)
-    now_occ, now_drop, now_sents = extract_occurrences(now_pages, args.context_chars)
+        Pages are renumbered continuously across the documents, in the order
+        the roots were given, so that the report's page numbers address the
+        submission rather than a file; the header records the boundaries.
+        """
+        occ: list[Occurrence] = []
+        drop: Counter = Counter()
+        sents: list[str] = []
+        offset = 0
+        side = "baseline" if bres is base_build else "target"
+        for i, d in enumerate(bres.docs):
+            pages = read_pdf(d.pdf, workdir, f"{side}-{i}-{d.tex.stem}")
+            d.pages = len(pages) or d.pages
+            d.first_page = offset + 1
+            o, dr, se = extract_occurrences(pages, args.context_chars, offset)
+            occ.extend(o)
+            drop.update(dr)
+            sents.extend(se)
+            offset += d.pages
+        bres.pages = offset
+        return occ, drop, sents
+
+    base_occ, base_drop, _ = harvest(base_build)
+    now_occ, now_drop, now_sents = harvest(now_build)
 
     lost, gained = compare(base_occ, now_occ, SentenceIndex(now_sents),
                            args.max_contexts)

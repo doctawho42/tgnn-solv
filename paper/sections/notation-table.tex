@@ -1,41 +1,27 @@
-% Notation table. Moved from the SI to the main text (2026-07-27) so that the symbols and the coined
-% vocabulary are defined before the Results use them, and declared at the end of the theory section
-% (2026-07-29) when the separate notation-and-grading section was dissolved (criterion 7).
-% WHERE IT ACTUALLY SETS, measured from the .aux: Table 1 floats to the top of p. 9, which is inside
-% Sec. 4 Methods -- Sec. 3 runs p. 5-7 and Sec. 4 opens on p. 8. Its first citation is on p. 8, so
-% the placement rule holds; what does not hold is the description of it as sitting at the end of the
-% theory section. It is declared there and prints one section later.
-%
-% SIMPLIFIED 2026-07-29 under criterion (8). It is a glossary, not a second methods section: one line
-% per symbol, the qualification that belongs to a measurement kept where the measurement is made
-% (Sec. 5.2, Tables 2-4, App. C). What left this table and where it now stands:
-%   - the sets' sizes, temperature and heavy-atom ceiling, and the deposited file names -> Sec. 5.2(i)-(ii)
-%   - "label noise is inside B_insuff, not beside it" -> Sec. 3.2 and Table 3, note k
-%   - the margin's bootstrap-resolution rule -> the grading rule at the head of Sec. 5
-%   - the full inventory of subscripted sigmas (Fisher design, cutoff, derivative) -> App. F, App. G
-%   - "deflated" -> App. C, where the deflated estimators are tabulated
-% Keep it to one line per row; a row that grows to three is a paragraph in the wrong place.
-\begin{table*}[t]
+% Table 1.  CUT ON 2026-08-02 to the symbols that genuinely collide, at referee request.  The
+% previous version was a twelve-row glossary of every symbol and every coined term the Results use;
+% a symbol used repeatedly and defined where it appears does not need a row, and the coined terms
+% went with the grading vocabulary.  What is left is the two letters this manuscript would otherwise
+% use for two different things, because it spans two chemical domains and two literatures: sigma and
+% Gamma.  Both renamings (\hammett for the Hammett constant, \Ggap for the grounding gap) are
+% defined in preamble.tex and are what the body prints.
+% Single-column `table', not `table*': at two rows a full-width float wastes a page-width band.
+% Do not grow this back into a glossary.  If a symbol needs explaining, explain it where it is used.
+\begin{table}[t]
 \centering
-\caption{Symbols and coined terms used throughout.}
+\caption{The two symbols that carry more than one meaning in this manuscript, and the renamings
+that separate them.}
 \label{tab:notation}
 {\footnotesize
-\begin{tabular}{@{}lp{0.68\linewidth}@{}}
+\begin{tabular}{@{}lp{0.60\linewidth}@{}}
 \toprule
-Symbol / term & Meaning \\
+Symbol & Meaning here \\
 \midrule
-$g$ (closure), $h$ (encoder) & fixed, non-fitted physical map (COSMO-SAC; a Hammett linear free-energy relation, LFER, for pKa); learned graph network $x\mapsto z$ \\
-$\zstar$, $\hat z$, $m$ & reference (oracle) vs.\ learned $\sigma$-profile; activity target (experimental $\lngi$). $\zstar$ is the closure's whole argument: the concatenated profile pair, written $(\zstar,T)$ where $g$ also reads a temperature \\
-$\Bclos$, $\Binsuf$    & closure misspecification $\Ex[(\Ex[m\mid\zstar]-g(\zstar))^2]$; input insufficiency $\Ex[\Var(m\mid\zstar)]$, over the measurement superpopulation of \S\ref{sec:decomp} \\
-separation margin      & $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$; positive witnesses $\Bclos>\Binsuf$ on the sample measured, negative loses that ordering rather than reversing it \\
-the corner / the broad IDAC set & the two activity data sets the instrument is run on: the VT-2005-matchable pairs at one temperature, and the larger set matched to the University of Delaware (UD) $\sigma$-profile database across temperatures (\S\ref{sec:measure}) \\
-LOTV; leakage-immune & law of total variance, the model-free binning bound on $\Binsuf$; \emph{leakage-immune}, fitting no model, so no held-out row borrows strength from a near-twin \\
-\Ggap\ (grounding gap) & $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$: oracle risk minus best end-to-end risk ($R_{\mathrm{free}}$ is the free black box's) \\
-$\Gamma_{S}$; \hammett; $\sigma_\eta$ & COSMO-SAC segment activity coefficient (Eq.~\eqref{eq:cosmo}), \emph{not} the grounding gap \Ggap; Hammett substituent constant, renamed from $\sigma$; experimental label noise. Standing alone, $\sigma$ is the charge-density profile, and $\sigma(\cdot)$ with an argument is the generated $\sigma$-algebra \\
-$\Delta_\infty$ (physics penalty) & asymptotic risk of the physics arm minus the budget-matched control \\
-full / res             & COSMO-SAC with / without the Staverman--Guggenheim combinatorial term \\
-compensating surrogate & a learned $\hat z$ that would \emph{cancel} the closure's error instead of matching $\zstar$; the hypothesis of \S\ref{sec:surrogate} \\
-$P_{\mathrm{boot}}$    & clustered-bootstrap frequency that the \emph{measured} separation margin stays positive: the instrument's resolution on this design, not a posterior probability \\
+$\sigma$ & standing alone, the screening-charge-density profile; $\sigma(\cdot)$ with an argument,
+the generated $\sigma$-algebra; \hammett, the Hammett substituent constant of the pKa closure,
+renamed from $\sigma$; $\sigma_\eta$, experimental label noise \\
+$\Gamma$ & $\Gamma_S$, the COSMO-SAC segment activity coefficient of Eq.~\eqref{eq:cosmo}; the
+grounding gap is \Ggap, renamed from $\Gamma$ so that the two do not collide \\
 \bottomrule
 \end{tabular}}
-\end{table*}
+\end{table}

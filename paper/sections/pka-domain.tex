@@ -3,7 +3,7 @@
 % \S\ref{sec:pka-main} carries the statement of this result in the main text -- what was measured, on
 % what, and the two signs. This appendix is the construction behind it and repeats those numbers on
 % purpose; keep the two in step if either changes.
-The measured result of this appendix is stated in \S\ref{sec:pka-main}; what follows is the
+The measured result of this section is stated in \S\ref{sec:pka-main}; what follows is the
 construction, the estimator and the sweep behind it.
 The instrument is not specific to COSMO-SAC. In a second real domain---aqueous $\mathrm pK_a$ of
 substituted aromatics---the fixed closure is a Hammett linear-free-energy relationship
@@ -15,21 +15,21 @@ Lemma~\ref{prop:decomp}: \emph{resonance saturation} (a curvature the linear clo
 represent) lands in $\Bclos$, while \emph{ortho/steric} effects, absent from the tabulated
 constants, are information the intermediate lacks and land in $\Binsuf$. On the OPERA experimental
 compilation \cite{mansouri2019opera}---the canonical full set under a uniform, closure-independent
-quality filter that drops pre-ionized microstates (App.~\ref{sec:si-pka})---this yields a
+quality filter that drops pre-ionized microstates (\S\ref{sec:si-pka})---this yields a
 \emph{measured} fidelity sweep. The clean meta/para series ($n{=}158$) is well specified (RMSE $0.55$,
 $\Bclos$ below the insufficiency floor). The ortho/heteroaromatic regime ($n{=}846$) degrades to
 RMSE $2.26$, of which a within-scaffold estimator places at most $4.5$ of the $5.1$ total in input
 insufficiency and hence at least $0.6$ in the closure. That estimator is an out-of-fold residual, so
 both figures are one-sided, and the a-priori
 channel assignment---ortho information the tabulated constant lacks---is consistent with the
-measurement rather than certified by it (App.~\ref{sec:si-pka}); the sweep is the
+measurement rather than established by it (\S\ref{sec:si-pka}); the sweep is the
 near-exact-to-degraded transition. The decisive test is the
 same oracle swap as on solubility---the learned $\hat\sigma_{\mathrm H}$ replaced by the tabulated $\sigma_{\mathrm H}^\star$
 in the same closure, the sign of the change recorded per stratum---measured \emph{in-distribution} across
 $K{=}20$ within-scaffold splits. It \emph{flips}. On the clean meta/para
 pole feeding the reference constant \emph{helps} (learned MAE $0.48$ vs oracle $0.315$; oracle better
 in $19/20$ splits and in three of the four reaction series): the ceiling there is the noisy learned estimate, not the
-closure---a real-data grounding-helps corner and an internal positive control. On the ortho pole the
+closure---a real-data pole on which grounding helps, and an internal positive control. On the ortho pole the
 same swap \emph{hurts} (learned $0.83$ vs oracle $1.62$; oracle worse in $\mathbf{20/20}$ splits and in
 all four series, gap $90\%$ CI $[{+}0.57,{+}0.95]$): the freely learned $\hat\sigma_{\mathrm H}$ absorbs the ortho/steric
 information the tabulated constant lacks. What reverses here is the sign of the grounding penalty; it
@@ -39,11 +39,11 @@ instance of the sign rule, not of that mechanism.
 The clustering unit is the Hammett reaction series, of which only $G{=}4$ exist,
 so the accompanying bootstrap resolves nothing finer than series-level sign agreement---read as a
 sign test on four units, $p{=}1/16$ on the ortho pole and $p{\approx}0.31$ on the clean one---and is
-quoted as such (App.~\ref{sec:si-pka}).
+quoted as such (\S\ref{sec:si-pka}).
 
 Both signs obey one \emph{crossover law}---grounding helps a pole iff the learned arm's error there
 exceeds the fidelity-set oracle error---which a competence sweep confirms
-(App.~\ref{sec:si-pka}). The well-specified pole's threshold (${\approx}0.315$) is never beaten by
+(\S\ref{sec:si-pka}). The well-specified pole's threshold (${\approx}0.315$) is never beaten by
 the learned arm, so grounding helps at every training budget. The degraded pole's threshold ($1.62$)
 is high, so the learned arm beats it, and grounding hurts, across the whole interpolation range
 (down to $12\%$ of the data), reverting to helps only under scaffold \emph{extrapolation}, where
@@ -53,6 +53,6 @@ scope boundary is predicted by the same law. It is the sharp, two-sided form of 
 efficiency under correct specification \cite{hirano2003}, pseudo-true fitting under misspecification
 \cite{white1982}---sharpened here into a fidelity-set
 threshold. The trained physics-vs-DirectGNN comparison is weaker and is not load-bearing
-(App.~\ref{sec:si-pka}). On an independent chemical closure the instrument separates a helps-corner
-from a hurts-corner, each with a sign consistent across splits and series; the full construction,
-the estimator validation and the measured sweep are in App.~\ref{sec:si-pka} (Fig.~\ref{fig:pka}).
+(\S\ref{sec:si-pka}). On an independent chemical closure the instrument separates a pole where
+grounding helps from one where it hurts, each with a sign consistent across splits and series; the full construction,
+the estimator validation and the measured sweep are in \S\ref{sec:si-pka} (Fig.~\ref{fig:pka}).
