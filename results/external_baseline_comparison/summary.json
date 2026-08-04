@@ -1,0 +1,429 @@
+{
+  "what": "absolute solubility accuracy of this work against published models",
+  "tier1_this_work_scaffold_split": {
+    "grounded_a": {
+      "label": "TGNN, COSMO-SAC closure, sigma head supervised (physics arm)",
+      "n": 5608,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "ln_x2": {
+        "mae": {
+          "mean": 1.8457231489714294,
+          "sd": 0.05345794497643314,
+          "per_seed": {
+            "42": 1.8034463284614253,
+            "43": 1.9211398298080251,
+            "44": 1.8125832886448376
+          }
+        },
+        "rmse": {
+          "mean": 2.4437988361657097,
+          "sd": 0.08614899270472824,
+          "per_seed": {
+            "42": 2.3711623443363803,
+            "43": 2.564824982875429,
+            "44": 2.3954091812853195
+          }
+        },
+        "r2": {
+          "mean": 0.32985565174813647,
+          "sd": 0.047743131562797976,
+          "per_seed": {
+            "42": 0.36988377247192183,
+            "43": 0.2627520800209142,
+            "44": 0.35693110275157336
+          }
+        }
+      },
+      "logS_mol_per_L": {
+        "mae": {
+          "mean": 0.818189769414683,
+          "sd": 0.022207570624044756
+        },
+        "rmse": {
+          "mean": 1.0785980220443985,
+          "sd": 0.03708381667702478
+        },
+        "r2": {
+          "mean": 0.2679132026638938,
+          "sd": 0.06276452941337905
+        }
+      }
+    },
+    "nrtl": {
+      "label": "TGNN, NRTL closure (physics arm)",
+      "n": 5608,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "ln_x2": {
+        "mae": {
+          "mean": 1.7949750799735205,
+          "sd": 0.07054762162251763,
+          "per_seed": {
+            "42": 1.7335323077831124,
+            "43": 1.7576226848893375,
+            "44": 1.8937702472481117
+          }
+        },
+        "rmse": {
+          "mean": 2.421963976916387,
+          "sd": 0.06323677811113752,
+          "per_seed": {
+            "42": 2.3480069878277336,
+            "43": 2.415398149413844,
+            "44": 2.502486793507583
+          }
+        },
+        "r2": {
+          "mean": 0.3421461675146898,
+          "sd": 0.034400030403049814,
+          "per_seed": {
+            "42": 0.38213036077074114,
+            "43": 0.34615389077855463,
+            "44": 0.29815425099477366
+          }
+        }
+      },
+      "logS_mol_per_L": {
+        "mae": {
+          "mean": 0.7915914209236181,
+          "sd": 0.03120764407853449
+        },
+        "rmse": {
+          "mean": 1.0670403386243086,
+          "sd": 0.03280533720901483
+        },
+        "r2": {
+          "mean": 0.2753046125442852,
+          "sd": 0.04130757515831804
+        }
+      }
+    },
+    "directgnn": {
+      "label": "DirectGNN (same encoder, no closure) -- the control",
+      "n": 5608,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "ln_x2": {
+        "mae": {
+          "mean": 1.7021765850634498,
+          "sd": 0.03301382785693155,
+          "per_seed": {
+            "42": 1.7485258443561382,
+            "43": 1.6741358618180238,
+            "44": 1.683868049016188
+          }
+        },
+        "rmse": {
+          "mean": 2.2713036168524563,
+          "sd": 0.05868505776951187,
+          "per_seed": {
+            "42": 2.34190026784301,
+            "43": 2.1982165541487877,
+            "44": 2.273794028565572
+          }
+        },
+        "r2": {
+          "mean": 0.421453459810423,
+          "sd": 0.029853272993102534,
+          "per_seed": {
+            "42": 0.3853401044055442,
+            "43": 0.45844940977057447,
+            "44": 0.4205708652551503
+          }
+        }
+      },
+      "logS_mol_per_L": {
+        "mae": {
+          "mean": 0.7465710454600779,
+          "sd": 0.009773453256013096
+        },
+        "rmse": {
+          "mean": 0.9950075195491713,
+          "sd": 0.021603593902868694
+        },
+        "r2": {
+          "mean": 0.39840852309503116,
+          "sd": 0.02597395856113908
+        }
+      }
+    },
+    "oracle": {
+      "label": "TGNN, COSMO-SAC with the reference sigma substituted at evaluation",
+      "n": 5608,
+      "seeds": [
+        42,
+        43
+      ],
+      "ln_x2": {
+        "mae": {
+          "mean": 2.2564950718865937,
+          "sd": 0.024797356725350328,
+          "per_seed": {
+            "42": 2.231697715161243,
+            "43": 2.281292428611944
+          }
+        },
+        "rmse": {
+          "mean": 3.0635957193247556,
+          "sd": 0.022978533279776725,
+          "per_seed": {
+            "42": 3.0406171860449787,
+            "43": 3.086574252604532
+          }
+        },
+        "r2": {
+          "mean": -0.05192657056675487,
+          "sd": 0.015779085855629038,
+          "per_seed": {
+            "42": -0.03614748471112583,
+            "43": -0.06770565642238391
+          }
+        }
+      },
+      "logS_mol_per_L": {
+        "mae": {
+          "mean": 1.0053309773027672,
+          "sd": 0.009010784946114792
+        },
+        "rmse": {
+          "mean": 1.3547961127730197,
+          "sd": 0.011574722409045668
+        },
+        "r2": {
+          "mean": -0.1437888570015441,
+          "sd": 0.05030694648003242
+        }
+      }
+    },
+    "_predict_the_mean_reference": {
+      "label": "predict the test-set mean of ln x2 (assumption-free scale)",
+      "mae_ln_x2": 2.32494158891005,
+      "rmse_ln_x2": 2.9871082226758108,
+      "n": 5608
+    },
+    "_deposit_defects": [
+      "oracle@seed44: covers 295/5608 locked rows"
+    ]
+  },
+  "tier2_external_rerun_here": {
+    "fastsolv_retrained_here": {
+      "n": 10287,
+      "ln_x2": {
+        "mae": 1.940994069751364,
+        "rmse": 2.437832582250764,
+        "r2": 0.2261558698385057
+      },
+      "logS_mol_per_L": {
+        "mae": 0.86935111788521,
+        "rmse": 1.0966388135223386,
+        "r2": 0.1695761225010982,
+        "n": 10287
+      },
+      "split": "by-solute",
+      "source_artifact": "results/external_baselines/solute/fastsolv_contract_v2/summary.csv"
+    },
+    "solprop_cycle_recalibrated": {
+      "n": 10287,
+      "ln_x2": {
+        "mae": 2.339706110225233,
+        "rmse": 3.0051897385670063,
+        "r2": -0.1759518312756915
+      },
+      "logS_mol_per_L": {
+        "mae": 1.04459674158313,
+        "rmse": 1.33809009119744,
+        "r2": -0.2363553478914442,
+        "n": 10287
+      },
+      "split": "by-solute",
+      "source_artifact": "results/external_baselines/solute/solprop_calibrated_contract_v2/summary.csv"
+    },
+    "solprop_cycle_zero_shot": {
+      "n": 10287,
+      "ln_x2": {
+        "mae": 2.3610285292044515,
+        "rmse": 3.354780002670502,
+        "r2": -0.4654595298552957
+      },
+      "logS_mol_per_L": {
+        "mae": 1.219100545060199,
+        "rmse": 1.8655069300144884,
+        "r2": -1.4030695243934077,
+        "n": 10287
+      },
+      "split": "by-solute",
+      "source_artifact": "results/external_baselines/solute/solprop_calibrated_contract_v2/summary.csv"
+    },
+    "solprop_encoder_retrained_no_cycle": {
+      "n": 10570,
+      "ln_x2": {
+        "mae": 1.624290219372559,
+        "rmse": 2.1576539603245415,
+        "r2": 0.3881256563398142
+      },
+      "logS_mol_per_L": {
+        "mae": 0.7555001471854262,
+        "rmse": 1.0690480220516807,
+        "r2": 0.210836425966109,
+        "n": 10287
+      },
+      "split": "by-solute",
+      "source_artifact": "results/external_baselines/solute/solprop_native_contract_v2/summary.csv"
+    },
+    "fastsolv_retrained_here_pair_random": {
+      "n": 10696,
+      "ln_x2": {
+        "mae": 2.9101541551033816,
+        "rmse": 3.479058631368178,
+        "r2": -0.5937458800508215
+      },
+      "logS_mol_per_L": {
+        "mae": 1.288733891915382,
+        "rmse": 1.5440423428790448,
+        "r2": -0.6235330413527977,
+        "n": 10696
+      },
+      "split": "pair_random",
+      "source_artifact": "results/external_baselines/pair_random/fastsolv_contract_v2/summary.csv"
+    },
+    "solprop_encoder_retrained_no_cycle_pair_random": {
+      "n": 10887,
+      "ln_x2": {
+        "mae": 0.6383925825089023,
+        "rmse": 0.974508639607208,
+        "r2": 0.8755408156717797
+      },
+      "logS_mol_per_L": {
+        "mae": 0.2905033617096746,
+        "rmse": 0.4519521688101463,
+        "r2": 0.8608998272850907,
+        "n": 10696
+      },
+      "split": "pair_random",
+      "source_artifact": "results/external_baselines/pair_random/solprop_native_contract_v2/summary.csv"
+    }
+  },
+  "tier3_published": [
+    {
+      "model": "fastsolv (solution-FASTPROP ensemble)",
+      "source": "Attia, Burns, Doyle & Green, Nat. Commun. 2025, 16, 7497",
+      "doi": "10.1038/s41467-025-62717-7",
+      "bibkey": "osanloo2024",
+      "bibcmd": "\\cite{osanloo2024}",
+      "test_set": "SolProp test set (solutes disjoint from the training corpus)",
+      "task": "new-solute extrapolation, variable T",
+      "metric_space": "log10 S (mol/L)",
+      "rmse": 0.83,
+      "mae": null,
+      "extra": "%logS+-1 = 78.1%"
+    },
+    {
+      "model": "solution-CHEMPROP (companion model)",
+      "source": "Attia, Burns, Doyle & Green, Nat. Commun. 2025, 16, 7497",
+      "doi": "10.1038/s41467-025-62717-7",
+      "bibkey": "osanloo2024",
+      "bibcmd": "\\cite{osanloo2024}",
+      "test_set": "SolProp test set",
+      "task": "new-solute extrapolation, variable T",
+      "metric_space": "log10 S (mol/L)",
+      "rmse": 0.83,
+      "mae": null,
+      "extra": "%logS+-1 = 76.1%"
+    },
+    {
+      "model": "SolProp (Vermeire et al. thermodynamic cycle)",
+      "source": "as evaluated in Attia et al. 2025; model from Vermeire, Chung & Green, J. Am. Chem. Soc. 2022, 144, 10785",
+      "doi": "10.1038/s41467-025-62717-7",
+      "bibkey": "vermeire2022solprop",
+      "bibcmd": "\\cite{vermeire2022solprop}, scored in \\cite{osanloo2024}",
+      "test_set": "SolProp test set",
+      "task": "new-solute extrapolation, variable T",
+      "metric_space": "log10 S (mol/L)",
+      "rmse": 1.43,
+      "mae": null,
+      "extra": "%logS+-1 = 66.9%"
+    },
+    {
+      "model": "fastsolv (solution-FASTPROP ensemble)",
+      "source": "Attia, Burns, Doyle & Green, Nat. Commun. 2025, 16, 7497",
+      "doi": "10.1038/s41467-025-62717-7",
+      "bibkey": "osanloo2024",
+      "bibcmd": "\\cite{osanloo2024}",
+      "test_set": "Leeds set (Boobier et al.), near room temperature",
+      "task": "new-solute extrapolation, the more stringent of the two",
+      "metric_space": "log10 S (mol/L)",
+      "rmse": 0.95,
+      "mae": null,
+      "extra": "%logS+-1 = 73.8%"
+    },
+    {
+      "model": "solution-CHEMPROP (companion model)",
+      "source": "Attia, Burns, Doyle & Green, Nat. Commun. 2025, 16, 7497",
+      "doi": "10.1038/s41467-025-62717-7",
+      "bibkey": "osanloo2024",
+      "bibcmd": "\\cite{osanloo2024}",
+      "test_set": "Leeds set",
+      "task": "new-solute extrapolation",
+      "metric_space": "log10 S (mol/L)",
+      "rmse": 0.99,
+      "mae": null,
+      "extra": "%logS+-1 = 70.9%"
+    },
+    {
+      "model": "SolProp (Vermeire et al. thermodynamic cycle)",
+      "source": "as evaluated in Attia et al. 2025",
+      "doi": "10.1038/s41467-025-62717-7",
+      "bibkey": "vermeire2022solprop",
+      "bibcmd": "\\cite{vermeire2022solprop}, scored in \\cite{osanloo2024}",
+      "test_set": "Leeds set",
+      "task": "new-solute extrapolation",
+      "metric_space": "log10 S (mol/L)",
+      "rmse": 2.16,
+      "mae": null,
+      "extra": "%logS+-1 = 41.2%"
+    }
+  ],
+  "noise_estimates": {
+    "this_work": {
+      "statistic": "mean absolute inter-source disagreement on repeated (solute, solvent, T)",
+      "value_ln_x2": [
+        0.15,
+        0.31
+      ],
+      "detail": "0.15 for pairs backed by two sources (n=3948 groups), 0.31 for three or more (n=349)",
+      "source": "this work, on the BigSolDB-derived corpus"
+    },
+    "attia_2025": {
+      "statistic": "inter-laboratory RMSE / standard deviation between duplicate solutions",
+      "value_log10_S": {
+        "rmse": 0.75,
+        "sd": 0.34
+      },
+      "detail": "34 solutions, 8 solutes, 6 solvents; quoted as the aleatoric limit",
+      "source": "Attia et al., Nat. Commun. 2025, 16, 7497"
+    },
+    "warning": "the two are different statistics on different bases (mean absolute vs RMSE; ln mole fraction vs log10 mol/L) and must not be pooled or converted into one another"
+  },
+  "deposit_defects": {
+    "found": [
+      "oracle@seed44: covers 295/5608 locked rows"
+    ],
+    "detail": "results/e5_sigma_grounding/seed_44/oracle_predictions.csv holds 295 rows where every other arm/seed file holds 8103, so the sigma-oracle arm cannot be recomputed at seed 44 from the committed artifacts. The committed seed_44/comparison.json records oracle MAE 2.242 on n=5608, i.e. it was produced from a longer file that is no longer deposited. The three-seed oracle bar of the paper's Fig. 2 therefore does not reproduce from the deposit; the other five arms do, exactly."
+  },
+  "comparability": {
+    "tier1_vs_tier2": "NOT like-for-like: tier 1 is the solute-scaffold split, tier 2 the by-solute split of the same corpus. A by-solute split is easier; the tier-2 numbers bound the task's difficulty on this corpus and do not rank the models against tier 1.",
+    "tier1_vs_tier3": "NOT like-for-like on three axes: corpus (this corpus vs the SolProp and Leeds sets), split, and metric base (ln mole fraction here; log10 S in mol/L there). The log10 S column is computed here through the same converter the tier-2 runs used, so the UNIT matches; the task does not.",
+    "within_tier1": "like-for-like: one locked row set (n as reported), three seeds, the same encoder. The physics arm trails the direct control.",
+    "hyperparameter_confound": "the physics and control arms were tuned separately, so the tier-1 gap is not attributable to the bottleneck; the article states this."
+  }
+}

@@ -1,0 +1,39 @@
+% The solubility parity float.  \input this where the arm comparison is discussed
+% (it belongs beside Fig.~\ref{fig:paradox}, which reports the same arms as bars).
+%
+% figure*, width=\linewidth: the canvas is drawn at \textwidth (504.47 pt) and the tight
+% bbox crops it to 485 pt, so at \linewidth it is ENLARGED by 1.04x and every type size in
+% it prints at or above the size it was set at.  Setting it in one column instead would
+% halve that and put the mathtext subscripts under 4 pt.  Do not add a width fraction.
+%
+% NOT fig:parity.  That label is the activity-coefficient parity on the n=60
+% VT-2005-matched pairs, in the Supporting Information.  Two different figures.
+%
+% Regenerate:
+%   KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src python scripts/analysis/make_parity_figure.py \
+%       --e5-dir results/e5_sigma_grounding --seed 42 --out-dir paper/figs \
+%       --dump-json paper/figs/fig_parity_lnx2.numbers.json
+% Every number the caption quotes from the panels is in that .numbers.json.
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_parity_lnx2.pdf}
+\caption{Solubility parity on the scaffold-split test rows: predicted against measured
+$\lnx$ for four arms of the controlled comparison. All four panels are the same $5608$
+rows---the cross-arm lock, rows supervised and finite in every arm---from seed $42$ of
+three. Those rows are $763$ solute--solvent pairs over $147$ solutes and $70$ solvents,
+measured between $248$ and $368$\,K, so one pair contributes a short temperature series and
+the number of points exceeds the number of independent systems. (a) is the closure-free
+control; (b) is COSMO-SAC over an unsupervised $\sigma$-profile, (c) the same closure with
+$\sigma$-profile supervision during training, and (d) the arm of (c) with the reference
+VT-2005 profile substituted at evaluation. Dashed, the identity; solid, the median
+prediction in twelve equal-count bins of the measurement. The MAE and $R^2$ above each
+panel are that panel's own, on those rows and that seed, to the three decimals
+Table~\ref{tab:si-arms} uses for a per-seed value; the three-seed means are
+Fig.~\ref{fig:paradox} and that table, and differ from these by at most $0.05$ in MAE. In
+every panel the median trace crosses the identity: predictions are too
+soluble where the measurement is small and too insoluble where it is large. Only (d)
+carries scatter below the identity that reaches $\lnx$ values no measurement occupies. The
+axes span the union of measured and predicted values over all four arms; no point is
+clipped.}
+\label{fig:parity-lnx2}
+\end{figure*}

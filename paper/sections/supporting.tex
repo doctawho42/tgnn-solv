@@ -2,7 +2,18 @@
 
 The interpretive claims of the preceding sections are based on a set of controlled diagnostics, each run under a named protocol. We report them here with their exact numbers, including the results that are unfavourable to the physics-informed hypothesis.
 
-\paragraph{Aleatoric noise floor.} Repeated solubility measurements of the same solute in the same solvent disagree across laboratories, and that disagreement sets a floor below which no model can be expected to fit. Measuring inter-source spread on \cite{krasnov2025bigsoldb}, the mean absolute disagreement is approximately $0.15$ \lnx{} units for pairs backed by two sources ($n=3948$ groups), rising to $0.31$ for groups backed by three or more sources ($n=349$); the corresponding medians are smaller still ($0.03$ and $0.09$). The scaffold-split MAE we report ($\approx 1.7$ to $1.9$) sits well above this band, so label noise does not account for the accuracy ceiling. The floor is small; the ceiling is not a data-quality artifact.
+% NOISE FLOOR: the derivation, both functionals and every value moved into the article at
+% \S\ref{sec:data} on 2026-08-02 (editorial item A3) -- the referees asked for it there and it is
+% one of the four things they could not verify without this document. What is left here is the
+% part the article does not carry: the upper tail of the per-group distribution, which is what
+% says the floor's mean is set by a minority of badly disagreeing systems.
+\paragraph{Aleatoric noise floor.} The derivation, the two aggregating functionals and their values
+are in the article at \S\ref{sec:data}. One property of the per-group distribution is not: it is
+strongly right-skewed, which is why the mean and the median differ by a factor of five. On the
+groups backed by two sources the $90$th percentile of the per-group disagreement is $0.42$ \lnx{}
+units and the $99$th is $1.41$; on those backed by three, $0.83$ and $3.55$. The floor's
+mean is therefore set by a minority of badly disagreeing systems rather than by a broad band, and on
+either reading it lies far below the scaffold-split error.
 
 \paragraph{The encoder is transfer-limited, not expressivity-limited.} To separate what the frozen graph embedding can represent from what it transfers out of distribution, we fit a linear probe from the encoder representation onto RDKit descriptors and compare in-distribution and held-out fit. The median train $R^2$ is $0.758$ against a test $R^2$ of $0.448$ ($n=700$ solutes in each partition), a gap of $0.31$. Individual descriptors split sharply: FractionCSP3 transfers well (test $R^2 = 0.96$) while HeavyAtomCount does not ($0.23$). The embedding is expressive enough in sample; what degrades out of distribution is the generalisation of that expressivity across scaffolds. This evidence is suggestive rather than decisive: the sharp per-descriptor spread (FractionCSP3 $0.96$ vs HeavyAtomCount $0.23$) means the train--test gap partly reflects covariate shift in the descriptor \emph{targets} across scaffolds rather than an encoder property alone, and the probe measures descriptor-representability, not task-relevant expressivity directly. It therefore \emph{suggests}---rather than establishes---that a new graph encoder is unlikely to be the main lever for out-of-distribution accuracy, with pretraining and coverage the more likely ones.
 

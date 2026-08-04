@@ -305,47 +305,20 @@ $\Pi_{\mathcal H}v\neq v$ and $\mathcal I_{\mathrm{eff}}>0$, with a finite
 Cram\'er--Rao bound.
 \end{proof}
 
-\begin{proof}[Proof of Lemma~\ref{prop:decomp} (decomposition and bounds)]
-\sloppy\relpenalty=0 \binoppenalty=0
-Throughout, $\zstar$ is the closure's \emph{entire} argument, so that $g(\zstar)$ is
-$\sigma(\zstar)$-measurable by construction. Every step below uses only that measurability, and each
-fails if any argument of $g$ is left out of the conditioning variable: with $g=g(\zstar,T)$ and $T$
-excluded, the cross term in (a) need not vanish and the binning in (c) is no longer a coarsening of
-the conditioning $\sigma$-algebra, so neither the identity nor the upper bound survives. Where $g$
-reads a temperature---the broad IDAC set of \S\ref{sec:measure}, $\dim=103$---we accordingly take
-$\zstar=(\text{profile pair},T)$; on the VT-2005-matched set all rows sit at $298$\,K, where $T$ is constant and
-the two readings coincide.
-\emph{(a) Identity.} Split the residual as
-$m-g(\zstar)=[m-\Ex(m\mid\zstar)]+[\Ex(m\mid\zstar)-g(\zstar)]$, square, and take
-expectations. The squared terms give $\Ex[\Var(m\mid\zstar)]=\Binsuf$ and
-$\Ex[(\Ex(m\mid\zstar)-g(\zstar))^2]=\Bclos$. The cross term vanishes: since
-$\Ex(m\mid\zstar)-g(\zstar)$ is $\sigma(\zstar)$-measurable, the tower rule gives
-$\Ex\big[(m-\Ex(m\mid\zstar))(\Ex(m\mid\zstar)-g(\zstar))\big]
-=\Ex\big[(\Ex(m\mid\zstar)-g(\zstar))\,\Ex(m-\Ex(m\mid\zstar)\mid\zstar)\big]=0$.
-\emph{(b) Jensen lower bound.} With $\Delta(\zstar)=\Ex(m\mid\zstar)-g(\zstar)$,
-$\Bclos=\Ex[\Delta^2]\ge(\Ex[\Delta])^2=(\Ex[m]-\Ex[g])^2$ by Jensen, using
-$\Ex[\Ex(m\mid\zstar)]=\Ex[m]$; it requires only that $m$ and $g$ share a reference
-state, so that $\Ex[m]-\Ex[g]$ is a genuine mean discrepancy.
-\emph{(c) Law-of-total-variance upper bound.} For any binning
-$B=\mathrm{bin}(g(\zstar))$, $\sigma(B)\subseteq\sigma(\zstar)$, so conditioning on the
-coarser $\sigma$-algebra cannot reduce expected conditional variance:
-$\Ex[\Var(m\mid B)]\ge\Ex[\Var(m\mid\zstar)]=\Binsuf$.
-\emph{(d) Convention-independence of the estimand, but not of the bound.}
-$\Binsuf=\Ex[\Var(m\mid\zstar)]$ is a functional of
-the law of $(m,\zstar)$ alone and does not involve $g$; hence it is identical across
-closure conventions, and any $\mathrm{MSE}(g_1)-\mathrm{MSE}(g_2)$ is entirely
-$\Bclos(g_1)-\Bclos(g_2)$. The \emph{bound} of~(c) is not convention-independent, and no
-contradiction arises: $\mathrm{bin}(g_{\text{full}}(\zstar))$ and
-$\mathrm{bin}(g_{\text{res}}(\zstar))$ coarsen the same $\sigma(\zstar)$ along two different
-statistics, so~(c) yields two different valid upper bounds on one quantity---which is why
-Table~\ref{tab:decomp} carries two numbers per set and why their minimum is again a valid
-population upper bound, admissible against the $\mathrm{MSE}$ of \emph{either} convention. In
-finite samples the minimum of two estimates is biased low even when each is valid, so we report it
-and do not headline it (\S\ref{sec:broad}).
-\end{proof}
-
-\noindent Two consequences of this one-sidedness reconcile the bounding apparatus with the
-injectivity of the design, and are stated in the main text at \S\ref{sec:decomp}. First, because
+% LEMMA 1'S PROOF IS IN THE ARTICLE, not here (2026-08-02, editorial item A3). All three referees
+% reported that the article's central identity could not be checked without this document, so the
+% proof -- all four parts, including the cross-term measurability condition and the
+% convention-independence of the estimand -- moved into \S\ref{sec:decomp}, where the identity is
+% stated. It is NOT duplicated here: a proof printed twice drifts. Table~\ref{tab:decomp}'s two
+% bounds per set are part (d) of that proof in the article.
+\noindent Lemma~\ref{prop:decomp}, the identity this instrument rests on, is stated and proved in
+the article at \S\ref{sec:decomp}: the cross term vanishes because $g(\zstar)$ is
+$\sigma(\zstar)$-measurable when $\zstar$ is the closure's whole argument, the Jensen bound needs no
+smoothness, the law-of-total-variance bound needs only that a binning of $g(\zstar)$ coarsens
+$\sigma(\zstar)$, and $\Binsuf$ is a functional of the law of $(m,\zstar)$ alone and therefore the
+same quantity under both combinatorial conventions---which is why Table~\ref{tab:decomp} carries two
+valid upper bounds per set. Two consequences of that one-sidedness reconcile the bounding apparatus
+with the injectivity of the design. First, because
 every reported $\Binsuf$ is an \emph{upper} bound and every $\Bclos$ the matching \emph{lower} one,
 the bounds are conservative in one direction only: were the superpopulation variance
 negligible, the finding would be the stronger $\Bclos=\mathrm{MSE}$. Nothing reported can therefore be an
@@ -400,19 +373,15 @@ $R_{\mathrm{e2e}}=0$ while $R_{\mathrm{orc}}=1$, hence $\Ggap=1>0=\Bclos$. Thus 
 does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 \end{proof}
 
-\noindent The penalty-sign result is stated and proved here; \S\ref{sec:tax} gives its two halves in
-prose and reads the consequences off them. Writing each trained risk as an asymptote plus estimation
-variance, $\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
-$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
-$V(n)\downarrow0$, the \emph{physics penalty at budget $n$} is
-$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$, with
-$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$ its \emph{asymptotic} part.
-\begin{proposition}[Sign of the physics penalty]\label{prop:tax}
-(i)~$\mathcal{T}(n)<0$ (physics helps) iff $V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$:
-the variance a constrained prior saves must exceed its asymptotic bias. (ii)~If
-$\Delta_\infty>0$ and the variance gap vanishes ($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$),
-there is a critical budget $n^\star$ beyond which $\mathcal{T}(n)>0$ for all $n>n^\star$.
-\end{proposition}
+% PROPOSITION 1 IS STATED IN THE ARTICLE (2026-08-02, editorial item A3), at \S\ref{sec:tax},
+% together with the asymptote-plus-variance decomposition it is written against. Its label is
+% therefore defined in that document and must NOT be redefined here -- the two documents share one
+% label namespace through xr-hyper, and check_split_refs.py fails on a name defined in both.
+% Only the proof stays here.
+\noindent Proposition~\ref{prop:tax} is stated in the article at \S\ref{sec:tax}, with the
+asymptote-plus-variance form of the physics penalty
+$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ it is written
+against, and $\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$. It is proved here.
 \begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the physics penalty)]
 \sloppy\relpenalty=0 \binoppenalty=0
 Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$ and
@@ -824,8 +793,8 @@ negative-margin cells Table~\ref{tab:grid} sets in bold, and both are listed her
 whole---every bound the inclusion rule keeps, plus one estimator that set cannot
 support, with the value, what each fits and what
 qualifies it. What is included, and what is not: note~\emph{a}. The per-stratum bounds that
-replace the aggregate margin are Tables~\ref{tab:map}--\ref{tab:map-b} in the article, in full in
-Tables~\ref{tab:map-full}--\ref{tab:map-detail} here and drawn as Fig.~\ref{fig:decomp}.}
+replace the aggregate margin are Tables~\ref{tab:map-full}--\ref{tab:map-detail} below, drawn as
+Fig.~\ref{fig:decomp}.}
 \label{tab:bounds}
 % This table is near the height limit of the text block: at \arraystretch{1} its last rows run
 % past the block and into the folio. The 0.84 below buys back about five lines and leaves the
@@ -1056,13 +1025,13 @@ classes, which is why panel~(c)'s shares do not sum down the column
 % with their sources, margins, intervals and robustness; Table~\ref{tab:map-detail} carries the
 % columns those two do not -- error, bound, bootstrap band, error share and the leave-one-source-out
 % curve -- on the same 59 strata.
-% WHAT IS HERE AND WHAT IS IN THE ARTICLE (2026-08-02). Between 2026-08-02 and this revision the
-% whole map lived here while the abstract named it as the instrument's output, so the article named
-% a deliverable it did not contain. The article now carries Table~\ref{tab:map}: the fifteen strata
-% the fixed estimator can bound, which are the only ones the admissibility rule can act on. These
-% three floats carry all 59, so the 44 the estimator cannot bound -- 15 of them with no estimate at
-% any binning -- print here with the test each fails, and nothing is dropped from either place. Do
-% NOT move the article's table back: that is the defect this revision repaired.
+% WHAT IS HERE AND WHAT IS IN THE ARTICLE (2026-08-02, second pass). For part of that day the
+% article carried a sixth float, the fifteen boundable strata, while these five carried all 59; the
+% referees then reported that the article was not self-contained on the METHOD, and the editor's
+% ruling was that the fifteen-row table is detail and the FINDING it carries is a sentence. So the
+% article states the finding with its numbers, names which chemistry separates and which does not,
+% and these five floats are the map itself. NOTHING WAS LOST IN THAT MOVE: every value the
+% article's two tables printed was verified, value by value, to be printed in these five.
 % All bodies are GENERATED by scripts/analysis/make_map_table_tex.py from
 % results/b_insuff/admissibility_table.csv; do not retype a value, and re-run that script after
 % re-running run_b_insuff_stratified_map.py. The solvent/solute split is a page-fit matter: at 59
@@ -1074,16 +1043,16 @@ classes, which is why panel~(c)'s shares do not sum down the column
 \begin{table*}[tp]
 \centering
 \caption{\textbf{The map, solvent axis, in full}: every solvent stratum of the broad IDAC set,
-including the ones the estimator cannot bound, at the same cell as the article's
-Table~\ref{tab:map}---eight equal-count bins of $g(\zstar)$, unbiased within-bin variance, row
+including the ones the estimator cannot bound, at the cell \S\ref{sec:estimator}
+fixes---eight equal-count bins of $g(\zstar)$, unbiased within-bin variance, row
 unit, deployed residual-only convention---applied identically to all of them. \emph{full} is the
 same cell under the full combinatorial convention. The map runs over $59$ strata in all: the
 solvent axis at three granularities and the solute axis at two, plus their cross-tab and the set as
 a whole, over $477$ rows, $185$ pairs, $78$ solutes, $36$ solvents and $15$ source publications,
 the finer solvent granularity in Table~\ref{tab:map-fine} and the solute axis in
-Tables~\ref{tab:map-solute} and~\ref{tab:map-xtab}. The article carries the fifteen strata with
-$n\ge40$; these four tables carry all $59$, so nothing is dropped for being small, and each row
-states either what it shows or the test it fails.}
+Tables~\ref{tab:map-solute} and~\ref{tab:map-xtab}. These four tables carry all $59$, so nothing is
+dropped for being small, and each row states either what it shows or the test it fails; the article
+states the one row set the admissibility rule establishes, and which chemistry it does not.}
 \label{tab:map-full}
 {\scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -1091,8 +1060,8 @@ states either what it shows or the test it fails.}
 \input{si_tables/stratified_map_rows}
 \tabnotes{\scriptsize%
 \tnk{a}\,Number of source publications, then the largest one and its share of that stratum's
-squared error. P1--P15 are keyed in Table~\ref{tab:map}, note~\emph{a}, and the keys are the same
-in both documents.\quad
+squared error. The keys, used in all five map tables:
+\input{si_tables/map_source_key}\quad
 \tnk{b}\,Two-way solute\,$\times$\,solvent cluster bootstrap, $3000$ draws, redrawn at each
 granularity, so one row set's margin repeats exactly while its endpoints differ in the last
 digits.\quad

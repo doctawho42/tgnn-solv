@@ -75,3 +75,15 @@
 # still prints).
 4.4    section-number churn: the old \S4.4 (the latent's departure from its reference) is now \S3.3; all 36 baseline occurrences were cross-references, and the target prints 3.3 in the same sentences (baseline x36 -> target x0).
 4.6    section-number churn: the old \S4.6 (the second chemical closure, pKa) is now \S3.5; all 5 baseline occurrences were cross-references, and the target prints 3.5 in the same sentences (baseline x5 -> target x0).
+
+# 2026-08-02 REBALANCE (editorial item A3). Two entries, and BOTH ARE THE CHECKER'S OWN
+# BIBLIOGRAPHY RULE, not losses. The rebalance moved the article from 26 pages to 28, which moved
+# the reference list from pp. 23-24 to pp. 26-27. The bibliography exclusion is a REGION rule -- a
+# page qualifies when three or more numbered entries make up at least 40% of its blocks -- and the
+# two identifiers below sat, in the baseline, on a page that did not qualify and so were counted as
+# printed numbers; in the target they sit on a page that does qualify and are excluded. VERIFIED
+# BEFORE ADDING, in the target PDF's own text: `pdftotext paper/grounding_paradox.pdf' prints
+# "doi:10.26434/chemrxiv-2024-93qp3" and "arXiv:2606.03469" in the article's reference list, and the
+# SI prints one of them too. Nothing left the submission; the exclusion boundary moved.
+10.26434    checker artifact, not a loss: the fastsolv ChemRxiv preprint DOI is still printed in the article's reference list (entry for Attia et al.), on a page the bibliography-region rule now excludes because the list starts one page later.
+2606.03469  checker artifact, not a loss: the arXiv identifier of Ref. ma2026 (Operator Learning under Model Misspecification) is still printed in the article's reference list, on a page the bibliography-region rule now excludes.

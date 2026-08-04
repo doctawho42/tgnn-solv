@@ -48,6 +48,29 @@ results/b_insuff/*
 !results/compensation
 results/compensation/*
 !results/compensation/offset_control.json
+# The external closure anchor: the deployed COSMO-SAC-2002 scored on the PGL6ed
+# infinite-dilution set that de Souza et al. (IECR 2025) evaluate COSMO-SAC on.
+# The three upstream record files are versioned with it (328 kB) because the
+# comparison is only checkable if the row set travels with the number; the
+# component map is deposited as the used subset, not the 2.8 MB original, and the
+# script reads whichever is present.  scored_records.csv is the per-row evidence
+# behind the anchor table and is what a referee re-derives the AAD from.
+!results/published_idac_check
+results/published_idac_check/*
+!results/published_idac_check/summary.json
+!results/published_idac_check/summary.csv
+!results/published_idac_check/table_closure_anchor.tex
+!results/published_idac_check/component_map_used.csv
+!results/published_idac_check/scored_records.csv
+!results/published_idac_check/pgl6ed_source
+# The external-baseline table (this work vs FastSolv/SolProp, re-run and as published)
+# and the locked per-row predictions the ln x2 parity figure is drawn from.
+!results/external_baseline_comparison
+results/external_baseline_comparison/*
+!results/external_baseline_comparison/summary.json
+!results/external_baseline_comparison/table_rows.csv
+!results/external_baseline_comparison/table_article.tex
+!results/external_baseline_comparison/parity_rows_seed42.csv
 figures/*
 !figures/.gitkeep
 

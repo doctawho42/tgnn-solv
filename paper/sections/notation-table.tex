@@ -1,27 +1,58 @@
-% Table 1.  CUT ON 2026-08-02 to the symbols that genuinely collide, at referee request.  The
-% previous version was a twelve-row glossary of every symbol and every coined term the Results use;
-% a symbol used repeatedly and defined where it appears does not need a row, and the coined terms
-% went with the grading vocabulary.  What is left is the two letters this manuscript would otherwise
-% use for two different things, because it spans two chemical domains and two literatures: sigma and
-% Gamma.  Both renamings (\hammett for the Hammett constant, \Ggap for the grounding gap) are
-% defined in preamble.tex and are what the body prints.
-% Single-column `table', not `table*': at two rows a full-width float wastes a page-width band.
-% Do not grow this back into a glossary.  If a symbol needs explaining, explain it where it is used.
-\begin{table}[t]
+% Table 1.  TERMINOLOGY, restored and enlarged 2026-08-02 at referee request (editorial item A3).
+% History: this was a twelve-row glossary, cut earlier the same day to the two colliding symbols;
+% the referees then reported that the article's own vocabulary -- closure, kernel, arm, boundable,
+% admissible, margin, the two conventions, the two data sets, the two senses of grounding -- could
+% not be recovered without the Supporting Information.  It is a terminology table again, and it is
+% the ONE place each term is defined; the body uses them without re-glossing, which is where the
+% page it costs comes back.
+% Entry rule: a term earns a row if it is used in more than one section AND is either coined here,
+% used in a narrower sense than the field's, or a symbol that collides.  A symbol used once and
+% defined where it appears does not get a row.
+% `table*', full width, DELIBERATELY: at fifteen rows in one column each meaning wraps to three
+% lines and the float is taller than a column can hold, so LaTeX sends it to a float page of its
+% own and wastes two thirds of it.  Across the full measure each row is one or two lines.
+% If it grows past about eighteen rows, something in it is not load-bearing.
+\begin{table*}[t]
 \centering
-\caption{The two symbols that carry more than one meaning in this manuscript, and the renamings
-that separate them.}
+\caption{Terminology, and the two symbols that would otherwise collide. Each term is defined here
+and used below without re-glossing.}
 \label{tab:notation}
 {\footnotesize
-\begin{tabular}{@{}lp{0.60\linewidth}@{}}
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{@{}lL{0.80\linewidth}@{}}
 \toprule
-Symbol & Meaning here \\
+Term & Meaning in this manuscript \\
 \midrule
-$\sigma$ & standing alone, the screening-charge-density profile; $\sigma(\cdot)$ with an argument,
-the generated $\sigma$-algebra; \hammett, the Hammett substituent constant of the pKa closure,
-renamed from $\sigma$; $\sigma_\eta$, experimental label noise \\
-$\Gamma$ & $\Gamma_S$, the COSMO-SAC segment activity coefficient of Eq.~\eqref{eq:cosmo}; the
-grounding gap is \Ggap, renamed from $\Gamma$ so that the two do not collide \\
+closure $g$ & the fixed, non-fitted physical map from the intermediate to the observable: here
+COSMO-SAC, in \S\ref{sec:pka-main} a Hammett relation \\
+kernel & the segment-interaction energy inside COSMO-SAC; a closure variant is named for its
+kernel's year (\emph{2002}, \emph{2010}) \\
+arm & one trained configuration, or one closure variant evaluated; \emph{DirectGNN} is the
+closure-free control arm \\
+$\zstar$, $\hat z$ & the reference (tabulated) latent and the network's own prediction of it; a
+\emph{$\sigma$-oracle} feeds $\zstar$ where $\hat z$ would go \\
+grounding & two opposite operations on one reference database: \emph{supervising} $\hat z$ against
+it during training, and \emph{substituting} $\zstar$ for $\hat z$ at evaluation \\
+$\Bclos$, $\Binsuf$ & the closure's own error, and what its inputs cannot resolve,
+Eq.~\eqref{eq:decomp}; $\Bclos$ is bounded below and $\Binsuf$ above, so the comparison is
+one-sided \\
+margin & $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$; positive establishes $\Bclos>\Binsuf$, non-positive
+is failure to separate and licenses nothing \\
+\Ggap & the grounding gap $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, renamed from $\Gamma$ so as not to
+collide with the segment activity coefficient $\Gamma_S$ \\
+stratum, map & a chemically defined row set of the broad IDAC set, and the $59$ of them the
+estimator is run on \\
+boundable & $n\ge40$, so the fixed cell's eight bins hold five rows each \\
+admissible & boundable \emph{and} sign-stable under deletion of each contributing publication, in
+all four unit\,$\times$\,convention cells (\S\ref{sec:estimator}) \\
+full, deployed & the combinatorial convention: \emph{full} carries the Staverman--Guggenheim term,
+\emph{deployed} is residual-only and is what this pipeline runs \\
+broad IDAC set & $477$ IDAC\,$\cap$\,UD rows, $185$ pairs, all temperatures, UD profiles \\
+VT-2005-matched set & $60$ pairs at $298$\,K carrying a VT-2005 profile on both sides \\
+$\sigma$ & alone, the screening-charge-density profile; $\sigma(\cdot)$ with an argument, the
+generated $\sigma$-algebra; \hammett, the Hammett substituent constant of \S\ref{sec:pka-main};
+$\sigma_\eta$, experimental label noise \\
 \bottomrule
 \end{tabular}}
-\end{table}
+\end{table*}

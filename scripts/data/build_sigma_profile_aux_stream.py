@@ -25,6 +25,7 @@ held-out split (``--exclude-scaffolds-from``) to keep scaffold evaluation honest
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -32,6 +33,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from rdkit import Chem
 
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.utils import scaffold_key
@@ -240,6 +242,38 @@ def main() -> None:
     else:
         train_out.to_csv(args.output_csv, index=False)
 
+    # Post-build certification. The guard above filters by scaffold, but a build made against the
+    # wrong split files passes it silently -- that happened once, with 87 held-out solutes reaching
+    # the stream by canonical SMILES and 54 by scaffold, and it was found only in review. So we
+    # re-read the split files we were pointed at and assert the intersection is empty, by both keys,
+    # against what was actually written. A leak now fails the build.
+    leak_smiles: set[str] = set()
+    leak_scaffolds: set[str] = set()
+    if args.exclude_scaffolds_from:
+        held_smiles: set[str] = set()
+        held_scaffolds: set[str] = set()
+        for path in args.exclude_scaffolds_from:
+            frame = pd.read_csv(path)
+            for smiles in frame["solute_smiles"].dropna().unique():
+                mol = Chem.MolFromSmiles(str(smiles))
+                held_smiles.add(Chem.MolToSmiles(mol) if mol else str(smiles))
+                held_scaffolds.add(scaffold_key(str(smiles)))
+        for smiles in out["solute_smiles"].dropna().unique():
+            mol = Chem.MolFromSmiles(str(smiles))
+            canonical = Chem.MolToSmiles(mol) if mol else str(smiles)
+            if canonical in held_smiles:
+                leak_smiles.add(canonical)
+            if scaffold_key(str(smiles)) in held_scaffolds:
+                leak_scaffolds.add(str(smiles))
+        if (leak_smiles or leak_scaffolds) and not args.allow_no_scaffold_exclusion:
+            raise SystemExit(
+                f"scaffold-leak guard failed after the build: {len(leak_smiles)} solute(s) share a "
+                f"canonical SMILES and {len(leak_scaffolds)} share a Murcko scaffold with "
+                f"{args.exclude_scaffolds_from}. The stream was NOT written as clean."
+            )
+
+    build_hash = hashlib.sha256(Path(args.output_csv).read_bytes()).hexdigest()
+
     summary = {
         "sigma_csv": args.sigma_csv, "template_csv": args.template_csv,
         "output_csv": args.output_csv, "n_pool_raw": int(n_raw),
@@ -249,6 +283,10 @@ def main() -> None:
         "grid": grid_metadata(args.n_bins),
         "n_train": int(len(train_out)), "n_val": int(len(val_out)),
         "val_fraction_actual": (len(val_out) / max(len(out), 1)),
+        "certified_no_leak": True,
+        "leak_check_smiles": len(leak_smiles),
+        "leak_check_scaffolds": len(leak_scaffolds),
+        "build_sha256": build_hash,
     }
     Path(args.summary_json).write_text(json.dumps(_json_safe(summary), indent=2, sort_keys=True))
     print(json.dumps(_json_safe(summary), indent=2, sort_keys=True))

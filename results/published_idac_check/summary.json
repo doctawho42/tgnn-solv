@@ -1,0 +1,302 @@
+{
+  "what": "deployed COSMO-SAC-2002 closure scored on a published IDAC evaluation set",
+  "closure": "tgnn_solv.layers.CosmoSacLayer (COSMO-SAC-2002, Lin & Sandler)",
+  "profile_source": "VT-2005 (results/sigma_profile_artifact/sigma_profiles.csv)",
+  "matching": "PGL6ed IdCas -> InChIKey (Input/IdCasTrcInchiName.txt) -> VT-2005, exact InChIKey",
+  "coverage": {
+    "records_in_published_files": 8138,
+    "records_scored": 7889,
+    "fraction_scored": 0.9694,
+    "unique_pairs": 2279,
+    "by_record_set": {
+      "LazzaroniDb2023": 4347,
+      "Jaubert_TDE_organic_in_water": 3074,
+      "Jaubert_TDE_water_in_organic": 468
+    },
+    "n_reported_by_publication": 6977,
+    "note": "the publication reports 6977 points from the same repository; the three record files now in the repository hold 8138 usable records, of which 7889 have a VT-2005 profile on both sides. The record selection behind 6977 is not stated file-by-file, so the row sets are close but not proven identical."
+  },
+  "published_reference": {
+    "citation": "de Souza Jr., E. T.; Alcantara, M. L.; Staudt, P. B.; Coutinho, J. A. P.; Soares, R. de P. Development of a COSMO-SAC Parametrization with Advanced QM Method TZVPD-FINE. Ind. Eng. Chem. Res. 2025, 64, 14700-14711.",
+    "doi": "10.1021/acs.iecr.5c01146",
+    "evaluation_set": "PGL6ed IDAC database (github.com/PGLadmin/PGLWrapper)",
+    "n_reported": 6977,
+    "metric": "AAD = mean |ln gamma_calc^inf - ln gamma_exp^inf|",
+    "rows": [
+      {
+        "model": "COSMO-SAC (Lin-Sandler 2002)",
+        "profiles": "HF-TZVP",
+        "aad": 1.7457,
+        "r2": 0.878
+      },
+      {
+        "model": "COSMO-SAC (Lin-Sandler 2002)",
+        "profiles": "BP-TZVPD-FINE",
+        "aad": 0.6775,
+        "r2": 0.9599
+      },
+      {
+        "model": "COSMO-SAC-HB2",
+        "profiles": "HF-TZVP",
+        "aad": 0.4785,
+        "r2": 0.9617
+      },
+      {
+        "model": "COSMO-SAC-HB2",
+        "profiles": "BP-TZVPD-FINE",
+        "aad": 0.464,
+        "r2": 0.9728
+      },
+      {
+        "model": "COSMO-SAC-HB2",
+        "profiles": "BP-TZVP",
+        "aad": 0.4773,
+        "r2": 0.9698
+      }
+    ]
+  },
+  "ours": {
+    "all_scored_records": {
+      "res": {
+        "n": 7889,
+        "aad": 0.7651,
+        "rmse": 1.1131,
+        "mse": 1.2391,
+        "bias": 0.0302,
+        "r2": 0.9192,
+        "mean_m": 3.8748
+      },
+      "full": {
+        "n": 7889,
+        "aad": 0.9777,
+        "rmse": 1.3458,
+        "mse": 1.8113,
+        "bias": -0.7059,
+        "r2": 0.8818,
+        "mean_m": 3.8748
+      }
+    },
+    "non_aqueous": {
+      "res": {
+        "n": 4347,
+        "aad": 0.4688,
+        "rmse": 0.6674,
+        "mse": 0.4454,
+        "bias": -0.3362,
+        "r2": 0.6757,
+        "mean_m": 1.1852
+      },
+      "full": {
+        "n": 4347,
+        "aad": 0.495,
+        "rmse": 0.6958,
+        "mse": 0.4842,
+        "bias": -0.4194,
+        "r2": 0.6475,
+        "mean_m": 1.1852
+      }
+    },
+    "aqueous": {
+      "res": {
+        "n": 3542,
+        "aad": 1.1287,
+        "rmse": 1.4877,
+        "mse": 2.2131,
+        "bias": 0.4799,
+        "r2": 0.8255,
+        "mean_m": 7.1756
+      },
+      "full": {
+        "n": 3542,
+        "aad": 1.5701,
+        "rmse": 1.8547,
+        "mse": 3.44,
+        "bias": -1.0575,
+        "r2": 0.7287,
+        "mean_m": 7.1756
+      }
+    },
+    "set:LazzaroniDb2023": {
+      "res": {
+        "n": 4347,
+        "aad": 0.4688,
+        "rmse": 0.6674,
+        "mse": 0.4454,
+        "bias": -0.3362,
+        "r2": 0.6757,
+        "mean_m": 1.1852
+      },
+      "full": {
+        "n": 4347,
+        "aad": 0.495,
+        "rmse": 0.6958,
+        "mse": 0.4842,
+        "bias": -0.4194,
+        "r2": 0.6475,
+        "mean_m": 1.1852
+      }
+    },
+    "set:Jaubert_TDE_organic_in_water": {
+      "res": {
+        "n": 3074,
+        "aad": 0.9934,
+        "rmse": 1.2618,
+        "mse": 1.592,
+        "bias": 0.2606,
+        "r2": 0.8623,
+        "mean_m": 7.6578
+      },
+      "full": {
+        "n": 3074,
+        "aad": 1.5663,
+        "rmse": 1.8273,
+        "mse": 3.3389,
+        "bias": -1.4187,
+        "r2": 0.7111,
+        "mean_m": 7.6578
+      }
+    },
+    "set:Jaubert_TDE_water_in_organic": {
+      "res": {
+        "n": 468,
+        "aad": 2.0172,
+        "rmse": 2.5085,
+        "mse": 6.2925,
+        "bias": 1.9198,
+        "r2": 0.26,
+        "mean_m": 4.0086
+      },
+      "full": {
+        "n": 468,
+        "aad": 1.5953,
+        "rmse": 2.0259,
+        "mse": 4.1041,
+        "bias": 1.315,
+        "r2": 0.5173,
+        "mean_m": 4.0086
+      }
+    },
+    "solvent_class:strong_donor": {
+      "res": {
+        "n": 4224,
+        "aad": 0.8691,
+        "rmse": 1.136,
+        "mse": 1.2906,
+        "bias": 0.0812,
+        "r2": 0.9231,
+        "mean_m": 5.9117
+      },
+      "full": {
+        "n": 4224,
+        "aad": 1.3027,
+        "rmse": 1.6075,
+        "mse": 2.5841,
+        "bias": -1.1804,
+        "r2": 0.8461,
+        "mean_m": 5.9117
+      }
+    },
+    "solvent_class:acceptor_only": {
+      "res": {
+        "n": 1600,
+        "aad": 0.5736,
+        "rmse": 0.7734,
+        "mse": 0.5982,
+        "bias": -0.3343,
+        "r2": 0.5471,
+        "mean_m": 1.2037
+      },
+      "full": {
+        "n": 1600,
+        "aad": 0.5665,
+        "rmse": 0.745,
+        "mse": 0.555,
+        "bias": -0.435,
+        "r2": 0.5798,
+        "mean_m": 1.2037
+      }
+    },
+    "solvent_class:inert": {
+      "res": {
+        "n": 2065,
+        "aad": 0.7006,
+        "rmse": 1.2769,
+        "mse": 1.6304,
+        "bias": 0.2084,
+        "r2": 0.6591,
+        "mean_m": 1.7776
+      },
+      "full": {
+        "n": 2065,
+        "aad": 0.6315,
+        "rmse": 1.0973,
+        "mse": 1.204,
+        "bias": 0.0549,
+        "r2": 0.7483,
+        "mean_m": 1.7776
+      }
+    },
+    "298K_nonaqueous": {
+      "res": {
+        "n": 1033,
+        "aad": 0.4187,
+        "rmse": 0.5969,
+        "mse": 0.3563,
+        "bias": -0.309,
+        "r2": 0.7458,
+        "mean_m": 1.2706
+      },
+      "full": {
+        "n": 1033,
+        "aad": 0.4609,
+        "rmse": 0.6473,
+        "mse": 0.419,
+        "bias": -0.4235,
+        "r2": 0.7011,
+        "mean_m": 1.2706
+      }
+    },
+    "all_pair_temperature_averaged": {
+      "res": {
+        "n": 6562,
+        "aad": 0.7374,
+        "rmse": 1.0827,
+        "mse": 1.1721,
+        "bias": 0.011,
+        "r2": 0.9155,
+        "mean_m": 3.4156
+      },
+      "full": {
+        "n": 6562,
+        "aad": 0.8936,
+        "rmse": 1.2534,
+        "mse": 1.571,
+        "bias": -0.6441,
+        "r2": 0.8868,
+        "mean_m": 3.4156
+      }
+    }
+  },
+  "papers_own_sets_same_closure_res_convention": {
+    "broad_idac_set_477": {
+      "profiles": "UD (University of Delaware)",
+      "n": 477,
+      "aad": 1.1155,
+      "rmse": 1.379,
+      "mse": 1.9018,
+      "bias": -0.4265,
+      "r2": 0.6079,
+      "mean_m": 3.4243
+    },
+    "vt2005_matched_set_60": {
+      "profiles": "VT-2005",
+      "n": 60,
+      "aad": 0.8072,
+      "rmse": 1.2134,
+      "mse": 1.4723,
+      "bias": -0.653,
+      "r2": 0.4031,
+      "mean_m": 0.7482
+    }
+  }
+}
