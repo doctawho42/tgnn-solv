@@ -1,4 +1,17 @@
 {
+  "_WARNING_do_not_cite_as_a_bound": {
+    "fields": [
+      "b_insuff_convention_independent.rf_oof_upper",
+      "b_insuff_convention_independent.ridge_oof_upper",
+      "hedges.hedge3_ordering_confidence.b_insuff_rf_point"
+    ],
+    "defect": "These out-of-fold values were fitted with sklearn KFold(n_splits=5, shuffle=True) -- ROW-LEVEL folds, no grouping on pair, molecule or source. The cross-fitted quantity E[(m - rhat(z*))^2] is an upper bound on B_insuff = E[Var(m | z*)] only when rhat is independent of the held-out row's label; with ungrouped folds on clustered data that independence fails, the cross term goes negative, and the estimate can fall BELOW B_insuff. So rf_oof_upper = 0.5645747528001114 is NOT certified to be an upper bound and must not be cited as one.",
+    "evidence": "Ground-truth synthetic validation matched to the real design (results/b_insuff/crossfit_synthetic_validation.json, from scripts/analysis/run_b_insuff_crossfit_synthetic_validation.py): with pair- or source-grouped folds, 0 of 636 cells fall below known truth across the declared headline scope; with row-level folds, 9.4% fall below truth in the realistic regime (B_insuff/Var(m) <= 0.30) and 71.9% at 0.60, and in the null design (m independent of z*) row-level folds return 1.73 and 1.42 against a truth of 4.851 -- 64% and 71% below -- while reporting out-of-fold R^2 of +0.61 and +0.64. Numerical gates do not catch it; only the fold-integrity assertion does.",
+    "exposure_on_this_set": "These 60 VT-2005-matched rows carry 60 distinct molecule pairs, so the pair channel is empty here; but 60 rows carry 41 solutes and 17 solvents, so every held-out row still shares a molecule with training rows. On the broad IDAC set the pair channel is open outright (359 of 477 rows share a pair with another row), and blocking that leak moves the same forest from 0.15 to 0.88.",
+    "what_the_paper_uses_instead": "Nothing in the manuscript rests on these values. The headline B_insuff upper bound is the law-of-total-variance coarsening (8 equal-count bins of g(z*), Bessel within-bin variance); the bounds inventory carries the audit artifact's forest (0.621), not this one. The properly grouped cross-fitted estimator is deposited in results/b_insuff/crossfit_map.json and is LOOSER than the coarsening (0.8557 vs 0.7043 res / 0.4890 full on the broad set), which is reported as a negative result in the Supporting Information.",
+    "added": "2026-08-06",
+    "note": "The numbers below are left exactly as they were computed; this key is a marking, not a correction."
+  },
   "provenance": {
     "sigma_profiles": "results/sigma_profile_artifact/sigma_profiles.csv",
     "idac": "notebooks/data/raw/idac.csv",
@@ -15,6 +28,7 @@
   "n_solvents_inchikey": 19,
   "mean_m": 0.7481771196583977,
   "b_insuff_convention_independent": {
+    "_WARNING": "row-level (ungrouped) folds: see _WARNING_do_not_cite_as_a_bound at the top of this file. rf_oof_upper and ridge_oof_upper are NOT certified upper bounds on B_insuff and are not cited as such anywhere in the manuscript.",
     "rf_oof_upper": 0.5645747528001114,
     "ridge_oof_upper": 0.624496214739149,
     "knn_in_zstar_biased_up": 0.40002904956287405,

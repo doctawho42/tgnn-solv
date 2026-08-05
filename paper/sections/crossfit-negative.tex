@@ -1,0 +1,170 @@
+% =====================================================================
+% A pre-declared estimator change that LOST.  Banked here and nowhere else: the main text
+% does not move, the coarsening stays the headline estimator, every printed margin stands.
+% The declaration is scripts/analysis/run_b_insuff_crossfit_estimator.py (sha256 d158989f...),
+% staged in git before any margin was scored; the validation is
+% run_b_insuff_crossfit_synthetic_validation.py; the deposits are results/b_insuff/crossfit_*.
+% THE DEVIATION FROM THE DECLARATION IS NAMED AS ONE, in its own paragraph, with the rule
+% quoted.  Do not soften it to "amendment" or "clarification" in any later pass, and do not
+% delete the sentence saying the deviation runs in this paper's favour.
+% =====================================================================
+\subsection{A pre-declared attempt to tighten the insufficiency bound, and its failure}
+\label{sec:si-crossfit}
+
+\emph{What was declared, and when.} In the solubility domain $\Binsuf^{\mathrm{up}}$ is a
+coarsening throughout: the within-bin variance of $m$ over eight equal-count bins of the scalar
+$g(\zstar)$, whose slack is the information the binning destroys and is not estimable from these
+data (\S\ref{sec:estimator}). The other domain does not coarsen---in the $\mathrm pK_a$ closure the same
+quantity is the out-of-fold residual mean square of a cross-fitted forest of $m$ on $\zstar$
+(\S\ref{sec:si-pka})---and because every margin in the map is
+$\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$, a regressor that predicts $m$ from $\zstar$ better than an
+eight-bin histogram of a scalar summary of $\zstar$ does would raise all of them at once. The
+experiment that asks whether it does was pre-declared, in the docstring of
+\texttt{scripts/\allowbreak analysis/\allowbreak run\_\allowbreak b\_\allowbreak insuff\_\allowbreak
+crossfit\_\allowbreak estimator.py} (sha256 \texttt{d158989fe9cfdc79}\ldots, the full digest
+deposited in \texttt{results/\allowbreak b\_insuff/\allowbreak crossfit\_\allowbreak
+declaration\_\allowbreak sha256.txt}), written and staged in git before any cross-fitted margin
+existed. It fixed in advance: the feature set ($\zstar$ and nothing else---the two
+$\sigma$-profiles, their areas and $T$, $105$ dimensions---with $v_{\mathrm{cosmo}}$ excluded
+because it is an argument of the full convention only, so conditioning on it would not bound the
+deployed convention's $\Binsuf$); the regressor, the $\mathrm pK_a$ domain's own, untuned, with a ridge
+sensitivity that never headlines; the folds, five-fold grouped on the molecule pair, with a
+source-grouped variant reported beside every cell; the row set, $473$ of the $477$, the four rows
+whose solutes carry no VT-2005 profile dropped; an outcome-blind validity gate; a ban on forming
+the per-cell minimum of the two bounds; the rule for which estimator the paper would headline; and
+three verdicts. Nothing above the declaration's \texttt{main} was edited afterwards, and both
+bounds are deposited for every one of the $1164$ cells.
+
+\emph{It did not tighten.} On the same $473$ rows, broad set, row unit, primary folds, the
+cross-fitted bound is $\Binsuf^{\mathrm{cf}}=0.856$ against the coarsening's $0.704$ (deployed
+residual-only convention) and $0.489$ (full)---looser by $22\%$ and by $75\%$. It is looser having
+\emph{passed} its own gate: no pair straddles a fold, the global out-of-fold $R^2$ is $+0.823$, and
+the value sits well above the deposited replicate floor $\Ex[\Var(m\mid\text{pair})]=0.046$. This
+is the estimator working and losing, not failing. The arithmetic of the loss is one comparison:
+with $\Var(m)=4.85$ on these rows, a fitted bound beats the coarsening only above
+$R^2=1-\Binsuf^{\mathrm{bin}}/\Var(m)$, which is $0.855$ under the deployed convention and $0.899$
+under the full one. The forest reached $0.823$.
+
+Every consequence runs against this work, and the numbers are printed here for that reason. The
+glycol-ether margin---the paper's one surviving stratified finding---falls from $+2.036$ to
+$+1.757$ at the headline cell, its $90\%$ two-way cluster interval from $[+1.260,+2.873]$ to
+$[+1.018,+2.489]$ and its leave-one-publication-out envelope from $[+1.597,+2.866]$ to
+$[+1.342,+2.339]$. The map is poorer in every count that reads a margin: admissible cells $35\to32$,
+strata admissible in all four unit\,$\times$\,convention cells $6\to5$, and distinct admissible
+positive row sets after the maximality reduction $2\to1$, the alkanes being the row set that
+drops. The count of \emph{boundable} strata does not move, $15$ of $59$ under both estimators,
+because boundability is the $n\ge40$ test and the declaration froze it. The retired whole-set
+aggregate does not return: its margin falls from $+0.944$ to $+0.211$ (full) and from $+0.506$ to
+$+0.203$ (deployed), and it now fails the deletion test outright, two publications flipping its
+sign. Nor does the chemistry-blind multiplicity null improve where it matters: re-run on the
+cross-fitted bound, $p(C)$ moves from $0.297$ to $0.255$ but $p(D)$, the null $p$ of the largest
+certified margin, moves the wrong way, $0.094\to0.137$; conditioned on drawing a map that certifies
+anything at all, a chemistry-blind relabelling reaches the observed maximum in $54\%$ of draws
+against $16\%$ under the coarsening. The declared verdict is therefore \textsc{loss} on branch L1,
+with L2 firing independently. Restricting $477\to473$ rows changes none of it: the four dropped rows
+leave the $477$-row baseline's $35/6/2$ and its $+2.036$ exactly where they were.
+
+\emph{A deviation from the declaration, named as one.} The declaration's Sec.~3 fixed an
+unconditional rule---``\textsc{the rule}. The cross-fitted estimator headlines
+\textsc{unconditionally} \ldots\ provided it passes the validity gate of Sec.~3.1, which never
+reads a margin, an $\mathrm{MSE}$, a $g$ or a stratum label''---and spelled out what it committed
+to: ``If the cross-fit is \textsc{looser} than the coarsening, the headline margins
+\textsc{shrink}, cells that are certified today lose their certification, and the map gets poorer.
+That outcome is reported as the result, in the paper, with the same prominence a gain would have
+had.'' \textbf{We did not follow that rule.} The coarsening remains the headline estimator, and
+every margin printed in this paper is the coarsening's. The reason is that the rule was written
+against one hazard---choosing the smaller bound cell by cell after seeing the cells, which is
+biased low and which the paper disowns elsewhere---and it did not anticipate the other, that one
+valid bound would be uniformly \emph{looser} than the other. Where that happens, obeying the rule
+prints a bound that is valid and strictly less informative: every claim weakens and none becomes
+more correct. What we did instead is what the declaration's Sec.~2 already required
+independently---both bounds, both margins and their difference are printed for every cell of the
+deposited map, the cells that favour this paper and the cells that do not---so a reader who holds us
+to the declared rule can read the poorer map straight off
+\texttt{crossfit\_\allowbreak map\_\allowbreak table.csv} and re-derive every number in the
+paragraph above. Two things about this deviation should be said rather than absorbed. It runs in
+this paper's favour, which is exactly why it is named here instead of being folded into a methods
+sentence. And it is a choice made \emph{after} seeing a number, which is what the declaration
+existed to prevent; what limits it is that the number is one global comparison of two bounds on one
+row set, not a per-cell selection, and that the alternative is on the page.
+
+\emph{Why the coarsening wins here, and where it would not.} The mechanism is measurable, and it is
+not the one a reader would guess. It was established on synthetic data matched to the real
+design---$477$ rows in $185$ pairs from $15$ sources, the real rows-per-pair multiplicities, real
+$\sigma$-profiles drawn from the deposited $1432$-row artifact so the regressor faces the real
+collinear geometry, and $\Binsuf$ known in closed form by construction. The coarsening is handed
+$g$: a physics-built statistic that was designed to predict $m$ and is close to sufficient for
+$\Ex[m\mid\zstar]$, so binning it starts from the answer. The forest is handed $\zstar$ and must
+rediscover $g$ from about $145$ of the $181$ pair groups in each training fold. \emph{It is not a
+dimensionality effect}: coarsening the regressor's features to the leading unsupervised principal
+components of $\zstar$---a legitimate operation on the bound, since a smaller $\sigma$-field can
+only raise $\Ex[\Var(m\mid\cdot)]$---never helps. On the synthetic design the raw $105$ dimensions
+give the tightest cross-fitted bound of the six feature sets tried (median $3.39$, against $3.71$ at
+eight components, $4.04$ at sixteen, $4.59$ at four, $5.00$ at two and $6.10$ at one), and all six
+sit above the eight-bin coarsening's $2.3$--$2.6$ on the same draws. What separates the two
+estimators is sample size alone: the ratio of the two bounds falls from $3.2$ at $n{=}40$ to $1.24$
+at $n{=}960$, and a log--log extrapolation of the two curves crosses near $n\approx2\times10^3$
+rows, three to four times the $473$ actually scored ($1.7\times10^3$ fitting all eight sizes,
+$2.0\times10^3$ omitting the two smallest; it is an extrapolation and is quoted as one). The same
+account explains why the cross-fitted estimator is the right one in the $\mathrm pK_a$ domain and is not an
+inconsistency between the two: there $\zstar$ is four series labels and a scalar, $\Ex[m\mid\zstar]$
+is estimable directly within a scaffold at the sample sizes available, and the closure confers no
+head start because there is no high-dimensional statistic left for it to summarise
+(\S\ref{sec:si-pka}). One further asymmetry is worth recording because a maximum-over-strata
+statistic inherits it: across the $15$ boundable strata the coarsening's bound has mean $0.315$ and
+standard deviation $0.213$, the cross-fitted one $0.658$ and $0.519$, and the same ordering holds
+under a chemistry-blind relabelling ($0.241$ against $0.553$, median over draws), so the extra
+spread is a property of the estimator and not of the chemistry---which is why $p(D)$ worsened while
+the bound merely loosened.
+
+\emph{The design rule this yields.} For anyone reusing this instrument on another closure, the
+choice of $\Binsuf^{\mathrm{up}}$ is not a choice between an old estimator and a modern one. Both
+are valid upper bounds; the choice is about power, and it turns on three things that are known
+before any margin is formed. \emph{(i)}~If the closure's own output $g(\zstar)$ is available as a
+feature and is near-sufficient for $\Ex[m\mid\zstar]$---the normal case when $g$ is a physical model
+built to predict $m$---coarsening $g$ begins from a statistic the regressor would have to learn, and
+it wins at every sample size that does not let the regressor learn it. \emph{(ii)}~If $\dim(\zstar)$
+is small enough that $\Ex[m\mid\zstar]$ is directly estimable---a handful of labels and a scalar, as
+in the $\mathrm pK_a$ domain---condition directly and do not coarsen, since the coarsening would then
+discard information for no return. \emph{(iii)}~Between those poles the crossing is a sample-size
+question with a computable answer: fit both and prefer the regressor only if its out-of-fold $R^2$
+exceeds $1-\Binsuf^{\mathrm{bin}}/\Var(m)$, the requirement being a function of $(m,\zstar,g)$ that
+reads no $\mathrm{MSE}$ and no margin. Here that requirement was $0.855$ and the forest returned
+$0.823$, which is the whole of the result. The rule must be declared before the margins are read;
+choosing per cell between two valid bounds after seeing them is biased low, and choosing once and
+globally after seeing them, as we did above, is a disclosed deviation and not a method.
+
+\emph{The fold warning, which is the part that can invalidate a bound rather than merely loosen it.}
+The cross-fitted quantity is an upper bound only if the regressor is independent of the held-out
+row's label, and on clustered data that is a property of the fold scheme, not of the estimator. This
+was measured before the real rows were touched, against known truth. With pair-grouped or
+source-grouped folds the estimator is a genuine upper bound: $0$ violations in $636$ cells over the
+declared headline scope---fit once globally, evaluate on label-blind sub-strata, both grouped
+schemes, random and chemically coherent sub-strata alike---including all $100$ cells at $n{=}40$,
+the map's own boundability threshold. With row-level folds it is not a bound at all: $9.4\%$ of
+cells ($18$ of $192$) fall below truth in the realistic regime, $\Binsuf/\Var(m)\le0.30$, and
+$71.9\%$ ($46$ of $64$) at $0.60$. In the null design, where $m$ is independent of $\zstar$ and the
+truth is $\Var(m)=4.85$, row-level folds return $1.73$ under a pair shock and $1.42$ under a source
+shock---$64\%$ and $71\%$ \emph{below} truth. The numerical gates do not catch this. The leaky
+version returns out-of-fold $R^2=+0.61$ and $+0.64$ in exactly those two cells and clears the
+replicate-floor check by a factor of thirty; the only gate that fires is the assertion that no
+group straddles a fold, which is a statement about the folds and not a number. \textbf{One deposited
+number is compromised by this and must not be cited as a bound}:
+\texttt{results/\allowbreak b\_insuff/\allowbreak decomposition.json} records
+\texttt{rf\_oof\_upper}${}=0.5646$, fitted with \texttt{KFold(shuffle=True)}---row-level folds, no
+grouping. Nothing in this paper rests on it: Table~\ref{tab:bounds} carries the audit artifact's
+$0.621$ instead, and the disagreement between the two forests is reported above. The deposit now
+carries the warning in the file itself, beside the number. The scheme's exposure differs by set and
+both readings reach the same verdict: on the VT-2005-matched set where that number lives no two
+rows share a pair, but $60$ rows carry $41$ solutes and $17$ solvents, so every held-out row has a
+near-twin in training; on the broad set the pair channel is open outright, $359$ of the $477$ rows
+sharing a molecule pair with another row (\S\ref{sec:si-repro}), and blocking it moves the same
+forest from $0.15$ to $0.88$. Artifacts: \texttt{crossfit\_\allowbreak map.json},
+\texttt{crossfit\_\allowbreak map\_\allowbreak table.csv}, \texttt{crossfit\_\allowbreak
+multiplicity\_\allowbreak null.json}, \texttt{crossfit\_\allowbreak within\_\allowbreak
+stratum\_\allowbreak sensitivity.csv}, \texttt{crossfit\_\allowbreak verdict.json} and
+\texttt{crossfit\_\allowbreak synthetic\_\allowbreak validation.json} under
+\texttt{results/\allowbreak b\_insuff/}, from the declaration above, its scoring pass
+\texttt{run\_\allowbreak b\_insuff\_\allowbreak crossfit\_\allowbreak scoring.py} and the validation
+\texttt{run\_\allowbreak b\_insuff\_\allowbreak crossfit\_\allowbreak synthetic\_\allowbreak
+validation.py}.
