@@ -30,13 +30,10 @@ class JobackGroup:
     tm_increment: float | None
     hfus_increment: float | None
 
-    @property
-    def dcp_increment(self) -> float | None:
-        """Heuristic fusion heat-capacity increment derived from Joback values."""
-        if self.tm_increment is None or self.hfus_increment is None:
-            return None
-        denom = max(100.0, JOBACK_TM_BASE_K + self.tm_increment)
-        return 1000.0 * self.hfus_increment / denom
+    # There is deliberately no per-group dCp increment. dH_fus/T_m is a ratio of two molecular
+    # quantities and does not decompose over fragments; a property that returned one invited the
+    # sum that _estimate_dcp_from_counts used to perform, and that sum was wrong by a median factor
+    # of 2.95. Aggregate the increments first, divide once.
 
 
 # Joback/Reid crystal-property increments and SMARTS adapted from the public
@@ -158,13 +155,28 @@ def _estimate_dh_from_counts(counts: dict[int, int]) -> float | None:
 
 
 def _estimate_dcp_from_counts(counts: dict[int, int]) -> float | None:
-    total = 0.0
+    """Heuristic dH_fus/T_m in J/mol/K, aggregated over the MOLECULE.
+
+    This was previously summed over `JobackGroup.dcp_increment`, a per-group ratio. That is not the
+    same quantity: the Joback base temperature enters T_m once per molecule, not once per fragment
+    occurrence, and each group's enthalpy increment belongs over the molecule's T_m rather than over
+    its own. Summing the per-group ratios added the 122.5 K base once per occurrence and divided
+    each numerator by its own increment, inflating the result by a median factor of 2.95 (max 11.6)
+    over 166 solutes. Found 2026-08-06 while auditing a crystal fidelity ladder whose third rung the
+    inflation alone produced: repairing this line moved that rung's MSE from 12.56 to 5.49, erasing
+    92% of the effect it was built to show. No published number rests on it -- `use_gc_priors_crystal`
+    is False by default and none of the manuscript's arms enable it.
+    """
+    tm_total = 0.0
+    hfus_total = 0.0
     for group_id, count in counts.items():
-        increment = JOBACK_GROUPS_BY_ID[group_id].dcp_increment
-        if increment is None:
+        group = JOBACK_GROUPS_BY_ID[group_id]
+        if group.tm_increment is None or group.hfus_increment is None:
             return None
-        total += increment * count
-    return total
+        tm_total += group.tm_increment * count
+        hfus_total += group.hfus_increment * count
+    denom = max(100.0, JOBACK_TM_BASE_K + tm_total)
+    return 1000.0 * hfus_total / denom
 
 
 def fit_tm_gc_calibration(
@@ -194,6 +206,13 @@ def compute_gc_priors(smiles: str) -> dict[str, float | None]:
     if mol is None:
         return {"T_m_gc": None, "dH_fus_gc": None, "dCp_fus_gc": None}
 
+    # The completeness flag is deliberately not a gate: a partial fragmentation still carries more
+    # information than the hard-coded fallback, which is why test_group_contribution.py asserts that
+    # an incompletely fragmented molecule keeps its estimate. It affects 24 of the 166 crystal-set
+    # solutes (14.5%), so a caller comparing GC priors against measured labels should stratify on it
+    # rather than assume uniform quality. Named with a leading underscore because it is unused here,
+    # not because it is unimportant -- an audit read the underscore as an oversight and proposed
+    # gating on it, which the test above correctly rejects.
     counts, _complete = _fragment_joback(mol)
     if not counts:
         return dict(GC_FALLBACK_PRIORS)
