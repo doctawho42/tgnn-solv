@@ -136,3 +136,4 @@ results/e5_sigma_grounding/seed_4?/*
 !results/e5_sigma_grounding/seed_4?/comparison.json
 !results/e5_sigma_grounding/seed_4?/*.summary.json
 !results/e5_sigma_grounding/THREE_SEED_SUMMARY.md
+!results/e5_sigma_grounding/ROW_SET_DECOMPOSITION.md

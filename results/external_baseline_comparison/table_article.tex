@@ -2,22 +2,22 @@
 % Do not hand-edit: re-run the script.
 \begin{tabular}{@{}llrrrr@{}}
 \toprule
-Model & Test set & $n$ & MAE $\lnx$ & RMSE $\log_{10}S$ & $R^2$ $\lnx$ \\
+Model & Test set & $n$ ($\lnx$ / $\log_{10}S$) & MAE $\lnx$ & RMSE $\log_{10}S$ & $R^2$ $\lnx$ \\
 \midrule
-\multicolumn{6}{@{}l}{\emph{This work, scaffold split; three seeds, mean $\pm$ s.d.}}\\
-TGNN, COSMO-SAC closure, supervised $\hat\sigma$ (physics) & solute scaffold, this corpus & 5608 & 1.85 $\pm$ 0.05 & 1.08 & 0.33 \\
-TGNN, NRTL closure (physics) & solute scaffold, this corpus & 5608 & 1.79 $\pm$ 0.07 & 1.07 & 0.34 \\
-DirectGNN, same encoder, no closure \emph{(control)} & solute scaffold, this corpus & 5608 & 1.70 $\pm$ 0.03 & 1.00 & 0.42 \\
-TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation [seeds $42,43$ only\tnote{$\ast$}] & solute scaffold, this corpus & 5608 & 2.26 $\pm$ 0.02 & 1.35 & -0.05 \\
+\multicolumn{6}{@{}l}{\emph{This work, scaffold split; mean $\pm$ s.d. over seeds, three unless the row says otherwise}}\\
+DirectGNN, same encoder, no closure \emph{(control)} & solute scaffold, this corpus & 5608 / 5440 & 1.70 $\pm$ 0.03 & 1.00 $\pm$ 0.02 & 0.42 $\pm$ 0.03 \\
+TGNN, NRTL closure (physics) & solute scaffold, this corpus & 5608 / 5440 & 1.79 $\pm$ 0.07 & 1.54 $\pm$ 0.07 & 0.34 $\pm$ 0.03 \\
+TGNN, COSMO-SAC closure, supervised $\hat\sigma$ (physics) & solute scaffold, this corpus & 5608 / 5440 & 1.85 $\pm$ 0.05 & 1.39 $\pm$ 0.19 & 0.33 $\pm$ 0.05 \\
+TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation [seeds $42,43$ only\tnote{$\ast$}] & solute scaffold, this corpus & 5608 / 5440 & 2.26 $\pm$ 0.02 & 1.57 $\pm$ 0.17 & -0.05 $\pm$ 0.02 \\
 \multicolumn{6}{@{}l}{\emph{Scale reference on the same rows}}\\
-predict the test-set mean of $\lnx$ & solute scaffold, this corpus & 5608 & 2.32 & -- & 0.00 \\
-\multicolumn{6}{@{}l}{\emph{External models re-run on this corpus, by-solute split---not comparable to the block above}}\\
+predict the test-set mean of $\lnx$ & solute scaffold, this corpus & 5608 / 5440 & 2.32 & 1.33 & 0.00 \\
+\multicolumn{6}{@{}l}{\emph{External models re-run on this corpus, by-solute split, one run each---not comparable to the block above}}\\
 FastSolv, retrained on this corpus & by-solute, this corpus & 10287 & 1.94 & 1.10 & 0.23 \\
 SolProp cycle, released model + 3-parameter recalibration & by-solute, this corpus & 10287 & 2.34 & 1.34 & -0.18 \\
 SolProp cycle, released model, zero-shot & by-solute, this corpus & 10287 & 2.36 & 1.87 & -0.47 \\
-SolProp encoder retrained on $\lnx$, cycle discarded & by-solute, this corpus & 10570 & 1.62 & 1.07 & 0.39 \\
+SolProp encoder retrained on $\lnx$, cycle discarded & by-solute, this corpus & 10570 / 10287 & 1.62 & 1.07 & 0.39 \\
 FastSolv, retrained on this corpus & random pair, this corpus & 10696 & 2.91 & 1.54 & -0.59 \\
-SolProp encoder retrained on $\lnx$, cycle discarded & random pair, this corpus & 10887 & 0.64 & 0.45 & 0.88 \\
+SolProp encoder retrained on $\lnx$, cycle discarded & random pair, this corpus & 10887 / 10696 & 0.64 & 0.45 & 0.88 \\
 \multicolumn{6}{@{}l}{\emph{As published, on their own corpora and splits, $\log_{10}S$ in mol\,L$^{-1}$}}\\
 fastsolv (solution-FASTPROP ensemble) \cite{osanloo2024} & SolProp test set (solutes disjoint from the training corpus) & -- & -- & 0.83 & -- \\
 solution-CHEMPROP (companion model) \cite{osanloo2024} & SolProp test set & -- & -- & 0.83 & -- \\

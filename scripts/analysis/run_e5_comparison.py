@@ -20,6 +20,23 @@ def _round_key(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _supervised_finite(df: pd.DataFrame) -> pd.DataFrame:
+    """Rows that are labelled AND finite-predicted.
+
+    The `fin` half of this conjunction is OUTCOME-dependent: it would remove from
+    every arm's score the rows some arm failed on, which biases the comparison in
+    favour of whichever arm fails most.  On the deposited e5 runs it is inert, and
+    that is audited, not assumed: over all 22 per-row files in
+    results/e5_sigma_grounding/seed_{42,43,44}/ the count of non-finite ln_x2_pred
+    is 0 in every file, across all 8103 test rows and not merely the labelled ones.
+    The lock is therefore 5608 = the rows with has_solubility True, the same
+    set for every arm, and deleting `fin` returns it unchanged; the remaining 2495
+    rows carry a melting point and no solubility.  See SI Sec. "The scored row set,
+    and why it is not arm-dependent".
+
+    If a future arm DOES produce a non-finite ln_x2_pred, this function silently
+    becomes arm-dependent again -- score on the labelled rows and report the
+    per-arm non-finite count instead of intersecting it away.
+    """
     df = df.drop_duplicates(_KEY, keep="first")
     if df["has_solubility"].dtype == object:
         sup = df["has_solubility"].map(lambda v: str(v).strip().lower() in ("true", "1"))

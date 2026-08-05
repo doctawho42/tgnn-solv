@@ -274,6 +274,15 @@ bound rather than an interval. Training-time supervision is not drawn.}
 Cluster-bootstrap frequencies $P$ are quoted as bands---rounded to one decimal, with $>0.95$ and
 $<0.2$ closing the ends---because with $17$ solvent and $41$ solute clusters on the VT-2005-matched
 set they do not carry two-decimal resolution; the two-decimal values are in the deposited artifacts.
+The resampling intervals of this paper---the Abstract's, the margins of \S\ref{sec:measure} and the
+pKa intervals of \S\ref{sec:pka-main}---are \emph{percentile} intervals: their endpoints are order
+statistics of a resampling distribution, with no bias correction and no studentisation, over the unit
+named beside each. \S\ref{sec:measure} resamples solute and solvent clusters two-way, $3000$ draws;
+in \S\ref{sec:pka-main} the decomposition bounds resample molecules within each Hammett reaction
+series and the flip gap resamples the four series themselves, $4000$ draws. Not every $\pm$ or
+bracketed span below is one of those. Two in particular are not: the kernel-transfer figures of
+\S\ref{sec:badclosure} are a standard \emph{error} over five fit seeds, and the
+leave-one-publication-out span of \S\ref{sec:broad} is the range of that curve.
 Table~\ref{tab:claims} collects the load-bearing claims with the set each was measured on, its size,
 and the value with its uncertainty and scope. It is where the scope of every claim below is
 recorded, so that the prose states each finding once.
@@ -303,7 +312,7 @@ row or a column.}
 Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \midrule
 \multicolumn{3}{@{}l@{}}{\emph{The two senses of grounding} (\S\ref{sec:paradox})}\\
-Reference profiles hurt solubility at evaluation (MAE) & test split ($5608$), 3 seeds & $1.85\to2.25$; the per-seed values do not overlap \\
+Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($5608$ of $8103$), 3 seeds & $1.85\to2.25$; the per-seed values do not overlap \\
 \ldots and still hurt when injected at training & cross-arm rows\tnk{c}, seed $42$ & $1.80\to1.98$ (own baseline $1.80\to2.23$); one seed, so a sign and not an effect size \\
 \ldots so part of that gap is test-time distribution shift & cross-arm rows\tnk{c}, seed $42$ & share $0.59$ on one seed: a description of that seed, not a magnitude \\
 Training-time $\sigma$ supervision \emph{helps} (MAE) & cross-arm rows\tnk{c}, 3 seeds & $2.04\to1.85$; the per-seed values do not overlap \\
@@ -318,7 +327,7 @@ $\Bclos>\Binsuf$, 2010 on its \emph{own} typed latent\tnk{f} & broad IDAC ($477$
 \multicolumn{3}{@{}l@{}}{\emph{Whether a better closure moves the ceiling} (\S\ref{sec:fidelity})}\\
 The $2002\to2010$ step lowers the error & broad IDAC ($477$) & $-0.99$ at $P\approx0.2$: no improvement, and not a measured equality either; under the full convention $-0.07$, $P\approx0.6$, and $+0.06$, $P\approx0.6$ with dispersion on \\
 \ldots but does on the VT-2005 set's chemistry & $57$ shared pairs, UD & $1.78\to0.77$, $P>0.95$, at fixed profile database and temperature, full convention; those $57$ pairs are also broad-set rows, so not an independent sample \\
-A fitted kernel residual transfers across solvents & VT-2005-matched ($60$), grouped folds & $-5\pm16\%$: the interval spans zero, and excludes a cross-solvent reduction above about $30\%$ \\
+A fitted kernel residual transfers across solvents & VT-2005-matched ($60$), grouped folds & $-5\pm16\%$: spans zero; the $\pm$ prices optimiser noise only, and the fold spread that dominates it is not propagated, so no bound follows \\
 \addlinespace[2pt]
 \multicolumn{3}{@{}l@{}}{\emph{Mechanism} (\S\ref{sec:surrogate})}\\
 The latent departs from its reference along a shared direction & matched molecules ($44$), 3 seeds & $51\pm2\%$; the magnitude is not stable across analysis configurations \\
@@ -327,14 +336,15 @@ The latent departs from its reference along a shared direction & matched molecul
 That departure \emph{cancels} closure error & not measured & the one direct check is under-powered and runs against it \\
 \addlinespace[2pt]
 \multicolumn{3}{@{}l@{}}{\emph{Accuracy} (\S\ref{sec:discussion})}\\
-Physics arm vs.\ DirectGNN accuracy ($\Delta$MAE) & test split ($5608$) & $+0.14$ between separately tuned pipelines, so not attributable to the thermodynamic bottleneck \\
+Physics arm vs.\ DirectGNN accuracy ($\Delta$MAE) & labelled test rows ($5608$ of $8103$) & $+0.14$ between separately tuned pipelines, so not attributable to the thermodynamic bottleneck \\
 \bottomrule
 \end{tabular}
 \tabnotes{\scriptsize%
-\tnk{a}\,Both sets are defined in Table~\ref{tab:notation}.\quad
+\tnk{a}\,The sets are defined in Table~\ref{tab:notation}.\quad
 \tnk{b}\,$P$ is a two-way (solute\,$\times$\,solvent) cluster-bootstrap frequency that the margin
 stays positive, reported as a band by the rounding rule at the head of this section.\quad
-\tnk{c}\,The cross-arm row set common to every arm of Table~\ref{tab:si-arms}.\quad
+\tnk{c}\,The same $5608$ rows: the seed-$42$ control arms carry the identical labelled set, so
+their cross-arm intersection with the arms of Table~\ref{tab:si-arms} is that set exactly.\quad
 \tnk{d}\,One estimator cell (\S\ref{sec:estimator}) for both sets, both kernels and every
 stratum.\quad
 \tnk{e}\,Bootstrap band over pair\,/\,two-way\,/\,source clusters.\quad
@@ -405,7 +415,8 @@ under-predicting $\lngi$ with a systematic bias (Fig.~\ref{fig:parity}).
 % Caption: what is shown, and nothing else.  The two caveats that used to close it -- that
 % the sigma-oracle bar swaps the input at evaluation only, and that DirectGNN was tuned
 % separately -- are both in the body within a paragraph of this float.  Do not restore them.
-\caption{Controlled comparison on the scaffold split ($n{=}5608$). Solid bars: three seeds,
+\caption{Controlled comparison on the labelled test rows of the scaffold split ($n{=}5608$ of
+$8103$; the remainder carry no solubility measurement). Solid bars: three seeds,
 mean $\pm$ a population standard deviation (\texttt{ddof}$=0$). The two hatched bars are the
 co-adaptation controls, seed $42$ only, so they carry no error bar and no $R^2$, and keep an empty
 slot in the right panel. Dashed in the left panel only, the DirectGNN reference.}
@@ -501,13 +512,14 @@ variance inflates---$0.140$ to $0.258$ on the $n{=}38$ remainder---and drives a 
 further negative. That is the whole of the uniqueness claimed for the glycol ethers: the only row set
 admissible, positive and not contained in another---\emph{not} the only admissible stratum and not
 the only one sign-stable under every deletion. Of the rest, water carried as the dilute solute ($37$
-rows, $+6.33$) and the halogenated solvents ($30$ rows, $+3.39$) are too small to bound and draw on
-one publication whose deletion cannot be run, so those two large margins were never put at risk;
+rows, $+6.33$) is too small to bound and draws on one publication, so its deletion cannot be run and
+that margin was never put at risk; the halogenated solvents ($30$ rows, $+3.39$) are too small to
+bound and only one of their two deletions runs, leaving $+5.84$;
 water as a solvent, the coarse hydroxylic class and the organic-solute subset each lose their sign
 under a deletion, which is why the finding belongs to the glycol-ether sub-class and not to the
 hydroxylic solvents as a class; the mono-alcohols, the N--H protics and the ester and azine
-sub-families, which an acceptor-only reading would lean on, are unboundable with a deletion that
-cannot be run. None may be used to explain a reversal. The whole-set row passes at the headline cell
+sub-families, which an acceptor-only reading would lean on, are unboundable. None may be used to
+explain a reversal. The whole-set row passes at the headline cell
 and fails once the pair unit is required, so the rule does not by itself dispose of the aggregate
 there; the composition argument above does.
 
@@ -518,10 +530,11 @@ against errors ($2.252$, $0.476$, $0.089$) spanning a factor of $25$; adding the
 estimate without being boundable---mono-alcohol $0.733$, halogenated $0.592$, N--H protic
 $0.281$---gives $6.8$ against $51$, that $6.8$ being set by the mono-alcohols' $0.733$, which exceeds
 that stratum's own $\Var(m)=0.604$ and is flagged in the artifact as an invalid bound on a stratum
-already excluded. The two orderings are unrelated---the glycol ethers carry the lowest bound of any
-class and the second-highest error---and against $2000$ random partitions into blocks of the observed
-class sizes, at the same cell, the chemical partition's spread in $\mathrm{MSE}$ exceeds every draw
-while its spread in the bound is unremarkable ($p=0.26$); their ratio gives $p=0.02$. That is the
+already excluded. The two orderings are unrelated---among those six the glycol ethers carry the
+lowest bound and the second-highest error---and against $2000$ random partitions into blocks of the observed
+class sizes, at the same cell, the chemical partition's range (largest minus smallest) in
+$\mathrm{MSE}$ exceeds every draw while its range in the bound is unremarkable ($p=0.26$); their
+ratio gives $p=0.02$. That is the
 estimator showing through: every stratum is summarised by eight quantile bins of one scalar, so the
 bound measures the residual spread of $m$ inside such a bin, a property of the binning rather than of
 the chemistry, while nothing constrains the error to follow it. An aggregate margin is therefore a
@@ -609,10 +622,10 @@ map; that does not say the map is \emph{fixably} wrong. A small structure-preser
 fixed COSMO-SAC exchange-energy kernel, fit on the reference VT-2005 profiles, removes $46\pm5\%$ of
 the reference-input error under random folds but $-5\pm16\%$ once folds are grouped so that no
 solvent is shared. Only the grouped design is free of leakage, the closure error being predominantly
-a between-solvent systematic. Stated as a bound rather than a null, that design excludes a
-cross-solvent reduction above about $30\%$. $\Bclos$ is therefore a defect a handful of kernel
-parameters can absorb \emph{within} a solvent and that we have not shown to be correctable across
-solvents.
+a between-solvent systematic. It gives a null and not a bound: the $\pm$ prices only optimiser noise
+over five fit seeds, the held-out fold spread that dominates it going unpropagated
+(\S\ref{sec:si-tables}). $\Bclos$ is therefore a defect a handful of kernel parameters can absorb
+\emph{within} a solvent and that we have not shown to be correctable across solvents.
 
 Where it fails is chemically placed, and placed differently on the two sets. On the VT-2005-matched
 set $90\%$ of the squared error falls on strong hydrogen-bond-donor solvents and the closure is
@@ -659,38 +672,105 @@ residual on the output, gated, on this closure and this corpus.
 \label{sec:pka-main}
 The instrument is not specific to COSMO-SAC, and a second domain runs it where the sign of grounding
 can be predicted before the measurement. The closure is a Hammett linear free-energy relationship
-$g(\hammett)=\mathrm pK_{a,0}-\rho\,\hammett$ in a substituent constant; the learned intermediate is
-that constant predicted from structure; the external reference is the Hansch--Leo table; and the data
+$g(\zstar)=\mathrm pK_{a,0}-\rho\,\hammett$ in a substituent constant, with $\mathrm pK_{a,0}$ and
+$\rho$ the tabulated Hansch--Leo--Taft reaction-series constants, one literature pair per
+scaffold---$(4.20,1.00)$ benzoic acid, $(9.99,2.23)$ phenol, $(4.60,2.77)$ anilinium,
+$(5.25,5.90)$ pyridinium---never fitted or refit on these data, so $g$ is fixed in the sense
+Lemma~\ref{prop:decomp} requires and the same $g$ runs inside every split. It reads two things, so
+$\zstar$ is the pair $(s,\hammett)$: the series $s$, which selects that literature pair, and the
+constant. Only $\hammett$ is learned---the
+learned intermediate is
+that constant predicted from structure; the external reference is the Hansch--Leo table
+\cite{hansch1991survey}, printed in full in \S\ref{sec:si-pka}; and the data
 are the OPERA experimental compilation \cite{mansouri2019opera} under a uniform,
-closure-independent quality filter that drops pre-ionized microstates. The two classic failure modes
-of that relation fall cleanly onto the two channels of Lemma~\ref{prop:decomp}: \emph{resonance
-saturation}, a curvature the linear closure cannot represent, lands in $\Bclos$, while
-\emph{ortho/steric} effects, absent from the tabulated constants, are information the intermediate
-lacks and land in $\Binsuf$. The two poles differ accordingly. On the meta- and para-substituted
-aromatics the relation was built for ($n{=}158$) it is well specified: RMSE $0.55$, with $\Bclos$
-below the insufficiency floor. On the ortho-substituted and heteroaromatic ones it does not describe
-($n{=}846$) it degrades to RMSE $2.26$, of which a within-scaffold out-of-fold estimator places at
+closure-independent quality filter that drops pre-ionized microstates.
+
+The reference constant is assigned mechanically, and that rule is also what defines the two poles.
+The four kinds are tried in the fixed order benzoic acid, phenol, anilinium, pyridinium, and a record
+enters under the first of them whose ionizing group matches exactly once in the molecule, at a ring
+atom lying in exactly one ring and that ring six-membered and aromatic. An ionizing site the entering
+kind does not consume does not exclude the record: on the same ring it is typed as an ordinary
+substituent, tabulated or not. It enters only if its ring system is also unambiguous: no aromatic nitrogen
+anywhere in the molecule for the three carbon-ring series, exactly one and no $N$-oxide for
+pyridinium. The kind a record enters under names the
+reaction series and with it $(\mathrm pK_{a,0},\rho)$. Ring
+positions are typed by shortest ring-bond distance from that ring atom---the one bearing the ionizing
+group, which for pyridinium is the ring nitrogen itself---one bond \emph{ortho}, two \emph{meta},
+three \emph{para}; and $\hammett^\star$ is the sum over the substituted positions
+of the Hansch--Leo constant of that substituent \emph{at that position}, $\sigma_m$ meta and
+$\sigma_p$ para, taken from the fixed list of nineteen substituents printed in
+\S\ref{sec:si-pka}; an unsubstituted parent has
+$\hammett^\star=0$. An ortho position carries no tabulated constant and enters the sum as zero, and
+so does a substituent outside the list. The first pole---the \emph{clean} one below---is the $158$
+records whose every substituted position is meta or para with a tabulated substituent; the
+\emph{degraded} pole is the $846$ where at least one position is neither---$571$ of them carrying an
+ortho substituent, the other $275$ an untabulated one---and there $\hammett^\star$ is the partial sum
+over the positions it can see. The split is not benzenoid against heteroaromatic: all four series occur on
+both sides, $32$ of the clean pole's records being pyridinium.
+
+The two classic failure modes of that relation fall onto the two channels of
+Lemma~\ref{prop:decomp}: \emph{resonance saturation}, a curvature the linear closure cannot
+represent, lands in $\Bclos$, while what the zeroed positions carry---ortho field and steric effects,
+and whatever an untabulated substituent contributes---is information the intermediate lacks and lands
+in $\Binsuf$. The two poles differ accordingly. On the clean one, the chemistry the relation was
+built for ($n{=}158$), it is well specified: RMSE $0.55$, and the lower
+bound $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ on the non-negative $\Bclos$ is $-0.2$ ($95\%$~CI
+$[-0.4,-0.0]$)---below zero, where a lower bound sits when the closure predicts as well as a flexible
+regressor on its own argument---while the per-scaffold systematic offsets, an independent lower
+bound, are $\le0.19$. On the degraded pole ($n{=}846$) it degrades to RMSE $2.26$, of which the same
+estimator places at
 most $4.5$ of the $5.1$ total in input insufficiency and hence at least $0.6$ in the closure---both
 figures one-sided, in the same direction as the solubility bounds.
 
+That estimator is not the eight-bin coarsening cell of \S\ref{sec:estimator}, and its conditioning
+variable is not the constant alone; nor is the functional the same, the two figures just given being
+floors $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ on $\Bclos$, which when positive establish $\Bclos>0$,
+and not the separation margin $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$ of Table~\ref{tab:notation},
+which when positive would establish the stronger $\Bclos>\Binsuf$. The closure reads the reaction series too---$\mathrm pK_{a,0}$
+and $\rho$ are per-series---so the argument Lemma~\ref{prop:decomp} requires is the pair
+$\zstar=(s,\hammett)$, series label and constant, and the estimand is
+$\Ex[\Var(\mathrm pK_a\mid s,\hammett)]$. Neither coordinate needs binning: $s$ takes four values and
+$\hammett$ is a scalar, so the conditional variance is estimated directly---a random forest of
+$\mathrm pK_a$ on $\hammett$ alone, fitted \emph{within} each series and pooled over series by $n$,
+five-fold, its \emph{out-of-fold} residual mean square. That regressor $\hat r$ reads $(s,\hammett)$
+and nothing else, and predicts each row from the folds that exclude it, which is what makes the split
+exact for it:
+$\Ex[(m-\hat r)^2]=\Ex[\Var(m\mid s,\hammett)]+\Ex[(\Ex[m\mid s,\hammett]-\hat r)^2]$, so the estimate
+exceeds $\Binsuf$ by the regressor's own approximation error---an upper figure, leaving a lower one.
+Conditioning on $s$ is not a free choice and it is not the conservative one: pool the four series and
+the same estimator returns $8.3$ against the degraded pole's $\mathrm{MSE}$ of $5.1$, a conditioning
+under which $g$ is not measurable, so Lemma~\ref{prop:decomp} does not license it and the closure
+floor it leaves would in any case be vacuous. The floor of $0.6$ therefore rests on $s$ belonging in
+$\zstar$, which is what the lemma demands of a closure that reads it.
+\S\ref{sec:broad} declines fitted estimators on solubility because random folds let a held-out row
+borrow strength from a near-twin through the representation; here the regressor's only input is the
+tabulated $\hammett$ within a series, so no fold can hand it what the closure's argument does not
+already carry. What the identity needs of the fold design is only that a row be held out of the fit
+that predicts it.
+
 The decisive test is the same oracle swap, measured \emph{in-distribution} across $K{=}20$
 within-scaffold splits: the learned $\hat\sigma_{\mathrm H}$ replaced by the tabulated
-$\sigma_{\mathrm H}^\star$ in the same closure, the sign of the change recorded per stratum. It
+$\sigma_{\mathrm H}^\star$ in the same closure---the series label is read from the structure in both
+arms, so the swap moves one coordinate of $\zstar$---the sign of the change recorded per stratum. It
 flips. On the clean pole the reference \emph{improves} accuracy---MAE $0.48$ learned against $0.315$
 with the reference, better in $19$ of $20$ splits and in three of the four reaction series---so the
 ceiling there is the noisy learned estimate and not the closure, which is an internal positive
-control on real data. On the ortho pole the same swap \emph{degrades} it---$0.83$ against $1.62$,
+control on real data. On the degraded pole the same swap \emph{degrades} it---$0.83$ against $1.62$,
 worse in $20$ of $20$ splits and in all four series, gap $90\%$ CI $[{+}0.57,{+}0.95]$---the freely
-learned constant absorbing the ortho and steric information the tabulated one lacks. The sign of
+learned constant absorbing what the zeroed positions carry and the tabulated one lacks. The sign of
 grounding therefore reverses inside one closure, in the direction Proposition~\ref{prop:tax} gives a
-priori and on the channel it names: input insufficiency, rather than the closure-error cancellation
-of \S\ref{sec:surrogate}. Both signs obey one crossover law---grounding helps a pole iff the learned
-arm's error there exceeds the fidelity-set oracle error---which a competence sweep confirms: the
-clean pole's threshold ($\approx0.315$) is never beaten by the learned arm, so grounding helps at
-every training budget, while the degraded pole's threshold ($1.62$) is high enough that the learned
+priori and---consistently with the one-sided bound above, though not isolated by it---through the
+insufficiency channel rather than the closure-error cancellation
+of \S\ref{sec:surrogate}. Both signs are one comparison: the sign of the grounding gap is by
+construction that of the learned arm's error against the fidelity-set oracle error, and what a
+competence sweep adds is that the oracle side of it does not move with the training budget while the
+learned side does. The
+clean pole's threshold ($\approx0.315$) is never beaten by the learned arm, so grounding helps at all
+four budgets swept, while the degraded pole's threshold ($1.62$) is high enough that the learned
 arm beats it across the whole interpolation range, down to $12\%$ of the data, and grounding reverts
 to helping only under scaffold \emph{extrapolation}, where the learned constant breaks
-($2.6{\pm}2.0$) back above the threshold. The clustering unit is the Hammett reaction series, of
+($2.6{\pm}2.0$) back above the threshold---in the mean over the six splits, three of which still
+have grounding hurting. The clustering unit is the Hammett reaction series, of
 which only $G{=}4$ exist, so the bootstrap resolves nothing finer than series-level sign agreement,
 read as a sign test on four units ($p{=}1/16$ on the pole where grounding hurts). The construction,
 the estimator validation and the measured fidelity sweep are in \S\ref{sec:pka}.
@@ -722,7 +802,9 @@ instrument's first application, and their transfer out of the matched regime is 
 
 \paragraph{Where the accuracy stands, and the confound in it.} Table~\ref{tab:baselines} places every
 arm of this work beside the external models, in three blocks that may not be read across. The physics
-arms trail their own control, and the predict-the-mean row shows how little room sits above them.
+arms trail their own control in the seed mean---the COSMO-SAC arms at every seed, the NRTL arm at
+two of three, being ahead at seed $42$ ($1.734$ against $1.749$; Table~\ref{tab:si-arms})---and the
+predict-the-mean row shows how little room sits above them.
 The physics and control arms were tuned separately and no hyperparameter-matched control was run, so
 the global $\Delta\mathrm{MAE}$ of $+0.14$ between them carries no information about the
 thermodynamic bottleneck, and neither do the per-solvent-class map, the per-solute-class map, the
@@ -733,8 +815,8 @@ differ, and no conclusion rests on them. Running the matched control is the dire
 not run it. What survives the confound is every \emph{within-checkpoint} contrast, where the two
 sides share one trained model and one tuning: \S\ref{sec:paradox}, \S\ref{sec:measure} (which uses no
 trained model at all), \S\ref{sec:surrogate} and \S\ref{sec:gateb}. Separately, and not as an
-accuracy claim about the bottleneck: we did not find a configuration in which the physics path
-attains a lower error than the control, and grounding the crystal factor on external labels did not
+accuracy claim about the bottleneck: no configuration we ran attains a lower \emph{seed-mean} error
+than the control---at one seed the NRTL arm does---and grounding the crystal factor on external labels did not
 move the ceiling (\S\ref{sec:e2}). The one place the physical \emph{structure} helps is temperature
 extrapolation, as a hypothesis-class property the trained models do not exploit
 (\S\ref{sec:supporting}).
@@ -744,13 +826,44 @@ are deposited here on a \emph{by-solute} split, this work's arms on the harder s
 retraining them on the scaffold split needs a GPU run we did not perform, and scoring released
 FastSolv weights on our test rows is invalid because FastSolv is trained on BigSolDB, which is this
 corpus. The third block is as published, on other corpora, with $\log_{10}S$ in molarity against mole
-fraction here, so the unit matches and the task does not. One sentence survives all three caveats:
-this work's control, at $\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is inside the band published
-new-solute extrapolation occupies---$0.83$ to $0.95$ for the leaders, $1.43$ to $2.16$ for the
-physics-informed cycle---rather than an order away from it, and no arm in any block is near the
-$0.75$ aleatoric estimate \cite{osanloo2024}, itself a different functional on a different base from
-this paper's own floor (\S\ref{sec:data}). How much the split matters is visible inside the table:
-the same FastSolv retraining scores $1.94$ by solute and $2.91$ on random pairs.
+fraction here, so the unit matches---through the conversion the caption defines---and the task does
+not. One sentence survives all three caveats, and it is not a favourable one: this work's control, at
+$\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is the same order as published new-solute
+extrapolation rather than an order away. The published leaders run $0.83$ to $0.99$
+and the physics-informed cycle $1.43$ to $2.16$, so the control's seed mean sits just past the worst
+leader---at one of its three seeds ($0.97$) it is under it; the
+physics arms, at $1.39$ to $1.57$, are worse than every published leader at every seed and every
+clip. The NRTL and grounded arms
+also trail their control by more here---an RMSE deficit---than in MAE, at every clip of the
+caption's sweep and at every seed; the $\sigma$-oracle does not, and the caption says where. Where
+they sit \emph{within} the cycle's range is not a reading
+this column supports: it moves with the saturation clip the caption defines---the control's figure
+does not move with that clip and all three of theirs do---and at the tight end of that sweep the
+NRTL and grounded arms fall below the cycle's better end at every seed, the $\sigma$-oracle only in
+its seed mean. They are also worse, in
+this column, than predicting one number for the entire test set: the scale reference reads $1.33$ on
+the same rows, below all three printed figures. That is a reading of the seed-mean column at the
+deposited clip and not of the models---at seed $42$ the grounded arm is below the reference at every
+clip, $1.13$ against $1.33$ at the deposited one, and seed-averaged the grounded and NRTL arms fall
+under it at the tight end as well; the caption counts the cells. It is the sharpest thing in the
+block and it is about this work.
+What may be read from the three figures is what survives the sweep---all three above every published
+leader and above their own control---and not the two decimals. The $0.75$
+aleatoric estimate \cite{osanloo2024}---itself a different functional on a different base from this
+paper's own floor (\S\ref{sec:data})---sits below every row of the table but one, the closest
+published figure being the leaders' $0.83$; the exception, at $0.45$, is on a random-pair split,
+where the same solute appears in training and the task is not extrapolation. One row pair in the
+external block reads the wrong way round and we no longer offer it as evidence about splits: the same
+FastSolv retraining scores MAE $1.94$ in \lnx\ by solute and $2.91$ on random pairs, $1.10$ and
+$1.54$ RMSE in $\log_{10}S$---worse on the \emph{easier} split. The cause is in our deposit rather
+than in the task. Both of those runs are scored through a prediction path that standardises the
+model's inputs twice, which saturates the network's input activation on temperature and leaves the
+predictions exactly constant in $T$; the residue is then a large offset that differs between the two
+splits. Both FastSolv rows are a floor on that model, the contrast between them measures our defect,
+and the arm in that block that is scored soundly, the retrained SolProp encoder, does move the way
+the split predicts, $1.62$ to $0.64$. Scored soundly, FastSolv would be expected nearer its published
+$0.83$ to $0.95$---further ahead of everything in the first block---and we have not re-run it to find
+out.
 
 % ---------------------------------------------------------------------------
 % EXTERNAL BASELINES, IN THE ARTICLE (2026-08-02, editorial item A3).  The only comparison against
@@ -759,25 +872,84 @@ the same FastSolv retraining scores $1.94$ by solute and $2.91$ on random pairs.
 % the flattering comparison in both directions: the physics arms trail their own control in block
 % one, and block two is on an easier split than block one so it is not a ranking.
 % Rows transcribed from results/external_baseline_comparison/table_article.tex; see the header of
-% si_tables/external_baselines_rows.tex for the two typesetting edits and the regeneration command.
+% si_tables/external_baselines_rows.tex for the four typesetting edits and the regeneration command.
+% The n column carries TWO sizes on purpose: the log10 S column is not computed on the rows the MAE
+% column is, and the rows it loses used to be ARM-DEPENDENT (2026-08-04 repair; see the generator's
+% `THE COMPARISON THIS TABLE MUST NOT FLATTER' block).
 % ---------------------------------------------------------------------------
 \begin{table*}[tp]
 \centering
 \caption{Solubility accuracy in three blocks that may not be read across: this work, external models
-re-run here on a different split, and published figures on other corpora.}
+re-run here on a different split, and published figures on other corpora. A row carries two sample
+sizes where its two metric columns are not scored on the same rows, one where they coincide, and a
+dash where the value is quoted rather than computed here.}
 \label{tab:baselines}
 {\scriptsize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.88}
 \input{si_tables/external_baselines_rows}
 \tabnotes{\scriptsize%
-\tnk{a}\,Seeds $42$ and $43$ only: the seed-$44$ per-row file for this arm is the truncated deposit
-of Table~\ref{tab:runs}. The three-seed bar of Fig.~\ref{fig:paradox} for the same arm,
-$2.25\pm0.02$, was aggregated at run time and is unaffected.\quad
-$\log_{10}S$ is converted from \lnx\ through the same converter for every row of the first two
-blocks; the third block is quoted as published, in mol\,L$^{-1}$, so the unit matches and the task
-does not. MAE is not available for the third block, which reports RMSE and $\%\log S\pm1$, and we do
-not convert between them.}}
+\tnk{a}\,The seed-$44$ per-row file for this arm is the truncated deposit of Table~\ref{tab:runs}.
+The three-seed bar of Fig.~\ref{fig:paradox} for the same arm, $2.25\pm0.02$, was aggregated at run
+time and is unaffected, and so is its $R^2$ in Table~\ref{tab:si-arms}: that arm reads
+$-0.03\pm0.04$ over the three seeds there against the $-0.05\pm0.02$ this row reads on the two
+intact deposits.\quad
+\emph{What the block-1 cells are.} Every one is the mean over seeds of that seed's own metric, with
+the population standard deviation over seeds beside it; no cell pools the seeds' rows.\quad
+\emph{The unit bridge.} $\log_{10}S$ is obtained from \lnx\ as $S=x_2c_{\mathrm{solv}}/(1-x_2)$, the
+solvent's molarity $c_{\mathrm{solv}}$ in mol\,L$^{-1}$ being $1000\rho/M$ from a tabulated
+\emph{mass} density $\rho$ (g\,cm$^{-3}$) and the molar mass $M$ (g\,mol$^{-1}$) where the solvent
+has one, and $1000/V_{\mathrm{m}}$ from the molar volume $V_{\mathrm{m}}$ (cm$^{3}$\,mol$^{-1}$) of
+one generated conformer where it has none (this $\rho$ is unrelated to the Hammett reaction constant
+of \S\ref{sec:pka-main}). Since $x_2/(1-x_2)$ is a mole ratio, $S$ is moles of solute per litre of
+\emph{solvent} rather than of solution, and the two conventions diverge as $x_2\to1$. The same
+converter runs on every row of the first two blocks. It carries \emph{no} temperature dependence---one ambient
+$c_{\mathrm{solv}}$ at every $T$---and it needs a molarity, so the $168$ of the $5608$ labelled test
+rows whose solvent has none carry no true $\log_{10}S$ and leave that column for \emph{every} arm:
+hence the two $n$. Block~1's $5608$ is itself the labelled subset of the $8103$ test rows
+(Table~\ref{tab:notation}); both exclusions are read off the data alone, neither off a prediction. The scale-reference row runs its one constant \lnx\ prediction through the same bridge
+on the same $5440$ rows, so it is a reference in this column too; predicting the mean of the true
+$\log_{10}S$ instead would read $1.28$.\quad
+\emph{The clip, and what the column owes it.} Predictions are clipped at $x_2=0.999999$ before
+conversion, so an arm that saturates keeps its row with a large finite error instead of converting to
+$+\infty$ and being dropped. Without that clip the exclusions would differ \emph{by arm}---$12$ to
+$195$ rows per seed for the three physics arms, none for the control, which never saturates---and
+would read the $\sigma$-oracle arm $0.21$ lower, the COSMO-SAC-grounded arm $0.31$ and the NRTL arm
+$0.48$, the control unchanged. The clip is a chosen constant and this column moves with it: swept
+from $x_2=1-10^{-3}$ to $1-10^{-10}$ it leaves the control at $1.00$ throughout and carries NRTL
+$1.23$ to $2.07$, COSMO-SAC-grounded $1.18$ to $1.75$ and the $\sigma$-oracle $1.42$ to $1.83$. Two
+readings hold at every clip in that span, and separately at each seed for the arms that seed
+deposits: the control is below every physics arm, and every physics arm is above every published
+leader. Four do not, and each of the four fails on the seed axis as well as the clip one. The NRTL
+and $\sigma$-oracle rows exchange places just past the value used in the seed-averaged sweep, two
+clips earlier at seed $42$, and not at all at seed $43$, where NRTL is the lower at all seven. The
+scale reference does not saturate and so does not move, and the physics arms are under it in $15$ of
+the $56$ arm--seed--clip cells: seed-averaged, the grounded arm at the three tightest clips and the
+NRTL arm at the two tightest; per seed, the grounded arm at all seven clips at seed $42$---the
+deposited clip included, $1.13$ against $1.33$, the one cell of the printed column that beats the
+reference---and the $\sigma$-oracle at no clip and no seed. At the tightest clip the NRTL and
+grounded arms read below $1.43$, the better end of the published physics-informed cycle, at every
+seed, and the $\sigma$-oracle's seed mean ($1.42$) does too though not its seed-$43$ value ($1.48$),
+so \S\ref{sec:discussion} does not place them there. And only two
+of the three trail their control by more in this column than in MAE: the $\sigma$-oracle's
+$\log_{10}S$ deficit falls \emph{below} its MAE deficit at the three tightest clips seed-averaged,
+at all seven at seed $42$ and at the two tightest at seed $43$, while the NRTL and grounded arms
+hold at every clip and seed, so \S\ref{sec:discussion} states it of those two. A fifth
+reading fails on the seed axis alone and we do not carry it: the grounded arm is the
+lowest of the three physics arms at every clip in the seed-averaged sweep just given, but at seed
+$43$ the NRTL arm is lower at all seven. \S\ref{sec:si-baselines} carries the sweep and lists every
+cell of the four.\quad
+\tnk{b}\,\emph{Defective, and a floor rather than a rendering of that model.} This retraining is
+deposited with its inputs standardised twice at prediction time, which saturates the network's input
+activation on the temperature channel: the deposited predictions are \emph{exactly} constant in
+temperature for every one of the $2251$ pairs spanning more than $5$\,K, where the measurements move
+a median $0.62$ in $\log_{10}S$. Its two rows bound FastSolv from below and their by-solute\,/\,random-pair
+contrast measures the defect, not the split; published FastSolv is the third block's $0.83$ to
+$0.95$. \S\ref{sec:si-baselines} gives the diagnosis. The SolProp rows use a different path and do
+carry a temperature response.\quad
+The third block is quoted as published, in mol\,L$^{-1}$, on other corpora and splits: no conversion
+of ours stands behind those six values. MAE is not available for that block, which reports RMSE and
+$\%\log S\pm1$, and we do not convert between them.}}
 \end{table*}
 
 \paragraph{The sign rule's own prediction.} Proposition~\ref{prop:tax} predicts \emph{when} to expect
@@ -918,11 +1090,13 @@ per-arm prediction files and the larger analysis artifacts will be deposited in 
 $\sigma$-profiles, Ref.~\cite{fingerhut2017} as redistributed with Ref.~\cite{bell2020cosmosac}
 for the UD profiles, ThermoML for the infinite-dilution activity coefficients, the
 PGL 6th-edition IDAC database for Table~\ref{tab:closure-anchor}, and the OPERA
-compilation \cite{mansouri2019opera} for the pKa data. Four deposited artifacts carry disclosed
-defects, recorded in \S\ref{sec:si-repro} and \S\ref{sec:si-tables}: the seed-44 oracle per-row
-file is truncated, the three-seed surrogate run's per-run split provenance was not logged, one
-$\sigma$-stream build on disk was written against the wrong split files, and the two
-VT-2005-matched audit artifacts disagree on one out-of-fold estimate.
+compilation \cite{mansouri2019opera} for the pKa data. Five deposited artifacts carry disclosed
+defects, recorded in \S\ref{sec:si-repro}, \S\ref{sec:si-tables} and \S\ref{sec:si-baselines}: the
+seed-44 oracle per-row file is truncated, the three-seed surrogate run's per-run split provenance was
+not logged, one $\sigma$-stream build on disk was written against the wrong split files, the two
+VT-2005-matched audit artifacts disagree on one out-of-fold estimate, and the two FastSolv retraining
+bundles were scored through a doubly standardising prediction path, which makes both their rows in
+Table~\ref{tab:baselines} a floor on that model rather than a rendering of it.
 
 \begin{acknowledgement}
 This research received no external funding.

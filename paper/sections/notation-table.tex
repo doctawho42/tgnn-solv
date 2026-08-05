@@ -29,9 +29,11 @@ COSMO-SAC, in \S\ref{sec:pka-main} a Hammett relation \\
 kernel & the segment-interaction energy inside COSMO-SAC; a closure variant is named for its
 kernel's year (\emph{2002}, \emph{2010}) \\
 arm & one trained configuration, or one closure variant evaluated; \emph{DirectGNN} is the
-closure-free control arm \\
-$\zstar$, $\hat z$ & the reference (tabulated) latent and the network's own prediction of it; a
-\emph{$\sigma$-oracle} feeds $\zstar$ where $\hat z$ would go \\
+closure-free control arm and \emph{TGNNSolv} the closure-carrying one, abbreviated \emph{TGNN} in
+Table~\ref{tab:baselines} \\
+$\zstar$, $\hat z$ & the closure's \emph{entire} argument at its reference (tabulated) value, and the
+network's own prediction of it; a \emph{$\sigma$-oracle} feeds $\zstar$ where $\hat z$ would go. In
+\S\ref{sec:pka-main} $\zstar$ is a pair and only one of its coordinates is learned \\
 grounding & two opposite operations on one reference database: \emph{supervising} $\hat z$ against
 it during training, and \emph{substituting} $\zstar$ for $\hat z$ at evaluation \\
 $\Bclos$, $\Binsuf$ & the closure's own error, and what its inputs cannot resolve,
@@ -48,10 +50,14 @@ admissible & boundable \emph{and} sign-stable under deletion of each contributin
 all four unit\,$\times$\,convention cells (\S\ref{sec:estimator}) \\
 full, deployed & the combinatorial convention: \emph{full} carries the Staverman--Guggenheim term,
 \emph{deployed} is residual-only and is what this pipeline runs \\
+UD & the University of Delaware $\sigma$-profile database \\
+labelled test rows & the $5608$ of the $8103$ scaffold-split test rows carrying a solubility
+measurement; the other $2495$ carry a melting point only and are scorable in no arm \\
 broad IDAC set & $477$ IDAC\,$\cap$\,UD rows, $185$ pairs, all temperatures, UD profiles \\
 VT-2005-matched set & $60$ pairs at $298$\,K carrying a VT-2005 profile on both sides \\
 $\sigma$ & alone, the screening-charge-density profile; $\sigma(\cdot)$ with an argument, the
-generated $\sigma$-algebra; \hammett, the Hammett substituent constant of \S\ref{sec:pka-main};
+generated $\sigma$-algebra; \hammett, the Hammett substituent constant, assigned by the rule stated
+in \S\ref{sec:pka-main};
 $\sigma_\eta$, experimental label noise \\
 \bottomrule
 \end{tabular}}

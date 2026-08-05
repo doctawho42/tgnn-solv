@@ -71,8 +71,9 @@ grounding helps.
 
 \subsubsection{The closure--insufficiency decomposition}
 \label{sec:decomp}
-Let $m$ be the activity target---the experimental infinite-dilution activity coefficient
-$\lngi$---and $g(\zstar)$ the closure evaluated on the reference latent.
+Let $m$ be the closure's target---here the experimental infinite-dilution activity coefficient
+(IDAC) $\lngi$, in \S\ref{sec:pka-main} the measured $\mathrm pK_a$---and $g(\zstar)$ the closure
+evaluated on the reference latent.
 
 \begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
 For a \emph{fixed} (non-fitted) closure $g$, with $\zstar$ denoting the closure's \emph{entire}
@@ -102,7 +103,9 @@ the cross term need not vanish and the binning in~(c) is no longer a coarsening 
 $\sigma$-algebra, so neither the identity nor the upper bound survives. Where $g$ reads a
 temperature---the broad IDAC set of \S\ref{sec:broad}, $\dim=103$---we accordingly take
 $\zstar=(\text{profile pair},T)$; on the VT-2005-matched set every row sits at $298$\,K and the two
-readings coincide.
+readings coincide. The same rule fixes $\zstar$ in the second domain: the Hammett closure of
+\S\ref{sec:pka-main} reads a per-series constant pair as well as the substituent constant, so there
+$\zstar=(s,\hammett)$ and the conditioning is on both.
 \emph{(b) Jensen lower bound.} With $\Delta(\zstar)=\Ex(m\mid\zstar)-g(\zstar)$,
 $\Bclos=\Ex[\Delta^2]\ge(\Ex[\Delta])^2=(\Ex[m]-\Ex[g])^2$, using $\Ex[\Ex(m\mid\zstar)]=\Ex[m]$.
 It needs \emph{no} smoothness assumption; its one requirement is that $m$ and $g$ share the $\lngi$
@@ -136,10 +139,10 @@ supply.
 superpopulation}: a draw is a nominal compound pair \emph{at a temperature}, together with the
 conformer, tautomer and protonation state actually populated there, and an independent determination
 of $\lngi$ for it. Neither the conformational state nor the replicate is part of the conditioning
-variable, so $\Var(m\mid\zstar,T)$ is the spread of $\lngi$ across the conformational ensemble and
+variable, so $\Var(m\mid\zstar)$ is the spread of $\lngi$ across the conformational ensemble and
 across replicate determinations at one reference profile and temperature---non-zero for physical
 reasons unrelated to sample size. Experimental label noise is a \emph{component} of it, not a term
-beside it: an independent zero-mean error on $m$ enters $\Var(m\mid\zstar,T)$ directly, so it sits
+beside it: an independent zero-mean error on $m$ enters $\Var(m\mid\zstar)$ directly, so it sits
 inside every bound reported here and is never added on. What the design cannot do is \emph{observe}
 it, neither set holding two rows at a common argument. The bounds are therefore conservative in one
 direction only---were the superpopulation variance negligible the finding would be the stronger
@@ -200,7 +203,10 @@ $15{,}665$ solutes and $221$ solvents between $243$ and $438$\,K, partitioned by
 scaffold into $111{,}724$ training, $8{,}103$ validation and $8{,}103$ test rows so that every test
 solute is unseen at training; a melting-point-independent miscibility/structure filter sets row
 membership, and crystal $\Tm$, $\dHfus$, Hansen parameters and infinite-dilution activity
-coefficients \lngi\ are merged on as per-solute labels where available. Crystal supervision is
+coefficients \lngi\ are merged on as per-solute labels where available. A split's rows do not all
+carry the same label: of the $8{,}103$ test rows, $5608$ carry a solubility measurement and the
+other $2495$ carry a melting point and no solubility, so every accuracy number below is on $5608$
+rows and says so (\S\ref{sec:eval}). Crystal supervision is
 scarce---the test and validation splits contain essentially no measured $\dHfus$, the quantitative
 basis of the identifiability argument (\S\ref{sec:framework}). The external single-component data
 used for grounding are an open crystal-property pool ($\sim$15{,}000 melting points), the VT-2005
@@ -277,7 +283,7 @@ layer~\cite{hsieh2010,hsieh2014dsp}, built on the \emph{typed} latent of three d
 $\sigma$-profiles per molecule in place of one, reproduces the NIST 2010 reference with dispersion
 \emph{off}. The dispersion term is \emph{not} validated to that standard, which is why every
 dispersion-off contrast is computed on our layers while the \emph{2010, dispersion on} runs are
-quoted from \texttt{cCOSMO}.
+quoted from \texttt{cCOSMO}, that reference implementation itself.
 
 \paragraph{The same closure against a published evaluation.}
 % Artifacts: results/published_idac_check/{summary.json,scored_records.csv,table_closure_anchor.tex}
@@ -362,8 +368,19 @@ tuned pipelines that differ in the thermodynamic bottleneck, not an isolation of
 every physics-penalty comparison below carries that caveat (\S\ref{sec:discussion}).
 
 The controlled comparisons of \S\ref{sec:paradox} are run at three seeds and reported as mean$\pm$sd
-on a cross-arm row set; $5608$ is that lock, the test rows supervised and finite in every arm, so
-all arms score identical rows. Table~\ref{tab:runs} names which run family produced which numbers,
+on a fixed row set; $5608$ is that lock---the test rows that carry a solubility measurement, $5608$
+of the $8103$ (\S\ref{sec:data})---so all arms score identical rows. The $2495$ rows outside it
+carry a melting point and no solubility and are unscorable in every arm alike, the control included;
+none is dropped for anything an arm predicted. The code that builds the lock also asks for a finite
+\lnx\ prediction in every arm, and that clause is inert as far as the deposit can be read: of the
+twenty-two per-row prediction files, twenty-one are full length, and across those it removes no row,
+from any arm, at any seed. The twenty-second is the truncated seed-$44$ $\sigma$-oracle file of
+Table~\ref{tab:runs}, which was saved with $295$ rows rather than $8103$; those $295$ are finite, and
+for that arm and seed nothing beyond them is re-verifiable from the deposit. The $\sigma$-oracle is
+not one of the five arms the lock intersects over, so the $5608$ rows themselves do not turn on it.
+For the twenty-one the set is fixed by which
+rows carry a label and not by which rows an arm handled; \S\ref{sec:si-lock} gives the
+decomposition. Table~\ref{tab:runs} names which run family produced which numbers,
 how many seeds it carries, and the script and artifact each regenerates from.
 
 % ---------------------------------------------------------------------------
@@ -386,7 +403,7 @@ how many seeds it carries, and the script and artifact each regenerates from.
 Run family (script) & Seeds & What it produced \\
 \midrule
 $\sigma$-grounding arms, GPU, full corpus
-(\texttt{run\_e5\_comparison}) & $42,43,44$, mean$\pm$sd on the $n{=}5608$ lock &
+(\texttt{run\_e5\_comparison}) & $42,43,44$, mean$\pm$sd on the $n{=}5608$ labelled test rows &
 Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2}, Table~\ref{tab:si-arms}, the $+0.41$ and $-0.20$
 of \S\ref{sec:paradox} \\
 Co-adaptation and channel-swap oracle controls; gated output residual & $42$ only: a sign, not an
@@ -407,7 +424,7 @@ Closure validation (\texttt{run\_closure\_reference\_validation},
 \texttt{run\_published\_idac\_closure\_check}) & none & the NIST reproduction;
 Table~\ref{tab:closure-anchor} \\
 External baselines (\texttt{run\_external\_baseline\_comparison}) & one run each, on a
-\emph{by-solute} split & Table~\ref{tab:baselines} \\
+\emph{by-solute} split and, for two of the rows, a \emph{random-pair} one & Table~\ref{tab:baselines} \\
 pKa second domain (\texttt{run\_pka\_real\_decomposition}, \texttt{\ldots\_hammett\_probe},
 \texttt{\ldots\_binsuff\_boot}) & $K{=}20$ within-scaffold splits; $G{=}4$ series as the cluster
 unit & \S\ref{sec:pka-main} \\
@@ -419,9 +436,10 @@ Noise floor and encoder probe (\texttt{run\_noise\_floor\_estimate}) & none & \S
 One deposited artifact is defective, and the defect is disclosed rather than repaired: the seed-$44$
 per-row oracle prediction file was truncated at save time to $295$ rows. The three-seed summaries
 were aggregated at run time, before that file was written, so Fig.~\ref{fig:paradox} and
-Table~\ref{tab:si-arms} are unaffected; any \emph{per-row} re-analysis of that
-arm---Fig.~\ref{fig:parity-lnx2} and the oracle row of Table~\ref{tab:baselines}---uses the two
-complete seeds and says so.}}
+Table~\ref{tab:si-arms} are unaffected; any \emph{per-row} re-analysis of that arm says which seeds
+it had. The oracle row of Table~\ref{tab:baselines} is the mean over the two complete seeds, $42$ and
+$43$, and its row says so; Fig.~\ref{fig:parity-lnx2} is one seed, $42$, for all four of its panels
+alike, and its caption says so.}}
 \end{table*}
 
 \subsection{Estimating the split: one cell, one convention, one rule}
@@ -454,8 +472,8 @@ group second, and the solute's role as water or as an organic. The classifier re
 and nothing else---never $m$, $g$, the squared error, the source or the bootstrap---so no cell can
 have been chosen on its outcome, which is a property of the code rather than an assurance. A stratum
 is \emph{boundable} at $n\ge40$, where eight bins hold five rows; the smaller ones are reported at
-that same cell, with the resample-adaptive rule $\max(3,\lfloor n/10\rfloor)$ carried beside them in
-the deposited table, nothing being dropped for being small.
+that same cell, with the adaptive bin count $\max(3,\lfloor n/10\rfloor)$ in the rows $n$ it is
+applied to carried beside them in the deposited table, nothing being dropped for being small.
 
 \emph{The admissibility rule.} A stratum is \emph{admissible} only if it is \emph{(a)}~boundable at
 that fixed cell and \emph{(b)}~robust to leave-one-source-out---its margin keeps its sign when each

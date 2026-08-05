@@ -4,6 +4,7 @@
     "grounded_a": {
       "label": "TGNN, COSMO-SAC closure, sigma head supervised (physics arm)",
       "n": 5608,
+      "n_logS": 5440,
       "seeds": [
         42,
         43,
@@ -40,22 +41,28 @@
       },
       "logS_mol_per_L": {
         "mae": {
-          "mean": 0.818189769414683,
-          "sd": 0.022207570624044756
+          "mean": 0.9226665518994995,
+          "sd": 0.07314360951896043
         },
         "rmse": {
-          "mean": 1.0785980220443985,
-          "sd": 0.03708381667702478
+          "mean": 1.3870856502408488,
+          "sd": 0.18785023921880004
         },
         "r2": {
-          "mean": 0.2679132026638938,
-          "sd": 0.06276452941337905
+          "mean": -0.1899917329731762,
+          "sd": 0.30344436812942144
         }
+      },
+      "logS_rows_saturated_at_x2_eq_1": {
+        "42": 12,
+        "43": 143,
+        "44": 135
       }
     },
     "nrtl": {
       "label": "TGNN, NRTL closure (physics arm)",
       "n": 5608,
+      "n_logS": 5440,
       "seeds": [
         42,
         43,
@@ -92,22 +99,28 @@
       },
       "logS_mol_per_L": {
         "mae": {
-          "mean": 0.7915914209236181,
-          "sd": 0.03120764407853449
+          "mean": 0.9559415094923317,
+          "sd": 0.025782835999242394
         },
         "rmse": {
-          "mean": 1.0670403386243086,
-          "sd": 0.03280533720901483
+          "mean": 1.5436882274661707,
+          "sd": 0.07252336327299959
         },
         "r2": {
-          "mean": 0.2753046125442852,
-          "sd": 0.04130757515831804
+          "mean": -0.45051077076592144,
+          "sd": 0.13767750796327874
         }
+      },
+      "logS_rows_saturated_at_x2_eq_1": {
+        "42": 195,
+        "43": 119,
+        "44": 136
       }
     },
     "directgnn": {
       "label": "DirectGNN (same encoder, no closure) -- the control",
       "n": 5608,
+      "n_logS": 5440,
       "seeds": [
         42,
         43,
@@ -155,11 +168,17 @@
           "mean": 0.39840852309503116,
           "sd": 0.02597395856113908
         }
+      },
+      "logS_rows_saturated_at_x2_eq_1": {
+        "42": 0,
+        "43": 0,
+        "44": 0
       }
     },
     "oracle": {
       "label": "TGNN, COSMO-SAC with the reference sigma substituted at evaluation",
       "n": 5608,
+      "n_logS": 5440,
       "seeds": [
         42,
         43
@@ -192,24 +211,383 @@
       },
       "logS_mol_per_L": {
         "mae": {
-          "mean": 1.0053309773027672,
-          "sd": 0.009010784946114792
+          "mean": 1.087573028783508,
+          "sd": 0.07449897408224315
         },
         "rmse": {
-          "mean": 1.3547961127730197,
-          "sd": 0.011574722409045668
+          "mean": 1.5663146462632125,
+          "sd": 0.1652084510770534
         },
         "r2": {
-          "mean": -0.1437888570015441,
-          "sd": 0.05030694648003242
+          "mean": -0.5066320574026518,
+          "sd": 0.3143297812893583
         }
+      },
+      "logS_rows_saturated_at_x2_eq_1": {
+        "42": 12,
+        "43": 143
       }
     },
     "_predict_the_mean_reference": {
       "label": "predict the test-set mean of ln x2 (assumption-free scale)",
       "mae_ln_x2": 2.32494158891005,
       "rmse_ln_x2": 2.9871082226758108,
-      "n": 5608
+      "n": 5608,
+      "n_logS": 5440,
+      "mae_logS": 1.0290550083208172,
+      "rmse_logS": 1.3255253065986852,
+      "r2_logS": -0.06713733258086085,
+      "rmse_logS_predicting_mean_of_true_logS": 1.2831512957782185,
+      "note": "The log10 S figure converts the same constant ln x2 prediction through the same unit bridge as every arm above it, on the same 5440 rows. It is BELOW all three physics arms (1.39, 1.54, 1.57) and above the DirectGNN control (1.00): predicting one number for the whole test set beats every physics arm in the column this table is placed against published work in."
+    },
+    "_defect_unclipped_arm_dependent": {
+      "what": "the repaired defect, per arm: convert predictions UNCLIPPED and let each arm's own +inf rows drop. The row set then depends on the arm.",
+      "per_arm": {
+        "grounded_a": {
+          "rmse_logS_mean": 1.0785980220443985,
+          "rows_dropped_per_seed": {
+            "42": 12,
+            "43": 143,
+            "44": 135
+          },
+          "repaired_minus_defect": 0.30848762819645037
+        },
+        "nrtl": {
+          "rmse_logS_mean": 1.0670403386243086,
+          "rows_dropped_per_seed": {
+            "42": 195,
+            "43": 119,
+            "44": 136
+          },
+          "repaired_minus_defect": 0.47664788884186216
+        },
+        "directgnn": {
+          "rmse_logS_mean": 0.9950075195491713,
+          "rows_dropped_per_seed": {
+            "42": 0,
+            "43": 0,
+            "44": 0
+          },
+          "repaired_minus_defect": 0.0
+        },
+        "oracle": {
+          "rmse_logS_mean": 1.3547961127730197,
+          "rows_dropped_per_seed": {
+            "42": 12,
+            "43": 143
+          },
+          "repaired_minus_defect": 0.21151853349019278
+        }
+      }
+    },
+    "_clip_sensitivity": {
+      "what": "RMSE log10 S as a function of the saturation clip. The control never saturates and does not move; the physics arms do. Read as: the ordering claims that survive the sweep are usable, the ones that do not are not.",
+      "clip_used": 0.999999,
+      "by_clip": {
+        "0.999": {
+          "grounded_a": 1.1825982332760654,
+          "nrtl": 1.2328210228936918,
+          "directgnn": 0.9950075195491713,
+          "oracle": 1.4232453488446493
+        },
+        "0.9999": {
+          "grounded_a": 1.2418430724836362,
+          "nrtl": 1.3241342770773668,
+          "directgnn": 0.9950075195491713,
+          "oracle": 1.4640185830358003
+        },
+        "0.99999": {
+          "grounded_a": 1.3105694409506492,
+          "nrtl": 1.428647402483134,
+          "directgnn": 0.9950075195491713,
+          "oracle": 1.5120280963098591
+        },
+        "0.999999": {
+          "grounded_a": 1.3870856502408488,
+          "nrtl": 1.5436882274661707,
+          "directgnn": 0.9950075195491713,
+          "oracle": 1.5663146462632125
+        },
+        "0.9999999": {
+          "grounded_a": 1.4699576691659366,
+          "nrtl": 1.6670847043754813,
+          "directgnn": 0.9950075195491713,
+          "oracle": 1.625993696927782
+        },
+        "0.99999999": {
+          "grounded_a": 1.5580185974127525,
+          "nrtl": 1.7971261382238648,
+          "directgnn": 0.9950075195491713,
+          "oracle": 1.6902886185659916
+        },
+        "0.9999999999": {
+          "grounded_a": 1.746172166297887,
+          "nrtl": 2.0721185815244234,
+          "directgnn": 0.9950075195491713,
+          "oracle": 1.8301764234620501
+        }
+      },
+      "by_clip_per_seed": {
+        "0.999": {
+          "grounded_a": {
+            "42": 1.0828819042115847,
+            "43": 1.2712319591865766,
+            "44": 1.193680836430035
+          },
+          "nrtl": {
+            "42": 1.2476414291584688,
+            "43": 1.2154283302874171,
+            "44": 1.2353933092351899
+          },
+          "directgnn": {
+            "42": 1.0168152266415562,
+            "43": 0.9655728582005743,
+            "44": 1.0026344738053832
+          },
+          "oracle": {
+            "42": 1.36719824426684,
+            "43": 1.4792924534224583
+          }
+        },
+        "0.9999": {
+          "grounded_a": {
+            "42": 1.0952244147653776,
+            "43": 1.3540521908271501,
+            "44": 1.2762526118583815
+          },
+          "nrtl": {
+            "42": 1.3660702551627908,
+            "43": 1.2898884655517224,
+            "44": 1.3164441105175873
+          },
+          "directgnn": {
+            "42": 1.0168152266415562,
+            "43": 0.9655728582005743,
+            "44": 1.0026344738053832
+          },
+          "oracle": {
+            "42": 1.3769946765894143,
+            "43": 1.5510424894821864
+          }
+        },
+        "0.99999": {
+          "grounded_a": {
+            "42": 1.109415722814584,
+            "43": 1.4503083696676384,
+            "44": 1.371984230369725
+          },
+          "nrtl": {
+            "42": 1.4990954722540337,
+            "43": 1.3762463313243616,
+            "44": 1.410600403871006
+          },
+          "directgnn": {
+            "42": 1.0168152266415562,
+            "43": 0.9655728582005743,
+            "44": 1.0026344738053832
+          },
+          "oracle": {
+            "42": 1.3883087072714153,
+            "43": 1.6357474853483032
+          }
+        },
+        "0.999999": {
+          "grounded_a": {
+            "42": 1.1253891547067678,
+            "43": 1.5575290584536567,
+            "44": 1.4783387375621226
+          },
+          "nrtl": {
+            "42": 1.6431999628243594,
+            "43": 1.472426122897686,
+            "44": 1.5154385966764672
+          },
+          "directgnn": {
+            "42": 1.0168152266415562,
+            "43": 0.9655728582005743,
+            "44": 1.0026344738053832
+          },
+          "oracle": {
+            "42": 1.4011061951861592,
+            "43": 1.731523097340266
+          }
+        },
+        "0.9999999": {
+          "grounded_a": {
+            "42": 1.14307038426505,
+            "43": 1.673610377989265,
+            "44": 1.5931922452434943
+          },
+          "nrtl": {
+            "42": 1.7957212385415458,
+            "43": 1.5766332984292981,
+            "44": 1.6288995761556
+          },
+          "directgnn": {
+            "42": 1.0168152266415562,
+            "43": 0.9655728582005743,
+            "44": 1.0026344738053832
+          },
+          "oracle": {
+            "42": 1.41534720971261,
+            "43": 1.836640184142954
+          }
+        },
+        "0.99999999": {
+          "grounded_a": {
+            "42": 1.1623815246430498,
+            "43": 1.7968361183886945,
+            "44": 1.7148381492065135
+          },
+          "nrtl": {
+            "42": 1.9546903651996994,
+            "43": 1.6873814999543824,
+            "44": 1.7493065495175124
+          },
+          "directgnn": {
+            "42": 1.0168152266415562,
+            "43": 0.9655728582005743,
+            "44": 1.0026344738053832
+          },
+          "oracle": {
+            "42": 1.4309886895041914,
+            "43": 1.9495885476277919
+          }
+        },
+        "0.9999999999": {
+          "grounded_a": {
+            "42": 1.205573684643341,
+            "43": 2.059523550906987,
+            "44": 1.9734192633433332
+          },
+          "nrtl": {
+            "42": 2.2865448177952716,
+            "43": 1.9239214705788628,
+            "44": 2.005889456199136
+          },
+          "directgnn": {
+            "42": 1.0168152266415562,
+            "43": 0.9655728582005743,
+            "44": 1.0026344738053832
+          },
+          "oracle": {
+            "42": 1.4662897836928224,
+            "43": 2.194063063231278
+          }
+        }
+      }
+    },
+    "_trails_control_by_more_in_logS_than_in_MAE": {
+      "what": "(RMSE log10 S of the arm - of the control) - (MAE ln x2 of the arm - of the control), per clip. Positive means the arm trails its control by MORE in the log10 S column than in MAE. It is positive for nrtl and grounded_a at every clip and at every seed; for the oracle it is NEGATIVE at the three tightest clips in the seed average, at all seven clips at seed 42, and at the two tightest at seed 43. Note the functionals differ (RMSE against MAE).",
+      "seed_averaged": {
+        "grounded_a": {
+          "0.999": 0.04404414981891447,
+          "0.9999": 0.10328898902648531,
+          "0.99999": 0.17201535749349828,
+          "0.999999": 0.24853156678369792,
+          "0.9999999": 0.3314035857087857,
+          "0.99999999": 0.4194645139556016,
+          "0.9999999999": 0.6076180828407362
+        },
+        "nrtl": {
+          "0.999": 0.1450150084344498,
+          "0.9999": 0.23632826261812478,
+          "0.99999": 0.34084138802389197,
+          "0.999999": 0.45588221300692877,
+          "0.9999999": 0.5792786899162393,
+          "0.99999999": 0.7093201237646228,
+          "0.9999999999": 0.9843125670651813
+        },
+        "oracle": {
+          "0.999": -0.12608065752766595,
+          "0.9999": -0.08530742333651486,
+          "0.99999": -0.037297910062456086,
+          "0.999999": 0.016988639890897272,
+          "0.9999999": 0.07666769055546674,
+          "0.99999999": 0.14096261219367634,
+          "0.9999999999": 0.2808504170897349
+        }
+      },
+      "per_seed": {
+        "grounded_a": {
+          "42": {
+            "0.999": 0.011146193464741438,
+            "0.9999": 0.023488704018534312,
+            "0.99999": 0.03768001206774074,
+            "0.999999": 0.05365344395992455,
+            "0.9999999": 0.07133467351820677,
+            "0.99999999": 0.09064581389620652,
+            "0.9999999999": 0.13383797389649765
+          },
+          "43": {
+            "0.999": 0.058655132996001,
+            "0.9999": 0.1414753646365745,
+            "0.99999": 0.23773154347706282,
+            "0.999999": 0.34495223226308114,
+            "0.9999999": 0.46103355179868943,
+            "0.99999999": 0.5842592921981189,
+            "0.9999999999": 0.8469467247164115
+          },
+          "44": {
+            "0.999": 0.062331122996002186,
+            "0.9999": 0.14490289842434856,
+            "0.99999": 0.24063451693569204,
+            "0.999999": 0.34698902412808974,
+            "0.9999999": 0.46184253180946144,
+            "0.99999999": 0.5834884357724806,
+            "0.9999999999": 0.8420695499093003
+          }
+        },
+        "nrtl": {
+          "42": {
+            "0.999": 0.24581973908993837,
+            "0.9999": 0.3642485650942604,
+            "0.99999": 0.49727378218550333,
+            "0.999999": 0.641378272755829,
+            "0.9999999": 0.7938995484730154,
+            "0.99999999": 0.952868675131169,
+            "0.9999999999": 1.2847231277267412
+          },
+          "43": {
+            "0.999": 0.16636864901552917,
+            "0.9999": 0.24082878427983445,
+            "0.99999": 0.3271866500524736,
+            "0.999999": 0.42336644162579806,
+            "0.9999999": 0.5275736171574101,
+            "0.99999999": 0.6383218186824944,
+            "0.9999999999": 0.8748617893069748
+          },
+          "44": {
+            "0.999": 0.02285663719788289,
+            "0.9999": 0.10390743848028028,
+            "0.99999": 0.19806373183369907,
+            "0.999999": 0.3029019246391602,
+            "0.9999999": 0.416362904118293,
+            "0.99999999": 0.5367698774802054,
+            "0.9999999999": 0.7933527841618291
+          }
+        },
+        "oracle": {
+          "42": {
+            "0.999": -0.13278885317982114,
+            "0.9999": -0.12299242085724682,
+            "0.99999": -0.11167839017524583,
+            "0.999999": -0.09888090226050195,
+            "0.9999999": -0.08463988773405107,
+            "0.99999999": -0.0689984079424697,
+            "0.9999999999": -0.033697313753838776
+          },
+          "43": {
+            "0.999": -0.09343697157203601,
+            "0.9999": -0.021686935512307937,
+            "0.99999": 0.06301806035380886,
+            "0.999999": 0.15879367234577169,
+            "0.9999999": 0.26391075914845974,
+            "0.99999999": 0.37685912263329757,
+            "0.9999999999": 0.6213336382367836
+          }
+        }
+      }
     },
     "_deposit_defects": [
       "oracle@seed44: covers 295/5608 locked rows"
@@ -229,6 +607,7 @@
         "r2": 0.1695761225010982,
         "n": 10287
       },
+      "n_logS": 10287,
       "split": "by-solute",
       "source_artifact": "results/external_baselines/solute/fastsolv_contract_v2/summary.csv"
     },
@@ -245,6 +624,7 @@
         "r2": -0.2363553478914442,
         "n": 10287
       },
+      "n_logS": 10287,
       "split": "by-solute",
       "source_artifact": "results/external_baselines/solute/solprop_calibrated_contract_v2/summary.csv"
     },
@@ -261,6 +641,7 @@
         "r2": -1.4030695243934077,
         "n": 10287
       },
+      "n_logS": 10287,
       "split": "by-solute",
       "source_artifact": "results/external_baselines/solute/solprop_calibrated_contract_v2/summary.csv"
     },
@@ -277,6 +658,7 @@
         "r2": 0.210836425966109,
         "n": 10287
       },
+      "n_logS": 10287,
       "split": "by-solute",
       "source_artifact": "results/external_baselines/solute/solprop_native_contract_v2/summary.csv"
     },
@@ -293,6 +675,7 @@
         "r2": -0.6235330413527977,
         "n": 10696
       },
+      "n_logS": 10696,
       "split": "pair_random",
       "source_artifact": "results/external_baselines/pair_random/fastsolv_contract_v2/summary.csv"
     },
@@ -309,6 +692,7 @@
         "r2": 0.8608998272850907,
         "n": 10696
       },
+      "n_logS": 10696,
       "split": "pair_random",
       "source_artifact": "results/external_baselines/pair_random/solprop_native_contract_v2/summary.csv"
     }
@@ -423,7 +807,10 @@
   "comparability": {
     "tier1_vs_tier2": "NOT like-for-like: tier 1 is the solute-scaffold split, tier 2 the by-solute split of the same corpus. A by-solute split is easier; the tier-2 numbers bound the task's difficulty on this corpus and do not rank the models against tier 1.",
     "tier1_vs_tier3": "NOT like-for-like on three axes: corpus (this corpus vs the SolProp and Leeds sets), split, and metric base (ln mole fraction here; log10 S in mol/L there). The log10 S column is computed here through the same converter the tier-2 runs used, so the UNIT matches; the task does not.",
-    "within_tier1": "like-for-like: one locked row set (n as reported), three seeds, the same encoder. The physics arm trails the direct control.",
+    "within_tier1": "like-for-like: one locked row set (n as reported), three seeds, the same encoder. In MAE ln x2 the physics arms trail the direct control in the SEED MEAN; per seed, the COSMO-SAC arms trail it at every seed and the NRTL arm at two of three, being ahead at seed 42 (1.7335 against 1.7485). One of the fourteen arm x seed cells beats the control.",
+    "logS_row_set": "The log10 S column of tier 1 is computed on the rows where the TRUE value converts, i.e. where the solvent has a molarity: the same rows for every arm and every seed, 5440 of the 5608 locked rows. Predictions are clipped at x2 = 0.999999 (clip_ln_x2_for_logS) before conversion, so an arm that saturates at x2 = 1 keeps its row with a large finite error. Without the clip those rows convert to +inf and are dropped, which removes each arm's most catastrophic predictions and only from the arms that saturate -- an arm-dependent exclusion, and one that flatters the physics arms, whose log10 S RMSE it lowers by 0.21 (sigma-oracle), 0.31 (COSMO-SAC-grounded) and 0.48 (NRTL) while leaving the DirectGNN control, which never saturates, untouched -- see `_defect_unclipped_arm_dependent'. Tier 2's two n values come from the deposited bundles and are printed for the same reason.",
+    "logS_column_depends_on_the_clip": "The clip is a chosen constant and three of the four tier-1 cells in the log10 S column are a function of it: see `_clip_sensitivity'. Over x2 = 1-1e-3 .. 1-1e-10 the control does not move at all while the physics arms move by 0.6-0.85. TWO readings survive the whole span, and separately at each seed for the arms that seed deposits: the control is below every physics arm; every physics arm is above every published leader. FOUR do not, and each of the four fails on the SEED axis as well as the clip one. (1) The NRTL and sigma-oracle rows exchange places just past the value used in the seed-averaged sweep, two clips earlier at seed 42, and not at all at seed 43, where NRTL is the lower at all seven. (2) The predict-the-mean reference does not saturate and so does not move with the clip -- it reads 1.3255 at every clip and at every seed, the locked row set being the same 5440 rows at all three -- and the physics arms are under it in 15 of the 56 arm x seed x clip cells: seed-averaged, the COSMO-SAC-grounded arm at the three tightest clips and NRTL at the two tightest; per seed, grounded at all seven clips at seed 42 (at the DEPOSITED clip 1.1254 against 1.3255, the one cell of the printed column that beats the reference), at the tightest at seed 43 and at the two tightest at seed 44; NRTL at the tightest at seed 42 and at the two tightest at seeds 43 and 44; the sigma-oracle at no clip and no seed. So the reading is a property of the seed-mean column at the deposited clip, not of the models. In MAE ln x2 every arm including the sigma-oracle is below the same reference (2.3249) at every seed. (3) At the tightest clip the NRTL and grounded arms read below 1.43, the better end of the published physics-informed cycle, at every seed, and the sigma-oracle's seed mean (1.4232) does too though not its seed-43 value (1.4793). (4) The physics arms do not uniformly trail the control by more in this column than in MAE (an RMSE deficit against an MAE one): the NRTL and COSMO-SAC-grounded arms do at every clip and at each seed, but the sigma-oracle's seed-averaged log10 S deficit runs 0.428/0.469/0.517/0.571/0.631/0.695/0.835 across the sweep against an MAE deficit of 0.554, so it fails at the three tightest clips and holds at the deposited one by 0.017; per seed it fails at all seven clips at seed 42 and at the two tightest at seed 43. A FIFTH reading fails on the seed axis alone and neither the article nor its SI carries it: the COSMO-SAC-grounded arm is the lowest of the three physics arms at every clip in the seed-averaged sweep, but at seed 43 the NRTL arm is lower at all seven, so that ordering is a property of the seed-mean column and not of the models. This block is the same inventory the article's Table 5 footnote a and its SI print; `_clip_sensitivity' (by_clip, by_clip_per_seed) and `_trails_control_by_more_in_logS_than_in_MAE' carry the numbers.",
+    "fastsolv_rows_are_defective": "DEFECT, disclosed in the article's Table 5 footnote b and its SI. The two FastSolv rows are read from bundles whose prediction path standardises the model's inputs TWICE: scripts/run_fastsolv.py::_predict_with_model scales solute, solvent and temperature with the checkpoint's own buffers and then calls trainer.predict, whose fastsolv._classes._fastsolv.predict_step scales the same tensors again. The network's sigmoid input activation then saturates on the twice-scaled temperature (it arrives at about -19.3 instead of about -1.5, sigmoid ~ 4e-9), and the deposited predictions are EXACTLY constant in temperature for all 1102 by-solute and 1149 random-pair (solute, solvent) pairs spanning more than 5 K, where the measurements move a median 0.62 log10 S over a median 40 K. Training and validation steps do not re-scale, so the fitted model is not at fault: forwarding the same checkpoint on singly-scaled inputs restores a temperature response (span 0.135 against a measured 0.179 on a sample pair) and tracks the deposit far worse (Pearson 0.85) than the doubly-scaled path does (0.99). Both FastSolv rows are therefore a FLOOR on that model, not a rendering of it, and the by-solute/random-pair contrast in those rows is a symptom and not a measurement of the split. The SolProp rows use a different path and do carry a temperature response (median predicted span 1.31 ln x2 against a measured 1.35).",
     "hyperparameter_confound": "the physics and control arms were tuned separately, so the tier-1 gap is not attributable to the bottleneck; the article states this."
   }
 }

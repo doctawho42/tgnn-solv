@@ -1,34 +1,58 @@
 % TRANSCRIBED from results/external_baseline_comparison/table_article.tex, which
 % scripts/analysis/run_external_baseline_comparison.py generates from
-% results/external_baseline_comparison/table_rows.csv.  Two edits and no others, both
-% typesetting: the model and test-set columns are set as ragged-right L{} boxes instead of
-% `l' so that the long names wrap inside the float, and the generator's \tnote{$\ast$}
-% (threeparttable) is written as this preamble's \tnk{a}.  NO VALUE IS CHANGED.  If the
-% numbers move, re-run the generator and re-apply those two edits.
-\begin{tabular}{@{}L{0.30\linewidth}L{0.26\linewidth}rrrr@{}}
+% results/external_baseline_comparison/table_rows.csv.  NO VALUE, NO ROW ORDER AND NO
+% FOOTNOTE MARKER IS CHANGED.  The edits are these four, all typesetting, and there are
+% no others:
+%   (1) the model and test-set columns are set as ragged-right L{} boxes instead of `l'
+%       so that the long names wrap inside the float;
+%   (2) the generator's \tnote{$\ast$} (threeparttable) is written as this preamble's
+%       \tnk{a}, and the bracketed `[seeds 42,43 only]' it marks is kept in the row;
+%   (3) the three block headers are shortened to fit the measure, without changing what
+%       any of them says about comparability -- including block 2's `one run each';
+%   (4) in the third block the model names are shortened (`SolProp cycle' for `SolProp
+%       (Vermeire et al. thermodynamic cycle)') to fit the measure.  The generator's
+%       test-set strings are kept verbatim, the Leeds set's `(Boobier et al.)'
+%       attribution and the SolProp set's `(solutes disjoint from the training corpus)'
+%       included, because the surviving cross-corpus sentence leans on both.
+% Plus one marker the generator does not carry: \tnk{b} on the two FastSolv rows, whose
+% deposited bundles are defective (double-standardised inputs at prediction time; see
+% the caption and \S\ref{sec:si-baselines}).
+% If the numbers move, re-run the generator and re-apply those edits.
+%
+% The $n$ column carries TWO sample sizes wherever the two metric columns are not
+% computed on the same rows: the log10 S conversion needs a solvent molarity and the
+% rows without one have no true value to score against.  Those 168 rows are the same for
+% every arm.  A single figure means the two row sets coincide; a dash means the value is
+% quoted, not computed here.  Predictions are clipped at x2 = 0.999999 before conversion,
+% so an arm that saturates keeps its row with a large finite error instead of being
+% dropped -- and that clip is a chosen constant which this column moves with, so the
+% caption carries the sweep.
+\begin{tabular}{@{}L{0.28\linewidth}L{0.23\linewidth}rrrr@{}}
 \toprule
-Model & Test set & $n$ & MAE $\lnx$ & RMSE $\log_{10}S$ & $R^2$ $\lnx$ \\
+Model & Test set & $n$ ($\lnx$/$\log_{10}S$) & MAE $\lnx$ & RMSE $\log_{10}S$ & $R^2$ $\lnx$ \\
 \midrule
-\multicolumn{6}{@{}l@{}}{\emph{This work, solute-scaffold split; three seeds, mean $\pm$ s.d.}}\\
-DirectGNN, same encoder, no closure \emph{(control)} & solute scaffold, this corpus & $5608$ & $1.70\pm0.03$ & $1.00$ & $0.42$ \\
-TGNN, NRTL closure (physics) & solute scaffold, this corpus & $5608$ & $1.79\pm0.07$ & $1.07$ & $0.34$ \\
-TGNN, COSMO-SAC closure, supervised $\hat\sigma$ (physics) & solute scaffold, this corpus & $5608$ & $1.85\pm0.05$ & $1.08$ & $0.33$ \\
-TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation\tnk{a} & solute scaffold, this corpus & $5608$ & $2.26\pm0.02$ & $1.35$ & $-0.05$ \\
-predict the test-set mean of $\lnx$ & solute scaffold, this corpus & $5608$ & $2.32$ & -- & $0.00$ \\
+\multicolumn{6}{@{}l@{}}{\emph{This work, solute-scaffold split; mean $\pm$ s.d. over seeds, three unless the row says otherwise}}\\
+DirectGNN, same encoder, no closure \emph{(control)} & solute scaffold, this corpus & $5608$ / $5440$ & $1.70\pm0.03$ & $1.00\pm0.02$ & $0.42\pm0.03$ \\
+TGNN, NRTL closure (physics) & solute scaffold, this corpus & $5608$ / $5440$ & $1.79\pm0.07$ & $1.54\pm0.07$ & $0.34\pm0.03$ \\
+TGNN, COSMO-SAC closure, supervised $\hat\sigma$ (physics) & solute scaffold, this corpus & $5608$ / $5440$ & $1.85\pm0.05$ & $1.39\pm0.19$ & $0.33\pm0.05$ \\
+TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation [seeds $42,43$ only\tnk{a}] & solute scaffold, this corpus & $5608$ / $5440$ & $2.26\pm0.02$ & $1.57\pm0.17$ & $-0.05\pm0.02$ \\
 \addlinespace[2pt]
-\multicolumn{6}{@{}l@{}}{\emph{External models re-run on this corpus---a different split, so not a ranking against the block above}}\\
-FastSolv, retrained on this corpus & by-solute, this corpus & $10287$ & $1.94$ & $1.10$ & $0.23$ \\
+\multicolumn{6}{@{}l@{}}{\emph{Scale reference on the same rows}}\\
+predict the test-set mean of $\lnx$ & solute scaffold, this corpus & $5608$ / $5440$ & $2.32$ & $1.33$ & $0.00$ \\
+\addlinespace[2pt]
+\multicolumn{6}{@{}l@{}}{\emph{External models re-run on this corpus, one run each---a different split, so not a ranking against the block above}}\\
+FastSolv, retrained on this corpus\tnk{b} & by-solute, this corpus & $10287$ & $1.94$ & $1.10$ & $0.23$ \\
 SolProp cycle, released model $+$ 3-parameter recalibration & by-solute, this corpus & $10287$ & $2.34$ & $1.34$ & $-0.18$ \\
 SolProp cycle, released model, zero-shot & by-solute, this corpus & $10287$ & $2.36$ & $1.87$ & $-0.47$ \\
-SolProp encoder retrained on $\lnx$, cycle discarded & by-solute, this corpus & $10570$ & $1.62$ & $1.07$ & $0.39$ \\
-FastSolv, retrained on this corpus & random pair, this corpus & $10696$ & $2.91$ & $1.54$ & $-0.59$ \\
-SolProp encoder retrained on $\lnx$, cycle discarded & random pair, this corpus & $10887$ & $0.64$ & $0.45$ & $0.88$ \\
+SolProp encoder retrained on $\lnx$, cycle discarded & by-solute, this corpus & $10570$ / $10287$ & $1.62$ & $1.07$ & $0.39$ \\
+FastSolv, retrained on this corpus\tnk{b} & random pair, this corpus & $10696$ & $2.91$ & $1.54$ & $-0.59$ \\
+SolProp encoder retrained on $\lnx$, cycle discarded & random pair, this corpus & $10887$ / $10696$ & $0.64$ & $0.45$ & $0.88$ \\
 \addlinespace[2pt]
 \multicolumn{6}{@{}l@{}}{\emph{As published, on their own corpora and splits; $\log_{10}S$ in mol\,L$^{-1}$}}\\
-fastsolv (solution-FASTPROP ensemble) \cite{osanloo2024} & SolProp test set & -- & -- & $0.83$ & -- \\
+fastsolv (solution-FASTPROP ensemble) \cite{osanloo2024} & SolProp test set (solutes disjoint from the training corpus) & -- & -- & $0.83$ & -- \\
 solution-CHEMPROP (companion) \cite{osanloo2024} & SolProp test set & -- & -- & $0.83$ & -- \\
 SolProp cycle \cite{vermeire2022solprop}, scored in \cite{osanloo2024} & SolProp test set & -- & -- & $1.43$ & -- \\
-fastsolv (solution-FASTPROP ensemble) \cite{osanloo2024} & Leeds set, near room temperature & -- & -- & $0.95$ & -- \\
+fastsolv (solution-FASTPROP ensemble) \cite{osanloo2024} & Leeds set (Boobier et al.), near room temperature & -- & -- & $0.95$ & -- \\
 solution-CHEMPROP (companion) \cite{osanloo2024} & Leeds set & -- & -- & $0.99$ & -- \\
 SolProp cycle \cite{vermeire2022solprop}, scored in \cite{osanloo2024} & Leeds set & -- & -- & $2.16$ & -- \\
 \bottomrule

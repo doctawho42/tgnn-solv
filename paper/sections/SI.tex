@@ -411,25 +411,65 @@ risk at finite $n$.
 
 \section{Per-arm tables and decomposition robustness}
 \label{sec:si-tables}
+
+% Artifact: results/e5_sigma_grounding/ROW_SET_DECOMPOSITION.md carries this decomposition, the
+% 22-file finiteness audit and the arm-independent recomputation, regenerable from the per-row
+% deposits in that directory alone.  If a future arm emits a non-finite ln_x2_pred, the claim in
+% this subsection stops being true and intersection_keys silently becomes arm-dependent again --
+% re-run the audit before restating it.
+\subsection{The scored row set, and why it is not arm-dependent}
+\label{sec:si-lock}
+Every accuracy number of \S\ref{sec:paradox} is on $5608$ rows, and the scaffold partition gives
+$8103$ test rows. The $2495$-row difference decomposes with no remainder, identically at all three
+seeds: $0$ rows are lost to duplicate (solute, solvent, $T$) keys---there are none---and $2495$
+carry \texttt{has\_solubility}\,=\,false, a melting point and no solubility measurement, with the
+\lnx\ field a placeholder zero. All $2495$ carry a melting point; none is a self-solvation row; they
+are unscorable for solubility in every arm, the control included.
+
+The clause that could have made this arm-dependent removes nothing. The code that builds the set
+(\texttt{run\_e5\_comparison.py}, \texttt{intersection\_keys}) intersects, over arms, the rows that
+are both labelled and finite in that arm's \lnx\ prediction, and the second half of that conjunction
+is outcome-dependent by construction. Audited over all twenty-two per-row prediction files in the
+deposit---the five intersecting arms and the $\sigma$-oracle at each of the three seeds, plus the two
+co-adaptation controls and the two output-residual arms at seed $42$---the count of non-finite \lnx\
+predictions is $0$ in every file, over every row that file carries and not merely the labelled ones.
+Twenty-one of those files are full length, covering all $8103$ test rows and each carrying exactly
+$5608$ labelled ones; the twenty-second is
+the truncated seed-$44$ $\sigma$-oracle deposit of Table~\ref{tab:runs}, whose $295$ rows are finite
+too---so for that arm and seed the audit reaches $295$ of the $5608$ and no further, which is what
+\S\ref{sec:eval} says of it. The $\sigma$-oracle is not one of the five arms the intersection runs
+over. Those five arms' labelled row sets are moreover identical as sets, not merely equal
+in size. Dropping the finiteness clause outright
+therefore returns the same $5608$ rows, so no arm's failures are removed from any arm's score and
+no number in this paper moves. The set is fixed by which rows carry a label.
+
+Non-finiteness in \lnx\ is not the same event as the saturation that Table~\ref{tab:baselines} note~a
+reports. That note counts rows whose predicted $x_2$ approaches $1$, where the \emph{unit conversion}
+to $\log_{10}S$ diverges while \lnx\ itself stays finite; those rows are inside the $5608$ and are
+scored, under the clip that note discloses.
+
 Table~\ref{tab:si-arms} gives the exact per-arm metrics behind the six three-seed bars of
-Fig.~\ref{fig:paradox}: three seeds on the cross-arm intersection lock
-($n{=}5608$, rows supervised and finite in every arm); the two single-seed co-adaptation bars are
+Fig.~\ref{fig:paradox}: three seeds on the labelled test rows
+($n{=}5608$ of $8103$, those carrying a solubility measurement); the two single-seed co-adaptation bars are
 valued in the paragraph below. Per-seed values are printed to three decimals;
 every mean, difference and $\pm$ quoted anywhere is computed on the unrounded values, so the printed
 triples reproduce them only to that precision. Every $\pm$ that spans \emph{seeds} in this paper is a
 population standard deviation over them (\texttt{ddof}$=0$); a sample standard deviation
 (\texttt{ddof}$=1$) would be larger by $\sqrt{3/2}$, and the error bars of Fig.~\ref{fig:paradox}
-follow the same \texttt{ddof}$=0$ convention. Three kinds of $\pm$ in this paper are \emph{not} that,
-and each says so where it is printed: the kernel-residual figures of the correctability test
+follow the same \texttt{ddof}$=0$ convention. Three kinds of $\pm$ in this paper are \emph{not} that:
+the kernel-residual figures of the correctability test
 ($46\pm5\%$, $-5\pm16\%$, $+2\pm15\%$) carry a standard \emph{error} over five fit seeds; a $\pm$ on a
 permutation or phase-randomised null (Table~\ref{tab:claims}; \S\ref{sec:surrogate}) is that null's
 own spread over draws, not a spread over seeds at all; and the pKa arm errors of
 \S\ref{sec:si-pka} span the $20$ within-scaffold splits. Reading the table off the rounded means mis-states differences by up to
 $0.01$: the learned-$\sigma$ and DirectGNN arms differ by $0.1435$ from their unrounded means, which
 we quote as $+0.14$, while their rounded values $1.85$ and $1.70$ differ by $0.15$. Both closure
-families---NRTL and COSMO-SAC over a learned $\sigma$-profile---trail the DirectGNN control (the
-physics penalty), though the arms are separately tuned and that gap is not attributable to the
-bottleneck (\S\ref{sec:discussion}). The $\sigma$-oracle (reference VT-2005 profile) is the worst arm.
+families---NRTL and COSMO-SAC over a learned $\sigma$-profile---trail the DirectGNN control in the
+seed mean (the physics penalty), though the arms are separately tuned and that gap is not
+attributable to the bottleneck (\S\ref{sec:discussion}). Only the COSMO-SAC family trails it at every
+seed: the per-seed column below puts the NRTL arm at $1.734$ against the control's $1.749$ at seed
+$42$, so the two arms' per-seed values overlap and that ordering is a property of the seed-mean
+column and not of the arms. The $\sigma$-oracle (reference VT-2005 profile) is the worst arm.
 Restoring the Staverman--Guggenheim combinatorial term makes the \emph{grounded learned-$\sigma$} arm
 slightly worse ($1.8457\to1.8788$)---the signature of a misspecified map (\S\ref{sec:measure}); no
 oracle-plus-combinatorial arm was run, so the combinatorial contrast is against the grounded
@@ -437,7 +477,7 @@ learned-$\sigma$ row and not against the oracle row.
 
 \begin{table*}[h]
 \centering
-\caption{Per-arm scaffold-split metrics (3 seeds, $n{=}5608$ cross-arm lock), with per-seed
+\caption{Per-arm scaffold-split metrics (3 seeds, the $n{=}5608$ labelled test rows), with per-seed
 MAE to three decimals. Ordered by MAE. The $\pm$ is a population standard deviation over the three
 seeds, computed on the unrounded values.}
 \label{tab:si-arms}
@@ -447,7 +487,7 @@ seeds, computed on the unrounded values.}
 Arm & MAE & $R^2$ & per-seed MAE ($42/43/44$) \\
 \midrule
 DirectGNN (no closure)                         & $1.70\pm0.03$ & $+0.42\pm0.03$ & $1.749/1.674/1.684$ \\
-NRTL closure                                   & $1.80\pm0.07$ & $+0.34\pm0.03$ & $1.734/1.758/1.894$ \\
+NRTL closure                                   & $1.79\pm0.07$ & $+0.34\pm0.03$ & $1.734/1.758/1.894$ \\
 COSMO-SAC, learned $\sigma$ (grounded)         & $1.85\pm0.05$ & $+0.33\pm0.05$ & $1.803/1.921/1.813$ \\
 \quad $+$ Staverman--Guggenheim combinatorial  & $1.88\pm0.09$ & $+0.32\pm0.05$ & $1.805/2.007/1.824$ \\
 COSMO-SAC, ungrounded $\sigma$                 & $2.04\pm0.04$ & $+0.19\pm0.01$ & $2.040/1.996/2.093$ \\
@@ -480,10 +520,10 @@ quoted there ($+0.40\to+0.14$) is a separate matched pair of runs --- one warm-u
 resumed twice for SLE, with the freeze off and on, on $n{=}5571$ matched rows --- and not these arms.
 
 % Artifacts: results/e5_sigma_grounding/seed_42/{grounded_a_truetrain,channel_swap}_predictions.csv
-% (seed 42 only; no seed_43/seed_44 counterpart), scored on the same n=5608 cross-arm lock.
+% (seed 42 only; no seed_43/seed_44 counterpart), scored on the same n=5608 labelled test rows.
 \paragraph{Oracle-application controls: two of the three are single-seed.} All three oracle
 applications (evaluation-only, training-time injection, channel-swap; \S\ref{sec:methods}) are
-computed on the same three-seed cross-arm row set as Table~\ref{tab:si-arms}, and their per-arm
+computed on the same $5608$ labelled test rows as Table~\ref{tab:si-arms}, and their per-arm
 predictions are released with the code. Only the evaluation-only substitution is a three-seed result.
 Training-time injection (MAE $1.98$) and the channel swap (MAE $2.08$) were run at seed $42$ alone,
 so their matched comparator is the seed-$42$ learned-$\sigma$ value $1.803$ on the same $n{=}5608$
@@ -539,8 +579,9 @@ turns on the choice---the whole middle range of the deployed convention lies bet
 $+0.47$, all positive---but the reason for it is occupancy and not conservatism, and taking the least
 favourable middle cell instead gives $+0.01$ and the same verdict of an
 unresolved margin. The per-cell $P$ holds that cell's bin count fixed across
-resamples. The main text instead quotes the deposited adaptive rule
-$\max(3,\lfloor n_{\text{resample}}/10\rfloor)$, which conditions on less on small resamples and is
+resamples. The main text instead quotes the deposited adaptive bin count
+$\max(3,\lfloor n/10\rfloor)$, here in the rows $n$ of the resample, which conditions on less on
+small resamples and is
 therefore more conservative: it gives ${\approx}0.78$ (maximum-likelihood) and ${\approx}0.72$
 (unbiased) residual-only, against ${\approx}0.89$ and ${\approx}0.86$ full. The two schemes measure
 different things and we report both rather than the higher.
@@ -1130,7 +1171,8 @@ intervals and admissibility are there.}
 \tabnotes{\scriptsize%
 \tnk{a}\,A dash is a stratum at which the fixed cell is undefined. Strata with $n\ge40$ are
 \emph{boundable}: eight bins hold at least five rows each. The others are reported anyway, and
-additionally carry the resample-adaptive rule $\max(3,\lfloor n/10\rfloor)$ in the deposited table.
+additionally carry the adaptive bin count $\max(3,\lfloor n/10\rfloor)$, here in the stratum's own
+rows $n$, in the deposited table.
 On the mono-alcohols $\Binsuf^{\mathrm{up}}=0.733$ exceeds that stratum's own $\Var(m)=0.604$, which
 the artifact flags; it is the value that sets the $\times6.8$ span of \S\ref{sec:broad}, and it
 occurs only on a stratum already not boundable.\quad
@@ -1288,8 +1330,11 @@ between-solvent systematic. Under folds grouped so that no solvent is shared, th
 $-5\pm16\%$ at rank one and $+2\pm15\%$ at rank two. Each $\pm$ is a standard error over the five fit
 seeds on one fixed $60$-pair set and prices optimiser noise only; the held-out spread across folds is
 an order of magnitude larger ($\mathrm{sd}\ 1.02$ in MSE under the grouped design, $0.54$ under random
-folds) and is not propagated into it. Stated as a bound rather than a null, the grouped design
-excludes a cross-solvent reduction above about $30\%$, and to that extent the apparent $46\%$ is a
+folds) and is not propagated into it. That spread is itself about $70\%$ of the reference-input MSE
+the reduction is measured against, so the grouped design yields a null and no upper bound: an
+interval wide enough to price it would exclude nothing about a cross-solvent reduction, and the
+narrow one quoted prices the wrong thing. What the two designs do support is the contrast between
+them---the $46\%$ appears only when the same solvent may sit on both sides of the split, so it is a
 within-solvent effect.
 
 That fold spread also exceeds the gaps between ranks ($\le0.06$) by an order of magnitude, so these
@@ -1605,7 +1650,8 @@ our target by a three-parameter linear recalibration fitted on the training rows
 That cycle is run at $298$\,K on every row, so the temperature of a measurement reaches the SolProp
 arm only through the calibrator's temperature term. In $\lnx$ they
 reach MAE $1.94$ (FastSolv, $R^2\,0.23$) and $2.34$ (SolProp, calibrated,
-$R^2\,{-}0.18$); in $\log_{10}S$, $0.87$ and $1.04$. These are on a \emph{by-solute} split that is
+$R^2\,{-}0.18$); in $\log_{10}S$, MAE $0.87$ and $1.04$, the same rows reading RMSE $1.10$ and
+$1.34$ in Table~\ref{tab:baselines}'s column. These are on a \emph{by-solute} split that is
 \emph{not comparable} to our scaffold numbers (Table~\ref{tab:si-arms}): they bound the task's
 difficulty, not a ranking of the models against one another, so this does \emph{not} establish that our
 scaffold-split DirectGNN ($1.70$) outperforms them. A like-for-like scaffold evaluation of the
@@ -1613,14 +1659,93 @@ external models was not run, the deposited external runs being by-solute and pai
 The internal ordering---the physics-informed SolProp trailing the direct FastSolv, the same
 ordering we find between our physics closures and DirectGNN---is therefore a
 comparison of the \emph{cycle} against a direct model. It reverses when SolProp's encoder is
-instead retrained directly on $\lnx$ with the cycle discarded: that arm reaches MAE $1.63$
-($R^2\,0.39$) in $\lnx$ and $0.76$ in $\log_{10}S$ on the $n{=}10{,}287$ rows FastSolv is scored on,
-against FastSolv's $1.94$ and $0.87$. We quote the cycle as the physics-informed arm because only it
+instead retrained directly on $\lnx$ with the cycle discarded: that arm reaches MAE $1.62$
+($R^2\,0.39$) in $\lnx$ on the $n{=}10{,}570$ rows it predicts, and MAE $0.76$ in $\log_{10}S$ on the
+$10{,}287$ of those the conversion is finite on, against FastSolv's MAE $1.94$ and $0.87$ on
+$10{,}287$ rows in both units. The two arms' \lnx\ figures are therefore not on quite the same rows;
+Table~\ref{tab:baselines} prints both sample sizes for the two rows of that block whose two metric
+columns disagree, and one figure for the four where they coincide. We quote the cycle as the physics-informed arm because only it
 assembles the separately learned components; the retrained arm measures what discarding the closure
 achieves on this corpus, not a better physics-informed model. The regime-level reading is that on this corpus no
 black box, ours or external, escapes the accuracy ceiling---consistent with the
 structural account of \S\ref{sec:discussion}. Per-arm ablations (NRTL vs COSMO-SAC,
 combinatorial on/off) are in Table~\ref{tab:si-arms}.
+
+% Diagnosis: scratchpad double-scaling test against
+% results/external_baselines/{solute,pair_random}/fastsolv_contract_v2/, and
+% results/external_baseline_comparison/summary.json comparability.fastsolv_rows_are_defective.
+\paragraph{The two FastSolv rows are defective, and how we know.} Both are read from bundles whose
+prediction path standardises the model's inputs \emph{twice}. \texttt{scripts/run\_fastsolv.py}'s
+\texttt{\_predict\_with\_model} scales solute descriptors, solvent descriptors and temperature with
+the checkpoint's own buffers and then calls \texttt{trainer.predict}, whose \texttt{predict\_step}
+(in \texttt{fastsolv.\_classes}) scales the same tensors again; the training and
+validation steps do not re-scale, so the fitted model is not what is wrong. The network's sigmoid
+input activation then annihilates the twice-scaled temperature, which reaches it at about $-19.3$
+rather than at the order $-1$ a single scaling gives, a sigmoid of $4\times10^{-9}$. The signature is unmistakable in the
+deposit: the predictions are \emph{exactly} constant in temperature---span $0$ to machine
+precision---for all $1102$ by-solute and $1149$ random-pair (solute, solvent) pairs that span more
+than $5$\,K, where the measurements move a median $0.62$ in $\log_{10}S$ over a median $40$\,K.
+Forwarding the same checkpoint on singly scaled inputs restores a response (span $0.135$ against a
+measured $0.179$ on a sampled pair), and across $60$ sampled pairs the deposited values track the
+twice-scaled forward pass at Pearson $0.99$ and the once-scaled one at $0.85$. What survives the
+double scaling is a systematic offset, and it is the whole of the anomaly: the by-solute run's mean
+$\log_{10}S$ error is $-0.36$ and the random-pair run's $-1.12$, and once each is centred the two
+runs' RMSEs are $1.04$ and $1.07$---the same dispersion, on both splits. The offset is present in
+validation too ($-1.10$), so checkpoint selection did not catch it. We therefore read both FastSolv
+rows as a floor on that model rather than a rendering of it, and we draw no conclusion about splits
+from the contrast between them. The SolProp arms go through a different path and do carry a
+temperature response: on the by-solute run their predictions span a median $1.31$ in \lnx\ across the
+temperatures of a pair, against a measured $1.35$.
+
+% Artifact: results/external_baseline_comparison/summary.json, tier1..._clip_sensitivity.
+\paragraph{What the $\log_{10}S$ column owes to the saturation clip.} Converting \lnx\ to
+$\log_{10}S$ sends a prediction at $x_2=1$ to $+\infty$, so predictions are clipped at
+$x_2=0.999999$ first (\texttt{clip\_ln\_x2\_for\_logS}, the repository's standing prediction-side
+constant). The constant is a choice, and three of the four block-1 cells of
+Table~\ref{tab:baselines} are a function of it, because a saturating row's error is whatever the clip
+makes it. Sweeping $x_2$ over $1-10^{-3}$, $1-10^{-4}$, $1-10^{-5}$, $1-10^{-6}$ (used), $1-10^{-7}$,
+$1-10^{-8}$ and $1-10^{-10}$ gives, in RMSE $\log_{10}S$: DirectGNN $0.995$ at every one of the
+seven; NRTL $1.233$, $1.324$, $1.429$, $1.544$, $1.667$, $1.797$, $2.072$; COSMO-SAC-grounded
+$1.183$, $1.242$, $1.311$, $1.387$, $1.470$, $1.558$, $1.746$; $\sigma$-oracle $1.423$, $1.464$,
+$1.512$, $1.566$, $1.626$, $1.690$, $1.830$. Two readings hold across the whole span, and separately
+at each seed for the arms that seed deposits: the control
+is below every physics arm, and every physics arm is above every published leader ($0.83$ to $0.99$).
+Four do not, and each of the four fails on the seed axis as well as the clip one. The NRTL and
+$\sigma$-oracle rows exchange places between $1-10^{-6}$ and $1-10^{-7}$ in the seed-averaged sweep,
+between $1-10^{-4}$ and $1-10^{-5}$ at seed $42$, and not at all at seed $43$, where NRTL is the
+lower at all seven; their printed order is not a fact about the models. The scale reference predicts
+one number for the whole test set, does not saturate, and reads $1.326$ at every clip and at every
+seed, the locked row set being the same $5440$ rows at all three; the physics arms are under it in
+$15$ of the $56$ arm--seed--clip cells. Seed-averaged, the grounded arm is below it at the three tightest clips
+($1.183$, $1.242$, $1.311$) and the NRTL arm at the two tightest ($1.233$, $1.324$); the
+$\sigma$-oracle is above it at all seven. Per seed, the grounded arm is below it at all seven clips
+at seed $42$ (at the deposited clip $1.125$ against $1.326$, the one cell of the printed column that
+beats the reference), at the tightest clip at seed $43$ and at the two tightest at seed $44$; the
+NRTL arm at the tightest clip at seed $42$ and at the two tightest at seeds $43$ and $44$; the
+$\sigma$-oracle at no clip and no seed. So whether a physics arm beats that reference depends on the
+constant \emph{and} on the seed: at the value we deposit the seed-mean column does not beat it, and
+one arm at one seed does. In MAE $\lnx$, by contrast, every arm including the $\sigma$-oracle is
+below the same reference ($2.325$) at every seed, so the reading is confined to this column.
+``Near the cycle's better end'' ($1.43$) fails at the tight end, where the NRTL and grounded arms sit
+below it at every seed and the $\sigma$-oracle's seed mean ($1.423$) does too, though not its
+seed-$43$ value ($1.479$); \S\ref{sec:discussion} no longer places the physics arms within that range.
+And the physics arms do not \emph{uniformly} trail their control by more in this column than in MAE
+(a comparison of an RMSE deficit against an MAE one). The NRTL and COSMO-SAC-grounded arms do, at
+all seven clips and separately at each of the three seeds: the smallest such excess anywhere is
+$+0.011$, the grounded arm at seed $42$ and the tightest clip. The $\sigma$-oracle does not. Its
+seed-averaged $\log_{10}S$ deficit over the control runs $0.428$, $0.469$, $0.517$, $0.571$, $0.631$,
+$0.695$, $0.835$ across the seven clips against an MAE deficit of $0.554$ (both averaged over seeds
+$42$ and $43$ for that arm, its seed-$44$ deposit being the truncated one), so the reading fails at
+the three tightest clips and holds at the deposited one by $0.017$; per seed it fails at all seven
+clips at seed $42$ and at the two tightest at seed $43$. \S\ref{sec:discussion} therefore states that
+reading of the other two arms only.
+A fifth reading fails on the seed axis alone, and neither document carries it: the grounded arm is the
+lowest of the three physics arms at every clip in the seed-averaged sweep above, but not at every seed.
+At the deposited clip the per-seed values are, at seeds $42$, $43$ and $44$, grounded $1.125$,
+$1.558$, $1.478$ against NRTL $1.643$, $1.472$, $1.515$; at seed $43$ the NRTL arm is lower at all
+seven clip values. It is a property of the seed-mean column and not of the models.
+What may be carried away from that column is what survives the sweep, and that is the two readings
+above and not the printed decimals.
 
 \section{Supplementary mechanism results}
 \label{sec:si-mech}
@@ -1763,9 +1888,11 @@ signal with which to pin the crystal term from data.
 under-training artifact of the activity branch. In the headline NRTL arm the head produces
 solvent-varying interaction parameters---$\tau_{12}$ over the $n{=}8103$ test pairs has mean
 $0.97$ and std $2.5$ (range $[-2.6,22]$), far from collapsed---yet the arm still trails the
-closure-free DirectGNN ($1.80$ vs $1.70$; Table~\ref{tab:si-arms}). A trained, non-degenerate
-activity branch that the control still outperforms is evidence that the penalty is structural, not a
-failure to train the branch.
+closure-free DirectGNN in the seed mean ($1.79$ vs $1.70$; Table~\ref{tab:si-arms}), at two of the
+three seeds and not at seed $42$, where it is ahead ($1.734$ against $1.749$). A trained,
+non-degenerate activity branch that the control outperforms at two seeds of three is evidence that
+the penalty is structural rather than a failure to train the branch, and weaker evidence than a
+clean sweep of the seeds would be.
 (The core closure-misspecification result---the $\sigma$-oracle and the decomposition---is in
 any case training-\emph{independent}: it feeds the reference VT-2005 profiles through the fixed
 closure with no encoder optimisation, so it cannot be a training pathology.)
@@ -2202,7 +2329,7 @@ limitation~(x) records as uncheckable until the repository is released; the two 
 the part of that material which can be checked without it.
 \paragraph{Seeds and determinism.} The controlled comparisons of \S\ref{sec:paradox} use seeds
 $\{42,43,44\}$ and
-are reported on a cross-arm intersection lock (rows supervised and finite in every arm); the
+are reported on the labelled test rows ($5608$ of $8103$; \S\ref{sec:si-lock}); the
 surrogate isolation (\S\ref{sec:surrogate}) uses seeds $\{0,1,2\}$; the training-time and
 channel-swap oracle controls, the output-residual arms (\S\ref{sec:gateb}), the data-efficiency
 curve (\S\ref{sec:data-efficiency}) and the loss-simplification ablation
