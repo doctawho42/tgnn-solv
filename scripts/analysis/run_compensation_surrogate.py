@@ -113,6 +113,13 @@ def main() -> None:
     ap.add_argument("--lam", type=float, default=1e-3)
     ap.add_argument("--out-json", type=Path, default=Path("results/compensation/surrogate.json"))
     ap.add_argument("--fig-dir", type=Path, default=Path("paper/figs"))
+    ap.add_argument(
+        "--exclude-smiles", nargs="*", default=None,
+        help="Drop these molecules from the matched set before A1/A2, matched on "
+             "canonical SMILES. Used to re-run the probe with the one molecule a "
+             "grounding-stream leak touched removed, so the reported departure and "
+             "its top-two share are read on a set no leak can reach.",
+    )
     args = ap.parse_args()
 
     from tgnn_solv.inference import load_model
@@ -125,12 +132,19 @@ def main() -> None:
     for col in ("solute_key", "solvent_key"):
         if col in md.columns:
             mols |= set(md[col].dropna().astype(str))
+    excluded_canon = {c for c in ( _canon(s) for s in (args.exclude_smiles or []) ) if c}
     # keep molecules for which we have a TRUE profile (canonical match)
     keep = []
+    dropped: list[str] = []
     for s in sorted(mols):
         c = _canon(s)
         if c is not None and c in true:
+            if c in excluded_canon:
+                dropped.append(s)
+                continue
             keep.append((s, c))
+    if args.exclude_smiles:
+        print(f"excluded on request: {len(dropped)} molecule(s) {dropped}")
     print(f"matched molecules with true VT-2005 profile: {len(keep)} / {len(mols)}")
     if len(keep) < 10:
         raise SystemExit("too few matched molecules with true profiles for A1/A2")
@@ -221,6 +235,12 @@ def main() -> None:
         plt.close(fig)
     except Exception as e:  # noqa: BLE001
         out["figure_error"] = str(e)
+
+    out["checkpoint"] = str(args.checkpoint)
+    out["baseline_checkpoint"] = str(args.baseline_checkpoint) if args.baseline_checkpoint else None
+    out["excluded_smiles_requested"] = list(args.exclude_smiles or [])
+    out["excluded_smiles_dropped"] = dropped
+    out["n_matched"] = len(keep)
 
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(out, indent=2))

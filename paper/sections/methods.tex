@@ -105,7 +105,7 @@ temperature---the broad IDAC set of \S\ref{sec:broad}, $\dim=103$---we according
 $\zstar=(\text{profile pair},T)$; on the VT-2005-matched set every row sits at $298$\,K and the two
 readings coincide. The same rule fixes $\zstar$ in the second domain: the Hammett closure of
 \S\ref{sec:pka-main} reads a per-series constant pair as well as the substituent constant, so there
-$\zstar=(s,\hammett)$ and the conditioning is on both.
+$\zstar=(s,\hammett^\star)$ and the conditioning is on both.
 \emph{(b) Jensen lower bound.} With $\Delta(\zstar)=\Ex(m\mid\zstar)-g(\zstar)$,
 $\Bclos=\Ex[\Delta^2]\ge(\Ex[\Delta])^2=(\Ex[m]-\Ex[g])^2$, using $\Ex[\Ex(m\mid\zstar)]=\Ex[m]$.
 It needs \emph{no} smoothness assumption; its one requirement is that $m$ and $g$ share the $\lngi$
@@ -125,9 +125,17 @@ is biased low in finite samples, so we report it and do not headline it.
 \noindent $\Bclos$ is the systematic discrepancy of a fixed physical map in the sense of
 Kennedy--O'Hagan \cite{kennedy2001,brynjarsdottir2014}, and its dominance over $\Binsuf$ is the
 empirical content of the claim that the ceiling is set by the closure rather than by the inputs.
-Where model-discrepancy calibration \emph{fits} a correction from held-out observations, here $g$ is
-fixed and $\zstar$ externally observed, so the map's error is \emph{attributed} rather than
-corrected---available only where an external latent oracle exists. \textbf{Exactness is contingent
+\textbf{What $\Bclos$ is the error of is a composite object.} The identity compares $g(\zstar)$
+against $\Ex[m\mid\zstar]$, and $\zstar$ is not measured but produced by a procedure---for
+$\sigma$-profiles a quantum-chemical calculation on one conformer and one protonation state per
+molecule at one level of theory---so $\Bclos$ is a joint property of the map and of the procedure that produced the reference
+it reads, and not of the kernel's functional form alone: a displaced reference loads onto $\Bclos$
+through the curvature of $g$ even where $g$ is exactly specified (\S\ref{sec:si-repro}). The
+deployed pipeline consumes that same composite, so it is the object a practitioner faces, but every
+attribution below is to the pair and not to the kernel. Where model-discrepancy calibration
+\emph{fits} a correction from held-out observations, here $g$ is fixed and $\zstar$ supplied from
+outside the fit, so the composite's error is \emph{attributed} rather than corrected---available
+only where an external latent oracle exists. \textbf{Exactness is contingent
 on $g$ being fixed}: for a \emph{fitted} decoder the cross term does not vanish and a plug-in point
 split is invalid. Because $\Binsuf$ is bounded above and $\Bclos$ below, a positive \emph{separation
 margin} $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$ establishes that the closure's own error exceeds what
@@ -236,11 +244,53 @@ pooled nor converted into one another anywhere below.
 The released stream builder excludes any pool molecule whose scaffold appears in validation or test
 and aborts on a missing split file---but that is a property of the builder, not a certified property
 of the runs reported here. One $\sigma$-stream build on disk was generated against the wrong split
-files, $91$ of its $1425$ rows being held-out solutes by canonical SMILES, and per-run stream
-provenance was not logged, so the artifacts cannot certify which build fed which arm.
-\S\ref{sec:si-repro} gives the file-order evidence, the three facts that bound what a leak could do,
-and the one molecule it touches in the $n{=}44$ analysis of \S\ref{sec:surrogate}. We therefore do
+files. Counted inside the stream, $91$ of its $1425$ rows are held-out solutes by canonical SMILES;
+counted where such a row can act, $7$ of the $147$ solutes spanned by the $5608$ labelled test rows
+have their own reference profile in that stream and $8$ have a scaffold relative in it, on $297$
+and $351$ of those rows. Solute coverage, not stream-row fraction, is the
+load-bearing figure for a scaffold split. Per-run stream provenance was not logged, so the artifacts
+cannot certify which build fed which arm. Each fact that bounds a leak bounds one contrast: the
+paradox contrast is one checkpoint evaluated two ways, and DirectGNN uses no stream. The
+grounded-versus-ungrounded supervision contrast is bounded by neither, because the ungrounded arm
+carries no $\sigma$ stream either, so the only arm a leak can reach there is the grounded one, and
+the $0.20$ gain of \S\ref{sec:paradox} stays uncertified until the leak-free re-run.
+\S\ref{sec:si-repro} gives the file evidence, each fact with the contrast it bounds, and the one
+molecule the leak touches in the $n{=}44$ analysis of \S\ref{sec:surrogate}. We therefore do
 not assert the scaffold guarantee for these runs.
+
+\paragraph{What the leak-free re-run reports, and what it decides.}
+The re-run is specified here rather than described afterwards, so that its protocol is fixed before
+its numbers exist. It trains the ungrounded and the grounded arm at five seeds ($42$ through $46$)
+under the COSMO-SAC configuration of the published arms, unchanged. The $\sigma$ stream is rebuilt
+with the scaffold guard pointed at the validation and test files of \emph{this} split, and is
+certified inside each training run rather than at the builder: the run re-reads the stream it is
+about to consume and the split files it will be scored against, and asserts that they share no
+molecule by canonical SMILES and none by Bemis--Murcko scaffold. The stream's SHA-256 and row count
+are written into that run's manifest beside the SHA-256 of each pinned split file, so the artifact
+states which build fed which arm; the ungrounded arm's manifest records that it carried no stream at
+all, since here the absence is the thing asserted. Accuracy is read on the same $5608$ labelled test
+rows as every other number in this paper, under the same cross-arm intersection rule
+(\S\ref{sec:eval}), and the five per-seed MAE values are reported for each arm rather than a mean and
+a standard deviation alone. Two further readings are taken on those same checkpoints: the
+evaluation-only substitution of \S\ref{sec:paradox}, which is within-checkpoint and therefore a
+consistency check rather than a test, and the $n{=}44$ profile comparison of \S\ref{sec:surrogate}
+with the one molecule the leak touches removed. A separate pass runs the co-adaptation control of
+\S\ref{sec:paradox} at the same five seeds, which is what would let its magnitude be quoted as
+something other than one seed.
+
+The decision the re-run settles is stated in advance and in one direction only, since it is the
+supervision contrast alone that hangs on it. If the five per-seed gains are of one sign, the two
+senses of grounding keep their opposite signs, and the abstract, \S\ref{sec:paradox} and
+Table~\ref{tab:claims} print the re-run's per-seed values in place of the three uncertified ones,
+with the refusal to order the two operations by magnitude unchanged. If the per-seed gains straddle
+zero, supervision has no established sign at five seeds: the paper then reports one operation with a
+sign---substituting the reference at inference hurts---and records the other as unresolved, and the
+abstract, the heading of \S\ref{sec:paradox}, the opening sentence of the Conclusions
+(\S\ref{sec:conclusion}) and the supervision row of Table~\ref{tab:claims} are rewritten to say so.
+If the gains are of one sign and it is the opposite one, that is what is reported. In either of the
+last two cases the freeze contrast of \S\ref{sec:surrogate} is restated as well, because the
+warm-up state whose quality it turns on is the supervised one. The substitution result is unaffected in all three cases:
+it is one checkpoint evaluated two ways, and no $\sigma$-stream build can reach it.
 
 \subsection{Model, closure, and training}
 \label{sec:model}
@@ -294,7 +344,9 @@ Table~\ref{tab:closure-anchor} answers that. De Souza et al.\ \cite{desouza2025c
 original Lin--Sandler COSMO-SAC on the infinite-dilution activity-coefficient database distributed
 with \emph{The Properties of Gases and Liquids}, at AAD $=\Ex|\ln\gamma_{\mathrm{calc}}^\infty
 -\ln\gamma_{\mathrm{exp}}^\infty|$ of $1.75$ with HF-TZVP profiles and $0.68$ with BP-TZVPD-FINE:
-one closure, two profile databases, a factor of $2.6$ between them. We ran the deployed
+one closure, two profile databases, a factor of $2.6$ between them. An evaluation of COSMO-SAC is
+in that sense an evaluation of the profiles it was handed, which is why $\Bclos$ is defined above on
+the composite of map and profile calculation and not on the kernel. We ran the deployed
 \texttt{CosmoSacLayer}---its own class, constants and damped fixed point---over the same three
 record files, resolving components through the repository's CAS-to-InChIKey map and matching by
 exact InChIKey to this paper's VT-2005 artifact: $7889$ of $8138$ usable records ($96.9\%$), $2279$
@@ -305,8 +357,8 @@ what this paper deploys and the axis that publication shows dominates; and the p
 points are not proven to be the same rows as the $7889$ scored here, the record selection not being
 stated file by file. Subject to those, the closure error decomposed in \S\ref{sec:measure} is the
 error a published COSMO-SAC has, and the structure inside the published set is the same
-H-bond-kernel localisation reported in \S\ref{sec:badclosure}, on $130$ times the data and someone
-else's compilation.
+localisation onto hydrogen-bond-donor chemistry reported in \S\ref{sec:badclosure}, on $130$ times
+the data and someone else's compilation.
 
 % ---------------------------------------------------------------------------
 % GENERATED by scripts/analysis/run_published_idac_closure_check.py; the full-convention row is
@@ -349,11 +401,28 @@ is if anything the harder one.}}
 \subsection{Evaluation protocol, and the DirectGNN control}
 \label{sec:eval}
 The \emph{oracle substitution} replaces the predicted $\sigma$-profile $\hat z$ with the reference
-VT-2005 profile $\zstar$ before the closure, matched by canonical SMILES. It is applied three ways
+VT-2005 profile $\zstar$ before the closure, matched by canonical SMILES. Precisely: the
+$\sigma$-head emits a normalised $51$-bin shape and a cavity area whose product is the area-weighted
+profile it passes to the closure, and for a matched molecule that pair---profile and area
+together---is replaced by the tabulated pair, which stands in the same relation, the reference area
+being the integral of the reference profile. So the reference area does reach the residual term's
+$A_2/a_{\mathrm{eff}}$ prefactor, and it reaches it as part of replacing one object rather than as a
+separate choice. Solute and solvent are matched independently. The size-factor volume is not
+substituted---the combinatorial term is switched off in these arms---and neither is the crystal
+head's output, which reads a solute-only embedding the substitution does not reach; the bounded
+correction does read the closure's own parameters, so the crystal values the solver finally receives
+shift by a little, at most $7\times10^{-4}$ in $\Phi$ against a median magnitude of $4.7$.
+\S\ref{sec:si-methods} lists every replaced and unreplaced quantity, and
+gives what the match rule reaches: the reference table covers $99.3\%$ of the labelled test rows on
+the solvent side and $5.3\%$ on the solute side, so the substitution contrast below is carried by
+the solvent profile.
+
+It is applied three ways
 to rule out implementation artifacts: at evaluation only; injected at training time so the model
 co-adapts; and as a channel-swap control, injected at training under a coordinate-descent schedule
 that freezes the crystal branch during the SLE phase, so that only the activity branch refits
-against it. The last two are at seed $42$ only. An analogous override substitutes reference crystal
+against it. The three differ in when the replacement is made, not in what is replaced. The last two
+are at seed $42$ only. An analogous override substitutes reference crystal
 targets. The activity target for the decomposition is the infinite-dilution
 $\lngi=\lim_{x_2\to0}\lng$, on two sets that differ in their reference database and their regime
 (\S\ref{sec:broad}--\S\ref{sec:vt2005}).
@@ -372,13 +441,8 @@ on a fixed row set; $5608$ is that lock---the test rows that carry a solubility 
 of the $8103$ (\S\ref{sec:data})---so all arms score identical rows. The $2495$ rows outside it
 carry a melting point and no solubility and are unscorable in every arm alike, the control included;
 none is dropped for anything an arm predicted. The code that builds the lock also asks for a finite
-\lnx\ prediction in every arm, and that clause is inert as far as the deposit can be read: of the
-twenty-two per-row prediction files, twenty-one are full length, and across those it removes no row,
-from any arm, at any seed. The twenty-second is the truncated seed-$44$ $\sigma$-oracle file of
-Table~\ref{tab:runs}, which was saved with $295$ rows rather than $8103$; those $295$ are finite, and
-for that arm and seed nothing beyond them is re-verifiable from the deposit. The $\sigma$-oracle is
-not one of the five arms the lock intersects over, so the $5608$ rows themselves do not turn on it.
-For the twenty-one the set is fixed by which
+\lnx\ prediction in every arm, and that clause is inert: all twenty-two per-row prediction files are
+full length, and across them it removes no row, from any arm, at any seed. The set is fixed by which
 rows carry a label and not by which rows an arm handled; \S\ref{sec:si-lock} gives the
 decomposition. Table~\ref{tab:runs} names which run family produced which numbers,
 how many seeds it carries, and the script and artifact each regenerates from.
@@ -433,13 +497,14 @@ Noise floor and encoder probe (\texttt{run\_noise\_floor\_estimate}) & none & \S
 \bottomrule
 \end{tabular}
 \tabnotes{\scriptsize%
-One deposited artifact is defective, and the defect is disclosed rather than repaired: the seed-$44$
-per-row oracle prediction file was truncated at save time to $295$ rows. The three-seed summaries
-were aggregated at run time, before that file was written, so Fig.~\ref{fig:paradox} and
-Table~\ref{tab:si-arms} are unaffected; any \emph{per-row} re-analysis of that arm says which seeds
-it had. The oracle row of Table~\ref{tab:baselines} is the mean over the two complete seeds, $42$ and
-$43$, and its row says so; Fig.~\ref{fig:parity-lnx2} is one seed, $42$, for all four of its panels
-alike, and its caption says so.}}
+One deposited artifact had been defective and is now repaired: the seed-$44$ per-row oracle
+prediction file was deposited at $295$ of its $8103$ rows, the transfer off the compute volume
+having stopped mid-record. The complete file was recovered from that volume; it reproduces every
+metric in the run's own summary exactly, and the $295$ rows are its first $295$ bytes for byte
+(\S\ref{sec:si-repro}). Every row of every arm at every seed is therefore now re-analysable from the
+deposit, and the oracle row of Table~\ref{tab:baselines} is a three-seed mean like the rest of its
+block. Fig.~\ref{fig:parity-lnx2} is one seed, $42$, for all four of its panels alike, and its
+caption says so.}}
 \end{table*}
 
 \subsection{Estimating the split: one cell, one convention, one rule}
@@ -450,6 +515,9 @@ fixed here, before any margin is reported.
 
 \emph{The estimator cell.} Eight equal-count bins of $g(\zstar)$, the \emph{unbiased} within-bin
 variance, and the row unit, applied identically to every set and every stratum whatever its size.
+The bin count is the choice with the most leverage---it takes the broad set's aggregate margin from
+$+0.01$ to $+0.96$---so the cell is not left standing alone anywhere a finding rests on it: the
+same sweep is run for the strata the admissibility rule passes, and reported with them.
 Enumerating every equal-count contiguous partition, the bin-edge choice is immaterial on the broad
 IDAC set and material on the VT-2005-matched set, whose margin changes sign inside the envelope; we
 accordingly read that set's margin as consistent with zero and carry the claim on the broad set in

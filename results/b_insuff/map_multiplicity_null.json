@@ -1,0 +1,109 @@
+{
+  "design": "A multiplicity null for the 59-stratum search: how often does the rule certify by chance?\n\nWHY THIS EXISTS.  The map of scripts/analysis/run_b_insuff_stratified_map.py searches 59 strata\nand states one of them.  The admissibility rule (boundable at the fixed cell, plus sign-stability\nunder deletion of each contributing publication, in all four unit x convention cells) is a\nSTABILITY filter; it is not a multiplicity correction, and the manuscript's limitation (vi) says\nso.  This script supplies the missing null: it asks how often a CHEMICALLY BLIND stratification of\nthe same rows, searched the same way, certifies at least one cell -- and how large the largest\ncertified margin gets by chance.\n\nTHE NULL.  Not a permutation of the rows into blocks: that would destroy the molecule-level\nclustering that makes a stratum a stratum, and it would put every publication into every block.\nInstead the LABELS are permuted over MOLECULES, which is the chemically blind version of the same\nsearch:\n\n  * each of the 36 solvents keeps its rows and its identity, and receives the label TRIPLE\n    (nine-class, coarse, fine family) of a uniformly drawn other solvent, the triple moving\n    together so that the nesting between granularities is exactly preserved;\n  * each of the 78 solutes likewise receives another solute's (family, role) PAIR;\n  * the whole stratum family is then rebuilt from the permuted labels by the same code path --\n    the same nine classes, the same five coarse classes, the same fine families, the same two\n    solute roles, the same solute families, the same cross-tab -- so the search that is run\n    against the null is the search that was run against the chemistry.\n\nPreserved by construction: the number of strata at every granularity, the number of MOLECULES per\nstratum, the containment lattice between granularities, and every row's (m, g, source, pair).\nDestroyed: the association between chemistry and error, which is the thing under test.\n\nWHAT IS COUNTED.  Per draw, the full pipeline: margin at the fixed cell in all four\nunit x convention cells, boundability at n >= 40, leave-one-source-publication-out in every cell,\nthe admissibility verdict, positivity in all four cells, reduction to distinct row sets, and the\nmaximality filter.  Four statistics come out, and the observed value of each is computed by the\nsame code on the true labels:\n\n  A  cells admissible                     (stratum x unit x convention)\n  B  strata admissible in all four cells\n  C  DISTINCT ROW SETS among those that are also positive in all four cells   <- observed 2\n  D  the largest headline-cell margin among them                             <- observed +2.04\n\nC is the referee's question -- how often does a chemically blind partition license anything at\nall -- and D is the question the single finding actually poses, since that finding is by\nconstruction the survivor of a search and is quoted at a magnitude.\n\nWHAT THIS NULL CANNOT DO, stated because the direction matters.  Admissibility depends on the\nSOURCE structure, and sources are chemistry-correlated: a publication measures a related set of\nsolvents, so a real stratum tends to draw on few publications with one carrying most of its\nsquared error, while a label-permuted stratum collects solvents from many publications and each\ndeletion then removes a smaller share.  Test (b) is therefore EASIER to pass under this null than\nunder the chemistry, so the null over-states how often the rule certifies.  A small null frequency\nis a conservative statement and a large one is not evidence that the rule is loose.  The exactly\nmatched null would have to permute chemistry and provenance jointly, which this design cannot do\nbecause the two are confounded in the data; that is the limit of what can be built here.\n\n    KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src \\\n        python scripts/analysis/run_b_insuff_map_multiplicity_null.py [n_draws]\n",
+  "n_draws": 2000,
+  "fixed_cell": {
+    "n_bins": 8,
+    "within_bin_variance": "Bessel (ddof=1)",
+    "boundable_iff_n_at_least": 40,
+    "cells": [
+      "row::full",
+      "row::res",
+      "pair::full",
+      "pair::res"
+    ]
+  },
+  "overlap_demotion_threshold": 0.5,
+  "observed": {
+    "n_strata_searched": 59,
+    "A_cells_admissible": 35,
+    "cells_boundable_with_a_margin": 50,
+    "loso_pass_rate_among_boundable_cells": 0.7,
+    "median_sources_per_boundable_stratum": 4.0,
+    "B_strata_admissible_in_every_cell": 6,
+    "B_names": [
+      "solute_family::alkane",
+      "solvent_class::aprotic_acceptor",
+      "solvent_class::glycol_ether",
+      "solvent_class_x_solute_role::aprotic_acceptor | organic_solute",
+      "solvent_class_x_solute_role::glycol_ether | organic_solute",
+      "solvent_family_fine::glycol_ether"
+    ],
+    "C_distinct_row_sets_admissible_and_positive": 2,
+    "C_names": [
+      "solute_family::alkane",
+      "solvent_class::glycol_ether",
+      "solvent_class_x_solute_role::glycol_ether | organic_solute",
+      "solvent_family_fine::glycol_ether"
+    ],
+    "D_max_headline_margin_among_them": 2.0364272362273272,
+    "maximal_row_sets": [
+      {
+        "stratum": "solvent_class::glycol_ether",
+        "headline_margin": 2.0364
+      }
+    ],
+    "n_maximal": 1
+  },
+  "null": {
+    "n_strata_searched": {
+      "median": 59.0,
+      "min": 58,
+      "max": 65
+    },
+    "A_cells_admissible": {
+      "observed": 35,
+      "median": 35.0,
+      "p90": 43.0,
+      "p_at_least_observed": 0.548
+    },
+    "is_the_null_permissive_on_the_deletion_test": {
+      "why_it_matters": "if a label-permuted stratum passes leave-one-source-out more easily than a chemical one, the null certifies more often than chance would under the chemistry and every frequency below is an over-estimate; if it passes less easily, they are under-estimates. This measures the direction instead of arguing it.",
+      "loso_pass_rate_among_boundable_cells_observed": 0.7,
+      "loso_pass_rate_among_boundable_cells_null_median": 0.5625,
+      "cells_boundable_with_a_margin_observed": 50,
+      "cells_boundable_with_a_margin_null_median": 62.0,
+      "median_sources_per_boundable_stratum_observed": 4.0,
+      "median_sources_per_boundable_stratum_null_median": 6.0
+    },
+    "B_strata_admissible_in_every_cell": {
+      "observed": 6,
+      "median": 1.0,
+      "p_at_least_observed": 0.0115,
+      "frequency_at_least_one": 0.602
+    },
+    "C_distinct_row_sets_admissible_and_positive": {
+      "observed": 2,
+      "median": 1.0,
+      "frequency_at_least_one": 0.5835,
+      "frequency_at_least_two": 0.286,
+      "p_at_least_observed": 0.286,
+      "distribution": {
+        "0": 833,
+        "1": 595,
+        "2": 325,
+        "3": 206,
+        "4": 34,
+        "5": 6,
+        "7": 1
+      }
+    },
+    "D_max_headline_margin_among_them": {
+      "observed": 2.0364,
+      "n_draws_with_any_certified_cell": 1167,
+      "median_over_draws_with_one": 1.5701,
+      "p90": 2.2032,
+      "p95": 2.3867,
+      "p99": 2.7472,
+      "max": 3.1415,
+      "p_at_least_observed_over_all_draws": 0.1005,
+      "p_at_least_observed_given_a_certified_cell": 0.1722
+    },
+    "n_maximal": {
+      "observed": 1,
+      "median": 1.0,
+      "frequency_at_least_one": 0.5835,
+      "p_at_least_observed": 0.5835
+    }
+  },
+  "how_to_read_this": "The rule is a stability filter, so the count statistics A-C measure how often a chemically blind search licenses ANYTHING; they do not measure how often it licenses something of the observed SIZE. Because the set taken whole has a positive margin at this cell, a random stratum inherits a positive margin on average, and a null frequency near one for `at least one certified cell' is expected and is not evidence against the rule. The statistic that matches the claim -- one stratum, stated at a magnitude, as the survivor of a 59-fold search -- is D."
+}

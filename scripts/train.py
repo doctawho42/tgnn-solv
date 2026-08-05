@@ -38,6 +38,7 @@ from tgnn_solv.group_contribution import (
     fit_tm_gc_calibration,
 )
 from tgnn_solv.model import TGNNSolv
+from tgnn_solv.stream_provenance import certify_streams_or_raise
 from tgnn_solv.pretrain_pipeline import (
     apply_pretrained_encoder_checkpoint,
     derive_pretrain_checkpoint_path,
@@ -326,6 +327,17 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Optional sigma-profile validation CSV for warmup early-stop "
             "(mirrors --sigma-train-data format). Used by sigma-warmup pretraining."
+        ),
+    )
+    parser.add_argument(
+        "--allow-stream-scaffold-overlap",
+        action="store_true",
+        help=(
+            "Override the fail-closed point-of-use check that no auxiliary grounding "
+            "stream shares a canonical SMILES or a Bemis-Murcko scaffold with the "
+            "validation/test files this run is scored against. The override is "
+            "recorded in the run manifest. Only for pools deliberately not used in a "
+            "scaffold-split evaluation."
         ),
     )
     parser.add_argument(
@@ -1212,6 +1224,36 @@ def main() -> None:
                     batch_size=args.crystal_batch_size,
                 )
 
+        # Point-of-use certification of every grounding stream, before a GPU-hour is
+        # spent on it. The builder's scaffold guard is a property of the builder; this
+        # is a property of THIS run, checked against the very val/test files this run
+        # will be scored against. Fail-closed; the records travel into the manifest.
+        held_out_for_streams = [p for p in (args.val_data, args.test_data) if p]
+        stream_provenance: list[dict[str, Any]] = []
+        if held_out_for_streams:
+            print("\n4b. Certifying grounding streams against the held-out splits...")
+            stream_provenance = certify_streams_or_raise(
+                [
+                    ("sigma_train", args.sigma_train_data),
+                    ("sigma_val", args.sigma_val_data),
+                    ("crystal_train", args.crystal_train_data),
+                    ("idac_train", args.idac_train_data),
+                ],
+                held_out_for_streams,
+                allow_overlap=bool(args.allow_stream_scaffold_overlap),
+            )
+            for record in stream_provenance:
+                if not record.get("present"):
+                    print(f"   {record['role']}: none (this arm carries no such stream)")
+                    continue
+                print(
+                    f"   {record['role']}: {record['n_rows']} rows "
+                    f"sha256={record['sha256'][:16]}... "
+                    f"leak by SMILES={record['leak_by_canonical_smiles']} "
+                    f"by scaffold={record['leak_by_murcko_scaffold']}"
+                    + ("" if record["certified_no_leak"] else "  [OVERRIDDEN]")
+                )
+
         sigma_train_loader = None
         if args.sigma_train_data is not None:
             if config.sigma_aux_steps_per_epoch <= 0:
@@ -1537,6 +1579,7 @@ def main() -> None:
                 "idac_train_data": args.idac_train_data,
                 "crystal_train_data": args.crystal_train_data,
                 "sigma_train_data": args.sigma_train_data,
+                "sigma_val_data": args.sigma_val_data,
                 "resume_checkpoint": args.resume,
                 "pretrain_enabled": bool(args.pretrain),
                 "pretrain_checkpoint": args.pretrain_checkpoint,
@@ -1550,6 +1593,11 @@ def main() -> None:
                 "seed": int(args.seed),
                 "device": str(device),
                 "pretrain_info": pretrain_info,
+                # The stream build hash, its row count and the recomputed leak counts,
+                # recorded beside the split hashes that `inputs` carries. This is what
+                # lets an artifact say which build fed which arm.
+                "grounding_streams": stream_provenance,
+                "stream_scaffold_overlap_override": bool(args.allow_stream_scaffold_overlap),
             },
         )
         model_card = build_model_card(

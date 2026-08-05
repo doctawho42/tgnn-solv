@@ -1,8 +1,8 @@
 \section{The pKa closure: full construction, measured sweep, and trained comparison}
 \label{sec:si-pka}
 This section gives the full construction behind \S\ref{sec:pka}: a fixed
-Hammett linear-free-energy relationship (LFER) $g(\zstar)=\mathrm pK_{a,0}-\rho\,\hammett$ over
-$\zstar=(s,\hammett)$: the reaction series $s$, which fixes the per-scaffold Hansch--Leo--Taft
+Hammett linear-free-energy relationship (LFER) $g(\zstar)=\mathrm pK_{a,0}-\rho\,\hammett^\star$ over
+$\zstar=(s,\hammett^\star)$: the reaction series $s$, which fixes the per-scaffold Hansch--Leo--Taft
 constants $(\mathrm pK_{a,0},\rho)$, together with the Hammett substituent constant $\hammett$, whose
 tabulated Hansch--Leo values are the external reference for the coordinate the network predicts. The analogy is close: as with the $\sigma$-profile through COSMO-SAC, a
 learnable physical descriptor is pushed through a fixed, approximate, differentiable map. The two
@@ -76,17 +76,17 @@ as a flexible within-scaffold regressor. There $\Bclos$ is not separately resolv
 with a well-specified closure (per-scaffold systematic offsets $\le0.19$, the largest $0.184$ on
 phenol). The degraded pole ($n{=}846$)
 degrades to RMSE $2.26$, dominated by input insufficiency. Here $\zstar$ is the pair
-$(s,\hammett)$---the reaction series, which fixes $(\mathrm pK_{a,0},\rho)$, and the constant---and
+$(s,\hammett^\star)$---the reaction series, which fixes $(\mathrm pK_{a,0},\rho)$, and the constant---and
 neither coordinate needs binning, four labels and a scalar, so---unlike the solubility
-regime---$\Binsuf=\Ex[\Var(\mathrm pK_a\mid s,\hammett)]$ is estimated \emph{directly} rather
+regime---$\Binsuf=\Ex[\Var(\mathrm pK_a\mid s,\hammett^\star)]$ is estimated \emph{directly} rather
 than through a coarsening of the closure's argument (\S\ref{sec:decomp}): a within-series
 out-of-fold regression estimator gives $\Binsuf=4.5$
-($95\%$~CI $[4.0,5.1]$; $\approx89\%$ of the error---the tabulated $\hammett$ carries nothing from
+($95\%$~CI $[4.0,5.1]$; $\approx89\%$ of the error---$\hammett^\star$ carries nothing from
 the zeroed positions, exactly the a-priori channel assignment), leaving a closure misspecification
 $\Bclos=0.6$ ($[0.3,0.8]$, a stratified within-scaffold molecule bootstrap; both intervals are
 percentile intervals of $4000$ resamples of molecules within each series, at their sizes). Directly estimated is
 not point-identified: the estimator is an out-of-fold residual mean square, which is an upper
-estimate of $\Ex[\Var(\mathrm{p}K_a\mid s,\hammett)]$, so $4.5$ is an upper figure and the $0.6$ it
+estimate of $\Ex[\Var(\mathrm{p}K_a\mid s,\hammett^\star)]$, so $4.5$ is an upper figure and the $0.6$ it
 leaves is a lower one---one-sided in the same direction as everywhere else in this paper, and
 narrower only because a four-valued label and a scalar need no binning (\S\ref{sec:decomp},
 % The pooled-over-series figure (8.3) and the within-series one (4.5) both print from
@@ -106,7 +106,9 @@ applied uniformly to both strata. It is closure-independent (it never references
 so it cannot be circular) and keeps net-neutral substituents such as nitro $[\mathrm N^+][\mathrm O^-]{=}\mathrm O$.
 This removes $5$ of $163$ clean-pole rows (restoring that pole to RMSE ${\approx}0.55$) and $352$
 of $1198$ degraded-pole rows (leaving $846$; that pole's RMSE is essentially unchanged, so the filter
-does not manufacture the sign), for $1004$ Hammett-amenable rows.
+does not manufacture the sign), for $1004$ Hammett-amenable rows. The clean pole's floor does turn on
+it: $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ is $+0.55$ on the $163$ unfiltered rows against the $-0.2$
+reported on the $158$ filtered, so that pole reads as well specified only after the filter.
 
 \paragraph{Evidence for the flip.} We train the physics arm (encoder $\to\hat\sigma_{\mathrm H}\to$ fixed LFER)
 on $K{=}20$ stratified $80/20$-within-scaffold splits---a Bemis--Murcko split collapses the meta/para

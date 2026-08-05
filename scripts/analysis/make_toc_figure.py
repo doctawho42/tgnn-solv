@@ -18,10 +18,26 @@ WHAT IT SAYS NOW
 ----------------
 The finding that survives and is stated in the title: "grounding" names two opposite
 operations on one reference database, and they carry opposite signs.  Supervising the
-learned profile against the database during training improves solubility MAE by 0.20
-over three seeds; substituting the same database's profile for the learned one at
-prediction time degrades it by 0.41.  Both numbers are the three-seed test-split values
-of Sec. 3.1, and the scope (solubility MAE, three seeds) prints in the image.
+learned profile against the database during training improves solubility MAE; substituting
+the same database's profile for the learned one at prediction time degrades it.  Both are
+three-seed test-split results of Sec. 3.1, and the scope (solubility MAE, held-out
+scaffolds, three seeds) prints in the image.
+
+THE MAGNITUDES ARE GONE, 2026-08-05, AND MAY NOT COME BACK
+----------------------------------------------------------
+Until 2026-08-05 the two arrows were labelled "MAE -0.20" and "MAE +0.41", and printing
+that pair in one image asserts a two-fold asymmetry the design does not support.  The
++0.41 is the evaluation-only substitution and carries the ordinary cost of swapping an
+input distribution at test time; the arm that removes that cost, injecting the reference
+during training so the model co-adapts, is by design the confound-free one and costs +0.18
+-- at one seed, so Sec. S3.1 states that neither +0.18 nor the channel swap's +0.27 can be
+ordered against the -0.20, whose own per-seed values (0.237/0.075/0.281) straddle +0.18.
+There is no pair of magnitudes this image can print side by side without asserting an
+ordering the paper withholds, and at 3.25 x 1.75 in there is no room for the three
+sentences that would license one.  So the arrows carry the signs, which are established at
+every seed, and the caption sends the reader to the text for the magnitudes.  Do not
+restore either number here, and do not "fix" this by printing +0.18 instead of +0.41: that
+juxtaposes -0.20 with a one-seed number, which is the same error.
 
 The stratified map is the paper's other deliverable and does not go here: at 3.25 x 1.75
 in nothing legible can carry fifteen strata with their margins and intervals, and a
@@ -96,14 +112,15 @@ ax.add_patch(FancyArrowPatch((0.408, 0.545), (0.487, 0.745), arrowstyle="-|>",
                              color=HURT, lw=1.4, mutation_scale=9, zorder=2))
 
 ax.text(0.245, 0.665, "train on it", ha="right", va="center", fontsize=6.8, color=HELP)
-ax.text(0.245, 0.575, "MAE $-0.20$", ha="right", va="center", fontsize=6.8, color=HELP)
+ax.text(0.245, 0.575, "MAE improves", ha="right", va="center", fontsize=6.8, color=HELP)
 ax.text(0.505, 0.665, "feed it in instead", ha="left", va="center", fontsize=6.8, color=HURT)
-ax.text(0.505, 0.575, "MAE $+0.41$", ha="left", va="center", fontsize=6.8, color=HURT)
+ax.text(0.505, 0.575, "MAE degrades", ha="left", va="center", fontsize=6.8, color=HURT)
 
-# One line, and it states the sign structure rather than a set-level verdict.
+# One line, and it states the sign structure rather than a set-level verdict.  The pointer to
+# the text is where the magnitudes went; see the module docstring for why they may not print here.
 ax.text(0.5, 0.115, "Grounding is two operations on one database, with opposite signs\n"
-        "(solubility MAE on held-out scaffolds, three seeds).",
-        ha="center", va="center", fontsize=6.2, color=INK)
+        "(solubility MAE on held-out scaffolds, three seeds; magnitudes in the text).",
+        ha="center", va="center", fontsize=6.0, color=INK)
 
 for ext in ("pdf", "png"):
     fig.savefig(f"{OUT}.{ext}")

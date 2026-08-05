@@ -1,0 +1,486 @@
+{
+  "what": "pre-declared out-of-sample test of the glycol-ether separation, on the PGL 6th-edition IDAC database scored by the deployed CosmoSacLayer on VT-2005 profiles",
+  "pre_declaration": "Out-of-sample test of the glycol-ether separation, pre-declared before it was run.\n\nWHY THIS EXISTS\n---------------\n`run_b_insuff_stratified_map.py' searches fifty-nine strata and states one of them: the\nglycol-ether solvents of the broad IDAC set, 182 rows over 43 pairs from three publications,\nmargin +2.04 [+1.27, +2.83] at the headline cell.  `run_b_insuff_map_multiplicity_null.py'\nthen asks what that search returns when the chemistry is relabelled at random with the\ncontainment lattice, the stratum sizes and every row's m, g, source and pair held fixed, and\nanswers: at least one certified row set in 58% of 2000 draws, two admissible positive row sets\nin 29%, and a certified margin of +2.04 or more in 10.1% of all draws (17% of the draws that\ncertify anything).  The observed margin sits near the ninetieth percentile of a chemistry-blind\nnull.  A number a blind search returns that often is not, on the strength of that search alone,\na located fact about glycol ethers.\n\nThe only thing that settles it is the same measurement on rows the search never saw.  This\nscript is that measurement.  Everything from here to the line marked END OF PRE-DECLARATION was\nwritten and committed to before any margin, MSE or B_insuff was computed on the out-of-sample\nrows.  What HAD been established first is the geometry of the candidate row sets -- how many\nrows exist, which solvents and solutes they carry, which files they come from -- because a test\ncannot be designed without knowing whether its data exist.  No outcome quantity was read.\n\n==============================================================================================\n                                  PRE-DECLARATION\n==============================================================================================\n\n1.  THE INVENTORY.  What is held that the fifty-nine-stratum search did not see.\n\n  (a)  results/published_idac_check/scored_records.csv -- the PGL 6th-edition IDAC database\n       (Lazzaroni 2023 + Jaubert/TDE), 7889 of 8138 usable records over 2279 distinct pairs,\n       each at its own temperature, scored by this repository's deployed\n       ``tgnn_solv.layers.CosmoSacLayer'' on VT-2005 sigma-profiles matched by exact InChIKey.\n       Another group's compilation, 16x the rows of the broad set, and a different profile\n       database from the broad set's UD.  This is the out-of-sample set.\n\n  (b)  notebooks/data/raw/idac_expanded.csv -- the 14900-row pool the broad set was drawn\n       from.  Of its glycol-ether-solvent rows, 184 carry a neutral glycol ether and 182 of\n       those are already in the broad set; the remaining 1369 are hydroxy-functionalised ionic\n       liquids, which the cascade calls glycol ethers, which have no VT-2005 profile, and which\n       the deployed closure cannot score.  Two out-of-sample rows is not a test.  NOT USED.\n\n  (c)  paper/si_tables/vt2005_matched_set_60.csv -- inside the search (reported as corner_60).\n       NOT OUT OF SAMPLE.\n\n  So (a) is the whole of the out-of-sample evidence, and the test is run there.\n\n2.  THE ROW SET.  The glycol-ether solvent stratum of (a): every scored PGL record whose\n    SOLVENT SMILES returns \"glycol_ether\" from the unmodified ``classify_solvent'' cascade\n    imported from run_b_insuff_stratified_map.py.  No re-tuning of the cascade, no exclusion of\n    any solvent it happens to catch, and no addition of any it happens to miss.  Pairs shared\n    with the broad IDAC set are excluded before anything is computed.\n\n    Row-set geometry, established before this declaration was written:\n      52 rows, 7 solvent molecules (glycerol, 1,4-butanediol, 1,2-ethanediol, 1,2-propanediol,\n      2-methoxyethanol, 2-ethoxyethanol, and acetic acid, which the cascade admits because it\n      carries an O-H and two oxygens), 1 solute -- water -- and 7 pairs, all from\n      IdacRecJaubert+TdeWinOrg.txt, T from 312.87 to 404.15 K.  Source labels within that file:\n      50 rows J (Jaubert/Moine compilation), 2 rows T (NIST TDE).\n      The exact analogue of the in-sample cell, glycol-ether solvent with an ORGANIC solute,\n      has ZERO rows in (a): the non-aqueous Lazzaroni file carries 88 solvents and not one\n      glycol ether.\n\n    Two mismatches against the in-sample cell are therefore known in advance and are stated\n    here rather than after the result: the solute is water rather than the nineteen organic\n    solutes of the in-sample cell, which the paper's own axis 2 holds to be a different\n    physical situation; and the oligomers that carry 141 of the in-sample cell's 182 rows\n    (di-, tri- and tetraethylene glycol) are absent, leaving 1,2-ethanediol as the only solvent\n    molecule in common.\n\n3.  THE ESTIMATOR CELL.  The manuscript's headline cell, unchanged and not swept:\n      unit         row\n      convention   res (residual-only, the deployed one)\n      binning      8 equal-count bins of g(z*)\n      variance     Bessel-corrected within-bin variance (ddof=1)\n      margin       MSE - 2 * B_insuff^up\n      interval     two-way (solute x solvent) cluster bootstrap, 3000 draws, 90% interval,\n                   seed from the same ``stable_seed'' used by the map.\n    The other three cells (row/full, pair/res, pair/full) are computed and deposited so that\n    nothing is hidden, but the PRIMARY is row/res and the verdict is read off it alone.\n\n4.  THE ADMISSIBILITY RULE.  The manuscript's, applied without amendment:\n      (a) BOUNDABLE: n >= 40, so each of the eight bins holds at least five rows.\n      (b) ROBUST TO LEAVE-ONE-SOURCE-OUT: the margin keeps its sign when any single source\n          contributing to it is deleted.  A stratum drawing on one source fails (b) by\n          non-testability.  A deletion leaving fewer than 16 rows leaves the fixed cell\n          undefined and the stratum fails (b).\n    The broad set's source axis is the source DOI.  The PGL files carry no DOI, so the source\n    axis here is declared to be the finest provenance the set actually has: the record file,\n    and within the Jaubert/TDE files the compilation label (J / T / Y).  This is a coarser\n    axis than the in-sample one and therefore a WEAKER test, which is stated now and not\n    discovered later.\n\n5.  WHAT COUNTS AS CONFIRMATION.  Declared before running, three outcomes and nothing else:\n\n    CONFIRMED  -- the row set is admissible under rule 4 at the primary cell AND its margin is\n                  positive AND the 90% cluster-bootstrap interval lies wholly above zero.\n                  Then the separation reproduces on another group's compilation with a\n                  different profile database, the multiplicity objection is answered by\n                  replication rather than by argument, and the title's second clause keeps its\n                  chemical localisation.\n\n    NOT CONFIRMED -- the row set is admissible and its margin is non-positive, or the interval\n                  covers zero.  Then the chemical localisation is not out-of-sample evidence\n                  and the title's second clause loses it.\n\n    NOT TESTABLE -- the row set is inadmissible under rule 4: too small to bound, or its sign\n                  never put at risk because the provenance axis carries no deletion that leaves\n                  the fixed cell defined.  This counts AS NOT CONFIRMED for the purpose of the\n                  title.  A test the paper's own rule would not let it state in sample is not a\n                  test it may state out of sample.\n\n    No fourth outcome is available, and in particular there is no outcome in which a positive\n    margin on an inadmissible row set is reported as support.  The one-sidedness of the\n    instrument is unchanged: a positive margin certifies B_clos > 0, a non-positive one is\n    failure to separate and certifies nothing in the other direction.\n\n6.  ONE TEST.  There is no cascade here, no second stratum, no alternative cell and no\n    alternative rule.  Item 7 below is DESCRIPTIVE and is not a test: it is the same map over\n    the PGL set's other solvent classes, reported because a reader is entitled to see whether\n    the instrument behaves out of sample the way Sec. 3.2 says it behaves in sample (B_insuff\n    nearly stratum-independent while MSE varies by an order of magnitude).  Nothing in item 7\n    may be stated as a finding, and no glycol-ether verdict is read from it.\n\n7.  DESCRIPTIVE COMPANION.  Solvent class x {row} x {res, full} over the whole PGL set, with n,\n    MSE, B_insuff^up, margin and admissibility for each class, plus the ratio of the MSE range\n    to the B_insuff range across classes.\n\n==============================================================================================\n                              END OF PRE-DECLARATION\n==============================================================================================\n\n    KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src \\\n        python scripts/analysis/run_glycol_ether_out_of_sample.py\n",
+  "pre_declaration_sha256": "a5bf57580d08353a703c82bae7e7d2c716e0a7d570e640534c5a70a53335e33f",
+  "out_of_sample_set": {
+    "file": "results/published_idac_check/scored_records.csv",
+    "n_rows": 7889,
+    "n_pairs": 2279,
+    "profile_database": "VT-2005",
+    "broad_set_profile_database": "UD",
+    "record_sets": {
+      "LazzaroniDb2023": 4347,
+      "Jaubert_TDE_organic_in_water": 3074,
+      "Jaubert_TDE_water_in_organic": 468
+    }
+  },
+  "row_set": {
+    "definition": "classify_solvent(solvent_smiles) == 'glycol_ether', minus any pair shared with the broad IDAC set",
+    "n_rows": 52,
+    "n_pairs": 7,
+    "n_solutes": 1,
+    "n_solvents": 7,
+    "solvents": [
+      "1,2-ethanediol",
+      "1,2-propanediol",
+      "1,4-butanediol",
+      "2-ethoxyethan-1-ol",
+      "2-methoxyethan-1-ol",
+      "acetic acid",
+      "glycerol"
+    ],
+    "solutes": [
+      "water"
+    ],
+    "pairs_shared_with_broad_set_excluded": [],
+    "sources": {
+      "Jaubert_TDE_water_in_organic:J": 50,
+      "Jaubert_TDE_water_in_organic:T": 2
+    },
+    "T_K_range": [
+      312.87,
+      404.15
+    ],
+    "solvent_molecules_shared_with_in_sample_cell": [
+      "OCCO"
+    ],
+    "in_sample_cell_solvent_molecules": [
+      "OCCO",
+      "OCCOCCO",
+      "OCCOCCOCCO",
+      "OCCOCCOCCOCCO"
+    ],
+    "exact_analogue_cell_glycol_ether_x_organic_solute_n_rows": 0
+  },
+  "cells": {
+    "row::res": {
+      "n": 52,
+      "n_solutes": 1,
+      "n_solvents": 7,
+      "n_pairs": 7,
+      "n_sources": 2,
+      "mse": 0.4915,
+      "var_m": 0.0948,
+      "boundable_at_headline_cell": true,
+      "b_insuff_up": 0.0686,
+      "b_closure_lb": 0.4229,
+      "margin": 0.3543,
+      "P_boot": 1.0,
+      "margin_ci90": [
+        0.284,
+        0.582
+      ],
+      "b_insuff_exceeds_var_m": false,
+      "bootstrap_reduces_to_one_way": true,
+      "loso_curve": [
+        {
+          "left_out": "Jaubert_TDE_water_in_organic:J",
+          "n_removed": 50,
+          "n_remaining": 2,
+          "remainder_still_boundable": false,
+          "margin": null
+        },
+        {
+          "left_out": "Jaubert_TDE_water_in_organic:T",
+          "n_removed": 2,
+          "n_remaining": 50,
+          "remainder_still_boundable": true,
+          "margin": 0.3383
+        }
+      ],
+      "test_a_boundable": true,
+      "test_b_sign_survives_loso": false,
+      "admissible": false,
+      "verdict": "NOT TESTABLE",
+      "verdict_reason": "1 of 2 deletions leave fewer than 16 rows and the fixed cell is then undefined (Jaubert_TDE_water_in_organic:J), so the sign is not verifiable"
+    },
+    "row::full": {
+      "n": 52,
+      "n_solutes": 1,
+      "n_solvents": 7,
+      "n_pairs": 7,
+      "n_sources": 2,
+      "mse": 0.1426,
+      "var_m": 0.0948,
+      "boundable_at_headline_cell": true,
+      "b_insuff_up": 0.0537,
+      "b_closure_lb": 0.0889,
+      "margin": 0.0351,
+      "P_boot": 0.97,
+      "margin_ci90": [
+        0.006,
+        0.248
+      ],
+      "b_insuff_exceeds_var_m": false,
+      "bootstrap_reduces_to_one_way": true,
+      "loso_curve": [
+        {
+          "left_out": "Jaubert_TDE_water_in_organic:J",
+          "n_removed": 50,
+          "n_remaining": 2,
+          "remainder_still_boundable": false,
+          "margin": null
+        },
+        {
+          "left_out": "Jaubert_TDE_water_in_organic:T",
+          "n_removed": 2,
+          "n_remaining": 50,
+          "remainder_still_boundable": true,
+          "margin": 0.0303
+        }
+      ],
+      "test_a_boundable": true,
+      "test_b_sign_survives_loso": false,
+      "admissible": false,
+      "verdict": "NOT TESTABLE",
+      "verdict_reason": "1 of 2 deletions leave fewer than 16 rows and the fixed cell is then undefined (Jaubert_TDE_water_in_organic:J), so the sign is not verifiable"
+    },
+    "pair::res": {
+      "n": 7,
+      "n_solutes": 1,
+      "n_solvents": 7,
+      "n_pairs": 7,
+      "n_sources": 2,
+      "mse": 0.6672,
+      "var_m": 0.152,
+      "boundable_at_headline_cell": false,
+      "b_insuff_up": null,
+      "b_closure_lb": null,
+      "margin": null,
+      "P_boot": null,
+      "margin_ci90": null,
+      "bootstrap_reduces_to_one_way": true,
+      "loso_curve": [
+        {
+          "left_out": "Jaubert_TDE_water_in_organic:J",
+          "n_removed": 6,
+          "n_remaining": 1,
+          "remainder_still_boundable": false,
+          "margin": null
+        },
+        {
+          "left_out": "Jaubert_TDE_water_in_organic:T",
+          "n_removed": 1,
+          "n_remaining": 6,
+          "remainder_still_boundable": false,
+          "margin": null
+        }
+      ],
+      "test_a_boundable": false,
+      "test_b_sign_survives_loso": false,
+      "admissible": false,
+      "verdict": "NOT TESTABLE",
+      "verdict_reason": "not boundable: n=7 < 40"
+    },
+    "pair::full": {
+      "n": 7,
+      "n_solutes": 1,
+      "n_solvents": 7,
+      "n_pairs": 7,
+      "n_sources": 2,
+      "mse": 0.2868,
+      "var_m": 0.152,
+      "boundable_at_headline_cell": false,
+      "b_insuff_up": null,
+      "b_closure_lb": null,
+      "margin": null,
+      "P_boot": null,
+      "margin_ci90": null,
+      "bootstrap_reduces_to_one_way": true,
+      "loso_curve": [
+        {
+          "left_out": "Jaubert_TDE_water_in_organic:J",
+          "n_removed": 6,
+          "n_remaining": 1,
+          "remainder_still_boundable": false,
+          "margin": null
+        },
+        {
+          "left_out": "Jaubert_TDE_water_in_organic:T",
+          "n_removed": 1,
+          "n_remaining": 6,
+          "remainder_still_boundable": false,
+          "margin": null
+        }
+      ],
+      "test_a_boundable": false,
+      "test_b_sign_survives_loso": false,
+      "admissible": false,
+      "verdict": "NOT TESTABLE",
+      "verdict_reason": "not boundable: n=7 < 40"
+    }
+  },
+  "primary": {
+    "cell": "row/res, 8 equal-count bins, ddof=1",
+    "verdict": "NOT TESTABLE",
+    "reason": "1 of 2 deletions leave fewer than 16 rows and the fixed cell is then undefined (Jaubert_TDE_water_in_organic:J), so the sign is not verifiable",
+    "margin": 0.3543,
+    "margin_ci90": [
+      0.284,
+      0.582
+    ],
+    "in_sample_comparator": {
+      "margin": 2.0364,
+      "ci90": [
+        1.268,
+        2.833
+      ],
+      "n": 182,
+      "n_pairs": 43,
+      "n_sources": 3
+    }
+  },
+  "descriptive_solvent_class_map": {
+    "note": "DESCRIPTIVE, declared as not a test (item 7). No verdict is read from this block and no stratum in it is stated as a finding.",
+    "strata": [
+      {
+        "n": 875,
+        "n_solutes": 64,
+        "n_solvents": 44,
+        "n_pairs": 358,
+        "n_sources": 3,
+        "mse": 2.457,
+        "var_m": 6.7525,
+        "boundable_at_headline_cell": true,
+        "b_insuff_up": 0.3654,
+        "b_closure_lb": 2.0916,
+        "margin": 1.7262,
+        "P_boot": 0.631,
+        "margin_ci90": [
+          -0.18,
+          5.256
+        ],
+        "b_insuff_exceeds_var_m": false,
+        "bootstrap_reduces_to_one_way": false,
+        "stratum": "aliphatic_hydrocarbon",
+        "admissible": false,
+        "reason_not_admissible": "sign does not survive deletion of Jaubert_TDE_water_in_organic:J (+1.726 -> -0.151)"
+      },
+      {
+        "n": 1577,
+        "n_solutes": 72,
+        "n_solvents": 104,
+        "n_pairs": 714,
+        "n_sources": 3,
+        "mse": 0.5258,
+        "var_m": 1.2079,
+        "boundable_at_headline_cell": true,
+        "b_insuff_up": 0.2536,
+        "b_closure_lb": 0.2722,
+        "margin": 0.0187,
+        "P_boot": 0.616,
+        "margin_ci90": [
+          -0.191,
+          0.306
+        ],
+        "b_insuff_exceeds_var_m": false,
+        "bootstrap_reduces_to_one_way": false,
+        "stratum": "aprotic_acceptor",
+        "admissible": false,
+        "reason_not_admissible": "sign does not survive deletion of Jaubert_TDE_water_in_organic:J (+0.019 -> -0.005); Jaubert_TDE_water_in_organic:T (+0.019 -> -0.114)"
+      },
+      {
+        "n": 344,
+        "n_solutes": 52,
+        "n_solvents": 15,
+        "n_pairs": 133,
+        "n_sources": 3,
+        "mse": 0.5467,
+        "var_m": 1.9795,
+        "boundable_at_headline_cell": true,
+        "b_insuff_up": 0.3383,
+        "b_closure_lb": 0.2084,
+        "margin": -0.1298,
+        "P_boot": 0.324,
+        "margin_ci90": [
+          -0.284,
+          1.999
+        ],
+        "b_insuff_exceeds_var_m": false,
+        "bootstrap_reduces_to_one_way": false,
+        "stratum": "aromatic_hydrocarbon",
+        "admissible": false,
+        "reason_not_admissible": "sign does not survive deletion of LazzaroniDb2023 (-0.130 -> +10.249)"
+      },
+      {
+        "n": 1,
+        "n_solutes": 1,
+        "n_solvents": 1,
+        "n_pairs": 1,
+        "n_sources": 1,
+        "mse": 10.3605,
+        "var_m": 0.0,
+        "boundable_at_headline_cell": false,
+        "b_insuff_up": null,
+        "b_closure_lb": null,
+        "margin": null,
+        "P_boot": null,
+        "margin_ci90": null,
+        "bootstrap_reduces_to_one_way": true,
+        "stratum": "aryl_ether",
+        "admissible": false,
+        "reason_not_admissible": "the fixed cell is undefined at n=1"
+      },
+      {
+        "n": 52,
+        "n_solutes": 1,
+        "n_solvents": 7,
+        "n_pairs": 7,
+        "n_sources": 2,
+        "mse": 0.4915,
+        "var_m": 0.0948,
+        "boundable_at_headline_cell": true,
+        "b_insuff_up": 0.0686,
+        "b_closure_lb": 0.4229,
+        "margin": 0.3543,
+        "P_boot": 1.0,
+        "margin_ci90": [
+          0.286,
+          0.57
+        ],
+        "b_insuff_exceeds_var_m": false,
+        "bootstrap_reduces_to_one_way": true,
+        "stratum": "glycol_ether",
+        "admissible": false,
+        "reason_not_admissible": "1 of 2 deletions leave fewer than 16 rows and the fixed cell is then undefined (Jaubert_TDE_water_in_organic:J), so the sign is not verifiable"
+      },
+      {
+        "n": 428,
+        "n_solutes": 52,
+        "n_solvents": 26,
+        "n_pairs": 211,
+        "n_sources": 3,
+        "mse": 1.7012,
+        "var_m": 4.334,
+        "boundable_at_headline_cell": true,
+        "b_insuff_up": 0.5154,
+        "b_closure_lb": 1.1858,
+        "margin": 0.6704,
+        "P_boot": 0.884,
+        "margin_ci90": [
+          -0.069,
+          2.233
+        ],
+        "b_insuff_exceeds_var_m": false,
+        "bootstrap_reduces_to_one_way": false,
+        "stratum": "halogenated",
+        "admissible": false,
+        "reason_not_admissible": "sign does not survive deletion of Jaubert_TDE_water_in_organic:J (+0.670 -> -0.275)"
+      },
+      {
+        "n": 1027,
+        "n_solutes": 77,
+        "n_solvents": 19,
+        "n_pairs": 344,
+        "n_sources": 3,
+        "mse": 0.3831,
+        "var_m": 0.729,
+        "boundable_at_headline_cell": true,
+        "b_insuff_up": 0.1472,
+        "b_closure_lb": 0.2359,
+        "margin": 0.0887,
+        "P_boot": 0.856,
+        "margin_ci90": [
+          -0.058,
+          0.317
+        ],
+        "b_insuff_exceeds_var_m": false,
+        "bootstrap_reduces_to_one_way": false,
+        "stratum": "mono_alcohol",
+        "admissible": true,
+        "reason_not_admissible": ""
+      },
+      {
+        "n": 368,
+        "n_solutes": 57,
+        "n_solvents": 7,
+        "n_pairs": 119,
+        "n_sources": 3,
+        "mse": 1.0256,
+        "var_m": 1.9272,
+        "boundable_at_headline_cell": true,
+        "b_insuff_up": 0.2137,
+        "b_closure_lb": 0.8119,
+        "margin": 0.5983,
+        "P_boot": 0.995,
+        "margin_ci90": [
+          0.218,
+          1.499
+        ],
+        "b_insuff_exceeds_var_m": false,
+        "bootstrap_reduces_to_one_way": false,
+        "stratum": "nh_protic",
+        "admissible": false,
+        "reason_not_admissible": "1 of 3 deletions leave fewer than 16 rows and the fixed cell is then undefined (LazzaroniDb2023), so the sign is not verifiable"
+      },
+      {
+        "n": 143,
+        "n_solutes": 45,
+        "n_solvents": 3,
+        "n_pairs": 53,
+        "n_sources": 2,
+        "mse": 1.2525,
+        "var_m": 1.5458,
+        "boundable_at_headline_cell": true,
+        "b_insuff_up": 0.574,
+        "b_closure_lb": 0.6785,
+        "margin": 0.1044,
+        "P_boot": 0.897,
+        "margin_ci90": [
+          -0.129,
+          1.145
+        ],
+        "b_insuff_exceeds_var_m": false,
+        "bootstrap_reduces_to_one_way": false,
+        "stratum": "unclassified",
+        "admissible": false,
+        "reason_not_admissible": "1 of 2 deletions leave fewer than 16 rows and the fixed cell is then undefined (LazzaroniDb2023), so the sign is not verifiable"
+      },
+      {
+        "n": 3074,
+        "n_solutes": 339,
+        "n_solvents": 1,
+        "n_pairs": 339,
+        "n_sources": 3,
+        "mse": 1.592,
+        "var_m": 11.5579,
+        "boundable_at_headline_cell": true,
+        "b_insuff_up": 2.0612,
+        "b_closure_lb": -0.4692,
+        "margin": -2.5303,
+        "P_boot": 0.0,
+        "margin_ci90": [
+          -3.093,
+          -1.772
+        ],
+        "b_insuff_exceeds_var_m": false,
+        "bootstrap_reduces_to_one_way": true,
+        "stratum": "water",
+        "admissible": true,
+        "reason_not_admissible": ""
+      }
+    ],
+    "range_mse_over_boundable": 2.0739,
+    "range_b_insuff_over_boundable": 1.9926
+  },
+  "donor_class_shares_res": [
+    {
+      "donor_class": "strong_donor",
+      "n": 4224,
+      "share_of_squared_error": 0.5577,
+      "mse": 1.2906
+    },
+    {
+      "donor_class": "inert",
+      "n": 2065,
+      "share_of_squared_error": 0.3444,
+      "mse": 1.6304
+    },
+    {
+      "donor_class": "acceptor_only",
+      "n": 1600,
+      "share_of_squared_error": 0.0979,
+      "mse": 0.5982
+    }
+  ]
+}

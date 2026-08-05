@@ -1,7 +1,9 @@
 {
   "source": "OPERA / Mansouri 2019 pKa_QR.sdf (experimental pKa_a/pKa_b)",
+  "qc": "none -- raw read, PRE-QC pole; the reported pole is the QC'd one in real_decomposition.json",
   "n_molecules_read": 7904,
   "n_hammett_amenable": 1361,
+  "n_after_qc": 1361,
   "high_F_mono": {
     "label": "high_F mono-substituted (canonical LFER)",
     "n": 104,

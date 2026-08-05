@@ -22,8 +22,19 @@ the solubility case). We report:
   * B_closure >= MSE_closure - B_insuff^up              (convention-independent lower bound)
   * B_closure >= (E[m] - E[g])^2 per scaffold           (Jensen; systematic offset)
 
+Records are QC'd first, by the same uniform, closure-independent filter the trained flip runs
+use (run_pka_flip_certify.net_charged): net formal charge != 0 drops the pre-ionized
+microstates the canonical OPERA read ships, and keeps net-neutral charge-separated groups such
+as nitro.  This is the pole the paper reports.  --no-qc decomposes the raw read instead; the
+two differ by more than magnitude, the clean pole's floor changing sign across the filter,
+which `_qc_sensitivity' in the QC'd output records.
+
     KMP_DUPLICATE_LIB_OK=TRUE python scripts/analysis/run_pka_real_decomposition.py \
         --sdf <path>/pKa_QR.sdf --out-json results/pka_hammett/real_decomposition.json
+    # the pre-QC pole, for comparison:
+    KMP_DUPLICATE_LIB_OK=TRUE python scripts/analysis/run_pka_real_decomposition.py --no-qc \
+        --sdf <path>/pKa_QR.sdf \
+        --out-json results/pka_hammett/real_decomposition_fetchedSDF.json
 """
 
 from __future__ import annotations
@@ -67,6 +78,15 @@ def _fnum(x):
 
 _AROM_N = Chem.MolFromSmarts("[n]")
 _N_OXIDE = Chem.MolFromSmarts("[n]-[O]")
+
+
+def net_charged(smi: str) -> bool:
+    """Non-circular structural QC flag: net formal charge != 0 (a pre-ionized microstate).
+    KEEPS net-neutral charge-separated groups such as nitro [N+]([O-])=O.  Identical to the
+    filter run_pka_flip_certify.net_charged applies, so the decomposition and the trained
+    flip runs are on the same records."""
+    mol = Chem.MolFromSmiles(str(smi))
+    return mol is None or Chem.GetFormalCharge(mol) != 0
 
 
 def _ring_clean(smiles: str, scaffold: str) -> bool:
@@ -183,23 +203,60 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sdf", type=Path, required=True)
     ap.add_argument("--out-json", type=Path, default=Path("results/pka_hammett/real_decomposition.json"))
+    ap.add_argument("--no-qc", action="store_true",
+                    help="skip the net-formal-charge QC and decompose the raw read "
+                         "(the pre-QC pole; the reported pole is the QC'd one)")
     args = ap.parse_args()
 
     assign = _load_builder()
     recs, n_read = load_records(args.sdf, assign)
+    recs_raw = recs
+    n_amenable_raw = len(recs)
+    if not args.no_qc:
+        recs = [r for r in recs if not net_charged(r["smiles"])]
     hi = [r for r in recs if r["bin"] == "high_F"]
     lo = [r for r in recs if r["bin"] == "low_F"]
     hi_mono = [r for r in hi if r["n_sub"] == 1]   # canonical mono-substituted Hammett series
 
     out = {
         "source": "OPERA / Mansouri 2019 pKa_QR.sdf (experimental pKa_a/pKa_b)",
+        "qc": ("none -- raw read, PRE-QC pole; the reported pole is the QC'd one in "
+               "real_decomposition.json" if args.no_qc else
+               "net_formal_charge!=0 dropped (uniform, closure-independent)"),
         "n_molecules_read": n_read,
-        "n_hammett_amenable": len(recs),
+        "n_hammett_amenable": n_amenable_raw,
+        "n_after_qc": len(recs),
         "high_F_mono": decompose(hi_mono, "high_F mono-substituted (canonical LFER)"),
         "high_F": decompose(hi, "high_F (meta/para, incl. poly-sub)"),
         "low_F": decompose(lo, "low_F (ortho / unknown)"),
         "all": decompose(recs, "all"),
     }
+    # The QC is closure-independent, but the clean pole's floor is not merely SMALLER without
+    # it -- it changes SIGN, and it is the negative sign that carries "the closure is well
+    # specified here".  A reader of this deposit must not have to infer that, so both readings
+    # of the same quantity are recorded side by side.
+    if not args.no_qc:
+        pre = decompose([r for r in recs_raw if r["bin"] == "high_F"], "high_F, PRE-QC")
+        post = out["high_F"]
+        out["_qc_sensitivity"] = {
+            "what": (
+                "The sign of the clean pole's floor MSE - B_insuff^up turns on the QC. "
+                f"PRE-QC: n={pre['n']}, RMSE {pre['rmse_true_input']}, floor "
+                f"{pre['bclosure_lb_conv_indep']:+}. POST-QC (reported): n={post['n']}, RMSE "
+                f"{post['rmse_true_input']}, floor {post['bclosure_lb_conv_indep']:+}. Only the "
+                "post-QC sign supports 'the closure is well specified on this pole'; a positive "
+                "floor would instead establish B_closure > 0. The filter drops "
+                f"{n_amenable_raw - len(recs)} of the {n_amenable_raw} Hammett-amenable records "
+                "for net formal charge != 0, keeping net-neutral charge-separated groups such as "
+                "nitro; among those it removes is a dimethylaminopyridinium carrying pKa -7.78 "
+                "against a closure value of 10.15. It reads structure only and never the residual "
+                "to the closure, but it is what makes the clean pole clean and the reported sign "
+                "depends on it. The full pre-QC decomposition is deposited in "
+                "real_decomposition_fetchedSDF.json."
+            ),
+            "pre_qc_high_F": pre,
+        }
+
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
     args.out_json.write_text(json.dumps(out, indent=2))
 
@@ -207,8 +264,8 @@ def main():
         return (f"n={d['n']:4d}  MSE={d.get('mse_true_input')}  RMSE={d.get('rmse_true_input')}  "
                 f"B_insuff^up={d.get('binsuff_within_scaffold_up')}  "
                 f"B_clos_lb={d.get('bclosure_lb_conv_indep')}")
-    print(f"read {n_read} molecules -> {len(recs)} Hammett-amenable "
-          f"({len(hi)} high_F [{len(hi_mono)} mono], {len(lo)} low_F)")
+    print(f"read {n_read} molecules -> {n_amenable_raw} Hammett-amenable -> {len(recs)} after QC "
+          f"[{out['qc']}] ({len(hi)} high_F [{len(hi_mono)} mono], {len(lo)} low_F)")
     for d in (out["high_F_mono"], out["high_F"], out["low_F"], out["all"]):
         print(f"  {d['label'][:38]:38s} {_fmt(d)}")
     print(f"  per-scaffold (high_F mono): {out['high_F_mono'].get('per_scaffold')}")

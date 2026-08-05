@@ -36,9 +36,11 @@ network's own prediction of it; a \emph{$\sigma$-oracle} feeds $\zstar$ where $\
 \S\ref{sec:pka-main} $\zstar$ is a pair and only one of its coordinates is learned \\
 grounding & two opposite operations on one reference database: \emph{supervising} $\hat z$ against
 it during training, and \emph{substituting} $\zstar$ for $\hat z$ at evaluation \\
-$\Bclos$, $\Binsuf$ & the closure's own error, and what its inputs cannot resolve,
-Eq.~\eqref{eq:decomp}; $\Bclos$ is bounded below and $\Binsuf$ above, so the comparison is
-one-sided \\
+$\Bclos$, $\Binsuf$ & the error of the closure \emph{as deployed}---the fixed map read at the
+tabulated intermediate, so a property of the map and of the procedure that produced that
+intermediate \emph{together}, and not of the kernel alone (\S\ref{sec:badclosure})---and what its
+inputs cannot resolve, Eq.~\eqref{eq:decomp}; $\Bclos$ is bounded below and $\Binsuf$ above, so the
+comparison is one-sided \\
 margin & $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$; positive establishes $\Bclos>\Binsuf$, non-positive
 is failure to separate and licenses nothing \\
 \Ggap & the grounding gap $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, renamed from $\Gamma$ so as not to
@@ -56,8 +58,8 @@ measurement; the other $2495$ carry a melting point only and are scorable in no 
 broad IDAC set & $477$ IDAC\,$\cap$\,UD rows, $185$ pairs, all temperatures, UD profiles \\
 VT-2005-matched set & $60$ pairs at $298$\,K carrying a VT-2005 profile on both sides \\
 $\sigma$ & alone, the screening-charge-density profile; $\sigma(\cdot)$ with an argument, the
-generated $\sigma$-algebra; \hammett, the Hammett substituent constant, assigned by the rule stated
-in \S\ref{sec:pka-main};
+generated $\sigma$-algebra; \hammett, the Hammett substituent constant, $\hammett^\star$ its
+tabulated value under the rule of \S\ref{sec:pka-main} and $\hat\sigma_{\mathrm H}$ the network's;
 $\sigma_\eta$, experimental label noise \\
 \bottomrule
 \end{tabular}}

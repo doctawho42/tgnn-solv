@@ -22,7 +22,15 @@ against the reference VT-2005 profile molecule by molecule ($n{=}44$).
 \paragraph{The drift under fine-tuning.} The comparison is within a single grounded model,
 checkpointed before and after solubility fine-tuning (the $\sigma$ head unfrozen), so architecture
 and initialisation are held fixed and only the objective differs; it is repeated over \emph{three
-seeds} and reported mean$\pm$sd. Under $\sigma$ supervision the head reproduces the reference profile
+seeds} and reported mean$\pm$sd. Those three runs are not the arms that produce the paradox: they
+are a separate set, trained with the $\sigma$ head left unfrozen through fine-tuning, where the
+four COSMO-SAC arms of \S\ref{sec:paradox} hold the head from P2 onward
+(Table~\ref{tab:si-arms}). The freeze holds the head and not the encoder feeding it, so those
+arms' profiles are not pinned at their warm-up value either; how far \emph{their} latent drifted
+is not measured, and the deposited per-arm predictions carry no $\sigma$-profile, so it cannot be
+recovered from them. What follows is therefore measured on runs of its own and is not established
+of the checkpoints whose paradox it is offered to explain.
+Under $\sigma$ supervision the head reproduces the reference profile
 to within $36\pm1\%$, so the intermediate \emph{can} carry the physical shape, though only as an
 in-sample fit: all $44$ probe molecules lie inside the $\sigma$-grounding pool. Solubility
 fine-tuning then drives the profile $41\pm3\%$ off the grounded one, for a total departure from the

@@ -24,6 +24,9 @@ cannot be compared to.
           committed benchmark bundles in results/external_baselines/.  These are on
           a BY-SOLUTE split (test_solute.csv), not the scaffold split, so they bound
           the task's difficulty on this corpus and do not rank against Tier 1.
+          The two FastSolv rows read the `_singlescale' bundles: the `_contract_v2'
+          ones they used to read were scored through a doubly standardising path and
+          are withdrawn, not printed.  See `fastsolv_rows_were_rescored' below.
 
   TIER 3  the same two model families AS PUBLISHED, on their own test sets and in
           their own units.  Different corpora, different splits, log10 S in mol/L.
@@ -47,7 +50,7 @@ conversion so that an arm which saturates keeps its row with a large finite erro
 An earlier version of this script converted predictions unclipped and let _metrics
 drop the resulting +inf rows; that dropped 12-195 rows per arm per seed, all of
 them each arm's worst predictions, and none at all from the DirectGNN control,
-which never saturates.  It lowered the sigma-oracle arm by 0.21 log10 S, the
+which never saturates.  It lowered the sigma-oracle arm by 0.26 log10 S, the
 COSMO-SAC-grounded arm by 0.31, the NRTL arm by 0.48, and the control by nothing;
 `defect_unclipped_arm_dependent' in the emitted summary carries all four.  Both n
 values are now printed for every row.
@@ -224,12 +227,15 @@ def _e5_module():
 
 
 _KEY = ["solute_smiles", "solvent_smiles", "T"]
-# Arms that define the intersection lock.  `oracle` is deliberately NOT among them:
-# results/e5_sigma_grounding/seed_44/oracle_predictions.csv holds 295 rows, not the
-# 8103 every other arm/seed file holds, so locking on it would collapse seed 44 to
-# n=295 and silently change every number.  See the `deposit_defects` block in the
-# emitted summary.  Locking on the five intact arms reproduces the paper's per-seed
-# MAEs exactly, because at every seed each arm's eligible row set is the same 5608.
+# Arms that define the intersection lock.  `oracle` is deliberately NOT among them,
+# and was not when run_e5_comparison.py built the lock either, so keeping it out is
+# what reproduces the paper's 5608.  (Until 2026-08-05 there was a second reason:
+# results/e5_sigma_grounding/seed_44/oracle_predictions.csv had been deposited at 295
+# rows instead of 8103, so locking on it would have collapsed seed 44 to n=295.  That
+# file has been repaired from the compute volume and all 22 per-row files are now full
+# length; `deposit_defects` in the emitted summary is empty.)  Locking on the five
+# intact arms reproduces the paper's per-seed MAEs exactly, because at every seed each
+# arm's eligible row set is the same 5608.
 LOCK_ARMS = ("nrtl", "directgnn", "ungrounded", "grounded_a", "grounded_b")
 ALL_ARMS = LOCK_ARMS + ("oracle",)
 
@@ -480,7 +486,7 @@ def tier1() -> tuple[dict, pd.DataFrame]:
             "log10 S column than in MAE. It is positive for nrtl and grounded_a at every "
             "clip and at every seed; for the oracle it is NEGATIVE at the three tightest "
             "clips in the seed average, at all seven clips at seed 42, and at the two "
-            "tightest at seed 43. Note the functionals differ (RMSE against MAE)."
+            "tightest at seeds 43 and 44. Note the functionals differ (RMSE against MAE)."
         ),
         "seed_averaged": excess_mean,
         "per_seed": excess_seed,
@@ -493,15 +499,23 @@ def tier2() -> dict:
     """External models re-run in this work, read from the committed bundles."""
     rows = {}
     specs = [
-        ("fastsolv_retrained_here", "solute/fastsolv_contract_v2/summary.csv", "fastsolv", None),
+        # RE-SCORED (2026-08-05).  The `_contract_v2' bundles for FastSolv were written
+        # through a prediction path that standardised the model's inputs twice; the two
+        # rows below now read the `_singlescale' bundles, which forward the SAME
+        # checkpoints on the SAME rows with the one scaling the model was trained under
+        # (scripts/analysis/rescore_fastsolv_single_scaling.py).  That script also re-runs
+        # the doubly-scaled path as a control and reproduces the old bundles exactly, which
+        # is what establishes that only the scaling changed.
+        ("fastsolv_retrained_here", "solute/fastsolv_contract_v2_singlescale/summary.csv",
+         "fastsolv", None),
         ("solprop_cycle_recalibrated", "solute/solprop_calibrated_contract_v2/summary.csv",
          "solprop_calibrated", None),
         ("solprop_cycle_zero_shot", "solute/solprop_calibrated_contract_v2/summary.csv",
          "solprop_zero_shot", None),
         ("solprop_encoder_retrained_no_cycle", "solute/solprop_native_contract_v2/summary.csv",
          None, "native"),
-        ("fastsolv_retrained_here_pair_random", "pair_random/fastsolv_contract_v2/summary.csv",
-         "fastsolv", None),
+        ("fastsolv_retrained_here_pair_random",
+         "pair_random/fastsolv_contract_v2_singlescale/summary.csv", "fastsolv", None),
         ("solprop_encoder_retrained_no_cycle_pair_random",
          "pair_random/solprop_native_contract_v2/summary.csv", None, "native"),
     ]
@@ -739,13 +753,16 @@ def main() -> None:
         "deposit_defects": {
             "found": t1["_deposit_defects"],
             "detail": (
-                "results/e5_sigma_grounding/seed_44/oracle_predictions.csv holds 295 rows "
-                "where every other arm/seed file holds 8103, so the sigma-oracle arm cannot "
-                "be recomputed at seed 44 from the committed artifacts. The committed "
-                "seed_44/comparison.json records oracle MAE 2.242 on n=5608, i.e. it was "
-                "produced from a longer file that is no longer deposited. The three-seed "
-                "oracle bar of the paper's Fig. 2 therefore does not reproduce from the "
-                "deposit; the other five arms do, exactly."
+                "Empty is the expected state since 2026-08-05. Before then this listed "
+                "results/e5_sigma_grounding/seed_44/oracle_predictions.csv, deposited at "
+                "295 rows where every other arm/seed file holds 8103, which put the "
+                "sigma-oracle arm out of reach at seed 44 and left the paper's Fig. 2 "
+                "oracle bar unreproducible from the deposit. The complete file was "
+                "recovered from the compute volume: it is a byte-prefix relationship (the "
+                "295-row file is the first 198190 bytes of it) and it reproduces every "
+                "field of seed_44/oracle_predictions.summary.json exactly, including MAE "
+                "2.2419879234438436 on n=5608. All six arms now reproduce at all three "
+                "seeds. A non-empty `found' means a per-row file is short again."
             ),
         },
         "comparability": {
@@ -787,7 +804,8 @@ def main() -> None:
                 "The clip is a chosen constant and three of the four tier-1 cells in the "
                 "log10 S column are a function of it: see `_clip_sensitivity'. Over "
                 "x2 = 1-1e-3 .. 1-1e-10 the control does not move at all while the physics "
-                "arms move by 0.6-0.85. TWO readings survive the whole span, and separately "
+                "arms move by 0.41 (sigma-oracle), 0.56 (COSMO-SAC-grounded) and 0.84 "
+                "(NRTL). TWO readings survive the whole span, and separately "
                 "at each seed for the arms that seed deposits: the control is below every "
                 "physics arm; every physics arm is above every published leader. FOUR do "
                 "not, and each of the four fails on the SEED axis as well as the clip one. "
@@ -826,27 +844,33 @@ def main() -> None:
                 "`_clip_sensitivity' (by_clip, by_clip_per_seed) and "
                 "`_trails_control_by_more_in_logS_than_in_MAE' carry the numbers."
             ),
-            "fastsolv_rows_are_defective": (
-                "DEFECT, disclosed in the article's Table 5 footnote b and its SI. The two "
-                "FastSolv rows are read from bundles whose prediction path standardises the "
-                "model's inputs TWICE: scripts/run_fastsolv.py::_predict_with_model scales "
-                "solute, solvent and temperature with the checkpoint's own buffers and then "
-                "calls trainer.predict, whose fastsolv._classes._fastsolv.predict_step "
-                "scales the same tensors again. The network's sigmoid input activation then "
-                "saturates on the twice-scaled temperature (it arrives at about -19.3 "
-                "instead of about -1.5, sigmoid ~ 4e-9), and the deposited predictions are "
-                "EXACTLY constant in temperature for all 1102 by-solute and 1149 "
-                "random-pair (solute, solvent) pairs spanning more than 5 K, where the "
-                "measurements move a median 0.62 log10 S over a median 40 K. Training and "
-                "validation steps do not re-scale, so the fitted model is not at fault: "
-                "forwarding the same checkpoint on singly-scaled inputs restores a "
-                "temperature response (span 0.135 against a measured 0.179 on a sample "
-                "pair) and tracks the deposit far worse (Pearson 0.85) than the "
-                "doubly-scaled path does (0.99). Both FastSolv rows are therefore a FLOOR "
-                "on that model, not a rendering of it, and the by-solute/random-pair "
-                "contrast in those rows is a symptom and not a measurement of the split. "
-                "The SolProp rows use a different path and do carry a temperature response "
-                "(median predicted span 1.31 ln x2 against a measured 1.35)."
+            "fastsolv_rows_were_rescored": (
+                "REPAIRED 2026-08-05. The two FastSolv rows used to be read from the "
+                "`_contract_v2' bundles, whose prediction path standardises the model's "
+                "inputs TWICE: scripts/run_fastsolv.py::_predict_with_model scales solute, "
+                "solvent and temperature with the checkpoint's own buffers and then calls "
+                "trainer.predict, whose fastsolv._classes._fastsolv.predict_step scales the "
+                "same tensors again. The network's sigmoid input activation saturated on "
+                "the twice-scaled temperature (it arrived at about -19.3 instead of about "
+                "-1.5, sigmoid ~ 4e-9), and those predictions were EXACTLY constant in "
+                "temperature for all 1102 by-solute and 1149 random-pair (solute, solvent) "
+                "pairs spanning more than 5 K, where the measurements move a median 0.62 "
+                "log10 S over a median 40 K. Training and validation do not re-scale, so "
+                "the fitted checkpoints were never at fault and the repair is "
+                "inference-only: scripts/analysis/rescore_fastsolv_single_scaling.py "
+                "forwards the same two checkpoints on the same rows with a single scaling, "
+                "and the rows above now read those `_singlescale' bundles. The same script "
+                "re-runs the doubly-scaled path as a control and reproduces the withdrawn "
+                "bundles exactly (by-solute MAE 1.940994, RMSE log10 S 1.096639, n 10287; "
+                "random-pair 2.910154, 1.544042, n 10696), which is what establishes that "
+                "only the scaling changed. The repair moves by-solute MAE ln x2 1.94 -> "
+                "1.44 and random-pair 2.91 -> 1.02, restores a temperature response (median "
+                "predicted span 0.500 and 0.631 log10 S against a measured 0.623), and "
+                "collapses the mean log10 S offset the double scaling left (-0.362 -> "
+                "-0.048 by solute, -1.117 -> -0.024 on random pairs). The by-solute/"
+                "random-pair contrast now runs the way the split predicts. The SolProp rows "
+                "always used a different path and carried a temperature response (median "
+                "predicted span 1.31 ln x2 against a measured 1.35)."
             ),
             "hyperparameter_confound": (
                 "the physics and control arms were tuned separately, so the tier-1 gap is "
