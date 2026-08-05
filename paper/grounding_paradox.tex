@@ -748,7 +748,12 @@ here, since that grid takes the aggregate from $+0.01$ to $+0.96$---the stratum 
 $56$ row-unit cells and all $40$ the pair unit defines, the deployed unbiased column running
 $+1.06$ to $+2.19$, and the deletion test passes at every one of the $36$ cells where it can be run
 (Table~\ref{tab:grid-glycol}). The occupancy rule that fixed the eight-bin cell would ask for $23$
-bins at $n{=}182$, so the cell the map reads is the coarser and the lower of the two.
+bins at $n{=}182$, so the cell the map reads is the coarser and the lower of the two. That sweep
+varies the coarsening's own settings and not the family of estimator: a pre-declared cross-fitted
+regressor, tested after this analysis was fixed, returns a \emph{looser} bound and moves this
+stratum to $+1.76$, leaving it the one admissible positive row set but with fewer cells around it
+(\S\ref{sec:si-crossfit}). What the sweep establishes is therefore robustness within the
+coarsening, not across estimators.
 
 What the row set does not have is a multiplicity null it clears, and this belongs beside the
 finding rather than in a limitation. It is by construction the survivor of a $59$-fold search.
