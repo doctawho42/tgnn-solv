@@ -470,6 +470,20 @@ def _process_bigsoldb_raw(
     result = result[(result["ln_x2"] > -30) & (result["ln_x2"] <= 0)]
 
     # --- Dedup ---
+    # KNOWN DEFECT, documented rather than repaired on 2026-08-06. `keep="first"` makes the surviving
+    # label an arbitrary member of its replicate group: across the 3,556 systems BigSolDB measures
+    # more than once, the retained row is the largest 54.2% of the time and the smallest 43.8%.
+    # Worse, the corpus contains transposed solvent columns -- 10.1021/je4000718 stores naringenin at
+    # ethanol 9.3e-7 and water 1.02e-2 monotonically across all nine temperatures, where an
+    # independent source gives water 1.8e-7 -- so an arbitrary pick can admit a label four orders of
+    # magnitude out. The same signature appears in 10.1021/je5001654 (chrysin).
+    #
+    # NOT repaired here because changing what survives changes which rows exist, and the seeded
+    # solute_scaffold split is not stable across pipeline versions: regenerating orphans every
+    # checkpoint and every published metric. The exposure was measured before deciding: the two
+    # defective publications contribute 178 rows, all of them to TRAIN (0.16% of 111,724) and none to
+    # val or test, so no reported number can move. A repair belongs with the next deliberate split
+    # regeneration, and should take the replicate median rather than the first row.
     result = result.drop_duplicates(
         subset=["solute_smiles", "solvent_smiles", "temperature"],
         keep="first",
