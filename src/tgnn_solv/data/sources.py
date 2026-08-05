@@ -307,6 +307,122 @@ def _load_bigsoldb_roomtemp_density_map() -> dict[str, float]:
     }
 
 
+# Publications whose solvent columns are transposed. Both were identified from the corpus alone, by
+# the homologous-series screen below, and then confirmed against an independent source: 10.1021/
+# je4000718 stores naringenin at water 8.6e-3 to 1.0e-2 mole fraction and ethanol 4.0e-7 to 4.0e-6,
+# monotonically across all nine temperatures, where naringenin's aqueous solubility is ~1e-7 and its
+# ethanol solubility sits between methanol's and propanol's. 10.1021/je5001654 carries the same
+# signature for chrysin. Quarantined by name so the screen's threshold does not have to carry them.
+QUARANTINED_SOURCES: tuple[str, ...] = (
+    "10.1021/je4000718",
+    "10.1021/je5001654",
+)
+
+# The n-alcohol homologous series, in order. Solubility varies smoothly along it -- adding one CH2
+# changes the solvent's polarity by a small, monotone step -- so an interior member cannot sit far
+# below both of its neighbours. Water is deliberately NOT in this list: it is not a member of the
+# series and for a lipophilic solute it is legitimately orders below all of them.
+_ALCOHOL_SERIES: tuple[str, ...] = (
+    "CO",          # methanol
+    "CCO",         # ethanol
+    "CCCO",        # 1-propanol
+    "CCCCO",       # 1-butanol
+    "CCCCCO",      # 1-pentanol
+    "CCCCCCCCO",   # 1-octanol
+)
+
+# An interior member this far below BOTH neighbours, in ln x2, is flagged. The defect it is built to
+# catch shows a 9.2 ln gap; a real homologous-series step is well under 1. Three ln units is roughly
+# 20x in mole fraction and leaves the screen a wide margin against ordinary scatter.
+_SERIES_INVERSION_LN: float = 3.0
+
+
+def _quarantine_bad_sources(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop rows from publications known to store transposed solvent columns."""
+    col = "source_raw" if "source_raw" in df.columns else None
+    if col is None or not QUARANTINED_SOURCES:
+        return df
+    src = df[col].astype(str)
+    bad = pd.Series(False, index=df.index)
+    for doi in QUARANTINED_SOURCES:
+        bad |= src.str.contains(doi, regex=False, na=False)
+    return df[~bad]
+
+
+def _aggregate_replicates(df: pd.DataFrame) -> pd.DataFrame:
+    """Collapse replicate (solute, solvent, T) rows to the median ln x2 over sources.
+
+    The median rather than the first row, and in log space rather than in mole fraction: solubility
+    here spans thirty orders of magnitude, so an arithmetic mean is the largest replicate under
+    another name, while the median of ln x2 is the geometric median of the solubility itself.
+    """
+    key = ["solute_smiles", "solvent_smiles", "temperature"]
+    if df.empty or not set(key).issubset(df.columns):
+        return df
+    med = df.groupby(key, sort=False)["ln_x2"].transform("median")
+    # Keep the row closest to the group's median so every other column stays a real, self-consistent
+    # record rather than a blend of provenances; then write the median itself into ln_x2.
+    order = (df["ln_x2"] - med).abs()
+    keep = order.groupby([df[c] for c in key], sort=False).idxmin()
+    out = df.loc[keep].copy()
+    out["ln_x2"] = med.loc[keep].to_numpy()
+    return out.sort_index()
+
+
+def _screen_alcohol_series(
+    df: pd.DataFrame, *, threshold_ln: float = _SERIES_INVERSION_LN
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Drop (solute, solvent) cells whose value inverts the n-alcohol homologous series.
+
+    For each solute, the series members it carries are compared in order. An INTERIOR member sitting
+    more than ``threshold_ln`` below both of its immediate present neighbours is chemically
+    impossible and is removed, together with every row of that solute in that solvent. Returns the
+    screened frame and a report of what was removed.
+    """
+    empty = pd.DataFrame(columns=["solute_smiles", "solvent_smiles", "gap_ln", "n_rows"])
+    if df.empty or "ln_x2" not in df.columns:
+        return df, empty
+
+    rank = {smi: i for i, smi in enumerate(_ALCOHOL_SERIES)}
+    sub = df[df["solvent_smiles"].isin(rank)]
+    if sub.empty:
+        return df, empty
+
+    per_cell = sub.groupby(["solute_smiles", "solvent_smiles"])["ln_x2"].median()
+    flagged: list[dict[str, object]] = []
+    for solute, cells in per_cell.groupby(level=0):
+        present = sorted(
+            ((rank[s], s, v) for (_, s), v in cells.items()), key=lambda t: t[0]
+        )
+        if len(present) < 3:
+            continue
+        for i in range(1, len(present) - 1):
+            _, smi, val = present[i]
+            gap = min(present[i - 1][2], present[i + 1][2]) - val
+            if gap > threshold_ln:
+                flagged.append(
+                    {"solute_smiles": solute, "solvent_smiles": smi, "gap_ln": float(gap)}
+                )
+    if not flagged:
+        return df, empty
+
+    report = pd.DataFrame(flagged)
+    bad_pairs = set(zip(report["solute_smiles"], report["solvent_smiles"]))
+    mask = pd.Series(
+        list(zip(df["solute_smiles"], df["solvent_smiles"])), index=df.index
+    ).isin(bad_pairs)
+    report["n_rows"] = report.apply(
+        lambda r: int(
+            (
+                (df["solute_smiles"] == r["solute_smiles"])
+                & (df["solvent_smiles"] == r["solvent_smiles"])
+            ).sum()
+        ),
+        axis=1,
+    )
+    return df[~mask], report
+
+
 def load_bigsoldb(*, preserve_source_detail: bool = False) -> pd.DataFrame:
     """
     Load BigSolDBv2.1 solubility database.
@@ -469,25 +585,26 @@ def _process_bigsoldb_raw(
     # --- QC ---
     result = result[(result["ln_x2"] > -30) & (result["ln_x2"] <= 0)]
 
-    # --- Dedup ---
-    # KNOWN DEFECT, documented rather than repaired on 2026-08-06. `keep="first"` makes the surviving
-    # label an arbitrary member of its replicate group: across the 3,556 systems BigSolDB measures
-    # more than once, the retained row is the largest 54.2% of the time and the smallest 43.8%.
-    # Worse, the corpus contains transposed solvent columns -- 10.1021/je4000718 stores naringenin at
-    # ethanol 9.3e-7 and water 1.02e-2 monotonically across all nine temperatures, where an
-    # independent source gives water 1.8e-7 -- so an arbitrary pick can admit a label four orders of
-    # magnitude out. The same signature appears in 10.1021/je5001654 (chrysin).
+    # --- Quarantine of sources with transposed solvent columns ---
+    result = _quarantine_bad_sources(result)
+
+    # --- Replicate aggregation ---
+    # Was `drop_duplicates(keep="first")`, which made the surviving label an arbitrary member of its
+    # replicate group: over the 3,556 systems BigSolDB measures more than once it kept the largest
+    # value 54.2% of the time and the smallest 43.8%. The median over sources is the consensus and
+    # is robust to exactly the failure the quarantine above catches by name -- one transposed source
+    # among three cannot move it, whereas "first" hands it the label outright.
     #
-    # NOT repaired here because changing what survives changes which rows exist, and the seeded
-    # solute_scaffold split is not stable across pipeline versions: regenerating orphans every
-    # checkpoint and every published metric. The exposure was measured before deciding: the two
-    # defective publications contribute 178 rows, all of them to TRAIN (0.16% of 111,724) and none to
-    # val or test, so no reported number can move. A repair belongs with the next deliberate split
-    # regeneration, and should take the replicate median rather than the first row.
-    result = result.drop_duplicates(
-        subset=["solute_smiles", "solvent_smiles", "temperature"],
-        keep="first",
-    )
+    # The median is taken in ln x2, i.e. of the log-solubility, so it is the geometric median in mole
+    # fraction. That is the right space: solubility spans thirty orders of magnitude here and an
+    # arithmetic mean would be the largest replicate in all but name.
+    result = _aggregate_replicates(result)
+
+    # --- Physical-consistency screen ---
+    # Catches the same defect structurally rather than by DOI, so a source nobody has audited cannot
+    # reintroduce it. Flags interior members of the n-alcohol homologous series that sit far below
+    # both neighbours, which no solute does.
+    result, _screen_report = _screen_alcohol_series(result)
 
     result["source_family"] = "BigSolDBv2.1"
     if preserve_source_detail and "source_raw" in result.columns:
