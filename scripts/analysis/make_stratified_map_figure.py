@@ -404,10 +404,14 @@ def draw(rows: list[dict], out_dir: Path, stem: str) -> list[str]:
           # the dashed bar in (a) and the blank row in (b) are the same fact
           Patch(facecolor="white", edgecolor=GRAY, linewidth=0.7,
                 linestyle=(0, (2.2, 1.4)), label="no bound at this $n$")]
+    # NO VERDICT WORD IN THE KEY, 2026-08-05 (round 3, referee 1, must-fix).  These two entries
+    # used to read "established: admissible, margin +" and "admissible, not established".  The
+    # marker states the two conditions the rule distinguishes; "established" asserts a status the
+    # multiplicity null of Sec. S3.3 declines to give the passing row set.  Do not restore it.
     kB = [Line2D([], [], ls="", marker="o", ms=4.4, mfc=SALMON, mec=SALMON,
-                 label="established: admissible, margin $+$"),
+                 label="admissible, margin $+$"),
           Line2D([], [], ls="", marker="s", ms=4.2, mfc=TEAL, mec=TEAL,
-                 label="admissible, not established"),
+                 label="admissible, margin not $+$"),
           Line2D([], [], ls="", marker="D", ms=3.8, mfc="white", mec=GRAY,
                  label="not admissible"),
           Line2D([], [], ls="", marker="o", ms=4.4, mfc="white", mec=SALMON,

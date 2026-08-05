@@ -775,8 +775,8 @@ cluster-bootstrap frequency that the margin is positive. Regenerates from
 for the sets taken \emph{whole}, and they are what establishes that the bin count is the analyst
 choice with the largest leverage here---the broad set's deployed margin runs from $+0.01$ to
 $+0.96$ across Table~\ref{tab:grid-rep}. Every one of the $59$ strata of \S\ref{sec:si-map} is then
-computed at the single fixed eight-bin cell, so the one row set the rule establishes was reported
-at one cell of a grid that moves. Table~\ref{tab:grid-glycol} runs the grid of
+computed at the single fixed eight-bin cell, so the one row set the rule leaves standing was
+reported at one cell of a grid that moves. Table~\ref{tab:grid-glycol} runs the grid of
 Table~\ref{tab:grid-rep} on that row set. At $n{=}182$ the eight-bin cell holds $22.75$ rows per
 bin, where the occupancy rule that fixed the cell on the $n{=}60$ set would ask for $23$ bins: the
 fixed cell is \emph{coarser} than the rule that chose it and therefore conditions on less, which
@@ -1161,8 +1161,9 @@ null is this one. Each of the $36$ solvents keeps its rows and receives the labe
 another solute's (family, role) pair, the triples moving together so that the nesting between
 granularities is preserved exactly; the stratum family is rebuilt from the permuted labels by the
 same code and put through the same rule---boundability, leave-one-publication-out in all four
-unit\,$\times$\,convention cells, positivity in all four, reduction to distinct row sets, and the
-containment filter. Preserved: the number of strata, the number of molecules per stratum, the
+unit\,$\times$\,convention cells, positivity in all four, and clause~(c) of \S\ref{sec:estimator},
+the reduction to distinct row sets together with its asymmetric residual test.
+Preserved: the number of strata, the number of molecules per stratum, the
 containment lattice, and every row's $m$, $g$, source and pair. Destroyed: the association between
 chemistry and error. Over $2000$ draws the chemical map's six admissible strata are above chance
 ($p=0.01$) and its two admissible positive row sets are not ($p=0.29$): a chemically blind
@@ -1198,6 +1199,14 @@ multiplicity\_\allowbreak null.py}.
 % that the deposited JSON carries the hypothesis alongside the result.  Do not restate the +0.35
 % as evidence: the pre-declaration fixed in advance that an inadmissible row set licenses nothing,
 % and it is printed only so that no reader has to ask what was withheld.
+% 2026-08-05, ROUND 3.  Referee 1 asked whether the emptiness of the analogue cell was already
+% visible when the docstring was staged.  It was, and the docstring says so itself -- its
+% inventory section records the zero-row count, and it exists because a test cannot be designed
+% without knowing whether its data exist.  That answer is now in the text, because the honest
+% reading of it cuts against the design: on THIS cell the pre-registration bought no protection
+% against a selective verdict, there being no verdict to be selective about.  What it did buy is
+% the rule and the row set, fixed before anything was scored, and the record of that.  Do not
+% state the verdict as a failed replication anywhere in either document.
 \emph{The out-of-sample test, declared before it was run.} A selection objection is settled by rows
 the search never saw. The only such rows this work holds are the PGL 6th-edition IDAC database
 scored by the deployed closure on VT-2005 profiles (Table~\ref{tab:closure-anchor}): $7889$ records
@@ -1215,22 +1224,80 @@ these files carry and is coarser than the broad set's DOI), and the three verdic
 confirmed, not confirmed, and not testable, the last counting as not confirmed for what the title
 may say. The verdict was \textbf{not testable, hence not confirmed}. The cell the finding is about
 does not exist there: no glycol-ether solvent carries an organic solute in that database, its
-non-aqueous half listing $88$ solvent molecules and no glycol ether. The nearest cell is $52$ rows
-of water in seven glycol-ether and polyol solvents over seven pairs, drawn $50$--$2$ from two
-compilations, so the one deletion that matters leaves two rows, the fixed cell undefined and the
+non-aqueous half listing $88$ solvent molecules and no glycol ether. That emptiness needed no
+margin to see. The geometry of the candidate row sets---how many rows exist, which solvents and
+solutes they carry, which files they come from---was established before the declaration was
+written, because a test cannot be designed without knowing whether its data exist, and the
+declaration records the zero-row count for the exact analogue cell along with the two mismatches
+of the nearest one. What the pre-registration delivered on this cell is therefore the
+unavailability of confirming data and not a replication that ran and failed; what it protected is
+the rule and the row set that would have decided the verdict had rows existed, fixed and staged
+before anything was scored. The nearest cell is $52$ rows
+of water in seven glycol-ether and polyol solvents over seven pairs, drawn $50$--$2$ from the two
+compilations of one record file, so the one deletion that matters leaves two rows, the fixed cell undefined and the
 sign untested---the same reason the rule refuses water-as-solute in sample. Its margin, which
 licenses nothing under the rule declared in advance, is $+0.35$ $[+0.28,+0.58]$, against $+2.04$ in
 sample. Of the four solvent molecules in the in-sample cell only ethylene glycol appears; the three
 oligomers carrying $141$ of its $182$ rows do not. Descriptively, and declared in advance as
-description rather than as a test, the same cell over that database's other solvent classes runs
-from $-2.53$ (water, $3074$ rows) to $+1.73$ (aliphatic hydrocarbons, $875$ rows), with $+0.67$ on
-the halogenated and $+0.60$ on the N--H protic solvents: the glycol ethers are not where this
+description rather than as a test, the same cell over that database's ten solvent classes is
+Table~\ref{tab:oos-map}, printed whole because a ranking quoted in part is a different statement:
+it runs from $-2.53$ (water, $3074$ rows, the largest stratum there) to $+1.73$ (aliphatic
+hydrocarbons, $875$ rows). The same admissibility rule admits two of the ten---the mono-alcohols,
+whose $+0.09$ carries an interval covering zero, and water at $-2.53$---so no out-of-sample class
+both passes the rule and separates the two terms, and the classes with the larger positive margins
+are ones the rule refuses. The glycol ethers are not where this
 closure fails hardest out of sample, and the instrument behaves out of sample as
 \S\ref{sec:broad} says it behaves in sample---a map, not a verdict. Artifact:
 \texttt{results/\allowbreak b\_insuff/\allowbreak glycol\_\allowbreak ether\_\allowbreak
 out\_\allowbreak of\_\allowbreak sample.json}, from \texttt{run\_\allowbreak glycol\_\allowbreak
 ether\_\allowbreak out\_\allowbreak of\_\allowbreak sample.py}, whose docstring is the
 pre-declaration in full.
+
+% OUT-OF-SAMPLE DESCRIPTIVE MAP, added 2026-08-05 (round 3, referee 3, must-fix).  The prose
+% above used to name three positive classes and the endpoints of the range; the negative half of
+% the ranking, and which classes the rule admits, existed only in the artifact.  A ranking
+% reported in part is a different statement from the ranking, and the part that was reported ran
+% in the paper's favour.  The whole of it prints here, on the same terms as the in-sample map.
+% Generated by scripts/analysis/make_oos_map_table_tex.py, which re-derives the deletion counts
+% through the run's own loso() and RAISES if any margin, interval, verdict or reason disagrees
+% with the deposited JSON.  Do not hand-edit the row file.
+\begin{table*}[tp]
+\centering
+\caption{\textbf{The out-of-sample set, class by class}: the descriptive companion to the
+pre-declared test above (item 7 of the declaration, fixed in advance as description and
+\emph{not} as a test---no verdict is read from this table and no row of it is stated as a
+finding), over every solvent class of the PGL 6th-edition set at the same headline cell as
+Table~\ref{tab:map-full}: eight equal-count bins of $g(\zstar)$, unbiased within-bin variance, row
+unit, deployed residual-only convention. Rows in descending margin; the ten classes carry all
+$7889$ records, so nothing is dropped for being small or for being negative. The manuscript's
+admissibility rule, applied here unchanged, admits two of the ten: the mono-alcohols, whose
+$+0.09$ carries a $90\%$ interval covering zero, and water, whose margin is negative. So no class
+of this set both passes the rule and separates the two terms, and the three largest positive
+margins sit on classes the rule refuses. The glycol-ether row is the nearest cell of the test
+above; the exact analogue cell---a glycol-ether solvent with an organic solute---has no rows here
+at all.}
+\label{tab:oos-map}
+{\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.7}
+\input{si_tables/oos_descriptive_rows}
+\tabnotes{\scriptsize%
+\tnk{a}\,Source labels under the provenance axis declared before the run: the record file, refined
+by the compilation label inside the two Jaubert/TDE files ($\mathrm J$ Jaubert, $\mathrm T$ NIST
+TDE, $\mathrm Y$ Yaws). \emph{WinOrg} is the water-in-organic file, \emph{OrgInW} the
+organic-in-water one, \emph{Lazzaroni} the third file, which carries no label and counts as one
+source. Six labels in all, against the broad set's fifteen source DOIs: this axis is coarser than
+the in-sample one and the test it supports is therefore weaker, which the declaration states in
+advance.\quad
+\tnk{b}\,Two-way solute\,$\times$\,solvent cluster bootstrap, $3000$ draws, drawn separately at
+each class: the glycol-ether row is the same $52$ rows as the test above and repeats its margin
+exactly, while its endpoints differ from that row's in the last digits because the draw is a
+different one.\quad
+\tnk{c}\,$n\ge40$, so eight equal-count bins hold at least five rows.\quad
+\tnk{d}\,How many of the class's leave-one-source-out deletions can be run: a deletion leaving
+fewer than $16$ rows leaves the fixed cell undefined, and a sign that cannot be checked reads as
+untested rather than as a pass.}}
+\end{table*}
 
 \emph{The leave-one-out curves.} At the headline cell under the deployed convention, baseline
 $+0.509$: leaving out \texttt{10.1021/acs.jced.7b00114} gives $+0.184$ and leaving out
@@ -1259,7 +1326,7 @@ leave-one-source-out, and the VT-2005-matched set's own curves, are in the artif
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_decomposition.pdf}
-\caption{\textbf{Where the closure binds, and where it is not established}, by solvent class and by
+\caption{\textbf{Where the closure binds, and where the two terms do not separate}, by solvent class and by
 solute role, on the broad IDAC set
 ($477$ rows, $185$ pairs, $78$ solutes, $36$ solvents, $15$ source publications). Bars, points and
 shares are at the row unit
@@ -1272,12 +1339,13 @@ publication drawn dark. This is the drawn form of the twelve cells at the report
 map itself, all $59$ strata with their sources, intervals and admissibility, is
 Tables~\ref{tab:map-full}--\ref{tab:map-xtab} below. The marker in~(b) is the
 admissibility verdict of \S\ref{sec:broad}, read off the same deposited columns the tables
-are built from. The one row set both positive and not contained in another is the glycol ethers,
-here at $P>0.95$; no other row, the aggregate included, is established. \emph{Caveat:} a hollow marker is a stratum below
+are built from. The one row set both positive and left standing by clause~(c) of the rule
+(\S\ref{sec:estimator}) is the glycol ethers,
+here at $P>0.95$; on no other row, the aggregate included, do the two terms separate. \emph{Caveat:} a hollow marker is a stratum below
 $n{=}40$---four of the
 drawn cells, with margins $+0.78$, $+0.61$, $+3.39$ and $+6.33$, none of them admissible---and
-three classes carry no bound at any $n$. The one established cell and the one admissible cell whose
-margin is not positive are both filled; panel~(c) shows how much of each cell one publication
+three classes carry no bound at any $n$. The one cell the rule leaves standing and the one
+admissible cell whose margin is not positive are both filled; panel~(c) shows how much of each cell one publication
 carries. The bars on the two axes overlap: all $37$ water-as-solute rows lie inside three solvent
 classes, which is why panel~(c)'s shares do not sum down the column
 (Table~\ref{tab:map-detail}, note~\emph{c}).}
@@ -1316,7 +1384,7 @@ a whole, over $477$ rows, $185$ pairs, $78$ solutes, $36$ solvents and $15$ sour
 the finer solvent granularity in Table~\ref{tab:map-fine} and the solute axis in
 Tables~\ref{tab:map-solute} and~\ref{tab:map-xtab}. These four tables carry all $59$, so nothing is
 dropped for being small, and each row states either what it shows or the test it fails; the article
-states the one row set the admissibility rule establishes, and which chemistry it does not.}
+states the one row set the admissibility rule leaves standing, and which chemistry it does not.}
 \label{tab:map-full}
 {\scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -1335,8 +1403,12 @@ contributing publication; the rule of \S\ref{sec:estimator} requires all four, w
 $59$ strata---three distinct row sets---satisfy.\quad
 \tnk{d}\,The condition the row is in, not a label for it. A one-source cell cannot be tested and a
 deletion leaving fewer than $16$ rows leaves the cell undefined, so both read as untested rather
-than as passes. A margin is one-sided: positive establishes $\Bclos>\Binsuf$ there, non-positive is
-failure to separate and licenses nothing (Table~\ref{tab:claims}, note~\emph{g}).}}
+than as passes. A margin is one-sided: positive puts $\Bclos>\Binsuf$ on those rows at that cell,
+non-positive is failure to separate and licenses nothing (Table~\ref{tab:claims},
+note~\emph{g}). Every row here is a cell of a $59$-fold search, and the row that passes is not
+separated from it: a chemistry-blind relabelling of the same molecules certifies at least one row
+set in $58\%$ of $2000$ draws and a margin of $+2.04$ or more in $10.1\%$
+(\S\ref{sec:si-tables}).}}
 \end{table*}
 
 \begin{table*}[tp]
@@ -1445,8 +1517,14 @@ aromatic hydrocarbons. Naming water-as-solute and the halogenated solvents as tw
 count those $18$ rows twice, and adding the aryl ethers or the coarse acceptor-only class a further
 $13$. The two positive admissible cells overlap the same way: alkane\,$\cap$\,glycol-ether is $108$
 rows over $24$ pairs and carries the whole effect ($+2.51$ on those rows), while the glycol ethers
-minus the alkanes remain admissible and the alkanes minus the glycol ethers do not. Those rows are
-counted once.
+minus the alkanes remain admissible---$74$ rows at $+1.40$ deployed and $+1.69$ full, under all
+three deletions---and the alkanes minus the glycol ethers, $21$ rows, do not, being below the
+boundability threshold at the fixed cell and returning $-0.22$ there ($-0.01$ full). That is
+clause~(c) of \S\ref{sec:estimator} run on these two cells: the glycol ethers hold the more rows and
+hold $84\%$ of the alkanes', and the alkane residual is inadmissible, so the alkane solutes are
+demoted to the glycol ethers and not the reverse. The overlap by itself decides nothing---had the
+$21$ rows carried the margin, the alkanes would have stood.
+Those rows are counted once.
 
 \paragraph{Concentration, inside the map as well as under it.} Three solvent classes holding $47\%$ of the
 rows carry $74\%$ of the squared error, the $12\%$ of rows that are acceptor-only aprotics carry
@@ -1454,7 +1532,7 @@ $0.6\%$, and three of fifteen publications carry $76\%$. A map cell can be as so
 aggregate was, so each is put through the same deletion (Tables~\ref{tab:map-full}--\ref{tab:map-xtab}).
 Eleven multi-source cells have every deletion runnable in all four cells and six keep the sign
 throughout---the admissible ones. What singles the glycol ethers out among them is positivity and
-not being another admissible row set restated, not a deletion nobody else survives. On the halogenated solvents and the mono-alcohols only one of the two deletions can be run
+clause~(c), not a deletion nobody else survives. On the halogenated solvents and the mono-alcohols only one of the two deletions can be run
 at all---in both, the one that cannot is the one removing the dominant source---and it leaves
 $+5.84$ and $+1.95$, so those two cells are unverified rather than shown to fail. At the level of the
 individual pair the broad set is stable, all $185$ leave-one-pair-out margins falling in
@@ -1541,8 +1619,8 @@ promoted because all $67$ multi-row pairs draw their rows from a single publicat
 between-laboratory spread (\S\ref{sec:broad}).
 
 \paragraph{Whether the closure defect is correctable: within a solvent, not across one.} Where
-$\Bclos$ dominates---on this set, the one row set of \S\ref{sec:broad} that is
-established---the ceiling is in the map \emph{as deployed}, kernel and computed profile together
+$\Bclos$ dominates---on this set, the one row set of \S\ref{sec:broad} the rule leaves
+standing---the ceiling is in the map \emph{as deployed}, kernel and computed profile together
 (\S\ref{sec:decomp}); that does not say the composite is \emph{fixably} wrong.
 We tested this with a small structure-preserving residual on the fixed COSMO-SAC exchange-energy
 kernel ($\Delta=B\,\mathrm{diag}(a)\,B^{\!\top}$ over the $\sigma$-grid, symmetric,
@@ -1584,7 +1662,7 @@ solvents, $84\%$ once the two doubted amine/methanol pairs are deleted, and the 
 solvents are near-exact. That localisation places $\Bclos$ on the chemistry COSMO-SAC-2002's
 single-parameter hydrogen-bonding term governs. It does not place it in the kernel rather than in
 the profile: those solvents' reference profiles are single gas-phase conformers as well, and the
-glycol ethers---the one established stratum, and the class the cascade above names
+glycol ethers---the one stratum the rule leaves standing, and the class the cascade above names
 conformer-dependent---are where that displacement is expected to be largest, so a displaced
 reference would load onto the rows that carry the error. Neither set separates the two
 (\S\ref{sec:si-repro}).

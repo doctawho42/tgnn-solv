@@ -54,13 +54,24 @@ condition each row is in: what the numbers show, or which test the row fails and
 how.  The computed distinctions below still decide WHICH sentence is printed;
 what changed is that the sentence says the thing rather than naming it.
 
+NO BOLD ON THE PASSING ROW, 2026-08-05 (round 3, referee 1, must-fix).  That
+cell used to print its condition in \textbf, which reads as "this is the
+finding" in a table whose other rows carry no null either.  The bold is retired:
+the row set the rule leaves standing is the survivor of a 59-fold search that
+the map's own chemistry-blind null does not separate from chance, and the null
+is now stated in note (d) of the first map table, whose notes the other map
+tables adopt.  Do not restore the bold here or the phrase "the one established
+finding" in the article.
+
     positive, robust and not a restatement   "the closure's own error exceeds
       of a larger row set                     the bound on its inputs; the sign
                                               holds when any one publication is
                                               deleted"
     positive and robust, but most of its     "N% of these rows are the X's and
       rows belong to a larger such set        the M outside give <margin>, so
-                                              this is those rows again"
+      and its margin does not stand           this margin does not stand outside
+      outside it                              the X's: demoted to them by
+                                              clause (c)"
     robust but the margin is not positive    "the margin is not positive, so the
                                               two terms are not separated here;
                                               a bound from above cannot show the
@@ -344,8 +355,8 @@ def main() -> None:
         if k in admissible:
             skip = None
             if k in established:
-                body = ("\\textbf{the closure's own error exceeds the bound on its "
-                        "inputs}, and the sign holds when any one publication is deleted")
+                body = ("the closure's own error exceeds the bound on its inputs, and the "
+                        "sign holds when any one publication is deleted")
             elif k in positive:
                 b = restatement_of(k)
                 skip = head_label(b[1])
@@ -353,8 +364,8 @@ def main() -> None:
                 outside = complement[(k, b)][0]
                 body = (f"the sign holds under every deletion, but ${100 * shared:.0f}\\%$ "
                         f"of these rows are the {skip}s' and the ${outside['n']}$ outside "
-                        f"give {fmt_signed(str(outside['margin']))}: these are those rows "
-                        "again")
+                        f"give {fmt_signed(str(outside['margin']))}, so this margin does not "
+                        f"stand outside the {skip}s: demoted to them by clause~(c)")
             else:
                 body = ("the sign holds under every deletion, but the margin is not "
                         "positive, so the two terms are not separated here---a bound from "

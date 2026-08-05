@@ -92,19 +92,19 @@
 %     the same molecules certifies at least one row set in 58% of 2000 draws and returns a
 %     certified margin of +2.04 or more in 10.1% -- so the outcome the clause asserts as a fact
 %     about chemistry is one a blind search returns more often than not.  And the pre-declared
-%     out-of-sample test (Sec. 3.2.1) did not confirm it: the only out-of-sample IDAC set that
+%     out-of-sample test (Sec. 3.2.1) returned NOT TESTABLE: the only out-of-sample IDAC set that
 %     exists carries no glycol-ether solvent with an organic solute at all, and its nearest cell
 %     is inadmissible under the paper's own rule.  A title cannot carry "survivor of a 59-fold
-%     search", so the localisation leaves the title and lives in Sec. 3.2.1 with its null and its
-%     failed replication attached.  Do not restore it if the abstract prints the 58%: the
-%     abstract now prints it, and the clause is still not earned.
+%     search", so the localisation leaves the title and lives in Sec. 3.2.1 with its null and the
+%     absence of any confirming data attached.  Do not restore it if the abstract prints the 58%:
+%     the abstract now prints it, and the clause is still not earned.
 %
 % WHAT THE SECOND CLAUSE SAYS NOW, AND WHY IT IS EARNED.  That the decomposition's OUTPUT is a
 % map over chemical strata rather than one verdict is the finding the multiplicity null does not
 % touch -- it is the reason an aggregate margin is a composition statistic (Sec. 3.2, and the
 % random-partition null in Sec. S3.1: observed MSE range 2.163 against a null median of 0.405,
-% no draw reaching it, while the bound's range is at chance).  It is also the claim the failed
-% replication SUPPORTS rather than damages: the out-of-sample set's classes run from -2.53 to
+% no draw reaching it, while the bound's range is at chance).  It is also the claim the
+% out-of-sample set SUPPORTS rather than damages: that set's classes run from -2.53 to
 % +1.73 at the same cell, which is the map behaving as a map.  The clause keeps "on Activity
 % Data": without it a reader takes the decomposition to have been measured on the solubility
 % rows, the cross-regime conflation limitation (i) exists to prevent.  It says "a Deployed
@@ -161,7 +161,10 @@ model misspecification, representation probing}
 \end{tocentry}
 
 \maketitle
-% ABSTRACT: 250 words is the ceiling and this one is at it.  Every assertion is scoped by
+% ABSTRACT: 250 words is the ceiling and this one is UNDER it, at 246 under the rule stated at the
+% foot of this block, and at 250 under the harshest rule any referee applied.  Re-count with
+% scripts/analysis/wc_abstract.py after ANY edit here; do not carry a count forward unchecked, which
+% is how this note came to be wrong twice.  Every assertion is scoped by
 % the set it was measured on rather than hedged with a modality.  No grade words, and
 % none may come back: if a sentence here needs one, the sentence is claiming more than
 % the body supports and the sentence is what changes.
@@ -193,45 +196,126 @@ model misspecification, representation probing}
 % SELECTION.  The row set is the survivor of a 59-fold search, a chemistry-blind relabelling of the
 % same molecules certifies some row set in 58% of 2000 draws, and the observed +2.04 sits at about
 % the ninetieth percentile of what that search returns (Sec. S3.1).  A pre-declared out-of-sample
-% test on the one independent IDAC database was then run and did not confirm the chemistry
+% test on the one independent IDAC database was then run and returned NOT TESTABLE
 % (Sec. 3.2.1).  Both now print here.  An abstract that gives the margin and withholds the null is
 % the exact failure repairs (1) and (2) were for, one level up.  Do not delete either sentence
 % while the +2.04 is printed: if the number goes, they may go with it, and not before.
-% WORD BUDGET.  The two sentences cost about thirty words at 249, and they came back by
-% compressing setup and connective tissue, not evidence: "expecting accurate reference values" ->
-% "accurate references", the third sentence folded onto the second with a colon, "over three
-% seeds" -> "(three seeds)", "The bound on the inputs" -> "The input bound", "applied alike to
-% every stratum" -> "applied alike", "neither data set whole" -> "neither set whole", and the
-% closing "the model consuming them" -> "the consuming model".  Every number, interval, seed count
-% and scope clause that printed at 249 still prints.  The ceiling is 250 and this is at it; the
-% next sentence added here has to displace one, and the counter is
-% scripts/analysis/check_number_conservation.py's sibling arithmetic, not an estimate.
+%
+% 2026-08-05, THIRD PASS: FOUR REPAIRS, ALL OF THEM THINGS THE SENTENCE SAID AND THE EVIDENCE
+% DID NOT.  Three referees, round 3, marked each of these must-fix.
+% (5) THE VERB.  "A pre-declared out-of-sample test did not confirm the chemistry" describes a
+% test that ran on rows and failed.  Nothing of the sort happened: the cell the finding is about
+% -- glycol-ether solvent, ORGANIC solute -- has zero rows in the only independent compilation
+% (its non-aqueous half lists 88 solvents and not one glycol ether), so the pre-declaration's
+% third verdict, NOT TESTABLE, is what the test returned.  The distinction is the whole of what
+% this round was about and it is not a nicety: "did not confirm" credits the design with a
+% replication attempt it never got to make, and the honest claim is that no confirming data
+% exist.  The same verb is repaired in Sec. 3.2.1, Table 4's claim row, limitation (vi), the
+% Conclusions and Sec. S3.1.  Do not restore "did not confirm" anywhere.  (The older comment at
+% Sec. 3.2.1 said the opposite -- "do not soften into could not be attempted" -- on the reasoning
+% that the script ran; the script running is not the hypothesis being tested, and that comment is
+% now corrected rather than obeyed.)
+% (6) THE UNGRAMMATICAL CLAUSE.  "...that error the larger term by +2.04" is not a clause, and it
+% carried the paper's one surviving quantitative chemical claim.  It now reads "where the deployed
+% model's own error exceeds its inputs' by +2.04", which is the comparison Lemma 1 licenses,
+% in the vocabulary the preceding sentence has already set up ("bounds the deployed model's error
+% from below, its inputs' from above").  It says "the deployed model's" and not "COSMO-SAC's"
+% because B_closure is the error of the kernel together with the computed profile it reads
+% (Sec. 2.1.1, Table 4 note g); do not let a shortening put the kernel alone in that slot.
+%
+% 2026-08-05, FOURTH PASS: THREE REPAIRS, ROUND 4.
+% (9) "AT LEAST".  Referees 1, 2 and 3, must-fix, and it is the discipline the whole round was
+% about.  The reported statistic is MSE - 2*B_insuff^up, which by Lemma 1 is a LOWER BOUND on
+% B_closure - B_insuff and equals it only if the upper bound on B_insuff is tight.  "exceeds its
+% inputs' by +2.04" states it as the excess; it now reads "by AT LEAST +2.04".  The bracket is a
+% bootstrap interval on that bound, so +2.83 is an upper limit on nothing -- which is why the two
+% words go in front of the number and not into the parenthesis.  The Conclusions ("lies above the
+% bound on the contribution of its inputs") and the SI map tables ("the closure's own error exceeds
+% the bound on its inputs") were already one-sided; this is the abstract and Sec. 3.2.1 catching up
+% with them.  Do not delete "at least" anywhere, here, in Sec. 3.2.1 or in Table 4's value cell.
+% (10) THE REFERENT.  "the deployed model" sat two sentences after "a graph neural network predicts
+% charge-density profiles; fixed COSMO-SAC turns two into a solubility", so it invited reading as
+% the LEARNED PIPELINE's error.  It is not: the decomposition runs on the fixed map read at a
+% tabulated profile, with no trained model in it at all (Table 3: "none: the closure has no
+% learnable parameters").  First mention now names it -- "the deployed THERMODYNAMIC model" -- and
+% the second refers back to it ("that model's"), which keeps the word count of the pair unchanged.
+% Do not drop "deployed": it is what charges the computed profile to B_closure (repair 3 above).
+% (11) "THE MISSPECIFIED MODEL".  The closing sentence attached "misspecified" as a settled
+% attribute of the closure the solubility arms were trained through.  Sec. 3.6 declines to assert
+% exactly that -- "until it is run, 'the substitution hurts BECAUSE the map is misspecified' is an
+% inference and this paper does not assert it" -- and the Conclusions confine the demonstrated
+% B_closure > B_insuff to one row set of the activity axis.  It reads "through this fixed closure"
+% now, which is what the sentence needs (the latent was trained through it) and all it can carry.
+% Do not restore "misspecified" as an unqualified appositive here.
+% (7) THE FLATNESS.  "The input bound barely moves between strata while the error does" asserted
+% as a chemical finding what Sec. 3.2.1 calls the estimator showing through, and the paper's own
+% partition null agrees with Sec. 3.2.1: the observed range of the bound is at chance (p=0.26)
+% while the range of MSE exceeds every one of 2000 draws.  The concession now travels with the
+% claim.  The "so" still holds -- a near-constant bound against a 25-fold error is exactly what
+% makes an aggregate a composition statistic -- but the near-constancy is a property of eight
+% quantile bins, not of chemistry, and the title's second clause rests on the MSE half.
+% (8) THE CLOSING GENERALISATION.  "Grounded latents are not reliably interpretable when the
+% consuming model is misspecified" was the strongest sentence in the manuscript and rested on its
+% weakest measurement: a separate three-seed set, magnitudes not stable across analysis
+% configurations, one null failed (wrong-molecule, p=1.00), 44 probes all inside the grounding
+% pool, and the cancellation half declined in Sec. 3.3.  It is deleted rather than hedged.  The
+% abstract now ends on the measurement and its scope; the general form is where it belongs, in
+% the Conclusions, as the prediction this work leaves testable.  Do not restore it here.
+% WORD BUDGET, AND TWO COUNTS THAT WERE WRONG.  This block first said "250 words is the ceiling
+% and this one is at it" (it was 261) and then "eight over" (it was, but the note was again taken
+% on faith rather than re-run).  Both were notes carried forward unchecked, which is why the header
+% now names the counter and the count is re-taken on every edit.
+% THE COUNTER: scripts/analysis/wc_abstract.py, the same arithmetic
+% check_number_conservation.py uses -- split on whitespace, a math atom counts as one word, tokens
+% with no letter or digit dropped.  It reads 246.  A counter that also splits on the em dash reads
+% 250, because four tokens here are em-dash-joined; that is the highest of the three counts the
+% referees reported (257-262 against this counter's 258 at the time) and it is the number to hold
+% under, since one of them is evidently reading the PDF through such a tool.  Converting an
+% em-dash pair to parentheses does not help: it costs exactly the words it saves on that counter.
+% WHAT CAME OUT, 2026-08-05 (round 4, length pass), 258 -> 246 with the coverage clause added.
+% All of it connective tissue, and every number, interval, seed count and scope clause that
+% printed before still prints: "Grounding names two operations on it, with opposite signs" ->
+% "two opposite-signed operations on it" (-2); "the test-time input swap" -> "the test-time swap"
+% (-1, the preceding clause already says the swap is of the input); "Neither degradation resolves"
+% -> "Neither resolves" (-1); "not a chemical one" -> "not chemistry" (-2); "It is the survivor of
+% a 59-fold search" -> "It survived a 59-fold search" (-3); "and reaches +2.04 in 10%" ->
+% ", reaching +2.04 in 10%" (-1); "(a separate three-seed set of runs)" -> "(separate three-seed
+% runs)" (-3).  Referee 2's coverage clause was then paid for out of the twelve: "a map over 59
+% strata, not one verdict" -> "a map: 59 strata, 15 boundable, not one verdict" (+1), so that "a
+% map" is not read as a filled one (the rest of the cascade -- 6 admissible, 3 distinct row sets,
+% 24 with no estimate at any n -- stays in Sec. 3.2.1 and Table 4 note h).
+% WHAT WAS NOT DONE AND MUST NOT BE.  Referee 3 offers "an estimator property, not chemistry" as a
+% costless cut because Sec. 3.2.1 and Table 4 restate it.  It is not costless HERE: it is the only
+% place in the abstract where the near-constancy of the bound is refused as a chemical finding,
+% which is repair (7), and a reader who stops at the abstract carries the unqualified form away.
+% It was compressed instead.  Referee 2 offers the 90% interval; retiring a printed number needs an
+% entry in paper/retired_numbers.txt and is a decision about evidence, not about wording.  If words
+% are ever needed again, they do not come from a scope clause, an interval or a seed count.
 \begin{abstract}
 Physics-informed models route predictions through interpretable physical quantities,
 expecting accurate references to improve accuracy. We measure
-that for solid--liquid solubility: a graph neural network predicts a molecule's
-charge-density profile, fixed COSMO-SAC turns two profiles
-into a solubility, and a quantum-chemical database
-tabulates them. Grounding names two operations on it, with opposite
-signs: supervising the predicted profile against it during training lowers solubility mean
+that for solid--liquid solubility: a graph neural network predicts
+charge-density profiles; fixed COSMO-SAC turns two
+into a solubility; a quantum-chemical database
+tabulates them. Grounding names two opposite-signed operations on
+it: supervising the profile against it during training lowers solubility mean
 absolute error by $0.20$ (three seeds, not certified leak-free); substituting the reference for the
-learned profile at inference raises it, by $0.18$ in the co-adaptation control removing the
-test-time input swap (one seed) and $0.41$ without it (three seeds). Neither degradation
+learned profile at inference raises it, by $0.18$ in the control removing the
+test-time swap (one seed) and $0.41$ without it (three seeds). Neither
 resolves against the $0.20$. The reference is an instrument too: on
-infinite-dilution activity data it bounds the deployed model's error from below, its inputs'
-from above. The input bound barely moves between
-strata while the error does, so the output is a map over $59$ strata, not one
+infinite-dilution activity data it bounds the deployed thermodynamic model's error from below, its inputs'
+from above. The input bound barely moves between strata---an estimator property, not
+chemistry---while the error does, so the output is a map: $59$ strata, $15$ boundable, not one
 verdict. One admissibility rule leaves one row set
 standing---the glycol-ether solvents, $182$ measurements over $43$
-pairs, that error the larger term by $+2.04$ ($90\%$ interval
-$[+1.27,+2.83]$)---and no other stratum, neither set whole, and nothing on the
-solubility axis. It is the survivor of a $59$-fold search: a chemistry-blind
-relabelling certifies some row set in $58\%$ of draws and reaches $+2.04$ in $10\%$. A
-pre-declared out-of-sample test did not confirm the chemistry. Trained through the
-misspecified model, the learned profile departs from its reference along a shared direction
-(a separate three-seed set of runs).
-Grounded latents are not reliably interpretable when the consuming model is
-misspecified.
+pairs, where that model's own error exceeds its inputs' by at least $+2.04$ ($90\%$ interval
+$[+1.27,+2.83]$)---and no other stratum, neither set whole, nothing on the
+solubility axis. It survived a $59$-fold search: chemistry-blind
+relabelling certifies some row set in $58\%$ of draws, reaching $+2.04$ in $10\%$. A
+pre-declared out-of-sample test returned \emph{not testable}: the one independent database holds
+no glycol-ether solvent with an organic solute. Trained through this
+fixed closure, the learned profile departs from its reference along a shared direction
+(separate three-seed runs).
 \end{abstract}
 
 % INTRODUCTION.  Field, related work, the assumption under test, then what was done.
@@ -347,7 +431,7 @@ outside it.
 $\hat\sigma$ that a fixed thermodynamic model turns into a solubility; the arrow marks the
 evaluation-time substitution of the reference $\sigma^\star$, which makes it
 worse. \textbf{(b)}~The counterpart error on infinite-dilution activity data, by solvent class; only
-the unmarked class is established, each mark carrying its own reason, and each block is a one-sided
+the unmarked class stands, each mark carrying its own reason, and each block is a one-sided
 bound rather than an interval. Training-time supervision is not drawn.}
 \label{fig:overview}
 \end{figure*}
@@ -403,7 +487,7 @@ Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($56
 Training-time $\sigma$ supervision \emph{helps} (MAE) & labelled test rows, 3 seeds & $2.04\to1.85$; the per-seed values do not overlap; per-seed gains $0.237/0.075/0.281$ straddle the co-adapted arm's $+0.18$, so the two operations are not ordered by magnitude---and the only contrast here a $\sigma$-stream leak could inflate, the ungrounded arm carrying no stream (\S\ref{sec:data}) \\
 \addlinespace[2pt]
 \multicolumn{3}{@{}l@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure})}\\
-$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & $+2.04$ $[+1.27,+2.83]$ to $+2.94$, $P>0.95$ in all four cells; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null that certifies some row set in $58\%$ of draws, not confirmed out of sample, where no rows of that chemistry exist \\
+$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.27,+2.83]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist \\
 \ldots\ on every other stratum of the map & broad IDAC, $59$ strata & \S\ref{sec:si-map}, Tables~\ref{tab:map-full}--\ref{tab:map-detail}, each with its margin, interval and the test it fails; none is stated as a finding\tnk{h} \\
 \ldots\ for either set \emph{as a whole} & broad IDAC ($477$); VT-2005-matched ($60$) & $+0.51$ (full $+0.95$); $-0.38$ compounding two cuts ($+0.01$ full); $+0.18$ less one publication; $+0.05$ on the smaller set: an average weighted by composition\tnk{f} \\
 $\Binsuf^{\mathrm{up}}$ near stratum-independent, $\mathrm{MSE}$ not & broad IDAC, $3$ boundable classes; $6$ with an estimate & $\times2.0$ against $\times25$; $\times6.8$ against $\times51$; $p{=}0.02$ against $2000$ null partitions of $9$ classes \\
@@ -437,12 +521,14 @@ stratum.\quad
 here are failures of the headline cell rather than robustness passes. These rows record what the
 aggregate was and how it fails; the rows above replace it.\quad
 \tnk{g}\,The comparison is one-sided in both directions it can be read: a positive margin establishes
-$\Bclos>\Binsuf$, a non-positive one is failure to separate and licenses nothing. $\Bclos$ is the
+$\Bclos>\Binsuf$, a non-positive one is failure to separate and licenses nothing. The margin's size
+is a lower bound on $\Bclos-\Binsuf$ and not an estimate of it, so an interval on a margin bounds
+that bound and not the difference (Lemma~\ref{prop:decomp}, \S\ref{sec:decomp}). $\Bclos$ is the
 error of the fixed map \emph{read at a computed profile}, so what a positive margin establishes is a
 property of that composite and not of the kernel alone (\S\ref{sec:badclosure}).\quad
-\tnk{h}\,Of fifty-nine strata, fifteen are boundable and six admissible, of which one row set is
-also positive and not contained in another---the glycol ethers, the one row set stated as a
-finding.}}
+\tnk{h}\,Of fifty-nine strata, fifteen are boundable and six admissible; clause~(c) of
+\S\ref{sec:estimator} makes those six three distinct row sets, of which one is also positive and not
+demoted by its residual test---the glycol ethers, the one row set the rule leaves standing.}}
 \end{table*}
 
 \subsection{The two senses of grounding}
@@ -578,6 +664,15 @@ publication and it therefore samples no between-laboratory component. Together t
 bound is slack rather than that $\Binsuf$ is negligible. What is reported rests on the LOTV bound,
 which fits no model and so has no fold design to leak through (Table~\ref{tab:bounds}).
 
+% THE BOLD SENTENCE, 2026-08-05 (round 3, referee 1, must-fix).  It used to read "That row set is
+% the one established finding", which asserts a status this paper's own controls decline to give:
+% the row set is the survivor of a 59-fold search, its magnitude is at the ninetieth percentile of
+% the chemistry-blind null below, and the pre-declared out-of-sample cell is empty.  The Conclusions
+% already say "where the instrument answered, not where the model is shown to fail"; this sentence
+% now says the same thing, and the null number is INSIDE it rather than one paragraph later, so a
+% reader cannot take the claim and leave the caveat.  Do not restore "established finding" here, the
+% bold in the map tables (tab:map-*, whose passing row is generated by
+% scripts/analysis/make_map_table_tex.py), or "the established stratum" as a name for the row set.
 \emph{The map, and how much of it survives the rule.} The instrument runs over $59$ strata of the
 broad IDAC set---$477$ rows, $185$ pairs, $78$ solutes, $36$ solvents, $15$ source
 publications---on the solvent axis at three granularities and the solute axis at two, plus their
@@ -586,11 +681,15 @@ margins the rule can act on; the other $44$, including the $24$ that carry no es
 printed with the test each fails in \S\ref{sec:si-map}
 (Tables~\ref{tab:map-full}--\ref{tab:map-detail} and Fig.~\ref{fig:decomp}), every stratum with its
 error, its bound, its interval and its share of the set's squared error, and nothing dropped for
-being small. Six of the fifteen are \emph{admissible}. Those six are three distinct row sets, of
-which one is both positive and not contained in another: the glycol-ether solvents. \textbf{That row
-set is the one established finding}: on $182$ rows over $43$ pairs from three publications carrying
+being small. Six of the fifteen are \emph{admissible}. Clause~(c) of the rule makes those six three
+distinct row sets, of which one is both positive and not demoted by its residual test: the
+glycol-ether solvents. \textbf{That row
+set is the one the admissibility rule leaves standing}, at a margin a chemistry-blind relabelling of
+the same molecules reaches in $10.1\%$ of draws (below): on $182$ rows over $43$
+pairs from three publications carrying
 $45\%$ of the set's squared error, the closure's own error exceeds what input insufficiency can
-account for, by $+2.04$ with a $90\%$ interval of $[+1.27,+2.83]$ at the deployed convention---$+2.94$
+account for by at least $+2.04$, that bound carrying a $90\%$ interval of $[+1.27,+2.83]$ at the
+deployed convention---$+2.94$
 at the pair unit under the full one---positive in all four cells and under every single-publication
 deletion, the worst leaving $+1.60$ when \texttt{10.1016/j.jct.2016.10.013}, which carries $53\%$ of
 that stratum's squared error, is removed. It is not an artifact of one solute family: the $74$ rows
@@ -618,11 +717,18 @@ measured rather than argued and run against each other (\S\ref{sec:si-tables}).
 
 % OUT-OF-SAMPLE TEST, 2026-08-05.  A selection objection is settled by rows the search never saw,
 % not by argument, so one test was declared in full -- row set, cell, rule, and what would count
-% as confirmation in each direction -- and then run once.  It did not confirm.  The paragraph
-% reports the reason it did not, which is about the data and not about the number: the cell the
-% finding is about is empty in the only out-of-sample set that exists.  Do not soften "did not
-% confirm" into "could not be attempted": the test ran, on a declared row set, and returned a
-% verdict the pre-declaration lists.  Do not promote the +0.35: the pre-declaration says an
+% as confirmation in each direction -- and then run once.  It returned NOT TESTABLE, the third of
+% the three verdicts the pre-declaration lists, which it counts as non-confirmation.
+% THE VERB, CORRECTED 2026-08-05 (round 3, three referees, must-fix).  This comment used to say
+% "do not soften did not confirm into could not be attempted: the test ran".  The script running
+% is not the hypothesis being tested.  What happened is that the cell the finding is about has
+% ZERO rows out of sample, so no test of it was possible on any public data; "did not confirm"
+% credits the design with a replication attempt it never got to make.  The paragraph now says
+% the chemistry could not be tested, and says that the emptiness was readable from the row
+% inventory that fixed the design, before any margin existed -- so what the pre-registration
+% delivered on this cell is the unavailability of confirming data, not a failed replication.
+% Do not restore "did not confirm" here or anywhere (abstract, Table 4, limitation (vi),
+% Conclusions, Sec. S3.1).  Do not promote the +0.35: the pre-declaration says an
 % inadmissible row set licenses nothing, and that rule is the one governing the whole map.
 % Artifact: results/b_insuff/glycol_ether_out_of_sample.json, from
 % scripts/analysis/run_glycol_ether_out_of_sample.py, whose docstring is the pre-declaration.
@@ -632,27 +738,39 @@ on VT-2005 profiles (Table~\ref{tab:closure-anchor}): $7889$ records over $2279$
 group's compilation, sixteen times the rows and a different profile database from the broad set's
 UD. The row set, the estimator cell, the admissibility rule and what would count as confirmation in
 each direction were written down before any margin was computed
-(\S\ref{sec:si-tables}). \textbf{The test did not confirm}, and it did not
-confirm for a reason about the data rather than about the number: the cell the finding is
+(\S\ref{sec:si-tables}). \textbf{The chemistry could not be tested there}, for a reason about
+the data rather than about the number: the cell the finding is
 about---a glycol-ether solvent with an \emph{organic} solute---has no rows there. The non-aqueous
-half of that database carries $88$ solvent molecules and not one glycol ether. What it does carry is
-$52$ rows of water in seven glycol-ether and polyol solvents over seven pairs, all from one
-compilation; deleting that compilation leaves two rows and the fixed cell undefined, so the sign is
+half of that database carries $88$ solvent molecules and not one glycol ether. \emph{Not testable}
+is the third verdict the pre-declaration lists and counts as non-confirmation, and it follows from
+the row inventory alone: what the pre-registration delivers here is the absence of confirming data
+and not a failed replication. What that database does carry is
+$52$ rows of water in seven glycol-ether and polyol solvents over seven pairs, drawn $50$--$2$ from
+the two compilations of one record file; deleting the larger of the two leaves two rows and the
+fixed cell undefined, so the sign is
 never put at risk and the row set is inadmissible under the same rule that governs the map---the
 rule refuses it out of sample for the reason it refuses water-as-solute in sample. Its margin,
 which therefore licenses nothing, is $+0.35$ $[+0.28,+0.58]$. Only ethylene glycol is shared with
 the four solvents of the in-sample cell; the three oligomers carrying $141$ of its $182$ rows are
-absent. One descriptive fact, stated as description and not as a test, belongs with it: out of
-sample the glycol ethers are not where this closure fails hardest, the same cell returning $+1.73$
-on the $875$ aliphatic-hydrocarbon rows, $+0.67$ on the halogenated and $+0.60$ on the N--H protic
-ones. The chemical localisation is therefore what the instrument licenses on the rows it was
-computed on, and the title does not carry it.
+absent. What belongs with that verdict is the whole out-of-sample ranking rather than the part of it
+that runs this closure's way, stated as description and not as a test. Over that database's ten
+solvent classes the same cell returns $+1.73$ (aliphatic hydrocarbons, $875$ rows), $+0.67$
+(halogenated, $428$), $+0.60$ (N--H protic, $368$), $+0.35$ (the glycol-ether and polyol rows above,
+$52$), $+0.10$ (the unclassified remainder, $143$), $+0.09$ (mono-alcohols, $1027$), $+0.02$
+(aprotic acceptors, $1577$), $-0.13$ (aromatic hydrocarbons, $344$) and $-2.53$ (water, $3074$ rows,
+the largest class there), with one row and no estimate on the aryl ethers
+(Table~\ref{tab:oos-map}). Of the ten the admissibility rule admits two---the mono-alcohols, whose
+$+0.09$ carries a $90\%$ interval $[-0.06,+0.32]$ covering zero, and water at $-2.53$---so no
+out-of-sample class both passes the rule and separates the two terms, and every margin above the
+mono-alcohols' sits on a class the rule refuses. Out of sample the glycol ethers are neither where
+this closure fails hardest nor a cell the rule can read. The chemical localisation is therefore what
+the instrument licenses on the rows it was computed on, and the title does not carry it.
 
-It is also the whole of the separation this paper establishes, and the
+It is also the whole of the separation this paper reports, and the
 statement carries five boundaries that the phrase ``COSMO-SAC error exceeds input error'' does not:
-no other stratum of the map establishes it (below), neither data set taken whole establishes it (the
+no other stratum of the map returns one (below), neither data set taken whole returns one (the
 aggregate is retired above, and the VT-2005-matched set's $+0.05$ does not stand,
-\S\ref{sec:vt2005}), it is not established anywhere on the solubility axis, where the two terms
+\S\ref{sec:vt2005}), none is returned anywhere on the solubility axis, where the two terms
 do not separate at all and where the substitution of \S\ref{sec:paradox} was measured, the error
 that stands above the bound there is COSMO-SAC's \emph{as deployed}---the map read at one computed
 conformer per molecule---which is the object the pipeline runs on and not the kernel alone
@@ -661,16 +779,20 @@ percentile, on the one chemistry no out-of-sample rows exist for.
 
 \emph{Which chemistry does not separate.} Three of the six admissible cells are that same row set at
 three granularities. The remaining three are two row sets, and neither establishes anything. The
-alkane solutes ($129$ rows, $45$ pairs, $+1.38$, $[+0.79,+2.33]$) are $84\%$ the glycol-ether rows
-and return $-0.22$ on the $21$ outside them---itself a sub-threshold number, so the demotion rests
-on the overlap arithmetic and not on it. The acceptor-only aprotics ($57$ rows, $-0.19$, negative in
+alkane solutes ($129$ rows, $45$ pairs, $+1.38$, $[+0.79,+2.33]$) are admissible and positive, and
+clause~(c) demotes them to the glycol ethers, which hold more rows and hold $108$ of these $129$:
+the alkane residual outside them is $21$ rows, too few to bound at the fixed cell, and returns
+$-0.22$ there, so the alkanes' margin does not stand outside the glycol ethers---where the glycol
+ethers' does stand outside the alkanes, on the $74$ rows at the $+1.40$ above. What demotes the cell
+is that residual, not the $84\%$ overlap and not the $-0.22$, which is itself
+sub-threshold. The acceptor-only aprotics ($57$ rows, $-0.19$, negative in
 all four cells, $P<0.2$ at both units under the deployed convention and $P\approx0.3$ under the full
 one, at an $\mathrm{MSE}$ of $0.089$ that is at the scale of the measurements) pass the rule and
 license nothing, the instrument being one-sided; their deletion test is additionally
 \emph{anti}-conservative, two of the four deletions leaving $n<40$, where the Bessel within-bin
 variance inflates---$0.140$ to $0.258$ on the $n{=}38$ remainder---and drives a negative margin
 further negative. That is the whole of the uniqueness claimed for the glycol ethers: the only row set
-admissible, positive and not contained in another---\emph{not} the only admissible stratum and not
+admissible, positive and left standing by clause~(c)---\emph{not} the only admissible stratum and not
 the only one sign-stable under every deletion. Of the rest, water carried as the dilute solute ($37$
 rows, $+6.33$) is too small to bound and draws on one publication, so its deletion cannot be run and
 that margin was never put at risk; the halogenated solvents ($30$ rows, $+3.39$) are too small to
@@ -789,7 +911,7 @@ small-molecule and glycol-heavy one, so on drug-like solids the lever is unteste
 % localisation is chemical, and the profile axis is the one the paper cannot rule out.
 \subsubsection{Correctability, and where the closure fails chemically}
 \label{sec:badclosure}
-Where $\Bclos$ dominates---on this set, the one row set the rule establishes---the ceiling is in the
+Where $\Bclos$ dominates---on this set, the one row set the rule leaves standing---the ceiling is in the
 map \emph{as it is deployed}: the fixed kernel together with the one computed conformer it reads,
 which is the composite $\Bclos$ is the error of (\S\ref{sec:decomp}) and the object the pipeline
 runs on. Which of the two carries the error is a question this section does not answer; nor does
@@ -822,7 +944,7 @@ half does not carry intact---strong donors take $56\%$ there rather than $90\%$,
 solvents, on which the smaller set's reading is silent, take $34\%$ at the highest per-row error
 of the three. It places the error in a \emph{chemistry} and not in one component of the
 composite: the reference profile for each of those solvents is one gas-phase conformer too, and on
-the glycol ethers of the established stratum---donor and acceptor on one flexible chain, the class
+the glycol ethers---donor and acceptor on one flexible chain, the class
 this paper's own cascade names conformer-dependent (\S\ref{sec:si-tables})---a displaced reference
 would load onto exactly the rows that carry the error. Neither set separates that from the kernel.
 On the broad set that reading does not reproduce, and neither does its
@@ -847,7 +969,7 @@ about a third of its compounds~\cite{fingerhut2017}; where the reference is disp
 perfectly specified $g$ carries a term in $\Bclos$ through its curvature (\S\ref{sec:si-repro}).
 Table~\ref{tab:closure-anchor} measures that axis directly---one closure, two profile databases, a
 factor of $2.6$ in AAD, $6.6$ in squared error if the errors scale uniformly---while the
-established stratum's margin closes only once its squared error falls below twice its $0.108$ bound,
+glycol-ether stratum's margin closes only once its squared error falls below twice its $0.108$ bound,
 a more than ten-fold reduction (Table~\ref{tab:map-detail}). A profile source better than VT-2005 by
 the whole of that published bracket would leave that sign standing. The arithmetic holds the
 insufficiency bound fixed, which a new profile source would not, so it sizes the exposure and does
@@ -1185,8 +1307,8 @@ own oracle is defined on; the arithmetic and the enlarged-pull values are in \S\
 (ii)~Under the deployed convention no \emph{aggregate} margin is resolved on either set and only the
 literature-standard convention resolves one, while the headline convention is the deployed one; the
 aggregate falls for the stronger reason of \S\ref{sec:broad} rather than for want of resolution.
-(iii)~Of the map's six admissible cells the glycol ethers are the only row set also positive and not
-contained in another, and not the only cell whose deletions all run; the halogenated solvents and the
+(iii)~Of the map's six admissible cells the glycol ethers are the only row set also positive and
+left standing by clause~(c), and not the only cell whose deletions all run; the halogenated solvents and the
 mono-alcohols keep their sign under the one deletion each admits, so they are unverified rather than
 shown to fail.
 
@@ -1215,9 +1337,9 @@ same rule, the number of admissible strata is above chance, while the number of 
 \emph{positive row sets}---the shape of the finding actually claimed---and the certified magnitude
 are not ($p=0.01$, $p=0.29$ and $p=0.10$, \S\ref{sec:broad}). None of the three is signed: the
 null's two mismatches against the chemical map are measured and run in opposite directions, so no
-one of them is an upper or a lower bound on a chance rate (\S\ref{sec:si-tables}). And a
-pre-declared out-of-sample test on the one independent database did not confirm the chemistry, that
-database holding no rows of it (\S\ref{sec:broad}). The single finding is therefore stated at the level the
+one of them is an upper or a lower bound on a chance rate (\S\ref{sec:si-tables}). And the
+chemistry could not be tested out of sample: the one independent database holds no rows of the
+cell, so the pre-declared test returned \emph{not testable} (\S\ref{sec:broad}). The single finding is therefore stated at the level the
 instrument licenses on its own rows and \emph{not} as a multiplicity-controlled chemical effect,
 and the same holds a fortiori for every cell the map reports and does not state.
 The rule is also one-sided in what it can deliver: with $\Binsuf$ bounded
@@ -1289,8 +1411,8 @@ more faithful physical model---the calculation that supplies its reference value
 better inputs. The answer comes chemistry by chemistry rather than
 once for a field, and it comes one-sided, so what the measurement returns is the chemistry on which
 better inputs are not the remedy---here one class of solvent, on which the standard route to a more
-faithful model did not clear the bar either, though neither the instrument's own null nor an
-out-of-sample test certifies that chemistry. What this work establishes about the instrument is the
+faithful model did not clear the bar either, though the instrument's own null does not certify that
+chemistry and no out-of-sample rows of it exist. What this work establishes about the instrument is the
 map itself: which cells it can answer in, and at what size.
 Whether a latent trained through an imperfect model
 becomes, in general, a surrogate for that model's error is the prediction this work leaves testable.
