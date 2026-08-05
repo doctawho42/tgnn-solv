@@ -11,8 +11,8 @@ when the abstract was 261 words, and later "eight over" without the eight having
 been re-checked.  A number that nobody re-runs is a number that goes stale, so
 the count is a script and the comment names the script.
 
-THE RULE, and why two numbers are printed
------------------------------------------
+THE RULE, and why three numbers are printed
+-------------------------------------------
 ``words``  split on whitespace; a math atom ``$...$`` counts as one word,
            whatever is inside it; tokens carrying neither letter nor digit are
            dropped.  This is the arithmetic ``check_number_conservation.py``
@@ -26,13 +26,26 @@ THE RULE, and why two numbers are printed
            spread is exactly the number of em-dash joins, so this is the reading
            to hold under.
 
+``as rendered``  the em-dash split, and additionally the spacing LaTeX itself
+           puts into a math atom: a comma inside ``$...$`` is punctuation and
+           is followed by a thin space, so ``$[+1.27,+2.83]$`` reaches the page
+           as ``[+1.27, +2.83]`` and any counter reading the PDF sees two
+           tokens where the source has one atom.  ``pdftotext`` on the built
+           article confirms it.  The first two rules count the SOURCE; this one
+           counts what the production editor's tool will count, so it is the
+           strictest of the three and the one the budget is set against.
+
 Usage
 -----
-    python scripts/analysis/wc_abstract.py [TEX ...]
+    python scripts/analysis/wc_abstract.py [TEX ...] [--reserve N]
 
 with no argument, ``paper/grounding_paradox.tex``.  ``--print`` echoes the
 tokenised abstract so a disagreement with another counter can be localised.
-Exit status is 1 if the em-dash-split count exceeds ``--ceiling`` (default 250),
+``--reserve N`` lowers the effective ceiling by N words: the manuscript
+pre-commits (\\S 2.2, "What the leak-free re-run reports") to reprinting two of
+the abstract's magnitudes as per-seed values once the five-seed re-run lands,
+and those words have to exist before the numbers do.  Exit status is 1 if the
+strictest count exceeds ``--ceiling`` minus ``--reserve`` (default 250 and 0),
 so the script can gate a build.
 """
 
@@ -55,11 +68,18 @@ def extract_abstract(source: str) -> str:
     return "\n".join(l for l in body.split("\n") if not l.lstrip().startswith("%"))
 
 
-def tokenise(body: str, split_em_dash: bool = False) -> list[str]:
+def tokenise(body: str, split_em_dash: bool = False, math_spacing: bool = False) -> list[str]:
     # a math atom is one word, whatever is inside it; the placeholder carries a
     # digit so the "must contain a letter or digit" filter keeps it, and no
-    # space is introduced, so `$59$-fold` stays one token.
-    text = re.sub(r"\$[^$]*\$", "0", body)
+    # space is introduced, so `$59$-fold` stays one token.  Under `math_spacing`
+    # the atom is replaced by one placeholder per comma-separated part instead,
+    # which is what LaTeX's punctuation spacing puts on the page.
+    if math_spacing:
+        text = re.sub(r"\$[^$]*\$",
+                      lambda m: " ".join("0" for _ in m.group(0).split(",")),
+                      body)
+    else:
+        text = re.sub(r"\$[^$]*\$", "0", body)
     text = re.sub(r"\\emph\{([^}]*)\}", r"\1", text)
     text = re.sub(r"\\[a-zA-Z]+", "", text)
     text = text.replace("{", "").replace("}", "")
@@ -72,25 +92,34 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("tex", nargs="*", type=Path, default=[DEFAULT_TEX])
     ap.add_argument("--ceiling", type=int, default=250)
+    ap.add_argument("--reserve", type=int, default=0,
+                    help="words held back for the five-seed substitution of Sec. 2.2")
     ap.add_argument("--print", dest="echo", action="store_true",
                     help="echo the tokenised abstract")
     args = ap.parse_args()
 
+    budget = args.ceiling - args.reserve
     status = 0
     for path in args.tex:
         body = extract_abstract(path.read_text(encoding="utf-8"))
         plain = tokenise(body)
         dashed = tokenise(body, split_em_dash=True)
+        page = tokenise(body, split_em_dash=True, math_spacing=True)
         joins = len(dashed) - len(plain)
-        verdict = "OVER" if len(dashed) > args.ceiling else "under"
+        splits = len(page) - len(dashed)
+        verdict = "OVER" if len(page) > budget else "under"
         print(f"{path}")
         print(f"  words            {len(plain)}")
         print(f"  em-dash split    {len(dashed)}   ({joins} em-dash-joined tokens)")
-        print(f"  ceiling {args.ceiling}: {verdict}")
+        print(f"  as rendered      {len(page)}   ({splits} comma-split math atoms)")
+        if args.reserve:
+            print(f"  ceiling {args.ceiling} less {args.reserve} reserved = {budget}: {verdict}")
+        else:
+            print(f"  ceiling {args.ceiling}: {verdict}")
         if args.echo:
             print()
             print(" ".join(plain))
-        if len(dashed) > args.ceiling:
+        if len(page) > budget:
             status = 1
     return status
 

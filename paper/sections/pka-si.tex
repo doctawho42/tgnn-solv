@@ -73,8 +73,10 @@ predicts experimental $\mathrm pK_a$ to RMSE $0.55$, with the closure at the inp
 the leakage-immune lower bound $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ is $-0.2$ ($95\%$~CI $[-0.4,-0.0]$),
 i.e.\ below zero, as a lower bound on the non-negative $\Bclos$ must sit when the LFER predicts as well
 as a flexible within-scaffold regressor. There $\Bclos$ is not separately resolvable and is consistent
-with a well-specified closure (per-scaffold systematic offsets $\le0.19$, the largest $0.184$ on
-phenol). The degraded pole ($n{=}846$)
+with a well-specified closure. The per-scaffold systematic offsets are $\le0.19$ in $\mathrm pK_a$,
+the largest $0.184$ on phenol; Lemma~\ref{prop:ident} bounds $\Bclos$ below by their \emph{square},
+so the Jensen bound here is $\le0.034$ against a total of $0.303$, or $11\%$---read unsquared it
+would be $63\%$ and would contradict the sentence it supports. The degraded pole ($n{=}846$)
 degrades to RMSE $2.26$, dominated by input insufficiency. Here $\zstar$ is the pair
 $(s,\hammett^\star)$---the reaction series, which fixes $(\mathrm pK_{a,0},\rho)$, and the constant---and
 neither coordinate needs binning, four labels and a scalar, so---unlike the solubility

@@ -638,7 +638,9 @@ $+0.18$.
 % (72 cells: 2 conventions x 18 bin counts x 2 within-bin variance conventions, each with its own
 % two-way pigeonhole cluster bootstrap at fixed bin count; the adaptive-bin rule that reproduces
 % keystone_robustness.json's P=0.777 is recorded in the same file).
-\paragraph{The estimator grid.} Three analyst choices set the separation margin on the VT-2005-matched set, and
+\paragraph{The estimator grid.} Every $\mathrm{MSE}$, bound and margin on the activity axis is in
+squared \lngi\ units, and not on the \lnx\ axis the per-arm MAEs above are measured on.
+Three analyst choices set the separation margin on the VT-2005-matched set, and
 Table~\ref{tab:grid} reports every combination of them rather than one setting of each. The margin is
 positive in $66$ of the $72$ cells. The six exceptions are the coarsest conditionings---three bins
 under either combinatorial convention and four bins residual-only---where the law-of-total-variance
@@ -902,7 +904,7 @@ $\lngi$-stratified bounds, computed on VT-2005-matched subsets, are Table~\ref{t
 % across three kernels, two sets and two conventions. The sweeps behind it stay in App. C.
 \begin{table*}[t]
 \centering
-\caption{Activity error (MSE, $\lngi$ units) of the three COSMO-SAC arms, and the block split that
+\caption{Activity error (MSE, squared $\lngi$ units) of the three COSMO-SAC arms, and the block split that
 reads the $2002\to2010$ reversal against profile database and temperature held fixed.}
 \label{tab:kernels}
 {\footnotesize
@@ -1378,7 +1380,9 @@ classes, which is why panel~(c)'s shares do not sum down the column
 including the ones the estimator cannot bound, at the cell \S\ref{sec:estimator}
 fixes---eight equal-count bins of $g(\zstar)$, unbiased within-bin variance, row
 unit, deployed residual-only convention---applied identically to all of them. \emph{full} is the
-same cell under the full combinatorial convention. The map runs over $59$ strata in all: the
+same cell under the full combinatorial convention. Every margin here and in
+Tables~\ref{tab:map-fine}--\ref{tab:map-detail}, and the $\mathrm{MSE}$ and bound behind it, is in
+squared \lngi\ units. The map runs over $59$ strata in all: the
 solvent axis at three granularities and the solute axis at two, plus their cross-tab and the set as
 a whole, over $477$ rows, $185$ pairs, $78$ solutes, $36$ solvents and $15$ source publications,
 the finer solvent granularity in Table~\ref{tab:map-fine} and the solute axis in
@@ -1567,8 +1571,9 @@ the margin upward to $+0.24$. That number stands with the broad set's aggregate,
 evidence, four analyst choices setting it (\S\ref{sec:decomp}).
 
 \paragraph{Which defect the broad set points at, and why it states neither.} \S\ref{sec:badclosure}
-places the closure's failure on the VT-2005-matched set in the single-parameter H-bond kernel:
-$90\%$ of that set's squared error falls on strong hydrogen-bond-donor solvents. On the broad set
+places the closure's failure on the VT-2005-matched set in a \emph{chemistry}---$90\%$ of that set's
+squared error falls on strong hydrogen-bond-donor solvents, the chemistry the single-parameter
+H-bond kernel governs---and not in one component of the composite. On the broad set
 that reading does not reproduce, and neither does its replacement. The donor classes carry $64\%$ of
 the squared error on $76\%$ of the rows, which is no enrichment, while the halogenated and
 aryl-ether solvents---which the 2002 kernel has no dispersion term for at all---carry $29\%$ on
