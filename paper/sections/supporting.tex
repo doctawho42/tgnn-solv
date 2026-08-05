@@ -54,7 +54,12 @@ zero for $\rho$, $\tau$ and nDCG@3, and only seed $42$'s does for top-1, which i
 quoted pooled. The lower block gives each arm's margin over its \emph{own} solute-blind floors---a
 floor built from the other arm is not a comparison---and counts, over four metrics $\times$ three
 seeds $\times$ two floors, how many of those margins have an interval excluding zero. Each floor is
-rebuilt from the predictions of the arm it is set against.}
+rebuilt from the predictions of the arm it is set against. One reference-$\sigma$ cell decides that
+count on a knife edge and is named so nobody has to rediscover it: nDCG@3 at seed $44$ against its
+own shuffled-profile floor is $[-0.0008,+0.0762]$, inside the resampling noise of the boundary
+itself, and an independent recomputation places it on the other side. The reference-$\sigma$ count is
+therefore $0$ or $1$ according to the bootstrap draw; nothing here turns on which, and the margins
+themselves, printed above, are what the reading rests on.}
 \label{tab:ranking}
 % Width: the tabular must fit \textwidth (504.5 pt) inside table*. At \small with the default
 % \tabcolsep it runs 85 pt over, and the stub is where that is won back -- the qualifications
