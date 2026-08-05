@@ -137,3 +137,16 @@ results/e5_sigma_grounding/seed_4?/*
 !results/e5_sigma_grounding/seed_4?/*.summary.json
 !results/e5_sigma_grounding/THREE_SEED_SUMMARY.md
 !results/e5_sigma_grounding/ROW_SET_DECOMPOSITION.md
+# The solvent-ranking working behind Table S17 and the ranking paragraphs of Sec. 3.1 / S6:
+# the three-seed ranking and floor analysis, the paired arm-minus-own-floor intervals, and the
+# in-sample/leave-one-out affine recalibration with the per-group fitted slopes. The scripts read
+# the ~5 MB per-row prediction files (archive) and write these JSONs, which carry every number the
+# two documents print, so they are versioned and the per-group CSVs are not.
+!results/e5_sigma_grounding/ranking
+results/e5_sigma_grounding/ranking/*
+!results/e5_sigma_grounding/ranking/rank_final.py
+!results/e5_sigma_grounding/ranking/rank_final.json
+!results/e5_sigma_grounding/ranking/rank_final_floorci.py
+!results/e5_sigma_grounding/ranking/rank_final_floorci.json
+!results/e5_sigma_grounding/ranking/rank_final_oos.py
+!results/e5_sigma_grounding/ranking/rank_final_oos.json

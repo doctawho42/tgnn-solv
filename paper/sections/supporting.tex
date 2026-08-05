@@ -34,8 +34,11 @@ solute--temperature group of the labelled test rows under the two $\sigma$-profi
 \S\ref{sec:paradox}: the same weights, the same rows, and only the profile fed to the closure
 differing ($\max|\Delta\Phi|=4.2\times10^{-4}$ at the worst of the three seeds, against $4.4$ to
 $5.9$ between separately trained arms). With its own learned profile the model orders solvents above
-two solute-blind references; with the reference profile substituted it is not distinguishable from
-either, on any of the four metrics, at any of the three seeds. Both arms remain far above the
+two solute-blind references, at every one of the twenty-four margins that comparison has---four
+metrics, three seeds, two floors. With the reference profile substituted, none of its own
+twenty-four margins separates it from those references: twenty-four of the twenty-four include zero,
+or twenty-three, one cell sitting on the boundary and changing side with the bootstrap draw. That
+cell is named in the caption below and discussed after it. Both arms remain far above the
 within-group permutation floor, so the substitution does not reduce the ordering to chance---it
 reduces it to one that a ranker never shown the solute could produce. Groups are formed on solute
 and temperature rounded to $1$\,K, kept when they hold at least three distinct solvents, with
@@ -88,9 +91,14 @@ permutation floor, $\rho$ & \multicolumn{2}{l}{$0.00\pm0.02$, both arms} & \\
 The shuffled-profile floor gives each group another randomly drawn solute's predictions over the
 same solvents, $200$ to $300$ draws; the solute-blind label floor ranks the group's solvents by
 their leave-one-solute-out mean measured solubility, which is label-derived and therefore an
-optimistic reference. Both are paired per group against the arm they are built from. Two of the
-reference arm's twenty-four margins are marginal rather than comfortable---seed $44$ against its
-own shuffled-profile floor, $\rho$ $[-0.005,+0.165]$ and nDCG@3 $[-0.001,+0.076]$---so
+optimistic reference. Both are paired per group against the arm they are built from. The reading is
+of the intervals and not of the point estimates: the reference arm's twenty-four margins are all
+small and all but one positive (the exception is top-1 at seed $43$ against its own shuffled-profile
+floor, $-0.028$), and what the intervals say is that none of the twenty-four separates that arm from
+its floor---twenty-four of them, or twenty-three, the one cell on the boundary changing side with the
+bootstrap draw. Two are marginal rather than comfortable---seed $44$ against its own shuffled-profile
+floor, $\rho$ $[-0.005,+0.165]$ and nDCG@3 $[-0.0008,+0.0762]$, the second of which is that boundary
+cell and is discussed in the caption above---so
 \emph{indistinguishable from its floor} is the description all twenty-four support, and
 \emph{below} it is not. The contrast survives excluding the $16$ groups where some solvent has no
 reference profile and the arm therefore runs on a mixture ($807$ groups: $-0.212/{-}0.158/{-}0.172$),
@@ -103,6 +111,73 @@ the closure sees and not to how its nonlinearity would answer a profile no molec
 closure-carrying arm cannot be ranked against DirectGNN here, that difference---DirectGNN minus the
 learned-$\sigma$ arm---being $-0.056/{+}0.053/{-}0.040$ by seed, sign-flipping, each interval spanning
 zero and each smaller than the seed-replicate spread.
+
+\paragraph{Per-group recalibration of the MAE gap, in sample and out.} The reading on which the
+substitution merely miscalibrates is granted in \S\ref{sec:paradox} at three strengths, each fitted
+inside each group, on exactly the row set the ranking uses: the $823$ groups, $4912$
+solute--solvent--temperature cells, $107$ solute clusters. No recalibration; an offset only, each
+group's own mean subtracted from prediction and from truth; and an affine map, slope and intercept
+fitted per group by ordinary least squares of measured on predicted \lnx. What is reported is the
+mean of the per-group MAEs and the paired reference-minus-learned difference, bootstrapped over
+solute clusters as everywhere here. In sample, pooled over the three seeds, the ladder is $+0.431$
+$[+0.308,+0.553]$ raw, $+0.371$ $[+0.269,+0.474]$ offset-only and $+0.060$ $[+0.021,+0.101]$ affine;
+per seed the affine residual is $+0.069/{+}0.030/{+}0.081$, the middle one spanning zero, which is
+why it is quoted pooled.
+
+Those three maps are fitted on the rows they are then scored on, and the groups are small: sizes run
+from $3$ to $18$ solvents with a median of $5$ and a mean of $6.0$, $103$ groups holding exactly
+three and $273$ four or fewer, so in one group in eight two parameters are being fitted to three
+points. The out-of-sample variant refits the same map leaving out the row it scores---for each
+solvent of a group the map is fitted on that group's other solvents and the held-out solvent scored
+under it. Leave-one-out rather than a held-out half, because a half-split is undefined at three
+solvents, where a two-parameter fit consumes two points and leaves one; and rather than fitting on
+one seed and applying to another, which reuses the same rows and would test seed stability instead of
+overfitting. Out of sample neither map absorbs the gap. The offset-only map, one parameter,
+transfers as a level correction---it takes the learned-$\sigma$ arm's mean per-group MAE from
+$1.83$ to $1.03$ and the reference-$\sigma$ arm's from $2.26$ to $1.51$---but not on the quantity
+printed here, which is the gap between them: that stands at $+0.481$ $[+0.349,+0.619]$ pooled, no
+smaller than the $+0.431$ raw gap and larger than the $+0.371$ in sample. The affine map is worse
+still: the gap becomes $+1.09$ $[+0.3,+2.2]$ pooled---one decimal, because that is the precision
+$4000$ cluster-bootstrap draws pin for this one interval, whose second decimal moves with the
+draw---$+1.63/{+}0.49/{+}1.14$ by seed, each interval excluding zero, though seed $44$ only just:
+its lower bound is $+0.009$, and an independent recomputation places it on the other side, as the
+boundary cell of Table~\ref{tab:ranking} does. Seed $43$'s bound, $+0.013$, is close enough to
+change side occasionally; seed $42$'s, $+0.221$, is not. Its point estimate is larger than the raw
+gap's, though not separably so---the paired difference is $+0.66$ $[-0.12,+1.75]$ and spans
+zero---and the direction is what the two arms do separately: the refit \emph{improves}
+the learned-$\sigma$ arm, $1.83$ to $1.68$ pooled, and \emph{worsens} the reference-$\sigma$ arm,
+$2.26$ to $2.77$---one arm better and one worse, not both worse, which is what opens the gap. That
+divergence is carried by the small groups. On the $550$ groups with five solvents or more the
+out-of-sample affine gap is $+0.277$ $[+0.065,+0.503]$, $+0.074$ $[-0.082,+0.241]$ and $+0.035$
+$[-0.172,+0.208]$ by seed, against an in-sample $+0.089/{+}0.029/{+}0.080$ there---the same small
+residual, measured too imprecisely at two of three seeds to be distinguished from zero. The in-sample
+$86\%$ is therefore a bound on how much of the MAE gap a per-group affine map \emph{can} absorb when
+it is fitted on the answer, not an estimate of how much a recalibration a user could apply would
+absorb, and \S\ref{sec:paradox} states it in that direction. Both fits, the ranking, the floors and
+every per-group fitted slope come from the deposit
+\texttt{results/e5\_sigma\_grounding/ranking/}.
+
+\paragraph{The fitted slopes, and where the rank invariance holds.} Rank statistics are invariant
+under a per-group affine map only when that map is \emph{increasing}; a fitted slope that comes out
+negative reverses the group's order, and the invariance argument of \S\ref{sec:paradox} does not
+cover those groups. Of the $823$ groups the fitted slope is negative in $98/94/84$ of the
+learned-$\sigma$ arm's ($11.9/11.4/10.2\%$ by seed) and in $146/153/142$ of the reference-$\sigma$
+arm's ($17.7/18.6/17.3\%$); the median slopes are $1.22/1.19/1.10$ and $0.50/0.58/0.53$, the
+reference arm's the smaller because its within-group spread is the wider---median $\mathrm{sd}(p)/
+\mathrm{sd}(t)$ of $1.05$ to $1.31$ against $0.64$ to $0.69$---while its alignment with the
+measurement is the weaker.
+Both arms' maps increase in $652/633/650$ groups by seed and in $589$ at all three seeds
+together. Restricted to those $589$, the reference-minus-learned ranking gap is $\rho$ $-0.148$
+$[-0.218,-0.079]$ pooled; per seed it is $-0.178/{-}0.112/{-}0.152$, and those three are on each
+seed's \emph{own} both-increasing set---the $652/633/650$ above, a different row set at each
+seed---not on the $589$ the pooled value is on. Also on the $589$: Kendall $-0.155$ $[-0.227,-0.084]$,
+nDCG@3 $-0.068$ $[-0.110,-0.026]$ and top-1 $-0.087$ $[-0.187,+0.015]$: about a quarter smaller than
+on the full set and of the same sign, with top-1---already quoted pooled only---now spanning zero
+there too. Groups whose predictions are constant have no fitted slope---there are $0/16/15$ of
+them---so the $589$ excludes them by construction. They leave two of the four metrics and not the
+other two: Spearman and Kendall are undefined where every prediction in the group is tied, which is
+why those two contrasts run on $823/807/808$ groups by seed rather than $823$, while top-1 and
+nDCG@3 are defined there and score all $823$.
 
 Uncertainty, by contrast, is badly miscalibrated in the native model---a nominal-$90\%$ interval
 covers only PICP@90 $=0.13$ of held-out points---but split-conformal wrapping repairs it to $0.92$

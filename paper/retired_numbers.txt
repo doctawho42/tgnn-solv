@@ -177,3 +177,25 @@
 # tables of S6, so its disappearance from this table cannot be flagged and needs no allowlisting.
 # The replacement prints top-1 at 0.586/0.515/0.548 against 0.447/0.428/0.454, gap -0.107
 # [-0.192, -0.020], quoted pooled because two of the three per-seed intervals span zero.
+
+# 2026-08-06, referee items 2 and 4. The knife-edge floor cell is now printed at the precision the
+# bootstrap deposit carries, in both documents and in the same words: the reference-sigma arm's
+# nDCG@3 margin over its own shuffled-profile floor at seed 44 is [-0.00081, +0.07622]
+# (rank_final_floorci.json seed_44.oracle_minus_own_donor_floor.ndcg.ci95), and the rounded
+# [-0.001, +0.076] the SI printed hid exactly the fact the caption has to state -- that this one
+# interval decides the count of intervals excluding zero, 0 or 1, on the bootstrap draw. Nothing is
+# withdrawn: the same interval prints, one digit longer, in the same sentence and in the caption.
+-0.001 re-printed at deposit precision: the rounded lower end of that cell, now [-0.0008, +0.0762].
+0.076  re-printed at deposit precision: the rounded upper end of the same cell, now +0.0762.
+
+# 2026-08-06, referee item 7 (precision). NO ENTRY IS NEEDED for the two endpoints below -- the
+# checker does not flag them, because both values still print elsewhere in the submission -- but the
+# retirement is deliberate and is recorded here so a later diff does not read it as an accident.
+# The pooled out-of-sample affine gap printed [+0.30,+2.17] in both documents. Those two decimals
+# are not pinned by the 4000 cluster-bootstrap draws behind them: repeating the draw with
+# independent RNG puts the lower endpoint anywhere in [+0.282,+0.311] and the upper in
+# [+2.181,+2.252], and raising the count does not rescue the second decimal of the upper endpoint
+# (at 200000 draws it still runs [+2.193,+2.202], straddling the 2.195 rounding boundary), because
+# the statistic is heavy-tailed -- a leave-one-out affine refit on a three-solvent group. Both
+# documents now print [+0.3,+2.2], the precision the draw count does pin, and the SI says so in the
+# sentence. The point estimate +1.09 is deterministic and unchanged.
