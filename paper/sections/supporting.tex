@@ -17,23 +17,93 @@ either reading it lies far below the scaffold-split error.
 
 \paragraph{The encoder is transfer-limited, not expressivity-limited.} To separate what the frozen graph embedding can represent from what it transfers out of distribution, we fit a linear probe from the encoder representation onto RDKit descriptors and compare in-distribution and held-out fit. The median train $R^2$ is $0.758$ against a test $R^2$ of $0.448$ ($n=700$ solutes in each partition), a gap of $0.31$. Individual descriptors split sharply: FractionCSP3 transfers well (test $R^2 = 0.96$) while HeavyAtomCount does not ($0.23$). The embedding is expressive enough in sample; what degrades out of distribution is the generalisation of that expressivity across scaffolds. This evidence is suggestive rather than decisive: the sharp per-descriptor spread (FractionCSP3 $0.96$ vs HeavyAtomCount $0.23$) means the train--test gap partly reflects covariate shift in the descriptor \emph{targets} across scaffolds rather than an encoder property alone, and the probe measures descriptor-representability, not task-relevant expressivity directly. It therefore \emph{suggests}---rather than establishes---that a new graph encoder is unlikely to be the main lever for out-of-distribution accuracy, with pretraining and coverage the more likely ones.
 
-\paragraph{Temperature extrapolation.} A structured van't Hoff activity class (log-solubility affine in $1/T$) encodes the correct temperature dependence of \lng{} by construction, and this is apparent when the split withholds temperature rather than structure. Training on measurements at $T \le 309.75$~K and testing at $T \ge 330$~K ($n_{\text{test}} = 3343$), the structured class attains a high-temperature MAE of $0.37$ against $1.29$ for a random forest over Morgan fingerprints plus temperature (in \lnx{} units), consistent with the temperature-aware \lngi{} modelling of \cite{sanchezmedina2023}. This is a property of the structured hypothesis class, not a performance claim for the trained model: the functional form carries temperature extrapolation that a descriptor-plus-temperature regressor does not.
+\paragraph{Temperature extrapolation.} A structured van't Hoff activity class (log-solubility affine in $1/T$) encodes the correct temperature dependence of \lng{} by construction, and this is apparent when the split withholds temperature rather than structure. Training on measurements at $T \le 309.75$~K and testing at $T \ge 330$~K ($n_{\text{test}} = 3343$), the structured class attains a high-temperature MAE of $0.37$ against $1.29$ for a random forest over Morgan fingerprints plus temperature (in \lnx{} units), consistent with the temperature-aware \lngi{} modelling of \cite{sanchezmedina2023}. This is a property of the structured hypothesis class, not a performance claim for the trained model: the functional form carries temperature extrapolation that a descriptor-plus-temperature regressor does not. Neither is it a claim that our trained arms fail to carry it. The one checkpoint scored on this split is a near-constant predictor whose activity branch never left initialisation, so it separates nothing (\S\ref{sec:si-mech}); what would separate it is a retraining of both arms on this split at the budget used elsewhere here.
 
-\paragraph{Ranking and calibration.} Absolute error and decision quality diverge. Despite its high MAE, the physics path orders candidate solvents usefully (Table~\ref{tab:ranking}; nDCG@3 $\approx0.73$ across $n=826$ solute groups). Uncertainty, by contrast, is badly miscalibrated in the native model---a nominal-$90\%$ interval covers only PICP@90 $=0.13$ of held-out points---but split-conformal wrapping repairs it to $0.92$ empirical coverage at the same nominal level. The ranking signal and the post-hoc calibrated intervals are the practically usable outputs, even where the point predictions are not competitive.
+% REPLACED 2026-08-06.  What stood here was a single-arm table -- rho 0.511 / top-1 0.477 /
+% Kendall 0.436 / nDCG@3 0.732 at n=826 -- computed from
+% results/e0_compensation/tgnn_mpnn_test_predictions.csv, an early proxy checkpoint on a
+% SUPERSEDED split (826 groups, 5826 rows, against the current 823 and 5608).  It belonged to no
+% arm of Fig. 2 and sat one paragraph from the arms a reader would take it for.  It is replaced,
+% not annotated, by the paired within-checkpoint contrast of \S\ref{sec:paradox}, which measures
+% the same thing on the arms this paper is about.  The retired values are recorded in
+% paper/retired_numbers.txt.  The conformal sentence below comes from the same proxy checkpoint
+% and now says so.
+\paragraph{Ranking and calibration.} Absolute error and decision quality diverge, and within one
+checkpoint the divergence has a direction. Table~\ref{tab:ranking} ranks the solvents of each
+solute--temperature group of the labelled test rows under the two $\sigma$-profiles of
+\S\ref{sec:paradox}: the same weights, the same rows, and only the profile fed to the closure
+differing ($\max|\Delta\Phi|=4.2\times10^{-4}$ at the worst of the three seeds, against $4.4$ to
+$5.9$ between separately trained arms). With its own learned profile the model orders solvents above
+two solute-blind references; with the reference profile substituted it is not distinguishable from
+either, on any of the four metrics, at any of the three seeds. Both arms remain far above the
+within-group permutation floor, so the substitution does not reduce the ordering to chance---it
+reduces it to one that a ranker never shown the solute could produce. Groups are formed on solute
+and temperature rounded to $1$\,K, kept when they hold at least three distinct solvents, with
+duplicate measurements averaged per solvent. The effective
+sample is the $107$ solute clusters, not the $823$ groups, and every interval below is a $95\%$
+bootstrap over those clusters.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
-\caption{Solvent-ranking quality of the physics path on the scaffold test
-($n=826$ solute groups).}
+\caption{Solvent ranking under the two $\sigma$-profiles, on the labelled test rows grouped by
+solute and temperature ($823$ groups, $107$ solute clusters, $\ge3$ solvents per group). Both
+columns are one checkpoint per seed; only the profile injected into the closure differs.
+Per-seed values are $42/43/44$. The last column is the paired per-group difference averaged over
+the three seeds, with a $95\%$ cluster bootstrap over solutes; all three per-seed intervals exclude
+zero for $\rho$, $\tau$ and nDCG@3, and only seed $42$'s does for top-1, which is why that row is
+quoted pooled. The lower block gives each arm's margin over its \emph{own} solute-blind floors---a
+floor built from the other arm is not a comparison---and counts, over four metrics $\times$ three
+seeds $\times$ two floors, how many of those margins have an interval excluding zero. Each floor is
+rebuilt from the predictions of the arm it is set against.}
 \label{tab:ranking}
-\begin{tabular}{lr}
+% Width: the tabular must fit \textwidth (504.5 pt) inside table*. At \small with the default
+% \tabcolsep it runs 85 pt over, and the stub is where that is won back -- the qualifications
+% belong in the caption, not in a row label.
+{\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lllr}
 \toprule
-Metric & Value \\
+ & learned $\sigma$ & reference $\sigma$ & reference $-$ learned \\
 \midrule
-Spearman $\rho$ & $0.511$ \\
-Top-1 accuracy & $0.477$ \\
-Kendall $\tau$ & $0.436$ \\
-nDCG@3 & $0.732$ \\
+Spearman $\rho$   & $0.592/0.546/0.598$ & $0.365/0.369/0.410$ & $-0.197$ $[-0.282,-0.117]$ \\
+Kendall $\tau$    & $0.518/0.469/0.521$ & $0.303/0.306/0.333$ & $-0.188$ $[-0.263,-0.118]$ \\
+nDCG@3            & $0.796/0.748/0.792$ & $0.697/0.690/0.698$ & $-0.084$ $[-0.124,-0.043]$ \\
+Top-1 accuracy    & $0.586/0.515/0.548$ & $0.447/0.428/0.454$ & $-0.107$ $[-0.192,-0.020]$ \\
+\addlinespace[3pt]
+\multicolumn{4}{@{}l@{}}{\emph{Margin over its own solute-blind floor} ($\rho$)}\\
+shuffled-profile floor    & $+0.120/{+}0.209/{+}0.264$ & $+0.039/{+}0.033/{+}0.079$ & \\
+solute-blind label floor  & $+0.240/{+}0.207/{+}0.273$ & $+0.038/{+}0.037/{+}0.080$ & \\
+of $24$, excluding zero   & $24$ & $0$ & \\
+\addlinespace[3pt]
+permutation floor, $\rho$ & \multicolumn{2}{l}{$0.00\pm0.02$, both arms} & \\
 \bottomrule
-\end{tabular}
-\end{table}
+\end{tabular}}
+\end{table*}
+
+The shuffled-profile floor gives each group another randomly drawn solute's predictions over the
+same solvents, $200$ to $300$ draws; the solute-blind label floor ranks the group's solvents by
+their leave-one-solute-out mean measured solubility, which is label-derived and therefore an
+optimistic reference. Both are paired per group against the arm they are built from. Two of the
+reference arm's twenty-four margins are marginal rather than comfortable---seed $44$ against its
+own shuffled-profile floor, $\rho$ $[-0.005,+0.165]$ and nDCG@3 $[-0.001,+0.076]$---so
+\emph{indistinguishable from its floor} is the description all twenty-four support, and
+\emph{below} it is not. The contrast survives excluding the $16$ groups where some solvent has no
+reference profile and the arm therefore runs on a mixture ($807$ groups: $-0.212/{-}0.158/{-}0.172$),
+survives a leave-one-solute-out jackknife over the $107$ clusters (ranges $[-0.239,-0.211]$,
+$[-0.190,-0.157]$, $[-0.203,-0.171]$), and exceeds at every seed the largest difference between
+seed replicates of one arm ($|\Delta\rho|\le0.060$ over nine seed pairs, every interval spanning
+zero). Two further readings are not available from it. The floors are built at the prediction
+level, not by a forward pass on a permuted profile, so they are faithful to \emph{which} profile
+the closure sees and not to how its nonlinearity would answer a profile no molecule has; and the
+closure-carrying arm cannot be ranked against DirectGNN here, that difference---DirectGNN minus the
+learned-$\sigma$ arm---being $-0.056/{+}0.053/{-}0.040$ by seed, sign-flipping, each interval spanning
+zero and each smaller than the seed-replicate spread.
+
+Uncertainty, by contrast, is badly miscalibrated in the native model---a nominal-$90\%$ interval
+covers only PICP@90 $=0.13$ of held-out points---but split-conformal wrapping repairs it to $0.92$
+empirical coverage at the same nominal level. Those two figures come from an earlier proxy
+checkpoint on a superseded split and are a property of an uncalibrated regressor of this family
+rather than of any arm of Fig.~\ref{fig:paradox}; the repair is the generic split-conformal
+guarantee and does not depend on which arm is wrapped. The ranking signal and the post-hoc
+calibrated intervals are the practically usable outputs, even where the point predictions are not
+competitive.

@@ -156,3 +156,24 @@
 0.835  SUPERSEDED by the third seed: the same deficit at the loosest clip, two-seed, now 0.930 over three seeds. The three remaining entries of that list, 0.428, 0.469 and 0.631, become 0.425, 0.476 and 0.677; all three baseline values survive elsewhere in the submission.
 0.554  SUPERSEDED by the third seed: the sigma-oracle's MAE deficit over the control, averaged over seeds 42 and 43. Over three seeds it is 2.2517 - 1.7022 = 0.5495, now printed as 0.549.
 0.017  SUPERSEDED by the third seed: the margin by which the sigma-oracle's log10 S deficit exceeded its MAE deficit at the deposited clip, on two seeds. Over three seeds that margin is +0.0537, now printed as 0.054. The reading it qualifies is unchanged -- it still fails at the three tightest clips -- and its per-seed statement gains seed 44, which behaves as seed 43 does.
+
+# 2026-08-06. The orphaned solvent-ranking table (old Table S13, sections/supporting.tex) is
+# REPLACED, not annotated. Its four values and its n came from
+# results/ranking/tgnn_mpnn_ranking.json, computed over
+# results/e0_compensation/tgnn_mpnn_test_predictions.csv -- an early proxy checkpoint on a split
+# that no longer exists (826 groups over 5826 rows, against the current 823 over 5608). It matched
+# no arm of Fig. 2 and printed one paragraph away from the arms a reader would take it for; the
+# scaffold split is documented as unstable across pipeline versions, so it cannot be re-derived on
+# the current rows either. The replacement measures the same quantity on the arms this paper is
+# about -- learned sigma against reference sigma, one checkpoint per seed, three seeds, cluster
+# bootstrap over the 107 solutes -- so nothing the submission claimed about ranking is withdrawn;
+# each of the four values below is superseded by its paired three-seed counterpart.
+# Working: scratchpad negatives/ranking-final.md; deposits rank_final.json, rank_final_floorci.json.
+0.511  SUPERSEDED, and by an arm that exists: the proxy checkpoint's mean per-solute Spearman. The replacement prints the learned-sigma arm at 0.592/0.546/0.598 and the reference-sigma arm at 0.365/0.369/0.410, with the paired gap -0.197 [-0.282, -0.117].
+0.436  SUPERSEDED, same table and same reason: the proxy's mean Kendall tau. The replacement prints 0.518/0.469/0.521 against 0.303/0.306/0.333, gap -0.188 [-0.263, -0.118].
+0.732  SUPERSEDED, same table and same reason: the proxy's mean nDCG@3. The replacement prints 0.796/0.748/0.792 against 0.697/0.690/0.698, gap -0.084 [-0.124, -0.043]. The rounded restatement of it in the same paragraph, "nDCG@3 ~0.73", also goes; 0.73 survives elsewhere in the submission and so is not listed separately.
+826    SUPERSEDED: the proxy split's solute-group count, printed twice (table caption and paragraph). The current labelled test rows give 823 groups over 107 solute clusters under the same grouping rule, and both figures print in the replacement, the 107 being the effective n every interval is bootstrapped over.
+# 0.477 (the proxy's top-1 accuracy) is NOT listed: the value survives three times in the map
+# tables of S6, so its disappearance from this table cannot be flagged and needs no allowlisting.
+# The replacement prints top-1 at 0.586/0.515/0.548 against 0.447/0.428/0.454, gap -0.107
+# [-0.192, -0.020], quoted pooled because two of the three per-seed intervals span zero.

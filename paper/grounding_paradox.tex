@@ -532,6 +532,7 @@ Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($56
 \ldots and still hurt when injected at training & labelled test rows\tnk{c}, seed $42$ & $1.80\to1.98$ (own baseline $1.80\to2.23$); one seed and a stream build not certified against its comparator's (\S\ref{sec:si-repro}), so a sign and not an effect size---free of the test-time swap, which the row above is not \\
 \ldots so part of that gap is test-time distribution shift & labelled test rows\tnk{c}, seed $42$ & share $0.59$ on one seed: a description of that seed, not a magnitude \\
 Training-time $\sigma$ supervision \emph{helps} (MAE) & labelled test rows, 3 seeds & $2.04\to1.85$; the per-seed values do not overlap; per-seed gains $0.237/0.075/0.281$ straddle the co-adapted arm's $+0.18$, so the two operations are not ordered by magnitude---and the only contrast here a $\sigma$-stream leak could inflate, the ungrounded arm carrying no stream (\S\ref{sec:data}) \\
+The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 3 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ at the worst seed---so free of the separate-tuning confound of \S\ref{sec:discussion}; a per-group affine recalibration removes $86\%$ of the \emph{MAE} gap and leaves this one untouched, rank statistics being invariant under it. The substitution falls on the solvent channel \\
 \addlinespace[2pt]
 \multicolumn{3}{@{}l@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure}); margins in squared \lngi\ units, not the \lnx\ MAE of the block above}\\
 $\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.27,+2.83]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist \\
@@ -628,6 +629,45 @@ spread exceeds the measurement's, yet its MAE is the highest and its $R^2$ is no
 from zero; substituting the reference restores spread that is not aligned with the truth, and its
 worst region is the sparingly-soluble tail it appears to reach. That is the misspecified map made
 visible on the solubility axis.
+
+% RANKING (2026-08-06).  Added here and not in the SI because it says what the paradox IS about:
+% the substitution costs a decision, not a calibration.  It is the paper's one decision-level
+% contrast that needs no matched control -- both sides are ONE checkpoint, re-run with a different
+% profile injected, max |dPhi| <= 4.2e-4 -- which is why it sits in the section the confound
+% paragraph of \S\ref{sec:discussion} lists as surviving.  Everything printed here is three-seed
+% with a cluster bootstrap over the 107 solutes; the two things that are not (per-seed top-1, and
+% the affine residual at seed 43) are quoted pooled or not at all.  Working and deposits:
+% \S\ref{sec:supporting}, Table~\ref{tab:ranking}.
+The substitution also costs the decision the model is used for, and this is the one place that can
+be read with no matched control in the way: the reference-profile arm re-runs the grounded
+checkpoint's own weights over the same rows and changes only the profile fed to the closure, so the
+two sides differ in $\Phi$ by $4.2\times10^{-4}$ at the worst seed and no second tuning stands
+between them.
+Grouping the labelled test rows by solute and temperature and ranking the solvents inside each group
+($823$ groups over $107$ solutes; Table~\ref{tab:ranking}), the mean per-solute Spearman correlation
+falls from $0.592/0.546/0.598$ to $0.365/0.369/0.410$ across the three seeds---pooled $-0.197$
+$[-0.282,-0.117]$, every per-seed interval excluding zero, and every one of the three larger than
+any difference between seed replicates of a single arm, the largest of which is $0.060$.
+nDCG@3 falls by $-0.084$ $[-0.124,-0.043]$. The solvent the
+model would select changes in $40$ to $53\%$ of groups, asymmetrically: the learned profile alone
+picks the measured best solvent in $20.0/23.2/21.5\%$ of groups, the reference profile alone in
+$6.2/14.5/12.2\%$. None of it is a level. Fitting a separate affine recalibration inside every
+group---a slope as well as an intercept, the largest concession a reading on which the substitution
+merely miscalibrates can ask for---removes $86\%$ of the MAE gap, $+0.431$ $[+0.308,+0.553]$ to
+$+0.060$ $[+0.021,+0.101]$; so the MAE penalty is largely level and scale, which is the restored,
+misaligned spread of the paragraph above in another currency. Rank statistics are invariant under
+exactly that map, and that invariance, rather than any centring argument, is what leaves the ranking
+penalty standing where the MAE penalty falls.
+
+What stands in its place is a solute-blind ordering. Set each arm against two references that know
+nothing about the solute---the same arm's own predictions for a randomly drawn other solute over the
+same solvents, and a ranking of those solvents by their leave-one-solute-out mean measured
+solubility---and the learned-profile arm is above both on Spearman, Kendall, top-1 and nDCG@3 at all
+three seeds, twenty-four intervals of twenty-four excluding zero. The reference-profile arm is above
+neither reference, on any metric, at any seed: twenty-four of twenty-four include zero. Neither arm
+is chance, the within-group permutation floor being $\rho=0.00\pm0.02$ for both. Supplying the true
+physical intermediate does not leave the model miscalibrated about solutes. It leaves it unable to
+tell them apart.
 
 Which of the two channels the substitution fails through is not decided here. Drug-like solutes are
 essentially absent from the VT-2005 set, so the substitution falls almost entirely on the
@@ -1197,8 +1237,10 @@ trained model at all), \S\ref{sec:surrogate} and \S\ref{sec:gateb}. Separately, 
 accuracy claim about the bottleneck: no configuration we ran attains a lower \emph{seed-mean} error
 than the control---at one seed the NRTL arm does---and grounding the crystal factor on external labels did not
 move the ceiling (\S\ref{sec:e2}). The one place the physical \emph{structure} helps is temperature
-extrapolation, as a hypothesis-class property the trained models do not exploit
-(\S\ref{sec:supporting}).
+extrapolation, and it helps there as a property of the hypothesis class. Whether a trained arm
+inherits it we do not know: the only checkpoint ever scored on the temperature-withheld split is one
+whose predictions are near-constant, so it is untested rather than answered
+(\S\ref{sec:supporting}, \S\ref{sec:si-mech}).
 
 The external block is not like-for-like and the table says so in its own rows. FastSolv and SolProp
 are deposited here on a \emph{by-solute} split, this work's arms on the harder solute-scaffold split;

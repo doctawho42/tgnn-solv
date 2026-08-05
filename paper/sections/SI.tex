@@ -2235,9 +2235,28 @@ than structure (train at $T\le309.75$\,K, test at higher $T$; $n=3343$), the
 affine-in-$1/T$ hypothesis classes extrapolate far better than an unstructured
 descriptor regressor (Table~\ref{tab:si-temp}); the van't~Hoff class also predicts the
 \emph{direction} of the high-$T$ shift correctly $99\%$ of the time versus $40\%$ for
-the random forest. This is a property of the structured hypothesis class---the trained
-neural models are weaker than the van't~Hoff baseline---not an accuracy claim for our
-model.
+the random forest. This is a property of the structured hypothesis class and not an
+accuracy claim for our model.
+
+% WEAKENED 2026-08-06.  What stood here -- "the trained neural models are weaker than the
+% van't Hoff baseline" -- was read off ONE April checkpoint, and an audit of that checkpoint's
+% own intermediates shows it is statistically a constant predictor whose activity branch never
+% left initialisation.  A null model cannot establish a property of a hypothesis class, in
+% either direction.  Do not restore the clause without a checkpoint that predicts something.
+It is also not a claim in the other direction, and the reason is a defect in the
+evidence rather than a result. The one TGNN checkpoint ever scored on this split
+predicts, statistically, a constant: prediction standard deviation $0.58$ against a
+measured $2.56$, and an MAE of $1.95$ against $2.00$ for the best global constant and
+$1.46$ for the per-pair constant already in Table~\ref{tab:si-temp}. Its activity and
+correction outputs never left initialisation---$\lng$, $\tau_{12}$, $\alpha$, the gate
+and the correction magnitude have standard deviations between $4\times10^{-6}$ and
+$6\times10^{-4}$ over the test rows---and it was trained at a one-epoch first phase, on
+the pre-repair crystal labels of the corrupted-twin paragraph above. What it measures is the trainability of the
+bottleneck at that budget, not the temperature behaviour of a trained physics path, so no
+trained arm appears in Table~\ref{tab:si-temp} and none should be inferred from its
+absence. Settling the question needs the closure-carrying and closure-free arms retrained
+on this split at the budget used everywhere else here, read on the \emph{bias} of the
+fitted per-pair slope as well as its dispersion; that is a GPU run we have not made.
 
 \begin{table}[h]
 \centering
