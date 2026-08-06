@@ -290,6 +290,34 @@ not assert the scaffold guarantee for these runs.
 % the DirectGNN black-box probe tables (S24-S26) are on the control alone; the n=44 surrogate runs,
 % the freeze contrast and the E2 crystal null are separate run sets; Gate B's two arms are seed-42
 % runs of their own, inside "nothing else moves"; and Table 5 carries no ungrounded row.
+% 2026-08-07, THE SAME-PASS RULE RUN AGAINST THE RESTRUCTURE, BEFORE ANY NUMBERS LANDED.  The
+% phenomenon-first restructure re-sectioned the article: the incumbent Sec. 3.1's prose now lands in
+% three places -- sec:paradox (still 3.1), the new sec:decision (3.2) and the new sec:notdecided
+% (3.4) -- while the incumbent Sec. 3.2 became 3.5, the pKa section 3.6 and the discussion 3.7.
+% Every display named below is addressed by \ref{} LABEL and not by printed number, so LaTeX
+% renumbers this list for free; the one entry that named a SECTION rather than a display is repaired
+% above to name all three landing labels, so the re-run still reaches every sentence it reached
+% before.  No display left either document in the move: what left the article went to the Supporting
+% Information, which is inside the boundary this list draws.
+% NAMED EXCEPTION 1 to the scope-preserving rule on the sec:paradox rewrite.  The rewrite is
+% otherwise clause-preserving, with one clause deliberately dropped: "what evidence there is for the
+% causal reading is therefore taken from the activity axis ... the decomposition and the latent's
+% departure from its reference".  It is the only sentence in the article that characterised
+% Sec. 3.5 as evidence for a reading Sec. 3.7 declines to assert, and under the new numbering it
+% pointed across the Sec. 3.4 barrier.  What replaces it was already in the manuscript and is
+% stronger: the impossibility claim -- on the solubility axis the two terms do not separate at all --
+% together with the two-reason denial, both in sec:notdecided, which states the causal reading before
+% refusing it.  Its surviving clause, the latent's departure at n=44, moved to the head of
+% sec:surrogate.  No other clause of sec:paradox may be narrowed under cover of this exception.
+% ALSO CHECKED IN THE SAME PASS.  The heading of sec:paradox now names the two OPERATIONS and not
+% their signs, so branch 2's rewrite of that heading is a check rather than a change.  The five rows
+% of tab:claims under "the two senses of grounding" are untouched by the move and the count "five"
+% still holds.  tab:runs and tab:baselines stay in the article, so no entry here acquires a
+% "Table S-n".  Limitation (xii), which disposition D names, stayed in the article when limitations
+% (vii)-(xi) and (xiii) moved to sec:si-limitations, and sec:discussion keeps its label on Sec. 3.7,
+% so both dispositions still find their passage.  Gate B keeps its label sec:gateb, now inside
+% sec:surrogate, and the inventory's note that its two arms are seed-42 runs of their own still
+% holds.
 \paragraph{What the leak-free re-run reports, and what it decides.}
 The re-run is specified here rather than described afterwards, so that its protocol is fixed before
 its numbers exist. It trains the ungrounded and the grounded arm at five seeds ($42$ through $46$)
@@ -332,8 +360,11 @@ manuscript had left itself the choice of. Three arms carry those values: the ung
 grounded arm, and the $\sigma$-oracle arm, which is the grounded checkpoint re-evaluated with
 $\zstar$ substituted and therefore moves with it. Each display named next carries at least one of the
 three and is regenerated from the five-seed arms by the script that produced it---the abstract's
-$0.20$ and $0.41$; \S\ref{sec:paradox} entire, its per-seed gains, its seed-$42$ values and the
-regression slopes it reads off Fig.~\ref{fig:parity-lnx2} included; the five rows of
+$0.20$ and $0.41$; \S\ref{sec:paradox} entire, together with the two sections the restructure of
+2026-08-07 moved its prose into---\S\ref{sec:decision}, which carries the regression slopes read off
+Fig.~\ref{fig:parity-lnx2}, the ranking contrast and the solute-blind comparison, and
+\S\ref{sec:notdecided}, which carries its channel paragraph---the per-seed gains and the seed-$42$
+values included wherever they now print; the five rows of
 Table~\ref{tab:claims} under \emph{the two senses of grounding} and the $+0.14$ of its accuracy row;
 the seed list of the $\sigma$-grounding row of Table~\ref{tab:runs}; the ungrounded, grounded and
 oracle bars of Fig.~\ref{fig:paradox} with their $R^2$; panels (b), (c) and (d) of

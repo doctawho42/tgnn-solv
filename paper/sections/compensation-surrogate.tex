@@ -1,4 +1,4 @@
-\subsection{The end-to-end latent against its reference}
+\subsection{What moved inside the model, and whether a downstream correction repairs it}
 \label{sec:surrogate}
 % Artifact: results/sur/surrogate_seeds/surrogate_seeds.json (3-seed GCP L4) +
 % surrogate_vs_true.json via scripts/analysis/run_compensation_surrogate.py, n=44 matched VT-2005.
@@ -17,7 +17,10 @@ antecedent---that the latent leaves the reference along a direction shared acros
 than as per-molecule noise---is measured. Its consequent---that the departure cancels part of
 $\Bclos$---is not, and the one direct check available argues against it. The external reference that
 fixes the ceiling makes the first part testable: we compare the predicted profile $\hat\sigma$
-against the reference VT-2005 profile molecule by molecule ($n{=}44$).
+against the reference VT-2005 profile molecule by molecule ($n{=}44$). That comparison is the anatomy of the
+object the two operations of \S\ref{sec:paradox} act on---how far the learned intermediate has
+travelled from the reference that supervises it and then replaces it---and it is placed here, inside
+the phenomenon, for that reason and not as evidence for why either operation has the sign it does.
 
 \paragraph{The drift under fine-tuning.} The comparison is within a single grounded model,
 checkpointed before and after solubility fine-tuning (the $\sigma$ head unfrozen), so architecture
@@ -54,18 +57,6 @@ exclude a shrinkage of every profile toward the corpus-mean shape. On the refere
 \S\ref{sec:si-mech} the drift consumes essentially all the molecular specificity grounding had
 provided, as such a collapse would also look.
 
-% Declared here, immediately before the paragraph that cites it, so the two-column
-% float queue can place it inside this section rather than pages later.
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figs/fig_compensation_surrogate.pdf}
-\caption{The drift solubility fine-tuning imposes on the learned $\sigma$-profile ($n{=}44$
-VT-2005-matched molecules): $\hat\sigma$ after fine-tuning minus the \emph{same model's grounded
-profile}, not minus the external reference. Shown are the mean drift and its dominant PCA mode,
-defined only up to sign and drawn in the mean drift's direction; the legend's EVR is that mode's
-explained variance ratio.}
-\label{fig:surrogate}
-\end{figure}
 
 \paragraph{Dominant mode, and the direct cancellation test.} The dominant drift mode
 (Fig.~\ref{fig:surrogate}) transfers area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and
@@ -93,14 +84,7 @@ physics-grounded latents is not guaranteed under misspecification
 otherwise physically-faithful latent \cite{interno2026}. Its \emph{structure}---low-rank rather than
 diffuse---excludes a random collapse but not the structured shrinkage above.
 
-\paragraph{What leaves $\sigma$ under-determined by activity.} The freedom that would make such a
-cancellation possible is the closure's geometry: at infinite dilution the activity map concentrates
-on the one or two hydrogen-bonding directions where the closure is least faithful. The end-to-end
-head can therefore move $\sigma$ along the remaining, low-sensitivity directions at little cost to
-the fit---the $\sigma$-profile form of Lemma~\ref{prop:ident}. The Fisher measurement behind that
-statement, and the two respects in which it does not settle the question, are in
-\S\ref{sec:si-mech}; nothing here shows recovery of the physical profile to be impossible in
-principle. The sign of grounding turns on \emph{both} axes, and on which sense of grounding is meant.
+\paragraph{What leaves $\sigma$ under-determined by activity, and what freezing it buys.} The freedom that would make such a cancellation possible is the closure's geometry, measured in \S\ref{sec:si-mech}: at infinite dilution the activity map concentrates on one or two hydrogen-bonding directions, so the end-to-end head can move $\sigma$ along the remaining, low-sensitivity ones at little cost to the fit---the $\sigma$-profile form of Lemma~\ref{prop:ident}. Nothing there shows recovery of the physical profile to be impossible in principle. The sign of grounding turns on \emph{both} axes, and on which sense of grounding is meant.
 Freezing the $\sigma$ head at its supervised warm-up state instead of letting it drift end to end
 cuts the reference-input penalty by $65\%$ ($\Delta\mathrm{MAE}$ from $+0.40$ to $+0.14$ over
 $n{=}5571$ matched test rows). Those are a separate matched pair of runs, one base resumed twice with
@@ -110,3 +94,19 @@ alone does not, however, \emph{flip} the sign here---the penalty stays positive,
 being the low-fidelity COSMO-SAC-2002 and the warm-up $\sigma$ itself only partly physical. The full
 flip needs supervision \emph{and} fidelity together, which is what TeNNet-SAC \cite{yang2025tennet}
 has and this pipeline does not.
+
+% GATE B, 2026-08-07.  This was a subsection of its own (\S3.4 under the incumbent numbering); the
+% phenomenon-first restructure folds it in here as this section's closing paragraph, because it
+% asks whether the departure measured above can be repaired downstream and the answer belongs beside
+% the measurement.  The label is kept, so every \S\ref{sec:gateb} in both documents still resolves
+% -- now to this section.
+% Artifacts: results/e5_sigma_grounding/seed_42/grounded_a_truetrain_residual{,_v2}_predictions.summary.json (Gate B v1 gated-shut / v2 forced-open); model.py correction_force_open_gate.
+\paragraph{Whether a downstream correction repairs it.}
+\label{sec:gateb}
+If the closure binding were merely an inaccurate point estimate, a learned output-space correction on
+top of the physics prediction should recover accuracy. It does not: an additive bounded residual with
+a learned confidence gate leaves the gate effectively shut, and forcing it open removes the
+systematic \emph{bias} ($+0.45\to+0.06$) but recovers little \emph{accuracy} ($R^2$ $0.236\to0.274$
+on the same rows), as expected if the closure, not the estimate, is the binding constraint. Both arms
+are seed $42$ only, and this is a statement about the one correction tested: an additive bounded
+residual on the output, gated, on this closure and this corpus.

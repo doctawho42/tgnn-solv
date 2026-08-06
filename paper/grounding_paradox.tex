@@ -579,7 +579,7 @@ property of that composite and not of the kernel alone (\S\ref{sec:badclosure}).
 demoted by its residual test---the glycol ethers, the one row set the rule leaves standing.}}
 \end{table*}
 
-\subsection{The two senses of grounding}
+\subsection{Supervising the intermediate toward the reference, and substituting it at prediction time}
 \label{sec:paradox}
 The word ``grounding'' names two opposite operations on the same VT-2005 database. Supervising the
 $\sigma$ head against the database \emph{during training} improves solubility MAE from
@@ -616,6 +616,29 @@ cannot be ordered against the
 $-0.20$ at all, whose own per-seed values ($0.237$, $0.075$, $0.281$) straddle it. Which of the two
 operations is larger is therefore unresolved, and only their signs are carried forward.
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_paradox.pdf}
+% Caption: what is shown, and nothing else.  The two caveats that used to close it -- that
+% the sigma-oracle bar swaps the input at evaluation only, and that DirectGNN was tuned
+% separately -- are both in the body within a paragraph of this float.  Do not restore them.
+\caption{Controlled comparison on the $5608$ labelled test rows (Table~\ref{tab:notation}).
+Solid bars: three seeds,
+mean $\pm$ a population standard deviation (\texttt{ddof}$=0$). The two hatched bars are the
+co-adaptation controls, seed $42$ only, so they carry no error bar and no $R^2$, and keep an empty
+slot in the right panel. Dashed in the left panel only, the DirectGNN reference.}
+\label{fig:paradox}
+\end{figure*}
+
+\subsection{What the substitution costs: level, spread, and the choice of solvent}
+\label{sec:decision}
+% NEW SECTION NUMBER, 2026-08-07, carved out of the incumbent \S3.1 without rewriting a
+% clause of it: the parity/shrinkage paragraph, the ranking result and the solute-blind
+% comparison move here whole.  The section carries the phrase "the choice of solvent", which
+% to a chemist cashes as top-1 -- the one ranking metric of the three that does not hold per
+% seed -- so the sentence that first reports the ranking result states in its own period that
+% top-1 is pooled only.  Do not split that clause off into a later caveat, into
+% Table~\ref{tab:claims}, or into the Supporting Information.
 Figure~\ref{fig:parity-lnx2} sets the same rows out predicted against measured, for the control and
 three of the closure arms. Two things are visible there that the arm ordering is not. First, every
 arm is severely shrunk toward the corpus mean: the ordinary least-squares slope of predicted on
@@ -691,34 +714,66 @@ $\rho=0.00\pm0.02$ for both. Supplying the true physical intermediate does not l
 miscalibrated about solutes; it leaves its ordering of them indistinguishable from one drawn without
 them.
 
+\input{sections/fig-parity-lnx2}
+
+\input{sections/compensation-surrogate}
+
+\subsection{What the substitution does not decide, and what would settle it}
+\label{sec:notdecided}
+% NEW SECTION, 2026-08-07, phenomenon-first restructure (spine/phenomenon.md Sec. 3, slot 3).
+% IT IS THE BARRIER between the phenomenon (Secs. 3.1-3.3) and the second axis (Sec. 3.5), and it
+% sits BEFORE the second measurement rather than after it, so that it reads as forward scope --
+% what the next measurement is and is not for -- and not as a retroactive devaluation of pages the
+% reader has just finished.  Placing it after was the reading failure recorded against the rival
+% designs.
+% WHAT IS DELIBERATELY NOT HERE.  The sentence that used to close \S\ref{sec:paradox} -- "what
+% evidence there is for the causal reading is therefore taken from the activity axis ... the
+% decomposition and the latent's departure from its reference" -- is NOT carried forward.  It is
+% the only sentence in the article that characterises \S\ref{sec:measure} as evidence for a reading
+% \S\ref{sec:discussion} declines to assert, and under this numbering it pointed across this
+% barrier.  Its surviving clause lives with the latent's departure, at the head of
+% \S\ref{sec:surrogate}; what replaces the rest is the impossibility claim below.  The disposition
+% is recorded as named exception 1 in the pre-commitment inventory of \S\ref{sec:data}.
+% Do not restore it.  Do not preview \S\ref{sec:measure}'s parity result here either: a result of
+% the second axis stated inside the phenomenon block is the adjacency this section exists to
+% prevent, and it used to sit three words from the sentence above.
+% Do not cite \S\ref{sec:estimator} from this section or from \S\ref{sec:paradox}--\S\ref{sec:surrogate}:
+% the estimator cell is used by \S\ref{sec:measure} alone, and \S\ref{sec:measure} restates it at
+% its own head.
+
 Which of the two channels the substitution fails through is not decided here. Drug-like solutes are
 essentially absent from the VT-2005 set, so the substitution falls almost entirely on the
 \emph{solvent} channel, and the both-channel substitution the attribution would need covers only
 ${\approx}7$ solutes; enlarging that set would mean computing new reference profiles rather than
-looking them up. What evidence there is for the causal reading is therefore taken from the activity
-axis, where the reference
-input is clean and matched on both channels: the decomposition (\S\ref{sec:measure}) and the
-latent's departure from its reference ($n{=}44$, \S\ref{sec:surrogate}). There the fixed
-reference-input closure sits well above the bound on what its inputs can fail to resolve,
-under-predicting $\lngi$ with a systematic bias (Fig.~\ref{fig:parity}).
+looking them up.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig_paradox.pdf}
-% Caption: what is shown, and nothing else.  The two caveats that used to close it -- that
-% the sigma-oracle bar swaps the input at evaluation only, and that DirectGNN was tuned
-% separately -- are both in the body within a paragraph of this float.  Do not restore them.
-\caption{Controlled comparison on the $5608$ labelled test rows (Table~\ref{tab:notation}).
-Solid bars: three seeds,
-mean $\pm$ a population standard deviation (\texttt{ddof}$=0$). The two hatched bars are the
-co-adaptation controls, seed $42$ only, so they carry no error bar and no $R^2$, and keep an empty
-slot in the right panel. Dashed in the left panel only, the DirectGNN reference.}
-\label{fig:paradox}
-\end{figure*}
+Nor does anything above decide \emph{why} the substitution hurts. The reading it invites is that
+handing the closure a faithful input surfaces a misspecified map rather than repairing it, so that
+the reference profile is the better input only where the map that consumes it is faithful. This
+paper states that reading and does not assert it, and the reason is stronger than a test that
+returned nothing: on the solubility axis the two terms of the split do not separate at all, and the
+solubility axis is where the substitution of \S\ref{sec:paradox} was measured. The quantities the
+reading is about---a fixed map's own error, and what its inputs fail to carry---are therefore not
+observable on the rows \S\ref{sec:paradox}--\S\ref{sec:surrogate} report.
 
-\input{sections/fig-parity-lnx2}
+What follows in \S\ref{sec:measure} is a second axis and not an explanation of the first. It is a
+different reference database, a different error functional, no trained model at all, and a row set
+that shares none of the rows above; the two are measured in different regimes on largely disjoint
+chemistry, and no measurement in this paper connects them. Until the connecting experiment is run,
+``the substitution hurts \emph{because} the map is misspecified'' is an inference and this paper
+does not assert it.
 
-\subsection{Closure against inputs on the activity axis}
+Two experiments would settle it, and both are stated as limitations rather than as prospects. The
+first is the transfer back to the paradox's own regime---finite composition and all $\gamma$, where
+the substitution is measured, rather than infinite dilution, where the split is---which needs a set
+matched across the two reference databases on which both can be computed on the same rows; that is
+limitation~(i) of \S\ref{sec:discussion} and it is the principal open question here. The second is a
+typed $\sigma$-profile head trained end to end through a modern kernel, which is what would show
+whether the substitution's sign survives a closure of different fidelity: limitation~(x). Neither
+has been run.
+
+
+\subsection{A second axis: bounding a deployed COSMO-SAC against its inputs}
 \label{sec:measure}
 % Artifacts. VT-2005-matched set (n=60): results/b_insuff/decomposition.json via
 % run_b_insuff_decomposition.py; bin-count / Bessel / convention grid with per-cell bootstrap:
@@ -726,6 +781,17 @@ slot in the right panel. Dashed in the left panel only, the DirectGNN reference.
 % adaptive-bin bootstrap: results/b_insuff/keystone_robustness.json.
 % Broad IDAC set (n=477): results/b_insuff/representative_decomposition.json via
 % run_b_insuff_representative.py; round-2 design/provenance audit: representative_audit.json.
+% GUARD 6 (2026-08-07).  \S\ref{sec:estimator} is the last section of Methods and the section it
+% abuts is \S\ref{sec:paradox}, not this one, which is seven pages further on.  A pre-declaration
+% belongs beside its first number, so this section restates the cell and the four choices fixed in
+% advance at its own head.  The restatement may NOT add a choice, and where it and
+% \S\ref{sec:estimator} disagree, \S\ref{sec:estimator} governs.
+The estimator is the one cell fixed in advance in \S\ref{sec:estimator} and used nowhere else in
+this paper: eight equal-count bins of the conditioning variable, the residual convention, the
+within-bin Bessel correction, and the admissibility clauses~(a)--(c) that decide which strata may be
+read at all. All four were fixed before any margin was computed; none of
+\S\ref{sec:paradox}--\S\ref{sec:notdecided} is measured with them.
+
 The decomposition of \S\ref{sec:decomp} separates a fixed closure's error into a part in the map and
 a part in its inputs. Its output is a map over chemical strata rather than one verdict for a set,
 for the reason \S\ref{sec:broad} establishes, and it runs on two data sets that must not be
@@ -868,18 +934,14 @@ rule refuses it out of sample for the reason it refuses water-as-solute in sampl
 which therefore licenses nothing, is $+0.35$ $[+0.28,+0.58]$. Only ethylene glycol is shared with
 the four solvents of the in-sample cell; the three oligomers carrying $141$ of its $182$ rows are
 absent. What belongs with that verdict is the whole out-of-sample ranking rather than the part of it
-that runs this closure's way, stated as description and not as a test. Over that database's ten
-solvent classes the same cell returns $+1.73$ (aliphatic hydrocarbons, $875$ rows), $+0.67$
-(halogenated, $428$), $+0.60$ (N--H protic, $368$), $+0.35$ (the glycol-ether and polyol rows above,
-$52$), $+0.10$ (the unclassified remainder, $143$), $+0.09$ (mono-alcohols, $1027$), $+0.02$
-(aprotic acceptors, $1577$), $-0.13$ (aromatic hydrocarbons, $344$) and $-2.53$ (water, $3074$ rows,
-the largest class there), with one row and no estimate on the aryl ethers
-(Table~\ref{tab:oos-map}). Of the ten the admissibility rule admits two---the mono-alcohols, whose
-$+0.09$ carries a $90\%$ interval $[-0.06,+0.32]$ covering zero, and water at $-2.53$---so no
-out-of-sample class both passes the rule and separates the two terms, and every margin above the
-mono-alcohols' sits on a class the rule refuses. Out of sample the glycol ethers are neither where
-this closure fails hardest nor a cell the rule can read. The chemical localisation is therefore what
-the instrument licenses on the rows it was computed on, and the title does not carry it.
+that runs this closure's way, stated as description and not as a test, and that ranking is
+Table~\ref{tab:oos-map}: over the database's ten solvent classes the same cell admits two, the
+mono-alcohols---whose margin is positive with an interval covering zero---and water, whose margin is
+negative. No out-of-sample class both passes the rule and separates the two terms, and every margin
+above the mono-alcohols' sits on a class the rule refuses. Out of sample the glycol ethers are
+neither where this closure fails hardest nor a cell the rule can read. The chemical localisation is
+therefore what the instrument licenses on the rows it was computed on, and the title does not carry
+it.
 
 It is also the whole of the separation this paper reports, and the
 statement carries five boundaries that the phrase ``COSMO-SAC error exceeds input error'' does not:
@@ -893,32 +955,17 @@ is one its own chemistry-blind null returns at the ninetieth
 percentile, on the one chemistry no out-of-sample rows exist for.
 
 \emph{Which chemistry does not separate.} Three of the six admissible cells are that same row set at
-three granularities. The remaining three are two row sets, and neither establishes anything. The
-alkane solutes ($129$ rows, $45$ pairs, $+1.38$, $[+0.79,+2.33]$) are admissible and positive, and
-clause~(c) demotes them to the glycol ethers, which hold more rows and hold $108$ of these $129$:
-the alkane residual outside them is $21$ rows, too few to bound at the fixed cell, and returns
-$-0.22$ there, so the alkanes' margin does not stand outside the glycol ethers---where the glycol
-ethers' does stand outside the alkanes, on the $74$ rows at the $+1.40$ above. What demotes the cell
-is that residual, not the $84\%$ overlap and not the $-0.22$, which is itself
-sub-threshold. The acceptor-only aprotics ($57$ rows, $-0.19$, negative in
-all four cells, $P<0.2$ at both units under the deployed convention and $P\approx0.3$ under the full
-one, at an $\mathrm{MSE}$ of $0.089$ that is at the scale of the measurements) pass the rule and
-license nothing, the instrument being one-sided; their deletion test is additionally
-\emph{anti}-conservative, two of the four deletions leaving $n<40$, where the Bessel within-bin
-variance inflates---$0.140$ to $0.258$ on the $n{=}38$ remainder---and drives a negative margin
-further negative. That is the whole of the uniqueness claimed for the glycol ethers: the only row set
-admissible, positive and left standing by clause~(c)---\emph{not} the only admissible stratum and not
-the only one sign-stable under every deletion. Of the rest, water carried as the dilute solute ($37$
-rows, $+6.33$) is too small to bound and draws on one publication, so its deletion cannot be run and
-that margin was never put at risk; the halogenated solvents ($30$ rows, $+3.39$) are too small to
-bound and only one of their two deletions runs, leaving $+5.84$;
-water as a solvent, the coarse hydroxylic class and the organic-solute subset each lose their sign
-under a deletion, which is why the finding belongs to the glycol-ether sub-class and not to the
-hydroxylic solvents as a class; the mono-alcohols, the N--H protics and the ester and azine
-sub-families, which an acceptor-only reading would lean on, are unboundable. None may be used to
-explain a reversal. The whole-set row passes at the headline cell
-and fails once the pair unit is required, so the rule does not by itself dispose of the aggregate
-there; the composition argument above does.
+three granularities. The remaining three are two row sets and neither establishes anything: the
+alkane solutes are admissible and positive and clause~(c) demotes them to the glycol ethers, which
+hold more rows and hold most of theirs, while the acceptor-only aprotics pass the rule and license
+nothing, the instrument being one-sided. That is the whole of the uniqueness claimed for the glycol
+ethers: the only row set admissible, positive and left standing by clause~(c)---\emph{not} the only
+admissible stratum and not the only one sign-stable under every deletion. Which cell each of the
+remaining strata fails on, and by how much---too few rows to bound, one publication so that the
+deletion cannot be run, or a sign lost under a deletion---is in \S\ref{sec:si-map}, and none may be
+used to explain a reversal. The whole-set row passes at the headline cell and fails once the pair
+unit is required, so the rule does not by itself dispose of the aggregate there; the composition
+argument above does.
 
 \emph{Why the output is a map.} $\Binsuf^{\mathrm{up}}$ is nearly stratum-independent and
 $\mathrm{MSE}$ is not. Across the three classes the design can bound---glycol ether, water and the
@@ -958,74 +1005,34 @@ $298$\,K under UD profiles, so the two are not independent samples---this is the
 and therefore the paradox's own oracle, is defined on, and the agreement between the two sets' error
 orderings is a consistency check rather than corroboration.
 
-\subsubsection{Whether a better closure moves the ceiling}
+\subsubsection{Whether a better closure moves the ceiling, and where this one fails}
 \label{sec:fidelity}
-% Artifacts: results/b_insuff/fidelity_lever_fair2002.json via run_fidelity_lever_fair2002.py;
-% results/b_insuff/closure_flip_ci.json via run_closure_flip_ci.py; block split of the kernel
-% contrast (shared 57 / complementary 420) in results/b_insuff/representative_audit.json.
+\label{sec:badclosure}
+% 2026-08-07 FOLD.  These were two subsubsections (the incumbent 3.2.3 and 3.2.4).  The
+% phenomenon-first restructure folds them into one closing block and moves the detail to
+% \S\ref{sec:si-fidelity}: the input-fixed control and its three limits, the convention and
+% dispersion arms, the block split's third block, the floor checks under the typed latent, the
+% published-evaluation split of the donor reading, and the Staverman--Guggenheim counter-test.
+% BOTH LABELS ARE KEPT HERE on purpose -- \S\ref{sec:fidelity} and \S\ref{sec:badclosure} are cited
+% from Table~\ref{tab:claims}, Table~\ref{tab:notation}, the head of \S\ref{sec:results} and six
+% places in the Supporting Information, and all of them still mean this block.
 If the ceiling is the closure, the direct remedy is a better closure. The standard $2002\to2010$
 step delivers one on the VT-2005-matched set and not on the broad IDAC set, and a block split
-identifies the factor that carries that reversal.
+identifies the factor that carries that reversal. The step more than halves the smaller set's error
+under the full convention ($P>0.95$), the convention under which the two kernels' published error
+figures are reported, and cuts it $42\%$ under the deployed one; on the broad IDAC set it is not an
+improvement under either rule. The reversal is the \emph{chemistry} and neither the profile database
+nor the temperature range---with UD profiles, one extraction and one convention throughout, the
+\emph{2010, dispersion off} arm wins on the $57$ pairs shared with the smaller set and does not win
+on the complementary $420$---and that block split is the whole of the evidence for the reversal being
+chemical. We claim only that \textbf{the fidelity lever we can demonstrate is confined to the smaller
+set's chemistry}, and that null is additionally a small-molecule and glycol-heavy one, so on
+drug-like solids the lever is untested rather than absent. The input-fixed control and its three
+limits, the three arms on both sets under both conventions (Table~\ref{tab:kernels}), the third block
+at $298$\,K, and the floor checks under the 2010 kernel's own typed latent---where the ordering is
+lost on the smaller set and holds on the broad one, loss of resolution rather than a demonstrated
+flip to the inputs---are in \S\ref{sec:si-fidelity}.
 
-The two kernels have no \emph{prescribed} common input, $\sigma$-profile averaging being part of each
-model's definition, so evaluating each on its native profile is the specified use. An input-fixed
-\emph{control}---profile database, cavity area, volume and averaging held fixed, kernel alone
-varied---gives $2.047\to0.765$ on the smaller set ($P>0.95$), under three limits: it cannot separate
-the donor/acceptor typing, which the 2002 kernel has no channel to consume and which is therefore
-charged to the kernel by construction; its step is larger than the native-input one, so it is
-favourable to the conclusion it supports; and its re-averaging term is unresolved. The NIST
-implementation detail fixing the \emph{fair 2002} arm at $1.757$, and the three arms on both sets
-under both conventions, are in Table~\ref{tab:kernels}.
-
-The step more than halves the smaller set's error under the full convention ($P>0.95$), the
-convention under which the two kernels' published error figures are reported, and cuts it $42\%$
-under the deployed one. On the broad IDAC set it is not an improvement under either rule, and the
-$3\%$ the dispersion term recovers there is a null whose interval is an order of magnitude wider than
-the effect. That arm's run on the smaller set is on $n{=}57$, three halogenated pairs having no
-tabulated dispersion value---a coverage limit of the model offered as the lever; no claim rests on
-the $0.765$-versus-$0.785$ ordering, which is not an artifact of the differing $n$.
-
-The reversal is the \emph{chemistry} and neither the profile database nor the temperature range:
-with UD profiles, one extraction and one convention throughout, the \emph{2010, dispersion off} arm
-wins on the $57$ pairs shared with the smaller set, does not win on the complementary $420$, and
-still does not win on the $80$ complementary rows that are \emph{also} at $298$\,K---that last block
-at $P\approx0.3$ and no interval, the three blocks not having been tested against one another. The
-VT-2005-matched set is a low-$\gamma$, hydrogen-bond-dominated sub-design, the regime the
-donor/acceptor-typed 2010 kernel was built for. The map does not corroborate the reversal from the
-other side and we do not ask it to: the typed kernel is not an improvement on the broad set, of whose
-squared error the glycol ethers carry $45\%$, and the classes that would explain a reversal---the
-halogenated solvents, the aryl ethers and water as the solute, largely one row set, all $13$
-aryl-ether rows and $18$ of the $30$ halogenated being water-as-solute rows from one
-publication---are the cells the rule excludes. The block split is the whole of the evidence for the
-reversal being chemical.
-
-The floor checks are same-database, same-latent \emph{and} same-convention. The \emph{UD-native}
-check on the smaller set, the one commensurable with the broad set, is at zero under the deployed
-rule and $+0.69$ under the full convention. Under the 2010 kernel's own typed latent,
-$306$-dimensional and so several times worse resolved, the ordering is \emph{lost} on the smaller set
-($-0.77$) and holds on the broad set ($+1.29$)---both aggregates, and read as such. That is loss of
-resolution, not a demonstrated flip to the inputs, which would need a \emph{lower} bound on
-$\Binsuf$. We know of no large-scale infinite-dilution benchmark of the $2002\to2010$ step, and our
-search was not exhaustive, so the broad-set result is an absence of evidence rather than evidence of
-absence; it lies within the range of magnitudes the comprehensive
-assessment~\cite{fingerhut2017} reports. We claim only that \textbf{the fidelity lever we can
-demonstrate is confined to the smaller set's chemistry}, and that null is additionally a
-small-molecule and glycol-heavy one, so on drug-like solids the lever is untested rather than absent.
-
-% 2026-08-05, WHOSE ERROR B_closure IS.  A referee reported that B_closure is the error of a
-% COMPOSITE -- the kernel applied to one fixed computed conformer -- and that the manuscript conceded
-% this in the last paragraph of this section while localising the error in the KERNEL everywhere
-% else, including in the sentence about the H-bond term below.  The composite now arrives in the
-% definition (Sec. 2.1.1), in Table 1, in Table 3 note g, in limitation (iv) and in the first
-% sentence here, and the H-bond sentence says what it can: the error is placed in a CHEMISTRY, and
-% strong donors are also where one gas-phase conformer is furthest from the ensemble, so this design
-% does not separate kernel from profile.  The closing paragraph now SIZES the exposure against
-% Table 2's own two-database bracket (2.6x in AAD, 6.6x squared, against the 10.5x reduction the
-% established stratum's margin would need to close) instead of only conceding it.
-% Do not restore "puts that set's B_closure in COSMO-SAC's ... H-bond kernel": on this evidence the
-% localisation is chemical, and the profile axis is the one the paper cannot rule out.
-\subsubsection{Correctability, and where the closure fails chemically}
-\label{sec:badclosure}
 Where $\Bclos$ dominates---on this set, the one row set the rule leaves standing---the ceiling is in the
 map \emph{as it is deployed}: the fixed kernel together with the one computed conformer it reads,
 which is the composite $\Bclos$ is the error of (\S\ref{sec:decomp}) and the object the pipeline
@@ -1043,32 +1050,13 @@ error came from.
 
 Where it fails is chemically placed, and placed differently on the two sets. On the VT-2005-matched
 set $90\%$ of the squared error falls on strong hydrogen-bond-donor solvents and the closure is
-near-exact on acceptor-only ones. That is the chemistry COSMO-SAC's documented single-parameter
-H-bond term governs---the term the donor/acceptor-typed 2010 closure was built to replace.
-% 2026-08-05.  This clause used to read "and the same localisation the published evaluation of
-% Table 2 shows on 130 times as many rows".  Scoring the classes of that published set directly
-% (results/b_insuff/glycol_ether_out_of_sample.json) shows half of the reading carries over and
-% half does not, so the clause now says which half.  Do not restore "the same localisation": on
-% the larger set the strong donors take 56% and not 90%, and the inert solvents -- which the
-% smaller set's reading has nothing to say about -- take a third of the error at the highest
-% per-row rate of the three.
-Half of that reading carries to the published evaluation of
-Table~\ref{tab:closure-anchor}, $130$ times as many rows: the acceptor-only solvents take $10\%$
-of its squared error at $\mathrm{MSE}$ $0.60$, the lowest of its three donor classes. The donor
-half does not carry intact---strong donors take $56\%$ there rather than $90\%$, and its inert
-solvents, on which the smaller set's reading is silent, take $34\%$ at the highest per-row error
-of the three. It places the error in a \emph{chemistry} and not in one component of the
-composite: the reference profile for each of those solvents is one gas-phase conformer too, and on
-the glycol ethers---donor and acceptor on one flexible chain, the class
-this paper's own cascade names conformer-dependent (\S\ref{sec:si-tables})---a displaced reference
-would load onto exactly the rows that carry the error. Neither set separates that from the kernel.
-On the broad set that reading does not reproduce, and neither does its
-replacement, an absent dispersion term: which of the two the broad set points at is decided in either
-direction by the same publication the map already declines to state, so we state neither, and the
-H-bond reading remains the VT-2005-matched set's, neither corroborated nor replaced by the broad set.
-The residual's fold design and rank ordering, its failure to gain over the free $2002\to2010$ step
-above, and the Staverman--Guggenheim counter-test in which the physically \emph{more} complete
-combinatorial term \emph{increases} error on size-asymmetric pairs are in \S\ref{sec:si-tables}.
+near-exact on acceptor-only ones---the chemistry COSMO-SAC's documented single-parameter H-bond term
+governs, the term the donor/acceptor-typed 2010 closure was built to replace. Half of that reading
+carries to the published evaluation of Table~\ref{tab:closure-anchor} and half does not, and on the
+broad set neither it nor its replacement reproduces, so we state neither
+(\S\ref{sec:si-fidelity}). It places the error in a \emph{chemistry} and not in one component of the
+composite: the reference profile for each of those solvents is one gas-phase conformer too, and
+neither set separates a displaced reference from the kernel.
 
 That COSMO-SAC-2002 is a low-fidelity closure is the contribution rather than a qualification of the
 result: it is what a practitioner adopts by default, a closure's fidelity is \emph{not knowable in
@@ -1088,21 +1076,7 @@ a more than ten-fold reduction (Table~\ref{tab:map-detail}). A profile source be
 the whole of that published bracket would leave that sign standing. The arithmetic holds the
 insufficiency bound fixed, which a new profile source would not, so it sizes the exposure and does
 not bound the share.
-
-\input{sections/compensation-surrogate}
-
-\subsection{A downstream correction on the output}
-\label{sec:gateb}
-% Artifacts: results/e5_sigma_grounding/seed_42/grounded_a_truetrain_residual{,_v2}_predictions.summary.json (Gate B v1 gated-shut / v2 forced-open); model.py correction_force_open_gate.
-If the closure binding were merely an inaccurate point estimate, a learned output-space correction on
-top of the physics prediction should recover accuracy. It does not: an additive bounded residual with
-a learned confidence gate leaves the gate effectively shut, and forcing it open removes the
-systematic \emph{bias} ($+0.45\to+0.06$) but recovers little \emph{accuracy} ($R^2$ $0.236\to0.274$
-on the same rows), as expected if the closure, not the estimate, is the binding constraint. Both arms
-are seed $42$ only, and this is a statement about the one correction tested: an additive bounded
-residual on the output, gated, on this closure and this corpus.
-
-\subsection{A second chemical closure: pKa through a fixed Hammett relation}
+\subsection{The same split on a second closure: pKa through a fixed Hammett relation}
 \label{sec:pka-main}
 The instrument is not specific to COSMO-SAC, and a second domain runs it where the sign of grounding
 can be predicted before the measurement. The closure is a Hammett linear free-energy relationship
@@ -1210,7 +1184,7 @@ which only $G{=}4$ exist, so the bootstrap resolves nothing finer than series-le
 read as a sign test on four units ($p{=}1/16$ on the pole where grounding hurts). The construction,
 the estimator validation and the measured fidelity sweep are in \S\ref{sec:pka}.
 
-\subsection{Scope of the results}
+\subsection{Scope, accuracy, and limitations}
 \label{sec:discussion}
 The result is a cautionary measurement about one of the two operations the word ``grounding'' names,
 and it is two measurements made in different places. On solubility: supervising a learned physical
@@ -1254,8 +1228,9 @@ chemical axes. We claim no accuracy result in either direction; those strata are
 \S\ref{sec:map} and \S\ref{sec:data-efficiency} as descriptions of where two particular pipelines
 differ, and no conclusion rests on them. Running the matched control is the direct repair and we have
 not run it. What survives the confound is every \emph{within-checkpoint} contrast, where the two
-sides share one trained model and one tuning: \S\ref{sec:paradox}, \S\ref{sec:measure} (which uses no
-trained model at all), \S\ref{sec:surrogate} and \S\ref{sec:gateb}. Separately, and not as an
+sides share one trained model and one tuning: \S\ref{sec:paradox}, \S\ref{sec:decision} (the ranking
+result included), \S\ref{sec:surrogate} with the output correction folded into it, and
+\S\ref{sec:measure}, which uses no trained model at all. Separately, and not as an
 accuracy claim about the bottleneck: no configuration we ran attains a lower \emph{seed-mean} error
 than the control---at one seed the NRTL arm does---and our one attempt to move the ceiling by grounding the
 crystal factor on external labels tested nothing, its pool being $97.76\%$ melting points the model was
@@ -1265,47 +1240,7 @@ inherits it we do not know: the only checkpoint ever scored on the temperature-w
 whose predictions are near-constant, so it is untested rather than answered
 (\S\ref{sec:supporting}, \S\ref{sec:si-mech}).
 
-The external block is not like-for-like and the table says so in its own rows. FastSolv and SolProp
-are deposited here on a \emph{by-solute} split, this work's arms on the harder solute-scaffold split;
-retraining them on the scaffold split needs a GPU run we did not perform, and scoring released
-FastSolv weights on our test rows is invalid because FastSolv is trained on BigSolDB, which is this
-corpus. The third block is as published, on other corpora, with $\log_{10}S$ in molarity against mole
-fraction here, so the dimension matches---through the conversion the caption defines, which puts our
-$S$ per litre of \emph{solvent} where the quoted block's basis is unstated---and the task does not. One sentence survives all three caveats, and it is not a favourable one: this work's control, at
-$\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is the same order as published new-solute
-extrapolation rather than an order away. The published leaders run $0.83$ to $0.99$
-and the physics-informed cycle $1.43$ to $2.16$, so the control's seed mean sits just past the worst
-leader---at one of its three seeds ($0.97$) it is under it; the
-physics arms, at $1.39$ to $1.60$, are worse than every published leader at every seed and every
-clip. The NRTL and grounded arms
-also trail their control by more here---an RMSE deficit---than in MAE, at every clip of the
-caption's sweep and at every seed; the $\sigma$-oracle does not, and \S\ref{sec:si-baselines} says
-where. Where
-they sit \emph{within} the cycle's range is not a reading
-this column supports: it moves with the saturation clip the caption defines---the control's figure
-does not move with that clip and all three of theirs do---and at the tight end of that sweep the
-NRTL and grounded arms fall below the cycle's better end at every seed, the $\sigma$-oracle in its
-seed mean and at two of its three seeds but not at seed $43$. They are also worse, in
-this column, than predicting one number for the entire test set: the scale reference reads $1.33$ on
-the same rows, below all three printed figures. That is a reading of the seed-mean column at the
-deposited clip and not of the models---at seed $42$ the grounded arm is below the reference at every
-clip, $1.13$ against $1.33$ at the deposited one, and seed-averaged the grounded and NRTL arms fall
-under it at the tight end as well; the caption counts the cells.
-What may be read from the three figures is what survives the sweep---all three above every published
-leader and above their own control---and not the two decimals. The $0.75$
-aleatoric estimate \cite{osanloo2024}---itself a different functional on a different base from this
-paper's own floor (\S\ref{sec:data})---sits below every row of the table but two, the closest
-published figure being the leaders' $0.83$; both exceptions, at $0.61$ and $0.45$, are on the
-random-pair split, where the same solute appears in training and the task is not extrapolation. The
-two arms run on both splits move the way the split predicts: the FastSolv retrainings score MAE
-$1.44$ in \lnx\ by solute against $1.02$ on random pairs, the retrained SolProp encoder $1.62$
-against $0.64$. That FastSolv pair is re-scored, and it replaces one that read the other way round.
-Both runs had been scored through a prediction path of ours that standardises the model's inputs
-twice, which saturates the network's input activation on temperature and leaves the predictions
-exactly constant in $T$; the fitted checkpoints were unaffected, so the repair is an inference pass
-on those same checkpoints and not a retraining (\S\ref{sec:si-baselines}). Re-scored, the by-solute
-row reads $\log_{10}S$ RMSE $0.84$, inside the published $0.83$ to $0.95$ but on an easier split than
-this work's arms are held to.
+The external block is not like-for-like and the table says so in its own rows. FastSolv and SolProp are deposited here on a \emph{by-solute} split, this work's arms on the harder solute-scaffold split, and the third block is as published, on other corpora and in another unit; retraining the two on the scaffold split needs a GPU run we did not perform, and scoring released FastSolv weights on our test rows is invalid because FastSolv is trained on this corpus. One sentence survives all three caveats, and it is not a favourable one: this work's control, at $\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is the same order as published new-solute extrapolation rather than an order away, and the physics arms are worse than every published leader at every seed and every clip. What may be read from those figures is what survives the caption's clip sweep and not the two decimals. The full reading---where each arm sits inside the sweep, which four readings fail on the seed axis as well as the clip one, the scale reference the physics arms fall under, and the doubly standardising prediction path that the re-scored rows withdraw---is in \S\ref{sec:si-baselines}.
 
 % ---------------------------------------------------------------------------
 % EXTERNAL BASELINES, IN THE ARTICLE (2026-08-02, editorial item A3).  The only comparison against
@@ -1446,35 +1381,11 @@ The rule is also one-sided in what it can deliver: with $\Binsuf$ bounded
 only from above, no cell can ever return ``better inputs would help here'', so the map only ever
 withholds a chemistry from an allocation of grounding effort.
 
-\paragraph{Limitations: what is untested, and what is not auditable.} (vii)~Absolute scaffold
-accuracy is encoder-bound but well \emph{above} the inter-lab noise floor of \S\ref{sec:data}, so
-label noise does not explain the ceiling. (viii)~The latent-departure result is three-seed
-mean$\pm$sd ($n{=}44$): what it establishes is the \emph{sign} and a transferable shared direction,
-the magnitudes ($51\pm2\%$/$72\pm1\%$/$4.1\pm0.5\times$) being reported but not stable across
-analysis configurations. Which null each of the two distinct top-two shares clears, and that none of
-it is measured on the arms of Fig.~\ref{fig:paradox}, whose own latent departure is not measured,
-are in \S\ref{sec:surrogate}. (ix)~The probe on the unconstrained control is
-bounded by the same reference scarcity: its crystal-term and temperature tests rest on $13$ held-out
-solutes and cannot be enlarged, so the negative there is a bound and not a
-demonstration that no crystal information is present; the crystal-slope test is additionally limited
-by the corpus, whose empirical slope carries $-\Delta H_{\text{fus}}/R$ at $r=+0.24$. The
-scaffold-organisation result needs no external reference, but its two partitions nearly coincide by
-construction, so a ratio near one is weak evidence of within-scaffold indistinguishability
-(\S\ref{sec:si-blackbox}). (x)~The closure-fidelity contrast compares \emph{oracle-input} activity
-error across kernels, so $\Ggap$ itself is not measured under a modern closure on either axis, and
-whether the \emph{solubility} paradox survives a $2010$/dsp closure is untested; both need a typed
-$\sigma$-profile head trained end to end through the 2010 kernel, and the solubility test a
-UD$\,\cap\,$BigSolDB matched set. (xi)~No difference in accuracy between the physics and control arms
-is attributable to the thermodynamic bottleneck; the confound and what survives it are stated above.
-(xii)~The scaffold-leak guard is a property of the released stream builder and not a certified
+\paragraph{Limitations: what is untested, and what is not auditable.} (xii)~The scaffold-leak guard is a property of the released stream builder and not a certified
 property of these runs, so the $0.20$ supervision gain is the one reported number a leak could
 inflate and is uncertified until the leak-free re-run (\S\ref{sec:data}); the arguments that bound
 the other contrasts do not restore auditability.
-(xiii)~Several of the numbers the verdict rests on are checkable only by
-re-running the released code, whose input artifacts are larger than the repository carries; the two
-decomposition sets are therefore deposited as row-level tables (Data Sets~S1 and~S2), so the sets and
-their margins can be recomputed without code, which does not deliver the provenance of the closure
-evaluations in them or of the trained arms.
+The six remaining limitations---(vii) the accuracy ceiling against the noise floor, (viii) what the three-seed latent-departure result establishes and what it does not, (ix) the reference scarcity that bounds the black-box probe, (x) the closure-fidelity contrast and the two runs that would settle it, (xi) the separate-tuning confound stated above, and (xiii) what is checkable only by re-running the released code---are in \S\ref{sec:si-limitations}, with their numerals preserved.
 
 % CONCLUSIONS: two paragraphs, no numbers, and not a restatement of the abstract -- the
 % consequence and the design rule, touching a finding only to carry the "therefore".
