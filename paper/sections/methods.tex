@@ -276,6 +276,20 @@ not assert the scaffold guarantee for these runs.
 % latitude the pre-commitment was written to remove.  Do not shorten it by dropping a display, and
 % if a display carrying the ungrounded, grounded or sigma-oracle arm is added to either document,
 % add it here in the same pass.
+% 2026-08-06, THE PASS THAT RULE ASKS FOR, AND WHY IT WAS NEEDED.  The ranking contrast was added to
+% Sec. 3.1 and Table 4 on 2026-08-06, a day after this list was fixed, and the same-pass rule was
+% not run: the count here still said FOUR rows of Table 4 where the block had FIVE, and Table S17 --
+% both of whose columns ARE re-run arms, the grounded checkpoint and its own sigma-oracle
+% re-evaluation -- was not enrolled at all.  Both are repaired above.  The same audit over the rest
+% of both documents found three more displays resting on the three arms and unenrolled, all now
+% listed: Sec. S6.4 with Tables S19 and S20, which resolve the enrolled +0.14 per solvent and solute
+% class off the grounded arm's own 1.85 +- 0.05; Sec. S1's row-class split of the substitution
+% (-0.000 / +0.431 / +0.006), which is the enrolled +0.41 split by which molecule the reference
+% reached; and the three certification passages, which the in-run guard answers rather than
+% revalues.  What was checked and left out is recorded too, so the next pass does not re-derive it:
+% the DirectGNN black-box probe tables (S24-S26) are on the control alone; the n=44 surrogate runs,
+% the freeze contrast and the E2 crystal null are separate run sets; Gate B's two arms are seed-42
+% runs of their own, inside "nothing else moves"; and Table 5 carries no ungrounded row.
 \paragraph{What the leak-free re-run reports, and what it decides.}
 The re-run is specified here rather than described afterwards, so that its protocol is fixed before
 its numbers exist. It trains the ungrounded and the grounded arm at five seeds ($42$ through $46$)
@@ -319,7 +333,7 @@ grounded arm, and the $\sigma$-oracle arm, which is the grounded checkpoint re-e
 $\zstar$ substituted and therefore moves with it. Each display named next carries at least one of the
 three and is regenerated from the five-seed arms by the script that produced it---the abstract's
 $0.20$ and $0.41$; \S\ref{sec:paradox} entire, its per-seed gains, its seed-$42$ values and the
-regression slopes it reads off Fig.~\ref{fig:parity-lnx2} included; the four rows of
+regression slopes it reads off Fig.~\ref{fig:parity-lnx2} included; the five rows of
 Table~\ref{tab:claims} under \emph{the two senses of grounding} and the $+0.14$ of its accuracy row;
 the seed list of the $\sigma$-grounding row of Table~\ref{tab:runs}; the ungrounded, grounded and
 oracle bars of Fig.~\ref{fig:paradox} with their $R^2$; panels (b), (c) and (d) of
@@ -327,17 +341,32 @@ Fig.~\ref{fig:parity-lnx2}; the block-1 grounded and $\sigma$-oracle rows of
 Table~\ref{tab:baselines} together with the clip sweep in its caption, the fuller sweep of
 \S\ref{sec:si-baselines} and the readings \S\ref{sec:discussion} takes from both;
 Table~\ref{tab:si-arms} and the unrounded means, per-seed values and arm orderings
-\S\ref{sec:si-tables} reads off it; and the graphic for the table of contents.
-Each of those four floats then carries re-run arms beside arms that were not re-run, so each states
+\S\ref{sec:si-tables} reads off it; Table~\ref{tab:ranking} with the ranking and per-group
+recalibration readings \S\ref{sec:supporting} sets around it, whose two columns are the grounded
+checkpoint and its own $\sigma$-oracle re-evaluation and nothing else;
+\S\ref{sec:map} with Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map}, which resolve that same
+$+0.14$ along chemical axes and restate the two arm means it is taken from; the row-class split of
+the substitution in \S\ref{sec:si-methods}, whose $-0.000$, $+0.431$ and $+0.006$ put the $+0.41$ on
+the solvent channel; and the graphic for the table of contents.
+Four of those floats---Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2},
+Tables~\ref{tab:baselines} and~\ref{tab:si-arms}---then carry re-run arms beside arms that were not
+re-run, so each states
 in its caption which of its arms came from the re-run---Table~\ref{tab:baselines}'s block header
 already carries the form of words for it, and Fig.~\ref{fig:parity-lnx2} remains one seed for all
 four of its panels, the new seed $42$ in three of them and the published one in the control.
+Table~\ref{tab:ranking} needs no such statement, both its arms being re-run;
+Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map} print no arm at all, every cell being a
+difference against the control, so each says in its caption that only the physics side is five-seed.
 Three numbers instead keep their published value with the five-seed one printed beside them and the
 caption saying so, because the re-run supplies one side of each comparison and not the other: the
 Staverman--Guggenheim contrast $1.8457\to1.8788$, whose combinatorial arm is not retrained; the
 channel swap's $+0.27$, a seed-$42$ checkpoint that is not retrained either; and the co-adaptation
 control's $+0.18$ together with the $0.59$ share of \S\ref{sec:paradox}, which move only if the
-separate five-seed pass above is run. Nothing else moves, and the boundary is worth stating because
+separate five-seed pass above is run. Three passages carry no arm value but state that the $0.20$ is
+uncertified---the disclosure above, limitation~(xii) of \S\ref{sec:discussion} and the provenance
+paragraph of \S\ref{sec:si-repro}---and the in-run certification answers all three, so each is
+rewritten to what the re-run certifies and limitation~(xii)'s $0.20$ moves with the abstract's.
+Nothing else moves, and the boundary is worth stating because
 two neighbouring numbers sit just outside it: neither the DirectGNN control nor the NRTL arm is
 retrained, so their rows in Tables~\ref{tab:baselines} and~\ref{tab:si-arms}, and the endpoint
 comparison of \S\ref{sec:data-efficiency}---which is the NRTL arm against that control---stand as
