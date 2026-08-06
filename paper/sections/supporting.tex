@@ -39,8 +39,9 @@ metrics, three seeds, two floors. With the reference profile substituted, none o
 twenty-four margins separates it from those references: twenty-four of the twenty-four include zero,
 or twenty-three, one cell sitting on the boundary and changing side with the bootstrap draw. That
 cell is named in the caption below and discussed after it. Both arms remain far above the
-within-group permutation floor, so the substitution does not reduce the ordering to chance---it
-reduces it to one that a ranker never shown the solute could produce. Groups are formed on solute
+within-group permutation floor, so the substitution does not reduce the ordering to chance; what it
+leaves cannot be told apart from what a ranker never shown the solute produces, which is a failure
+to separate the two and not a demonstration that they are the same. Groups are formed on solute
 and temperature rounded to $1$\,K, kept when they hold at least three distinct solvents, with
 duplicate measurements averaged per solvent. The effective
 sample is the $107$ solute clusters, not the $823$ groups, and every interval below is a $95\%$
@@ -49,7 +50,9 @@ bootstrap over those clusters.
 \begin{table*}[t]
 \centering
 \caption{Solvent ranking under the two $\sigma$-profiles, on the labelled test rows grouped by
-solute and temperature ($823$ groups, $107$ solute clusters, $\ge3$ solvents per group). Both
+solute and temperature ($823$ groups, $107$ solute clusters, $\ge3$ solvents per group; $\rho$ and
+$\tau$ are undefined on a group whose predictions are all tied and so run on $823/807/808$ by seed,
+as \S\ref{sec:supporting} sets out). Both
 columns are one checkpoint per seed; only the profile injected into the closure differs.
 Per-seed values are $42/43/44$. The last column is the paired per-group difference averaged over
 the three seeds, with a $95\%$ cluster bootstrap over solutes; all three per-seed intervals exclude
@@ -137,12 +140,14 @@ transfers as a level correction---it takes the learned-$\sigma$ arm's mean per-g
 $1.83$ to $1.03$ and the reference-$\sigma$ arm's from $2.26$ to $1.51$---but not on the quantity
 printed here, which is the gap between them: that stands at $+0.481$ $[+0.349,+0.619]$ pooled, no
 smaller than the $+0.431$ raw gap and larger than the $+0.371$ in sample. The affine map is worse
-still: the gap becomes $+1.09$ $[+0.3,+2.2]$ pooled---one decimal, because that is the precision
-$4000$ cluster-bootstrap draws pin for this one interval, whose second decimal moves with the
-draw---$+1.63/{+}0.49/{+}1.14$ by seed, each interval excluding zero, though seed $44$ only just:
-its lower bound is $+0.009$, and an independent recomputation places it on the other side, as the
-boundary cell of Table~\ref{tab:ranking} does. Seed $43$'s bound, $+0.013$, is close enough to
-change side occasionally; seed $42$'s, $+0.221$, is not. Its point estimate is larger than the raw
+still: the gap becomes $+1.09$ $[+0.3,+2.2]$ pooled---one decimal, and more draws do not buy a
+second, the leave-one-out affine statistic being heavy-tailed on the three-solvent groups: at
+$200{,}000$ draws the upper endpoint still runs $[+2.193,+2.202]$, astride the rounding
+boundary---$+1.63/{+}0.49/{+}1.14$ by seed, each interval excluding zero, though seed $44$ only
+just: its lower bound is $+0.009$. Over $200$ independent $4000$-draw bootstraps that bound falls
+below zero in $31\%$ of them, and does so at $40{,}000$ draws too, as the boundary cell of
+Table~\ref{tab:ranking} does; seed $43$'s bound of $+0.013$ crosses in $2.5\%$ and seed $42$'s of
+$+0.221$ in none. Its point estimate is larger than the raw
 gap's, though not separably so---the paired difference is $+0.66$ $[-0.12,+1.75]$ and spans
 zero---and the direction is what the two arms do separately: the refit \emph{improves}
 the learned-$\sigma$ arm, $1.83$ to $1.68$ pooled, and \emph{worsens} the reference-$\sigma$ arm,
@@ -177,7 +182,8 @@ there too. Groups whose predictions are constant have no fitted slope---there ar
 them---so the $589$ excludes them by construction. They leave two of the four metrics and not the
 other two: Spearman and Kendall are undefined where every prediction in the group is tied, which is
 why those two contrasts run on $823/807/808$ groups by seed rather than $823$, while top-1 and
-nDCG@3 are defined there and score all $823$.
+nDCG@3 are defined there and score all $823$. That seed-$43$ count of $807$ is a coincidence of
+arithmetic and not the $807$ of the mixed-coverage check above, which is a different subset.
 
 Uncertainty, by contrast, is badly miscalibrated in the native model---a nominal-$90\%$ interval
 covers only PICP@90 $=0.13$ of held-out points---but split-conformal wrapping repairs it to $0.92$
