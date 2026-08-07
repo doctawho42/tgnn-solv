@@ -182,27 +182,59 @@ model misspecification, representation probing}
 % directions the separation must not be over-read in -- no other stratum, neither data set whole,
 % nothing on the solubility axis, and the deployed model rather than the kernel alone.  If words
 % are ever needed, they come out of connective tissue, never out of one of those.
+%
+% THREE DISTINCTIONS THE NUMBERS USED TO CARRY, restored in words on 2026-08-07 after all three
+% referees found them missing from the numberless draft.  Each is a WRONGNESS and not a looseness,
+% so none may be traded back for words.
+% (A) "THE SAME REFERENCE" NAMED ONE TABLE WHERE THERE ARE TWO.  The evaluation-time substitution
+%     of \S\ref{sec:paradox} is the VT-2005 database; the standing glycol-ether margin is computed
+%     on the UD profiles the broad IDAC set is matched to (\S\ref{sec:broad}, and the
+%     database-to-database bracket of \S\ref{sec:badclosure}, which exists precisely because the
+%     two sides name different databases).  What the two axes share is that a tabulated reference
+%     for the intermediate exists on both -- which is what "another such database" now says, at no
+%     word cost, "such" reaching back to "a quantum-chemical database tabulates them".  Do not
+%     write "the same reference", "the same database" or "that reference" here.  Fig. 1 carried the
+%     same conflation in its panel labels and was corrected in the same pass
+%     (scripts/analysis/make_overview_figure.py); the two must stay in step.
+% (B) "IT SURVIVED A SEARCH" CLAIMED THE OPPOSITE OF \S\ref{sec:broad} AND LIMITATION (vi).  A
+%     chemistry-blind relabelling certifies some row set in most draws and reaches the observed
+%     margin in a tenth of them, so the row set is the SURVIVOR OF the search, not something that
+%     survived a null.  It now reads "the survivor of a search across every stratum, not an
+%     established chemical effect" -- "not ESTABLISHED" and not "not a chemical effect", because
+%     the null bounds what was shown and not what is true.  Do not restore any verb that puts the
+%     finding on the passing side of a test.
+% (C) ONE GRAMMATICAL SUBJECT CARRIED TWO ARMS, and mis-described the second.  The co-adaptation
+%     control does not remove the test-time swap by declining to substitute: it substitutes the
+%     reference DURING TRAINING, so the model co-adapts to it (\S\ref{sec:paradox}).  The subject
+%     is therefore now the operation both arms share -- substituting the reference for the learned
+%     profile -- and the arms are told apart by WHEN, "at inference" against "during training".
+%     "by less, at one seed" is the seed-42 pair (+0.18 co-adapted against +0.43 evaluation-only,
+%     read off one comparator); it may not be widened to the three-seed headline.
+% WHERE THE WORDS CAME FROM.  The repairs cost four net; two were paid back out of connective
+% tissue, neither of it a scope clause -- "solubility mean absolute error" lost "solubility"
+% (\S2's "We measure that for solid--liquid solubility" already fixes the axis, and the switch is
+% marked at "On infinite-dilution activity data"), and one "so" became a colon.  248 as rendered.
 \begin{abstract}
 Physics-informed models route predictions through interpretable physical quantities,
 expecting accurate references to improve accuracy. We measure that for solid--liquid
 solubility: a graph neural network predicts charge-density profiles; fixed COSMO-SAC turns
 two into a solubility; a quantum-chemical database tabulates them. Grounding names two
 opposite-signed operations: supervising the profile against that database during training
-lowers solubility mean absolute error, over three seeds and not certified
-leak-free; substituting the reference at inference raises it, in the one-seed control
-removing the test-time swap and, by more, without it. Neither
+lowers mean absolute error, over three seeds, not certified
+leak-free; substituting the reference for the learned profile raises it, at inference
+and---by less, at one seed---during training, where the model co-adapts. Neither
 resolves against the gain, so only the signs carry. On infinite-dilution
-activity data the same reference bounds a deployed thermodynamic model's error from below,
-its inputs' from above. The input bound barely moves between chemical strata---an
-estimator property, not chemistry---while the error does, so the output is a map, most
+activity data another such database bounds a deployed thermodynamic model's error from below,
+its inputs' from above. The input bound barely moves across strata---an
+estimator property, not chemistry---while the error does: the output is a map, most
 strata unboundable, not one verdict. One admissibility rule leaves
-one row set standing, the glycol-ether solvents, where that model's own error exceeds its
+one row set standing, the glycol-ether solvents, where that model's error exceeds its
 inputs' by a margin itself only a lower bound---and no other stratum, neither set
-whole, nothing on the solubility axis. It survived a search across every stratum:
-chemistry-blind relabelling of the same molecules certifies some row set in most draws,
-reaching the observed margin in a tenth. A pre-declared out-of-sample test returned
-\emph{not testable}: the one independent database holds no glycol-ether solvent with an
-organic solute. Trained through this fixed closure, the learned profile departs from its
+whole, nothing on the solubility axis. It is the survivor of a search across every stratum,
+not an established chemical effect: chemistry-blind relabelling certifies some row set in
+most draws, reaching the observed margin in a tenth. A pre-declared out-of-sample test
+returned \emph{not testable}: the one independent database holds no glycol-ether solvent
+with an organic solute. Trained through this closure, the learned profile departs from its
 reference along a shared direction, on separate three-seed runs.
 \end{abstract}
 
@@ -314,6 +346,13 @@ untabulated substituent, a division that runs across all four reaction series an
 % not buy the six words back by deleting "each mark carrying its own reason".  No third
 % kind of growth.  This float sets early, so every term in it must be defined by then:
 % keep it in plain English, and no section reference.
+% THE DATABASE NAMES ARE IN THE PANELS AND NOT HERE, 2026-08-07, which is why this caption may
+% still say "counterpart" and does not have to spend words distinguishing the two references.
+% The panels now read "external reference profile (VT-2005)" in (a) and "error on the UD
+% reference profiles" in (b), because the labels used to say "reference profile" on both sides
+% of a figure whose two halves are measured on DIFFERENT tables -- the same conflation the
+% abstract's "the same reference" carried, corrected in the same pass.  If a later edit strips
+% a name from a panel, this caption must buy it back in words, budget or no budget.
 \caption{\textbf{Overview.} \textbf{(a)}~A learned encoder predicts a charge-density profile
 $\hat\sigma$ that a fixed thermodynamic model turns into a solubility; the arrow marks the
 evaluation-time substitution of the reference $\sigma^\star$, which makes it

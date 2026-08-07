@@ -8,14 +8,19 @@
 % Entry rule: a term earns a row if it is used in more than one section AND is either coined here,
 % used in a narrower sense than the field's, or a symbol that collides.  A symbol used once and
 % defined where it appears does not get a row.
+% Caption and the \Ggap row STATE the notation and do not recount choosing it (2026-08-07): the
+% caption used to advertise "the two symbols that would otherwise collide" and the \Ggap row used to
+% say it was "renamed from \Gamma", but a reader of the published paper never met \Gamma in that
+% sense, so both were narrating an editorial decision.  The disambiguation the reader does need --
+% that \Gamma_S is a different quantity, and that sigma carries four senses -- is in the rows.
+% Do not restore the rename; the macro comment in preamble.tex keeps that history for us.
 % `table*', full width, DELIBERATELY: at fifteen rows in one column each meaning wraps to three
 % lines and the float is taller than a column can hold, so LaTeX sends it to a float page of its
 % own and wastes two thirds of it.  Across the full measure each row is one or two lines.
 % If it grows past about eighteen rows, something in it is not load-bearing.
 \begin{table*}[t]
 \centering
-\caption{Terminology, and the two symbols that would otherwise collide. Each term is defined here
-and used below without re-glossing.}
+\caption{Terminology and notation. Each term is defined here and used below without re-glossing.}
 \label{tab:notation}
 {\footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -46,8 +51,8 @@ closure read at $\zstar$ against its own target $m$, so in squared $m$ units, sq
 activity axis and not the solubility axis; positive establishes $\Bclos>\Binsuf$ and its size is a
 lower bound on $\Bclos-\Binsuf$ and not an estimate of it; non-positive is failure to separate and
 licenses nothing \\
-\Ggap & the grounding gap $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, renamed from $\Gamma$ so as not to
-collide with the segment activity coefficient $\Gamma_S$ \\
+\Ggap & the grounding gap $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$; distinct from $\Gamma_S$, the
+segment activity coefficient inside COSMO-SAC \\
 stratum, map & a chemically defined row set of the broad IDAC set, and the $59$ of them the
 estimator is run on \\
 boundable & $n\ge40$, so the fixed cell's eight bins hold five rows each \\

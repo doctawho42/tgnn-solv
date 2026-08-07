@@ -19,6 +19,18 @@ margin, the pair-clustered and two-way bootstrap intervals, the n=60 comparison)
 footnote lines. Prose set inside axes is unreadable at the printed column width, so all of it
 moved OUT of the figure and into the caption; nothing was weakened and nothing was dropped.
 
+2026-08-07 THE TWO PANELS NAME THEIR DATABASES, and the names are the point. Panel (a) said
+"external reference profile" and panel (b) "error when the reference profile is used", so the
+figure asserted that one table runs through both measurements. It does not: the evaluation-time
+substitution is the VT-2005 database, while the decomposition and its glycol-ether margin are
+computed on the UD profiles the broad IDAC set is matched to -- which is also why Sec. 3.5.3's
+database-to-database bracket exists at all. Two referees read the abstract's matching "the same
+reference" as an error rather than a looseness; the abstract now says "another such database"
+and these labels carry the same correction. What the two axes share is that a tabulated
+reference for the intermediate exists on each, not that it is the same table. Do not drop
+"(VT-2005)" or "UD" to buy width, and do not let one panel name its database while the other
+does not.
+
 2026-08-02 restratification -- WHY THIS PANEL IS NO LONGER ONE BAR. It drew the whole set's
 split as a single bar cut at B_insuff^up, with the threshold MSE/2 at its midpoint, so the
 reader saw the input block end left of centre and read the aggregate ordering off the shape.
@@ -104,7 +116,7 @@ axa.text(1.055, y + 0.075, "solubility", ha="left", va="center", fontsize=8.8, c
 
 # the substitution
 box(axa, 0.53, 0.25, 0.11, 0.15, r"$\sigma^\star$", SALMON, fs=12.0, tc=INK, lw=0)
-axa.text(0.50, 0.325, "external\nreference profile", ha="right", va="center",
+axa.text(0.50, 0.325, "external reference\nprofile (VT-2005)", ha="right", va="center",
          fontsize=8.2, color=INK)
 arrow(axa, (0.585, 0.40), (0.585, 0.545), color=HURT, lw=1.8)
 axa.text(0.66, 0.325, "substituting it makes\nthe prediction worse", ha="left", va="center",
@@ -151,7 +163,7 @@ def _x(v):
     return BX0 + (BX1 - BX0) * v / SCALE
 
 
-axb.text(0.045, 0.800, "error when the reference profile is used ($n{=}477$),\n"
+axb.text(0.045, 0.800, "error on the UD reference profiles ($n{=}477$),\n"
                        "by solvent class", ha="left", va="top", fontsize=7.8, color=GRAY)
 for k, (name, b, mse, mark) in enumerate(CLASSES):
     yk = 0.585 - k * 0.120

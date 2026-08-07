@@ -170,9 +170,9 @@ representable encoder nor a lossless bottleneck. Alongside it we report a second
 quantity, the \emph{grounding gap} $\Ggap:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, the oracle risk minus
 the best end-to-end risk; the paradox is $\Ggap>0$. Under a representable encoder (A1) and a
 lossless bottleneck (A2) it is sandwiched $0\le\Ggap\le\Bclos$, so $\Ggap>0$ would certify
-$\Bclos>0$ (Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is unverified---the reading that took a
-linear probe as evidence against it is withdrawn, that probe not distinguishing the trained encoder
-from an untrained one (\S\ref{sec:supporting})---and A2 is unverifiable and
+$\Bclos>0$ (Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is unverified---the linear probe of
+\S\ref{sec:supporting} does not bear on it, scoring an untrained encoder of the same architecture
+within its own spread---and A2 is unverifiable and
 physically dubious; when A2 fails, $\Ggap>0$ conflates
 closure misspecification with input insufficiency, a well-specified closure with a lossy latent
 giving $\Bclos=0$ yet $\Ggap>0$. We therefore read $\Ggap$ as corroborating evidence and base the

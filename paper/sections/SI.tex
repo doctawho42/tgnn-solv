@@ -136,9 +136,9 @@ steps) pools each graph, solute and solvent interact through a $3$-layer cross-a
 $512$-dimensional pair representation $[\,g_s,g_v,g_s\!\odot g_v,|g_s-g_v|\,]$ (dropout $0.012$) feeds
 the crystal head, the $51$-bin $\sigma$-profile head, and the parameter-free COSMO-SAC closure. The
 full model has $5.40$M trainable parameters. Whether that capacity is the binding constraint is not
-measured here: the reading that took an in-sample linear probe as evidence on it is withdrawn
-(\S\ref{sec:supporting}), where isotropic noise features reach a \emph{higher} train $R^2$ than the
-trained encoder does, and the expectation that capacity is not the binding constraint is carried by
+measured here: an in-sample linear probe does not bear on it (\S\ref{sec:supporting}, where
+isotropic noise features reach a \emph{higher} train $R^2$ than the trained encoder does), and the
+expectation that capacity is not the binding constraint is carried by
 the arm comparisons of \S\ref{sec:paradox} instead. The DirectGNN
 control shares this encoder, interaction, and readout verbatim, and adds a thermometer encoding of
 $T$ in place of the temperature dependence the physics arm receives through $\Phi(T)$ and the closure.
@@ -233,9 +233,9 @@ headline message-passing network (MPNN); a hybrid local-message/global-attention
 (GPS \cite{rampasek2022}); and a physics-channelled variant, Thermodynamically-Informed Message
 Passing (TIMP), which splits messages into dispersive, polar, and hydrogen-bonding channels
 supervised toward the Hansen parameters to prevent channel collapse. TIMP does not outperform the plain
-MPNN across our runs. That is an observation and we do not explain it: the transfer-rather-than-expressivity
-reading of the encoder is withdrawn, the linear probe it rested on having no
-untrained-encoder arm to read against (\S\ref{sec:supporting}).
+MPNN across our runs. That is an observation and we do not explain it: the linear probe of
+\S\ref{sec:supporting} has no untrained-encoder arm to read against and supports no
+explanation.
 \paragraph{Optimisation, and the two arms' settings.} The physics arm uses Adam (weight decay
 $5\times10^{-4}$, gradient clipping at $2.0$, batch $64$)
 under the three-phase curriculum of \S\ref{sec:methods}: $30$ epochs of auxiliary pretraining (P1),
