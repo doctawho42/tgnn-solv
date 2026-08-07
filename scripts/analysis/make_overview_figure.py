@@ -11,8 +11,21 @@ evidence belongs to the Discussion.
       profile for the learned one makes the prediction worse.
   (b) where the error sits -- one-sided bounds on the misspecified-model and
       insufficient-input parts in the deployed residual-only convention, drawn PER SOLVENT
-      CLASS. Bounds, never a point split: the conditional variance is unestimable, so
-      B_insuff is only ever an upper bound and B_closure only lower-bounded.
+      CLASS, under a strip that draws the WHOLE search the three are taken from. Bounds,
+      never a point split: the conditional variance is unestimable, so B_insuff is only ever
+      an upper bound and B_closure only lower-bounded.
+
+2026-08-07 THE STRIP, and why three bars alone were a misdrawing. Two referees, independently:
+three solvent classes summing to 350 rows are drawn out of the fifty-nine strata the search
+covers, and a reader with only the bars in front of them reads the map as three classes wide.
+The panel is the paper's one overview display of the finding's SHAPE, and the shape is that most
+of the map supports no statement at all -- which is what the abstract says ("most strata
+unboundable") and what the bars, alone, deny. The strip draws all fifty-nine: pale where no
+bound exists (forty-four), filled where one does (fifteen), and the one row set the
+admissibility rule leaves standing carried out to full height under its own mark. The bars are
+then labelled for what they are, the three of those fifteen that are solvent classes. Do not
+delete the strip to buy space for the bars: without it the three bars are a claim about the
+map's width, and the claim is false.
 
 2026-07-28 declutter. Panel (b) used to carry a three-line statistical sentence (separation
 margin, the pair-clustered and two-way bootstrap intervals, the n=60 comparison) and two grey
@@ -151,25 +164,60 @@ axa.text(0.06, 0.10, "Either the fixed model is wrong, or the learned profile\n"
 # cell is admissible in all four cells and survives every one of its four deletions.  It is not
 # established because its margin is not positive and the instrument is one-sided.  Keep the marks
 # distinct.
-CLASSES = [("glycol ethers", 0.1077, 2.2518, ""),
+#
+# 2026-08-07 THE STANDING CLASS NOW CARRIES A MARK OF ITS OWN, and the caption no longer says
+# "unmarked".  A referee: with the other two marked, an unmarked block reads as a CATEGORY, and a
+# reader cannot tell whether it means "passed the rule" or "not yet put to it" -- absence of a
+# disqualification is not a mark.  The asterisk is that mark, and it is glossed by the rule it
+# clears (bounded, sign-stable under deletion, margin positive) rather than by the absence of the
+# other two reasons.  Three marks, three glosses; do not go back to two.
+CLASSES = [("glycol ethers", 0.1077, 2.2518, " $\\ast$"),
            ("water", 0.2150, 0.4765, " $\\dagger$"),
            ("aprotic acceptors", 0.1404, 0.0891, " $\\ddagger$")]
 LX, BX0, BX1 = 0.365, 0.380, 0.965      # label right edge; bar span
 SCALE = 2.45                             # ln-gamma units^2 across (BX1 - BX0)
-BH = 0.090
+BH = 0.078
 
 
 def _x(v):
     return BX0 + (BX1 - BX0) * v / SCALE
 
 
-axb.text(0.045, 0.800, "error on the UD reference profiles ($n{=}477$),\n"
-                       "by solvent class", ha="left", va="top", fontsize=7.8, color=GRAY)
+axb.text(0.045, 0.808, "error on the UD reference profiles ($n{=}477$)",
+         ha="left", va="center", fontsize=7.6, color=GRAY)
+
+# ---- the whole search, one tick per stratum ----------------------------------------------
+# results/b_insuff/stratified_map_table.csv, set=broad_477, unit=row, convention=res: 59 strata
+# over seven axes (whole set, solute family, solvent family, solvent class, coarse class, solute
+# role, class x role), of which boundable_at_headline_cell holds on 15.  Six of those are
+# admissible in every unit x convention cell; clause (c) of Sec. 4.2 collapses the six to three
+# distinct ROW SETS, and one of the three is also positive and undemoted -- the glycol ethers.
+# Those are the counts Table 3's note (h) prints, and the two must move together.
+# The ticks are SORTED by status, not by name: the strata carry no natural order, and sorting is
+# what lets the eye read 44-against-15 off the strip.  The standing one is drawn last, taller,
+# in ink, under the same asterisk the bar below it wears.
+N_STRATA, N_BOUNDABLE = 59, 15
+SX0, SX1, SY, SH = 0.045, 0.965, 0.712, 0.038
+_pitch = (SX1 - SX0) / N_STRATA
+for i in range(N_STRATA):
+    stands = i == N_STRATA - 1
+    boundable = i >= N_STRATA - N_BOUNDABLE
+    axb.add_patch(FancyBboxPatch((SX0 + i * _pitch, SY), _pitch * 0.68,
+                                 SH * (1.5 if stands else 1.0),
+                                 boxstyle="square,pad=0", lw=0, zorder=3,
+                                 fc=INK if stands else ("#9AA0A6" if boundable else "#DFD9D3")))
+axb.text(SX0 + (N_STRATA - 0.66) * _pitch, SY + SH * 1.5 - 0.008, "$\\ast$",
+         ha="center", va="bottom", fontsize=6.5, color=INK)
+axb.text(0.045, 0.678, "fifty-nine strata; fifteen boundable (filled), one stands ($\\ast$)",
+         ha="left", va="center", fontsize=6.5, color=GRAY)
+axb.text(0.045, 0.616, "the three boundable solvent classes", ha="left", va="center",
+         fontsize=7.4, color=INK)
+
 for k, (name, b, mse, mark) in enumerate(CLASSES):
-    yk = 0.585 - k * 0.120
+    yk = 0.495 - k * 0.098
     axb.text(LX, yk + BH / 2, name + mark,
              ha="right", va="center", fontsize=8.0,
-             color=GRAY if mark else INK)
+             color=INK if "ast" in mark else GRAY)
     if mse > b:                          # the ordinary case: two contiguous blocks
         axb.add_patch(FancyBboxPatch((_x(0), yk), _x(b) - _x(0), BH,
                                      boxstyle="square,pad=0", fc="#DDE7E3", ec=INK,
@@ -184,7 +232,7 @@ for k, (name, b, mse, mark) in enumerate(CLASSES):
         axb.plot([_x(mse)] * 2, [yk, yk + BH], lw=1.1, color=INK, zorder=5)
 # The teal blocks line up because every stratum is binned the same way; the salmon ones do not.
 # That contrast IS the panel, so it is drawn and not asserted -- no threshold line, no numbers.
-KY, KH, KW = 0.250, 0.050, 0.038         # legend swatch row: y, height, width
+KY, KH, KW = 0.232, 0.046, 0.036         # legend swatch row: y, height, width
 axb.add_patch(FancyBboxPatch((0.085, KY), KW, KH, boxstyle="square,pad=0",
                              fc="#DDE7E3", ec=INK, lw=0.7, zorder=3))
 axb.text(0.085 + KW + 0.020, KY + KH / 2, "the inputs, at most", ha="left", va="center",
@@ -197,11 +245,13 @@ axb.text(0.545 + KW + 0.020, KY + KH / 2, "the model, at least", ha="left", va="
 # across all nine: the sentence must describe the rows the panel actually draws.
 axb.text(0.045, 0.190, "The input bound hardly moves; the error moves 25-fold.",
          ha="left", va="center", fontsize=8.0, color=HURT)
-axb.text(0.045, 0.150, "$\\dagger$ measured, not established: the ordering here does not survive\n"
-                       "removing one contributing laboratory.  $\\ddagger$ measured, not established:\n"
-                       "this margin is not positive, and the bound is one-sided.",
-         ha="left", va="top", multialignment="left", fontsize=6.4, color=GRAY,
-         linespacing=1.15)
+# One line per mark, and each line names the rule its class meets or fails.  The asterisk's gloss
+# is the admissibility rule itself, so "stands" cannot be read as "not yet tested".
+axb.text(0.045, 0.150, "$\\ast$ stands: bounded, sign-stable under deletion, margin positive.\n"
+                       "$\\dagger$ measured, not established: dropping a laboratory flips the sign.\n"
+                       "$\\ddagger$ measured, not established: margin not positive, bound one-sided.",
+         ha="left", va="top", multialignment="left", fontsize=6.3, color=GRAY,
+         linespacing=1.14)
 
 fig.suptitle("When do reference physical inputs help a learned solubility model?",
              fontsize=12.5, color=INK, y=0.985)

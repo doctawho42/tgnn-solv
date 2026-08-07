@@ -214,28 +214,70 @@ model misspecification, representation probing}
 % tissue, neither of it a scope clause -- "solubility mean absolute error" lost "solubility"
 % (\S2's "We measure that for solid--liquid solubility" already fixes the axis, and the switch is
 % marked at "On infinite-dilution activity data"), and one "so" became a colon.  248 as rendered.
+%
+% TWO MORE REPAIRS, 2026-08-07, and the SECOND ONE IS PAID FOR -- read the ledger before touching
+% any of the eleven words it spends.  249 as rendered; re-run wc_abstract.py, do not trust this.
+% (D) "FIXED COSMO-SAC TURNS TWO INTO A SOLUBILITY" WAS FALSE, and false in the direction that
+%     flatters the paper: COSMO-SAC returns an activity coefficient, and the solubility needs the
+%     crystal term as well (Eq. 1, \lnx = -\Phicry - \lng).  Attributing the whole prediction to
+%     the closure inflates exactly the object the paper is measuring the error OF.  It now reads
+%     "fixed COSMO-SAC and a crystal term turn two into a solubility", and the sentence was
+%     re-ordered so the database attaches to the profiles it tabulates ("charge-density profiles
+%     a quantum-chemical database tabulates"), which pays one of the four words back.  Do not
+%     write a sketch in which the closure alone reaches a solubility.
+% (E) THE SECOND CLOSURE WAS MISSING while the Introduction's last paragraph promises exactly its
+%     generality ("Neither consequence is peculiar to charge distributions").  An abstract that
+%     omits it leaves the paper's own generality claim unsupported at the only place most readers
+%     reach.  Added as one sentence, eleven words: "A Hammett $\mathrm pK_a$ closure reverses the
+%     substitution's sign where its constants suffice."  It carries the substitution consequence
+%     and not the drift one, because the drift is measured on solubility only; and "where its
+%     constants suffice" is the clean meta/para pole (\S\ref{sec:pka-main}), so the sentence also
+%     says, by implication, that the sign does NOT reverse where they do not -- which is the
+%     agreement with the solubility result.  Do not widen it to "both consequences".
+% WHAT (D) AND (E) COST, AND WHY EACH TRADE IS THE RIGHT ONE.  Thirteen words, none of them a
+% scope clause and none of them on the do-not-drop list above:
+%   -3  "not one verdict" -- the TITLE ends "Returns a Map, Not a Verdict", and "the output is a
+%       map, most strata unboundable" states it positively two words earlier.
+%   -2  "across strata" in "The input bound barely moves" -- "the output is a map, most strata
+%       unboundable" in the same sentence supplies the unit it barely moves across.
+%   -2  "nothing on the solubility axis" -> "nothing on solubility".  The direction survives
+%       whole; only the word "axis" goes, and the abstract names no other axis.
+%   -1  "opposite-signed" in "two opposite-signed operations" -- "lowers" against "raises" and
+%       "only the signs carry" say it twice more in the same breath.
+%   -1  "improve accuracy" -> "help", the paper's own verb for this quantity.
+%   -1  "the model co-adapts" -> "it co-adapts"; the subject has not changed since "raises it".
+%   -1  "so only the signs carry" -> "; only the signs carry".
+%   -1  "the glycol-ether solvents" -> "glycol-ether solvents" (apposition, no article).
+%   -1  "chemical" in "not an established chemical effect".  What (B) protects is "not
+%       ESTABLISHED"; the noun it qualifies is a row set of one chemistry either way.
+%   +0  "the observed margin" -> "that margin", whose antecedent is the margin two sentences up.
+% What was NOT touched, and may not be: "not certified leak-free", "over three seeds", "at
+% inference"/"during training", "only a lower bound", the four over-reading directions, "in most
+% draws", \emph{not testable}, "on separate three-seed runs", and "a deployed thermodynamic
+% model" -- dropping "thermodynamic" would let "the deployed model" be read as the network.
 \begin{abstract}
 Physics-informed models route predictions through interpretable physical quantities,
-expecting accurate references to improve accuracy. We measure that for solid--liquid
-solubility: a graph neural network predicts charge-density profiles; fixed COSMO-SAC turns
-two into a solubility; a quantum-chemical database tabulates them. Grounding names two
-opposite-signed operations: supervising the profile against that database during training
+expecting accurate references to help. We measure that for solid--liquid
+solubility: a graph neural network predicts charge-density profiles a quantum-chemical
+database tabulates; fixed COSMO-SAC and a crystal term turn two into a solubility.
+Grounding names two operations: supervising the profile against that database during training
 lowers mean absolute error, over three seeds, not certified
 leak-free; substituting the reference for the learned profile raises it, at inference
-and---by less, at one seed---during training, where the model co-adapts. Neither
-resolves against the gain, so only the signs carry. On infinite-dilution
+and---by less, at one seed---during training, where it co-adapts. Neither
+resolves against the gain; only the signs carry. On infinite-dilution
 activity data another such database bounds a deployed thermodynamic model's error from below,
-its inputs' from above. The input bound barely moves across strata---an
+its inputs' from above. The input bound barely moves---an
 estimator property, not chemistry---while the error does: the output is a map, most
-strata unboundable, not one verdict. One admissibility rule leaves
-one row set standing, the glycol-ether solvents, where that model's error exceeds its
+strata unboundable. One admissibility rule leaves
+one row set standing, glycol-ether solvents, where that model's error exceeds its
 inputs' by a margin itself only a lower bound---and no other stratum, neither set
-whole, nothing on the solubility axis. It is the survivor of a search across every stratum,
-not an established chemical effect: chemistry-blind relabelling certifies some row set in
-most draws, reaching the observed margin in a tenth. A pre-declared out-of-sample test
+whole, nothing on solubility. It is the survivor of a search across every stratum,
+not an established effect: chemistry-blind relabelling certifies some row set in
+most draws, reaching that margin in a tenth. A pre-declared out-of-sample test
 returned \emph{not testable}: the one independent database holds no glycol-ether solvent
 with an organic solute. Trained through this closure, the learned profile departs from its
-reference along a shared direction, on separate three-seed runs.
+reference along a shared direction, on separate three-seed runs. A Hammett $\mathrm pK_a$
+closure reverses the substitution's sign where its constants suffice.
 \end{abstract}
 
 % INTRODUCTION.  Field, related work, the assumption under test, then what was done.
@@ -336,8 +378,8 @@ untabulated substituent, a division that runs across all four reaction series an
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_overview.pdf}
-% CAPTION BUDGET 72 words, counting the "Overview." lead-in and the (a)/(b) markers.
-% The budget rose 60 -> 66 -> 72, each step a disclosure panel (b) forced: three solvent
+% CAPTION BUDGET 82 words, counting the "Overview." lead-in and the (a)/(b) markers.
+% The budget rose 60 -> 66 -> 72 -> 82, each step a disclosure panel (b) forced: three solvent
 % classes are drawn and only one is established, and THE TWO MARKS SAY DIFFERENT THINGS.
 % Water (dagger) loses its sign when one publication is deleted; the acceptor-only aprotics
 % (double dagger) survive every deletion in all four cells and are not established because
@@ -346,6 +388,18 @@ untabulated substituent, a division that runs across all four reaction series an
 % not buy the six words back by deleting "each mark carrying its own reason".  No third
 % kind of growth.  This float sets early, so every term in it must be defined by then:
 % keep it in plain English, and no section reference.
+% THE 72 -> 82 STEP, 2026-08-07, is the strip, and it is the same kind of step as the two before
+% it: the panel disclosed something and the caption has to name it.  Two referees, independently,
+% read three solvent classes drawn out of fifty-nine strata as a map three classes wide, so the
+% panel now draws all fifty-nine and the caption has to say which display is which -- "the strip
+% is every stratum searched, the bars the three boundable solvent classes".  Ten words, and they
+% buy the honest shape of the finding in the one figure that shows its shape.  The panel carries
+% the counts (fifty-nine, fifteen, one), so the caption does not repeat them; if a later edit
+% strips a count from the panel, this caption must buy it back in words.
+% "STARRED", NOT "UNMARKED".  The standing class used to be the one with no mark, and a referee
+% could not tell whether that meant it had passed the rule or had not been put to it -- absence
+% of a disqualification is not a mark.  All three classes now carry one and the asterisk is
+% glossed inside the panel by the rule it clears.  Do not write "unmarked" here again.
 % THE DATABASE NAMES ARE IN THE PANELS AND NOT HERE, 2026-08-07, which is why this caption may
 % still say "counterpart" and does not have to spend words distinguishing the two references.
 % The panels now read "external reference profile (VT-2005)" in (a) and "error on the UD
@@ -356,8 +410,9 @@ untabulated substituent, a division that runs across all four reaction series an
 \caption{\textbf{Overview.} \textbf{(a)}~A learned encoder predicts a charge-density profile
 $\hat\sigma$ that a fixed thermodynamic model turns into a solubility; the arrow marks the
 evaluation-time substitution of the reference $\sigma^\star$, which makes it
-worse. \textbf{(b)}~The counterpart error on infinite-dilution activity data, by solvent class; only
-the unmarked class stands, each mark carrying its own reason, and each block is a one-sided
+worse. \textbf{(b)}~The counterpart error on infinite-dilution activity data: the strip is every
+stratum searched, the bars the three boundable solvent classes; only the starred class stands,
+each mark carrying its own reason, and each block is a one-sided
 bound rather than an interval. Training-time supervision is not drawn.}
 \label{fig:overview}
 \end{figure*}
