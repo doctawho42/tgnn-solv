@@ -27,12 +27,12 @@ Staverman--Guggenheim normalisers $r_0=66.69$\,\AA$^3$, $q_0=79.53$\,\AA$^2$; th
 $\sigma$-profile grid is $51$ bins on $[-0.025,0.025]$\,e\,\AA$^{-2}$. The segment-activity
 fixed point is damped ($\lambda=0.7$) and run for $16$ iterations at train time and $30$
 at evaluation.
-\paragraph{A usage pitfall in \texttt{cCOSMO} (\texttt{COSMO1} on typed profiles).} Supplying the 2002
+\paragraph{A usage pitfall in the reference implementation.} Supplying the 2002
 kernel with a typed three-profile base produces a silently-wrong result that the library returns without
 warning. The reference implementation~\cite{bell2020cosmosac} pairs its 2002 model
-(\texttt{COSMO1}) with the single-profile Virginia Tech database; the demonstrated input is one
-untyped, Mullins-averaged profile. When \texttt{COSMO1} is instead supplied with a typed three-profile
-(Hsieh, \texttt{sigma3}) base --- the configuration that arises when a 2002 and a 2010 arm share one
+with the single-profile Virginia Tech database; the demonstrated input is one
+untyped, Mullins-averaged profile. When that 2002 model is instead supplied with a typed three-profile
+Hsieh base --- the configuration that arises when a 2002 and a 2010 arm share one
 profile source --- it silently reads the nonpolar channel only, discards the donor and acceptor channels, keeps the
 total cavity area as prefactor, and returns a number without error. The prescribed way to recover a
 single 2002 profile from the typed set is instead their \emph{sum},
@@ -45,16 +45,15 @@ nonpolar channel it actually reads) scores $1.757/1.758$. This is an issue for t
 The kernel arms of \S\ref{sec:measure} are deposited across two artifacts, and which file holds a
 value does not follow the set. The dispersion-\emph{off} values ($1.757$ and $0.765$ on the VT-2005-matched set, $1.911$ and $1.978$ on
 the broad IDAC set), all under the full convention in which the kernel comparison is run, are our
-differentiable layers on each kernel's native profiles
-(\texttt{fidelity\_lever\_fair2002.json}). Both dispersion values are \texttt{cCOSMO}'s own
-\texttt{COSMO3} call: the VT-2005-matched set's $0.785$ from \texttt{closure\_flip\_ci.json}, where the reference
+differentiable layers on each kernel's native profiles.
+Both dispersion values are the reference implementation's own
+dispersion-on call: the VT-2005-matched set's $0.785$ from the kernel-flip artifact, where the reference
 returns no dispersion for the three bromine/iodine pairs and that arm therefore scores on $n{=}57$;
-the broad IDAC set's $1.855$ from the \texttt{mse\_2010dsp} field of
-\texttt{fidelity\_lever\_fair2002.json}, whose VT-2005-matched counterpart in the same file is instead our own
+the broad IDAC set's $1.855$ from the dispersion-on field of
+the fidelity-lever artifact, whose VT-2005-matched counterpart in the same file is instead our own
 layer's $7.43$. That $7.43$ is the measure of the gap: our transcribed dispersion term is not
-validated against the reference, which is why the dsp arm is deferred to \texttt{cCOSMO} throughout.
-The input-fixed control of \S\ref{sec:si-tables}(a$'$) is a third file,
-\texttt{fidelity\_lever\_}\texttt{inputfixed.json}: it runs the 2002 kernel on the summed typed
+validated against the reference, which is why the dsp arm is deferred to that implementation throughout.
+The input-fixed control of \S\ref{sec:si-tables}(a$'$) is a third deposited file: it runs the 2002 kernel on the summed typed
 profile and re-derives the $1.757$ and $0.765$ arms of the first file as its own gate.
 \paragraph{The differentiable COSMO-SAC-2010/dsp layer, and the scope of its dispersion caveat.}
 The 2010 layer implements the four mechanisms of~\cite{hsieh2010,hsieh2014dsp}: the donor/acceptor-typed
@@ -63,8 +62,8 @@ $c_{\mathrm{ES}}(T)=A_{\mathrm{ES}}+B_{\mathrm{ES}}/T^2$, the typed hydrogen-bon
 optional dispersion term in the tabulated parameter $\epsilon/k_{\mathrm{B}}$. With dispersion
 \emph{off} it reproduces the NIST COSMO-SAC-2010 reference to RMSE
 $1.4\times10^{-4}\,\ln\gamma$. That figure is quoted from the validation run's console output:
-unlike its 2002 counterpart, whose comparison is deposited as
-\texttt{closure\_reference\_validation.json}, the 2010 validator wrote no artifact, so this one
+unlike its 2002 counterpart, whose comparison is deposited,
+the 2010 validator wrote no artifact, so this one
 figure cannot be checked against the deposited record. The dispersion term is not validated to that standard, for two
 reasons we state rather than absorb. It carries the tabulated coefficient at a single sign, the
 class-dependent sign reversal of Ref.~\cite{hsieh2014dsp} being unimplemented and unexercised on the
@@ -113,7 +112,7 @@ oracle arms below. In the \emph{decomposition}, where every input is a
 tabulated one, $V_i$ is the reference COSMO cavity volume of the same calculation that produced
 $A_i$, so the two share a cavity basis. In the \emph{trained model} the reference volume is never
 read: the volume channel is off in every arm this paper reports the paradox on
-(\texttt{cosmo\_sac\_wire\_volume} false, so $V_i$ reaches the closure as \texttt{None} and the
+(the volume channel is disabled, so no $V_i$ reaches the closure and the
 combinatorial term is not evaluated at all), and in the one arm where it is on---the
 $+$\,Staverman--Guggenheim row of Table~\ref{tab:si-arms}---$V_i$ is the auxiliary head's predicted
 molar volume, detached. Small hydride solvents such
@@ -137,7 +136,7 @@ steps) pools each graph, solute and solvent interact through a $3$-layer cross-a
 $512$-dimensional pair representation $[\,g_s,g_v,g_s\!\odot g_v,|g_s-g_v|\,]$ (dropout $0.012$) feeds
 the crystal head, the $51$-bin $\sigma$-profile head, and the parameter-free COSMO-SAC closure. The
 full model has $5.40$M trainable parameters. Whether that capacity is the binding constraint is not
-measured here: the in-sample linear probe this clause formerly cited for it is withdrawn
+measured here: the reading that took an in-sample linear probe as evidence on it is withdrawn
 (\S\ref{sec:supporting}), where isotropic noise features reach a \emph{higher} train $R^2$ than the
 trained encoder does, and the expectation that capacity is not the binding constraint is carried by
 the arm comparisons of \S\ref{sec:paradox} instead. The DirectGNN
@@ -150,9 +149,9 @@ Figure~\ref{fig:arch} draws the two arms and marks where each of the two error t
 \includegraphics[width=\linewidth]{figs/fig_architecture.pdf}
 \caption{The model and the oracle substitution. Input insufficiency $\Binsuf$ enters at $\hat z$
 and closure misspecification $\Bclos$ where the fixed map $g$ reads $\zstar$, so $\Bclos$ is the
-error of map and profile calculation together (\S\ref{sec:decomp}); the $\sigma$-oracle (salmon) replaces
+error of map and profile calculation together; the $\sigma$-oracle (salmon) replaces
 $\hat z$ with the reference VT-2005 profile $\zstar$. DirectGNN (grey) is the capacity- and
-budget-matched control, separately tuned (\S\ref{sec:framework}), and the double-headed arrow between
+budget-matched control, separately tuned, and the double-headed arrow between
 the two $\lnx$ outputs is the physics tax $R_{\mathrm{phys}}-R_{\mathrm{direct}}$.}
 \label{fig:arch}
 \end{figure*}
@@ -167,14 +166,14 @@ the two $\lnx$ outputs is the physics tax $R_{\mathrm{phys}}-R_{\mathrm{direct}}
 %   scripts/experiments/run_e5_sigma_grounding.sh   the three arms' flags
 % If any of those change, this paragraph is the thing that goes stale first.
 % ---------------------------------------------------------------------------
-\paragraph{What the oracle substitution replaces, and what it does not.} The reference table is
-\texttt{results/\allowbreak sigma\_\allowbreak profile\_\allowbreak artifact/\allowbreak sigma\_\allowbreak profiles.csv}: $1432$ rows carrying a SMILES
-string, a cavity area \texttt{sigma\_area} in \AA$^2$, the $51$ area-weighted profile bins
-\texttt{sigma\_p\_0}\ldots\texttt{sigma\_p\_50} in \AA$^2$, and a COSMO cavity volume
-\texttt{v\_cosmo} in \AA$^3$. The loader canonicalises the SMILES with RDKit, giving $1424$ distinct
+\paragraph{What the oracle substitution replaces, and what it does not.} The deposited reference table
+carries $1432$ rows, each a SMILES
+string, a cavity area in \AA$^2$, the $51$ area-weighted profile bins
+in \AA$^2$, and a COSMO cavity volume
+in \AA$^3$. The loader canonicalises the SMILES with RDKit, giving $1424$ distinct
 keys, and returns for each key exactly two objects: the $51$-vector $p^\star$ and the scalar
-$A^\star=\texttt{sigma\_area}$. It does not return \texttt{v\_cosmo}, and nothing in the model path
-reads that column.
+$A^\star$, the tabulated cavity area. It does not return the cavity volume, and nothing in the model path
+reads it.
 
 For each molecule the $\sigma$-head emits a shape $\hat p^{\mathrm{shape}}$ (a softmax over the $51$
 bins, so it sums to $1$), a strictly positive area $\hat A$ (a softplus scaled by $75$ and offset by
@@ -216,7 +215,7 @@ is replaced.
 test rows the table matches the solvent in $5571$ ($99.3\%$; $64$ of the $70$ distinct solvents) and
 the solute in $297$ ($5.3\%$; $7$ of the $147$ distinct solutes). Every solute match is also a
 solvent match, so the rows split into $37$ with neither molecule replaced, $5274$ with the solvent
-only, and $297$ with both; the \texttt{sigma\_oracle\_applied} column of the deposited per-row files
+only, and $297$ with both; the substitution flag carried by the deposited per-row files
 is exactly the union, $5571$ rows. That asymmetry is a property of the reference database, which
 covers common solvents and few drug-like solids, and it is worth stating because it decides which
 side the reported gap is a statement about. Comparing the $\sigma$-oracle arm against the grounded
@@ -234,8 +233,8 @@ headline message-passing network (MPNN); a hybrid local-message/global-attention
 (GPS \cite{rampasek2022}); and a physics-channelled variant, Thermodynamically-Informed Message
 Passing (TIMP), which splits messages into dispersive, polar, and hydrogen-bonding channels
 supervised toward the Hansen parameters to prevent channel collapse. TIMP does not outperform the plain
-MPNN across our runs. That is an observation and we do not explain it: the linear probe formerly
-cited here for a transfer-rather-than-expressivity reading of the encoder is withdrawn, having no
+MPNN across our runs. That is an observation and we do not explain it: the transfer-rather-than-expressivity
+reading of the encoder is withdrawn, the linear probe it rested on having no
 untrained-encoder arm to read against (\S\ref{sec:supporting}).
 \paragraph{Optimisation, and the two arms' settings.} The physics arm uses Adam (weight decay
 $5\times10^{-4}$, gradient clipping at $2.0$, batch $64$)
@@ -314,7 +313,7 @@ not a direct re-measurement of $\lVert\hat\sigma-\sigma\rVert$ under the minimal
 checkpoint was not retained, and the larger reference-arm error is consistent with more profile drift but
 does not isolate it from closure-path recalibration). The minimal model trains normally (validation
 $\lnx$ MAE $1.87$, within $0.1$ of the full-loss base), ruling out a degenerate-training reading
-(seed $42$; \texttt{scripts/\allowbreak analysis/\allowbreak run\_loss\_ablation\_analysis.py}).
+(seed $42$).
 
 \section{Proofs}
 \label{sec:si-proofs}
@@ -524,12 +523,12 @@ risk at finite $n$.
 Every accuracy number of \S\ref{sec:paradox} is on $5608$ rows, and the scaffold partition gives
 $8103$ test rows. The $2495$-row difference decomposes with no remainder, identically at all three
 seeds: $0$ rows are lost to duplicate (solute, solvent, $T$) keys---there are none---and $2495$
-carry \texttt{has\_solubility}\,=\,false, a melting point and no solubility measurement, with the
+carry no solubility flag, a melting point and no solubility measurement, with the
 \lnx\ field a placeholder zero. All $2495$ carry a melting point; none is a self-solvation row; they
 are unscorable for solubility in every arm, the control included.
 
 The clause that could have made this arm-dependent removes nothing. The code that builds the set
-(\texttt{run\_e5\_comparison.py}, \texttt{intersection\_keys}) intersects, over arms, the rows that
+intersects, over arms, the rows that
 are both labelled and finite in that arm's \lnx\ prediction, and the second half of that conjunction
 is outcome-dependent by construction. Audited over all twenty-two per-row prediction files in the
 deposit---the five intersecting arms and the $\sigma$-oracle at each of the three seeds, plus the two
@@ -554,9 +553,9 @@ Fig.~\ref{fig:paradox}: three seeds on the labelled test rows
 valued in the paragraph below. Per-seed values are printed to three decimals;
 every mean, difference and $\pm$ quoted anywhere is computed on the unrounded values, so the printed
 triples reproduce them only to that precision. Every $\pm$ that spans \emph{seeds} in this paper is a
-population standard deviation over them (\texttt{ddof}$=0$); a sample standard deviation
-(\texttt{ddof}$=1$) would be larger by $\sqrt{3/2}$, and the error bars of Fig.~\ref{fig:paradox}
-follow the same \texttt{ddof}$=0$ convention. Three kinds of $\pm$ in this paper are \emph{not} that:
+population standard deviation over them; a sample standard deviation
+would be larger by $\sqrt{3/2}$, and the error bars of Fig.~\ref{fig:paradox}
+follow the same convention. Three kinds of $\pm$ in this paper are \emph{not} that:
 the kernel-residual figures of the correctability test
 ($46\pm5\%$, $-5\pm16\%$, $+2\pm15\%$) carry a standard \emph{error} over five fit seeds; a $\pm$ on a
 permutation or phase-randomised null (Table~\ref{tab:claims}; \S\ref{sec:surrogate}) is that null's
@@ -579,7 +578,8 @@ learned-$\sigma$ row and not against the oracle row.
 \centering
 \caption{Per-arm scaffold-split metrics (3 seeds, the $n{=}5608$ labelled test rows), with per-seed
 MAE to three decimals. Ordered by MAE. The $\pm$ is a population standard deviation over the three
-seeds, computed on the unrounded values.}
+seeds. Mean, $\pm$ and per-seed column are each rounded once from the unrounded values, the column
+independently of the mean beside it.}
 \label{tab:si-arms}
 {\small
 \begin{tabular}{lrrl}
@@ -596,8 +596,11 @@ COSMO-SAC, reference $\sigma$ ($\sigma$-oracle)     & $2.25\pm0.02$ & $-0.03\pm0
 \end{tabular}}
 \end{table*}
 
-\noindent The unrounded means are $1.7022$, $1.7950$, $1.8457$, $1.8788$, $2.0434$ and $2.2517$, with
-population standard deviations $0.033$, $0.071$, $0.053$, $0.091$, $0.040$ and $0.021$. The two senses
+\noindent To four decimals the means are $1.7022$, $1.7950$, $1.8457$, $1.8788$, $2.0434$ and
+$2.2517$, with population standard deviations $0.033$, $0.071$, $0.053$, $0.091$, $0.040$ and
+$0.021$. The NRTL row is where the two roundings part: averaging its printed per-seed triple gives
+$1.7953$, whose two-decimal form is $1.80$, but the arm's mean is $1.794975$, so the entry is
+$1.79$. The two senses
 of grounding are the second and the last of these: training-time supervision moves the arm from
 $2.0434$ to $1.8457$ (helps, $-0.20$), evaluation-time substitution from $1.8457$ to $2.2517$ (hurts,
 $+0.41$).
@@ -606,7 +609,7 @@ $+0.41$).
 % + scripts/experiments/run_e5_sigma_grounding.sh (per-arm invocations).
 \paragraph{$\sigma$-head schedule of these arms.} The four COSMO-SAC rows come from three
 training runs under one pinned configuration --- $30$ P1, $70$ P2 and $10$ P3 epochs with
-\texttt{freeze\_sigma\_head\_during\_sle} on, so the $\sigma$ head's weights are held from P2
+the $\sigma$-head freeze on, so that head's weights are held from P2
 onward. The two grounded rows precede that with a $\sigma$ warm-up on the grounding pool (up to $40$
 epochs, early-stopped on a held-out tenth of the pool) and interleave the pool through P1; under the
 freeze the stream is inactive in P2/P3. The ungrounded row sets warm-up and stream budget to zero,
@@ -694,14 +697,14 @@ different things and we report both rather than the higher.
 
 \paragraph{A fourth analyst choice: what ``equal-count'' means when $n$ is not divisible by the bin
 count.} The rule this paper deploys, and which \S\ref{sec:estimator} names as the fourth analyst choice
-without restating, is interpolated (\texttt{numpy} default \texttt{linear}) quantile edges of $g$ at
+without restating, is linearly interpolated quantile edges of $g$ at
 $j/8$, $j=1,\dots,7$, with a value falling exactly on an edge assigned to the upper bin.
 Neither $n$ divides by eight ($60/8=7.5$, $477/8=59.625$), and that alone is what makes standard
 implementations of the same phrase disagree; there are no exact ties in $g$ on either set under
 either convention, so each of them is a genuine coarsening of $\sigma(g)$ and the bound is valid
 under all of them. On the VT-2005-matched set at eight bins, the deployed convention and the unbiased variance,
 $\Binsuf^{\mathrm{up}}$ is $0.713$ under our rule, under the same edges with ties sent to the lower
-bin, and under \texttt{pandas.qcut} alike; $0.624$ under \texttt{numpy.array\_split} of the
+bin, and under the standard quantile-cut implementation alike; $0.624$ under an equal-length split of the
 $g$-sorted order (margin $+0.225$); $0.669$ under $\lfloor k\,\mathrm{rank}/n\rfloor$ ($+0.134$); and
 $0.736$ under order-statistic quantile edges ($+0.001$). Exact enumeration by dynamic programming
 over \emph{every} partition of the $g$-ordered rows into eight contiguous bins of sizes in
@@ -790,8 +793,8 @@ $48$ & $+1.29$ (1.0) & $+1.22$ (1.0) & $+1.06$ (1.0) & $+0.96$ (1.0) \\
 \end{tabular}}
 \tabnotes{%
 \tnk{a}\,ML, maximum likelihood; Be, unbiased. In parentheses, the fixed-bin two-way
-cluster-bootstrap frequency that the margin is positive. Regenerates from
-\texttt{results/b\_insuff/convention\_audit.json}.}
+cluster-bootstrap frequency that the margin is positive. Regenerates from the deposited
+convention audit.}
 \end{table}
 
 \paragraph{The same grid on the stratum the paper states.} The two grids above sweep the bin count
@@ -823,8 +826,9 @@ the sweep---one more reason the finding is stated on the glycol ethers and not o
 \begin{table}[h]
 \centering
 \caption{Separation margin $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$ on the \emph{glycol-ether
-stratum} of the broad IDAC set ($n{=}182$, row unit), over the grid of
-Table~\ref{tab:grid-rep}.\tnk{a} No cell is negative; the fixed cell of the map is $8$/res/Be.}
+stratum} of the broad IDAC set ($n{=}182$, row unit), over the same bin-count $\times$ variance
+$\times$ convention grid the aggregate is swept on.\tnk{a} No cell is negative; the fixed cell of the
+map is $8$/res/Be.}
 \label{tab:grid-glycol}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}lcccc@{}}
@@ -850,9 +854,8 @@ $48$ & $+2.41$ (1.0) & $+2.39$ (1.0) & $+2.20$ (1.0) & $+2.19$ (1.0) \\
 \tabnotes{%
 \tnk{a}\,ML, maximum likelihood; Be, unbiased. In parentheses, the fixed-bin two-way
 cluster-bootstrap frequency that the margin is positive. The pair unit, the other five admissible
-cells, and the leave-one-publication-out curve at every bin count are in
-\texttt{results/b\_insuff/stratum\_bin\_sweep.json}, from
-\texttt{run\_b\_insuff\_stratum\_bin\_sweep.py}.}
+cells, and the leave-one-publication-out curve at every bin count are in the
+deposited stratum bin sweep.}
 \end{table}
 
 \paragraph{The decomposition on both sets, and the three kernel arms.}
@@ -976,8 +979,8 @@ corroborating estimators Table~\ref{tab:decomp} points here for instead of listi
 row. The inclusion rule is note~\emph{a} of the table, and it is a rule for that table and not a
 claim of completeness over the paper: the LOTV half is a selection from two bin grids far too large
 to reproduce, and the $\lngi$-stratified bounds of Table~\ref{tab:regime} are computed on subsets of the
-VT-2005-matched set rather than on either whole set and are not in it. It regenerates from \texttt{make\_paradox\_}\texttt{figures.py} (in \texttt{scripts/analysis/})
-run with \texttt{-{}-dump-bounds}, which prints the inventory, so the table can be
+VT-2005-matched set rather than on either whole set and are not in it. The deposited figure script
+regenerates it, printing the inventory as it goes, so the table can be
 re-checked against the artifacts. The regeneration's guard against an artifact changing under the
 inventory is \emph{not} the same on the two sets, and we state which is which rather than claim one
 rule. On the VT-2005-matched set it stops both ways: on an estimator the artifact records and the inventory does
@@ -1001,8 +1004,7 @@ negative-margin cells Table~\ref{tab:grid} sets in bold, and both are listed her
 whole---every bound the inclusion rule keeps, plus one estimator that set cannot
 support, with the value, what each fits and what
 qualifies it. What is included, and what is not: note~\emph{a}. The per-stratum bounds that
-replace the aggregate margin are Tables~\ref{tab:map-full}--\ref{tab:map-detail} below, drawn as
-Fig.~\ref{fig:decomp}.}
+replace the aggregate margin are the map tables below.}
 \label{tab:bounds}
 % This table is near the height limit of the text block: at \arraystretch{1} its last rows run
 % past the block and into the folio. The 0.84 below buys back about five lines and leaves the
@@ -1083,8 +1085,8 @@ residual-only.\quad
 % scripts/analysis/run_b_insuff_stratified_map.py, which imports lotv() and two_way_margin_boot()
 % from run_b_insuff_estimator_grid.py rather than reimplementing them.
 \paragraph{The stratification rule, in full.} \S\ref{sec:broad} reports the decomposition per
-stratum rather than per set, and the rule is set out here because it is the object a reader has to be
-able to check was not fitted to its own outcome.
+stratum rather than per set, and the rule is set out here in full because it is the object that has
+to be checkable against the charge of having been fitted to its own outcome.
 
 \emph{Axis 1, solvent class.} An ordered cascade over functional groups; the first class a solvent
 matches is the class it takes, and the order is hydrogen-bonding role first---the axis COSMO-SAC's
@@ -1133,7 +1135,7 @@ COSMO-SAC-2002's documented weakness is specific to. The same cascade applied to
 secondary solute-family axis, also deposited, because a practitioner deciding where to ground needs
 both halves of a pair.
 
-\emph{Two mechanical points.} \texttt{classify\_solvent} takes one argument, a SMILES string, and the
+\emph{Two mechanical points.} The solvent classifier takes one argument, a SMILES string, and the
 whole cascade is a sequence of SMARTS tests: it never reads $m$, $g$, the squared error,
 $\mathrm{MSE}$, $\Binsuf$, the margin, the source DOI or the bootstrap. That is a property of the
 code and not an assurance. Second, the University of Delaware compound list stores formamide and
@@ -1145,12 +1147,12 @@ normalisation is applied to every molecule alike rather than carved for two of t
 $\Binsuf^{\mathrm{up}}$ is capped by the within-stratum label variance: the law of total variance on
 a single bin \emph{is} $\Var(m)$, and refining the bins can only lower it, so under the
 maximum-likelihood within-bin variance $\Binsuf^{\mathrm{up}}\le\Var(m)$ identically---which the
-deposited \texttt{b\_insuff\_up\_ml} column satisfies in every stratum ($0.12$ against $0.80$ on the
+deposited maximum-likelihood column satisfies in every stratum ($0.12$ against $0.80$ on the
 aprotic acceptors, $0.10$ against $3.07$ on the glycol ethers, $0.20$ against $1.42$ on water, $0.22$
 against $5.61$ on the N--H protics, $0.44$ against $3.66$ on the halogenated, $0.58$ against $0.60$
 on the mono-alcohols). The Bessel-corrected estimate the manuscript headlines can exceed $\Var(m)$
 once bins hold only a few rows, and does so exactly once: the mono-alcohols, $0.733$ against $0.604$
-at $n{=}35$ and four rows a bin, where the artifact raises \texttt{b\_insuff\_exceeds\_var\_m}. That
+at $n{=}35$ and four rows a bin, where the artifact raises its own exceedance flag. That
 flag fires only on a stratum already declared not boundable, which is the boundability criterion
 doing its job rather than an unexplained anomaly---and that same value is what sets the $\times6.8$
 span quoted in \S\ref{sec:broad}.
@@ -1212,10 +1214,7 @@ an upper nor a lower bound on a chance rate. And because the set taken whole has
 at this cell, a randomly assembled stratum inherits a positive margin on average; a null frequency
 near one half for ``certifies something'' is expected and is not evidence that the rule is loose.
 The exactly matched null would permute chemistry and provenance jointly, which this design cannot
-do because the two are confounded in these data. Artifact:
-\texttt{results/\allowbreak b\_insuff/\allowbreak map\_\allowbreak multiplicity\_\allowbreak
-null.json}, from \texttt{run\_\allowbreak b\_insuff\_\allowbreak map\_\allowbreak
-multiplicity\_\allowbreak null.py}.
+do because the two are confounded in these data. The draw-by-draw record is deposited.
 
 % OUT-OF-SAMPLE TEST, 2026-08-05.  The null above says the search is not multiplicity-controlled;
 % only new rows settle whether the chemistry is real.  This paragraph is the record of the one
@@ -1242,7 +1241,7 @@ $14900$-row pool the broad set was drawn from contains $184$ neutral glycol-ethe
 which $182$ are already in the broad set, its remaining glycol-ether-classified rows being
 hydroxy-functionalised ionic liquids with no reference profile and no scoreable closure; and the
 VT-2005-matched set is inside the search. Before any margin was computed on the PGL rows we fixed
-the row set (the same \texttt{classify\_solvent} cascade, unmodified, minus any pair shared with the
+the row set (the same solvent-classifier cascade, unmodified, minus any pair shared with the
 broad set), the estimator cell (the headline one: row unit, deployed convention, eight equal-count
 bins, Bessel within-bin variance), the admissibility rule (the manuscript's, with the source axis
 declared to be the record file refined by the compilation label, which is the finest provenance
@@ -1273,11 +1272,8 @@ whose $+0.09$ carries an interval covering zero, and water at $-2.53$---so no ou
 both passes the rule and separates the two terms, and the classes with the larger positive margins
 are ones the rule refuses. The glycol ethers are not where this
 closure fails hardest out of sample, and the instrument behaves out of sample as
-\S\ref{sec:broad} says it behaves in sample---a map, not a verdict. Artifact:
-\texttt{results/\allowbreak b\_insuff/\allowbreak glycol\_\allowbreak ether\_\allowbreak
-out\_\allowbreak of\_\allowbreak sample.json}, from \texttt{run\_\allowbreak glycol\_\allowbreak
-ether\_\allowbreak out\_\allowbreak of\_\allowbreak sample.py}, whose docstring is the
-pre-declaration in full.
+\S\ref{sec:broad} says it behaves in sample---a map, not a verdict. The deposited artifact
+carries the pre-declaration in full.
 
 % OUT-OF-SAMPLE DESCRIPTIVE MAP, added 2026-08-05 (round 3, referee 3, must-fix).  The prose
 % above used to name three positive classes and the endpoints of the range; the negative half of
@@ -1292,8 +1288,8 @@ pre-declaration in full.
 \caption{\textbf{The out-of-sample set, class by class}: the descriptive companion to the
 pre-declared test above (item 7 of the declaration, fixed in advance as description and
 \emph{not} as a test---no verdict is read from this table and no row of it is stated as a
-finding), over every solvent class of the PGL 6th-edition set at the same headline cell as
-Table~\ref{tab:map-full}: eight equal-count bins of $g(\zstar)$, unbiased within-bin variance, row
+finding), over every solvent class of the PGL 6th-edition set at the map's own headline
+cell: eight equal-count bins of $g(\zstar)$, unbiased within-bin variance, row
 unit, deployed residual-only convention. Rows in descending margin; the ten classes carry all
 $7889$ records, so nothing is dropped for being small or for being negative. The manuscript's
 admissibility rule, applied here unchanged, admits two of the ten: the mono-alcohols, whose
@@ -1362,19 +1358,18 @@ input-insufficiency bound and its total error; \textbf{(b)}~the margin between t
 two-way cluster-bootstrap interval, the other three unit\,$\times$\,convention cells as grey ticks;
 \textbf{(c)}~each stratum's share of the set's squared error, the part carried by its largest source
 publication drawn dark. This is the drawn form of the twelve cells at the reported granularity; the
-map itself, all $59$ strata with their sources, intervals and admissibility, is
-Tables~\ref{tab:map-full}--\ref{tab:map-xtab} below. The marker in~(b) is the
-admissibility verdict of \S\ref{sec:broad}, read off the same deposited columns the tables
-are built from. The one row set both positive and left standing by clause~(c) of the rule
-(\S\ref{sec:estimator}) is the glycol ethers,
+map itself, all $59$ strata with their sources, intervals and admissibility, is the four map tables
+below. The marker in~(b) is the
+admissibility verdict, read off the same deposited columns the tables
+are built from. The one row set both positive and left standing by clause~(c) of the rule is the
+glycol ethers,
 here at $P>0.95$; on no other row, the aggregate included, do the two terms separate. \emph{Caveat:} a hollow marker is a stratum below
 $n{=}40$---four of the
 drawn cells, with margins $+0.78$, $+0.61$, $+3.39$ and $+6.33$, none of them admissible---and
 three classes carry no bound at any $n$. The one cell the rule leaves standing and the one
 admissible cell whose margin is not positive are both filled; panel~(c) shows how much of each cell one publication
 carries. The bars on the two axes overlap: all $37$ water-as-solute rows lie inside three solvent
-classes, which is why panel~(c)'s shares do not sum down the column
-(Table~\ref{tab:map-detail}, note~\emph{c}).}
+classes, which is why panel~(c)'s shares do not sum down the column.}
 \label{fig:decomp}
 \end{figure*}
 
@@ -1401,18 +1396,16 @@ classes, which is why panel~(c)'s shares do not sum down the column
 \begin{table*}[tp]
 \centering
 \caption{\textbf{The map, solvent axis, in full}: every solvent stratum of the broad IDAC set,
-including the ones the estimator cannot bound, at the cell \S\ref{sec:estimator}
-fixes---eight equal-count bins of $g(\zstar)$, unbiased within-bin variance, row
+including the ones the estimator cannot bound, at the pre-declared cell---eight equal-count bins of
+$g(\zstar)$, unbiased within-bin variance, row
 unit, deployed residual-only convention---applied identically to all of them. \emph{full} is the
-same cell under the full combinatorial convention. Every margin here and in
-Tables~\ref{tab:map-fine}--\ref{tab:map-detail}, and the $\mathrm{MSE}$ and bound behind it, is in
+same cell under the full combinatorial convention. Every margin here and in the three map tables
+that follow, and the $\mathrm{MSE}$ and bound behind it, is in
 squared \lngi\ units. The map runs over $59$ strata in all: the
 solvent axis at three granularities and the solute axis at two, plus their cross-tab and the set as
-a whole, over $477$ rows, $185$ pairs, $78$ solutes, $36$ solvents and $15$ source publications,
-the finer solvent granularity in Table~\ref{tab:map-fine} and the solute axis in
-Tables~\ref{tab:map-solute} and~\ref{tab:map-xtab}. These four tables carry all $59$, so nothing is
-dropped for being small, and each row states either what it shows or the test it fails; the article
-states the one row set the admissibility rule leaves standing, and which chemistry it does not.}
+a whole, over $477$ rows, $185$ pairs, $78$ solutes, $36$ solvents and $15$ source publications.
+Together the four tables carry all $59$, so nothing is
+dropped for being small, and each row states either what it shows or the test it fails.}
 \label{tab:map-full}
 % linespread: this float was 10.2pt taller than the page ("Float too large for page"), so its
 % note block was set into the bottom margin, one line from being clipped the way Table 4's notes
@@ -1446,8 +1439,8 @@ $10.1\%$ (\S\ref{sec:si-tables}).}}
 
 \begin{table*}[tp]
 \centering
-\caption{\textbf{The map, solvent axis at the fine granularity}---the third granularity of
-Table~\ref{tab:map-full}, at the same estimator cell and under the same rule, whose notes apply
+\caption{\textbf{The map, solvent axis at the fine granularity}---the third solvent granularity, at
+the same estimator cell and under the same rule as the solvent-axis map above, whose notes apply
 here unchanged. A finer class is a subset of a coarser one, so these rows are the same
 measurements re-partitioned and not new ones.}
 \label{tab:map-fine}
@@ -1459,8 +1452,8 @@ measurements re-partitioned and not new ones.}
 
 \begin{table*}[tp]
 \centering
-\caption{\textbf{The map, solute axis}---the solute half of Table~\ref{tab:map-full}, at the same
-estimator cell and under the same rule, whose notes apply here unchanged. Rows at different
+\caption{\textbf{The map, solute axis}---the solute half of the map, at the same
+estimator cell and under the same rule as the solvent axis above, whose notes apply here unchanged. Rows at different
 granularities, and rows on the two axes, can be the same measurements: $362$ of the $1711$ stratum
 pairs share rows, and every row that keeps its sign carries its overlap with the others.}
 \label{tab:map-solute}
@@ -1473,10 +1466,9 @@ pairs share rows, and every row that keeps its sign carries its overlap with the
 \begin{table*}[tp]
 \centering
 \caption{\textbf{The map, the solvent\,$\times$\,solute cross-tab and the set as a whole}---the
-last two granularities of Table~\ref{tab:map-full}, at the same estimator cell and under the same
-rule, whose notes apply here unchanged. The whole-set row is the aggregate the article declines to
-state, printed with the rest; the reading below states which of the cells cited together overlap
-and by how much.}
+last two granularities, at the same estimator cell and under the same
+rule as the two axes above, whose notes apply here unchanged. The whole-set row is the aggregate
+this work declines to state, printed with the rest.}
 \label{tab:map-xtab}
 {\scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -1487,10 +1479,9 @@ and by how much.}
 \begin{table*}[tp]
 \centering
 \caption{\textbf{The map's error, bound and source curve}, stratum by stratum, at the same headline
-cell as Table~\ref{tab:map-full}---eight equal-count bins of $g(\zstar)$, unbiased within-bin variance,
-row unit, deployed residual-only convention. These are the columns
-Tables~\ref{tab:map-full}--\ref{tab:map-xtab} do not carry, on the same $59$ strata; margins,
-intervals and admissibility are there.}
+cell as the four map tables above---eight equal-count bins of $g(\zstar)$, unbiased within-bin variance,
+row unit, deployed residual-only convention. These are the columns those tables do not carry, on the
+same $59$ strata, whose margins, intervals and admissibility are printed there.}
 \label{tab:map-detail}
 % linespread: as for Table~\ref{tab:map-full} above -- this float was 4.3pt taller than the page
 % and set its notes into the bottom margin.  Same reason, same guard.
@@ -2071,7 +2062,7 @@ this work's arms are held to.
 
 We evaluated the direct state-of-the-art model (FastSolv \cite{osanloo2024}) and the
 physics-informed state-of-the-art model (SolProp \cite{vermeire2022solprop}) on a
-by-solute test split (\texttt{test\_solute.csv}, $n\approx10$--$12$k). The two arms are not obtained
+by-solute test split ($n\approx10$--$12$k). The two arms are not obtained
 the same way, and the difference matters below: FastSolv is retrained on our corpus, whereas SolProp
 is the released pretrained thermodynamic cycle---the arm that instantiates the physics---mapped onto
 our target by a three-parameter linear recalibration fitted on the training rows, not by retraining.
@@ -2106,10 +2097,10 @@ combinatorial on/off) are in Table~\ref{tab:si-arms}.
 % results/external_baseline_comparison/summary.json comparability.fastsolv_rows_were_rescored.
 \paragraph{The two FastSolv rows are re-scored, and what was wrong with the first pair.} The bundles
 first written for these two runs were read through a
-prediction path that standardises the model's inputs \emph{twice}. \texttt{scripts/run\_fastsolv.py}'s
-\texttt{\_predict\_with\_model} scales solute descriptors, solvent descriptors and temperature with
-the checkpoint's own buffers and then calls \texttt{trainer.predict}, whose \texttt{predict\_step}
-(in \texttt{fastsolv.\_classes}) scales the same tensors again; the training and
+prediction path that standardises the model's inputs \emph{twice}. Our own inference wrapper scales
+solute descriptors, solvent descriptors and temperature with
+the checkpoint's own buffers and then hands them to the released package's prediction step, which
+scales the same tensors again; the training and
 validation steps do not re-scale, so the fitted models were never what was wrong. The network's sigmoid
 input activation then annihilates the twice-scaled temperature, which reaches it at about $-19.3$
 rather than at the order $-1$ a single scaling gives, a sigmoid of $4\times10^{-9}$. The signature was
@@ -2123,7 +2114,7 @@ runs' RMSEs were $1.04$ and $1.07$---the same dispersion, on both splits. The of
 validation too ($-1.10$), so checkpoint selection did not catch it.
 
 Because the fault was in the scoring and not in the fit, the repair is one inference pass per saved
-checkpoint. \texttt{scripts/analysis/\allowbreak rescore\_fastsolv\_single\_scaling.py} forwards the same two
+checkpoint. A re-scoring pass forwards the same two
 checkpoints over the same rows with the single scaling the models were trained under, and re-runs the
 doubly scaled path beside it as a control. That control reproduces the withdrawn bundles to every
 digit they printed---by-solute MAE $1.940994$ in \lnx\ and RMSE $1.096639$ in $\log_{10}S$ on
@@ -2143,8 +2134,8 @@ temperatures of a pair, against a measured $1.35$.
 % Artifact: results/external_baseline_comparison/summary.json, tier1..._clip_sensitivity.
 \paragraph{What the $\log_{10}S$ column owes to the saturation clip.} Converting \lnx\ to
 $\log_{10}S$ sends a prediction at $x_2=1$ to $+\infty$, so predictions are clipped at
-$x_2=0.999999$ first (\texttt{clip\_ln\_x2\_for\_logS}, the repository's standing prediction-side
-constant). The constant is a choice, and three of the four block-1 cells of
+$x_2=0.999999$ first, the standing prediction-side
+constant of the released code. The constant is a choice, and three of the four block-1 cells of
 Table~\ref{tab:baselines} are a function of it, because a saturating row's error is whatever the clip
 makes it. Sweeping $x_2$ over $1-10^{-3}$, $1-10^{-4}$, $1-10^{-5}$, $1-10^{-6}$ (used), $1-10^{-7}$,
 $1-10^{-8}$ and $1-10^{-10}$ gives, in RMSE $\log_{10}S$: DirectGNN $0.995$ at every one of the
@@ -2171,7 +2162,7 @@ one arm at one seed does. In MAE $\lnx$, by contrast, every arm including the $\
 below the same reference ($2.325$) at every seed, so the reading is confined to this column.
 ``Near the cycle's better end'' ($1.43$) fails at the tight end, where the NRTL and grounded arms sit
 below it at every seed and the $\sigma$-oracle's seed mean ($1.421$, printed as $1.42$) does too,
-though not its seed-$43$ value ($1.479$, printed as $1.48$); \S\ref{sec:discussion} no longer places
+though not its seed-$43$ value ($1.479$, printed as $1.48$); \S\ref{sec:discussion} does not place
 the physics arms within that range.
 And the physics arms do not \emph{uniformly} trail their control by more in this column than in MAE
 (a comparison of an RMSE deficit against an MAE one). The NRTL and COSMO-SAC-grounded arms do, at
@@ -2338,13 +2329,9 @@ linear in the profile inherits that concentration.
 spectrum of the drift whose mean and dominant mode are Fig.~\ref{fig:surrogate}. Its top two modes
 carry $72.9\%$ in the companion run plotted there and $71.8\pm1.3\%$ over the three seeds (quoted as
 $72\pm1\%$ in \S\ref{sec:surrogate}): the same statistic on different runs. The companion run's
-spectrum is \texttt{results/\allowbreak compensation/\allowbreak isolation\_\allowbreak gpu.json}
-and the three-seed aggregate
-\texttt{results/\allowbreak sur/\allowbreak surrogate\_\allowbreak seeds/\allowbreak
-surrogate\_\allowbreak seeds.json}, whose \texttt{top2\_evr} has mean $0.71819$ and standard
-deviation $0.01265$ over seeds $0$--$2$; both this figure and Fig.~\ref{fig:surrogate} are drawn by
-\texttt{scripts/\allowbreak analysis/\allowbreak make\_\allowbreak surrogate\_\allowbreak
-figure.py}. That share has no
+spectrum and the three-seed aggregate are both deposited; the aggregate's top-two share has mean $0.71819$ and standard
+deviation $0.01265$ over seeds $0$--$2$. Both this figure and Fig.~\ref{fig:surrogate} are drawn by
+one deposited script. That share has no
 matched null, so the panel is titled by what it plots and not by an inference. The
 phase-randomised and wrong-molecule nulls of \S\ref{sec:surrogate} are run on the
 $\hat\sigma$-versus-reference deviation instead, a different quantity; the isolation drift has not
@@ -2512,8 +2499,7 @@ per-pair mean                   & $1.46$ & $0.56$ & $0.01$ \\
 % number that left the article prints here; nothing was dropped in the move.
 The article's \S\ref{sec:fidelity} states two things---that the fidelity lever it can demonstrate is
 confined to the VT-2005-matched set's chemistry, and that the closure error is chemically placed and
-placed differently on the two sets. This section is the working behind both, in the form it had
-before the 2026-08-07 restructure moved it out of the article.
+placed differently on the two sets. This section is the working behind both.
 
 \paragraph{The $2002\to2010$ step, in full.}
 % Artifacts: results/b_insuff/fidelity_lever_fair2002.json via run_fidelity_lever_fair2002.py;
@@ -2680,7 +2666,7 @@ claim rests on it \emph{computed under the deployed convention}.
 
 The article's \S\ref{sec:discussion} carries limitations~(i), (iv) and~(vi), which scope what the two
 data sets and the estimator can deliver, and~(xii), which the leak-free re-run of \S\ref{sec:data}
-rewrites. The remaining nine are here, unchanged and with their numerals.
+rewrites. The remaining nine are here, keeping those numerals.
 
 (vii)~Absolute scaffold
 accuracy is encoder-bound but well \emph{above} the inter-lab noise floor of \S\ref{sec:data}, so
@@ -2914,7 +2900,7 @@ standing, and the chemistry cut compounded with the pair collapse does not.
 % The article keeps the published two-database bracket, the fact that the deployed closure lands
 % inside it, and both open limits.
 \paragraph{Scoring the deployed closure against the published evaluation.} The deployed
-\texttt{CosmoSacLayer}---its own class, constants and damped fixed point---was run over the same
+our differentiable COSMO-SAC layer---its own constants and damped fixed point---was run over the same
 three record files De Souza et al.\ \cite{desouza2025cosmosac} score, with components resolved
 through the repository's CAS-to-InChIKey map and matched by exact InChIKey to this paper's VT-2005
 artifact: $7889$ of $8138$ usable records ($96.9\%$), $2279$ distinct pairs, each at its own
@@ -2926,7 +2912,7 @@ Bemis--Murcko scaffold---molecules grouped by ring system plus linker, side chai
 $\Tm/\dHfus$: an open melting-point pool plus a group-contribution prior. True
 $\sigma$-profiles: the VT-2005 database, the Virginia Tech 2005 compilation of quantum-chemically
 computed screening-charge profiles for ${\sim}1{,}400$ compounds \cite{mullins2006} (ingested to
-\texttt{sigma\_profiles.csv}, $1432$ compounds, with the COSMO cavity volume
+$1432$ compounds, with the COSMO cavity volume
 $V_{\mathrm{cosmo}}$ for the combinatorial term). These are quantum-chemically computed for a
 single reference conformer and protonation state; mismatch to the experimental measurement
 conditions is noise in $\zstar$ that inflates $\Binsuf$, but under a Berkson-type displacement it
@@ -2961,14 +2947,14 @@ method-stratified nor a source-clustered re-estimate is available on it.
 The VT-2005-matched set is matched to VT-2005 by RDKit canonical SMILES on solute and
 solvent, the rule the deployed $\sigma$-oracle itself uses; matching by InChIKey instead admits $85$
 pairs over $46$ solutes and $19$ solvents at $298$\,K in place of $60/41/17$ (both counts are recorded
-in \texttt{decomposition.json}). We keep the stricter rule so that the $\zstar$ charged against each
+in the deposited decomposition artifact). We keep the stricter rule so that the $\zstar$ charged against each
 label is the profile the deployed pipeline would supply, rather than one imported across a tautomer or
 protonation variant---the same mismatch that makes the reference imperfect above. The decomposition
 was not re-estimated on the InChIKey-matched set; whether the verdict moves on those $25$ extra pairs
 is untested. The broad IDAC set uses the looser InChIKey rule, so the two sets are matched under
 different standards; that asymmetry is quantified above (four molecules, $12$ rows, verdict unchanged
 on the exactly matched subset) rather than left implicit. Second-domain pKa: the OPERA experimental compilation
-\cite{mansouri2019opera} (\texttt{pKa\_QR.sdf}, $7904$ QSAR-ready records, public-domain US EPA;
+\cite{mansouri2019opera} ($7904$ QSAR-ready records, public-domain US EPA;
 cited, not redistributed); the uniform net-formal-charge filter reduces this to the $1004$
 Hammett-amenable rows ($158$ meta/para, $846$ ortho/heteroaromatic) analysed in \S\ref{sec:si-pka}. The Bemis--Murcko scaffold split follows the main text. Because the seeded
 split is not stable across pipeline versions (\S\ref{sec:data}), the numbers in this paper are
@@ -3001,7 +2987,7 @@ rows carrying $64$ distinct test-split molecules and $26$ carrying $26$ validati
 correctly guarded build leaves none of them.
 
 Those are counts over the split \emph{files}, which carry the auxiliary melting-point rows
-(source \texttt{aux\_only}, no solubility label) alongside the labelled ones and so span $2634$ and
+(auxiliary-only, no solubility label) alongside the labelled ones and so span $2634$ and
 $2467$ distinct solutes. Every test metric in this paper is computed on the $5608$ labelled rows,
 which span $147$ solutes, and that is the set a leak can act on. Of those $147$, $7$ have their own
 reference profile in the defective stream and $8$ have a scaffold relative in it, on $297$ and
@@ -3140,9 +3126,10 @@ seeds, which this protocol does not commit to running.
 
 The decision the re-run settles is stated in advance and in one direction only, since it is the
 supervision contrast alone that hangs on it. If the five per-seed gains are of one sign, the two
-senses of grounding keep their opposite signs, and the abstract, \S\ref{sec:paradox} and
+senses of grounding keep their opposite signs, \S\ref{sec:paradox} and
 Table~\ref{tab:claims} print the re-run's per-seed values in place of the three uncertified ones,
-with the refusal to order the two operations by magnitude unchanged. If the per-seed gains straddle
+and the abstract's scope clause moves from three seeds to five, with the refusal to order the two
+operations by magnitude unchanged. If the per-seed gains straddle
 zero, supervision has no established sign at five seeds: the paper then reports one operation with a
 sign---substituting the reference at inference hurts---and records the other as unresolved, and the
 abstract, the heading of \S\ref{sec:paradox}, the opening sentence of the Conclusions
@@ -3155,13 +3142,13 @@ the supervised one. The substitution result is unaffected in all three cases:
 it is one checkpoint evaluated two ways, and no $\sigma$-stream build can reach it.
 
 Which displays the five-seed values replace is fixed here as well, and in all three branches alike,
-because a five-seed abstract printed beside a three-seed figure would be a contradiction the
-manuscript had left itself the choice of. Three arms carry those values: the ungrounded arm, the
+because a five-seed table printed beside a three-seed figure would be a contradiction, and which
+displays move is not a choice to be taken once the numbers are known. Three arms carry those values: the ungrounded arm, the
 grounded arm, and the $\sigma$-oracle arm, which is the grounded checkpoint re-evaluated with
 $\zstar$ substituted and therefore moves with it. Each display named next carries at least one of the
 three and is regenerated from the five-seed arms by the script that produced it---the abstract's
-$0.20$ and $0.41$; \S\ref{sec:paradox} entire, together with the two sections the restructure of
-2026-08-07 moved its prose into---\S\ref{sec:decision}, which carries the regression slopes read off
+seed count and its leak-free clause, which carry no value of their own; \S\ref{sec:paradox} entire, together with the two sections that carry the rest of
+its prose---\S\ref{sec:decision}, which carries the regression slopes read off
 Fig.~\ref{fig:parity-lnx2}, the ranking contrast and the solute-blind comparison, and
 \S\ref{sec:notdecided}, which carries its channel paragraph---the per-seed gains and the seed-$42$
 values included wherever they now print; the five rows of
@@ -3198,7 +3185,7 @@ control's $+0.18$ together with the $0.59$ share of \S\ref{sec:paradox}, which m
 separate five-seed pass above is run. Three passages carry no arm value but state that the $0.20$ is
 uncertified---the disclosure above, limitation~(xii) of \S\ref{sec:discussion} and the provenance
 paragraph of \S\ref{sec:si-repro}---and the in-run certification answers all three, so each is
-rewritten to what the re-run certifies and limitation~(xii)'s $0.20$ moves with the abstract's.
+rewritten to what the re-run certifies and limitation~(xii)'s $0.20$ moves with \S\ref{sec:paradox}'s.
 Nothing else moves, and the boundary is worth stating because
 two neighbouring numbers sit just outside it: neither the DirectGNN control nor the NRTL arm is
 retrained, so their rows in Tables~\ref{tab:baselines} and~\ref{tab:si-arms}, and the endpoint
@@ -3209,18 +3196,17 @@ printed; and \S\ref{sec:measure} uses no trained model at all.
 verdict rests on a newly constructed set, both sets are deposited with the Supporting Information as
 row-level tables that need no code to inspect. The results that otherwise require re-running the code
 are, specifically, the broad IDAC set with its design and provenance audit, the 2010 kernel's
-own-latent floors, the fitted kernel residual and the estimator grid. \textbf{Data Set~S1} (\texttt{broad\_idac\_set\_477.csv}) carries one
+own-latent floors, the fitted kernel residual and the estimator grid. \textbf{Data Set~S1} carries one
 row per measurement: pair identifier, solute and solvent SMILES, the UD compound key matched to each
 and which rule matched it (full InChIKey or first-block fallback), temperature, the experimental
 $\lngi$, the \emph{four} closure outputs---2002 and 2010-dispersion-off, each in the full and the
 residual-only combinatorial convention, so that the deployed-convention kernel contrast of
 \S\ref{sec:fidelity} is recomputable from the file---the
 ThermoML method field, the source DOI and journal, and a flag for the $57$ rows shared with the
-VT-2005-matched set. Some analysis artifacts label that same table \texttt{representative\_set\_477.csv}.
-\textbf{Data Set~S2} (\texttt{vt2005\_matched\_set\_60.csv}, printed in full as
+\textbf{Data Set~S2} (printed in full as
 Table~\ref{tab:vt2005-rows}) carries the same fields for the $60$ VT-2005-matched pairs, with three
 differences that follow from how the VT-2005-matched set is defined. Its closure outputs are the VT-2005 ones the
-deployed $\sigma$-oracle uses (columns \texttt{g\_full}, \texttt{g\_res}) alongside the four
+deployed $\sigma$-oracle uses, in both combinatorial conventions, alongside the four
 UD-profile outputs that make it commensurable with Data Set~S1. Its matching rule is canonical SMILES
 throughout, so it carries neither the per-row match-rule columns nor the UD compound keys. It also
 names each compound in words as well as in SMILES. It additionally carries a per-row record count,
@@ -3235,7 +3221,7 @@ provenance of the closure evaluations themselves, which still requires the code.
 % \input inside a tabular breaks booktabs' \noalign.
 \begin{table*}[t]
 \centering
-\caption{\textbf{Data Set~S2} (\texttt{vt2005\_matched\_set\_60.csv}) in full: the VT-2005-matched set ($n{=}60$), row by
+\caption{\textbf{Data Set~S2} in full: the VT-2005-matched set ($n{=}60$), row by
 row, deposited so the set can be inspected without running code. Read in two blocks of $30$, left
 then right.}
 \label{tab:vt2005-rows}
@@ -3281,7 +3267,7 @@ then right.}
 \tabnotes{%
 \tnk{a}\,Columns: $m$, the experimental $\lngi$ at $298$\,K; $g_{\text{full}}$ and
 $g_{\text{res}}$, the VT-2005-input COSMO-SAC-2002 output under the full and residual-only
-conventions; \emph{broad} (the deposit's \texttt{in\_broad\_idac\_set}), the $57$ pairs that also
+conventions; \emph{broad}, the $57$ pairs that also
 appear in the broad IDAC set, the three that do not being the bromine- and iodine-containing pairs of
 \S\ref{sec:fidelity}. The $477$-row broad IDAC set is the companion machine-readable
 Data Set~S1.}}
@@ -3301,14 +3287,8 @@ estimators, method and source-DOI composition, the method-stratified and cluster
 the kernel contrast split into the shared $57$, the complementary $420$ and the $80$ complementary
 rows that are also at $298$\,K, the VT-2005-matched floor
 recomputed on UD profiles, and both sets' floors under the 2010 kernel's own typed
-latent---regenerates in one CPU run of
-% The \allowbreak's make these paths breakable in the two-column measure. Without them the
-% \texttt runs past the column and overprints the neighbouring one. The paths themselves are
-% provenance and must stay exact, so they are broken rather than shortened.
-\texttt{scripts/\allowbreak analysis/\allowbreak run\_\allowbreak b\_\allowbreak insuff\_\allowbreak representative\_\allowbreak audit.py} into
-\texttt{results/\allowbreak b\_\allowbreak insuff/\allowbreak representative\_\allowbreak audit.json}. A second CPU run,
-\texttt{scripts/\allowbreak analysis/\allowbreak run\_\allowbreak b\_\allowbreak insuff\_\allowbreak convention\_\allowbreak audit.py} into
-\texttt{results/\allowbreak b\_\allowbreak insuff/\allowbreak convention\_\allowbreak audit.json}, produces the convention-rule material: both sets'
+latent---regenerates in one CPU run of the deposited design-and-provenance audit. A second CPU run,
+the convention audit, produces the convention-rule material: both sets'
 margins and clustered bootstraps under each combinatorial convention, the per-cell broad-set
 grid of Table~\ref{tab:grid-rep}, the InChIKey match-rule audit and its exactly matched re-estimate,
 the pair-conditional bound and its single-source diagnosis, the typed latent's dimensions, and the
@@ -3338,8 +3318,7 @@ difference in float64. Its $8103$ rows carry no non-finite \lnx\ prediction, its
 the same $5608$ rows in the same order as all five other seed-$44$ arms, and on the $37$ labelled
 rows where the oracle matched neither molecule its \lng\ agrees with the grounded arm's to
 $5\times10^{-6}$, the two being the same checkpoint forwarded twice. Those checks are not a claim to
-be taken on trust:
-\texttt{scripts/\allowbreak analysis/\allowbreak verify\_\allowbreak perrow\_\allowbreak deposit.py} runs all
+be taken on trust: a deposited verification pass runs all
 of them over the deposit in one CPU pass---row count, labelled count, whether the last record is
 complete, non-finite predictions, cross-arm row order, and each file against its own
 summary---and exits non-zero if any file fails. All twenty-two pass.
@@ -3350,9 +3329,8 @@ What the repair changes is what could be recomputed afterwards. The $\sigma$-ora
 Table~\ref{tab:baselines} had been the mean over the two intact deposits and is now a three-seed
 mean like the rest of its block, moving from $2.26\pm0.02$ to $2.25\pm0.02$ in MAE, from
 $1.57\pm0.17$ to $1.60\pm0.14$ in $\log_{10}S$ RMSE, and from $-0.05\pm0.02$ to $-0.03\pm0.04$ in
-$R^{2}$---the last of which is now the same $-0.03\pm0.04$ Table~\ref{tab:si-arms} reads, a
-disagreement between the two tables that the truncation had caused and that the caption used to have
-to explain. The clip sweep of \S\ref{sec:si-baselines} likewise carries three seeds for that arm.
+$R^{2}$---the last of which is the same $-0.03\pm0.04$ Table~\ref{tab:si-arms} reads, the truncation
+having been the whole of the disagreement between the two tables. The clip sweep of \S\ref{sec:si-baselines} likewise carries three seeds for that arm.
 
 The learned-$\sigma$ and DirectGNN solubility files and the activity-level
 ($n{=}60$, $n{=}44$) artifacts were complete for every seed throughout.

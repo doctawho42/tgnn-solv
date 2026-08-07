@@ -248,3 +248,22 @@
 # entries still print -- `pdftotext -layout paper/grounding_paradox.pdf - | grep Econometrica'
 # returns "Econometrica 2003, 71, 1161-1189" on p. 33, and Digital Discovery 2023, 2, 781-798 and
 # the NeurIPS 2021 entry are on p. 32. The reference list did not change in this pass.
+
+# 2026-08-07 rounding/scope pass. NO ENTRY NEEDED, recorded so a later diff does not read any of
+# it as an accident. Section 1 is EMPTY: nothing stopped being printed anywhere.
+#
+# (a) THE ONE DELIBERATE REMOVAL is +0.10 in S6.5, and it was a wrong claim, not a retired value.
+#     The sentence read "the second is taken from the unrounded means, since the rounded column
+#     would give +0.10". It does not: Table S2's rounded column is 1.79 and 1.70, a difference of
+#     +0.09, which is also what the unrounded means give (1.7949751 - 1.7021766 = 0.0927985). The
+#     sentence now prints 0.0928 and says the rounded column agrees. The value 0.10 still prints on
+#     eight other pages (report: x13 -> x12), so it is a section-2 entry and not a retirement; it is
+#     deliberately NOT allowlisted, because allowlisting 0.1 would blind the checker to all thirteen.
+#
+# (b) THE OTHER FIVE section-2/4 entries are REFLOW, and their counts prove it: +1.40 x6 -> x6,
+#     +0.69 x9 -> x9, 74 x5 -> x5, 846 x7 -> x7, 275 x2 -> x2. Adding four lines to Sec. S3 moved a
+#     page folio (S-27, S-56, S-61, S-63) into the middle of each of those sentences, which is what
+#     defeats the occurrence matcher. All five sentences were read back out of the built SI and are
+#     intact -- e.g. "remain admissible--74 rows at +1.40 deployed [S-27] and +1.69 full, under all
+#     three deletions" and "at zero under the deployed rule and +0.69 under the full conven- [S-56]
+#     tion". Nothing here is allowlisted either.

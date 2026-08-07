@@ -19,11 +19,9 @@ quantity is the out-of-fold residual mean square of a cross-fitted forest of $m$
 (\S\ref{sec:si-pka})---and because every margin in the map is
 $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$, a regressor that predicts $m$ from $\zstar$ better than an
 eight-bin histogram of a scalar summary of $\zstar$ does would raise all of them at once. The
-experiment that asks whether it does was pre-declared, in the docstring of
-\texttt{scripts/\allowbreak analysis/\allowbreak run\_\allowbreak b\_\allowbreak insuff\_\allowbreak
-crossfit\_\allowbreak estimator.py} (sha256 \texttt{d158989fe9cfdc79}\ldots, the full digest
-deposited in \texttt{results/\allowbreak b\_insuff/\allowbreak crossfit\_\allowbreak
-declaration\_\allowbreak sha256.txt}), written and staged in git before any cross-fitted margin
+experiment that asks whether it does was pre-declared, in the header of the estimator itself
+(sha256 \texttt{d158989fe9cfdc79}\ldots, the full digest
+deposited beside it), written and staged in version control before any cross-fitted margin
 existed. It fixed in advance: the feature set ($\zstar$ and nothing else---the two
 $\sigma$-profiles, their areas and $T$, $105$ dimensions---with $v_{\mathrm{cosmo}}$ excluded
 because it is an argument of the full convention only, so conditioning on it would not bound the
@@ -32,7 +30,7 @@ sensitivity that never headlines; the folds, five-fold grouped on the molecule p
 source-grouped variant reported beside every cell; the row set, $473$ of the $477$, the four rows
 whose solutes carry no VT-2005 profile dropped; an outcome-blind validity gate; a ban on forming
 the per-cell minimum of the two bounds; the rule for which estimator the paper would headline; and
-three verdicts. Nothing above the declaration's \texttt{main} was edited afterwards, and both
+three verdicts. Nothing above the declaration was edited afterwards, and both
 bounds are deposited for every one of the $1164$ cells.
 
 \emph{It did not tighten.} On the same $473$ rows, broad set, row unit, primary folds, the
@@ -88,17 +86,16 @@ valid bound would be uniformly \emph{looser} than the other. Where that happens,
 prints a bound that is valid and strictly less informative: every claim weakens and none becomes
 more correct. What we did instead is what the declaration's Sec.~2 already required
 independently---both bounds, both margins and their difference are printed for every cell of the
-deposited map, the cells that favour this paper and the cells that do not---so a reader who holds us
-to the declared rule can read the poorer map straight off
-\texttt{crossfit\_\allowbreak map\_\allowbreak table.csv} and re-derive every number in the
-paragraph above. Two things about this deviation should be said rather than absorbed. It runs in
+deposited map, the cells that favour this paper and the cells that do not, so that the poorer map
+is legible in the deposit and every number in the
+paragraph above re-derivable from it. Two things about this deviation should be said rather than absorbed. It runs in
 this paper's favour, which is exactly why it is named here instead of being folded into a methods
 sentence. And it is a choice made \emph{after} seeing a number, which is what the declaration
 existed to prevent; what limits it is that the number is one global comparison of two bounds on one
 row set, not a per-cell selection, and that the alternative is on the page.
 
 \emph{Why the coarsening wins here, and where it would not.} The mechanism is measurable, and it is
-not the one a reader would guess. It was established on synthetic data matched to the real
+not the obvious one. It was established on synthetic data matched to the real
 design---$477$ rows in $185$ pairs from $15$ sources, the real rows-per-pair multiplicities, real
 $\sigma$-profiles drawn from the deposited $1432$-row artifact so the regressor faces the real
 collinear geometry, and $\Binsuf$ known in closed form by construction. The coarsening is handed
@@ -158,9 +155,8 @@ shock---$64\%$ and $71\%$ \emph{below} truth. The numerical gates do not catch t
 version returns out-of-fold $R^2=+0.61$ and $+0.64$ in exactly those two cells and clears the
 replicate-floor check by a factor of thirty; the only gate that fires is the assertion that no
 group straddles a fold, which is a statement about the folds and not a number. \textbf{One deposited
-number is compromised by this and must not be cited as a bound}:
-\texttt{results/\allowbreak b\_insuff/\allowbreak decomposition.json} records
-\texttt{rf\_oof\_upper}${}=0.5646$, fitted with \texttt{KFold(shuffle=True)}---row-level folds, no
+number is compromised by this and must not be cited as a bound}: the deposited
+decomposition artifact records an out-of-fold forest upper bound of $0.5646$, fitted on row-level folds, with no
 grouping. Nothing in this paper rests on it: Table~\ref{tab:bounds} carries the audit artifact's
 $0.621$ instead, and the disagreement between the two forests is reported above. The deposit now
 carries the warning in the file itself, beside the number. The scheme's exposure differs by set and
@@ -168,12 +164,6 @@ both readings reach the same verdict: on the VT-2005-matched set where that numb
 rows share a pair, but $60$ rows carry $41$ solutes and $17$ solvents, so every held-out row has a
 near-twin in training; on the broad set the pair channel is open outright, $359$ of the $477$ rows
 sharing a molecule pair with another row (\S\ref{sec:si-repro}), and blocking it moves the same
-forest from $0.15$ to $0.88$. Artifacts: \texttt{crossfit\_\allowbreak map.json},
-\texttt{crossfit\_\allowbreak map\_\allowbreak table.csv}, \texttt{crossfit\_\allowbreak
-multiplicity\_\allowbreak null.json}, \texttt{crossfit\_\allowbreak within\_\allowbreak
-stratum\_\allowbreak sensitivity.csv}, \texttt{crossfit\_\allowbreak verdict.json} and
-\texttt{crossfit\_\allowbreak synthetic\_\allowbreak validation.json} under
-\texttt{results/\allowbreak b\_insuff/}, from the declaration above, its scoring pass
-\texttt{run\_\allowbreak b\_insuff\_\allowbreak crossfit\_\allowbreak scoring.py} and the validation
-\texttt{run\_\allowbreak b\_insuff\_\allowbreak crossfit\_\allowbreak synthetic\_\allowbreak
-validation.py}.
+forest from $0.15$ to $0.88$. The cross-fitted map, its per-cell table, its multiplicity null, its
+within-stratum sensitivity, its verdict and its synthetic validation are all deposited, together with
+the declaration above, the scoring pass and the validation run that produced them.

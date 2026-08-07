@@ -170,9 +170,9 @@ representable encoder nor a lossless bottleneck. Alongside it we report a second
 quantity, the \emph{grounding gap} $\Ggap:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, the oracle risk minus
 the best end-to-end risk; the paradox is $\Ggap>0$. Under a representable encoder (A1) and a
 lossless bottleneck (A2) it is sandwiched $0\le\Ggap\le\Bclos$, so $\Ggap>0$ would certify
-$\Bclos>0$ (Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is unverified---the linear probe this
-paper previously read as evidence against it does not distinguish the trained encoder from an
-untrained one, and that reading is withdrawn (\S\ref{sec:supporting})---and A2 is unverifiable and
+$\Bclos>0$ (Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is unverified---the reading that took a
+linear probe as evidence against it is withdrawn, that probe not distinguishing the trained encoder
+from an untrained one (\S\ref{sec:supporting})---and A2 is unverifiable and
 physically dubious; when A2 fails, $\Ggap>0$ conflates
 closure misspecification with input insufficiency, a well-specified closure with a lossy latent
 giving $\Bclos=0$ yet $\Ggap>0$. We therefore read $\Ggap$ as corroborating evidence and base the
@@ -348,6 +348,15 @@ quoted from \texttt{cCOSMO}, that reference implementation itself.
 % B_clos on the composite, the fact that the deployed closure lands INSIDE it, and BOTH open limits
 % -- the unmatched profile-database axis, and that the published 6977 points are not proven to be
 % the rows scored here.  The conclusion is licensed only "subject to those"; do not print it bare.
+% NARROWED 2026-08-07 (referee, round 5).  This paragraph used to claim the deployed closure lands
+% inside the bracket "on both statistics and under both conventions, as do this paper's own two
+% sets".  The table beside it does not show that.  Published Lin-Sandler brackets are AAD
+% [0.6775, 1.7457] and R^2 [0.8780, 0.9599] (results/published_idac_check/summary.json).  On the same
+% records ours is AAD 0.7651 res / 0.9777 full -- inside -- and R^2 0.9192 res / 0.8818 full, the
+% full one clearing the lower end by 0.004 and printing as 0.88 against 0.88.  This paper's OWN two
+% sets are inside on AAD (1.1155, 0.8072) but NOT on R^2 (0.6079, 0.4031), and the table scores them
+% in the residual convention only.  Hence "in AAD" in the conclusion below.  Do not widen either
+% sentence back without re-reading the table.
 Reproducing a reference implementation fixes the code; it does not say whether the error this paper
 decomposes is the error a published COSMO-SAC has, or something peculiar to this data assembly.
 Table~\ref{tab:closure-anchor} answers that. De Souza et al.\ \cite{desouza2025cosmosac} score the
@@ -356,14 +365,16 @@ with \emph{The Properties of Gases and Liquids}, at AAD $=\Ex|\ln\gamma_{\mathrm
 -\ln\gamma_{\mathrm{exp}}^\infty|$ of $1.75$ with HF-TZVP profiles and $0.68$ with BP-TZVPD-FINE:
 one closure, two profile databases, a factor of $2.6$ between them. An evaluation of COSMO-SAC is
 in that sense an evaluation of the profiles it was handed, which is why $\Bclos$ is defined above on
-the composite of map and profile calculation and not on the kernel. We ran the deployed
-\texttt{CosmoSacLayer} over the same records (\S\ref{sec:si-repro}), and it lands inside the bracket
-the published closure spans across profile databases, on both statistics and under both conventions,
-as do this paper's own two sets. Two limits stay open: the profile database is the one axis we
+the composite of map and profile calculation and not on the kernel. We ran our own differentiable layer
+over the same records (\S\ref{sec:si-repro}), and on AAD it lands inside the
+bracket the published closure spans across profile databases, under both conventions; on $R^2$ it is
+inside in the deployed convention and level with the bracket's lower end in the full one, the two
+printing alike at $0.88$. This paper's own two sets are inside on AAD alone, and in the deployed
+convention only---their $R^2$, $0.61$ and $0.40$, is below the published range. Two limits stay open: the profile database is the one axis we
 cannot match, VT-2005 being what this paper deploys and the axis that publication shows dominates;
 and the publication's $6977$ points are not proven to be the same rows as the $7889$ scored here,
 the record selection not being stated file by file. Subject to those, the closure error decomposed
-in \S\ref{sec:measure} is the error a published COSMO-SAC has; which half of this paper's chemical
+in \S\ref{sec:measure} is, in AAD, the error a published COSMO-SAC has; which half of this paper's chemical
 localisation carries across to that set, on $130$ times the data and someone else's compilation, and
 which half does not, is in \S\ref{sec:badclosure}.
 
@@ -459,44 +470,40 @@ how many seeds it carries, and the script and artifact each regenerates from.
 % ---------------------------------------------------------------------------
 \begin{table*}[tp]
 \centering
-\caption{Run families: which runs produced which numbers, and at how many seeds. Scripts are in
-\texttt{scripts/analysis/}, artifacts under \texttt{results/}.}
+\caption{Run families: which runs produced which numbers, and at how many seeds. The deposit names
+the analysis script and the artifact behind each row.}
 \label{tab:runs}
 {\scriptsize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.9}
 \begin{tabular}{@{}L{0.32\linewidth}L{0.22\linewidth}L{0.40\linewidth}@{}}
 \toprule
-Run family (script) & Seeds & What it produced \\
+Run family & Seeds & What it produced \\
 \midrule
-$\sigma$-grounding arms, GPU, full corpus
-(\texttt{run\_e5\_comparison}) & $42,43,44$, mean$\pm$sd on the $n{=}5608$ labelled test rows &
+$\sigma$-grounding arms, GPU, full corpus & $42,43,44$, mean$\pm$sd on the $n{=}5608$ labelled test rows &
 Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2}, Table~\ref{tab:si-arms}, the $+0.41$ and $-0.20$
 of \S\ref{sec:paradox} \\
 Co-adaptation and channel-swap oracle controls; gated output residual & $42$ only: a sign, not an
 effect size & the $+0.18$ and $+0.27$ of \S\ref{sec:paradox}; \S\ref{sec:gateb} \\
-Decomposition, VT-2005-matched (\texttt{run\_b\_insuff\_decomposition}) & none: the closure has no
+Decomposition, VT-2005-matched & none: the closure has no
 learnable parameters & \S\ref{sec:vt2005}; the estimator grids \\
-Decomposition, broad IDAC (\texttt{run\_b\_insuff\_representative}, \texttt{\ldots\_audit}) & none &
+Decomposition, broad IDAC, with its design and provenance audit & none &
 \S\ref{sec:broad}: the $+0.51$, the $+0.95$, the deletion curve \\
-The stratified map (\texttt{run\_b\_insuff\_stratified\_map}) & none & the $59$ strata,
+The stratified map & none & the $59$ strata,
 Tables~\ref{tab:map-full}--\ref{tab:map-detail} \\
-Closure-fidelity kernels (\texttt{run\_fidelity\_lever\_fair2002}, \texttt{run\_closure\_flip\_ci})
-& none & \S\ref{sec:fidelity}, Table~\ref{tab:kernels} \\
-Kernel residual (\texttt{run\_local\_closure\_fix}) & five fit seeds; $\pm$ is their standard error
+Closure-fidelity kernels & none & \S\ref{sec:fidelity}, Table~\ref{tab:kernels} \\
+Kernel residual & five fit seeds; $\pm$ is their standard error
 & the $46\pm5\%$ and $-5\pm16\%$ of \S\ref{sec:badclosure} \\
-Latent against its reference (\texttt{run\_compensation\_surrogate}) & $0,1,2$; mean$\pm$sd &
+Latent against its reference & $0,1,2$; mean$\pm$sd &
 \S\ref{sec:surrogate}, Fig.~\ref{fig:surrogate} \\
-Closure validation (\texttt{run\_closure\_reference\_validation},
-\texttt{run\_published\_idac\_closure\_check}) & none & the \emph{2002} NIST reproduction;
-Table~\ref{tab:closure-anchor}. The 2010 one is regenerated by neither: it comes from
-\texttt{validate\_cosmo2010\_layer}, which wrote no artifact \\
-External baselines (\texttt{run\_external\_baseline\_comparison}) & one run each, on a
+Closure validation & none & the \emph{2002} NIST reproduction;
+Table~\ref{tab:closure-anchor}. The 2010 reproduction comes from a validator that wrote no
+artifact and is regenerated by neither \\
+External baselines & one run each, on a
 \emph{by-solute} split and, for two of the rows, a \emph{random-pair} one & Table~\ref{tab:baselines} \\
-pKa second domain (\texttt{run\_pka\_real\_decomposition}, \texttt{\ldots\_hammett\_probe},
-\texttt{\ldots\_binsuff\_boot}) & $K{=}20$ within-scaffold splits; $G{=}4$ series as the cluster
+pKa second domain: decomposition, Hammett probe and bootstrap & $K{=}20$ within-scaffold splits; $G{=}4$ series as the cluster
 unit & \S\ref{sec:pka-main} \\
-Noise floor and encoder probe (\texttt{run\_noise\_floor\_estimate}) & none & \S\ref{sec:data},
+Noise floor and encoder probe & none & \S\ref{sec:data},
 \S\ref{sec:gap} \\
 \bottomrule
 \end{tabular}

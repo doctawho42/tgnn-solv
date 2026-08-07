@@ -161,209 +161,49 @@ model misspecification, representation probing}
 \end{tocentry}
 
 \maketitle
-% ABSTRACT: the ceiling is 250 words, 5 of them are RESERVED, and this abstract is at the
-% resulting budget of 245 exactly -- 240 words, 244 splitting the em dashes, 245 as the page
-% renders it, which is the strictest of the three and the one the budget is set against.  The 5
-% are held for the five-seed substitution Sec. 2.2 pre-commits to; the paragraph below the counter
-% says what they buy and why they are not spendable on anything else.  Re-count with
-% scripts/analysis/wc_abstract.py --reserve 5 after ANY edit here, and take the number the script
-% prints, not the one this comment printed before your edit: carrying a count forward unchecked is
-% how this note came to be wrong three times.  Every assertion is scoped by
-% the set it was measured on rather than hedged with a modality.  No grade words, and
-% none may come back: if a sentence here needs one, the sentence is claiming more than
-% the body supports and the sentence is what changes.
-%
-% 2026-08-05, TWO SCOPE REPAIRS.  Both were the same failure: the abstract printed a claim the
-% body then qualifies, and a reader who stops here carries the unqualified form away.
-% (1) THE SUBSTITUTION'S MAGNITUDE.  The abstract used to print "degrades it by 0.41" beside
-% "improves ... by 0.20", which asserts a two-fold asymmetry.  Sec. 3.1 says the evaluation-only
-% 0.41 mixes closure misspecification with the ordinary cost of swapping an input at test time,
-% that the co-adapted arm "is by design the confound-free one" and costs 0.18, and Sec. S3.1 adds
-% that NEITHER 0.18 nor the channel swap's 0.27 can be ordered against the 0.20 -- the
-% supervision gain's own per-seed values (0.237/0.075/0.281) straddle 0.18.  So both magnitudes
-% print, the confound-free one first, with what separates them named, and the sentence that
-% refuses the ordering is here and not only in the SI.  Do not re-lead with 0.41.
-% (2) WHAT SEPARATED.  "The map reports the rest without establishing it" said nothing about the
-% two AGGREGATES, which are what a reader assumes a decomposition paper measured, and nothing
-% about the axis.  The scope is now explicit in all three directions the claim can be over-read:
-% no other stratum, neither data set as a whole, and not the solubility axis at all.
-% The three-seed 0.41, the 0.20, the 59, the 182/43 and the +2.04 interval all still print; what
-% went is the enumeration of the admissibility cascade (fifteen boundable, six admissible, three
-% row sets), which Sec. 3.2.1 and Table 1 note h carry in full.
-% (3) WHOSE ERROR IS BOUNDED.  "the model's own error" named COSMO-SAC as the owner of B_closure.
-% B_closure is the error of the map READ AT A COMPUTED PROFILE, so it is a joint property of the
-% kernel and of the calculation that produced z* (Sec. 2.1.1, Sec. 3.2.4, limitation (iv)); the
-% profile axis alone moves the same closure's AAD by 2.6x (Table 2).  The clause now names the
-% profiles the bound is charged against.  Do not restore a form in which the equation alone owns it.
-% (4) 2026-08-05, SECOND PASS: THE FOURTH DIRECTION OF SCOPE.  Repair (2) named three directions
-% the separation could be over-read in and omitted the one this paper's own null then supplied:
-% SELECTION.  The row set is the survivor of a 59-fold search, a chemistry-blind relabelling of the
-% same molecules certifies some row set in 58% of 2000 draws, and the observed +2.04 sits at about
-% the ninetieth percentile of what that search returns (Sec. S3.1).  A pre-declared out-of-sample
-% test on the one independent IDAC database was then run and returned NOT TESTABLE
-% (Sec. 3.2.1).  Both now print here.  An abstract that gives the margin and withholds the null is
-% the exact failure repairs (1) and (2) were for, one level up.  Do not delete either sentence
-% while the +2.04 is printed: if the number goes, they may go with it, and not before.
-%
-% 2026-08-05, THIRD PASS: FOUR REPAIRS, ALL OF THEM THINGS THE SENTENCE SAID AND THE EVIDENCE
-% DID NOT.  Three referees, round 3, marked each of these must-fix.
-% (5) THE VERB.  "A pre-declared out-of-sample test did not confirm the chemistry" describes a
-% test that ran on rows and failed.  Nothing of the sort happened: the cell the finding is about
-% -- glycol-ether solvent, ORGANIC solute -- has zero rows in the only independent compilation
-% (its non-aqueous half lists 88 solvents and not one glycol ether), so the pre-declaration's
-% third verdict, NOT TESTABLE, is what the test returned.  The distinction is the whole of what
-% this round was about and it is not a nicety: "did not confirm" credits the design with a
-% replication attempt it never got to make, and the honest claim is that no confirming data
-% exist.  The same verb is repaired in Sec. 3.2.1, Table 4's claim row, limitation (vi), the
-% Conclusions and Sec. S3.1.  Do not restore "did not confirm" anywhere.  (The older comment at
-% Sec. 3.2.1 said the opposite -- "do not soften into could not be attempted" -- on the reasoning
-% that the script ran; the script running is not the hypothesis being tested, and that comment is
-% now corrected rather than obeyed.)
-% (6) THE UNGRAMMATICAL CLAUSE.  "...that error the larger term by +2.04" is not a clause, and it
-% carried the paper's one surviving quantitative chemical claim.  It now reads "where the deployed
-% model's own error exceeds its inputs' by +2.04", which is the comparison Lemma 1 licenses,
-% in the vocabulary the preceding sentence has already set up ("bounds the deployed model's error
-% from below, its inputs' from above").  It says "the deployed model's" and not "COSMO-SAC's"
-% because B_closure is the error of the kernel together with the computed profile it reads
-% (Sec. 2.1.1, Table 4 note g); do not let a shortening put the kernel alone in that slot.
-%
-% 2026-08-05, FOURTH PASS: THREE REPAIRS, ROUND 4.
-% (9) "AT LEAST".  Referees 1, 2 and 3, must-fix, and it is the discipline the whole round was
-% about.  The reported statistic is MSE - 2*B_insuff^up, which by Lemma 1 is a LOWER BOUND on
-% B_closure - B_insuff and equals it only if the upper bound on B_insuff is tight.  "exceeds its
-% inputs' by +2.04" states it as the excess; it now reads "by AT LEAST +2.04".  The bracket is a
-% bootstrap interval on that bound, so +2.83 is an upper limit on nothing -- which is why the two
-% words go in front of the number and not into the parenthesis.  The Conclusions ("lies above the
-% bound on the contribution of its inputs") and the SI map tables ("the closure's own error exceeds
-% the bound on its inputs") were already one-sided; this is the abstract and Sec. 3.2.1 catching up
-% with them.  Do not delete "at least" anywhere, here, in Sec. 3.2.1 or in Table 4's value cell.
-% (10) THE REFERENT.  "the deployed model" sat two sentences after "a graph neural network predicts
-% charge-density profiles; fixed COSMO-SAC turns two into a solubility", so it invited reading as
-% the LEARNED PIPELINE's error.  It is not: the decomposition runs on the fixed map read at a
-% tabulated profile, with no trained model in it at all (Table 3: "none: the closure has no
-% learnable parameters").  First mention now names it -- "the deployed THERMODYNAMIC model" -- and
-% the second refers back to it ("that model's"), which keeps the word count of the pair unchanged.
-% Do not drop "deployed": it is what charges the computed profile to B_closure (repair 3 above).
-% (11) "THE MISSPECIFIED MODEL".  The closing sentence attached "misspecified" as a settled
-% attribute of the closure the solubility arms were trained through.  Sec. 3.6 declines to assert
-% exactly that -- "until it is run, 'the substitution hurts BECAUSE the map is misspecified' is an
-% inference and this paper does not assert it" -- and the Conclusions confine the demonstrated
-% B_closure > B_insuff to one row set of the activity axis.  It reads "through this fixed closure"
-% now, which is what the sentence needs (the latent was trained through it) and all it can carry.
-% Do not restore "misspecified" as an unqualified appositive here.
-% (7) THE FLATNESS.  "The input bound barely moves between strata while the error does" asserted
-% as a chemical finding what Sec. 3.2.1 calls the estimator showing through, and the paper's own
-% partition null agrees with Sec. 3.2.1: the observed range of the bound is at chance (p=0.26)
-% while the range of MSE exceeds every one of 2000 draws.  The concession now travels with the
-% claim.  The "so" still holds -- a near-constant bound against a 25-fold error is exactly what
-% makes an aggregate a composition statistic -- but the near-constancy is a property of eight
-% quantile bins, not of chemistry, and the title's second clause rests on the MSE half.
-% (8) THE CLOSING GENERALISATION.  "Grounded latents are not reliably interpretable when the
-% consuming model is misspecified" was the strongest sentence in the manuscript and rested on its
-% weakest measurement: a separate three-seed set, magnitudes not stable across analysis
-% configurations, one null failed (wrong-molecule, p=1.00), 44 probes all inside the grounding
-% pool, and the cancellation half declined in Sec. 3.3.  It is deleted rather than hedged.  The
-% abstract now ends on the measurement and its scope; the general form is where it belongs, in
-% the Conclusions, as the prediction this work leaves testable.  Do not restore it here.
-% WORD BUDGET, AND THREE COUNTS THAT WERE WRONG.  This block first said "250 words is the ceiling
-% and this one is at it" (it was 261), then "eight over" (it was, but the note was again taken
-% on faith rather than re-run), and then "UNDER it ... at 250 under the harshest rule any referee
-% applied" (the source was 250 on that counter, but the PAGE was 251; see the third rule below).
-% All three were notes carried forward unchecked, which is why the header names the counter, the
-% count is re-taken on every edit, and the counter now prints the rule that decides.
-% THE COUNTER: scripts/analysis/wc_abstract.py, whose first rule is the arithmetic
-% check_number_conservation.py uses -- split on whitespace, a math atom counts as one word, tokens
-% with no letter or digit dropped.  It reads 240.  A counter that also splits on the em dash reads
-% 244, because four tokens here are em-dash-joined; that is the kind of tool the highest referee
-% count came from (257-262 against the first rule's 258 at the time).  A counter reading the PDF
-% reads 245: LaTeX follows a comma inside a math atom with a thin space, so $[+1.27,+2.83]$ reaches
-% the page as two tokens.  245 is therefore the operative count -- the production editor's tool
-% reads the page, not the source.  Converting an em-dash pair to parentheses does not help: it
-% costs exactly the words it saves on the second counter.
-% THE RESERVE, 5 WORDS, AND WHAT SPENDS IT.  Sec. 2.2 ("What the leak-free re-run reports, and what
-% it decides") fixes, before the numbers exist, that the abstract's 0.20 and 0.41 are regenerated
-% from the five-seed arms and that the abstract prints the re-run's PER-SEED values in place of the
-% three uncertified ones.  Priced against this abstract: five comma-separated values cost 4 words
-% each where one mean costs 1 (+8), and the re-run certifies the stream inside each training run,
-% so "(three seeds, not certified leak-free)" becomes "(five seeds)" (-3; the arithmetic rests on
-% that, so if the in-run certification does not pass, the clause stays and the slash form below
-% stops being optional).  Net +5, and the budget is 250 - 5 = 245, which is where this abstract
-% now sits.  So the substitution lands AT the
-% ceiling and not over it, and it lands there without a decision being taken after the numbers are
-% known -- which is the whole point of a pre-commitment.  Two consequences.  (a) The 5 words are
-% not free space: an editor who spends them on a clause puts the abstract over on the day the
-% re-run lands, and the deficit will then have to come out of a number, an interval or a scope
-% clause, which the last line of this block forbids.  (b) If the per-seed values print in the
-% slash form Table 4 already uses for them ($0.237/0.075/0.281$, one whitespace token however many
-% seeds it holds) the substitution costs -3 rather than +5, and the reserve is then slack.  That
-% slack is what absorbs the one case Sec. 2.2 leaves open: the co-adaptation control's 0.18 is not
-% in Sec. 2.2's list of displays the re-run rewrites, and a five-seed pass on it is NOT committed to
-% there (2026-08-05: Sec. 2.2's two sentences on that pass now agree, on the conditional reading);
-% if it is run and its magnitude quoted per-seed the comma form costs a further +4 and only the slash
-% form fits.  Do not resolve that by cutting; resolve it by setting the values in the slash form.
-% WHAT CAME OUT, 2026-08-05 (round 4, length pass), 258 -> 246 with the coverage clause added.
-% All of it connective tissue, and every number, interval, seed count and scope clause that
-% printed before still prints: "Grounding names two operations on it, with opposite signs" ->
-% "two opposite-signed operations on it" (-2); "the test-time input swap" -> "the test-time swap"
-% (-1, the preceding clause already says the swap is of the input); "Neither degradation resolves"
-% -> "Neither resolves" (-1); "not a chemical one" -> "not chemistry" (-2); "It is the survivor of
-% a 59-fold search" -> "It survived a 59-fold search" (-3); "and reaches +2.04 in 10%" ->
-% ", reaching +2.04 in 10%" (-1); "(a separate three-seed set of runs)" -> "(separate three-seed
-% runs)" (-3).  Referee 2's coverage clause was then paid for out of the twelve: "a map over 59
-% strata, not one verdict" -> "a map: 59 strata, 15 boundable, not one verdict" (+1), so that "a
-% map" is not read as a filled one (the rest of the cascade -- 6 admissible, 3 distinct row sets,
-% 24 with no estimate at any n -- stays in Sec. 3.2.1 and Table 4 note h).
-% WHAT CAME OUT, 2026-08-05 (round 4, reserve pass), 251 -> 245 as the page renders it.  Six words,
-% both cuts connective tissue, and every number, interval, seed count and scope clause that printed
-% before still prints: "two opposite-signed operations on it: supervising the profile against it"
-% -> "two opposite-signed operations: supervising the profile against it" (-2 -- "on it" announced
-% a shared object that both clauses then name for themselves, "against it" and "the reference");
-% "The reference is an instrument too: on infinite-dilution activity data it bounds the deployed
-% thermodynamic model's error from below" -> "On infinite-dilution activity data the same reference
-% bounds the deployed thermodynamic model's error from below" (-4 -- "is an instrument too" is a
-% metaphor for the role the rest of the sentence states operationally; "the same" keeps this
-% database identical to the one supervision and substitution used, which is the load-bearing part,
-% and leading on the axis strengthens the scope clause the title's second half turns on).
-% THE MARGIN'S UNITS, 2026-08-05 (round 4, referee 2, must-fix), 245 -> 245.  +2.04 is in squared
-% ln-gamma_2^inf and printed here beside 0.20, 0.41 and 0.18, which are MAE in ln x2 on a DIFFERENT
-% axis; nothing in either document said so outside one SI figure's axis label, so a reader met the
-% two as commensurable.  The unit tag `\,(\lngi)^2' is now on the value.  It renders as a second
-% token (the thin space is a space on the page), so it was paid for out of connective tissue and
-% NOT out of the reserve: "182 measurements over 43 pairs" -> "182 measurements, 43 pairs" (-1;
-% both counts still print and the appositive relation survives).  Sec. 3.2.1, Table 1, Table 4, the
-% SI's estimator grid and the map tables carry the same statement once each, in words.
-% WHAT WAS NOT DONE AND MUST NOT BE.  Referee 3 offers "an estimator property, not chemistry" as a
-% costless cut because Sec. 3.2.1 and Table 4 restate it.  It is not costless HERE: it is the only
-% place in the abstract where the near-constancy of the bound is refused as a chemical finding,
-% which is repair (7), and a reader who stops at the abstract carries the unqualified form away.
-% It was compressed instead.  Referee 2 offers the 90% interval; retiring a printed number needs an
-% entry in paper/retired_numbers.txt and is a decision about evidence, not about wording.  If words
-% are ever needed again, they do not come from a scope clause, an interval or a seed count.
+% ABSTRACT.  THREE RULES, and they are the whole of what governs this block.
+% (1) NO NUMERALS.  Not one figure, interval, seed count, sample size or percentage.  Every
+%     scope clause that used to ride on a number is carried in WORDS instead -- "three seeds",
+%     "not certified leak-free", "in most draws", "only a lower bound", "and no other stratum".
+%     A number here was, every time, a number a reader could carry away without the clause that
+%     scopes it; the body prints all of them, each beside its own scope.  Do not restore one,
+%     and do not restore a number by spelling it as a bare digit inside a math atom either.
+% (2) NO SECTION REFERENCES.  An abstract that points into the document is not self-contained.
+% (3) THE CEILING IS 250 WORDS and it still binds.  Re-count after ANY edit with
+%     scripts/analysis/wc_abstract.py and take the number the script prints, not the number a
+%     previous comment printed -- carrying a count forward unchecked is how the old note here
+%     came to be wrong three times.  The operative rule is the script's third ("as rendered"),
+%     because the production editor's tool reads the page and not the source.
+% WHAT MUST NOT BE DROPPED TO SAVE WORDS, in order: that supervision's gain is not certified
+% leak-free; that the two operations' magnitudes do not resolve against each other, so only the
+% signs carry; that the input bound's flatness is an estimator property and not chemistry; that
+% the row set is one of many searched and a chemistry-blind relabelling reaches its margin often;
+% that the out-of-sample verdict is NOT TESTABLE and not a failed replication; and the four
+% directions the separation must not be over-read in -- no other stratum, neither data set whole,
+% nothing on the solubility axis, and the deployed model rather than the kernel alone.  If words
+% are ever needed, they come out of connective tissue, never out of one of those.
 \begin{abstract}
 Physics-informed models route predictions through interpretable physical quantities,
-expecting accurate references to improve accuracy. We measure
-that for solid--liquid solubility: a graph neural network predicts
-charge-density profiles; fixed COSMO-SAC turns two
-into a solubility; a quantum-chemical database
-tabulates them. Grounding names two opposite-signed
-operations: supervising the profile against it during training lowers solubility mean
-absolute error by $0.20$ (three seeds, not certified leak-free); substituting the reference for the
-learned profile at inference raises it, by $0.18$ in the control removing the
-test-time swap (one seed) and $0.41$ without it (three seeds). Neither
-resolves against the $0.20$. On infinite-dilution activity data the same reference bounds the
-deployed thermodynamic model's error from below, its inputs'
-from above. The input bound barely moves between strata---an estimator property, not
-chemistry---while the error does, so the output is a map: $59$ strata, $15$ boundable, not one
-verdict. One admissibility rule leaves one row set
-standing---the glycol-ether solvents, $182$ measurements, $43$
-pairs, where that model's own error exceeds its inputs' by at least $+2.04\,(\lngi)^2$ ($90\%$ interval
-$[+1.26,+2.87]$)---and no other stratum, neither set whole, nothing on the
-solubility axis. It survived a $59$-fold search: chemistry-blind
-relabelling certifies some row set in $58\%$ of draws, reaching $+2.04$ in $10\%$. A
-pre-declared out-of-sample test returned \emph{not testable}: the one independent database holds
-no glycol-ether solvent with an organic solute. Trained through this
-fixed closure, the learned profile departs from its reference along a shared direction
-(separate three-seed runs).
+expecting accurate references to improve accuracy. We measure that for solid--liquid
+solubility: a graph neural network predicts charge-density profiles; fixed COSMO-SAC turns
+two into a solubility; a quantum-chemical database tabulates them. Grounding names two
+opposite-signed operations: supervising the profile against that database during training
+lowers solubility mean absolute error, over three seeds and not certified
+leak-free; substituting the reference at inference raises it, in the one-seed control
+removing the test-time swap and, by more, without it. Neither
+resolves against the gain, so only the signs carry. On infinite-dilution
+activity data the same reference bounds a deployed thermodynamic model's error from below,
+its inputs' from above. The input bound barely moves between chemical strata---an
+estimator property, not chemistry---while the error does, so the output is a map, most
+strata unboundable, not one verdict. One admissibility rule leaves
+one row set standing, the glycol-ether solvents, where that model's own error exceeds its
+inputs' by a margin itself only a lower bound---and no other stratum, neither set
+whole, nothing on the solubility axis. It survived a search across every stratum:
+chemistry-blind relabelling of the same molecules certifies some row set in most draws,
+reaching the observed margin in a tenth. A pre-declared out-of-sample test returned
+\emph{not testable}: the one independent database holds no glycol-ether solvent with an
+organic solute. Trained through this fixed closure, the learned profile departs from its
+reference along a shared direction, on separate three-seed runs.
 \end{abstract}
 
 % INTRODUCTION.  Field, related work, the assumption under test, then what was done.
@@ -421,8 +261,7 @@ head's leaked concepts with ground truth can then degrade accuracy \cite{espinos
 gap between a fixed physical map and reality is the model-discrepancy problem of Kennedy and O'Hagan
 \cite{kennedy2001} and its calibration critique \cite{brynjarsdottir2014}; four further
 literatures---forecast decomposition, quasi-maximum likelihood, identifiability, and the validity of
-composed pipelines---supply pieces used below, and what each supplies is set out in
-\S\ref{sec:si-positioning}.
+composed pipelines---supply pieces used below.
 
 The design rests on an assumption rarely stated because it is taken for self-evident: a model
 supplied with physical inputs closer to their true values predicts better. For one class of
@@ -434,7 +273,7 @@ are uninformative, and the two call for opposite remedies. What this literature 
 whether the learned intermediate has stopped reporting the quantity it is named after; in the
 concept-bottleneck case no external reference exists against which either question could be settled.
 This work supplies one---a reference $\sigma$-profile for solubility, tabulated substituent
-constants for a second chemical domain---and holds the mechanistic kernel fixed, so the tabulated
+constants for a second chemical domain---and holds the mechanistic model fixed, so the tabulated
 value stays available as an external reference for the learned one.
 
 Here a graph neural network predicts the pair of charge-density distributions COSMO-SAC consumes, in
@@ -450,8 +289,8 @@ can, because both molecules carry a tabulated distribution and the two error ter
 they separate, an ordering decides the remedy: a map whose own error stands above what its inputs
 fail to carry does not become more accurate when handed a better input, but more exposed, the
 accurate input no longer masking the bias the map introduces. That ordering is a property of the
-chemistry the map is asked about, so the instrument returns a map over chemical strata rather than a
-verdict. Two consequences follow. A learned intermediate trained through a misspecified map cannot be
+chemistry the map is asked about, so the instrument returns a map over chemical strata---one answer
+per chemically defined set of rows---rather than a verdict. Two consequences follow. A learned intermediate trained through a misspecified map cannot be
 read as the physical quantity it is named after: the predicted distribution drifts away from the
 tabulated one along a direction shared across molecules---measured on a separate three-seed set of
 runs, not the checkpoints whose paradox it is offered to explain. And substituting a reference value
@@ -549,7 +388,7 @@ Training-time $\sigma$ supervision \emph{helps} (MAE) & labelled test rows, 3 se
 The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 3 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ at the worst seed---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $589$ of the $823$ groups in both arms at all three seeds. The substitution falls on the solvent channel \\
 \addlinespace[2pt]
 \multicolumn{3}{@{}l@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure}); margins in squared \lngi\ units, not the \lnx\ MAE of the block above}\\
-$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.26,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist \\
+$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.26,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist; the pre-declared cross-fitted $\Binsuf^{\mathrm{up}}$, which came back looser and does not headline, puts the same cell at $+1.76$ $[+1.02,+2.49]$ (\S\ref{sec:si-crossfit}) \\
 \ldots\ on every other stratum of the map & broad IDAC, $59$ strata & \S\ref{sec:si-map}, Tables~\ref{tab:map-full}--\ref{tab:map-detail}, each with its margin, interval and the test it fails; none is stated as a finding\tnk{h} \\
 \ldots\ for either set \emph{as a whole} & broad IDAC ($477$); VT-2005-matched ($60$) & $+0.51$ (full $+0.95$); $-0.38$ compounding two cuts ($+0.01$ full); $+0.18$ less one publication; $+0.05$ on the smaller set: an average weighted by composition\tnk{f} \\
 $\Binsuf^{\mathrm{up}}$ near stratum-independent, $\mathrm{MSE}$ not & broad IDAC, $3$ boundable classes; $6$ with an estimate & $\times2.0$ against $\times25$; $\times6.8$ against $\times51$; $p{=}0.02$ against $2000$ null partitions of $9$ classes \\
@@ -654,9 +493,9 @@ operations is larger is therefore unresolved, and only their signs are carried f
 % Caption: what is shown, and nothing else.  The two caveats that used to close it -- that
 % the sigma-oracle bar swaps the input at evaluation only, and that DirectGNN was tuned
 % separately -- are both in the body within a paragraph of this float.  Do not restore them.
-\caption{Controlled comparison on the $5608$ labelled test rows (Table~\ref{tab:notation}).
+\caption{Controlled comparison on the $5608$ labelled test rows of the scaffold split.
 Solid bars: three seeds,
-mean $\pm$ a population standard deviation (\texttt{ddof}$=0$). The two hatched bars are the
+mean $\pm$ a population standard deviation over them. The two hatched bars are the
 co-adaptation controls, seed $42$ only, so they carry no error bar and no $R^2$, and keep an empty
 slot in the right panel. Dashed in the left panel only, the DirectGNN reference.}
 \label{fig:paradox}
@@ -922,8 +761,8 @@ validity gate that reads no margin, and it passed. \textbf{We did not follow tha
 margin printed in this paper is the coarsening's. The reason and the two things that should be said
 about the deviation rather than absorbed---that it runs in this paper's favour, and that it is a
 choice made after seeing a number, which is what a declaration exists to prevent---are in
-\S\ref{sec:si-crossfit}, where the poorer map is also deposited cell by cell, so a reader who holds
-us to the declared rule can read it off. What the sweep establishes is therefore robustness within
+\S\ref{sec:si-crossfit}, where the poorer map is also deposited cell by cell and the declared rule
+can be held against this one. What the sweep establishes is therefore robustness within
 the coarsening, not across estimators.
 
 What the row set does not have is a multiplicity null it clears, and this belongs beside the
@@ -1282,15 +1121,16 @@ than an allocation across chemistries.
 \input{sections/blackbox-probe}
 
 \paragraph{The contribution.} The unit of contribution is the measurement, not any single number it
-returned. Its two ingredients are individually standard---the closure--insufficiency split is a
+returned. Its two ingredients are individually standard: the closure--insufficiency split is a
 law-of-total-variance identity, and the sign of grounding's effect follows the model-discrepancy
-principle \cite{kennedy2001,brynjarsdottir2014}---and what is new is their combination into a usable
-instrument: an identity on a \emph{fixed} operator, with the insufficiency side bounded rather than
-point-identified, whose sign rule can be tested \emph{a priori} and \emph{bidirectionally}. The pKa
-domain supplies that test as an in-distribution sign flip, at the resolution four series allow and no
-better---an oracle-on-a-fixed-operator affordance the concept-leakage setting lacks, its intermediate
-having no ground truth \cite{parisini2025,espinosa2025leakage}. The solubility results are the
-instrument's first application, and their transfer out of the matched regime is not established.
+principle \cite{kennedy2001,brynjarsdottir2014}. Their combination is an instrument---an identity on
+a \emph{fixed} operator, with the insufficiency side bounded rather than point-identified, and a sign
+rule testable \emph{a priori} and in both directions. The pKa domain supplies that test as an
+in-distribution sign flip, an oracle-on-a-fixed-operator affordance the concept-leakage setting
+lacks, its intermediate having no ground truth \cite{parisini2025,espinosa2025leakage}. The
+solubility results are the instrument's first application. Both scopes are narrow: the sign flip
+resolves no finer than the four reaction series it is read on, and the solubility results' transfer
+out of the matched regime is not established.
 
 \paragraph{Where the accuracy stands, and the confound in it.} Table~\ref{tab:baselines} places every
 arm of this work beside the external models, in three blocks that may not be read across. The physics
@@ -1385,7 +1225,7 @@ these negatives: a prior hurts precisely in the mature-data, low-noise, well-cov
 synthetic sweep (Fig.~\ref{fig:dial}) is true by construction there, so it verifies the instrument
 rather than the hypothesis, while the pKa closure exercises the sufficiency channel on real data.
 Whether grounding helps is shaped by \emph{two} axes, closure fidelity and how the latent is trained;
-characterising that plane on real systems is future work. The chemical strata form a pattern in the
+that plane is not characterised on real systems here. The chemical strata form a pattern in the
 direction the sign rule would give, but separately tuned pipelines can produce it and there is no
 multiplicity control, so \S\ref{sec:map} records it as the experiment a matched control should run
 and the diagnostic is \emph{proposed} rather than validated.
@@ -1440,46 +1280,46 @@ withholds a chemistry from an allocation of grounding effort.
 property of these runs, so the $0.20$ supervision gain is the one reported number a leak could
 inflate and is uncertified until the leak-free re-run (\S\ref{sec:data}); the arguments that bound
 the other contrasts do not restore auditability.
-The nine remaining limitations are in \S\ref{sec:si-limitations} with their numerals preserved: (ii) what the convention rule costs the aggregate and (iii) which other cells of the map keep their sign, both already stated where they bite, in \S\ref{sec:estimator} and \S\ref{sec:broad}; (v) the constant-offset bound's convention-specificity, likewise in \S\ref{sec:estimator}; (vii) the accuracy ceiling against the noise floor, (viii) what the three-seed latent-departure result establishes and what it does not, (ix) the reference scarcity that bounds the black-box probe, (x) the closure-fidelity contrast and the two runs that would settle it, (xi) the separate-tuning confound stated above, and (xiii) what is checkable only by re-running the released code.
+The nine remaining limitations are in \S\ref{sec:si-limitations}, keeping their numerals: (ii) what the convention rule costs the aggregate and (iii) which other cells of the map keep their sign, both already stated where they bite, in \S\ref{sec:estimator} and \S\ref{sec:broad}; (v) the constant-offset bound's convention-specificity, likewise in \S\ref{sec:estimator}; (vii) the accuracy ceiling against the noise floor, (viii) what the three-seed latent-departure result establishes and what it does not, (ix) the reference scarcity that bounds the black-box probe, (x) the closure-fidelity contrast and the two runs that would settle it, (xi) the separate-tuning confound stated above, and (xiii) what is checkable only by re-running the released code.
 
-% CONCLUSIONS: two paragraphs, no numbers, and not a restatement of the abstract -- the
-% consequence and the design rule, touching a finding only to carry the "therefore".
+% CONCLUSIONS.  Two paragraphs, no numbers, no section references, and NOT a restatement of the
+% abstract: the consequence and the design rule, touching a finding only to carry the "therefore".
+% NO CAVEAT IS RESTATED HERE.  The multiplicity null, the not-testable out-of-sample verdict, the
+% cross-regime gap and the leak certification are stated where they are measured and in the
+% limitations; what survives here is the one-clause SCOPE each of them forces -- "on a contrast this
+% work does not certify leak-free", "where the instrument answered, not where the model is shown to
+% fail", "one chemistry at a time", "on runs of its own".  Those clauses are not decoration and are
+% not restatements: delete one and the sentence it sits in claims more than the body supports.  Do
+% not expand them back into the caveats they stand for either.
 \section{Conclusions}
 \label{sec:conclusion}
-Grounding a learned physical intermediate in reference values is two operations, not one, and only
-one of them helped here. Training the intermediate against reference values improved the model---on a
-contrast not certified leak-free, the one number here a grounding-stream leak could inflate
-(\S\ref{sec:data}); supplying those values at prediction time did not, and no stream build reaches
-that second half. On the activity data where the two terms can be
-separated, they do not separate the same way in every chemistry: on one class of solvent, under a
-rule applied to every class alike, the bound on the fixed thermodynamic model's own error---the
-model as deployed, reading one computed conformer per molecule, and not its kernel alone---lies above
-the bound on the contribution of its inputs, which is the condition under which more accurate inputs
-expose a model's bias rather than remove it; on every other row set the separation is not
-established. \emph{Which} class that is, this work does not establish: the class is the survivor of
-a search across many of them, a chemistry-blind relabelling of the same molecules returns a margin
-that size often enough, and the one independent database holds no rows of the chemistry the search
-named. The class is where the instrument answered, not where the model is shown to fail.
-That condition and the failed substitution are two measurements on two data sets in two
-regimes, so the first is offered as the reading of the second and not as a test of it. As a single number for a
-whole data set the comparison is an average over that set's composition, a property of the set and
-not of the model. And in a separate three-seed set of runs---not the checkpoints whose paradox it
-explains, whose own latent is unmeasured---the intermediate trained through that model stopped
-reporting the physical quantity it is named after, on the molecules where it can be held against its
-reference, which is the price of reading a grounded latent as a measurement.
+Grounding a learned physical intermediate in reference values is two operations, not one, and here
+they had opposite signs. Training the intermediate toward its reference improved the model, on a
+contrast this work does not certify leak-free; supplying that reference at prediction time made the
+model worse, at every seed, and no question of certification reaches that second half. The operation
+that failed is the one a practitioner reaches for, because it is the one that needs no retraining.
+The two terms of the error can be told apart on activity data and not on solubility, and there, on
+one class of solvent, the fixed thermodynamic model's own error---the model as deployed, reading one
+computed conformer per molecule, and not its kernel alone---stands above the bound on what its
+inputs fail to carry: the condition under which a more accurate input exposes a model's bias instead
+of removing it. That is the reading the failed substitution invites, measured on other data and not
+a test of it. It is also where the instrument answered rather than where the model is shown to fail,
+and the answer came one chemistry at a time: a single figure for a whole data set is an average over that set's
+composition, a property of the set and not of the model. The intermediate paid for the arrangement.
+Trained through a model it cannot correct, and measured on runs of its own, it stopped reporting the
+physical quantity it is named after wherever a reference existed to hold it against---which is the
+price of reading a grounded latent as a measurement.
 
 The general statement is a design rule with a test attached. Wherever a predictor composes a fixed
 physical model over a learned intermediate for which an external reference exists, that reference
 measures which of the two limits accuracy, and where it answers, the answer decides the remedy: a
 more faithful physical model---the calculation that supplies its reference values included---or
-better inputs. The answer comes chemistry by chemistry rather than
-once for a field, and it comes one-sided, so what the measurement returns is the chemistry on which
-better inputs are not the remedy---here one class of solvent, on which the standard route to a more
-faithful model did not clear the bar either, though the instrument's own null does not certify that
-chemistry and no out-of-sample rows of it exist. What this work establishes about the instrument is the
-map itself: which cells it can answer in, and at what size.
-Whether a latent trained through an imperfect model
-becomes, in general, a surrogate for that model's error is the prediction this work leaves testable.
+better inputs. The answer comes chemistry by chemistry rather than once for a field, and it comes
+one-sided, so what the measurement returns is the chemistry on which better inputs are not the
+remedy---here one class of solvent, on which the standard route to a more faithful model did not
+clear the bar either. What this work establishes about the instrument is the map itself: which cells
+it can answer in, and at what size. Whether a latent trained through an imperfect model becomes, in
+general, a surrogate for that model's error is the prediction this work leaves testable.
 
 \section*{Author contributions}
 \noindent
