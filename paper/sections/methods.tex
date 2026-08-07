@@ -295,8 +295,11 @@ one checkpoint evaluated two ways, and no $\sigma$-stream build can reach it.
 \subsection{Model, closure, and training}
 \label{sec:model}
 A \emph{shared} message-passing encoder embeds solute and solvent, a bipartite cross-attention block
-lets them interact, and the resulting pair representation feeds every head; two interchangeable
-encoder alternatives do not outperform it. A fusion head predicts $\Tm$ and $\dHfus$, giving the
+lets them interact, and the resulting pair representation feeds every head. Two further backbones
+are implemented and neither carries a number reported here; the physics-channelled one was run
+against this encoder and did not beat it, an observation recorded with no set, seed count or
+interval attached to it (\S\ref{sec:si-methods}), so no accuracy comparison between backbones is
+claimed. A fusion head predicts $\Tm$ and $\dHfus$, giving the
 ideal term $\Phicry(T)$ of Eq.~\eqref{eq:sle}. The activity term \lng\ comes from one of three
 differentiable closures. Two are controls, the fitted NRTL model and its symmetric one-parameter
 collapse. The third, parameter-free, is the closure under study: a $\sigma$-profile head emitting a

@@ -617,7 +617,8 @@ the freeze holds the head and not the encoder that feeds it, the predicted profi
 its warm-up value in these arms. We have not run the surrogate isolation (\S\ref{sec:surrogate}) on
 these checkpoints, so how far their latent drifted is not measured. The supervision contrast
 quoted there ($+0.40\to+0.14$) is a separate matched pair of runs --- one warm-up-plus-short-P1 base
-resumed twice for SLE, with the freeze off and on, on $n{=}5571$ matched rows --- and not these arms.
+resumed twice for SLE, with the freeze off and on, on $n{=}5571$ matched rows, so a single pair
+carrying no seed replicate and no interval --- and not these arms.
 
 % Artifacts: results/e5_sigma_grounding/seed_42/{grounded_a_truetrain,channel_swap}_predictions.csv
 % (seed 42 only; no seed_43/seed_44 counterpart), scored on the same n=5608 labelled test rows.
@@ -1410,7 +1411,12 @@ Tables~\ref{tab:map-solute} and~\ref{tab:map-xtab}. These four tables carry all 
 dropped for being small, and each row states either what it shows or the test it fails; the article
 states the one row set the admissibility rule leaves standing, and which chemistry it does not.}
 \label{tab:map-full}
-{\scriptsize
+% linespread: this float was 10.2pt taller than the page ("Float too large for page"), so its
+% note block was set into the bottom margin, one line from being clipped the way Table 4's notes
+% were.  \arraystretch is already below 1 and does nothing here -- the height is the WRAPPED LINES
+% inside the L-columns, which only the leading reaches.  Do not raise it back without rebuilding
+% and grepping the build output for "Float too large".
+{\scriptsize\linespread{0.96}\selectfont
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{0.7}
 \input{si_tables/stratified_map_rows}
@@ -1483,7 +1489,9 @@ row unit, deployed residual-only convention. These are the columns
 Tables~\ref{tab:map-full}--\ref{tab:map-xtab} do not carry, on the same $59$ strata; margins,
 intervals and admissibility are there.}
 \label{tab:map-detail}
-{\scriptsize
+% linespread: as for Table~\ref{tab:map-full} above -- this float was 4.3pt taller than the page
+% and set its notes into the bottom margin.  Same reason, same guard.
+{\scriptsize\linespread{0.96}\selectfont
 \setlength{\tabcolsep}{4.5pt}
 \renewcommand{\arraystretch}{0.72}
 \input{si_tables/stratified_map_rows_detail}
@@ -2625,11 +2633,16 @@ quantum chemistry and not experiment: the VT-2005 profiles are computed for a si
 conformer and protonation state, and the successor Delaware database revises those conformations for
 about a third of its compounds~\cite{fingerhut2017}; where the reference is displaced, even a
 perfectly specified $g$ carries a term in $\Bclos$ through its curvature (\S\ref{sec:si-repro}).
-Table~\ref{tab:closure-anchor} measures that axis directly---one closure, two profile databases, a
+Table~\ref{tab:closure-anchor} measures that axis directly---one closure, two profile databases,
+HF-TZVP against BP-TZVPD-FINE, a
 factor of $2.6$ in AAD, $6.6$ in squared error if the errors scale uniformly---while the
-glycol-ether stratum's margin closes only once its squared error falls below twice its $0.108$ bound,
-a more than ten-fold reduction (Table~\ref{tab:map-detail}). A profile source better than VT-2005 by
-the whole of that published bracket would leave that sign standing. The arithmetic holds the
+glycol-ether stratum's margin, read on the UD profiles the broad set is matched to and not on the
+VT-2005 profiles the solubility pipeline deploys, closes only once its squared error falls below
+twice its $0.108$ bound,
+a more than ten-fold reduction (Table~\ref{tab:map-detail}). A profile source better than UD by
+the whole of that published bracket would leave that sign standing. No side of that arithmetic is
+on the same database as another: the bracket enters as the size of a database-to-database effect,
+transported to the stratum, and not as a comparison run on it. The arithmetic holds the
 insufficiency bound fixed, which a new profile source would not, so it sizes the exposure and does
 not bound the share.
 
@@ -3162,7 +3175,9 @@ checkpoint and its own $\sigma$-oracle re-evaluation and nothing else;
 \S\ref{sec:map} with Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map}, which resolve that same
 $+0.14$ along chemical axes and restate the two arm means it is taken from; the row-class split of
 the substitution in \S\ref{sec:si-methods}, whose $-0.000$, $+0.431$ and $+0.006$ put the $+0.41$ on
-the solvent channel; and the graphic for the table of contents.
+the solvent channel; and the graphic for the table of contents, whose caveat that training on the
+reference is not certified leak-free is removed in all three branches alike, the re-run certifying
+the stream inside each training run whichever way its per-seed gains fall.
 Four of those floats---Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2},
 Tables~\ref{tab:baselines} and~\ref{tab:si-arms}---then carry re-run arms beside arms that were not
 re-run, so each states

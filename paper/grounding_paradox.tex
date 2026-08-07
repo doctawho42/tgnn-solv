@@ -453,12 +453,14 @@ accurate input no longer masking the bias the map introduces. That ordering is a
 chemistry the map is asked about, so the instrument returns a map over chemical strata rather than a
 verdict. Two consequences follow. A learned intermediate trained through a misspecified map cannot be
 read as the physical quantity it is named after: the predicted distribution drifts away from the
-tabulated one along a direction shared across molecules. And substituting a reference value for it at
-prediction time is not a safe improvement but a change of regime; here it degrades prediction at
-every seed. Neither consequence is peculiar to charge distributions:
+tabulated one along a direction shared across molecules---measured on a separate three-seed set of
+runs, not the checkpoints whose paradox it is offered to explain. And substituting a reference value
+for it at prediction time is not a safe improvement but a change of regime; here it degrades
+prediction at every seed. Neither consequence is peculiar to charge distributions:
 tabulated substituent constants behave the same way inside a fixed Hammett relation for acid
-dissociation, improving the aromatic series that relation was built for and degrading the ones
-outside it.
+dissociation, improving the records the tabulated constants describe completely---every substituted
+position meta or para with a constant in the table---and degrading those carrying an ortho or an
+untabulated substituent, a division that runs across all four reaction series and not between them.
 
 \begin{figure*}[t]
 \centering
@@ -511,12 +513,26 @@ and the value with its uncertainty and scope.
 % `p' is in the specifier because this table sits within a few lines of the top-float
 % height limit: without it, one extra wrapped row makes it unplaceable as a top float and
 % it is deferred past the Discussion, taking every later starred float with it.
+%
+% THE LEDGER IS SPLIT ACROSS TWO FLOATS, AND MUST STAY SPLIT (2026-08-07).  Set as one
+% float it was 105.4pt TALLER THAN THE PAGE -- "LaTeX Warning: Float too large for page by
+% 105.36841pt" -- and LaTeX does not break a float, so the excess was set past the bottom of
+% the text block: the folio printed on top of note f, note g stopped mid-clause after "one-sided
+% in both directions", and note h did not reach the PDF at all.  All three referees reported it.
+% `p' in the specifier does NOT help this failure and never did: a float taller than \textheight
+% overflows a float page exactly as it overflows a text page.  The two parts carry the same
+% number through \ContinuedFloat (the `caption' package, already loaded by achemso), so
+% \ref{tab:claims} and the Supporting Information's "Table 4, note g" both still resolve, and no
+% later table is renumbered.  The notes sit at the foot of the SECOND part, where a continued
+% table's notes belong.  BEFORE MOVING A ROW BETWEEN THE TWO PARTS, or adding one, rebuild and
+% grep the build output for "Float too large": either part is within a few lines of the limit
+% again the moment it carries two blocks it was not sized for.
 % ---------------------------------------------------------------------------
 \begin{table*}[tp]
 \centering
 \caption{One row per load-bearing claim: what is claimed, the data set and its size, and
-the value measured with its uncertainty and its scope. Notes \emph{a}--\emph{h} qualify a
-row or a column.}
+the value measured with its uncertainty and its scope. Notes \emph{a}--\emph{h}, at the foot
+of the continuation, qualify a row or a column.}
 \label{tab:claims}
 {\scriptsize
 \setlength{\tabcolsep}{4pt}
@@ -538,7 +554,25 @@ $\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $
 \ldots\ for either set \emph{as a whole} & broad IDAC ($477$); VT-2005-matched ($60$) & $+0.51$ (full $+0.95$); $-0.38$ compounding two cuts ($+0.01$ full); $+0.18$ less one publication; $+0.05$ on the smaller set: an average weighted by composition\tnk{f} \\
 $\Binsuf^{\mathrm{up}}$ near stratum-independent, $\mathrm{MSE}$ not & broad IDAC, $3$ boundable classes; $6$ with an estimate & $\times2.0$ against $\times25$; $\times6.8$ against $\times51$; $p{=}0.02$ against $2000$ null partitions of $9$ classes \\
 $\Bclos>\Binsuf$, 2010 on its \emph{own} typed latent\tnk{f} & broad IDAC ($477$); VT-2005-matched ($60$) & $+1.29$, $P>0.95/{\approx}0.9/{\approx}0.9$\tnk{e}; $-0.77$ at $P\approx0.3$ on the smaller set, where the ordering is lost: loss of resolution, not a reversal \\
-\addlinespace[2pt]
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+% Second part of the claim ledger; see the note above the first part before touching either.
+\begin{table*}[tp]
+\ContinuedFloat
+\centering
+\caption{\emph{Continued.} The remaining three blocks of the ledger, and notes
+\emph{a}--\emph{h}, which qualify rows and columns of both parts.}
+\label{tab:claims-cont}
+{\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.86}
+\begin{tabular}{@{}L{0.27\linewidth}L{0.19\linewidth}L{0.46\linewidth}@{}}
+\toprule
+Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
+\midrule
 \multicolumn{3}{@{}l@{}}{\emph{Whether a better closure moves the ceiling} (\S\ref{sec:fidelity})}\\
 The $2002\to2010$ step lowers the error & broad IDAC ($477$) & $-0.99$ at $P\approx0.2$: no improvement, and not a measured equality either; under the full convention $-0.07$, $P\approx0.6$, and $+0.06$, $P\approx0.6$ with dispersion on \\
 \ldots but does on the VT-2005 set's chemistry & $57$ shared pairs, UD & $1.78\to0.77$, $P>0.95$, at fixed profile database and temperature, full convention; those $57$ pairs are also broad-set rows, so not an independent sample \\
@@ -1099,10 +1133,13 @@ latent silently departs from the quantity it is named after (\S\ref{sec:surrogat
 without an external oracle. Outside that one row set the map reports cells it cannot resolve, not
 cells in which the closure is sound. One arithmetic sizes that exposure, and it is worth stating
 because the ground truth charging $\Bclos$ is quantum chemistry and not experiment: one closure read
-on two profile databases differs by a factor of $2.6$ in AAD (Table~\ref{tab:closure-anchor}),
-against a glycol-ether stratum whose margin closes only under a more than ten-fold reduction in its
-squared error, so a profile source better than VT-2005 by the whole of that published bracket would
-leave that sign standing. The arithmetic holds the insufficiency bound fixed, which a new profile
+on two profile databases---HF-TZVP against BP-TZVPD-FINE---differs by a factor of $2.6$ in AAD
+(Table~\ref{tab:closure-anchor}), against a glycol-ether stratum, computed on the UD profiles the
+broad set is matched to, whose margin closes only under a more than ten-fold reduction in its
+squared error; so a profile source better than UD by the whole of that published bracket would
+leave that sign standing. The two sides therefore name different databases, and the bracket enters
+as the size of a database-to-database effect rather than as a comparison either side is on.
+The arithmetic holds the insufficiency bound fixed, which a new profile
 source would not, so it sizes the exposure and does not bound the share; the working, and the route
 by which a displaced reference loads onto $\Bclos$ through the curvature of $g$ even where $g$ is
 exactly specified, are in \S\ref{sec:si-fidelity} and \S\ref{sec:si-repro}.
@@ -1327,8 +1364,8 @@ trail their control by more in this column than in MAE. \S\ref{sec:si-baselines}
 and lists every cell of the four, and \S\ref{sec:discussion} takes only the readings that survive
 them.\quad
 \tnk{a}\,\emph{Re-scored}: the same checkpoint over the same rows with the single scaling it was
-trained under, the doubly standardising prediction path diagnosed in \S\ref{sec:discussion}
-withdrawn rather than printed. \S\ref{sec:si-baselines} gives the diagnosis, the withdrawn values
+trained under, the doubly standardising prediction path diagnosed in \S\ref{sec:si-baselines}
+withdrawn rather than printed. That section gives the diagnosis, the withdrawn values
 and the control that reproduces them. The SolProp rows were always scored through a different path
 and are unaffected.\quad
 The third block is quoted as published, in mol\,L$^{-1}$, on other corpora and splits: no conversion
@@ -1470,7 +1507,8 @@ VT-2005-matched audit artifacts disagree on one out-of-fold estimate, and the CO
 reference reproduction (\S\ref{sec:model}) was printed to its validator's console and never written
 to an artifact at all. Two further defects are
 repaired rather than disclosed, each described where its numbers are printed: the two FastSolv
-retraining bundles were re-scored (\S\ref{sec:discussion}, Table~\ref{tab:baselines}) and the
+retraining bundles were re-scored (Table~\ref{tab:baselines}, with the diagnosis, the withdrawn
+values and the control that reproduces them in \S\ref{sec:si-baselines}) and the
 withdrawn bundle is kept beside the re-scored one, and the truncated seed-$44$ $\sigma$-oracle
 per-row file has been recovered complete and now stands in the deposit
 (Table~\ref{tab:runs}, \S\ref{sec:si-repro}).
