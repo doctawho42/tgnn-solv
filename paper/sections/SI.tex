@@ -248,7 +248,7 @@ $5\times10^{-4}$, gradient clipping $2.54$ against $2.0$, over $110$ P2 epochs e
 arm's total budget at the same width ($64$) and depth ($3$). Width, depth, batch size and epoch
 budget are therefore matched and the optimisation is not, so $\Delta_\infty$ and the physics-versus-control
 $\Delta\mathrm{MAE}$ are differences between two separately tuned pipelines and are not
-attributable to the thermodynamic bottleneck alone (\S\ref{sec:framework}). A
+attributable to the thermodynamic bottleneck alone (\S\ref{sec:eval}). A
 hyperparameter-matched control was not run.
 \paragraph{Loss.} The objective is a weighted sum. Its registry holds $32$ terms, of which $17$ are
 hard-wired to $0$ and two more (bridge, solubility variance) default to $0$ through the
@@ -459,15 +459,15 @@ $R_{\mathrm{e2e}}=0$ while $R_{\mathrm{orc}}=1$, hence $\Ggap=1>0=\Bclos$. Thus 
 does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 \end{proof}
 
-% PROPOSITION 1 IS STATED IN THE ARTICLE (2026-08-02, editorial item A3), at \S\ref{sec:tax},
-% together with the asymptote-plus-variance decomposition it is written against. Its label is
-% therefore defined in that document and must NOT be redefined here -- the two documents share one
-% label namespace through xr-hyper, and check_split_refs.py fails on a name defined in both.
-% Only the proof stays here.
-\noindent Proposition~\ref{prop:tax} is stated in the article at \S\ref{sec:tax}, with the
+% PROPOSITION 1 IS STATED AND PROVED HERE (moved out of the article on 2026-08-07, page-reduction
+% pass). Its label is therefore defined in THIS document and must NOT also be defined in the
+% article -- the two documents share one label namespace through xr-hyper, and
+% check_split_refs.py fails on a name defined in both. What the article keeps at \S\ref{sec:tax}
+% is the penalty decomposition, the rule in words and its three scope sentences.
+\noindent The article states the sign rule in words at \S\ref{sec:tax}, against the
 asymptote-plus-variance form of the physics penalty
 $\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ it is written
-against, and $\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$. It is proved here.
+against, and $\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$. It is stated and proved here.
 % PROPOSITION 1'S STATEMENT MOVED HERE FROM THE ARTICLE'S Sec. 2.1.2 ON 2026-08-07 (page-reduction
 % pass), so that it stands beside the proof that was already here.  The article keeps the penalty
 % decomposition, the rule in words and its three scope sentences, and refers to this statement by
@@ -505,7 +505,7 @@ $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{free}}=\Bclos-\Ggap$ by \eqref{eq:gap
 \end{proof}
 
 \noindent The variance term $D(n)$ of Proposition~\ref{prop:tax} is what carries the semiparametric
-phenomenon \S\ref{sec:discussion} appeals to, in which an estimated propensity outperforms the
+phenomenon \S\ref{sec:tax} appeals to, in which an estimated propensity outperforms the
 known-true one \cite{hirano2003,robins1997}: a fitted nuisance can be the more \emph{efficient}
 estimator even when its bias is no smaller, so a true-valued input need not give the lower total
 risk at finite $n$.
@@ -543,8 +543,8 @@ in size. Dropping the finiteness clause outright
 therefore returns the same $5608$ rows, so no arm's failures are removed from any arm's score and
 no number in this paper moves. The set is fixed by which rows carry a label.
 
-Non-finiteness in \lnx\ is not the same event as the saturation that Table~\ref{tab:baselines} note~a
-reports. That note counts rows whose predicted $x_2$ approaches $1$, where the \emph{unit conversion}
+Non-finiteness in \lnx\ is not the same event as the saturation that Table~\ref{tab:baselines}'s
+clip note reports. That note counts rows whose predicted $x_2$ approaches $1$, where the \emph{unit conversion}
 to $\log_{10}S$ diverges while \lnx\ itself stays finite; those rows are inside the $5608$ and are
 scored, under the clip that note discloses.
 
@@ -693,7 +693,7 @@ therefore more conservative: it gives ${\approx}0.78$ (maximum-likelihood) and $
 different things and we report both rather than the higher.
 
 \paragraph{A fourth analyst choice: what ``equal-count'' means when $n$ is not divisible by the bin
-count.} The rule this paper deploys, and which \S\ref{sec:decomp} names as the fourth analyst choice
+count.} The rule this paper deploys, and which \S\ref{sec:estimator} names as the fourth analyst choice
 without restating, is interpolated (\texttt{numpy} default \texttt{linear}) quantile edges of $g$ at
 $j/8$, $j=1,\dots,7$, with a value falling exactly on an edge assigned to the upper bin.
 Neither $n$ divides by eight ($60/8=7.5$, $477/8=59.625$), and that alone is what makes standard
@@ -1188,9 +1188,12 @@ unit\,$\times$\,convention cells, positivity in all four, and clause~(c) of \S\r
 the reduction to distinct row sets together with its asymmetric residual test.
 Preserved: the number of strata, the number of molecules per stratum, the
 containment lattice, and every row's $m$, $g$, source and pair. Destroyed: the association between
-chemistry and error. Over $2000$ draws the chemical map's six admissible strata are above chance
-($p=0.01$) and its two admissible positive row sets are not ($p=0.29$): a chemically blind
-relabelling certifies at least one row set in $58\%$ of draws and two or more in $29\%$. What the
+chemistry and error. Every frequency here is that null on all $477$ rows under the coarsening, the
+row set and the estimator the map itself deploys; \S\ref{sec:si-crossfit} re-runs it on $473$ and
+its figures differ for that reason alone. Over $2000$ draws the chemical map's six admissible
+strata are above chance
+($p=0.01$) and its two admissible positive row sets are not ($p=0.286$): a chemically blind
+relabelling certifies at least one row set in $58\%$ of draws and two or more in $28.6\%$. What the
 search returns is therefore not rare; its \emph{size} is closer to being so. The largest certified
 margin reaches the observed $+2.04$ or more in $10.1\%$ of all draws ($17\%$ of the draws that
 certify anything), against a median of $+1.57$ among those, a $95$th percentile of $+2.39$ and a
@@ -1424,9 +1427,9 @@ states the one row set the admissibility rule leaves standing, and which chemist
 \tnk{a}\,Number of source publications, then the largest one and its share of that stratum's
 squared error. The keys, used in all five map tables:
 \input{si_tables/map_source_key}\quad
-\tnk{b}\,Two-way solute\,$\times$\,solvent cluster bootstrap, $3000$ draws, redrawn at each
-granularity, so one row set's margin repeats exactly while its endpoints differ in the last
-digits.\quad
+\tnk{b}\,Two-way solute\,$\times$\,solvent cluster bootstrap, $3000$ draws; each endpoint carries
+$\pm0.02$ of Monte-Carlo spread. Row-identical strata print one interval, under the row set's
+first name above, and the glycol ethers print it converged.\quad
 \tnk{c}\,In how many of the four unit\,$\times$\,convention cells the stratum is both boundable
 ($n\ge40$, so eight bins hold five rows) and keeps its margin's sign under deletion of each
 contributing publication; the rule of \S\ref{sec:estimator} requires all four, which six of the
@@ -1436,9 +1439,9 @@ deletion leaving fewer than $16$ rows leaves the cell undefined, so both read as
 than as passes. A margin is one-sided: positive puts $\Bclos>\Binsuf$ on those rows at that cell,
 non-positive is failure to separate and licenses nothing (Table~\ref{tab:claims},
 note~\emph{g}). Every row here is a cell of a $59$-fold search, and the row that passes is not
-separated from it: a chemistry-blind relabelling of the same molecules certifies at least one row
-set in $58\%$ of $2000$ draws and a margin of $+2.04$ or more in $10.1\%$
-(\S\ref{sec:si-tables}).}}
+separated from it: a chemistry-blind relabelling of the same molecules, on all $477$ rows,
+certifies at least one row set in $58\%$ of $2000$ draws and a margin of $+2.04$ or more in
+$10.1\%$ (\S\ref{sec:si-tables}).}}
 \end{table*}
 
 \begin{table*}[tp]
@@ -1629,7 +1632,7 @@ to $-0.23$. Scored against VT-2005 profiles under the deployed residual-only con
 \emph{unbiased} within-bin variance, the LOTV bound gives $\Binsuf\lesssim0.713$ and the separation
 margin of $+0.05$; the maximum-likelihood variant biases the within-bin variance downward and so
 the margin upward to $+0.24$. That number stands with the broad set's aggregate, and on weaker
-evidence, four analyst choices setting it (\S\ref{sec:decomp}).
+evidence, four analyst choices setting it (\S\ref{sec:estimator}).
 
 \paragraph{Which defect the broad set points at, and why it states neither.} \S\ref{sec:badclosure}
 places the closure's failure on the VT-2005-matched set in a \emph{chemistry}---$90\%$ of that set's
@@ -1646,7 +1649,7 @@ error, and the donor classes rise to $82\%$ and $94\%$, which \emph{is} the VT-2
 localisation. So one publication decides the reading in either direction, which is why the article
 states neither.
 
-\paragraph{The constant-offset (Jensen) bound on both sets.} \S\ref{sec:decomp} promises these here.
+\paragraph{The constant-offset (Jensen) bound on both sets.} \S\ref{sec:estimator} promises these here.
 On the broad IDAC set $\Ex[m]=3.424$, $\Ex[g_{\mathrm{res}}]=2.998$ and $\Ex[g_{\mathrm{full}}]=2.579$,
 so the constant-offset bound is $\Bclos\ge0.182$ under the deployed residual-only convention and
 $\Bclos\ge0.715$ under the full one. Against the law-of-total-variance ceiling on $\Binsuf$ ($0.697$
@@ -1656,7 +1659,7 @@ a wider margin---the deployed ratio is $0.26$ here against $0.60$ there. On this
 addition strictly slacker than the bound the decomposition already supplies,
 $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ ($0.182$ against $1.205$ residual-only, $0.715$ against
 $1.429$ full), so it adds nothing to the ordering under either convention; the deployed-convention
-separation rests on the law-of-total-variance bound alone, which is what \S\ref{sec:decomp} says.
+separation rests on the law-of-total-variance bound alone, which is what \S\ref{sec:estimator} says.
 
 \paragraph{The broad set's matching rule, and two bounds we decline to headline.} Three details of
 \S\ref{sec:broad} follow. \emph{(a)~The matching asymmetry.} The VT-2005-matched set is
@@ -2649,7 +2652,7 @@ not bound the share.
 
 
 
-\subsection{Limitations (vii)--(xi) and (xiii), in full}
+\subsection{Limitations (ii), (iii), (v), (vii)--(xi) and (xiii), in full}
 \label{sec:si-limitations}
 % 2026-08-07.  Moved verbatim out of the article's \S\ref{sec:discussion} by the phenomenon-first
 % restructure.  THE NUMERALS ARE PRESERVED so that every cross-reference of the form "limitation
@@ -2968,7 +2971,7 @@ on the exactly matched subset) rather than left implicit. Second-domain pKa: the
 \cite{mansouri2019opera} (\texttt{pKa\_QR.sdf}, $7904$ QSAR-ready records, public-domain US EPA;
 cited, not redistributed); the uniform net-formal-charge filter reduces this to the $1004$
 Hammett-amenable rows ($158$ meta/para, $846$ ortho/heteroaromatic) analysed in \S\ref{sec:si-pka}. The Bemis--Murcko scaffold split follows the main text. Because the seeded
-split is not stable across pipeline versions (\S\ref{sec:framework}), the numbers in this paper are
+split is not stable across pipeline versions (\S\ref{sec:data}), the numbers in this paper are
 computed on a \emph{single, pinned} split, whose per-file SHA-256 each run's manifest records and
 whose files are deposited with the checkpoints rather than versioned---with the one run whose split
 provenance was not logged, recorded in the
@@ -3224,7 +3227,7 @@ names each compound in words as well as in SMILES. It additionally carries a per
 $1$ throughout. All $60$ rows sit at $298$\,K, all are
 chromatographic, and their three source DOIs divide the set $33/20/7$. The counts, margins,
 stratified re-estimates and clustered bootstraps reported for either set are recomputable from these
-two files with the estimator definitions of \S\ref{sec:measure}; what they do \emph{not} restore is the
+two files with the estimator definitions of \S\ref{sec:estimator}; what they do \emph{not} restore is the
 provenance of the closure evaluations themselves, which still requires the code.
 
 % Rows generated from paper/si_tables/vt2005_matched_set_60.csv by

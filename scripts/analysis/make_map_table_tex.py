@@ -91,6 +91,37 @@ Every passing row additionally carries an OVERLAP FLAG naming the other passing
 row sets it shares rows with and by how much, so a reader of the map alone
 cannot count one row set twice across the two axes.
 
+ONE ROW SET, ONE INTERVAL, 2026-08-07 (two referees, independently).
+--------------------------------------------------------------------
+The map's bootstrap seed is derived from the STRATUM NAME
+(``run_b_insuff_stratified_map.stable_seed``), so the strata that select the
+SAME rows under different names each got an INDEPENDENT 3000-draw replicate of
+the same interval, and this script printed all of them.  The glycol-ether row
+set -- the one finding in the paper -- has three such names and therefore
+printed three intervals: ``[+1.27,+2.83]`` (solvent class), ``[+1.27,+2.87]``
+(fine family) and ``[+1.23,+2.90]`` (class x role), with the manuscript quoting
+the first in its abstract.  Twenty-two pairs of strata in this map are
+row-identical, so the same thing happened to water, the mono-alcohols, the
+N--H protics and the aprotic acceptors.
+
+Those are not different quantities and they are not different roundings.  A
+3000-draw replicate of this interval carries a Monte-Carlo standard deviation of
+0.020 on EACH endpoint (forty seeds, deposited in
+``glycol_ether_ci_converged.json``), which is twice the second decimal they were
+printed to; the four values in the manuscript sat within +-1.8 sd of one mean.
+
+So: row-identical strata now print ONE interval.  Which one is fixed by
+position, not by value -- the first name the row set gets in the manuscript's
+own axis order (``AXES``/``AXIS_RANK`` below), which is the order a reader meets
+it in and was not chosen by reading endpoints.  For the
+glycol-ether row set the printed interval is instead the CONVERGED one from
+``results/b_insuff/glycol_ether_ci_converged.json`` (1.2e6 draws, standard error
+0.001 on each endpoint, so the printed digits are determined), because that is
+the interval the abstract quotes and a claim in an abstract should not be one
+draw of a Monte-Carlo procedure.  It is WIDER than the replicate the manuscript
+had been printing, which is the direction that matters: [+1.26,+2.87] against
+[+1.27,+2.83].
+
     python scripts/analysis/make_map_table_tex.py
 """
 from __future__ import annotations
@@ -105,6 +136,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "results" / "b_insuff" / "admissibility_table.csv"
 OVERLAP = ROOT / "results" / "b_insuff" / "stratum_overlap.csv"
 SIDES = ROOT / "results" / "b_insuff" / "admissibility.json"
+CONVERGED = ROOT / "results" / "b_insuff" / "glycol_ether_ci_converged.json"
 OUT = ROOT / "paper" / "si_tables" / "stratified_map_rows.tex"
 OUT_SOLUTE = ROOT / "paper" / "si_tables" / "stratified_map_rows_solute.tex"
 OUT_ARTICLE = ROOT / "paper" / "si_tables" / "stratified_map_rows_article.tex"
@@ -131,6 +163,11 @@ SOLUTE_AXES = [
     ("whole_set", "The set as a whole"),
 ]
 AXES = SOLVENT_AXES + SOLUTE_AXES
+
+# Which name a row set's interval is quoted under when several names select the same rows:
+# the first in the manuscript's own axis order, which is AXES above and is the order in which
+# a reader meets the row set.  Fixed by position, never by looking at the endpoints.
+AXIS_RANK = {a: i for i, (a, _) in enumerate(AXES)}
 
 # The SI carries all 59 strata, which is four floats and not two.  At 28 and 31 rows the two
 # earlier floats ran 266 pt and 214 pt past the text block, so their last rows printed over the
@@ -267,6 +304,62 @@ def main() -> None:
             continue
         overlaps.setdefault(a, []).append({"other": b, "rec": o, "flip": False})
         overlaps.setdefault(b, []).append({"other": a, "rec": o, "flip": True})
+
+    # ----------------------------------------------------------------- #
+    # ONE ROW SET, ONE INTERVAL.  See the module docstring.  Row-identical
+    # strata are pooled; the pool quotes the interval of its coarsest name.
+    # ----------------------------------------------------------------- #
+    parent: dict[tuple[str, str], tuple[str, str]] = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for entries in overlaps.values():
+        for e in entries:
+            if e["rec"]["relation"] != "identical":
+                continue
+            a = (e["rec"]["axis_a"], e["rec"]["stratum_a"])
+            b = (e["rec"]["axis_b"], e["rec"]["stratum_b"])
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                parent[rb] = ra
+
+    def rank(k: tuple[str, str]) -> tuple[int, str]:
+        return (AXIS_RANK.get(k[0], len(AXIS_RANK)), k[1])
+
+    pools: dict[tuple[str, str], list[tuple[str, str]]] = {}
+    for k in list(parent):
+        pools.setdefault(find(k), []).append(k)
+    canonical = {k: min(members, key=rank)
+                 for members in pools.values() for k in members}
+
+    conv = json.loads(CONVERGED.read_text()) if CONVERGED.exists() else None
+    conv_ci = None
+    if conv is not None:
+        c = conv["converged_interval"]
+        conv_ci = (str(c["ci90_lo"]), str(c["ci90_hi"]))
+
+    def ci_of(k: tuple[str, str]) -> tuple[str, str]:
+        """The 90% margin interval this row prints.
+
+        Row-identical strata share one interval -- the coarsest name's -- because
+        the map draws an independent bootstrap per stratum NAME and the spread
+        between those draws is Monte-Carlo, 0.02 per endpoint, not chemistry.
+        The glycol-ether row set quotes the converged deposit instead, since the
+        abstract quotes it and one 3000-draw replicate does not determine the
+        second decimal.
+        """
+        src = canonical.get(k, k)
+        if conv_ci is not None and src[1].split("|")[0].strip() == "glycol_ether":
+            return conv_ci
+        r = key.get(src)
+        if r is None:
+            r = key[k]
+        return r["margin_ci90_lo"], r["margin_ci90_hi"]
 
     def share_of(entry: dict) -> float:
         o = entry["rec"]
@@ -473,7 +566,7 @@ def main() -> None:
                 lines.append(
                     f"{pretty(r['stratum'])} & ${r['n']}$ & ${r['n_pairs']}$ & {src} & "
                     f"{fmt_signed(r['margin'])} & "
-                    f"{fmt_ci(r['margin_ci90_lo'], r['margin_ci90_hi'])} & "
+                    f"{fmt_ci(*ci_of((axis, r['stratum'])))} & "
                     f"{fmt_signed(full['margin'])} & ${r['cells_admissible']}$ & "
                     f"{shorten(r)} \\\\")
                 n_printed += 1

@@ -40,7 +40,7 @@ either reading it lies far below the scaffold-split error.
 \paragraph{Ranking and calibration.} Absolute error and decision quality diverge, and within one
 checkpoint the divergence has a direction. Table~\ref{tab:ranking} ranks the solvents of each
 solute--temperature group of the labelled test rows under the two $\sigma$-profiles of
-\S\ref{sec:paradox}: the same weights, the same rows, and only the profile fed to the closure
+\S\ref{sec:decision}: the same weights, the same rows, and only the profile fed to the closure
 differing ($\max|\Delta\Phi|=4.2\times10^{-4}$ at the worst of the three seeds, against $4.4$ to
 $5.9$ between separately trained arms). With its own learned profile the model orders solvents above
 two solute-blind references, at every one of the twenty-four margins that comparison has---four
@@ -125,7 +125,7 @@ learned-$\sigma$ arm---being $-0.056/{+}0.053/{-}0.040$ by seed, sign-flipping, 
 zero and each smaller than the seed-replicate spread.
 
 \paragraph{Per-group recalibration of the MAE gap, in sample and out.} The reading on which the
-substitution merely miscalibrates is granted in \S\ref{sec:paradox} at three strengths, each fitted
+substitution merely miscalibrates is granted in \S\ref{sec:decision} at three strengths, each fitted
 inside each group, on exactly the row set the ranking uses: the $823$ groups, $4912$
 solute--solvent--temperature cells, $107$ solute clusters. No recalibration; an offset only, each
 group's own mean subtracted from prediction and from truth; and an affine map, slope and intercept
@@ -167,13 +167,13 @@ $[-0.172,+0.208]$ by seed, against an in-sample $+0.089/{+}0.029/{+}0.080$ there
 residual, measured too imprecisely at two of three seeds to be distinguished from zero. The in-sample
 $86\%$ is therefore a bound on how much of the MAE gap a per-group affine map \emph{can} absorb when
 it is fitted on the answer, not an estimate of how much a recalibration a user could apply would
-absorb, and \S\ref{sec:paradox} states it in that direction. Both fits, the ranking, the floors and
+absorb, and \S\ref{sec:decision} states it in that direction. Both fits, the ranking, the floors and
 every per-group fitted slope come from the deposit
 \texttt{results/e5\_sigma\_grounding/ranking/}.
 
 \paragraph{The fitted slopes, and where the rank invariance holds.} Rank statistics are invariant
 under a per-group affine map only when that map is \emph{increasing}; a fitted slope that comes out
-negative reverses the group's order, and the invariance argument of \S\ref{sec:paradox} does not
+negative reverses the group's order, and the invariance argument of \S\ref{sec:decision} does not
 cover those groups. Of the $823$ groups the fitted slope is negative in $98/94/84$ of the
 learned-$\sigma$ arm's ($11.9/11.4/10.2\%$ by seed) and in $146/153/142$ of the reference-$\sigma$
 arm's ($17.7/18.6/17.3\%$); the median slopes are $1.22/1.19/1.10$ and $0.50/0.58/0.53$, the

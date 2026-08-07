@@ -39,6 +39,18 @@ every seed, and the caption sends the reader to the text for the magnitudes.  Do
 restore either number here, and do not "fix" this by printing +0.18 instead of +0.41: that
 juxtaposes -0.20 with a one-seed number, which is the same error.
 
+THE LEFT ARROW CARRIES A CAVEAT, 2026-08-07, AND IT MAY NOT BE DROPPED
+----------------------------------------------------------------------
+Two referees reported that this was the one display in the submission printing the
+supervision direction without it.  "Train on it -> MAE improves" is the grounded arm
+against the ungrounded one, and it is exactly the contrast Sec. 2.2's disclosure says a
+sigma-stream leak could inflate: the ungrounded arm carries no stream, so the only arm a
+leak can reach is the grounded one, and the gain stays uncertified until the leak-free
+re-run.  The substitution arrow is untouched by this -- it is one checkpoint evaluated two
+ways, which no stream build can reach -- so the caveat attaches to the left arrow alone and
+the bottom line says which.  It prints NO magnitude, which is the standing decision above.
+The wording matches the abstract's ("not certified leak-free") and Sec. 2.2's on purpose.
+
 The stratified map is the paper's other deliverable and does not go here: at 3.25 x 1.75
 in nothing legible can carry fifteen strata with their margins and intervals, and a
 drawn map reduced to one bar per class would be an aggregate again.  The map is a table
@@ -116,11 +128,13 @@ ax.text(0.245, 0.575, "MAE improves", ha="right", va="center", fontsize=6.8, col
 ax.text(0.505, 0.665, "feed it in instead", ha="left", va="center", fontsize=6.8, color=HURT)
 ax.text(0.505, 0.575, "MAE degrades", ha="left", va="center", fontsize=6.8, color=HURT)
 
-# One line, and it states the sign structure rather than a set-level verdict.  The pointer to
-# the text is where the magnitudes went; see the module docstring for why they may not print here.
+# Three lines, and they state the sign structure rather than a set-level verdict.  The pointer
+# to the text is where the magnitudes went; see the module docstring for why they may not print
+# here, and for why the third line is not optional.
 ax.text(0.5, 0.115, "Grounding is two operations on one database, with opposite signs\n"
-        "(solubility MAE on held-out scaffolds, three seeds; magnitudes in the text).",
-        ha="center", va="center", fontsize=6.0, color=INK)
+        "(solubility MAE on held-out scaffolds, three seeds; magnitudes in the text).\n"
+        "Training on it is not certified leak-free; a re-run is pre-committed.",
+        ha="center", va="center", fontsize=6.0, color=INK, linespacing=1.35)
 
 for ext in ("pdf", "png"):
     fig.savefig(f"{OUT}.{ext}")

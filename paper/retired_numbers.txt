@@ -216,3 +216,35 @@
 # unmeasured there and cites the arm comparisons instead, which is where S6.1 already puts the
 # surviving version of the expectation. 0.76 still prints nine times elsewhere, so the checker
 # lists it under section 2 (value survives) and not section 1.
+
+# 2026-08-07. ONE STATISTIC PRINTED AT FOUR VALUES: the glycol-ether margin's 90% interval.
+# Two referees reported it independently. It was not four quantities and not four roundings.
+# The map seeds its bootstrap from the stratum's NAME (run_b_insuff_stratified_map.stable_seed),
+# so the strata that select the SAME rows each drew an INDEPENDENT 3000-draw replicate of one
+# interval, and run_b_insuff_crossfit_scoring.py composes that seed string differently again for
+# a fourth. Verified from the deposit: the glycol-ether stratum is the same 182 rows (19 solutes,
+# 4 solvents, 43 pairs, 3 publications) in stratified_map_table.csv and crossfit_map_table.csv,
+# with MSE 2.251842, B_insuff^up 0.107708 and margin 2.036427 bit-identical in every printing.
+# A 3000-draw replicate carries +-0.020 of Monte-Carlo spread on EACH endpoint over 40 seeds --
+# twice the digit they were printed to -- and all four printed values sat within 1.8 sd of one
+# mean. results/b_insuff/glycol_ether_ci_converged.json, from
+# scripts/analysis/run_b_insuff_glycol_ether_ci.py, is that bootstrap run to convergence:
+# [+1.2558, +2.8689], standard error 0.001 per endpoint, printed [+1.26, +2.87] everywhere. It is
+# WIDER than the [+1.27, +2.83] the abstract had been quoting, which was the narrowest of the
+# four. Row-identical strata now print one interval throughout the map (make_map_table_tex.py),
+# which retires the duplicate replicates of five other row sets as well.
+1.018   re-rounded, not lost: the cross-fitted arm's interval on the glycol ethers, crossfit_map_table.csv broad_473 solvent_class::glycol_ether ci90_cf = [1.0175, 2.4890]. A 3000-draw bootstrap endpoint carries +-0.02, so both arms of that sentence now print to two decimals, [+1.02,+2.49]; the leave-one-publication-out envelopes beside them are exact deletion extrema and keep their three.
+2.489   re-rounded, not lost: the same cross-fitted endpoint, ci90_cf upper 2.4890 -> +2.49. See 1.018 above.
+2.873   retired replicate: the coarsening arm's upper endpoint in the cross-fit section, crossfit_map_table.csv ci90_bin = [1.2603, 2.8732] -- one 3000-draw replicate of the interval whose converged value is 2.8689. That sentence now prints the converged [+1.26,+2.87], the same interval the abstract, Table 4, Sec. 3.4 and all three map tables now carry.
+3.26    retired replicate: the mono-alcohol interval as drawn under the name solvent_family_fine::mono_alcohol, [+0.29,+3.26]. It is the same 35 rows as solvent_class::mono_alcohol, whose replicate [+0.18,+3.24] all three cells now print. The margin +0.78 and the full-convention +1.09 are unchanged, and the row is inadmissible either way (n < 40).
+3.37    retired replicate: the same 35 mono-alcohol rows as drawn under solvent_class_x_solute_role::mono_alcohol | organic_solute, [+0.30,+3.37]. Superseded by [+0.18,+3.24] as above.
+8.61    retired replicate: the halogenated non-H-bonding interval as drawn under solvent_class_coarse::halogenated_nonHB, [+1.10,+8.61]. Same 30 rows as solvent_class::halogenated, whose [+0.86,+8.12] both cells now print. Margin +3.39 unchanged; inadmissible either way (n < 40, and one deletion leaves too few rows).
+9.5     retired replicate: the water-as-solute interval as drawn under solute_family::water, [+3.39,+9.50]. Same 37 rows as solute_role::water_solute, whose [+3.97,+9.49] both cells now print. Margin +6.33 unchanged; inadmissible either way (n < 40, single source, no deletion to run).
+
+# Same pass, NO ENTRY NEEDED, recorded so a later diff does not read it as an accident: the seven
+# tier-B integers in section 3 (1161, 1189, 2003, 2021, 2023, 781, 798, and 71 in section 4) are
+# the checker's bibliography-REGION exclusion reacting to reflow, not lost references. The report's
+# own header shows bibliography-excluded tokens falling 297 -> 290, exactly those seven. All three
+# entries still print -- `pdftotext -layout paper/grounding_paradox.pdf - | grep Econometrica'
+# returns "Econometrica 2003, 71, 1161-1189" on p. 33, and Digital Discovery 2023, 2, 781-798 and
+# the NeurIPS 2021 entry are on p. 32. The reference list did not change in this pass.

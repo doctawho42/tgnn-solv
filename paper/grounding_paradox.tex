@@ -357,7 +357,7 @@ chemistry---while the error does, so the output is a map: $59$ strata, $15$ boun
 verdict. One admissibility rule leaves one row set
 standing---the glycol-ether solvents, $182$ measurements, $43$
 pairs, where that model's own error exceeds its inputs' by at least $+2.04\,(\lngi)^2$ ($90\%$ interval
-$[+1.27,+2.83]$)---and no other stratum, neither set whole, nothing on the
+$[+1.26,+2.87]$)---and no other stratum, neither set whole, nothing on the
 solubility axis. It survived a $59$-fold search: chemistry-blind
 relabelling certifies some row set in $58\%$ of draws, reaching $+2.04$ in $10\%$. A
 pre-declared out-of-sample test returned \emph{not testable}: the one independent database holds
@@ -549,7 +549,7 @@ Training-time $\sigma$ supervision \emph{helps} (MAE) & labelled test rows, 3 se
 The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 3 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ at the worst seed---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $589$ of the $823$ groups in both arms at all three seeds. The substitution falls on the solvent channel \\
 \addlinespace[2pt]
 \multicolumn{3}{@{}l@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure}); margins in squared \lngi\ units, not the \lnx\ MAE of the block above}\\
-$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.27,+2.83]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist \\
+$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.26,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist \\
 \ldots\ on every other stratum of the map & broad IDAC, $59$ strata & \S\ref{sec:si-map}, Tables~\ref{tab:map-full}--\ref{tab:map-detail}, each with its margin, interval and the test it fails; none is stated as a finding\tnk{h} \\
 \ldots\ for either set \emph{as a whole} & broad IDAC ($477$); VT-2005-matched ($60$) & $+0.51$ (full $+0.95$); $-0.38$ compounding two cuts ($+0.01$ full); $+0.18$ less one publication; $+0.05$ on the smaller set: an average weighted by composition\tnk{f} \\
 $\Binsuf^{\mathrm{up}}$ near stratum-independent, $\mathrm{MSE}$ not & broad IDAC, $3$ boundable classes; $6$ with an estimate & $\times2.0$ against $\times25$; $\times6.8$ against $\times51$; $p{=}0.02$ against $2000$ null partitions of $9$ classes \\
@@ -893,11 +893,14 @@ set is the one the admissibility rule leaves standing}, at a margin a chemistry-
 the same molecules reaches in $10.1\%$ of draws (below): on $182$ rows over $43$
 pairs from three publications carrying
 $45\%$ of the set's squared error, the closure's own error exceeds what input insufficiency can
-account for by at least $+2.04$, that bound carrying a $90\%$ interval of $[+1.27,+2.83]$ at the
+account for by at least $+2.04$, that bound carrying a $90\%$ interval of $[+1.26,+2.87]$ at the
 deployed convention---$+2.94$
 at the pair unit under the full one---positive in all four cells and under every single-publication
 deletion, the worst leaving $+1.60$ when \texttt{10.1016/j.jct.2016.10.013}, which carries $53\%$ of
-that stratum's squared error, is removed. It is not an artifact of one solute family: the $74$ rows
+that stratum's squared error, is removed. That interval is the two-way cluster bootstrap run to
+convergence; at the $3000$ draws each cell of the map uses, its endpoints carry a Monte-Carlo
+spread of $\pm0.02$, so no interval in the map is to be read past that digit. It is not an
+artifact of one solute family: the $74$ rows
 left when its alkane solutes are dropped keep the sign at $+1.40$ deployed and $+1.69$ full, under
 all three deletions. Nor is it a property of the estimator cell. Swept over the bin-count grid
 Table~\ref{tab:grid-rep} runs for the aggregate---the analyst choice with the largest leverage
@@ -909,8 +912,11 @@ bins at $n{=}182$, so the cell the map reads is the coarser and the lower of the
 varies the coarsening's own settings and not the family of estimator: a pre-declared cross-fitted
 regressor, tested after this analysis was fixed, returns a \emph{looser} bound and moves this
 stratum to $+1.76$, leaving it the one admissible positive row set but with fewer cells around it,
-and moves the chemistry-blind null below the \emph{wrong} way---$p(D)$ from $0.094$ to $0.137$, and
-from $16\%$ to $54\%$ of the draws that certify anything reaching the observed maximum. That
+and moves the chemistry-blind null the \emph{wrong} way. That null is re-run on both sides for
+that comparison, on the $473$ rows the cross-fitted estimator scores rather than the $477$ the map
+is built on, so its baseline column is not the $10.1\%$ and $17\%$ quoted below: against a
+coarsening baseline of $0.094$ on those rows the cross-fit gives $p(D)=0.137$, and the share of
+certifying draws that reach the observed maximum goes from $16\%$ to $54\%$. That
 declaration bound us to headline the cross-fitted estimator \textsc{unconditionally} if it passed a
 validity gate that reads no margin, and it passed. \textbf{We did not follow that rule}: every
 margin printed in this paper is the coarsening's. The reason and the two things that should be said
@@ -922,10 +928,11 @@ the coarsening, not across estimators.
 
 What the row set does not have is a multiplicity null it clears, and this belongs beside the
 finding rather than in a limitation. It is by construction the survivor of a $59$-fold search.
-Under $2000$ chemically blind relabellings of the same molecules---each solvent and solute keeping
+Under $2000$ chemically blind relabellings of the same molecules, on all $477$ rows and at the
+coarsening the map deploys---each solvent and solute keeping
 its rows and taking another's class labels, the stratum family rebuilt and put through the same
 rule---the map's six admissible strata are above chance ($p=0.01$) but its two admissible positive
-row sets are not ($p=0.29$): such a relabelling certifies at least one row set in $58\%$ of draws.
+row sets are not ($p=0.286$): such a relabelling certifies at least one row set in $58\%$ of draws.
 The size is the sharper statistic, and it is not sharp enough: a certified margin of $+2.04$ or
 more arises in $10.1\%$ of all draws, which is $17\%$ of the draws that certify anything, against a
 median of $+1.57$ among those. The separation is what the instrument licenses on the rows it was

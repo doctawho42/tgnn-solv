@@ -1,0 +1,80 @@
+{
+  "what": "Converged 90% two-way (solute x solvent) cluster bootstrap interval on the glycol-ether margin at the map's headline estimator cell (broad IDAC, row unit, deployed residual-only convention, 8 equal-count bins, Bessel within-bin variance), and the Monte-Carlo error of the map's own 3000-draw setting.",
+  "why": "The map seeds its bootstrap from the STRATUM NAME, so the three strata that select the same 182 glycol-ether rows each drew an independent 3000-draw replicate, and the cross-fit artifact composed the seed string differently again for a fourth. The submission printed all four as if they were four quantities. They are one quantity; the spread between them is Monte-Carlo error and it is larger than the second decimal they were printed to. Every printing now quotes the converged value below. See the module docstring of scripts/analysis/run_b_insuff_glycol_ether_ci.py.",
+  "generated_by": "scripts/analysis/run_b_insuff_glycol_ether_ci.py",
+  "row_set": {
+    "n": 182,
+    "n_solutes": 19,
+    "n_solvents": 4,
+    "n_pairs": 43,
+    "n_sources": 3,
+    "identical_in_the_477_and_473_row_deposits": true,
+    "note": "none of the four rows the cross-fit declaration drops carries a glycol-ether solvent, so this stratum is the same 182 rows in stratified_map_table.csv (broad_477) and crossfit_map_table.csv (broad_473)"
+  },
+  "point_estimates": {
+    "mse": 2.251842,
+    "b_insuff_up": 0.107708,
+    "margin": 2.036427
+  },
+  "converged_interval": {
+    "n_replicates": 12,
+    "draws_per_replicate": 100000,
+    "n_draws": 1200000,
+    "ci90_lo": 1.2558,
+    "ci90_hi": 2.8689,
+    "se_lo": 0.00091,
+    "se_hi": 0.00115,
+    "P_boot": 1.0,
+    "printed_as": [
+      1.26,
+      2.87
+    ]
+  },
+  "monte_carlo_error_at_the_maps_own_3000_draws": {
+    "n_seeds": 40,
+    "n_draws_each": 3000,
+    "lo_mean": 1.2534,
+    "lo_sd": 0.0195,
+    "lo_range": [
+      1.2089,
+      1.2951
+    ],
+    "hi_mean": 2.8635,
+    "hi_sd": 0.0197,
+    "hi_range": [
+      2.8131,
+      2.9011
+    ]
+  },
+  "the_four_values_the_submission_printed_before_2026_08_07": {
+    "[+1.27,+2.83]": {
+      "exact": [
+        1.268,
+        2.833
+      ],
+      "source": "stratified_map_table.csv, solvent_class::glycol_ether"
+    },
+    "[+1.27,+2.87]": {
+      "exact": [
+        1.266,
+        2.873
+      ],
+      "source": "stratified_map_table.csv, solvent_family_fine::glycol_ether"
+    },
+    "[+1.23,+2.90]": {
+      "exact": [
+        1.226,
+        2.896
+      ],
+      "source": "stratified_map_table.csv, solvent_class_x_solute_role::glycol_ether | organic_solute"
+    },
+    "[+1.260,+2.873]": {
+      "exact": [
+        1.260269,
+        2.873223
+      ],
+      "source": "crossfit_map_table.csv, broad_473, solvent_class::glycol_ether, column ci90_bin (the coarsening arm of the cross-fit table)"
+    },
+    "verdict": "same estimator, same 182 rows, four independent bootstrap replicates; every endpoint within 1.8 sd of one mean"
+  }
+}

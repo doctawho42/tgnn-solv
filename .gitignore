@@ -43,6 +43,11 @@ results/b_insuff/*
 !results/b_insuff/admissibility_table.csv
 !results/b_insuff/admissibility.json
 !results/b_insuff/stratum_overlap.csv
+# The converged 90% interval on the one stratified finding, and the Monte-Carlo error the map's
+# own 3000-draw bootstrap carries.  The abstract quotes this interval, and until 2026-08-07 the
+# submission printed four independent 3000-draw replicates of it as four different numbers, so
+# the converged value is versioned and make_map_table_tex.py reads it at build time.
+!results/b_insuff/glycol_ether_ci_converged.json
 # The constant-offset control that qualifies the transfer ratio of Sec. 6.4 / App. E.
 # Small, and it is the only source for a number the paper prints, so it is versioned.
 !results/compensation
