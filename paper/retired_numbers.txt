@@ -199,3 +199,20 @@
 # the statistic is heavy-tailed -- a leave-one-out affine refit on a three-solvent group. Both
 # documents now print [+0.3,+2.2], the precision the draw count does pin, and the SI says so in the
 # sentence. The point estimate +1.09 is deterministic and unchanged.
+
+# 2026-08-07, referee items 1-5 (the five sentence-level qualifications). Two entries, and BOTH ARE
+# THE CHECKER'S OWN EXCLUSION RULES REACTING TO REFLOW, not losses. Putting each qualification back
+# where its claim is made added a few lines to Sec. 2.3, Sec. 3.3, the Conclusions, Data
+# availability and S1, which re-broke the lines around two numbers and moved them across an
+# exclusion boundary. VERIFIED IN THE TARGET PDFs' OWN TEXT BEFORE ADDING, one command each.
+2411.15101  checker artifact, not a loss: the arXiv identifier of Ref. mohan2024 (What You See is Not What You Get) is still printed in the article's reference list -- `pdftotext paper/grounding_paradox.pdf - | grep 15101' returns it on p. 31 -- on a page the bibliography-REGION rule now excludes, the list having reflowed by one entry. The same pass moved 12 tokens in total from counted to bibliography-excluded (302 -> 290).
+-16         checker artifact, not a loss: the exponent of the profile-area identity's residual in S1, which still prints as "is at most 7 x 10-16" on S-4 -- `pdftotext -layout paper/grounding_paradox_si.pdf - | grep 'at most 7'' returns it. The S1 edit above it re-broke the line so that pdftotext no longer spaces the mantissa from the "x 10", and the checker now folds the whole token as scientific notation instead of counting the bare exponent (sci-base folded 36 -> 37, sci-exponent folded 43 -> 44, both +1). The number is in the document at the same precision; only the unfolded token is gone.
+
+# Same pass, NO ENTRY NEEDED but recorded so a later diff does not read it as an accident: S1's
+# "capacity that the in-sample linear probe (R^2 ~ 0.76) indicates is not the binding constraint"
+# was the last surviving use of the withdrawn transfer-vs-expressivity diagnosis, and it cited
+# S6.1 -- the section that withdraws exactly that inference and shows isotropic noise features
+# reaching a HIGHER train R^2 (0.979) than the trained encoder. The clause now says the question is
+# unmeasured there and cites the arm comparisons instead, which is where S6.1 already puts the
+# surviving version of the expectation. 0.76 still prints nine times elsewhere, so the checker
+# lists it under section 2 (value survives) and not section 1.

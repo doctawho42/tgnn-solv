@@ -136,8 +136,11 @@ layers, on $35$-dimensional node and $8$-dimensional edge features; a set2set re
 steps) pools each graph, solute and solvent interact through a $3$-layer cross-attention block, and the
 $512$-dimensional pair representation $[\,g_s,g_v,g_s\!\odot g_v,|g_s-g_v|\,]$ (dropout $0.012$) feeds
 the crystal head, the $51$-bin $\sigma$-profile head, and the parameter-free COSMO-SAC closure. The
-full model has $5.40$M trainable parameters---capacity that the in-sample linear probe
-($R^2\approx0.76$, \S\ref{sec:supporting}) indicates is not the binding constraint. The DirectGNN
+full model has $5.40$M trainable parameters. Whether that capacity is the binding constraint is not
+measured here: the in-sample linear probe this clause formerly cited for it is withdrawn
+(\S\ref{sec:supporting}), where isotropic noise features reach a \emph{higher} train $R^2$ than the
+trained encoder does, and the expectation that capacity is not the binding constraint is carried by
+the arm comparisons of \S\ref{sec:paradox} instead. The DirectGNN
 control shares this encoder, interaction, and readout verbatim, and adds a thermometer encoding of
 $T$ in place of the temperature dependence the physics arm receives through $\Phi(T)$ and the closure.
 Figure~\ref{fig:arch} draws the two arms and marks where each of the two error terms enters.
@@ -2258,7 +2261,10 @@ provided, as such a collapse would also look.
 
 \paragraph{Dominant mode, and the direct cancellation test.} The dominant drift mode
 (Fig.~\ref{fig:surrogate}) transfers area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and
-\emph{into} the polar wings: the network represents molecules as more polar than they are. Whether
+\emph{into} the polar wings---the mode being defined only up to sign and drawn there in the mean
+drift's direction: fine-tuning makes the network represent molecules as more polar than its own
+grounded profile does, that profile and not the external reference being what the plotted drift is
+taken against. Whether
 that shift \emph{cancels} part of $\Bclos$---the input compensating the map, as the
 non-identifiability of the split allows (Lemma~\ref{prop:ident})---is the comparison
 $\mathrm{MSE}(m,g(\hat\sigma))$ against $\mathrm{MSE}(m,g(\zstar))$ on the same pairs. It does not

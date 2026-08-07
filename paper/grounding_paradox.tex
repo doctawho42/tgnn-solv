@@ -1403,8 +1403,10 @@ The nine remaining limitations are in \S\ref{sec:si-limitations} with their nume
 \section{Conclusions}
 \label{sec:conclusion}
 Grounding a learned physical intermediate in reference values is two operations, not one, and only
-one of them helped here. Training the intermediate against reference values improved the model;
-supplying those values at prediction time did not. On the activity data where the two terms can be
+one of them helped here. Training the intermediate against reference values improved the model---on a
+contrast not certified leak-free, the one number here a grounding-stream leak could inflate
+(\S\ref{sec:data}); supplying those values at prediction time did not, and no stream build reaches
+that second half. On the activity data where the two terms can be
 separated, they do not separate the same way in every chemistry: on one class of solvent, under a
 rule applied to every class alike, the bound on the fixed thermodynamic model's own error---the
 model as deployed, reading one computed conformer per molecule, and not its kernel alone---lies above
@@ -1417,9 +1419,10 @@ named. The class is where the instrument answered, not where the model is shown 
 That condition and the failed substitution are two measurements on two data sets in two
 regimes, so the first is offered as the reading of the second and not as a test of it. As a single number for a
 whole data set the comparison is an average over that set's composition, a property of the set and
-not of the model. And the intermediate trained through that model stopped reporting the physical
-quantity it is named after, on the molecules where it can be held against its reference, which is the
-price of reading a grounded latent as a measurement.
+not of the model. And in a separate three-seed set of runs---not the checkpoints whose paradox it
+explains, whose own latent is unmeasured---the intermediate trained through that model stopped
+reporting the physical quantity it is named after, on the molecules where it can be held against its
+reference, which is the price of reading a grounded latent as a measurement.
 
 The general statement is a design rule with a test attached. Wherever a predictor composes a fixed
 physical model over a learned intermediate for which an external reference exists, that reference
@@ -1459,11 +1462,13 @@ per-arm prediction files and the larger analysis artifacts will be deposited in 
 $\sigma$-profiles, Ref.~\cite{fingerhut2017} as redistributed with Ref.~\cite{bell2020cosmosac}
 for the UD profiles, ThermoML for the infinite-dilution activity coefficients, the
 PGL 6th-edition IDAC database for Table~\ref{tab:closure-anchor}, and the OPERA
-compilation \cite{mansouri2019opera} for the pKa data. Three deposited artifacts carry disclosed
-defects, recorded in \S\ref{sec:si-repro} and \S\ref{sec:si-tables}: the three-seed surrogate run's
-per-run split provenance was not logged, one $\sigma$-stream build on disk was written against the
-wrong split files, and the two
-VT-2005-matched audit artifacts disagree on one out-of-fold estimate. Two further defects are
+compilation \cite{mansouri2019opera} for the pKa data. Four disclosed defects sit on the deposited
+record, in \S\ref{sec:si-methods}, \S\ref{sec:si-repro} and \S\ref{sec:si-tables}: the
+three-seed surrogate run's per-run split provenance was not logged, one $\sigma$-stream build on disk
+was written against the wrong split files, the two
+VT-2005-matched audit artifacts disagree on one out-of-fold estimate, and the COSMO-SAC-2010 layer's
+reference reproduction (\S\ref{sec:model}) was printed to its validator's console and never written
+to an artifact at all. Two further defects are
 repaired rather than disclosed, each described where its numbers are printed: the two FastSolv
 retraining bundles were re-scored (\S\ref{sec:discussion}, Table~\ref{tab:baselines}) and the
 withdrawn bundle is kept beside the re-scored one, and the truncated seed-$44$ $\sigma$-oracle
