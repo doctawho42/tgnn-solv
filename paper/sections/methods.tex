@@ -154,10 +154,9 @@ conformer, tautomer and protonation state actually populated there, and an indep
 of $\lngi$ for it. Neither the conformational state nor the replicate is part of the conditioning
 variable, so $\Var(m\mid\zstar)$ is the spread of $\lngi$ across the conformational ensemble and
 across replicate determinations at one reference profile and temperature---non-zero for physical
-reasons unrelated to sample size. Experimental label noise is a \emph{component} of it, not a term
-beside it: an independent zero-mean error on $m$ enters $\Var(m\mid\zstar)$ directly, so it sits
-inside every bound reported here and is never added on. What the design cannot do is \emph{observe}
-it, neither set holding two rows at a common argument. The bounds are therefore conservative in one
+reasons unrelated to sample size. Experimental label noise is a \emph{component} of it and never a
+term added beside it, and what the design cannot do is \emph{observe} it, neither set holding two
+rows at a common argument. The bounds are therefore conservative in one
 direction only---were the superpopulation variance negligible the finding would be the stronger
 $\Bclos=\mathrm{MSE}$---so nothing reported can be an artifact of over-estimating $\Binsuf$, no
 entry anywhere is the share of the error the inputs contribute, and a low cluster-bootstrap
@@ -171,33 +170,31 @@ representable encoder nor a lossless bottleneck. Alongside it we report a second
 quantity, the \emph{grounding gap} $\Ggap:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, the oracle risk minus
 the best end-to-end risk; the paradox is $\Ggap>0$. Under a representable encoder (A1) and a
 lossless bottleneck (A2) it is sandwiched $0\le\Ggap\le\Bclos$, so $\Ggap>0$ would certify
-$\Bclos>0$ (Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is empirically doubtful---the encoder
-is transfer-limited, a linear probe dropping from train $R^2\approx0.76$ to test
-$R^2\approx0.45$---and A2 is unverifiable and physically dubious; when A2 fails, $\Ggap>0$ conflates
+$\Bclos>0$ (Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is unverified---the linear probe this
+paper previously read as evidence against it does not distinguish the trained encoder from an
+untrained one, and that reading is withdrawn (\S\ref{sec:supporting})---and A2 is unverifiable and
+physically dubious; when A2 fails, $\Ggap>0$ conflates
 closure misspecification with input insufficiency, a well-specified closure with a lossy latent
 giving $\Bclos=0$ yet $\Ggap>0$. We therefore read $\Ggap$ as corroborating evidence and base the
 model-dominance conclusion on the decomposition.
 
+% PROPOSITION 1 MOVED TO \S\ref{sec:si-proofs} ON 2026-08-07 (page-reduction pass), where its proof
+% and the limiting refinement already were, so the statement now sits with what proves it.  The
+% label prop:tax is unchanged and every \ref to it in both documents still resolves.  WHAT MUST STAY
+% HERE is the decomposition of the penalty that the rule is about, the rule's content in words, and
+% the SCOPE SENTENCES -- a penalty at the budget actually trained, no optimal-grounding theorem, no
+% out-of-distribution claim -- because \S\ref{sec:pka-main} and \S\ref{sec:discussion} both read the
+% rule and would otherwise read it unscoped.
 \paragraph{The sign rule, and scope.}\label{sec:tax} Whether the \emph{trained} physics model
 outperforms the \emph{trained} black box at sample size $n$ follows a sign rule. Writing each
-trained risk as an asymptote plus estimation variance,
-$\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
-$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
-$V(n)\downarrow0$, the \emph{physics penalty at budget $n$} is
-$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$, with
-$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$ its \emph{asymptotic} part.
-
-\begin{proposition}[Sign of the physics penalty]\label{prop:tax}
-(i)~$\mathcal{T}(n)<0$ (physics helps) iff
-$V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$: the variance a constrained prior saves
-must exceed its asymptotic bias. (ii)~If $\Delta_\infty>0$ and the variance gap vanishes
-($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$), there is a critical budget $n^\star$ beyond which
-$\mathcal{T}(n)>0$ for all $n>n^\star$.
-\end{proposition}
-
-\noindent Both halves are immediate from $\mathcal{T}(n)=\Delta_\infty-D(n)$ with
-$D:=V_{\mathrm{direct}}-V_{\mathrm{phys}}$ (proof, and the limiting refinement in which
-$\Delta_\infty=\Bclos-\Ggap$ when the control is asymptotically Bayes, in \S\ref{sec:si-proofs}).
+trained risk as an asymptote plus estimation variance, the \emph{physics penalty at budget $n$} is
+$\mathcal{T}(n)\approx\Delta_\infty-D(n)$, where
+$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$ is its \emph{asymptotic} part and
+$D:=V_{\mathrm{direct}}-V_{\mathrm{phys}}$ the variance a constrained prior saves. Physics helps
+exactly when that saving exceeds the asymptotic bias; and if $\Delta_\infty>0$ while the variance
+gap vanishes, there is a critical budget beyond which it does not
+(Proposition~\ref{prop:tax}, \S\ref{sec:si-proofs}, with the limiting refinement in which
+$\Delta_\infty=\Bclos-\Ggap$ when the control is asymptotically Bayes).
 The consequence used below is that a prior is predicted to hurt precisely in the mature-data,
 low-noise, well-covered regime. Each physics-versus-control difference reported here is a penalty at
 the budget actually trained, not an asymptotic one; there is no ``optimal grounding'' theorem, and
@@ -263,145 +260,37 @@ the $0.20$ gain of \S\ref{sec:paradox} stays uncertified until the leak-free re-
 molecule the leak touches in the $n{=}44$ analysis of \S\ref{sec:surrogate}. We therefore do
 not assert the scaffold guarantee for these runs.
 
-% THE DISPLAY INVENTORY, ADDED 2026-08-05 (round 4, all three referees, must-fix).  The paragraph
-% used to fix the DECISION -- which sentences the five-seed values rewrite in each of the three
-% branches -- and not the SCOPE OF REPLACEMENT.  Table 3's own run-family row attributes Figs. 2
-% and 3, Table S2 and the +0.41/-0.20 to the two arms being re-run, and Table 5's block 1, the clip
-% sweep and Sec. 3.6's readings sit on the same two arms; naming only the abstract, Sec. 3.1 and
-% Table 4 would have let a five-seed abstract print beside three-seed figures, with the choice of
-% which to believe made after the numbers landed.  The third paragraph closes the list, gives every
-% named display one of two dispositions (regenerated, or published value kept with the five-seed
-% one beside it), and states the boundary in both directions.  IT MUST BE SETTLED BEFORE THE
-% NUMBERS EXIST: after they land, any edit to this list is a post-hoc choice, which is the exact
-% latitude the pre-commitment was written to remove.  Do not shorten it by dropping a display, and
-% if a display carrying the ungrounded, grounded or sigma-oracle arm is added to either document,
-% add it here in the same pass.
-% 2026-08-06, THE PASS THAT RULE ASKS FOR, AND WHY IT WAS NEEDED.  The ranking contrast was added to
-% Sec. 3.1 and Table 4 on 2026-08-06, a day after this list was fixed, and the same-pass rule was
-% not run: the count here still said FOUR rows of Table 4 where the block had FIVE, and Table S17 --
-% both of whose columns ARE re-run arms, the grounded checkpoint and its own sigma-oracle
-% re-evaluation -- was not enrolled at all.  Both are repaired above.  The same audit over the rest
-% of both documents found three more displays resting on the three arms and unenrolled, all now
-% listed: Sec. S6.4 with Tables S19 and S20, which resolve the enrolled +0.14 per solvent and solute
-% class off the grounded arm's own 1.85 +- 0.05; Sec. S1's row-class split of the substitution
-% (-0.000 / +0.431 / +0.006), which is the enrolled +0.41 split by which molecule the reference
-% reached; and the three certification passages, which the in-run guard answers rather than
-% revalues.  What was checked and left out is recorded too, so the next pass does not re-derive it:
-% the DirectGNN black-box probe tables (S24-S26) are on the control alone; the n=44 surrogate runs,
-% the freeze contrast and the E2 crystal null are separate run sets; Gate B's two arms are seed-42
-% runs of their own, inside "nothing else moves"; and Table 5 carries no ungrounded row.
-% 2026-08-07, THE SAME-PASS RULE RUN AGAINST THE RESTRUCTURE, BEFORE ANY NUMBERS LANDED.  The
-% phenomenon-first restructure re-sectioned the article: the incumbent Sec. 3.1's prose now lands in
-% three places -- sec:paradox (still 3.1), the new sec:decision (3.2) and the new sec:notdecided
-% (3.4) -- while the incumbent Sec. 3.2 became 3.5, the pKa section 3.6 and the discussion 3.7.
-% Every display named below is addressed by \ref{} LABEL and not by printed number, so LaTeX
-% renumbers this list for free; the one entry that named a SECTION rather than a display is repaired
-% above to name all three landing labels, so the re-run still reaches every sentence it reached
-% before.  No display left either document in the move: what left the article went to the Supporting
-% Information, which is inside the boundary this list draws.
-% NAMED EXCEPTION 1 to the scope-preserving rule on the sec:paradox rewrite.  The rewrite is
-% otherwise clause-preserving, with one clause deliberately dropped: "what evidence there is for the
-% causal reading is therefore taken from the activity axis ... the decomposition and the latent's
-% departure from its reference".  It is the only sentence in the article that characterised
-% Sec. 3.5 as evidence for a reading Sec. 3.7 declines to assert, and under the new numbering it
-% pointed across the Sec. 3.4 barrier.  What replaces it was already in the manuscript and is
-% stronger: the impossibility claim -- on the solubility axis the two terms do not separate at all --
-% together with the two-reason denial, both in sec:notdecided, which states the causal reading before
-% refusing it.  Its surviving clause, the latent's departure at n=44, moved to the head of
-% sec:surrogate.  No other clause of sec:paradox may be narrowed under cover of this exception.
-% ALSO CHECKED IN THE SAME PASS.  The heading of sec:paradox now names the two OPERATIONS and not
-% their signs, so branch 2's rewrite of that heading is a check rather than a change.  The five rows
-% of tab:claims under "the two senses of grounding" are untouched by the move and the count "five"
-% still holds.  tab:runs and tab:baselines stay in the article, so no entry here acquires a
-% "Table S-n".  Limitation (xii), which disposition D names, stayed in the article when limitations
-% (vii)-(xi) and (xiii) moved to sec:si-limitations, and sec:discussion keeps its label on Sec. 3.7,
-% so both dispositions still find their passage.  Gate B keeps its label sec:gateb, now inside
-% sec:surrogate, and the inventory's note that its two arms are seed-42 runs of their own still
-% holds.
+% THE RE-RUN PRE-COMMITMENT MOVED TO \S\ref{sec:si-repro} ON 2026-08-07 (page-reduction pass),
+% verbatim and entire: the protocol, the three-branch decision rule and the display inventory with
+% its named exceptions and its same-pass rule.  What stays here is this summary, which must keep
+% three things a reader cannot reconstruct from the disclosure above: that the protocol was fixed
+% BEFORE the numbers exist, that the decision is stated in all three directions and not only the
+% favourable one, and that the list of displays the five-seed values replace is closed.  Do not
+% let this shrink to a bare cross-reference; the promise has to be legible without the SI open.
+% If a display carrying the ungrounded, grounded or sigma-oracle arm is added anywhere, it goes
+% into the inventory in \S\ref{sec:si-repro} in the same pass.
 \paragraph{What the leak-free re-run reports, and what it decides.}
-The re-run is specified here rather than described afterwards, so that its protocol is fixed before
-its numbers exist. It trains the ungrounded and the grounded arm at five seeds ($42$ through $46$)
-under the COSMO-SAC configuration of the published arms, unchanged. The $\sigma$ stream is rebuilt
-with the scaffold guard pointed at the validation and test files of \emph{this} split, and is
-certified inside each training run rather than at the builder: the run re-reads the stream it is
-about to consume and the split files it will be scored against, and asserts that they share no
-molecule by canonical SMILES and none by Bemis--Murcko scaffold. The stream's SHA-256 and row count
-are written into that run's manifest beside the SHA-256 of each pinned split file, so the artifact
-states which build fed which arm; the ungrounded arm's manifest records that it carried no stream at
-all, since here the absence is the thing asserted. Accuracy is read on the same $5608$ labelled test
-rows as every other number in this paper, under the same cross-arm intersection rule
-(\S\ref{sec:eval}), and the five per-seed MAE values are reported for each arm rather than a mean and
-a standard deviation alone. Two further readings are taken on those same checkpoints: the
-evaluation-only substitution of \S\ref{sec:paradox}, which is within-checkpoint and therefore a
-consistency check rather than a test, and the $n{=}44$ profile comparison of \S\ref{sec:surrogate}
-with the one molecule the leak touches removed. Quoting the magnitude of the co-adaptation control
-of \S\ref{sec:paradox} as something other than one seed would need a separate pass at the same five
-seeds, which this protocol does not commit to running.
-
-The decision the re-run settles is stated in advance and in one direction only, since it is the
-supervision contrast alone that hangs on it. If the five per-seed gains are of one sign, the two
-senses of grounding keep their opposite signs, and the abstract, \S\ref{sec:paradox} and
-Table~\ref{tab:claims} print the re-run's per-seed values in place of the three uncertified ones,
-with the refusal to order the two operations by magnitude unchanged. If the per-seed gains straddle
-zero, supervision has no established sign at five seeds: the paper then reports one operation with a
-sign---substituting the reference at inference hurts---and records the other as unresolved, and the
-abstract, the heading of \S\ref{sec:paradox}, the opening sentence of the Conclusions
-(\S\ref{sec:conclusion}) and the supervision row of Table~\ref{tab:claims} are rewritten to say so.
-If the gains are of one sign and it is the opposite one, that is what is reported. In either of the
-last two cases the graphic for the table of contents, which prints the two senses of grounding and
-their opposite signs, is redrawn to what is then reported, and the freeze contrast of
-\S\ref{sec:surrogate} is restated as well, because the warm-up state whose quality it turns on is
-the supervised one. The substitution result is unaffected in all three cases:
-it is one checkpoint evaluated two ways, and no $\sigma$-stream build can reach it.
-
-Which displays the five-seed values replace is fixed here as well, and in all three branches alike,
-because a five-seed abstract printed beside a three-seed figure would be a contradiction the
-manuscript had left itself the choice of. Three arms carry those values: the ungrounded arm, the
-grounded arm, and the $\sigma$-oracle arm, which is the grounded checkpoint re-evaluated with
-$\zstar$ substituted and therefore moves with it. Each display named next carries at least one of the
-three and is regenerated from the five-seed arms by the script that produced it---the abstract's
-$0.20$ and $0.41$; \S\ref{sec:paradox} entire, together with the two sections the restructure of
-2026-08-07 moved its prose into---\S\ref{sec:decision}, which carries the regression slopes read off
-Fig.~\ref{fig:parity-lnx2}, the ranking contrast and the solute-blind comparison, and
-\S\ref{sec:notdecided}, which carries its channel paragraph---the per-seed gains and the seed-$42$
-values included wherever they now print; the five rows of
-Table~\ref{tab:claims} under \emph{the two senses of grounding} and the $+0.14$ of its accuracy row;
-the seed list of the $\sigma$-grounding row of Table~\ref{tab:runs}; the ungrounded, grounded and
-oracle bars of Fig.~\ref{fig:paradox} with their $R^2$; panels (b), (c) and (d) of
-Fig.~\ref{fig:parity-lnx2}; the block-1 grounded and $\sigma$-oracle rows of
-Table~\ref{tab:baselines} together with the clip sweep in its caption, the fuller sweep of
-\S\ref{sec:si-baselines} and the readings \S\ref{sec:discussion} takes from both;
-Table~\ref{tab:si-arms} and the unrounded means, per-seed values and arm orderings
-\S\ref{sec:si-tables} reads off it; Table~\ref{tab:ranking} with the ranking and per-group
-recalibration readings \S\ref{sec:supporting} sets around it, whose two columns are the grounded
-checkpoint and its own $\sigma$-oracle re-evaluation and nothing else;
-\S\ref{sec:map} with Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map}, which resolve that same
-$+0.14$ along chemical axes and restate the two arm means it is taken from; the row-class split of
-the substitution in \S\ref{sec:si-methods}, whose $-0.000$, $+0.431$ and $+0.006$ put the $+0.41$ on
-the solvent channel; and the graphic for the table of contents.
-Four of those floats---Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2},
-Tables~\ref{tab:baselines} and~\ref{tab:si-arms}---then carry re-run arms beside arms that were not
-re-run, so each states
-in its caption which of its arms came from the re-run---Table~\ref{tab:baselines}'s block header
-already carries the form of words for it, and Fig.~\ref{fig:parity-lnx2} remains one seed for all
-four of its panels, the new seed $42$ in three of them and the published one in the control.
-Table~\ref{tab:ranking} needs no such statement, both its arms being re-run;
-Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map} print no arm at all, every cell being a
-difference against the control, so each says in its caption that only the physics side is five-seed.
-Three numbers instead keep their published value with the five-seed one printed beside them and the
-caption saying so, because the re-run supplies one side of each comparison and not the other: the
-Staverman--Guggenheim contrast $1.8457\to1.8788$, whose combinatorial arm is not retrained; the
-channel swap's $+0.27$, a seed-$42$ checkpoint that is not retrained either; and the co-adaptation
-control's $+0.18$ together with the $0.59$ share of \S\ref{sec:paradox}, which move only if the
-separate five-seed pass above is run. Three passages carry no arm value but state that the $0.20$ is
-uncertified---the disclosure above, limitation~(xii) of \S\ref{sec:discussion} and the provenance
-paragraph of \S\ref{sec:si-repro}---and the in-run certification answers all three, so each is
-rewritten to what the re-run certifies and limitation~(xii)'s $0.20$ moves with the abstract's.
-Nothing else moves, and the boundary is worth stating because
-two neighbouring numbers sit just outside it: neither the DirectGNN control nor the NRTL arm is
-retrained, so their rows in Tables~\ref{tab:baselines} and~\ref{tab:si-arms}, and the endpoint
-comparison of \S\ref{sec:data-efficiency}---which is the NRTL arm against that control---stand as
-printed; and \S\ref{sec:measure} uses no trained model at all.
+The re-run is specified before its numbers exist, and its protocol, its decision rule and the list
+of displays it rewrites are set out in full in \S\ref{sec:si-repro}. It trains the ungrounded and
+the grounded arm at five seeds ($42$ through $46$) under the published COSMO-SAC configuration,
+unchanged, on a $\sigma$ stream rebuilt against \emph{this} split's files and certified inside each
+training run---the run re-reads the stream and the split files and asserts that they share no
+molecule by canonical SMILES and none by Bemis--Murcko scaffold, and writes both SHA-256s into its
+manifest---and reads accuracy on the same $5608$ labelled test rows under the same cross-arm
+intersection rule (\S\ref{sec:eval}), reporting five per-seed values per arm rather than a mean
+alone. The decision is fixed in one direction only, since the supervision contrast alone hangs on
+it, and in three branches: if the five per-seed gains are of one sign the two senses of grounding
+keep their opposite signs and the published values are replaced by the re-run's; if they straddle
+zero, supervision has no established sign at five seeds and the abstract, \S\ref{sec:paradox}, the
+Conclusions and Table~\ref{tab:claims} are rewritten to report one operation with a sign and the
+other as unresolved; if they are of one sign and it is the opposite one, that is what is reported.
+Which displays the five-seed values replace is fixed here too rather than chosen afterwards---the
+three arms that carry those values, every float and passage resting on them, and the three numbers
+that instead keep their published value with the five-seed one beside them because the re-run
+supplies one side of the comparison and not the other---together with the boundary in both
+directions: neither the DirectGNN control nor the NRTL arm is retrained, and \S\ref{sec:measure}
+uses no trained model at all. The substitution result is unaffected in all three branches: it is
+one checkpoint evaluated two ways, and no $\sigma$-stream build can reach it.
 
 \subsection{Model, closure, and training}
 \label{sec:model}
@@ -419,12 +308,11 @@ $x_2$; a bounded, gated adaptive correction perturbs the physical parameters rat
 so the physical decomposition survives it.
 
 External single-component data enter through \emph{grounding streams}---the training-time sense of
-grounding. Each stream is a sidecar of \emph{self-solvent} rows
-($\mathrm{solvent}=\mathrm{solute}$, no solubility label, only the target factor's mask active),
-interleaved into training under the guard above; the streams ground the crystal factor from the
-melting-point pool and the activity factor from the $\sigma$-profile database, identifying from
-external data a factor that solubility alone leaves non-identifiable and that a black-box predictor
-cannot use. Training runs a three-stage curriculum under a weighted loss: a warm-up on the auxiliary
+grounding. Each stream is a sidecar of \emph{self-solvent} rows (no solubility label, only the target
+factor's mask active) interleaved into training under the guard above, grounding the crystal factor
+from the melting-point pool and the activity factor from the $\sigma$-profile database, and so
+identifying from external data a factor that solubility alone leaves non-identifiable and that a
+black-box predictor cannot use. Training runs a three-stage curriculum under a weighted loss: a warm-up on the auxiliary
 streams alone, then joint training against solubility, then a low-rate stabilisation stage. The
 schedule pinned for the arms of Fig.~\ref{fig:paradox} freezes the $\sigma$ head at the end of the
 warm-up, so the $\sigma$ stream enters the warm-up only.
@@ -449,6 +337,12 @@ quoted from \texttt{cCOSMO}, that reference implementation itself.
 \paragraph{The same closure against a published evaluation.}
 % Artifacts: results/published_idac_check/{summary.json,scored_records.csv,table_closure_anchor.tex}
 % via scripts/analysis/run_published_idac_closure_check.py.
+% COMPRESSED 2026-08-07 (page-reduction pass).  The scoring mechanics -- the three record files, the
+% CAS-to-InChIKey resolution, the 7889-of-8138 count and the 2279 pairs -- moved to
+% \S\ref{sec:si-repro}.  WHAT MUST STAY: the published two-database bracket that motivates defining
+% B_clos on the composite, the fact that the deployed closure lands INSIDE it, and BOTH open limits
+% -- the unmatched profile-database axis, and that the published 6977 points are not proven to be
+% the rows scored here.  The conclusion is licensed only "subject to those"; do not print it bare.
 Reproducing a reference implementation fixes the code; it does not say whether the error this paper
 decomposes is the error a published COSMO-SAC has, or something peculiar to this data assembly.
 Table~\ref{tab:closure-anchor} answers that. De Souza et al.\ \cite{desouza2025cosmosac} score the
@@ -458,18 +352,15 @@ with \emph{The Properties of Gases and Liquids}, at AAD $=\Ex|\ln\gamma_{\mathrm
 one closure, two profile databases, a factor of $2.6$ between them. An evaluation of COSMO-SAC is
 in that sense an evaluation of the profiles it was handed, which is why $\Bclos$ is defined above on
 the composite of map and profile calculation and not on the kernel. We ran the deployed
-\texttt{CosmoSacLayer}---its own class, constants and damped fixed point---over the same three
-record files, resolving components through the repository's CAS-to-InChIKey map and matching by
-exact InChIKey to this paper's VT-2005 artifact: $7889$ of $8138$ usable records ($96.9\%$), $2279$
-distinct pairs, each at its own temperature. It lands inside the bracket the published closure spans
-across profile databases, on both statistics and under both conventions, and so do this paper's own
-two sets. Two limits stay open: the profile database is the one axis we cannot match, VT-2005 being
-what this paper deploys and the axis that publication shows dominates; and the publication's $6977$
-points are not proven to be the same rows as the $7889$ scored here, the record selection not being
-stated file by file. Subject to those, the closure error decomposed in \S\ref{sec:measure} is the
-error a published COSMO-SAC has; which half of this paper's chemical localisation carries across to
-that set, on $130$ times the data and someone else's compilation, and which half does not, is in
-\S\ref{sec:badclosure}.
+\texttt{CosmoSacLayer} over the same records (\S\ref{sec:si-repro}), and it lands inside the bracket
+the published closure spans across profile databases, on both statistics and under both conventions,
+as do this paper's own two sets. Two limits stay open: the profile database is the one axis we
+cannot match, VT-2005 being what this paper deploys and the axis that publication shows dominates;
+and the publication's $6977$ points are not proven to be the same rows as the $7889$ scored here,
+the record selection not being stated file by file. Subject to those, the closure error decomposed
+in \S\ref{sec:measure} is the error a published COSMO-SAC has; which half of this paper's chemical
+localisation carries across to that set, on $130$ times the data and someone else's compilation, and
+which half does not, is in \S\ref{sec:badclosure}.
 
 % ---------------------------------------------------------------------------
 % GENERATED by scripts/analysis/run_published_idac_closure_check.py; the full-convention row is
@@ -512,15 +403,13 @@ is if anything the harder one.}}
 \subsection{Evaluation protocol, and the DirectGNN control}
 \label{sec:eval}
 The \emph{oracle substitution} replaces the predicted $\sigma$-profile $\hat z$ with the reference
-VT-2005 profile $\zstar$ before the closure, matched by canonical SMILES. Precisely: the
-$\sigma$-head emits a normalised $51$-bin shape and a cavity area whose product is the area-weighted
-profile it passes to the closure, and for a matched molecule that pair---profile and area
-together---is replaced by the tabulated pair, which stands in the same relation, the reference area
-being the integral of the reference profile. So the reference area does reach the residual term's
-$A_2/a_{\mathrm{eff}}$ prefactor, and it reaches it as part of replacing one object rather than as a
-separate choice. Solute and solvent are matched independently. The size-factor volume is not
-substituted---the combinatorial term is switched off in these arms---and neither is the crystal
-head's output, which reads a solute-only embedding the substitution does not reach; the bounded
+VT-2005 profile $\zstar$ before the closure, matched by canonical SMILES. What is replaced is one
+object and not two: the $\sigma$-head emits a normalised $51$-bin shape and a cavity area whose
+product is the area-weighted profile the closure reads, and for a matched molecule that pair is
+replaced by the tabulated pair, which stands in the same relation---so the reference area reaches
+the residual term's $A_2/a_{\mathrm{eff}}$ prefactor as part of replacing that one object rather
+than as a separate choice. Solute and solvent are matched independently. Nothing else is replaced,
+the crystal head reading a solute-only embedding the substitution does not reach; the bounded
 correction does read the closure's own parameters, so the crystal values the solver finally receives
 shift by a little, at most $7\times10^{-4}$ in $\Phi$ against a median magnitude of $4.7$.
 \S\ref{sec:si-methods} lists every replaced and unreplaced quantity, and
@@ -551,11 +440,9 @@ The controlled comparisons of \S\ref{sec:paradox} are run at three seeds and rep
 on a fixed row set; $5608$ is that lock---the test rows that carry a solubility measurement, $5608$
 of the $8103$ (\S\ref{sec:data})---so all arms score identical rows. The $2495$ rows outside it
 carry a melting point and no solubility and are unscorable in every arm alike, the control included;
-none is dropped for anything an arm predicted. The code that builds the lock also asks for a finite
-\lnx\ prediction in every arm, and that clause is inert: all twenty-two per-row prediction files are
-full length, and across them it removes no row, from any arm, at any seed. The set is fixed by which
-rows carry a label and not by which rows an arm handled; \S\ref{sec:si-lock} gives the
-decomposition. Table~\ref{tab:runs} names which run family produced which numbers,
+none is dropped for anything an arm predicted. The set is fixed by which
+rows carry a label and not by which rows an arm handled---the lock's finite-prediction clause is
+inert, removing no row from any arm at any seed---and \S\ref{sec:si-lock} gives the decomposition. Table~\ref{tab:runs} names which run family produced which numbers,
 how many seeds it carries, and the script and artifact each regenerates from.
 
 % ---------------------------------------------------------------------------

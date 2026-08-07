@@ -231,8 +231,9 @@ headline message-passing network (MPNN); a hybrid local-message/global-attention
 (GPS \cite{rampasek2022}); and a physics-channelled variant, Thermodynamically-Informed Message
 Passing (TIMP), which splits messages into dispersive, polar, and hydrogen-bonding channels
 supervised toward the Hansen parameters to prevent channel collapse. TIMP does not outperform the plain
-MPNN across our runs, consistent with the encoder being transfer-limited rather than
-expressivity-limited (linear probe train $R^2\approx0.76$, test $R^2\approx0.45$).
+MPNN across our runs. That is an observation and we do not explain it: the linear probe formerly
+cited here for a transfer-rather-than-expressivity reading of the encoder is withdrawn, having no
+untrained-encoder arm to read against (\S\ref{sec:supporting}).
 \paragraph{Optimisation, and the two arms' settings.} The physics arm uses Adam (weight decay
 $5\times10^{-4}$, gradient clipping at $2.0$, batch $64$)
 under the three-phase curriculum of \S\ref{sec:methods}: $30$ epochs of auxiliary pretraining (P1),
@@ -464,6 +465,22 @@ does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 asymptote-plus-variance form of the physics penalty
 $\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ it is written
 against, and $\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$. It is proved here.
+% PROPOSITION 1'S STATEMENT MOVED HERE FROM THE ARTICLE'S Sec. 2.1.2 ON 2026-08-07 (page-reduction
+% pass), so that it stands beside the proof that was already here.  The article keeps the penalty
+% decomposition, the rule in words and its three scope sentences, and refers to this statement by
+% label.  Do not restate the rule's scope here: it is the article's, at \S\ref{sec:tax}.
+\begin{proposition}[Sign of the physics penalty]\label{prop:tax}
+Write $\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
+$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
+$V(n)\downarrow0$, so that the physics penalty at budget $n$ is
+$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ with
+$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$. Then
+(i)~$\mathcal{T}(n)<0$ (physics helps) iff
+$V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$: the variance a constrained prior saves
+must exceed its asymptotic bias. (ii)~If $\Delta_\infty>0$ and the variance gap vanishes
+($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$), there is a critical budget $n^\star$ beyond which
+$\mathcal{T}(n)>0$ for all $n>n^\star$.
+\end{proposition}
 \begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the physics penalty)]
 \sloppy\relpenalty=0 \binoppenalty=0
 Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$ and
@@ -2123,7 +2140,7 @@ $1.531$, $1.598$, $1.672$, $1.752$, $1.925$. Two readings hold across the whole 
 at each of the three seeds: the control
 is below every physics arm, and every physics arm is above every published leader ($0.83$ to $0.99$).
 Four do not, and each of the four fails on the seed axis as well as the clip one. The NRTL and
-$\sigma$-oracle rows exchange places between $1-10^{-7}$ and $1-10^{-8}$ in the seed-averaged sweep,
+$\sigma$-oracle rows exchange places between \mbox{$1-10^{-7}$} and \mbox{$1-10^{-8}$} in the seed-averaged sweep,
 between $1-10^{-4}$ and $1-10^{-5}$ at seed $42$, and not at all at seeds $43$ and $44$, where NRTL
 is the lower at all seven; their printed order is not a fact about the models. The scale reference predicts
 one number for the whole test set, does not saturate, and reads $1.326$ at every clip and at every
@@ -2139,8 +2156,9 @@ constant \emph{and} on the seed: at the value we deposit the seed-mean column do
 one arm at one seed does. In MAE $\lnx$, by contrast, every arm including the $\sigma$-oracle is
 below the same reference ($2.325$) at every seed, so the reading is confined to this column.
 ``Near the cycle's better end'' ($1.43$) fails at the tight end, where the NRTL and grounded arms sit
-below it at every seed and the $\sigma$-oracle's seed mean ($1.421$) does too, though not its
-seed-$43$ value ($1.479$); \S\ref{sec:discussion} no longer places the physics arms within that range.
+below it at every seed and the $\sigma$-oracle's seed mean ($1.421$, printed as $1.42$) does too,
+though not its seed-$43$ value ($1.479$, printed as $1.48$); \S\ref{sec:discussion} no longer places
+the physics arms within that range.
 And the physics arms do not \emph{uniformly} trail their control by more in this column than in MAE
 (a comparison of an RMSE deficit against an MAE one). The NRTL and COSMO-SAC-grounded arms do, at
 all seven clips and separately at each of the three seeds: the smallest such excess anywhere is
@@ -2158,6 +2176,26 @@ seven clip values. It is a property of the seed-mean column and not of the model
 What may be carried away from that column is what survives the sweep, and that is the two readings
 above and not the printed decimals.
 
+% RELOCATED FROM Table 5's CAPTION IN THE ARTICLE ON 2026-08-07, VERBATIM, in the page-reduction
+% pass.  The caption keeps what a reader of the table must have -- that the converter carries no
+% temperature dependence and needs a molarity, the 168 rows that leave the column for every arm and
+% hence the two n, that both exclusions are read off the data and not off a prediction, and the
+% scale-reference row -- and points here for the mechanics.
+\paragraph{The unit bridge behind the $\log_{10}S$ column.} $\log_{10}S$ is obtained from \lnx\ as
+$S=x_2c_{\mathrm{solv}}/(1-x_2)$, the solvent's molarity $c_{\mathrm{solv}}$ in mol\,L$^{-1}$ being
+$1000\rho/M$ from a tabulated \emph{mass} density $\rho$ (g\,cm$^{-3}$) and the molar mass $M$
+(g\,mol$^{-1}$) where the solvent has one, and $1000/V_{\mathrm{m}}$ from the molar volume
+$V_{\mathrm{m}}$ (cm$^{3}$\,mol$^{-1}$) of one generated conformer where it has none (this $\rho$ is
+unrelated to the Hammett reaction constant of \S\ref{sec:pka-main}). Since $x_2/(1-x_2)$ is a mole
+ratio, $S$ is moles of solute per litre of \emph{solvent} rather than of solution, and the two
+conventions diverge as $x_2\to1$. The same converter runs on every row of the first two blocks of
+Table~\ref{tab:baselines}. It carries \emph{no} temperature dependence---one ambient
+$c_{\mathrm{solv}}$ at every $T$---and it needs a molarity, so the $168$ of the $5608$ labelled test
+rows whose solvent has none carry no true $\log_{10}S$ and leave that column for \emph{every} arm,
+which is why that table's rows carry two sample sizes. Predicting the mean of the true $\log_{10}S$,
+rather than running the constant-\lnx\ scale reference through this bridge, would read $1.28$.
+
+
 \section{Supplementary mechanism results}
 \label{sec:si-mech}
 % 2026-08-07.  Fig. 4 of the incumbent article moved here with the phenomenon-first
@@ -2172,6 +2210,78 @@ defined only up to sign and drawn in the mean drift's direction; the legend's EV
 explained variance ratio.}
 \label{fig:surrogate}
 \end{figure}
+
+% =====================================================================
+% RELOCATED HERE FROM THE ARTICLE'S Sec. 3.3 ON 2026-08-07, VERBATIM, in the page-reduction pass.
+% Fig.~\ref{fig:surrogate} was already in this section, so the measurement and its figure are now
+% together.  The article keeps every number below and the caveat that scopes each -- the separate
+% three-seed run set, the in-sample pool, the two nulls that do NOT clear, the identity-null-only
+% reading of the transfer ratio, and the three limits on the cancellation check -- and points here
+% for the working.  Nothing was dropped in transit.
+% =====================================================================
+\paragraph{The latent's departure from its reference, in full.}
+\paragraph{The drift under fine-tuning.} The comparison is within a single grounded model,
+checkpointed before and after solubility fine-tuning (the $\sigma$ head unfrozen), so architecture
+and initialisation are held fixed and only the objective differs; it is repeated over \emph{three
+seeds} and reported mean$\pm$sd. Those three runs are not the arms that produce the paradox: they
+are a separate set, trained with the $\sigma$ head left unfrozen through fine-tuning, where the
+four COSMO-SAC arms of \S\ref{sec:paradox} hold the head from P2 onward
+(Table~\ref{tab:si-arms}). The freeze holds the head and not the encoder feeding it, so those
+arms' profiles are not pinned at their warm-up value either; how far \emph{their} latent drifted
+is not measured, and the deposited per-arm predictions carry no $\sigma$-profile, so it cannot be
+recovered from them. What follows is therefore measured on runs of its own and is not established
+of the checkpoints whose paradox it is offered to explain.
+Under $\sigma$ supervision the head reproduces the reference profile
+to within $36\pm1\%$, so the intermediate \emph{can} carry the physical shape, though only as an
+in-sample fit: all $44$ probe molecules lie inside the $\sigma$-grounding pool. Solubility
+fine-tuning then drives the profile $41\pm3\%$ off the grounded one, for a total departure from the
+reference of $51\pm2\%$. The drift is not per-molecule noise, and its structure is not a constant
+offset: the first two principal components of the \emph{mean-centred} deviation carry $72\pm1\%$ of
+the variance. The quantity read against a null is a different one, the top-two share of the
+learned-versus-reference deviation, $0.399$; its null is \emph{phase-randomised}, matching each
+deviation's own smoothness and destroying only the between-molecule alignment at issue, and the
+observed share clears it ($0.399$ against $0.221$, $p<0.001$), at roughly $1.8\times$. The
+$72\pm1\%$ mean-centred share has no matched null of its own, a wrong-molecule null built from real
+reference profiles does \emph{not} clear ($0.772$, $p=1.00$), and if the case for preferring the
+phase-randomised null is not accepted the spectrum is uninformative rather than supporting. To test
+whether the structure transfers across molecules we fit one distortion operator $D$ on half the $44$
+molecules and score it on the other half, where it predicts the drift $4.1\pm0.5\times$ better than
+the zero-drift (identity) null out of sample. That null is deliberately weak, nothing controls it on
+these three seeds, whose checkpoints were not retained, and a molecule-independent constant offset
+reaches $2.1\times$ on the one companion run where that control can be computed, so the ratio stands
+against the identity null alone; the held-out half is homologue-saturated. Structure \emph{beyond} an
+offset therefore rests on the mean-centred spectrum, not on the ratio---and that spectrum does not
+exclude a shrinkage of every profile toward the corpus-mean shape. On the reference ladder of
+\S\ref{sec:si-mech} the drift consumes essentially all the molecular specificity grounding had
+provided, as such a collapse would also look.
+
+
+\paragraph{Dominant mode, and the direct cancellation test.} The dominant drift mode
+(Fig.~\ref{fig:surrogate}) transfers area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and
+\emph{into} the polar wings: the network represents molecules as more polar than they are. Whether
+that shift \emph{cancels} part of $\Bclos$---the input compensating the map, as the
+non-identifiability of the split allows (Lemma~\ref{prop:ident})---is the comparison
+$\mathrm{MSE}(m,g(\hat\sigma))$ against $\mathrm{MSE}(m,g(\zstar))$ on the same pairs. It does not
+support the cancellation reading. Holding the cavity area at its reference value so that only the
+profile shape varies, the sole retained end-to-end SLE-trained COSMO-SAC checkpoint gives $18.75$
+against $1.47$: on the activity axis its drifted profile is an order of magnitude \emph{worse}
+through the same closure, not better. Three limits sit on that number. The checkpoint is the
+uncontrolled one, whose departure ($82\%$) is half again the three-seed $51\pm2\%$. The axis is
+wrong: the drift is produced by the finite-composition solubility objective and scored here at
+infinite dilution. And the check has almost no power in the direction that matters, so it separates
+``no cancellation'' from ``large cancellation'' but not from ``some cancellation''. It is the only
+direct evidence available, and it is evidence against rather than a clean pass or fail. A second,
+independent check on the closure's own axis points the same way: a \emph{more} polar profile moves
+$g$ further from $m$ (\S\ref{sec:si-mech}). Both sit on that same infinite-dilution axis, so neither
+refutes cancellation in the regime that generates the drift; they remove the one place it could have
+been measured, and the cancellation reading remains inferred from the paradox itself. What is
+established is weaker and still consequential: the model's ``physical'' intermediate is not the
+molecule's charge distribution, consistent with cautions that the interpretability of
+physics-grounded latents is not guaranteed under misspecification
+\cite{brynjarsdottir2014,takeishi2021}, and that adapting a representation can itself collapse an
+otherwise physically-faithful latent \cite{interno2026}. Its \emph{structure}---low-rank rather than
+diffuse---excludes a random collapse but not the structured shrinkage above.
+
 
 \paragraph{The activity map's Fisher geometry, and why $\sigma$ is under-determined.} At infinite
 dilution the aggregate activity Fisher $J^{\top}J$ ($J=\partial\lngi/\partial\sigma$) is rank-one
@@ -2526,9 +2636,29 @@ not bound the share.
 % restructure.  THE NUMERALS ARE PRESERVED so that every cross-reference of the form "limitation
 % (viii)" still finds its item, and (xii) is NOT here: disposition D of the Sec. 2.2 pre-commitment
 % inventory names it as a passage the leak-free re-run rewrites, so it stays in the article.
-The article's \S\ref{sec:discussion} carries limitations~(i)--(vi), which scope what the two data
-sets and the estimator can deliver, and~(xii), which the leak-free re-run of \S\ref{sec:data}
-rewrites. The remaining six are here, unchanged and with their numerals.
+% (ii), (iii) and (v) JOINED THIS SECTION ON 2026-08-07 (page-reduction pass), verbatim and with
+% their numerals, so the list here is (ii), (iii), (v), (vii)-(xi), (xiii).  Each of the three is
+% already stated where it bites -- (ii) and (v) in the convention rule of \S\ref{sec:estimator},
+% (iii) in the uniqueness paragraph of \S\ref{sec:broad} -- so the article does not carry an
+% unqualified claim by their absence.  The article's own list is now (i), (iv), (vi) and (xii).
+\paragraph{(ii), (iii) and (v): the convention rule, the other admissible cells, and the
+constant-offset bound.}
+(ii)~Under the deployed convention no \emph{aggregate} margin is resolved on either set and only the
+literature-standard convention resolves one, while the headline convention is the deployed one; the
+aggregate falls for the stronger reason of \S\ref{sec:broad} rather than for want of resolution.
+(iii)~Of the map's six admissible cells the glycol ethers are the only row set also positive and
+left standing by clause~(c), and not the only cell whose deletions all run; the halogenated solvents
+and the mono-alcohols keep their sign under the one deletion each admits, so they are unverified
+rather than shown to fail.
+(v)~The constant-offset margin is
+convention-specific and inverts under the deployed default on both sets; there the separation rests
+on the law-of-total-variance bound and the more-physics-worse effect. That bound is not itself
+convention-independent---only the estimand $\Binsuf$ is, Lemma~\ref{prop:decomp}(d)---so the deployed
+claim rests on it \emph{computed under the deployed convention}.
+
+The article's \S\ref{sec:discussion} carries limitations~(i), (iv) and~(vi), which scope what the two
+data sets and the estimator can deliver, and~(xii), which the leak-free re-run of \S\ref{sec:data}
+rewrites. The remaining nine are here, unchanged and with their numerals.
 
 (vii)~Absolute scaffold
 accuracy is encoder-bound but well \emph{above} the inter-lab noise floor of \S\ref{sec:data}, so
@@ -2757,6 +2887,18 @@ carries the map: the quality cut that \emph{inverts} the enlarged $298$\,K set
 does not buy is an aggregate verdict, for the reason Table~\ref{tab:map-full} and
 \S\ref{sec:broad} give: the chromatographic cut and the pair collapse each leave the sign
 standing, and the chemistry cut compounded with the pair collapse does not.
+% RELOCATED FROM THE ARTICLE'S Sec. 2.3 ON 2026-08-07, in the page-reduction pass: the scoring
+% mechanics behind Table~\ref{tab:closure-anchor}'s "same set, through this paper's closure" block.
+% The article keeps the published two-database bracket, the fact that the deployed closure lands
+% inside it, and both open limits.
+\paragraph{Scoring the deployed closure against the published evaluation.} The deployed
+\texttt{CosmoSacLayer}---its own class, constants and damped fixed point---was run over the same
+three record files De Souza et al.\ \cite{desouza2025cosmosac} score, with components resolved
+through the repository's CAS-to-InChIKey map and matched by exact InChIKey to this paper's VT-2005
+artifact: $7889$ of $8138$ usable records ($96.9\%$), $2279$ distinct pairs, each at its own
+temperature. Those are the rows of Table~\ref{tab:closure-anchor}'s middle block, and the same $7889$
+rows are the out-of-sample set of \S\ref{sec:broad}.
+
 \paragraph{Sources.} Solubility: BigSolDB~2.0 \cite{krasnov2025bigsoldb}, partitioned by
 Bemis--Murcko scaffold---molecules grouped by ring system plus linker, side chains stripped. Crystal
 $\Tm/\dHfus$: an open melting-point pool plus a group-contribution prior. True
@@ -2887,6 +3029,158 @@ for the $7$ evaluated test solutes above, and the guarantee stated in \S\ref{sec
 therefore a property of the
 released builder rather than of every stream file we trained on. Closing this requires hashing each
 stream build beside the split hash, which was not done for these runs.
+% =====================================================================
+% RELOCATED HERE FROM THE ARTICLE'S Sec. 2.2 ON 2026-08-07, VERBATIM, in the page-reduction
+% pass.  It is a PRINTED PROMISE that a running experiment discharges within a day, so the
+% move is a change of address and not of content: not one clause of the protocol, the
+% three-branch decision rule or the display inventory was altered in transit, and the article
+% keeps a summary at \S\ref{sec:data} that states the protocol's fixed points, names all three
+% branches, and points here by label.  THE SAME-PASS RULE STILL BINDS: if a display carrying the
+% ungrounded, grounded or sigma-oracle arm is added to either document, add it to the inventory
+% below in the same pass.  Do not shorten this by dropping a display.  Nothing here may be
+% edited after the five-seed numbers exist; an edit then is the post-hoc latitude the
+% pre-commitment was written to remove.
+% =====================================================================
+% THE DISPLAY INVENTORY, ADDED 2026-08-05 (round 4, all three referees, must-fix).  The paragraph
+% used to fix the DECISION -- which sentences the five-seed values rewrite in each of the three
+% branches -- and not the SCOPE OF REPLACEMENT.  Table 3's own run-family row attributes Figs. 2
+% and 3, Table S2 and the +0.41/-0.20 to the two arms being re-run, and Table 5's block 1, the clip
+% sweep and Sec. 3.6's readings sit on the same two arms; naming only the abstract, Sec. 3.1 and
+% Table 4 would have let a five-seed abstract print beside three-seed figures, with the choice of
+% which to believe made after the numbers landed.  The third paragraph closes the list, gives every
+% named display one of two dispositions (regenerated, or published value kept with the five-seed
+% one beside it), and states the boundary in both directions.  IT MUST BE SETTLED BEFORE THE
+% NUMBERS EXIST: after they land, any edit to this list is a post-hoc choice, which is the exact
+% latitude the pre-commitment was written to remove.  Do not shorten it by dropping a display, and
+% if a display carrying the ungrounded, grounded or sigma-oracle arm is added to either document,
+% add it here in the same pass.
+% 2026-08-06, THE PASS THAT RULE ASKS FOR, AND WHY IT WAS NEEDED.  The ranking contrast was added to
+% Sec. 3.1 and Table 4 on 2026-08-06, a day after this list was fixed, and the same-pass rule was
+% not run: the count here still said FOUR rows of Table 4 where the block had FIVE, and Table S17 --
+% both of whose columns ARE re-run arms, the grounded checkpoint and its own sigma-oracle
+% re-evaluation -- was not enrolled at all.  Both are repaired above.  The same audit over the rest
+% of both documents found three more displays resting on the three arms and unenrolled, all now
+% listed: Sec. S6.4 with Tables S19 and S20, which resolve the enrolled +0.14 per solvent and solute
+% class off the grounded arm's own 1.85 +- 0.05; Sec. S1's row-class split of the substitution
+% (-0.000 / +0.431 / +0.006), which is the enrolled +0.41 split by which molecule the reference
+% reached; and the three certification passages, which the in-run guard answers rather than
+% revalues.  What was checked and left out is recorded too, so the next pass does not re-derive it:
+% the DirectGNN black-box probe tables (S24-S26) are on the control alone; the n=44 surrogate runs,
+% the freeze contrast and the E2 crystal null are separate run sets; Gate B's two arms are seed-42
+% runs of their own, inside "nothing else moves"; and Table 5 carries no ungrounded row.
+% 2026-08-07, THE SAME-PASS RULE RUN AGAINST THE RESTRUCTURE, BEFORE ANY NUMBERS LANDED.  The
+% phenomenon-first restructure re-sectioned the article: the incumbent Sec. 3.1's prose now lands in
+% three places -- sec:paradox (still 3.1), the new sec:decision (3.2) and the new sec:notdecided
+% (3.4) -- while the incumbent Sec. 3.2 became 3.5, the pKa section 3.6 and the discussion 3.7.
+% Every display named below is addressed by \ref{} LABEL and not by printed number, so LaTeX
+% renumbers this list for free; the one entry that named a SECTION rather than a display is repaired
+% above to name all three landing labels, so the re-run still reaches every sentence it reached
+% before.  No display left either document in the move: what left the article went to the Supporting
+% Information, which is inside the boundary this list draws.
+% NAMED EXCEPTION 1 to the scope-preserving rule on the sec:paradox rewrite.  The rewrite is
+% otherwise clause-preserving, with one clause deliberately dropped: "what evidence there is for the
+% causal reading is therefore taken from the activity axis ... the decomposition and the latent's
+% departure from its reference".  It is the only sentence in the article that characterised
+% Sec. 3.5 as evidence for a reading Sec. 3.7 declines to assert, and under the new numbering it
+% pointed across the Sec. 3.4 barrier.  What replaces it was already in the manuscript and is
+% stronger: the impossibility claim -- on the solubility axis the two terms do not separate at all --
+% together with the two-reason denial, both in sec:notdecided, which states the causal reading before
+% refusing it.  Its surviving clause, the latent's departure at n=44, moved to the head of
+% sec:surrogate.  No other clause of sec:paradox may be narrowed under cover of this exception.
+% ALSO CHECKED IN THE SAME PASS.  The heading of sec:paradox now names the two OPERATIONS and not
+% their signs, so branch 2's rewrite of that heading is a check rather than a change.  The five rows
+% of tab:claims under "the two senses of grounding" are untouched by the move and the count "five"
+% still holds.  tab:runs and tab:baselines stay in the article, so no entry here acquires a
+% "Table S-n".  Limitation (xii), which disposition D names, stayed in the article when limitations
+% (vii)-(xi) and (xiii) moved to sec:si-limitations, and sec:discussion keeps its label on Sec. 3.7,
+% so both dispositions still find their passage.  Gate B keeps its label sec:gateb, now inside
+% sec:surrogate, and the inventory's note that its two arms are seed-42 runs of their own still
+% holds.
+\paragraph{What the leak-free re-run reports, and what it decides.}
+The re-run is specified here rather than described afterwards, so that its protocol is fixed before
+its numbers exist. It trains the ungrounded and the grounded arm at five seeds ($42$ through $46$)
+under the COSMO-SAC configuration of the published arms, unchanged. The $\sigma$ stream is rebuilt
+with the scaffold guard pointed at the validation and test files of \emph{this} split, and is
+certified inside each training run rather than at the builder: the run re-reads the stream it is
+about to consume and the split files it will be scored against, and asserts that they share no
+molecule by canonical SMILES and none by Bemis--Murcko scaffold. The stream's SHA-256 and row count
+are written into that run's manifest beside the SHA-256 of each pinned split file, so the artifact
+states which build fed which arm; the ungrounded arm's manifest records that it carried no stream at
+all, since here the absence is the thing asserted. Accuracy is read on the same $5608$ labelled test
+rows as every other number in this paper, under the same cross-arm intersection rule
+(\S\ref{sec:eval}), and the five per-seed MAE values are reported for each arm rather than a mean and
+a standard deviation alone. Two further readings are taken on those same checkpoints: the
+evaluation-only substitution of \S\ref{sec:paradox}, which is within-checkpoint and therefore a
+consistency check rather than a test, and the $n{=}44$ profile comparison of \S\ref{sec:surrogate}
+with the one molecule the leak touches removed. Quoting the magnitude of the co-adaptation control
+of \S\ref{sec:paradox} as something other than one seed would need a separate pass at the same five
+seeds, which this protocol does not commit to running.
+
+The decision the re-run settles is stated in advance and in one direction only, since it is the
+supervision contrast alone that hangs on it. If the five per-seed gains are of one sign, the two
+senses of grounding keep their opposite signs, and the abstract, \S\ref{sec:paradox} and
+Table~\ref{tab:claims} print the re-run's per-seed values in place of the three uncertified ones,
+with the refusal to order the two operations by magnitude unchanged. If the per-seed gains straddle
+zero, supervision has no established sign at five seeds: the paper then reports one operation with a
+sign---substituting the reference at inference hurts---and records the other as unresolved, and the
+abstract, the heading of \S\ref{sec:paradox}, the opening sentence of the Conclusions
+(\S\ref{sec:conclusion}) and the supervision row of Table~\ref{tab:claims} are rewritten to say so.
+If the gains are of one sign and it is the opposite one, that is what is reported. In either of the
+last two cases the graphic for the table of contents, which prints the two senses of grounding and
+their opposite signs, is redrawn to what is then reported, and the freeze contrast of
+\S\ref{sec:surrogate} is restated as well, because the warm-up state whose quality it turns on is
+the supervised one. The substitution result is unaffected in all three cases:
+it is one checkpoint evaluated two ways, and no $\sigma$-stream build can reach it.
+
+Which displays the five-seed values replace is fixed here as well, and in all three branches alike,
+because a five-seed abstract printed beside a three-seed figure would be a contradiction the
+manuscript had left itself the choice of. Three arms carry those values: the ungrounded arm, the
+grounded arm, and the $\sigma$-oracle arm, which is the grounded checkpoint re-evaluated with
+$\zstar$ substituted and therefore moves with it. Each display named next carries at least one of the
+three and is regenerated from the five-seed arms by the script that produced it---the abstract's
+$0.20$ and $0.41$; \S\ref{sec:paradox} entire, together with the two sections the restructure of
+2026-08-07 moved its prose into---\S\ref{sec:decision}, which carries the regression slopes read off
+Fig.~\ref{fig:parity-lnx2}, the ranking contrast and the solute-blind comparison, and
+\S\ref{sec:notdecided}, which carries its channel paragraph---the per-seed gains and the seed-$42$
+values included wherever they now print; the five rows of
+Table~\ref{tab:claims} under \emph{the two senses of grounding} and the $+0.14$ of its accuracy row;
+the seed list of the $\sigma$-grounding row of Table~\ref{tab:runs}; the ungrounded, grounded and
+oracle bars of Fig.~\ref{fig:paradox} with their $R^2$; panels (b), (c) and (d) of
+Fig.~\ref{fig:parity-lnx2}; the block-1 grounded and $\sigma$-oracle rows of
+Table~\ref{tab:baselines} together with the clip sweep in its caption, the fuller sweep of
+\S\ref{sec:si-baselines} and the readings \S\ref{sec:discussion} takes from both;
+Table~\ref{tab:si-arms} and the unrounded means, per-seed values and arm orderings
+\S\ref{sec:si-tables} reads off it; Table~\ref{tab:ranking} with the ranking and per-group
+recalibration readings \S\ref{sec:supporting} sets around it, whose two columns are the grounded
+checkpoint and its own $\sigma$-oracle re-evaluation and nothing else;
+\S\ref{sec:map} with Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map}, which resolve that same
+$+0.14$ along chemical axes and restate the two arm means it is taken from; the row-class split of
+the substitution in \S\ref{sec:si-methods}, whose $-0.000$, $+0.431$ and $+0.006$ put the $+0.41$ on
+the solvent channel; and the graphic for the table of contents.
+Four of those floats---Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2},
+Tables~\ref{tab:baselines} and~\ref{tab:si-arms}---then carry re-run arms beside arms that were not
+re-run, so each states
+in its caption which of its arms came from the re-run---Table~\ref{tab:baselines}'s block header
+already carries the form of words for it, and Fig.~\ref{fig:parity-lnx2} remains one seed for all
+four of its panels, the new seed $42$ in three of them and the published one in the control.
+Table~\ref{tab:ranking} needs no such statement, both its arms being re-run;
+Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map} print no arm at all, every cell being a
+difference against the control, so each says in its caption that only the physics side is five-seed.
+Three numbers instead keep their published value with the five-seed one printed beside them and the
+caption saying so, because the re-run supplies one side of each comparison and not the other: the
+Staverman--Guggenheim contrast $1.8457\to1.8788$, whose combinatorial arm is not retrained; the
+channel swap's $+0.27$, a seed-$42$ checkpoint that is not retrained either; and the co-adaptation
+control's $+0.18$ together with the $0.59$ share of \S\ref{sec:paradox}, which move only if the
+separate five-seed pass above is run. Three passages carry no arm value but state that the $0.20$ is
+uncertified---the disclosure above, limitation~(xii) of \S\ref{sec:discussion} and the provenance
+paragraph of \S\ref{sec:si-repro}---and the in-run certification answers all three, so each is
+rewritten to what the re-run certifies and limitation~(xii)'s $0.20$ moves with the abstract's.
+Nothing else moves, and the boundary is worth stating because
+two neighbouring numbers sit just outside it: neither the DirectGNN control nor the NRTL arm is
+retrained, so their rows in Tables~\ref{tab:baselines} and~\ref{tab:si-arms}, and the endpoint
+comparison of \S\ref{sec:data-efficiency}---which is the NRTL arm against that control---stand as
+printed; and \S\ref{sec:measure} uses no trained model at all.
+
 \paragraph{The two decomposition sets, deposited row by row.} Because the closure/insufficiency
 verdict rests on a newly constructed set, both sets are deposited with the Supporting Information as
 row-level tables that need no code to inspect. The results that otherwise require re-running the code

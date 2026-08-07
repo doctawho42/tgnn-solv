@@ -22,68 +22,75 @@ object the two operations of \S\ref{sec:paradox} act on---how far the learned in
 travelled from the reference that supervises it and then replaces it---and it is placed here, inside
 the phenomenon, for that reason and not as evidence for why either operation has the sign it does.
 
-\paragraph{The drift under fine-tuning.} The comparison is within a single grounded model,
-checkpointed before and after solubility fine-tuning (the $\sigma$ head unfrozen), so architecture
-and initialisation are held fixed and only the objective differs; it is repeated over \emph{three
-seeds} and reported mean$\pm$sd. Those three runs are not the arms that produce the paradox: they
-are a separate set, trained with the $\sigma$ head left unfrozen through fine-tuning, where the
-four COSMO-SAC arms of \S\ref{sec:paradox} hold the head from P2 onward
-(Table~\ref{tab:si-arms}). The freeze holds the head and not the encoder feeding it, so those
-arms' profiles are not pinned at their warm-up value either; how far \emph{their} latent drifted
-is not measured, and the deposited per-arm predictions carry no $\sigma$-profile, so it cannot be
-recovered from them. What follows is therefore measured on runs of its own and is not established
-of the checkpoints whose paradox it is offered to explain.
-Under $\sigma$ supervision the head reproduces the reference profile
-to within $36\pm1\%$, so the intermediate \emph{can} carry the physical shape, though only as an
-in-sample fit: all $44$ probe molecules lie inside the $\sigma$-grounding pool. Solubility
-fine-tuning then drives the profile $41\pm3\%$ off the grounded one, for a total departure from the
-reference of $51\pm2\%$. The drift is not per-molecule noise, and its structure is not a constant
-offset: the first two principal components of the \emph{mean-centred} deviation carry $72\pm1\%$ of
-the variance. The quantity read against a null is a different one, the top-two share of the
-learned-versus-reference deviation, $0.399$; its null is \emph{phase-randomised}, matching each
-deviation's own smoothness and destroying only the between-molecule alignment at issue, and the
-observed share clears it ($0.399$ against $0.221$, $p<0.001$), at roughly $1.8\times$. The
-$72\pm1\%$ mean-centred share has no matched null of its own, a wrong-molecule null built from real
-reference profiles does \emph{not} clear ($0.772$, $p=1.00$), and if the case for preferring the
-phase-randomised null is not accepted the spectrum is uninformative rather than supporting. To test
-whether the structure transfers across molecules we fit one distortion operator $D$ on half the $44$
-molecules and score it on the other half, where it predicts the drift $4.1\pm0.5\times$ better than
-the zero-drift (identity) null out of sample. That null is deliberately weak, nothing controls it on
-these three seeds, whose checkpoints were not retained, and a molecule-independent constant offset
-reaches $2.1\times$ on the one companion run where that control can be computed, so the ratio stands
-against the identity null alone; the held-out half is homologue-saturated. Structure \emph{beyond} an
-offset therefore rests on the mean-centred spectrum, not on the ratio---and that spectrum does not
-exclude a shrinkage of every profile toward the corpus-mean shape. On the reference ladder of
-\S\ref{sec:si-mech} the drift consumes essentially all the molecular specificity grounding had
-provided, as such a collapse would also look.
+% THE TWO MEASUREMENT PARAGRAPHS MOVED TO \S\ref{sec:si-mech} ON 2026-08-07 (page-reduction pass),
+% VERBATIM AND ENTIRE -- the drift ladder, the three nulls with the two that do not clear, the
+% transfer ratio's weak-null disclosure and the constant-offset control, the dominant mode, and the
+% direct cancellation test with its three limits.  Fig.~\ref{fig:surrogate} was already there.
+% WHAT HAD TO STAY HERE, and what an editor of this stub must not drop: every number is a claim of
+% the Mechanism block of Table~\ref{tab:claims} and each one travels with the caveat that scopes it
+% -- 51+-2% with "a separate three-seed run set, not the paradox's arms, whose own drift is
+% unmeasured" and with "in-sample"; the top-two share with the null it clears AND the two it does
+% not; the 4.1x with "against the identity null alone"; and the cancellation check with "evidence
+% against, and under-powered".  A number here printed without its clause is the failure this pass
+% was told to avoid; put the clause back rather than the number out.
+\paragraph{What is measured, and on what.} The comparison is within a single grounded model,
+checkpointed before and after solubility fine-tuning, over the $n{=}44$ matched molecules and
+repeated at three seeds. Those three runs are \emph{not} the arms that produce the paradox: they are
+a separate set, trained with the $\sigma$ head left unfrozen through fine-tuning, where the four
+COSMO-SAC arms of \S\ref{sec:paradox} hold the head from P2 onward---how far \emph{their} latent
+drifted is not measured and cannot be recovered from the deposit. What follows is therefore measured
+on runs of its own and is not established of the checkpoints whose paradox it is offered to explain.
+Under $\sigma$ supervision the head reproduces the reference profile to within $36\pm1\%$, so the
+intermediate \emph{can} carry the physical shape---though only as an in-sample fit, all $44$ probe
+molecules lying inside the $\sigma$-grounding pool. Solubility fine-tuning then drives it a further
+$41\pm3\%$ away, for a total departure from the reference of $51\pm2\%$. A relative deviation
+carries no scale of its own, and the ladder that supplies one (\S\ref{sec:si-mech}: the same $44$
+molecules and the same relative-$L_2$ metric, its rungs built from the reference profiles the
+grounded arm was supervised on) places the fine-tuned latent at $0.507$ and the grounded base at
+$0.364$, against $0.493$ for one corpus-mean profile reused for every molecule---a rung carrying no
+molecular information at all---and $0.651$--$0.684$ for each molecule given another molecule's
+reference profile. Read on that ladder, the drift consumes essentially all the molecular specificity
+grounding had provided, which is what makes the shrinkage reading below more than a formality.
 
+\paragraph{What the departure is, and what it is not.} The drift is not per-molecule noise and its
+structure is not a constant offset: the first two principal components of the mean-centred deviation
+carry $72\pm1\%$ of the variance, and the quantity read against a null---the top-two share of the
+learned-versus-reference deviation, $0.399$---clears a phase-randomised null ($0.221$, $p<0.001$).
+Two nulls it does not clear travel with that: the mean-centred share has no matched null of its own,
+and a wrong-molecule null built from real reference profiles does \emph{not} clear ($0.772$,
+$p=1.00$), so if the case for preferring the phase-randomised null is not accepted the spectrum is
+uninformative rather than supporting. One distortion operator fitted on half the $44$ molecules
+predicts the drift on the other half $4.1\pm0.5\times$ better than the zero-drift null---a
+deliberately weak null, uncontrolled on these three seeds, against which a molecule-independent
+constant offset already reaches $2.1\times$ on the one companion run where that control can be
+computed, so the ratio stands against the identity null alone and structure \emph{beyond} an offset
+rests on the mean-centred spectrum. The held-out half is also homologue-saturated---six $n$-alkanes,
+four halobenzenes, five pyridines and four butyl and hexyl amines among the $44$, and the median
+held-out molecule sits $16\%$ of its own profile norm from its nearest training-half
+neighbour---so ``outside the fit'' is largely within-cluster interpolation.
+That spectrum does not exclude a shrinkage of every profile
+toward the corpus-mean shape, which is how the drift looks on the reference ladder of
+\S\ref{sec:si-mech}. The dominant mode (Fig.~\ref{fig:surrogate}) moves area out of the nonpolar bins
+and into the polar wings: the network represents molecules as more polar than they are.
 
-\paragraph{Dominant mode, and the direct cancellation test.} The dominant drift mode
-(Fig.~\ref{fig:surrogate}) transfers area \emph{out of} the nonpolar bins ($\sigma\!\approx\!0$) and
-\emph{into} the polar wings: the network represents molecules as more polar than they are. Whether
-that shift \emph{cancels} part of $\Bclos$---the input compensating the map, as the
-non-identifiability of the split allows (Lemma~\ref{prop:ident})---is the comparison
-$\mathrm{MSE}(m,g(\hat\sigma))$ against $\mathrm{MSE}(m,g(\zstar))$ on the same pairs. It does not
-support the cancellation reading. Holding the cavity area at its reference value so that only the
-profile shape varies, the sole retained end-to-end SLE-trained COSMO-SAC checkpoint gives $18.75$
-against $1.47$: on the activity axis its drifted profile is an order of magnitude \emph{worse}
-through the same closure, not better. Three limits sit on that number. The checkpoint is the
-uncontrolled one, whose departure ($82\%$) is half again the three-seed $51\pm2\%$. The axis is
-wrong: the drift is produced by the finite-composition solubility objective and scored here at
-infinite dilution. And the check has almost no power in the direction that matters, so it separates
-``no cancellation'' from ``large cancellation'' but not from ``some cancellation''. It is the only
-direct evidence available, and it is evidence against rather than a clean pass or fail. A second,
-independent check on the closure's own axis points the same way: a \emph{more} polar profile moves
-$g$ further from $m$ (\S\ref{sec:si-mech}). Both sit on that same infinite-dilution axis, so neither
-refutes cancellation in the regime that generates the drift; they remove the one place it could have
-been measured, and the cancellation reading remains inferred from the paradox itself. What is
-established is weaker and still consequential: the model's ``physical'' intermediate is not the
-molecule's charge distribution, consistent with cautions that the interpretability of
-physics-grounded latents is not guaranteed under misspecification
+\paragraph{Whether the departure cancels closure error.} It is not shown to, and the one direct
+check runs against it. Holding the cavity area at its reference value, the sole retained end-to-end
+SLE-trained COSMO-SAC checkpoint scores $18.75$ against $1.47$: on the activity axis its drifted
+profile is an order of magnitude \emph{worse} through the same closure. Three limits sit on that
+number---the checkpoint is the uncontrolled one, whose $82\%$ departure is half again the three-seed
+$51\pm2\%$; the axis is wrong, the drift being produced at finite composition and scored at infinite
+dilution; and the check has almost no power in the direction that matters, so it separates ``no
+cancellation'' from ``large cancellation'' but not from ``some cancellation''. A second, independent
+check on the closure's own axis points the same way (\S\ref{sec:si-mech}). Both sit on that
+infinite-dilution axis, so neither refutes cancellation in the regime that generates the drift; they
+remove the one place it could have been measured, and the cancellation reading remains inferred from
+the paradox itself. What is established is weaker and still consequential: the model's ``physical''
+intermediate is not the molecule's charge distribution, consistent with cautions that the
+interpretability of physics-grounded latents is not guaranteed under misspecification
 \cite{brynjarsdottir2014,takeishi2021}, and that adapting a representation can itself collapse an
 otherwise physically-faithful latent \cite{interno2026}. Its \emph{structure}---low-rank rather than
-diffuse---excludes a random collapse but not the structured shrinkage above.
-
+diffuse---excludes a random collapse but not the structured shrinkage above. The full measurement,
+its nulls and the two controls are in \S\ref{sec:si-mech}.
 \paragraph{What leaves $\sigma$ under-determined by activity, and what freezing it buys.} The freedom that would make such a cancellation possible is the closure's geometry, measured in \S\ref{sec:si-mech}: at infinite dilution the activity map concentrates on one or two hydrogen-bonding directions, so the end-to-end head can move $\sigma$ along the remaining, low-sensitivity ones at little cost to the fit---the $\sigma$-profile form of Lemma~\ref{prop:ident}. Nothing there shows recovery of the physical profile to be impossible in principle. The sign of grounding turns on \emph{both} axes, and on which sense of grounding is meant.
 Freezing the $\sigma$ head at its supervised warm-up state instead of letting it drift end to end
 cuts the reference-input penalty by $65\%$ ($\Delta\mathrm{MAE}$ from $+0.40$ to $+0.14$ over
