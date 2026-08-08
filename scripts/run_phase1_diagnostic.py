@@ -33,9 +33,9 @@ from run_full_budget_experiment import (
     parse_seeds,
     pearson_corr,
     regression_metrics,
-    resolve_device,
 )
 from tgnn_solv.baselines.rf_baseline import RFBaseline
+from tgnn_solv.device import default_device, resolve_device
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.post_analysis import parse_training_log
 from tgnn_solv.reporting import json_safe
@@ -101,7 +101,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda",
+        default=default_device(),
     )
     parser.add_argument(
         "--skip-rf",

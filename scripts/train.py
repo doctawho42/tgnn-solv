@@ -26,6 +26,7 @@ from torch.utils.data import DataLoader
 from tgnn_solv.artifacts import build_model_card, build_run_manifest, write_json
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import make_loader
+from tgnn_solv.device import default_device, resolve_device
 from tgnn_solv.experiment_logger import ExperimentLogger
 from tgnn_solv.features import (
     EDGE_FEAT_DIM,
@@ -47,51 +48,6 @@ from tgnn_solv.pretrain_pipeline import (
 )
 from tgnn_solv.seed import set_seed
 from tgnn_solv.trainer import TGNNSolvTrainer
-
-
-def resolve_device(device_str: str) -> torch.device:
-    """Resolve a requested device, refusing to substitute CPU for an accelerator.
-
-    The fallback used to be silent-ish: one WARNING line, then 300 KB of tqdm output on
-    top of it. On 2026-08-08 a kernel upgrade left the gate box without its NVIDIA
-    module, six `--device cuda` runs fell through to CPU, and they trained for ten hours
-    at 15 s/it against ~1 s/it on the V100 -- roughly two months to a result -- without
-    a single error line. An accelerator asked for by name and quietly not delivered is
-    never what the caller wanted, so it is an error now. Set TGNN_ALLOW_CPU_FALLBACK=1
-    to restore the old behaviour for a smoke run.
-    """
-    requested = device_str.strip().lower()
-    allow_fallback = os.environ.get("TGNN_ALLOW_CPU_FALLBACK", "").lower() in (
-        "1", "true", "yes", "on"
-    )
-    unavailable = None
-    if requested.startswith("cuda") and not torch.cuda.is_available():
-        unavailable = "CUDA"
-    elif requested == "mps" and not torch.backends.mps.is_available():
-        unavailable = "MPS"
-    if unavailable is not None:
-        if not allow_fallback:
-            raise RuntimeError(
-                f"{unavailable} was requested (--device {device_str}) but is not available. "
-                f"Refusing to train on CPU instead: on this corpus that is a ~15x slowdown "
-                f"that produces no error and no wrong number, only a run that never finishes. "
-                f"Pass --device cpu if CPU is what you meant, or set "
-                f"TGNN_ALLOW_CPU_FALLBACK=1 to fall back silently."
-            )
-        print(f"WARNING: {unavailable} requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    dev = torch.device(device_str)
-    if dev.type == "cuda" and os.environ.get("TGNN_MATMUL_TF32", "").lower() in (
-        "1", "true", "high", "yes", "on"
-    ):
-        # TF32 matmul: large speedup on Ampere+/Blackwell (a no-op on T4, which has
-        # no TF32), numerically negligible for training. Opt-in so default FP32 runs
-        # stay bit-comparable across seeds.
-        torch.set_float32_matmul_precision("high")
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
-        print("   TF32 matmul enabled (TGNN_MATMUL_TF32).")
-    return dev
 
 
 def maybe_compile_model(
@@ -198,8 +154,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda" if torch.cuda.is_available() else "cpu",
-        help="Device to use (cuda or cpu)",
+        default=default_device(),
+        help="Device to use (cuda or cpu); defaults to whichever this box has.",
     )
     
     # Logging
@@ -577,7 +533,6 @@ def maybe_run_descriptor_probe(
         extract_solute_embeddings,
         fit_descriptor_probes,
         load_unique_solutes,
-        resolve_device as resolve_probe_device,
     )
     from tgnn_solv.inference import load_model
     from tgnn_solv.reporting import json_safe
@@ -589,7 +544,11 @@ def maybe_run_descriptor_probe(
     )
     probe_output_dir.mkdir(parents=True, exist_ok=True)
 
-    probe_device = resolve_probe_device(device)
+    # Default allow_tf32_from_env=False, as before: this call used to borrow
+    # probe_gsol_descriptor_recovery's resolver, which never touched TGNN_MATMUL_TF32.
+    # (If the training run above enabled TF32, that process-global setting stands; this
+    # only declines to re-apply and re-announce it.)
+    probe_device = resolve_device(device)
     model, cfg = load_model(str(checkpoint_path), device=probe_device)
     model.eval()
 
@@ -1034,7 +993,9 @@ def main() -> None:
         else:
             print(f"\n1. Loading configuration from {args.config}...")
             config = TGNNSolvConfig.from_yaml(args.config)
-        device = resolve_device(args.device)
+        # allow_tf32_from_env: this is a training entry point, so TGNN_MATMUL_TF32 may
+        # switch the process to TF32 matmul. Evaluation callers leave it off.
+        device = resolve_device(args.device, allow_tf32_from_env=True)
         descriptor_mean = None
         descriptor_std = None
         if config.use_descriptor_augmentation:

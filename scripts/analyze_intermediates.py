@@ -21,8 +21,8 @@ from run_medium_budget_comparison import _collect_tgnn_tm_only_oracle_intermedia
 from validate_physics import (
     load_model_from_checkpoint,
     make_test_loader,
-    resolve_device,
 )
+from tgnn_solv.device import resolve_device
 from tgnn_solv.post_analysis import safe_float
 
 

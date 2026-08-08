@@ -29,6 +29,7 @@ except Exception:  # pragma: no cover - optional dependency
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import TGNNSolvDataset, collate_fn
 from tgnn_solv.data.solvent_types import solvent_type_id_from_smiles
+from tgnn_solv.device import default_device, resolve_device
 from tgnn_solv.features import (
     EDGE_FEAT_DIM,
     NODE_FEAT_DIM,
@@ -80,22 +81,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda",
-        help="Requested inference device.",
+        default=default_device(),
+        help="Requested inference device; defaults to whichever this box has.",
     )
     return parser.parse_args()
-
-
-def resolve_device(device_str: str) -> torch.device:
-    """Resolve a requested device with a safe fallback."""
-    requested = device_str.strip().lower()
-    if requested.startswith("cuda") and not torch.cuda.is_available():
-        print("WARNING: CUDA requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    if requested == "mps" and not torch.backends.mps.is_available():
-        print("WARNING: MPS requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    return torch.device(device_str)
 
 
 def safe_float(value: object) -> float | None:

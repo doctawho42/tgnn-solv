@@ -5,10 +5,46 @@ evaluating, or deploying TGNN-Solv.
 
 ## CUDA Is Unavailable
 
-Symptom:
+Symptom — the run stops immediately with:
 
-- `torch.cuda.is_available()` is `False`
-- training falls back to CPU
+```
+RuntimeError: CUDA was requested (--device cuda) but is not available.
+Refusing to run on CPU instead: ...
+```
+
+This is deliberate, and it is new. The training, evaluation and analysis entry
+points listed in `tests/test_device.py` — sixteen of the forty-seven scripts
+that take a `--device` flag — resolve it through
+`tgnn_solv.device.resolve_device`, which refuses to substitute CPU for an
+accelerator you named. The old behaviour was one `WARNING` line followed by a
+run that trained at ~15 s/it instead of ~1 s/it and produced no error and no
+wrong number, only a result that never arrived: on 2026-08-08 a kernel upgrade
+left the gate box without its NVIDIA module and six runs burned ten hours that
+way. `--device cuda` on a box without CUDA is now fatal.
+
+Every other script that owns a `--device` flag falls into one of three classes.
+Some hand the string to a child process that does resolve it (`run_seeds.py`,
+`learning_curves.py`, `run_split_comparisons.py`, `temperature_extrapolation.py`
+all spawn `scripts/train.py` or `train_directgnn.py`; so do the
+`scripts/experiments/*.sh` drivers). Most build a `torch.device` from it
+themselves and get no check at all — `torch.device("cuda")` constructs happily
+on a CPU box and fails at the first `.to(device)`.
+
+Five are worse than unchecked, because they fail in the direction this page
+exists to warn about. `run_pka_flip_certify.py:160`,
+`run_pka_lambda_frontier.py:120` and `run_solprop.py:474` rewrite a named
+`--device cuda` to CPU with no message; `run_pka_n_sweep.py:123` and
+`run_pka_flip_competence.py:96` accept the flag and then hardcode CPU
+regardless. Under the failure above these five run to completion on the CPU
+saying nothing.
+
+The lists in `tests/test_device.py` are the authority for which scripts this
+error protects; a count quoted in prose is not, because two AST scans written a
+day apart disagreed on it. If a script is not in those lists, do not assume the
+error protects it.
+`scripts/experiments/run_pka_trained_comparison.py` opts out on purpose and
+says so in a comment: its arm trains small per-molecule MLPs in seconds, so a
+CPU fallback costs a coffee rather than ten hours.
 
 Checks:
 
@@ -25,6 +61,53 @@ Actions:
 ```bash
 pip install --force-reinstall torch --index-url https://download.pytorch.org/whl/cu121
 ```
+
+If CPU is genuinely what you want, say so — pass `--device cpu`. Invoke any of
+those sixteen scripts directly with no flag and it cannot fire: their defaults
+are `cpu`, `auto`, or `default_device()`, which reads the machine (CUDA if
+present, else CPU, and MPS for the three written on a Mac). No default among
+them names an accelerator, and `tests/test_device.py` asserts that.
+
+Two routes type the flag for you, and both raise this error on a box without
+CUDA even though you passed nothing:
+
+- **The `scripts/experiments/*.sh` drivers.** Six open with
+  `DEVICE="${DEVICE:-cuda}"` and hand `--device "${DEVICE}"` to every child:
+  `run_corrected_split_reproduction.sh`, `run_data_efficiency.sh`,
+  `run_e2_crystal_grounding.sh`, `run_e3_temperature_extrapolation.sh`,
+  `run_e4_ablations.sh`, `run_e5_sigma_grounding.sh`. Set the variable rather
+  than editing the script:
+
+  ```bash
+  DEVICE=cpu bash scripts/experiments/run_e2_crystal_grounding.sh
+  ```
+
+  (`run_e5_leakfree_followups.sh` already defaults to `cpu`.)
+
+- **`scripts/cloud/kaggle_run.py`.** Its `--device` default is a deliberate
+  literal `"cuda"` (`kaggle_run.py:548`), passed into every child it spawns,
+  because a Kaggle session that quietly runs on CPU is a wasted session. Pass
+  `--device cpu`, or `--allow-cpu` — see below.
+
+`TGNN_ALLOW_CPU_FALLBACK=1` restores the old warn-and-continue behaviour for
+the whole process, including `--device cuda`:
+
+```bash
+TGNN_ALLOW_CPU_FALLBACK=1 python scripts/train.py --config ... --device cuda
+```
+
+Use it only when a command line with a hardcoded `--device cuda` has to run on
+a CPU box anyway — a smoke test of the wiring, or reproducing a driver script
+verbatim. It reintroduces exactly the failure above, so never set it for a run
+whose numbers you intend to keep. `scripts/cloud/kaggle_run.py --allow-cpu` is
+the same permission for a Kaggle session: it skips that script's own
+kernel-launch preflight and exports `TGNN_ALLOW_CPU_FALLBACK=1` to every child
+it spawns.
+
+The preflight in `kaggle_run.py` is a stronger check than `resolve_device`'s,
+which only asks `torch.cuda.is_available()`. It launches a real kernel, so it
+also catches a card that is visible but too old for the installed PyTorch — a
+Tesla P100 (`sm_60`) reports as available and then fails on first use.
 
 ## MPS Training Gets Killed or Crashes
 

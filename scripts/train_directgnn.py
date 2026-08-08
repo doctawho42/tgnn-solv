@@ -21,6 +21,7 @@ from tgnn_solv.artifacts import build_model_card, build_run_manifest, write_json
 from tgnn_solv.baselines.direct_gnn import DirectGNN, DirectGNNTrainer
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import make_loader
+from tgnn_solv.device import default_device, resolve_device
 from tgnn_solv.experiment_logger import ExperimentLogger
 from tgnn_solv.features import (
     DESCRIPTOR_RAW_ABS_CLIP,
@@ -87,8 +88,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda",
-        help="Requested training device.",
+        default=default_device(),
+        help="Requested training device; defaults to whichever this box has.",
     )
     parser.add_argument(
         "--log-dir",
@@ -127,29 +128,6 @@ def parse_args() -> argparse.Namespace:
         help="Print a one-batch descriptor trace before training.",
     )
     return parser.parse_args()
-
-
-def resolve_device(device_str: str) -> torch.device:
-    """Resolve a requested device with a safe fallback."""
-    requested = device_str.strip().lower()
-    if requested.startswith("cuda") and not torch.cuda.is_available():
-        print("WARNING: CUDA requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    if requested == "mps" and not torch.backends.mps.is_available():
-        print("WARNING: MPS requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    dev = torch.device(device_str)
-    if dev.type == "cuda" and os.environ.get("TGNN_MATMUL_TF32", "").lower() in (
-        "1", "true", "high", "yes", "on"
-    ):
-        # TF32 matmul: large speedup on Ampere+/Blackwell (a no-op on T4, which has
-        # no TF32), numerically negligible for training. Opt-in so default FP32 runs
-        # stay bit-comparable across seeds.
-        torch.set_float32_matmul_precision("high")
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
-        print("   TF32 matmul enabled (TGNN_MATMUL_TF32).")
-    return dev
 
 
 def maybe_compile_model(
@@ -410,7 +388,9 @@ def main() -> None:
         else:
             print(f"\n1. Loading configuration from {config_path}...")
             config = TGNNSolvConfig.from_yaml(str(config_path))
-        device = resolve_device(args.device)
+        # allow_tf32_from_env: this is a training entry point, so TGNN_MATMUL_TF32 may
+        # switch the process to TF32 matmul. Evaluation callers leave it off.
+        device = resolve_device(args.device, allow_tf32_from_env=True)
         if args.batch_size is not None:
             config.batch_size = int(args.batch_size)
             print(f"   Applying batch_size override: {config.batch_size}")

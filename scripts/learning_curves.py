@@ -16,6 +16,8 @@ import _bootstrap  # noqa: F401
 import numpy as np
 import pandas as pd
 
+from tgnn_solv.device import default_device
+
 
 SUPPORTED_MODELS = {"tgnn_solv", "direct_gnn", "rf_baseline"}
 METRICS = ("mae", "rmse", "r2", "pearson_r")
@@ -78,8 +80,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda",
-        help="Device string forwarded to neural-model training scripts.",
+        default=default_device(),
+        help=(
+            "Device string forwarded to neural-model training scripts; defaults to "
+            "whichever this box has, because the child raises on an accelerator it "
+            "cannot deliver."
+        ),
     )
     parser.add_argument(
         "--models",

@@ -25,6 +25,7 @@ if str(SRC) not in sys.path:
 from tgnn_solv.baselines.direct_gnn import DirectGNN  # noqa: E402
 from tgnn_solv.config import TGNNSolvConfig  # noqa: E402
 from tgnn_solv.data.dataset import make_loader  # noqa: E402
+from tgnn_solv.device import resolve_device  # noqa: E402
 from tgnn_solv.diagnostics import GradientFlowMonitor  # noqa: E402
 from tgnn_solv.features import graph_feature_spec_from_config  # noqa: E402
 from tgnn_solv.model import TGNNSolv  # noqa: E402
@@ -61,19 +62,6 @@ def _apply_overrides(cfg: TGNNSolvConfig, overrides: list[str]) -> None:
         if key not in valid_fields:
             raise ValueError(f"Unknown TGNNSolvConfig override: {key}")
         setattr(cfg, key, _parse_override_value(raw_value.strip()))
-
-
-def _resolve_device(requested: str) -> torch.device:
-    if requested == "auto":
-        if torch.cuda.is_available():
-            return torch.device("cuda")
-        if torch.backends.mps.is_available():
-            return torch.device("mps")
-        return torch.device("cpu")
-    if requested == "mps" and not torch.backends.mps.is_available():
-        print("[gradient-flow] MPS unavailable, falling back to CPU.")
-        return torch.device("cpu")
-    return torch.device(requested)
 
 
 def _loader_for_config(
@@ -382,7 +370,7 @@ def main() -> None:
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
-    device = _resolve_device(args.device)
+    device = resolve_device(args.device)
 
     tgnn_cfg = TGNNSolvConfig.from_yaml(str(args.config))
     _apply_overrides(tgnn_cfg, args.override)

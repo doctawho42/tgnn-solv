@@ -20,6 +20,7 @@ from tgnn_solv.data.split_registry import (
     resolve_split_modes,
     split_paths,
 )
+from tgnn_solv.device import default_device
 from tgnn_solv.reporting import json_safe
 
 try:
@@ -82,8 +83,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda",
-        help="Device passed to training scripts.",
+        default=default_device(),
+        help=(
+            "Device passed to training scripts; defaults to whichever this box has, "
+            "because they raise on an accelerator they cannot deliver."
+        ),
     )
     parser.add_argument(
         "--results-dir",

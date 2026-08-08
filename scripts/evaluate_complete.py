@@ -35,6 +35,7 @@ if importlib.util.find_spec("torch") is None:
     sys.exit(1)
 
 from tgnn_solv.data.utils import canonicalize
+from tgnn_solv.device import resolve_device
 from tgnn_solv.data.split_registry import build_split_metadata
 from tgnn_solv.artifacts import build_benchmark_card, build_run_manifest, write_json
 from tgnn_solv.ionic_features import flag_no_melting_point, ionic_feature_summary
@@ -160,18 +161,6 @@ def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[s
         'pearson_r': float(corr),
         'rmse_percent_mean': float(100 * rmse / np.abs(y_true_clean).mean()),
     }
-
-
-def resolve_device(device_str: str) -> torch.device:
-    """Resolve requested evaluation device with a safe fallback."""
-    requested = device_str.strip().lower()
-    if requested.startswith("cuda") and not torch.cuda.is_available():
-        print("WARNING: CUDA requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    if requested == "mps" and not torch.backends.mps.is_available():
-        print("WARNING: MPS requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    return torch.device(device_str)
 
 
 def normalize_overall_metrics(metrics: dict) -> dict:

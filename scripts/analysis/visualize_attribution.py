@@ -16,25 +16,13 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from tgnn_solv.device import resolve_device  # noqa: E402
 from tgnn_solv.inference import load_directgnn_model, load_model  # noqa: E402
 from tgnn_solv.interpretation import (  # noqa: E402
     AtomAttribution,
     atom_labels_from_smiles,
     build_single_system_inputs,
 )
-
-
-def _resolve_device(requested: str) -> torch.device:
-    if requested == "auto":
-        if torch.cuda.is_available():
-            return torch.device("cuda")
-        if torch.backends.mps.is_available():
-            return torch.device("mps")
-        return torch.device("cpu")
-    if requested == "mps" and not torch.backends.mps.is_available():
-        print("[attribution] MPS unavailable, falling back to CPU.")
-        return torch.device("cpu")
-    return torch.device(requested)
 
 
 def _load_any_model(checkpoint: Path, device: torch.device):
@@ -160,7 +148,7 @@ def main() -> None:
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
 
-    device = _resolve_device(args.device)
+    device = resolve_device(args.device)
     attr, labels, family = compute_for_checkpoint(
         args.checkpoint,
         args.solute,

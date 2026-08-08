@@ -28,8 +28,8 @@ from run_full_budget_experiment import (  # noqa: E402
     load_direct_checkpoint,
     pearson_corr,
     regression_metrics,
-    resolve_device,
 )
+from tgnn_solv.device import default_device, resolve_device  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -72,7 +72,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--device",
-        default="mps",
+        default=default_device(prefer_mps=True),
+        help=(
+            "Requested device; defaults to whichever this box has. The hardcoded 'mps' "
+            "this used to carry was a statement about the Mac it was written on."
+        ),
     )
     parser.add_argument(
         "--eval-batch-size",

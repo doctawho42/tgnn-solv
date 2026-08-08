@@ -20,6 +20,7 @@ import torch
 
 from tgnn_solv.baselines.rf_baseline import RFBaseline
 from tgnn_solv.config import TGNNSolvConfig
+from tgnn_solv.device import default_device, resolve_device
 from tgnn_solv.inference import load_model
 from tgnn_solv.reporting import json_safe
 
@@ -31,7 +32,6 @@ from run_full_budget_experiment import (
     load_direct_checkpoint,
     pearson_corr,
     regression_metrics,
-    resolve_device,
 )
 
 
@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"),
+        default=default_device(prefer_mps=True),
     )
     parser.add_argument(
         "--seed",

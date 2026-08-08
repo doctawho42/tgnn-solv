@@ -189,6 +189,9 @@ def main():
     if args.smoke:
         args.epochs, args.seeds = 2, [42]
 
+    # Deliberately NOT tgnn_solv.device.resolve_device: this arm trains small per-molecule
+    # MLPs over a few thousand pKa graphs in seconds, so a silent CPU fallback costs a
+    # coffee rather than the ten hours that made the shared resolver fatal.
     device = torch.device(args.device if torch.cuda.is_available() or args.device != "cuda" else "cpu")
     mod = _load_real_decomp()
     data = build_dataset(mod, args.sdf)

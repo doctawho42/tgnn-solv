@@ -18,17 +18,9 @@ if str(_SCRIPTS_ROOT) not in sys.path:
 
 import _bootstrap  # noqa: E402, F401
 from tgnn_solv.data.dataset import make_loader  # noqa: E402
+from tgnn_solv.device import default_device, resolve_device  # noqa: E402
 from tgnn_solv.inference import load_directgnn_model, load_model  # noqa: E402
 from tgnn_solv.sigma_oracle import build_oracle_tensors, load_sigma_profiles  # noqa: E402
-
-
-def resolve_device(raw: str) -> torch.device:
-    requested = raw.strip().lower()
-    if requested.startswith("cuda") and not torch.cuda.is_available():
-        return torch.device("cpu")
-    if requested == "mps" and not torch.backends.mps.is_available():
-        return torch.device("cpu")
-    return torch.device(raw)
 
 
 def tensor_to_numpy(x: torch.Tensor) -> np.ndarray:
@@ -129,7 +121,15 @@ def main() -> None:
     parser.add_argument("--data", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--model-type", choices=["tgnn", "direct"], required=True)
-    parser.add_argument("--device", default="mps")
+    parser.add_argument(
+        "--device",
+        default=default_device(prefer_mps=True),
+        help=(
+            "Requested device; defaults to whichever this box has. Every experiment "
+            "driver passes its own DEVICE here, and e5's oracle arm is export-only -- "
+            "it has no train step in front of it to notice a missing GPU."
+        ),
+    )
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--summary", default=None)

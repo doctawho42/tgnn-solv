@@ -28,6 +28,7 @@ from tgnn_solv.ablation import (
 from tgnn_solv.baselines.direct_gnn import DirectGNN, DirectGNNTrainer
 from tgnn_solv.config import TGNNSolvConfig
 from tgnn_solv.data.dataset import TGNNSolvDataset, collate_fn
+from tgnn_solv.device import default_device, resolve_device
 from tgnn_solv.evaluate import Evaluator
 from tgnn_solv.features import compute_descriptor_normalization_stats
 from tgnn_solv.model import TGNNSolv
@@ -103,8 +104,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda",
-        help="Device to use for training and evaluation.",
+        default=default_device(),
+        help="Device for training and evaluation; defaults to whichever this box has.",
     )
     parser.add_argument(
         "--checkpoint-dir",
@@ -113,18 +114,6 @@ def parse_args() -> argparse.Namespace:
         help="Directory for ablation checkpoints.",
     )
     return parser.parse_args()
-
-
-def resolve_device(device_str: str) -> torch.device:
-    """Resolve a requested device with a safe fallback."""
-    requested = device_str.strip().lower()
-    if requested.startswith("cuda") and not torch.cuda.is_available():
-        print("WARNING: CUDA requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    if requested == "mps" and not torch.backends.mps.is_available():
-        print("WARNING: MPS requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    return torch.device(device_str)
 
 
 def make_dataloader(

@@ -28,6 +28,12 @@ use [Experiment Lab](experiment_lab.md). Its `Training`, `Pipeline Studio`,
 `Model Architect`, and `HPO Lab` workspaces all delegate to the maintained
 training and experiment entry points described on this page.
 
+Commands on this page are written for a GPU box and say `--device cuda`
+throughout. On a machine without CUDA that is now a hard error rather than a
+silent ten-hour CPU run — drop the flag to get whatever the machine has, or pass
+`--device cpu` deliberately. See
+[Troubleshooting → CUDA Is Unavailable](troubleshooting.md#cuda-is-unavailable).
+
 ## TGNN-Solv Training
 
 Paper-style training command:

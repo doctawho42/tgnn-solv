@@ -48,11 +48,19 @@ SIGMA_ARTIFACT = REPO / "results" / "sigma_profile_artifact" / "sigma_profiles.c
 EXTRA_SET: list = []
 _BATCH: int | None = None      # native --batch-size for train_directgnn.py
 _WORKERS: int | None = None    # native --num-workers for train_directgnn.py
+_ALLOW_CPU: bool = False       # --allow-cpu; exported to children as TGNN_ALLOW_CPU_FALLBACK
 
 
 def run(cmd, env_extra=None, log=None):
     env = {**os.environ, "PYTHONUNBUFFERED": "1", "KMP_DUPLICATE_LIB_OK": "TRUE",
            "PYTHONPATH": str(REPO / "src")}
+    if _ALLOW_CPU:
+        # --allow-cpu says "permit the silent CPU fallback", and every child is spawned
+        # with --device from args.device (default "cuda"). Skipping only this script's
+        # own preflight probe left the children still raising in resolve_device(), and
+        # run() turns that rc into RuntimeError below -- so the flag guaranteed the
+        # crash it was there to prevent. The permission has to reach the child.
+        env["TGNN_ALLOW_CPU_FALLBACK"] = "1"
     if env_extra:
         env.update(env_extra)
     cmd = [str(c) for c in cmd]
@@ -546,7 +554,10 @@ def main():
     ap.add_argument("--warm", type=int, default=40); ap.add_argument("--sle", type=int, default=120)
     ap.add_argument("--t3-ep1", type=int, default=30); ap.add_argument("--t3-ep2", type=int, default=120)
     ap.add_argument("--t3-ep3", type=int, default=20); ap.add_argument("--t3-arm-ep2", type=int, default=60)
-    ap.add_argument("--allow-cpu", action="store_true", help="permit the silent CPU fallback (do NOT on Kaggle)")
+    ap.add_argument("--allow-cpu", action="store_true",
+                    help="permit the silent CPU fallback: skips the preflight probe below AND "
+                         "exports TGNN_ALLOW_CPU_FALLBACK=1 to every child, which is what stops "
+                         "their resolve_device() raising on --device cuda (do NOT on Kaggle)")
     ap.add_argument("--batch-size", type=int, default=256,
                     help="override config batch_size (default 64 starves the GPU; 256 = ~4x fewer batches). 0 = leave config default.")
     ap.add_argument("--workers", type=int, default=0,
@@ -554,7 +565,7 @@ def main():
                          "collation with GPU compute (epoch 1 warms the per-worker cache, epochs 2+ are faster). "
                          "Try 4 on Kaggle; watch epoch 2-3 vs epoch 1.")
     args = ap.parse_args()
-    global EXTRA_SET, _BATCH, _WORKERS
+    global EXTRA_SET, _BATCH, _WORKERS, _ALLOW_CPU
     EXTRA_SET = []
     if args.batch_size:
         EXTRA_SET.append(f"batch_size={args.batch_size}")
@@ -562,10 +573,16 @@ def main():
         EXTRA_SET.append(f"num_workers={args.workers}")
     _BATCH = args.batch_size or None       # native flag for train_directgnn.py
     _WORKERS = args.workers or None
+    _ALLOW_CPU = bool(args.allow_cpu)
+    if _ALLOW_CPU:
+        print("[gpu] --allow-cpu: preflight skipped and TGNN_ALLOW_CPU_FALLBACK=1 exported "
+              "to every child. Expect ~25x slower.", flush=True)
 
-    # Fail fast instead of silently running on CPU for hours: train.py's resolve_device()
-    # falls back to CPU when cuda is unavailable (~25x slower here, ~15 min/epoch on the
-    # 112k-row corpus), which silently burns an entire Kaggle session.
+    # Fail fast on a GPU that is present but unusable. tgnn_solv.device.resolve_device()
+    # now raises when cuda is unavailable, but it only asks torch.cuda.is_available();
+    # this check also launches a kernel, which is what catches a visible-but-too-old card
+    # (sm_60). Either way CPU here is ~25x slower, ~15 min/epoch on the 112k-row corpus,
+    # and silently burns an entire Kaggle session.
     if args.device.startswith("cuda") and not args.allow_cpu:
         _name = _err = None
         try:

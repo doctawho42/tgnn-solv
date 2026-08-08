@@ -19,6 +19,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from torch_geometric.data import Batch
 
+from tgnn_solv.device import resolve_device
 from tgnn_solv.features import (
     RDKIT_DESCRIPTOR_NAMES,
     compute_molecular_descriptors,
@@ -96,18 +97,6 @@ def parse_args() -> argparse.Namespace:
         help="Temperature fed to the encoder if the checkpoint enables encoder temperature features.",
     )
     return parser.parse_args()
-
-
-def resolve_device(device_str: str) -> torch.device:
-    """Resolve a requested device with a safe fallback."""
-    requested = device_str.strip().lower()
-    if requested.startswith("cuda") and not torch.cuda.is_available():
-        print("WARNING: CUDA requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    if requested == "mps" and not torch.backends.mps.is_available():
-        print("WARNING: MPS requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    return torch.device(device_str)
 
 
 def load_unique_solutes(path: Path) -> list[str]:

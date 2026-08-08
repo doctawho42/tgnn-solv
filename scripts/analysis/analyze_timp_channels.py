@@ -30,6 +30,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from tgnn_solv.data.dataset import make_loader
+from tgnn_solv.device import resolve_device  # noqa: E402
 from tgnn_solv.features import RDKIT_DESCRIPTOR_NAMES, compute_molecular_descriptors
 from tgnn_solv.hansen_contrastive import pseudo_hansen_from_smiles
 from tgnn_solv.inference import load_model
@@ -53,19 +54,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
-
-
-def _resolve_device(raw: str) -> torch.device:
-    if raw == "auto":
-        if torch.cuda.is_available():
-            return torch.device("cuda")
-        if torch.backends.mps.is_available():
-            return torch.device("mps")
-        return torch.device("cpu")
-    if raw == "mps" and not torch.backends.mps.is_available():
-        print("[timp-channels] MPS unavailable, falling back to CPU.")
-        return torch.device("cpu")
-    return torch.device(raw)
 
 
 def _loader(df: pd.DataFrame, cfg, batch_size: int, seed: int):
@@ -385,7 +373,7 @@ def main() -> None:
     args = parse_args()
     output_dir = Path(args.output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    device = _resolve_device(args.device)
+    device = resolve_device(args.device)
     model, cfg = load_model(str(Path(args.checkpoint).expanduser().resolve()), device=device)
     if str(getattr(cfg, "encoder_type", "")) != "timp":
         raise ValueError(f"Expected encoder_type='timp', got {cfg.encoder_type!r}.")

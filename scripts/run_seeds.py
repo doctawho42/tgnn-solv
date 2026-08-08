@@ -13,6 +13,7 @@ from typing import Any
 
 import _bootstrap  # noqa: F401
 from tgnn_solv.data.split_registry import build_split_metadata
+from tgnn_solv.device import default_device
 
 try:
     from scipy.stats import t as student_t
@@ -86,8 +87,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda",
-        help="Device to pass to scripts/train.py.",
+        default=default_device(),
+        help=(
+            "Device to pass to scripts/train.py; defaults to whichever this box has, "
+            "because train.py raises on an accelerator it cannot deliver."
+        ),
     )
     parser.add_argument(
         "--split-mode",

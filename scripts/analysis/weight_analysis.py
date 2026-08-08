@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from tgnn_solv.device import resolve_device  # noqa: E402
 from tgnn_solv.inference import load_directgnn_model, load_model
 
 
@@ -34,19 +35,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--max-points-per-group", type=int, default=6000)
     return parser.parse_args()
-
-
-def _resolve_device(raw: str) -> torch.device:
-    if raw == "auto":
-        if torch.cuda.is_available():
-            return torch.device("cuda")
-        if torch.backends.mps.is_available():
-            return torch.device("mps")
-        return torch.device("cpu")
-    if raw == "mps" and not torch.backends.mps.is_available():
-        print("[weight-analysis] MPS unavailable, falling back to CPU.")
-        return torch.device("cpu")
-    return torch.device(raw)
 
 
 def _load_any(path: Path, device: torch.device):
@@ -232,7 +220,7 @@ def main() -> None:
     checkpoint = Path(args.checkpoint).expanduser().resolve()
     output_dir = Path(args.output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    model, cfg, family = _load_any(checkpoint, _resolve_device(args.device))
+    model, cfg, family = _load_any(checkpoint, resolve_device(args.device))
 
     param_rows: list[dict[str, object]] = []
     grouped_values: dict[str, list[np.ndarray]] = {}
