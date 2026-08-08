@@ -50,6 +50,8 @@ import pandas as pd
 import torch
 from rdkit import Chem
 
+from tgnn_solv.device import resolve_device
+
 N_BINS = 51
 SIGMA_GRID = np.linspace(-0.025, 0.025, N_BINS)
 
@@ -109,6 +111,11 @@ def main() -> None:
                          "sigma_hat_SLE - sigma_hat_grounded")
     ap.add_argument("--sigma-profiles", default="results/sigma_profile_artifact/sigma_profiles.csv")
     ap.add_argument("--matched-csv", default="results/b_insuff/matched_pairs.csv")
+    # Deliberately "cpu" rather than default_device(): this script produces numbers that
+    # are deposited under results/ and quoted in the manuscript, and moving the device moves
+    # the last digits. It is not the wish that default_device() exists to remove -- that one
+    # names an accelerator the box may not have; this one names the backend the deposited
+    # figures were computed on. Pass --device explicitly to score somewhere else.
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--lam", type=float, default=1e-3)
     ap.add_argument("--out-json", type=Path, default=Path("results/compensation/surrogate.json"))
@@ -123,7 +130,11 @@ def main() -> None:
     args = ap.parse_args()
 
     from tgnn_solv.inference import load_model
-    device = torch.device(args.device)
+    # This is step 3 of kaggle_run.do_onemodel, behind a warm-up and a full SLE training.
+    # Building torch.device(args.device) raw meant --allow-cpu bought the two children a
+    # TGNN_ALLOW_CPU_FALLBACK this step never read: they warned, ran to completion, and
+    # then the scoring died in torch.load with both checkpoints on disk unscored.
+    device = resolve_device(args.device)
     model, cfg = load_model(args.checkpoint, device=device)
 
     true = load_true_shapes(args.sigma_profiles)

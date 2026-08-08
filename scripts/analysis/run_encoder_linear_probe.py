@@ -48,6 +48,10 @@ from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
 
 from tgnn_solv.data.dataset import make_loader
+# E402 like its neighbours: nothing here can import tgnn_solv until _bootstrap above has
+# put src/ on the path. Suppressed on this line alone so the file's ruff count is the one
+# it had before, rather than one higher for an import that had to go here.
+from tgnn_solv.device import resolve_device  # noqa: E402
 from tgnn_solv.inference import load_directgnn_model, load_model
 
 # Curated interpretable descriptors (the probe targets).
@@ -78,6 +82,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--model-type", choices=["tgnn", "direct"], default="tgnn")
     p.add_argument("--train-data", default="notebooks/data/processed/train.csv")
     p.add_argument("--test-data", default="notebooks/data/processed/test.csv")
+    # Deliberately "cpu" rather than default_device(): this script produces numbers that
+    # are deposited under results/ and quoted in the manuscript, and moving the device moves
+    # the last digits. It is not the wish that default_device() exists to remove -- that one
+    # names an accelerator the box may not have; this one names the backend the deposited
+    # figures were computed on. Pass --device explicitly to score somewhere else.
     p.add_argument("--device", default="cpu")
     p.add_argument("--max-solutes", type=int, default=800, help="Cap per split.")
     p.add_argument("--ridge-alpha", type=float, default=10.0)
@@ -93,7 +102,9 @@ def _unique_solutes(csv: str, cap: int) -> list[str]:
 
 
 @torch.no_grad()
-def _embeddings(model, cfg, smiles: list[str], device: str, batch_size: int) -> tuple[np.ndarray, list[str]]:
+def _embeddings(
+    model, cfg, smiles: list[str], device: torch.device, batch_size: int
+) -> tuple[np.ndarray, list[str]]:
     """Per-molecule encoder readout for each SMILES (self-solvent rows)."""
     df = pd.DataFrame({
         "solute_smiles": smiles, "solvent_smiles": smiles, "temperature": 298.15,
@@ -143,15 +154,19 @@ def _descriptor_matrix(smiles: list[str]) -> tuple[np.ndarray, np.ndarray, list[
 
 def main() -> None:
     args = parse_args()
+    # Before the checkpoint is opened, not inside torch.load: an unavailable accelerator
+    # named here used to reach torch.device() unchecked and die at deserialisation,
+    # which on run_corrected_split_reproduction.sh is five steps and two trainings in.
+    device = resolve_device(args.device)
     loader_fn = load_directgnn_model if args.model_type == "direct" else load_model
-    model, cfg = loader_fn(args.checkpoint, device=args.device)
+    model, cfg = loader_fn(args.checkpoint, device=device)
     model.eval()
 
     tr_smis = _unique_solutes(args.train_data, args.max_solutes)
     te_smis = _unique_solutes(args.test_data, args.max_solutes)
 
-    Xtr, tr_smis = _embeddings(model, cfg, tr_smis, args.device, args.batch_size)
-    Xte, te_smis = _embeddings(model, cfg, te_smis, args.device, args.batch_size)
+    Xtr, tr_smis = _embeddings(model, cfg, tr_smis, device, args.batch_size)
+    Xte, te_smis = _embeddings(model, cfg, te_smis, device, args.batch_size)
     Dtr, ktr, names = _descriptor_matrix(tr_smis)
     Dte, kte, _ = _descriptor_matrix(te_smis)
     Xtr, Xte = Xtr[ktr], Xte[kte]

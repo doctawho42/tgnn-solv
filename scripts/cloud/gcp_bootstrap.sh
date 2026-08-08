@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 # Run ON the GCP GPU VM to execute the 3-seed compensating-surrogate run.
+#
+# The literal `--device cuda` below stays a literal, unlike the six scripts/experiments
+# drivers that used to open `DEVICE="${DEVICE:-cuda}"`. Those run on whatever box the
+# author is sitting at, so naming CUDA there was a wish; this file runs on one machine
+# only, a freshly provisioned GPU VM, and step 3 asserts `torch.cuda.is_available()`
+# before anything is trained -- so the demand is a statement about the machine, and it
+# is checked with a better error than resolve_device could give.
 # Prereq: the data tarball is already at ~/tgnn_data.tgz (see gcp_surrogate_seeds.md, Step 0/2).
 # Usage:  bash gcp_bootstrap.sh            # 40 warmup / 120 SLE epochs per seed (default)
 #         WARM=40 SLE=120 bash gcp_bootstrap.sh

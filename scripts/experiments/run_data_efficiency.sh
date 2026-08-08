@@ -9,9 +9,11 @@
 # ranking vs fraction. Physics should win at small fractions even if it ties at 1.0.
 #
 # Usage (GPU): DEVICE=cuda bash scripts/experiments/run_data_efficiency.sh
+# Naming the device is what makes a box whose CUDA broke stop rather than fall to CPU.
+# Nothing typed: --device is not passed and each child reads this box for itself.
 #
 # Env (defaults):
-#   DEVICE cuda ; FRACS "0.05 0.1 0.25 0.5 1.0" ; SEED 42
+#   DEVICE (unset, see above) ; FRACS "0.05 0.1 0.25 0.5 1.0" ; SEED 42
 #   PHYSICS_CONFIG configs/physics_grounded.yaml ; DIRECT_CONFIG configs/paper_config_directgnn_tuned.yaml
 #   DATA_DIR notebooks/data/processed ; CRYSTAL_CSV notebooks/data/processed_crystal_aux_stream/crystal_train.csv
 #   CRYSTAL_STEPS 8 ; OUT_DIR results/data_efficiency ; CKPT_DIR checkpoints/data_efficiency
@@ -19,7 +21,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-DEVICE="${DEVICE:-cuda}"
+# DEVICE is a demand, not a default. Unset, --device is not passed at all and each child
+# reads this box through tgnn_solv.device.default_device(); set, the string reaches every
+# child, where resolve_device refuses to substitute CPU for an accelerator you named --
+# which is the point of typing DEVICE=cuda on a GPU box. `DEVICE=cuda` used to be this
+# line's default, and made a Mac with nothing typed die at the first train.py.
+DEVICE="${DEVICE:-}"
+DEV_ARGS=(); [ -n "${DEVICE}" ] && DEV_ARGS=(--device "${DEVICE}")
 FRACS="${FRACS:-0.05 0.1 0.25 0.5 1.0}"
 SEED="${SEED:-42}"
 PHYSICS_CONFIG="${PHYSICS_CONFIG:-configs/physics_grounded.yaml}"
@@ -33,6 +41,8 @@ EXTRA_TRAIN_ARGS="${EXTRA_TRAIN_ARGS:-}"
 
 VAL="${DATA_DIR}/val.csv"; TEST="${DATA_DIR}/test.csv"
 mkdir -p "${OUT_DIR}/data" "${CKPT_DIR}"
+echo "== data-efficiency sweep =="
+echo "   device=${DEVICE:-per-script default (this box)} fracs=${FRACS} seed=${SEED}"
 ENTRIES=()
 
 for FRAC in ${FRACS}; do
@@ -56,19 +66,19 @@ PY
     if [[ "${MODEL}" == "physics" ]]; then
       python scripts/train.py --config "${PHYSICS_CONFIG}" \
         --train-data "${TRAIN_SUB}" --val-data "${VAL}" --test-data "${TEST}" \
-        --checkpoint "${CKPT}" --device "${DEVICE}" \
+        --checkpoint "${CKPT}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} \
         --crystal-train-data "${CRYSTAL_CSV}" --crystal-steps-per-epoch "${CRYSTAL_STEPS}" \
         ${EXTRA_TRAIN_ARGS}
       MT="tgnn"
     else
       python scripts/train_directgnn.py --config "${DIRECT_CONFIG}" \
         --train-data "${TRAIN_SUB}" --val-data "${VAL}" --test-data "${TEST}" \
-        --checkpoint "${CKPT}" --device "${DEVICE}" ${EXTRA_TRAIN_ARGS}
+        --checkpoint "${CKPT}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ${EXTRA_TRAIN_ARGS}
       MT="direct"
     fi
     python scripts/analysis/export_checkpoint_predictions.py \
       --checkpoint "${CKPT}" --data "${TEST}" --output "${PRED}" \
-      --model-type "${MT}" --device "${DEVICE}"
+      --model-type "${MT}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"}
     python scripts/analysis/run_ranking_eval.py \
       --predictions-csv "${PRED}" --out-json "${RUN_DIR}/rank.json" || true
     ENTRIES+=("--entry" "${MODEL}:${FRAC}:${PRED%.csv}.summary.json:${RUN_DIR}/rank.json")

@@ -8,9 +8,11 @@
 # just be compensation). This is the empirical side of the A-optimality story.
 #
 # Usage (GPU): DEVICE=cuda bash scripts/experiments/run_e4_ablations.sh
+# Naming the device is what makes a box whose CUDA broke stop rather than fall to CPU.
+# Nothing typed: --device is not passed and each child reads this box for itself.
 #
 # Env overrides (defaults):
-#   DEVICE            cuda
+#   DEVICE            (unset)   see above
 #   CONFIG            configs/physics_grounded.yaml
 #   DATA_DIR          notebooks/data/processed
 #   CRYSTAL_CSV       notebooks/data/processed_crystal_aux_stream/crystal_train.csv
@@ -23,7 +25,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-DEVICE="${DEVICE:-cuda}"
+# DEVICE is a demand, not a default. Unset, --device is not passed at all and each child
+# reads this box through tgnn_solv.device.default_device(); set, the string reaches every
+# child, where resolve_device refuses to substitute CPU for an accelerator you named --
+# which is the point of typing DEVICE=cuda on a GPU box. `DEVICE=cuda` used to be this
+# line's default, and made a Mac with nothing typed die at the first train.py.
+DEVICE="${DEVICE:-}"
+DEV_ARGS=(); [ -n "${DEVICE}" ] && DEV_ARGS=(--device "${DEVICE}")
 CONFIG="${CONFIG:-configs/physics_grounded.yaml}"
 DATA_DIR="${DATA_DIR:-notebooks/data/processed}"
 CRYSTAL_CSV="${CRYSTAL_CSV:-notebooks/data/processed_crystal_aux_stream/crystal_train.csv}"
@@ -37,6 +45,8 @@ TRAIN="${DATA_DIR}/train.csv"
 VAL="${DATA_DIR}/val.csv"
 TEST="${DATA_DIR}/test.csv"
 mkdir -p "${OUT_DIR}" "${CKPT_DIR}"
+echo "== E4 ablations =="
+echo "   device=${DEVICE:-per-script default (this box)} config=${CONFIG} ablations=${ABLATIONS}"
 
 CRYSTAL_ON="--crystal-train-data ${CRYSTAL_CSV} --crystal-steps-per-epoch ${CRYSTAL_STEPS}"
 CRYSTAL_OFF="--crystal-steps-per-epoch 0"
@@ -74,11 +84,11 @@ for label in ${ABLATIONS}; do
   python scripts/train.py \
     --config "${CONFIG}" \
     --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-    --checkpoint "${ckpt}" --device "${DEVICE}" \
+    --checkpoint "${ckpt}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} \
     ${EXTRA_TRAIN_ARGS} ${extra}
   python scripts/analysis/export_checkpoint_predictions.py \
     --checkpoint "${ckpt}" --data "${TEST}" \
-    --output "${pred}" --model-type tgnn --device "${DEVICE}"
+    --output "${pred}" --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"}
   RUN_ARGS+=("--run" "${label}=${pred}")
 done
 

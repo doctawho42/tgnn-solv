@@ -51,6 +51,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--checkpoint", default=None)
     p.add_argument("--model-type", choices=["tgnn", "direct"], default="tgnn")
     p.add_argument("--test-data", default=None)
+    # Deliberately "cpu" rather than default_device(): this script produces numbers that
+    # are deposited under results/ and quoted in the manuscript, and moving the device moves
+    # the last digits. It is not the wish that default_device() exists to remove -- that one
+    # names an accelerator the box may not have; this one names the backend the deposited
+    # figures were computed on. Pass --device explicitly to score somewhere else.
     p.add_argument("--device", default="cpu")
     p.add_argument("--mc-samples", type=int, default=30)
     p.add_argument("--out-json", required=True)
@@ -75,9 +80,15 @@ def _resolve_noise_floor(arg: float | None) -> float:
 
 
 def _generate_mc_dropout(args: argparse.Namespace) -> pd.DataFrame:
+    # Imported here, not at module scope, so the post-hoc CSV path stays free of torch:
+    # this script's other half needs nothing but numpy/pandas/scipy, and --device is
+    # unread there, so an accelerator named on a post-hoc run is not a demand to check.
+    from tgnn_solv.device import resolve_device
     from tgnn_solv.inference import load_directgnn_model, load_model
     from tgnn_solv.uncertainty import MCDropoutPredictor
-    device = args.device
+    # Before the checkpoint is opened: `device` used to be the raw string, which
+    # load_model handed to torch.load and died on.
+    device = resolve_device(args.device)
     if args.model_type == "direct":
         model, _ = load_directgnn_model(args.checkpoint, device=device)
     else:

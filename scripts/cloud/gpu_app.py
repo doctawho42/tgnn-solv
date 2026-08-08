@@ -19,6 +19,14 @@ Usage (from the repo root, so add_local_dir paths resolve):
 
 Pull the full artifacts back with:
   modal volume get tgnn-results /data_efficiency_seed1 ./results/data_efficiency_multiseed
+
+Every `--device cuda` below, and the `DEVICE=cuda` handed to the shell drivers, stays a
+literal. The six scripts/experiments drivers dropped theirs because they run on whatever
+box the author is sitting at, where naming CUDA was a wish about the hardware; each
+function here is decorated `gpu=GPU` and cannot start without one, so the demand is a
+statement about the machine. It also has to be typed: with `DEVICE` unset a driver now
+lets each child read the box, which on a Modal container whose CUDA broke would train on
+CPU for the whole timeout instead of raising in the first minute.
 """
 from __future__ import annotations
 

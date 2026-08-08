@@ -8,9 +8,11 @@
 # evaluate on the high-T rows. Aggregate into one leaderboard.
 #
 # Usage (GPU): DEVICE=cuda bash scripts/experiments/run_e3_temperature_extrapolation.sh
+# Naming the device is what makes a box whose CUDA broke stop rather than fall to CPU.
+# Nothing typed: --device is not passed and each child reads this box for itself.
 #
 # Env overrides (defaults):
-#   DEVICE             cuda
+#   DEVICE             (unset)    see above
 #   PHYSICS_CONFIG     configs/physics_grounded.yaml
 #   DIRECT_CONFIG      configs/paper_config_directgnn_tuned.yaml
 #   DATA_DIR           notebooks/data/processed
@@ -23,7 +25,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-DEVICE="${DEVICE:-cuda}"
+# DEVICE is a demand, not a default. Unset, --device is not passed at all and each child
+# reads this box through tgnn_solv.device.default_device(); set, the string reaches every
+# child, where resolve_device refuses to substitute CPU for an accelerator you named --
+# which is the point of typing DEVICE=cuda on a GPU box. `DEVICE=cuda` used to be this
+# line's default, and made a Mac with nothing typed die at the first train.py.
+DEVICE="${DEVICE:-}"
+DEV_ARGS=(); [ -n "${DEVICE}" ] && DEV_ARGS=(--device "${DEVICE}")
 PHYSICS_CONFIG="${PHYSICS_CONFIG:-configs/physics_grounded.yaml}"
 DIRECT_CONFIG="${DIRECT_CONFIG:-configs/paper_config_directgnn_tuned.yaml}"
 DATA_DIR="${DATA_DIR:-notebooks/data/processed}"
@@ -39,7 +47,7 @@ SPLITS="${BASE_DIR}/splits"
 mkdir -p "${OUT_DIR}" "${CKPT_DIR}"
 
 echo "== E3 temperature extrapolation =="
-echo "   device=${DEVICE} train_max_k=${TRAIN_MAX_K} test_min_k=${TEST_MIN_K}"
+echo "   device=${DEVICE:-per-script default (this box)} train_max_k=${TRAIN_MAX_K} test_min_k=${TEST_MIN_K}"
 
 # --- 1. Build same-pair low/high split + classical baselines ---
 echo "== [1/5] temperature split + classical baselines =="
@@ -59,7 +67,7 @@ echo "== [2/5] train physics analytic curve =="
 python scripts/train.py \
   --config "${PHYSICS_CONFIG}" \
   --train-data "${TRAIN_LOW}" --val-data "${VAL_LOW}" --test-data "${TEST_HIGH}" \
-  --checkpoint "${PHYS_CKPT}" --device "${DEVICE}" \
+  --checkpoint "${PHYS_CKPT}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} \
   ${PHYSICS_EXTRA} ${EXTRA_TRAIN_ARGS}
 
 # --- 3. Train DirectGNN (unstructured T-encoder) on the same split ---
@@ -68,7 +76,7 @@ echo "== [3/5] train DirectGNN =="
 python scripts/train_directgnn.py \
   --config "${DIRECT_CONFIG}" \
   --train-data "${TRAIN_LOW}" --val-data "${VAL_LOW}" --test-data "${TEST_HIGH}" \
-  --checkpoint "${DIRECT_CKPT}" --device "${DEVICE}" \
+  --checkpoint "${DIRECT_CKPT}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} \
   ${EXTRA_TRAIN_ARGS}
 
 # --- 4. Export high-T predictions + van't Hoff slope fidelity ---
@@ -77,10 +85,10 @@ PHYS_PRED="${OUT_DIR}/physics/predictions.csv"
 DIRECT_PRED="${OUT_DIR}/directgnn/predictions.csv"
 python scripts/analysis/export_checkpoint_predictions.py \
   --checkpoint "${PHYS_CKPT}" --data "${TEST_HIGH}" \
-  --output "${PHYS_PRED}" --model-type tgnn --device "${DEVICE}"
+  --output "${PHYS_PRED}" --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"}
 python scripts/analysis/export_checkpoint_predictions.py \
   --checkpoint "${DIRECT_CKPT}" --data "${TEST_HIGH}" \
-  --output "${DIRECT_PRED}" --model-type direct --device "${DEVICE}"
+  --output "${DIRECT_PRED}" --model-type direct ${DEV_ARGS[@]+"${DEV_ARGS[@]}"}
 
 python scripts/analysis/check_vant_hoff_slopes.py \
   --predictions "${PHYS_PRED}" \

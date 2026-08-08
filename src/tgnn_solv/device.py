@@ -15,10 +15,12 @@ name and not delivered is an error rather than a warning. Of the eleven it left:
   back only for MPS, behind a bracketed tag line rather than a `WARNING:` one.
 
 This module is one behaviour, the strict one. All twelve import it, as do the four
-scripts that had been reaching a copy through another script's module namespace;
-`tests/test_device.py` names both sets, and those lists are the authority for what is
-protected -- a count quoted in prose is not, because two AST scans written a day apart
-disagreed on the total. Many other entry points take a `--device` flag without coming
+scripts that had been reaching a copy through another script's module namespace.
+`tests/test_device.py` used to name both sets; it scans the tree instead, and the rules
+it scans by -- stated at the top of that file -- are the authority for what is
+protected. Neither a list nor a count is: the list could not know about a script written
+after it, and two AST scans written a day apart disagreed on the total. Many other
+entry points take a `--device` flag without coming
 through here. A minority hand it to a child process that does; most build a
 `torch.device` in the same process and get no check at all. Five are worse than
 unchecked: `run_pka_flip_certify.py`, `run_pka_lambda_frontier.py` and `run_solprop.py`
@@ -50,23 +52,157 @@ Two entry points keep a literal accelerator default on purpose:
 `scripts/cloud/kaggle_run.py`, because a Kaggle session that quietly runs on CPU is a
 wasted session and it answers for that with its own kernel-launch preflight and
 `--allow-cpu`, and `scripts/experiments/run_pka_trained_comparison.py`, which never
-reaches this resolver. An argparse default has to be a statement about the machine,
+reaches this resolver. Those two are the whole of
+`LITERAL_ACCELERATOR_DEFAULT_EXEMPTIONS` in `tests/test_device.py`, asserted in both
+directions so that a third has to be argued for rather than read as intentional for
+already being on a list. An argparse default has to be a statement about the machine,
 not a wish.
+
+Reading the machine is silent in one direction only. `default_device` returning `"cuda"`
+needs no announcement; returning `"cpu"` is either unremarkable or the whole 2026-08-08
+failure, and the two are told apart by asking whether the box has an NVIDIA GPU at all.
+A MacBook has none, and prints nothing. A gate box whose kernel module went missing
+still has its V100 sitting on the PCI bus, and gets a block of tagged lines between
+rules, on stderr, once per process. Before this, the no-flag path carried *less* signal
+than it had on the day: `default_device` chose CPU without a word, the subprocess
+drivers forwarded `--device cpu`, and `resolve_device("cpu")` is a legitimate request
+that says nothing either -- so the only tell left was one `Device: cpu` line inside a
+long banner, and that is the line that was missed on the day. `TGNN_ALLOW_CPU_FALLBACK=1`
+silences the announcement as well, since it already means "a CPU run is what I meant"
+(`--device cpu` cannot silence it: an argparse default is computed before the arguments
+are parsed).
 """
 
 from __future__ import annotations
 
 import os
+import sys
+import textwrap
 
 import torch
 
 _TRUTHY = ("1", "true", "yes", "on")
 _TF32_TRUTHY = ("1", "true", "high", "yes", "on")
 
+# Where the PCI bus is legible without asking a driver, a library or a subprocess:
+# sysfs, which is a directory of one-line files. The failure this detects is precisely
+# a card with no usable driver, so every richer source -- nvidia-smi, /dev/nvidia*,
+# /proc/driver/nvidia, libcuda via ctypes, torch.cuda's own device count -- is either
+# absent in exactly that state or costs more than an argparse default may spend.
+_PCI_DEVICE_ROOT = "/sys/bus/pci/devices"
+_NVIDIA_PCI_VENDOR = "0x10de"
+# PCI base class 03 is "display controller": 0x030000 VGA, 0x030200 3D controller (the
+# data-centre cards). A card's own HDMI-audio (0x0403xx) and USB-C (0x0c03xx) functions
+# carry the same vendor id and would otherwise be counted as extra GPUs.
+_DISPLAY_PCI_CLASS = "0x03"
+
+# Once per process. The announcement is worth a block of stderr on the run that needed
+# it; it is worth nothing on the fifth parser built inside the same run.
+_CPU_DEFAULT_ANNOUNCED = False
+
 
 def _env_is_set(name: str, truthy: tuple[str, ...] = _TRUTHY) -> bool:
     """Return True when environment variable `name` holds an affirmative value."""
     return os.environ.get(name, "").lower() in truthy
+
+
+def _read_sysfs(path: str) -> str:
+    """Read a one-line sysfs attribute, or "" if it is missing or unreadable."""
+    try:
+        with open(path) as handle:
+            return handle.read().strip().lower()
+    except OSError:
+        return ""
+
+
+def nvidia_gpus_on_the_bus(root: str | None = None) -> int:
+    """Count NVIDIA display devices on the PCI bus, by reading sysfs and nothing else.
+
+    This is the question "is this box a machine that should have had CUDA?", and it is
+    deliberately not the question `torch.cuda.is_available()` answers. A box that lost
+    its kernel module answers no to the second and yes to this one; a MacBook, which has
+    no `/sys` at all, answers no to both. The cost is one `listdir` and two small reads
+    per device -- microseconds, no import, no subprocess -- and it is only paid on the
+    path that has already decided on CPU.
+
+    A missing root, an unreadable attribute or a non-NVIDIA vendor all fail closed to
+    "not counted": a bad guess here must never be able to break device selection, and
+    the consequence of undercounting is the silence that was there before.
+
+    Args:
+        root: The sysfs PCI directory to read. `None` means `_PCI_DEVICE_ROOT`, looked
+            up on each call rather than frozen into a default argument, so that a test
+            can put a directory of fake devices where the bus is.
+    """
+    if root is None:
+        root = _PCI_DEVICE_ROOT
+    try:
+        entries = sorted(os.listdir(root))
+    except OSError:
+        return 0
+    found = 0
+    for entry in entries:
+        if _read_sysfs(os.path.join(root, entry, "vendor")) != _NVIDIA_PCI_VENDOR:
+            continue
+        pci_class = _read_sysfs(os.path.join(root, entry, "class"))
+        # An unreadable class is counted: the vendor already matched, and this
+        # detector's failure mode should be a false banner, not a false silence.
+        if pci_class and not pci_class.startswith(_DISPLAY_PCI_CLASS):
+            continue
+        found += 1
+    return found
+
+
+def _announce_cpu_default() -> None:
+    """Shout, on stderr, when CPU was chosen on a box that owns an NVIDIA GPU.
+
+    Loud where it matters and absent everywhere else. Every line carries the same
+    `TGNN-DEVICE` tag so the block is one `grep` in a 300 KB log and survives being
+    interleaved with tqdm (which writes to stderr too, so any log that has the progress
+    bars in it has this). A laptop never sees it and so cannot learn to ignore it.
+    """
+    global _CPU_DEFAULT_ANNOUNCED
+    if _CPU_DEFAULT_ANNOUNCED or _env_is_set("TGNN_ALLOW_CPU_FALLBACK"):
+        return
+    count = nvidia_gpus_on_the_bus()
+    if count == 0:
+        return
+    _CPU_DEFAULT_ANNOUNCED = True
+    # Which of the two causes it is, for the price of an attribute lookup. They need
+    # different repairs and both present as this same silence.
+    cuda_build = getattr(torch.version, "cuda", None)
+    if cuda_build is None:
+        diagnosis = (
+            "This torch has no CUDA in it at all (torch.version.cuda is None), so the "
+            "wheel is the thing to fix and not the driver: reinstall from the CUDA "
+            "wheel index."
+        )
+    else:
+        diagnosis = (
+            f"torch was built against CUDA {cuda_build} and still reports "
+            f"is_available() False, which is what a missing or mismatched kernel "
+            f"module looks like: try `modinfo nvidia`."
+        )
+    plural = "" if count == 1 else "s"
+    body = (
+        f'The --device default was read off this box as "cpu" -- but {count} NVIDIA '
+        f"display device{plural} {'is' if count == 1 else 'are'} on its PCI bus. "
+        f"The card is here; CUDA is not usable. Check `nvidia-smi` first. "
+        f"{diagnosis} "
+        f"On 2026-08-08 this exact state cost the gate box ten hours at ~15 s/it "
+        f"against ~1 s/it on its V100, with no error and no wrong number. "
+        f"This is the argparse default, computed before your flags are parsed: it "
+        f"refuses nothing, and a --device cuda you typed yourself still raises. "
+        f"Set TGNN_ALLOW_CPU_FALLBACK=1 if a CPU run is what you meant."
+    )
+    rule = "=" * 78
+    print(rule, file=sys.stderr)
+    # break_on_hyphens=False: this text is mostly `--device`, `nvidia-smi` and
+    # `~15 s/it`, and a wrap that splits those leaves an operator grepping for a
+    # string the log does not contain.
+    for line in textwrap.wrap(body, width=62, break_on_hyphens=False):
+        print(f"TGNN-DEVICE  {line}", file=sys.stderr)
+    print(rule, file=sys.stderr)
 
 
 def default_device(*, prefer_mps: bool = False) -> str:
@@ -86,11 +222,17 @@ def default_device(*, prefer_mps: bool = False) -> str:
             Mac (`export_checkpoint_predictions.py`, the DirectGNN error diagnostics),
             and for `run_medium_budget_comparison.py`, whose own ladder already fell
             through to MPS.
+
+    Returning `"cpu"` announces itself on stderr, but only on a box that owns an NVIDIA
+    GPU -- see `_announce_cpu_default`. A machine with no accelerator to lose says
+    nothing, which is what keeps the announcement worth reading on the machine that has
+    one. Nothing is announced on the accelerator paths, and the bus is not read there.
     """
     if torch.cuda.is_available():
         return "cuda"
     if prefer_mps and torch.backends.mps.is_available():
         return "mps"
+    _announce_cpu_default()
     return "cpu"
 
 

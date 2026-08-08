@@ -3,10 +3,11 @@
 # grounded-A residual-only, grounded-B +SG} / oracle — on the corrected split, >=3 seeds,
 # metrics intersection-locked by run_e5_comparison.py. REAL metrics need GPU; CPU = smoke.
 #
-# Usage (GPU):
+# Usage (GPU) — name the device, so a box whose CUDA broke stops instead of falling to CPU:
 #   DEVICE=cuda bash scripts/experiments/run_e5_sigma_grounding.sh
 # 1-seed pilot (validate pipeline + read ungrounded std(lng) to calibrate --lngamma-band):
 #   DEVICE=cuda SEEDS=42 bash scripts/experiments/run_e5_sigma_grounding.sh
+# Nothing typed: --device is not passed and each child reads this box for itself.
 # CPU smoke (no meaningful metrics — just checks the wiring):
 #   DEVICE=cpu SEEDS=42 WARMUP_EPOCHS=1 SIGMA_STEPS=2 \
 #     EXTRA_TRAIN_ARGS="--epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1" \
@@ -20,7 +21,7 @@
 #
 # Env overrides (defaults):
 #   PY               $HOME/anaconda3/envs/tgnn-solv/bin/python
-#   DEVICE           cuda            torch device for training/export
+#   DEVICE           (unset)         torch device for training/export; see below
 #   DATA_DIR         notebooks/data/processed       (the CORRECTED split)
 #   SIGMA_DIR        notebooks/data/processed_sigma_aux_stream
 #   OUT_DIR          results/e5_sigma_grounding
@@ -40,7 +41,14 @@ cd "$(dirname "$0")/../.."
 export KMP_DUPLICATE_LIB_OK=TRUE   # rdkit/torch/sklearn libomp clash on macOS
 
 PY="${PY:-$HOME/anaconda3/envs/tgnn-solv/bin/python}"
-DEVICE="${DEVICE:-cuda}"
+# DEVICE is a demand, not a default. Unset, --device is not passed at all and each child
+# reads this box through tgnn_solv.device.default_device(); set, the string reaches every
+# child, where resolve_device refuses to substitute CPU for an accelerator you named. That
+# refusal is the point of typing DEVICE=cuda on a GPU box: a broken driver stops the run
+# instead of quietly costing it ten hours. `DEVICE=cuda` used to be this line's default,
+# which made a Mac with nothing typed fail at the first arm.
+DEVICE="${DEVICE:-}"
+DEV_ARGS=(); [ -n "${DEVICE}" ] && DEV_ARGS=(--device "${DEVICE}")
 DATA_DIR="${DATA_DIR:-notebooks/data/processed}"
 SIGMA_DIR="${SIGMA_DIR:-notebooks/data/processed_sigma_aux_stream}"
 OUT_DIR="${OUT_DIR:-results/e5_sigma_grounding}"
@@ -73,7 +81,7 @@ mkdir -p "${OUT_DIR}" "${CKPT_DIR}"
 
 echo "================================================================"
 echo " run_e5: sigma-grounding decisive comparison"
-echo "   device=${DEVICE}  data=${DATA_DIR}  sigma=${SIGMA_DIR}"
+echo "   device=${DEVICE:-per-script default (this box)}  data=${DATA_DIR}  sigma=${SIGMA_DIR}"
 echo "   seeds=${SEEDS}  out=${OUT_DIR}  ckpt=${CKPT_DIR}  checkpoint_every=${CHECKPOINT_EVERY}"
 echo "================================================================"
 
@@ -140,42 +148,42 @@ for SEED in ${SEEDS}; do
       nrtl)
         "${PY}" scripts/train.py --config configs/paper_config_nrtl_h64L3.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" ${EXTRA_TRAIN_ARGS}
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" ${EXTRA_TRAIN_ARGS}
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
-          --model-type tgnn --device "${DEVICE}" ;;
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;
       directgnn)
         "${PY}" scripts/train_directgnn.py --config configs/paper_config_directgnn_h64L3.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" ${DIRECT_EPOCHS:+--epochs ${DIRECT_EPOCHS}}
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" ${DIRECT_EPOCHS:+--epochs ${DIRECT_EPOCHS}}
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
-          --model-type direct --device "${DEVICE}" ;;
+          --model-type direct ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;
       ungrounded)
         "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
           --sigma-steps-per-epoch 0 --sigma-warmup-epochs 0 ${EXTRA_TRAIN_ARGS}
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
-          --model-type tgnn --device "${DEVICE}" ;;
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;
       grounded_a)
         "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
           "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS}
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
-          --model-type tgnn --device "${DEVICE}" ;;
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;
       grounded_b)
         # --set cosmo_sac_wire_volume=true must be LAST (argparse nargs='*' is greedy)
         "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
           "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} --set cosmo_sac_wire_volume=true
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
-          --model-type tgnn --device "${DEVICE}" ;;
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;
       grounded_a_truetrain)
         # DISAMBIGUATOR: inject TRUE (VT-2005) σ during TRAINING so the crystal/correction
         # branches co-adapt to correct σ (not the σ-head's prediction). Export WITH oracle σ
@@ -184,12 +192,12 @@ for SEED in ${SEEDS}; do
         # both-matched subset via sigma_oracle_mask_solute&solvent columns). --set must be LAST.
         "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
           "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} \
           --set train_sigma_oracle=true sigma_oracle_side=both sigma_oracle_artifact="${SIGMA_ARTIFACT}"
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
-          --model-type tgnn --device "${DEVICE}" \
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} \
           --sigma-oracle --sigma-oracle-side both --sigma-artifact "${SIGMA_ARTIFACT}" ;;
       grounded_a_truetrain_residual)
         # GATE B v1 (moonshot actionability): train-time TRUE σ (as grounded_a_truetrain) BUT with
@@ -202,12 +210,12 @@ for SEED in ${SEEDS}; do
         # --set must be LAST (greedy nargs); the residual keys ride the same group as the oracle keys.
         "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
           "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} \
           --set train_sigma_oracle=true sigma_oracle_side=both sigma_oracle_artifact="${SIGMA_ARTIFACT}" correction_output_mode=ln_x2_residual correction_ln_x2_max_delta=3.0
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
-          --model-type tgnn --device "${DEVICE}" \
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} \
           --sigma-oracle --sigma-oracle-side both --sigma-artifact "${SIGMA_ARTIFACT}" ;;
       grounded_a_truetrain_residual_v2)
         # GATE B v2: as _residual but FORCE the confidence gate fully open
@@ -218,12 +226,12 @@ for SEED in ${SEEDS}; do
         # NULL if ≈ truetrain 0.283 (closure binding even with an open valve). --set must be LAST.
         "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
           "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} \
           --set train_sigma_oracle=true sigma_oracle_side=both sigma_oracle_artifact="${SIGMA_ARTIFACT}" correction_output_mode=ln_x2_residual correction_ln_x2_max_delta=3.0 correction_force_open_gate=true
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
-          --model-type tgnn --device "${DEVICE}" \
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} \
           --sigma-oracle --sigma-oracle-side both --sigma-artifact "${SIGMA_ARTIFACT}" ;;
       channel_swap)
         # CHANNEL-SWAP corroboration: coordinate_descent freezes Φ (crystal head + encoder)
@@ -232,12 +240,12 @@ for SEED in ${SEEDS}; do
         # ceiling independent of the crystal branch. --set must be LAST (greedy nargs).
         "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
-          --seed "${SEED}" --device "${DEVICE}" "${CKPT_ARGS[@]}" \
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
           "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} \
           --set train_sigma_oracle=true sigma_oracle_side=both sigma_oracle_artifact="${SIGMA_ARTIFACT}" branch_training_mode=coordinate_descent
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
-          --model-type tgnn --device "${DEVICE}" \
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} \
           --sigma-oracle --sigma-oracle-side both --sigma-artifact "${SIGMA_ARTIFACT}" ;;
       oracle)
         # Reuse the grounded_a checkpoint; only the eval path changes (oracle sigma injection).
@@ -248,7 +256,7 @@ for SEED in ${SEEDS}; do
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${CKPT_DIR}/grounded_a_seed${SEED}.pt" \
           --data "${TEST}" --output "${pred}" \
-          --model-type tgnn --device "${DEVICE}" \
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} \
           --sigma-oracle --sigma-oracle-side both \
           --sigma-artifact "${SIGMA_ARTIFACT}" ;;
     esac
