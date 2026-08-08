@@ -434,7 +434,7 @@ resamples, with which the margin it is attached to stays positive; it is not a $
 null. Such frequencies are quoted as bands---rounded to one decimal, with $>0.95$ and
 $<0.2$ closing the ends---because with $17$ solvent and $41$ solute clusters on the VT-2005-matched
 set they do not carry two-decimal resolution; the two-decimal values are in the deposited artifacts.
-The resampling intervals of this paper---the Abstract's, the ranking and recalibration intervals of
+The resampling intervals of this paper---the ranking and recalibration intervals of
 \S\ref{sec:decision}, the margins of \S\ref{sec:measure} and the
 pKa intervals of \S\ref{sec:pka-main}---are \emph{percentile} intervals: their endpoints are order
 statistics of a resampling distribution, with no bias correction and no studentisation, over the unit
@@ -1305,9 +1305,10 @@ The external block is not like-for-like and the table says so in its own block h
 % the model column is ragged-right prose and the four numeric columns are right-aligned numbers
 % that abut.  Setting \tabcolsep here would change nothing and mislead the next editor.  The
 % arithmetic, the printed gutters and how to re-measure them are in the rows file's header; the
-% five-column tabular measures 502.1 pt against a 504.5 pt \textwidth, so a widened cell has
-% 2.4 pt before it overflows and an over-wide tabular in a centred float does NOT reliably raise
-% an Overfull \hbox.
+% five-column tabular measures 498.75 pt against a 504.47 pt \textwidth, and the LINE it is
+% centred in measures 502.08 pt because the newline after \end{tabular} leaves an interword space
+% behind it, so a widened cell has 2.4 pt and not 5.7 pt before the line overflows -- and an
+% over-wide tabular in a centred float does NOT reliably raise an Overfull \hbox.
 % ---------------------------------------------------------------------------
 \begin{table*}[tp]
 \centering
@@ -1428,13 +1429,25 @@ price of reading a grounded latent as a measurement.
 
 The general statement is a design rule with a test attached. Wherever a predictor composes a fixed
 physical model over a learned intermediate for which an external reference exists, that reference
-measures which of the two limits accuracy, and where it answers, the answer decides the remedy: a
-more faithful physical model---the calculation that supplies its reference values included.
+measures whether the fixed model itself limits accuracy, and where it answers, the answer decides the
+remedy: a more faithful physical model---the calculation that supplies its reference values included.
 % `---or better inputs' DELETED 2026-08-09.  Two referees stopped at the colon and took away a
 % two-sided instrument, which the next clause but one then has to take back and \S\ref{sec:discussion}
 % flatly denies: with \Binsuf\ bounded only from above, no cell can ever return "better inputs would
 % help here".  The remedy this rule names is the only one it can name.  Do not restore the phrase to
 % balance the sentence; the sentence is not balanced because the instrument is not.
+% AND THE PREMISE FOLLOWED IT, 2026-08-09.  Deleting the second item left "which of the two limits
+% accuracy" standing in front of a colon that now opens a one-item list -- the sentence still asked
+% the two-sided question and then answered only half of it, which is the reading the deletion was
+% made to prevent.  The question is now scoped to the side the bound can answer.  THE FIX IS THE
+% PREMISE, NOT THE LIST: do not re-broaden this clause to make the colon look balanced.
+% WHAT IS DELIBERATELY STILL MISSING, so a later reader does not repair it by accident.  The pKa
+% oracle swap of \S\ref{sec:pka-main} IS two-sided and measured -- it returns "the reference input
+% helps here" on the clean pole and "it hurts here" on the degraded -- and this section names the
+% second closure nowhere, so this general statement is narrower than the paper's own result.  That
+% is a gap in what the Conclusions cover, not an error in this sentence, and closing it means adding
+% the swap, NOT widening the bound's claim.  The two are different instruments: the swap compares
+% two measured accuracies, the bound compares an error against a one-sided bound on another.
 The answer comes chemistry by chemistry rather than once for a field, and it comes
 one-sided, so what the measurement returns is the chemistry on which better inputs are not the
 remedy---here one class of solvent, on which the standard route to a more faithful model did not

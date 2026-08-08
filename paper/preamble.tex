@@ -179,8 +179,13 @@
 % scanning a row therefore met 2.2 / 2.2 / 4.0 / 2.2 / 2.2 / 4.0 and the four cells read as one run
 % of tokens -- all three referees measured it independently on Table \ref{tab:baselines}.  The 3mu
 % taken back leaves a 0.56pt hairline inside the pair, which is what makes the pair one token, and
-% it frees 4.44pt in every column whose widest cell is a `a +- b' (three of the four there), which
-% is what pays for the wider gutter.  DO NOT use it in prose -- `mean $\pm$ s.d.' in a block head is
+% it frees 3.33pt in every column whose widest cell is a `a +- b' (three of the four there), which
+% is what pays for the wider gutter.  THE FIGURE IS 3.33 AND NOT THE 4.44 THIS LINE USED TO CARRY:
+% \pmsd removes 3mu a side, so 6mu, and 6mu at 10pt is 3.33pt -- 4.44pt would be 8mu, the whole
+% \medmuskip off both sides, which is not what the definition below does and is contradicted by
+% the 0.56pt hairline the line above states correctly.  Measured, not reasoned: \sbox
+% `$1.70\pm0.03$' and `$1.70\pmsd0.03$' at \footnotesize and \typeout the widths, 47.778pt against
+% 44.445pt.  DO NOT use it in prose -- `mean $\pm$ s.d.' in a block head is
 % a word and keeps the ordinary spacing.
 \newcommand{\pmsd}{\mspace{-3mu}\pm\mspace{-3mu}}
 

@@ -560,21 +560,53 @@ risk at finite $n$.
 % claims is collected.  A p-column table does not grow by the ratio of the sizes: the cells
 % reflow, so the line COUNT rises with the type as well as the leading, and the measured cost
 % here was ~1.55x on the row blocks, not the ~1.25x an eyeballed estimate gives.  Two floats
-% could not hold that (block one alone reaches 470pt of a 701pt text block, and blocks one and
-% two together 760pt), so the blocks were repacked one / two-plus-three / four-plus-five.  The
-% SIXTH block, the second closure of \S\ref{sec:pka-main}, joined the second part on 2026-08-09
+% could not hold that (block one alone reaches 470pt of a 711pt text block -- \textheight is
+% 711.03pt, not the 701 an earlier draft of this comment carried -- and blocks one and two
+% together 760pt), so the blocks were repacked.
+% THE LEDGER RUNS TO SIX BLOCKS AND THE PACKING IS, IN PRINTED ORDER: part one, block one (the two
+% senses of grounding); part two, blocks two, three and FOUR (closure against inputs; whether a
+% better closure moves the ceiling; the second closure of \S\ref{sec:pka-main}); part three,
+% blocks five and six (mechanism; accuracy) and the notes.  THE SECOND-CLOSURE BLOCK IS THE FOURTH
+% PRINTED, and it is the last block of the SECOND part.  It was the sixth ADDED, which is what an
+% earlier draft of this comment called it, and "the sixth block, the second closure" sends an
+% editor to the last part, where the accuracy block is.  It joined the second part on 2026-08-09
 % and went there rather than to the third because the second part sits alone on a float page with
 % room for it, while the third shares its page with body text that a taller float would displace.
 % BEFORE MOVING A ROW BETWEEN THE PARTS, or adding one, rebuild and grep the build output for
-% "Float too large": each part is within a block or two of the limit.
+% "Float too large".  THE SECOND PART IS THE TIGHT ONE and the other two are not close.  Measured
+% off the printed page against \textheight = 711.0pt: part two is 606.6pt tall, 85% of the text
+% block, with 104.4pt of headroom -- LESS THAN THE ROW LAST ADDED TO IT, the second-closure row
+% being 132pt on its own, and under three of that part's ordinary rows, which run 36-42pt; part one 441.2pt
+% (62%) with 269.8pt; part three 416.3pt (59%, its notes included) with 294.7pt.  The generic
+% warning this replaces -- "each part is within a block or two of the limit" -- was written when
+% every part had over 250pt of slack, and only one of them still does not.
+% HOW TO RE-MEASURE, since a float carries no rule at its top or bottom.  Parts one and two sit
+% ALONE on float pages, where \@fptop and \@fpbot are both fil, so the float is centred and the
+% headroom is exactly twice the gap above it: take the caption's first-line yMin, subtract the
+% 36.476bp at which a float set at the top of the text block starts (part three's caption, or the
+% article's Table 3), and double.  Part three is a top float on a text page, so that trick does
+% not apply to it; its height is its caption's yMin to the last note line's yMax.  Convert: a PDF
+% box is in bp (1/72in) and TeX's pt is 1/72.27in, so a length read off the page is 0.37% smaller
+% than the same length in \the\dimen.  Compare a measured rule with a \typeout without converting
+% and the two disagree by about 1.9pt on a full-width table, which is not a defect.
 %
 % THE COLUMN WIDTHS ARE FRACTIONS OF \linewidth AND DO NOT SHRINK WITH THE TYPE.  They sum to
 % 0.95, which with 4 x \tabcolsep(4pt) prints a 493.4bp rule inside a 502.6bp measure -- 9.2bp
-% of slack, 4.6bp a side, MEASURED OFF THE PAGE and not off the specifier.  What the type size
+% of slack, MEASURED OFF THE PAGE and not off the specifier.  It is 4.6bp a side on the THIRD
+% part only, which is the one of the three that prints centred; parts one and two print 1.66bp
+% left of centre, 2.93bp of slack on the left of the rule against 6.25bp on its right.  That is
+% not a placement fault and is not worth chasing: the
+% newline after their \end{tabular} leaves one \footnotesize interword space (3.33pt) inside the
+% centred line, so what \centering centres is the tabular PLUS that space and the rule sits half a
+% space to the left of true centre.  Part three escapes it because \tabnotes opens with \par,
+% which drops the trailing glue.  The article's Table 3 is off centre for the same reason and by
+% the same amount; a `%' after \end{tabular} would centre either, and neither has been given one.
+% What the type size
 % does move is the \multicolumn block headings, which is where the 10pt reset first broke: they
 % were `l' cells, so the closure heading -- the long one, which carries the units the block is in
 % -- simply ran 14.3pt past the rule at the larger size and LaTeX set it anyway, an Overfull
-% \hbox being a warning.  All five headings are p-cells of the tabular's own width now, so they
+% \hbox being a warning.  All SIX headings -- one in the first part, three in the second, two in
+% the third -- are p-cells of the tabular's own width now, so they
 % wrap.  If any of this is touched, measure the printed rule's right edge against the text block;
 % a clean build is not the check.
 %
@@ -675,7 +707,7 @@ The $2002\to2010$ step lowers the error & broad IDAC ($477$) & $-0.99$ at $P\app
 A fitted kernel residual transfers across solvents & VT-2005-matched ($60$), grouped folds & $-5\pm16\%$: spans zero; the $\pm$ prices optimiser noise only, and the fold spread that dominates it is not propagated, so no bound follows \\
 \addlinespace[7pt]
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{The same split on a second closure} (\S\ref{sec:pka-main}); MAE in $\mathrm pK_a$, not the squared \lngi\ of the two blocks above}\\
-A Hammett $\mathrm pK_a$ closure reverses the substitution's sign between its two poles & OPERA $\mathrm pK_a$, clean pole ($158$) and degraded ($846$); $K{=}20$ within-scaffold splits, $G{=}4$ series & MAE gap $-0.165$ $[-0.28,-0.04]$ on the clean pole, the reference better in $19$ of $20$ splits and in three of the four series, against $+0.79$ $[+0.57,+0.95]$ on the degraded, worse in $20$ of $20$ and in all four; $90\%$ intervals over the four series, which as a sign test read $p\approx0.31$ on the clean pole and $p{=}1/16$ on the degraded---so that test carries the degraded half and not the positive control. The clean pole is well specified only after the quality filter: on the $163$ rows before it its closure floor is $+0.55$, not $-0.2$ \\
+A Hammett $\mathrm pK_a$ closure reverses the substitution's sign between its two poles & OPERA $\mathrm pK_a$, clean pole ($158$) and degraded ($846$); $K{=}20$ within-scaffold splits, $G{=}4$ series & MAE gap $-0.165$ $[-0.28,-0.04]$ on the clean pole, the reference better in $19$ of $20$ splits and in three of the four series, against $+0.79$ $[+0.57,+0.95]$ on the degraded, worse in $20$ of $20$ and in all four; $90\%$ intervals over the four series, which as a sign test read $p\approx0.31$ on the clean pole and $p{=}1/16$ on the degraded---so that test carries the degraded half and not the positive control. The clean pole is well specified only after the quality filter: on the $163$ rows before it its closure floor is $+0.55$ in squared $\mathrm pK_a$, not $-0.2$ \\
 \bottomrule
 \end{tabular}
 }

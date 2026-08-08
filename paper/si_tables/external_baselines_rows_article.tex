@@ -38,17 +38,19 @@
 % wider than any number under them -- `n (ln x2/log10 S)' by 10 pt and `RMSE log10 S' by 14 pt --
 % so breaking all four over two lines returns 24 pt at no cost to any cell.
 % THE MEASURE, RE-DONE FOR FIVE COLUMNS (2026-08-08).  \textwidth in this document's table* is
-% 504.47 pt, measured with \typeout and not assumed.  The four numeric columns cost 217.2 pt
+% 504.47 pt, measured with \typeout and not assumed.  The four numeric columns cost 213.9 pt
 % together (set by `(ln x2/log10 S)' at 62.7, `-0.03 +- 0.04' at 55.6 and two `1.70 +- 0.03'
-% at 47.8), and five columns with @{} at both ends cost 2*\tabcolsep*4 in gaps.  The longest
+% at 47.8 -- this line read 217.2 pt, which is not the sum of the four widths it lists and never
+% was), and five columns with @{} at both ends cost 2*\tabcolsep*4 in gaps.  The longest
 % model name -- `TGNN, COSMO-SAC, reference sigma* substituted at evaluation' -- has a natural
 % width of 268.4 pt, so at \tabcolsep 3 pt the model column could be at most 263.3 pt and that
 % name would still wrap.  \tabcolsep 2 pt buys the 8 pt that
-% closes it: 269.9 + 217.2 + 16 = 503.1 pt, which is 1.4 pt inside the measure, and every one of
-% the nine names then sets on one line.  Both margins are thin and NOTHING here is stretchy, so
+% closes it: 269.9 + 213.9 + 16 = 499.8 pt, which is 4.7 pt inside the measure, and every one of
+% the nine names then sets on one line.  The margin is thin and NOTHING here is stretchy, so
 % anything that widens a cell or a block head must be re-measured against 504.47 pt --
-% \sbox the tabular and \typeout its \wd; the build does not reliably complain, because an
-% over-wide tabular in a centred float sticks out on both sides without an Overfull \hbox.
+% \sbox the tabular and \typeout its \wd, but read TWO WIDTHS below before believing the figure:
+% an \sbox around the \input measures the LINE and not the tabular.  The build does not reliably
+% complain, because an over-wide tabular in a centred float sticks out without an Overfull \hbox.
 % The widest block head is the third at 486.7 pt, which is inside the tabular and not binding.
 %
 % THE GUTTERS, AND WHY \tabcolsep IS GONE (2026-08-09).  What the paragraph above bought in
@@ -62,10 +64,34 @@
 % longest-name row because the n cells are narrower than their own head.
 % So: every boundary is an explicit @{\hspace{}} (4 pt model|n, 7 pt on each of the three
 % numeric|numeric), \tabcolsep no longer applies anywhere, and the extra 9 pt of gap is paid for
-% by \pmsd, which takes 3 mu off each side of the twelve `+-' and so narrows by 4.44 pt each of
-% the three columns whose widest cell is one (MAE, RMSE and R2; the n column has no `+-' and does
-% not move).  The tabular measures 502.08 pt by \typeout -- 269.89 model + 25 gap + 207.2 numeric
-% -- so it is 2.4 pt inside the measure, WIDER MARGIN than the 1.4 pt it replaced.
+% by \pmsd, which takes 3 mu off each side of the twelve `+-'.  THAT IS 6 mu, AND 6 mu AT THE
+% 10 pt OF \footnotesize IS 3.33 pt -- not the 4.44 pt an earlier draft of this comment claimed.
+% 4.44 pt is 8 mu, i.e. the whole \medmuskip off both sides rather than three quarters of it, and
+% the same draft states the arithmetic correctly two lines above where it calls the 1 mu left
+% inside the pair a 0.56 pt hairline: 4 mu - 3 mu = 1 mu = 0.56 pt, so the pair cannot have given
+% back 4.44.  \sbox the two forms and \typeout their widths rather than reasoning about them:
+% `$1.70\pm0.03$' is 47.778 pt against `$1.70\pmsd0.03$' at 44.445, and `$-0.03\pm0.04$' 55.556
+% against 52.222.  Each of the three columns whose widest cell is a `+-' therefore narrows by
+% 3.33 pt (MAE, RMSE and R2; the n column has no `+-' and does not move), 10.0 pt over the three,
+% which is what pays for the 9 pt of extra gap.  WITHOUT \pmsd THE TABULAR IS 508.75 pt AND DOES
+% NOT FIT THE 504.47 pt MEASURE AT ALL: the macro is load-bearing here, not a refinement.
+% TWO WIDTHS, AND THEY ARE DIFFERENT NUMBERS.  The TABULAR is 498.75 pt -- 269.89 model + 25 gap
+% + 203.86 numeric (62.75 n + 44.44 + 44.44 + 52.22) -- and that is what the printed rule
+% measures, 5.7 pt inside the measure.  The LINE it is centred in is 502.08 pt, 3.33 pt more,
+% because the newline after \end{tabular} at the foot of this file leaves one \footnotesize
+% interword space behind the tabular and \centering centres the two together.  So an \sbox around
+% the \input reports 502.08 and a measured rule reports 498.75 and both are right; the earlier
+% draft's 502.08 was the line's.  THE HEADROOM IS THE LINE'S, 2.4 pt: widen a cell by more than
+% that and it is the line, not the tabular, that overflows.
+% WHY THE RULE DOES NOT PRINT CENTRED, and why it is not being fixed.  That same trailing space
+% leaves the rule 1.19 pt inside the left edge of the measure and 4.53 pt inside the right -- an
+% offset of 1.66 pt, half a space.  It is pre-existing and it is not this table's doing: the first
+% and second parts of the claim ledger in the Supporting Information are off centre by the
+% identical 1.66 pt, and its third part, whose \tabnotes opens with \par and so drops the trailing
+% glue, prints exactly centred.  A `%' after \end{tabular} below would centre this one and hand
+% back the 3.33 pt as headroom; it has deliberately NOT been added at proof stage.  Add it in a
+% later pass and every figure in this block moves -- all of them re-derive from the two \sbox
+% measurements above -- so do not add it and leave the numbers.
 % RE-MEASURE THE PRINTED RESULT, not the specifier, and not the build's silence:
 %   xelatex grounding_paradox.tex
 %   pdftotext -f 28 -l 28 -bbox-layout grounding_paradox.pdf -     # the page tab:baselines is on
