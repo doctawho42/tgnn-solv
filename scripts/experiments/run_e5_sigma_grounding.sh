@@ -54,6 +54,18 @@ EXTRA_TRAIN_ARGS="${EXTRA_TRAIN_ARGS:-}"   # e.g. --epochs-phase1 1 --epochs-pha
 DIRECT_EPOCHS="${DIRECT_EPOCHS:-}"         # directgnn --epochs override; empty = config's matched 110 (smoke: 1)
 NUM_WORKERS="${NUM_WORKERS:-}"             # DataLoader workers for all training arms; empty = 0 (main process)
 NW_ARGS=(); [ -n "${NUM_WORKERS}" ] && NW_ARGS=(--num-workers "${NUM_WORKERS}")
+
+# DataLoader workers pass tensors between processes as file descriptors, and several concurrent
+# arms exhaust the default soft limit of 1024 during validation: one arm of the 2026-08-08 gate
+# died with "RuntimeError: received 0 items of ancdata", which reads like a data bug and is not
+# one. Raise the soft limit toward the hard one whenever workers are in play.
+if [ -n "${NUM_WORKERS}" ] && [ "${NUM_WORKERS}" != "0" ]; then
+  _fd_hard=$(ulimit -Hn 2>/dev/null || echo 1024)
+  [ "${_fd_hard}" = "unlimited" ] && _fd_hard=65536
+  _fd_want=65536; [ "${_fd_hard}" -lt "${_fd_want}" ] 2>/dev/null && _fd_want="${_fd_hard}"
+  ulimit -n "${_fd_want}" 2>/dev/null || true
+  echo "   file descriptors: soft=$(ulimit -n) hard=${_fd_hard} (workers=${NUM_WORKERS})"
+fi
 SIGMA_ARTIFACT="${SIGMA_ARTIFACT:-results/sigma_profile_artifact/sigma_profiles.csv}"
 
 TRAIN="${DATA_DIR}/train.csv"; VAL="${DATA_DIR}/val.csv"; TEST="${DATA_DIR}/test.csv"

@@ -50,13 +50,35 @@ from tgnn_solv.trainer import TGNNSolvTrainer
 
 
 def resolve_device(device_str: str) -> torch.device:
-    """Resolve a requested device with a safe fallback."""
+    """Resolve a requested device, refusing to substitute CPU for an accelerator.
+
+    The fallback used to be silent-ish: one WARNING line, then 300 KB of tqdm output on
+    top of it. On 2026-08-08 a kernel upgrade left the gate box without its NVIDIA
+    module, six `--device cuda` runs fell through to CPU, and they trained for ten hours
+    at 15 s/it against ~1 s/it on the V100 -- roughly two months to a result -- without
+    a single error line. An accelerator asked for by name and quietly not delivered is
+    never what the caller wanted, so it is an error now. Set TGNN_ALLOW_CPU_FALLBACK=1
+    to restore the old behaviour for a smoke run.
+    """
     requested = device_str.strip().lower()
+    allow_fallback = os.environ.get("TGNN_ALLOW_CPU_FALLBACK", "").lower() in (
+        "1", "true", "yes", "on"
+    )
+    unavailable = None
     if requested.startswith("cuda") and not torch.cuda.is_available():
-        print("WARNING: CUDA requested but unavailable; falling back to CPU.")
-        return torch.device("cpu")
-    if requested == "mps" and not torch.backends.mps.is_available():
-        print("WARNING: MPS requested but unavailable; falling back to CPU.")
+        unavailable = "CUDA"
+    elif requested == "mps" and not torch.backends.mps.is_available():
+        unavailable = "MPS"
+    if unavailable is not None:
+        if not allow_fallback:
+            raise RuntimeError(
+                f"{unavailable} was requested (--device {device_str}) but is not available. "
+                f"Refusing to train on CPU instead: on this corpus that is a ~15x slowdown "
+                f"that produces no error and no wrong number, only a run that never finishes. "
+                f"Pass --device cpu if CPU is what you meant, or set "
+                f"TGNN_ALLOW_CPU_FALLBACK=1 to fall back silently."
+            )
+        print(f"WARNING: {unavailable} requested but unavailable; falling back to CPU.")
         return torch.device("cpu")
     dev = torch.device(device_str)
     if dev.type == "cuda" and os.environ.get("TGNN_MATMUL_TF32", "").lower() in (
