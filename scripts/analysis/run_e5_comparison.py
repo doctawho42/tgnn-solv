@@ -89,17 +89,51 @@ def _metrics_on_keys(df: pd.DataFrame, keys) -> dict:
 
 
 def evaluate_criteria(per_arm: dict, *, direct_label: str, lngamma_band) -> dict:
+    """Score the two pre-registered criteria, distinguishing "failed" from "not tested".
+
+    Both criteria used to collapse to `False` when they could not be evaluated at all --
+    `rescue` whenever the `direct_label` arm was absent from this run, `keeps_constraint`
+    whenever an arm carried no `ln_gamma2_pred` column. That is the failure mode this
+    project treats as worse than a wrong positive: a negative that was never established
+    reads exactly like one that was, and nothing downstream can tell them apart. The
+    leak-free A1 gate runs `ungrounded` and `grounded_a` only, with no `directgnn` arm,
+    so every seed's comparison.json said `rescue: false` for arms no comparator had been
+    measured against.
+
+    An unevaluable criterion is `None` now -- JSON `null` -- and `criteria_not_evaluated`
+    says which, and why, so a reader who sees neither true nor false is told the reason
+    rather than left to infer one.
+    """
     lo, hi = lngamma_band
     direct_r2 = per_arm.get(direct_label, {}).get("r2", float("nan"))
-    rescue, keeps = {}, {}
+    direct_missing = direct_label not in per_arm
+    rescue, keeps, why = {}, {}, {}
     for label, mtr in per_arm.items():
-        rescue[label] = bool(
-            np.isfinite(direct_r2) and np.isfinite(mtr["r2"]) and mtr["r2"] >= direct_r2
-        )
+        if direct_missing:
+            rescue[label] = None
+            why[f"rescue.{label}"] = (
+                f"no {direct_label!r} arm in this run, so there is no comparator R^2"
+            )
+        elif not np.isfinite(direct_r2):
+            rescue[label] = None
+            why[f"rescue.{label}"] = f"{direct_label!r} arm scored a non-finite R^2"
+        elif not np.isfinite(mtr["r2"]):
+            rescue[label] = None
+            why[f"rescue.{label}"] = "this arm scored a non-finite R^2"
+        else:
+            rescue[label] = bool(mtr["r2"] >= direct_r2)
+
         std = mtr.get("lngamma_std", float("nan"))
-        keeps[label] = bool(np.isfinite(std) and lo <= std <= hi)
+        if not np.isfinite(std):
+            keeps[label] = None
+            why[f"keeps_constraint.{label}"] = (
+                "no finite ln_gamma2_pred spread (column absent, or fewer than two rows)"
+            )
+        else:
+            keeps[label] = bool(lo <= std <= hi)
     return {"rescue": rescue, "keeps_constraint": keeps,
-            "matched_direct_r2": direct_r2}
+            "matched_direct_r2": direct_r2,
+            "criteria_not_evaluated": why}
 
 
 def main() -> None:
