@@ -510,8 +510,138 @@ estimator even when its bias is no smaller, so a true-valued input need not give
 risk at finite $n$.
 
 
-\section{Per-arm tables and decomposition robustness}
+\section{The claims ledger, per-arm tables and decomposition robustness}
 \label{sec:si-tables}
+
+% ---------------------------------------------------------------------------
+% THE CLAIM LEDGER.  One row per load-bearing claim of the ARTICLE, so that data set, n,
+% estimator and value are legible without reconstructing them from its prose.
+%
+% IT MOVED HERE FROM THE ARTICLE ON 2026-08-08, whole: both floats, the \ContinuedFloat that
+% keeps them one table, and notes a-h.  It went because twenty-five rows of \scriptsize across
+% two pages of a 34-page article is not readable, which is what the author asked to be rid of.
+% Bring it back and the same complaint comes back with it.
+%
+% WHAT IT IS NOT, ANY MORE, AND THIS IS THE LOAD-BEARING PART.  Between 2026-08-02 and the move
+% this table WAS the manuscript's hedging apparatus: an earlier pass had lifted the scope clauses
+% out of the prose sentences and into these value cells to shorten the prose, so a large number of
+% article claims took their scope FROM this table.  Moving it in that state would have left the
+% article asserting flatly what it now qualifies.  So the scopes went back into the article's
+% prose FIRST, claim by claim and verified against the cell, and only then did the table move; the
+% inventory of what was restored where is in the comment above \S\ref{sec:paradox} in
+% grounding_paradox.tex.  This table is therefore a REFERENCE INDEX and no longer the only place a
+% qualification is printed.  A cell here that repeats a clause of the article is correct.
+% DO NOT shorten an article sentence on the ground that a row here already scopes it.
+%
+% THE LEDGER IS SPLIT ACROSS TWO FLOATS, AND MUST STAY SPLIT (2026-08-07).  Set as one
+% float it was 105.4pt TALLER THAN THE PAGE -- "LaTeX Warning: Float too large for page by
+% 105.36841pt" -- and LaTeX does not break a float, so the excess was set past the bottom of
+% the text block: the folio printed on top of note f, note g stopped mid-clause after "one-sided
+% in both directions", and note h did not reach the PDF at all.  All three referees reported it.
+% The page geometry is the same in this document as in the article (same class, same
+% layout=twocolumn), so the limit is the same limit.  `p' in the specifier does NOT help this
+% failure and never did: a float taller than \textheight overflows a float page exactly as it
+% overflows a text page.  The two parts carry the same number through \ContinuedFloat (the
+% `caption' package, already loaded by achemso), so \ref{tab:claims} and the "Table 4, note g"
+% pointers elsewhere in this document both still resolve, and no later table is renumbered.
+% The notes sit at the foot of the SECOND part, where a continued table's notes belong.
+% BEFORE MOVING A ROW BETWEEN THE TWO PARTS, or adding one, rebuild and grep the build output
+% for "Float too large": either part is within a few lines of the limit again the moment it
+% carries two blocks it was not sized for.
+% ---------------------------------------------------------------------------
+\subsection{The claims ledger}
+\label{sec:si-ledger}
+Table~\ref{tab:claims} collects the article's eighteen load-bearing claims in one place: what is
+claimed, the data set it was measured on and that set's size, and the value with its uncertainty and
+its scope. It is an index and not the place those scopes live. Every qualification printed in a value
+cell below---an $n$, a per-seed triple, ``one seed'', ``one checkpoint'', an interval that spans
+zero, a named exception, the one-sidedness of a margin---is also carried by the article sentence that
+makes the claim, which is where a reader meets it; nothing in the article depends on this table being
+open beside it. What the table adds is that the eighteen can be read against one another, and that
+the five blocks show at a glance which claims share a data set, a confound or an estimator.
+
+\begin{table*}[tp]
+\centering
+\caption{One row per load-bearing claim: what is claimed, the data set and its size, and
+the value measured with its uncertainty and its scope. Notes \emph{a}--\emph{h}, at the foot
+of the continuation, qualify a row or a column.}
+\label{tab:claims}
+{\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.86}
+\begin{tabular}{@{}L{0.27\linewidth}L{0.19\linewidth}L{0.46\linewidth}@{}}
+\toprule
+Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\emph{The two senses of grounding} (\S\ref{sec:paradox})}\\
+Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($5608$ of $8103$), 3 seeds & $1.85\to2.25$; the per-seed values do not overlap; the gap carries the test-time input swap with it \\
+\ldots and still hurt when injected at training & labelled test rows\tnk{c}, seed $42$ & $1.80\to1.98$ (own baseline $1.80\to2.23$); one seed and a stream build not certified against its comparator's (\S\ref{sec:si-repro}), so a sign and not an effect size---free of the test-time swap, which the row above is not \\
+\ldots so part of that gap is test-time distribution shift & labelled test rows\tnk{c}, seed $42$ & share $0.59$ on one seed: a description of that seed, not a magnitude \\
+Training-time $\sigma$ supervision \emph{helps} (MAE) & labelled test rows, 3 seeds & $2.04\to1.85$; the per-seed values do not overlap; per-seed gains $0.237/0.075/0.281$ straddle the co-adapted arm's $+0.18$, so the two operations are not ordered by magnitude---and the only contrast here a $\sigma$-stream leak could inflate, the ungrounded arm carrying no stream (\S\ref{sec:data}) \\
+The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 3 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ at the worst seed---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $589$ of the $823$ groups in both arms at all three seeds. The substitution falls on the solvent channel \\
+\addlinespace[2pt]
+\multicolumn{3}{@{}l@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure}); margins in squared \lngi\ units, not the \lnx\ MAE of the block above}\\
+$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.26,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist; the pre-declared cross-fitted $\Binsuf^{\mathrm{up}}$, which came back looser and does not headline, puts the same cell at $+1.76$ $[+1.02,+2.49]$ (\S\ref{sec:si-crossfit}) \\
+\ldots\ on every other stratum of the map & broad IDAC, $59$ strata & \S\ref{sec:si-map}, Tables~\ref{tab:map-full}--\ref{tab:map-detail}, each with its margin, interval and the test it fails; none is stated as a finding\tnk{h} \\
+\ldots\ for either set \emph{as a whole} & broad IDAC ($477$); VT-2005-matched ($60$) & $+0.51$ (full $+0.95$); $-0.38$ compounding two cuts ($+0.01$ full); $+0.18$ less one publication; $+0.05$ on the smaller set: an average weighted by composition\tnk{f} \\
+$\Binsuf^{\mathrm{up}}$ near stratum-independent, $\mathrm{MSE}$ not & broad IDAC, $3$ boundable classes; $6$ with an estimate & $\times2.0$ against $\times25$; $\times6.8$ against $\times51$; $p{=}0.02$ against $2000$ null partitions of $9$ classes \\
+$\Bclos>\Binsuf$, 2010 on its \emph{own} typed latent\tnk{f} & broad IDAC ($477$); VT-2005-matched ($60$) & $+1.29$, $P>0.95/{\approx}0.9/{\approx}0.9$\tnk{e}; $-0.77$ at $P\approx0.3$ on the smaller set, where the ordering is lost: loss of resolution, not a reversal \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+% Second part of the claim ledger; see the note above the first part before touching either.
+\begin{table*}[tp]
+\ContinuedFloat
+\centering
+\caption{\emph{Continued.} The remaining three blocks of the ledger, and notes
+\emph{a}--\emph{h}, which qualify rows and columns of both parts.}
+\label{tab:claims-cont}
+{\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.86}
+\begin{tabular}{@{}L{0.27\linewidth}L{0.19\linewidth}L{0.46\linewidth}@{}}
+\toprule
+Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\emph{Whether a better closure moves the ceiling} (\S\ref{sec:fidelity})}\\
+The $2002\to2010$ step lowers the error & broad IDAC ($477$) & $-0.99$ at $P\approx0.2$: no improvement, and not a measured equality either; under the full convention $-0.07$, $P\approx0.6$, and $+0.06$, $P\approx0.6$ with dispersion on \\
+\ldots but does on the VT-2005 set's chemistry & $57$ shared pairs, UD & $1.78\to0.77$, $P>0.95$, at fixed profile database and temperature, full convention; those $57$ pairs are also broad-set rows, so not an independent sample \\
+A fitted kernel residual transfers across solvents & VT-2005-matched ($60$), grouped folds & $-5\pm16\%$: spans zero; the $\pm$ prices optimiser noise only, and the fold spread that dominates it is not propagated, so no bound follows \\
+\addlinespace[2pt]
+\multicolumn{3}{@{}l@{}}{\emph{Mechanism} (\S\ref{sec:surrogate})}\\
+The latent departs from its reference along a shared direction & matched molecules ($44$), 3 seeds & $51\pm2\%$; the magnitude is not stable across analysis configurations, and these are a separate three-seed set of runs, not the arms of Fig.~\ref{fig:paradox}, whose latent departure is not measured \\
+\ldots and that departure's top-two mode share exceeds a phase-randomised null & one grounded checkpoint, same $44$ & $0.40$ against $0.22\pm0.01$, the $\pm$ being the null's spread; one checkpoint, and a wrong-molecule null is not cleared \\
+\ldots and that direction \emph{transfers} to molecules outside the fit & matched molecules ($44$), 3 seeds & $4.1\pm0.5\times$ a zero-drift null, with no constant-offset control on these seeds; the $\pm$ spans seeds at one partition; and the held-out half is homologue-saturated, so ``outside the fit'' is largely within-cluster interpolation \\
+That departure \emph{cancels} closure error & not measured & the one direct check is under-powered and runs against it \\
+\addlinespace[2pt]
+\multicolumn{3}{@{}l@{}}{\emph{Accuracy} (\S\ref{sec:discussion})}\\
+Physics arm vs.\ DirectGNN accuracy ($\Delta$MAE) & labelled test rows ($5608$ of $8103$) & $+0.14$ between separately tuned pipelines, so not attributable to the thermodynamic bottleneck \\
+\bottomrule
+\end{tabular}
+\tabnotes{\scriptsize%
+\tnk{a}\,The sets are defined in Table~\ref{tab:notation}.\quad
+\tnk{b}\,$P$ is a two-way (solute\,$\times$\,solvent) cluster-bootstrap frequency that the margin
+stays positive, reported as a band by the rounding rule at the head of this section.\quad
+\tnk{c}\,The same $5608$ rows: the seed-$42$ control arms carry the identical labelled set, so
+their cross-arm intersection with the arms of Table~\ref{tab:si-arms} is that set exactly.\quad
+\tnk{d}\,One estimator cell (\S\ref{sec:estimator}) for both sets, both kernels and every
+stratum.\quad
+\tnk{e}\,Bootstrap band over pair\,/\,two-way\,/\,source clusters.\quad
+\tnk{f}\,An aggregate margin is a composition-weighted average, and the deletions and cuts recorded
+here are failures of the headline cell rather than robustness passes. These rows record what the
+aggregate was and how it fails; the rows above replace it.\quad
+\tnk{g}\,The comparison is one-sided in both directions it can be read: a positive margin establishes
+$\Bclos>\Binsuf$, a non-positive one is failure to separate and licenses nothing. The margin's size
+is a lower bound on $\Bclos-\Binsuf$ and not an estimate of it, so an interval on a margin bounds
+that bound and not the difference (Lemma~\ref{prop:decomp}, \S\ref{sec:decomp}). $\Bclos$ is the
+error of the fixed map \emph{read at a computed profile}, so what a positive margin establishes is a
+property of that composite and not of the kernel alone (\S\ref{sec:badclosure}).\quad
+\tnk{h}\,Of fifty-nine strata, fifteen are boundable and six admissible; clause~(c) of
+\S\ref{sec:estimator} makes those six three distinct row sets, of which one is also positive and not
+demoted by its residual test---the glycol ethers, the one row set the rule leaves standing.}}
+\end{table*}
 
 % Artifact: results/e5_sigma_grounding/ROW_SET_DECOMPOSITION.md carries this decomposition, the
 % 22-file finiteness audit and the arm-independent recomputation, regenerable from the per-row
@@ -2779,6 +2909,70 @@ and a power check inline.
 
 \section{Data provenance and reproducibility}
 \label{sec:si-repro}
+
+% ---------------------------------------------------------------------------
+% RUN-FAMILY TABLE (2026-08-02, editorial item A3).  The referees could not tell which numbers came
+% from which run, nor which were three-seed.  This is that map: the seed count and the provenance of
+% every number the article reports.
+% One row per run family, NOT per number: a family is a set of runs sharing a script, a corpus and a
+% seed policy.  If a new family is added to the paper, add a row here in the same pass.
+%
+% IT MOVED HERE FROM THE ARTICLE'S sec:eval ON 2026-08-08, in the readability pass, because it is
+% provenance and not evidence -- no claim in the article is read off it and its third column is a
+% list of cross-references -- and because at 43% of a page in 8 pt it was the second-largest float
+% in a 34-page article.  The article keeps the sentence that says every number has a named family
+% with a seed policy.  Its \label is unchanged, so the article's \ref{tab:runs} resolves to this
+% table's S-number through xr-hyper and no call site was rewritten.
+% THE NOTE LOST ITS ARITHMETIC IN THE SAME PASS.  It used to restate the seed-44 deposit defect in
+% full -- 295 of 8103 rows, the byte-prefix, the metrics that recompute -- which is the subject of
+% the recovery paragraph later in THIS section, so inside sec:si-repro it was the same disclosure
+% printed twice.  What is left is the clause a reader of the table needs to read its first row.
+% ---------------------------------------------------------------------------
+\begin{table*}[tp]
+\centering
+\caption{Run families: which runs produced which numbers, and at how many seeds. The deposit names
+the analysis script and the artifact behind each row.}
+\label{tab:runs}
+{\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.9}
+\begin{tabular}{@{}L{0.32\linewidth}L{0.22\linewidth}L{0.40\linewidth}@{}}
+\toprule
+Run family & Seeds & What it produced \\
+\midrule
+$\sigma$-grounding arms, GPU, full corpus & $42,43,44$, mean$\pm$sd on the $n{=}5608$ labelled test rows &
+Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2}, Table~\ref{tab:si-arms}, the $+0.41$ and $-0.20$
+of \S\ref{sec:paradox} \\
+Co-adaptation and channel-swap oracle controls; gated output residual & $42$ only: a sign, not an
+effect size & the $+0.18$ and $+0.27$ of \S\ref{sec:paradox}; \S\ref{sec:gateb} \\
+Decomposition, VT-2005-matched & none: the closure has no
+learnable parameters & \S\ref{sec:vt2005}; the estimator grids \\
+Decomposition, broad IDAC, with its design and provenance audit & none &
+\S\ref{sec:broad}: the $+0.51$, the $+0.95$, the deletion curve \\
+The stratified map & none & the $59$ strata,
+Tables~\ref{tab:map-full}--\ref{tab:map-detail} \\
+Closure-fidelity kernels & none & \S\ref{sec:fidelity}, Table~\ref{tab:kernels} \\
+Kernel residual & five fit seeds; $\pm$ is their standard error
+& the $46\pm5\%$ and $-5\pm16\%$ of \S\ref{sec:badclosure} \\
+Latent against its reference & $0,1,2$; mean$\pm$sd &
+\S\ref{sec:surrogate}, Fig.~\ref{fig:surrogate} \\
+Closure validation & none & the \emph{2002} NIST reproduction;
+Table~\ref{tab:closure-anchor}. The 2010 reproduction comes from a validator that wrote no
+artifact and is regenerated by neither \\
+External baselines & one run each, on a
+\emph{by-solute} split and, for two of the rows, a \emph{random-pair} one &
+Tables~\ref{tab:baselines} and~\ref{tab:si-published} \\
+pKa second domain: decomposition, Hammett probe and bootstrap & $K{=}20$ within-scaffold splits; $G{=}4$ series as the cluster
+unit & \S\ref{sec:pka-main} \\
+Noise floor and encoder probe & none & \S\ref{sec:data},
+\S\ref{sec:gap} \\
+\bottomrule
+\end{tabular}
+\tabnotes{\scriptsize%
+The $\sigma$-grounding row's seed-$44$ oracle prediction file was deposited truncated and has been
+recovered complete, so every row of every arm at every seed is re-analysable from the deposit.}}
+\end{table*}
+
 % Artifact: results/b_insuff/representative_decomposition.json ("construction_ladder" field) via
 % scripts/analysis/run_b_insuff_representative.py.
 \paragraph{The broad IDAC set ($n{=}477$), and the UD profile database.} The UD $\sigma$-profile
@@ -2906,6 +3100,14 @@ through the repository's CAS-to-InChIKey map and matched by exact InChIKey to th
 artifact: $7889$ of $8138$ usable records ($96.9\%$), $2279$ distinct pairs, each at its own
 temperature. Those are the rows of Table~\ref{tab:closure-anchor}'s middle block, and the same $7889$
 rows are the out-of-sample set of \S\ref{sec:broad}.
+
+% RELOCATED FROM Table 2's NOTE a ON 2026-08-08, in the readability pass, verbatim.  The note keeps
+% the one clause a reader of that table cannot do without -- which row is like-for-like and which
+% convention the deployed one is -- and this is the per-cell reading of the same block.
+Within that block the error is not evenly spread, and the worst cell is water carried as the dilute
+solute in an organic solvent: AAD $2.02$ with a $+1.92$ bias on $468$ rows. At $298$\,K and
+non-aqueous---the regime the $n{=}60$ VT-2005-matched set occupies---AAD is $0.42$ on $1033$ rows,
+against that set's own $0.81$, so this paper's set is if anything the harder one.
 
 \paragraph{Sources.} Solubility: BigSolDB~2.0 \cite{krasnov2025bigsoldb}, partitioned by
 Bemis--Murcko scaffold---molecules grouped by ring system plus linker, side chains stripped. Crystal
@@ -3098,8 +3300,13 @@ stream build beside the split hash, which was not done for these runs.
 % ALSO CHECKED IN THE SAME PASS.  The heading of sec:paradox now names the two OPERATIONS and not
 % their signs, so branch 2's rewrite of that heading is a check rather than a change.  The five rows
 % of tab:claims under "the two senses of grounding" are untouched by the move and the count "five"
-% still holds.  tab:runs and tab:baselines stay in the article, so no entry here acquires a
-% "Table S-n".  Limitation (xii), which disposition D names, stayed in the article when limitations
+% still holds.  tab:baselines stays in the article; tab:runs moved into this document on 2026-08-08,
+% so the protocol's "seed list of the sigma-grounding row" now names an S-numbered table, and every
+% \ref above resolves either way, so no entry had to be rewritten.  The same pass took the
+% as-published block and the two random-pair rows out of tab:baselines into tab:si-published; those
+% are external runs carrying no seed of ours, so no display this protocol names moved with them, and
+% the block-1 rows it does name are still in the article.
+% Limitation (xii), which disposition D names, stayed in the article when limitations
 % (vii)-(xi) and (xiii) moved to sec:si-limitations, and sec:discussion keeps its label on Sec. 3.7,
 % so both dispositions still find their passage.  Gate B keeps its label sec:gateb, now inside
 % sec:surrogate, and the inventory's note that its two arms are seed-42 runs of their own still

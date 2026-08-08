@@ -6,9 +6,14 @@
 % scripts/analysis/run_surrogate_two_mse.py (retained checkpoints only, not the three seeds).
 % The coinage "compensating surrogate" was retired on 2026-08-02 with the rest of the coined
 % vocabulary; the hypothesis is now named by what it says. Do not reintroduce the term.
-% 2026-08-02 compression: the hedge clauses that trailed each measurement are collected in the
-% Mechanism block of Table~\ref{tab:claims} and in limitation (viii). Every number, null and control
-% that stood here still stands here; what left was the SECOND statement of each caveat.
+% 2026-08-02 compression: the hedge clauses that trailed each measurement were collected in the
+% Mechanism block of the claims ledger and in limitation (viii).  REVERSED 2026-08-08, when the
+% ledger left the article for \S\ref{sec:si-ledger}: a claim may not take its scope from a table in
+% the other document, so the three clauses that trade had removed -- the 51+-2% magnitude's
+% instability across analysis configurations, "one grounded checkpoint" on the top-two share, and
+% what the +-0.5 on the 4.1x spans -- are back in the sentences that make those claims.  Every
+% number, null and control that stood here still stands here.  Do not move a scope out of a
+% sentence and into a table again.
 A candidate \emph{mechanism} for the low-fidelity, end-to-end regime is this: a $\sigma$-profile head
 trained \emph{end-to-end} through a fixed, misspecified closure---with no $\sigma$ supervision in
 that phase---is under pressure to \emph{cancel} the closure's error rather than to be physically
@@ -27,10 +32,13 @@ the phenomenon, for that reason and not as evidence for why either operation has
 % transfer ratio's weak-null disclosure and the constant-offset control, the dominant mode, and the
 % direct cancellation test with its three limits.  Fig.~\ref{fig:surrogate} was already there.
 % WHAT HAD TO STAY HERE, and what an editor of this stub must not drop: every number is a claim of
-% the Mechanism block of Table~\ref{tab:claims} and each one travels with the caveat that scopes it
+% the Mechanism block of the ledger (now \S\ref{sec:si-ledger}) and each one travels with the
+% caveat that scopes it, IN THIS TEXT and not in that table
 % -- 51+-2% with "a separate three-seed run set, not the paradox's arms, whose own drift is
-% unmeasured" and with "in-sample"; the top-two share with the null it clears AND the two it does
-% not; the 4.1x with "against the identity null alone"; and the cancellation check with "evidence
+% unmeasured", with "in-sample", and with the magnitude's instability across analysis
+% configurations; the top-two share with the null it clears AND the two it does not, and with "one
+% grounded checkpoint"; the 4.1x with "against the identity null alone" and with what its +- spans;
+% and the cancellation check with "evidence
 % against, and under-powered".  A number here printed without its clause is the failure this pass
 % was told to avoid; put the clause back rather than the number out.
 \paragraph{What is measured, and on what.} The comparison is within a single grounded model,
@@ -43,7 +51,9 @@ on runs of its own and is not established of the checkpoints whose paradox it is
 Under $\sigma$ supervision the head reproduces the reference profile to within $36\pm1\%$, so the
 intermediate \emph{can} carry the physical shape---though only as an in-sample fit, all $44$ probe
 molecules lying inside the $\sigma$-grounding pool. Solubility fine-tuning then drives it a further
-$41\pm3\%$ away, for a total departure from the reference of $51\pm2\%$. A relative deviation
+$41\pm3\%$ away, for a total departure from the reference of $51\pm2\%$---a magnitude reported but
+not stable across analysis configurations, so what these runs fix is the sign and the shared
+direction below and not the size. A relative deviation
 carries no scale of its own, and the ladder that supplies one (\S\ref{sec:si-mech}: the same $44$
 molecules and the same relative-$L_2$ metric, its rungs built from the reference profiles the
 grounded arm was supervised on) places the fine-tuned latent at $0.507$ and the grounded base at
@@ -55,12 +65,15 @@ grounding had provided, which is what makes the shrinkage reading below more tha
 \paragraph{What the departure is, and what it is not.} The drift is not per-molecule noise and its
 structure is not a constant offset: the first two principal components of the mean-centred deviation
 carry $72\pm1\%$ of the variance, and the quantity read against a null---the top-two share of the
-learned-versus-reference deviation, $0.399$---clears a phase-randomised null ($0.221$, $p<0.001$).
+learned-versus-reference deviation, $0.399$---clears a phase-randomised null ($0.221$, $p<0.001$),
+on one grounded checkpoint rather than over the three seeds, the $0.221$ carrying a spread of
+$\pm0.01$ that is the null's own over draws and not a spread over seeds.
 Two nulls it does not clear travel with that: the mean-centred share has no matched null of its own,
 and a wrong-molecule null built from real reference profiles does \emph{not} clear ($0.772$,
 $p=1.00$), so if the case for preferring the phase-randomised null is not accepted the spectrum is
 uninformative rather than supporting. One distortion operator fitted on half the $44$ molecules
-predicts the drift on the other half $4.1\pm0.5\times$ better than the zero-drift null---a
+predicts the drift on the other half $4.1\pm0.5\times$ better than the zero-drift null---the $\pm$
+spanning the three seeds at one partition of the $44$ and not the partitions---a
 deliberately weak null, uncontrolled on these three seeds, against which a molecule-independent
 constant offset already reaches $2.1\times$ on the one companion run where that control can be
 computed, so the ratio stands against the identity null alone and structure \emph{beyond} an offset

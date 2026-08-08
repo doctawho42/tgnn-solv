@@ -383,14 +383,28 @@ which half does not, is in \S\ref{sec:badclosure}.
 % added here from the same summary.json (ours.all_scored_records.full). Do not retype a value.
 % This float answers half of the referees' "is your closure normal?" objection -- the data half.
 % The other half, the implementation, is the NIST reproduction in the paragraph above.
+%
+% SET AT \footnotesize ACROSS THE FULL MEASURE, 2026-08-08 (the readability pass).  It used to be a
+% one-column `table' at \scriptsize -- 8 pt, two sizes under the body -- because its widest row is
+% 227 pt of a 240 pt column and does not fit in one column at 10 pt.  A `table*' has 503 pt, so the
+% same seven rows fit at 10 pt with room to spare; the cost is about 7% of a page and the buy is two
+% type sizes.  Do NOT put it back in one column: the only way back is \scriptsize.
+% `p' IS IN THE SPECIFIER because this is now a starred float (see the float note in preamble.tex):
+% a deferred `table*' blocks every starred float after it, and `p' keeps a float page available so
+% the queue cannot back up.
+% THE NOTE KEEPS ONE CLAUSE.  The worst-cell and 298 K arithmetic that used to run on after it is a
+% per-cell reading of the middle block, not something the table cannot say without it; it is in
+% sec:si-repro beside the paragraph that scores that block, and the caption says so.
 % ---------------------------------------------------------------------------
-\begin{table}[t]
+\begin{table*}[tp]
 \centering
 \caption{The deployed closure against a published evaluation of the same closure. AAD is the mean
-absolute error in $\ln\gamma^\infty$.}
+absolute error in $\ln\gamma^\infty$. The middle block's per-cell and per-regime values are in
+\S\ref{sec:si-repro}.}
 \label{tab:closure-anchor}
-{\scriptsize
-\setlength{\tabcolsep}{3pt}
+{\footnotesize
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.05}
 \begin{tabular}{@{}llrrr@{}}
 \toprule
 COSMO-SAC-2002 on & profiles & $n$ & AAD & $R^2$ \\
@@ -398,23 +412,22 @@ COSMO-SAC-2002 on & profiles & $n$ & AAD & $R^2$ \\
 \multicolumn{5}{@{}l@{}}{\emph{As published \cite{desouza2025cosmosac}}}\\
 PGL 6th ed.\ IDAC set & HF-TZVP & $6977$ & $1.75$ & $0.88$ \\
 PGL 6th ed.\ IDAC set & BP-TZVPD-FINE & $6977$ & $0.68$ & $0.96$ \\
+\addlinespace[2pt]
 \multicolumn{5}{@{}l@{}}{\emph{The same set, through this paper's closure}}\\
 \quad full convention\tnk{a} & VT-2005 & $7889$ & $0.98$ & $0.88$ \\
 \quad residual (deployed) & VT-2005 & $7889$ & $0.77$ & $0.92$ \\
 \quad\quad non-aqueous rows & VT-2005 & $4347$ & $0.47$ & $0.68$ \\
 \quad\quad aqueous rows & VT-2005 & $3542$ & $1.13$ & $0.83$ \\
+\addlinespace[2pt]
 \multicolumn{5}{@{}l@{}}{\emph{This paper's own sets, residual convention}}\\
 broad IDAC set & UD & $477$ & $1.12$ & $0.61$ \\
 VT-2005-matched set & VT-2005 & $60$ & $0.81$ & $0.40$ \\
 \bottomrule
 \end{tabular}
-\tabnotes{\scriptsize%
+\tabnotes{%
 \tnk{a}\,The like-for-like row, a published COSMO-SAC carrying its Staverman--Guggenheim term; the
-residual row is the convention this paper's $\Bclos$ is measured in. Worst cell: water in an organic
-solvent, AAD $2.02$ with a $+1.92$ bias on $468$ rows. At $298$\,K and non-aqueous---the regime the
-$n{=}60$ set occupies---AAD is $0.42$ on $1033$ rows, against that set's $0.81$, so this paper's set
-is if anything the harder one.}}
-\end{table}
+residual row is the convention this paper's $\Bclos$ is measured in.}}
+\end{table*}
 
 \subsection{Evaluation protocol, and the DirectGNN control}
 \label{sec:eval}
@@ -458,64 +471,19 @@ of the $8103$ (\S\ref{sec:data})---so all arms score identical rows. The $2495$ 
 carry a melting point and no solubility and are unscorable in every arm alike, the control included;
 none is dropped for anything an arm predicted. The set is fixed by which
 rows carry a label and not by which rows an arm handled---the lock's finite-prediction clause is
-inert, removing no row from any arm at any seed---and \S\ref{sec:si-lock} gives the decomposition. Table~\ref{tab:runs} names which run family produced which numbers,
-how many seeds it carries, and the script and artifact each regenerates from.
+inert, removing no row from any arm at any seed---and \S\ref{sec:si-lock} gives the decomposition. The
+runs behind every number reported here fall into twelve families, a family being a set of runs
+sharing a script, a corpus and a seed policy; Table~\ref{tab:runs} gives each number its family, its
+seed count and the artifact it regenerates from.
 
-% ---------------------------------------------------------------------------
-% RUN-FAMILY TABLE (2026-08-02, editorial item A3).  The referees could not tell which numbers came
-% from which run, nor which were three-seed.  This is that map, in the article, so the seed count and
-% the provenance of every reported number are checkable without the Supporting Information.
-% One row per run family, NOT per number: a family is a set of runs sharing a script, a corpus and a
-% seed policy.  If a new family is added to the paper, add a row here in the same pass.
-% ---------------------------------------------------------------------------
-\begin{table*}[tp]
-\centering
-\caption{Run families: which runs produced which numbers, and at how many seeds. The deposit names
-the analysis script and the artifact behind each row.}
-\label{tab:runs}
-{\scriptsize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{0.9}
-\begin{tabular}{@{}L{0.32\linewidth}L{0.22\linewidth}L{0.40\linewidth}@{}}
-\toprule
-Run family & Seeds & What it produced \\
-\midrule
-$\sigma$-grounding arms, GPU, full corpus & $42,43,44$, mean$\pm$sd on the $n{=}5608$ labelled test rows &
-Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2}, Table~\ref{tab:si-arms}, the $+0.41$ and $-0.20$
-of \S\ref{sec:paradox} \\
-Co-adaptation and channel-swap oracle controls; gated output residual & $42$ only: a sign, not an
-effect size & the $+0.18$ and $+0.27$ of \S\ref{sec:paradox}; \S\ref{sec:gateb} \\
-Decomposition, VT-2005-matched & none: the closure has no
-learnable parameters & \S\ref{sec:vt2005}; the estimator grids \\
-Decomposition, broad IDAC, with its design and provenance audit & none &
-\S\ref{sec:broad}: the $+0.51$, the $+0.95$, the deletion curve \\
-The stratified map & none & the $59$ strata,
-Tables~\ref{tab:map-full}--\ref{tab:map-detail} \\
-Closure-fidelity kernels & none & \S\ref{sec:fidelity}, Table~\ref{tab:kernels} \\
-Kernel residual & five fit seeds; $\pm$ is their standard error
-& the $46\pm5\%$ and $-5\pm16\%$ of \S\ref{sec:badclosure} \\
-Latent against its reference & $0,1,2$; mean$\pm$sd &
-\S\ref{sec:surrogate}, Fig.~\ref{fig:surrogate} \\
-Closure validation & none & the \emph{2002} NIST reproduction;
-Table~\ref{tab:closure-anchor}. The 2010 reproduction comes from a validator that wrote no
-artifact and is regenerated by neither \\
-External baselines & one run each, on a
-\emph{by-solute} split and, for two of the rows, a \emph{random-pair} one & Table~\ref{tab:baselines} \\
-pKa second domain: decomposition, Hammett probe and bootstrap & $K{=}20$ within-scaffold splits; $G{=}4$ series as the cluster
-unit & \S\ref{sec:pka-main} \\
-Noise floor and encoder probe & none & \S\ref{sec:data},
-\S\ref{sec:gap} \\
-\bottomrule
-\end{tabular}
-\tabnotes{\scriptsize%
-The seed-$44$ per-row oracle prediction file had been deposited at $295$ of its $8103$ rows, the
-transfer off the compute volume having stopped mid-record; the recovered complete file reproduces
-every metric in the run's own summary exactly and matches those $295$ rows byte for byte
-(\S\ref{sec:si-repro}), so every row of every arm at every seed is re-analysable from the deposit
-and the oracle row of Table~\ref{tab:baselines} is a three-seed mean like the rest of its
-block. Fig.~\ref{fig:parity-lnx2} is one seed, $42$, for all four of its panels alike, and its
-caption says so.}}
-\end{table*}
+% THE RUN-FAMILY TABLE MOVED TO THE SUPPORTING INFORMATION ON 2026-08-08 (the readability pass),
+% whole, and now sits at the head of \S\ref{sec:si-repro}, which is the section its rows point into.
+% It went because it is PROVENANCE and not evidence: no claim in this article is read off it, its
+% third column is a list of cross-references to displays printed elsewhere, and at 43% of a page in
+% 8 pt it was the second-largest float in the document.  The sentence above is what it left behind,
+% and it carries the one fact a reader needs at this point -- that every number has a named family
+% with a seed policy -- rather than an instruction to go and look.
+% Do NOT bring it back to shorten that sentence.
 
 \subsection{Estimating the split: one cell, one convention, one rule}
 \label{sec:estimator}

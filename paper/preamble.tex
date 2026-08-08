@@ -53,10 +53,12 @@
 % here is \end{document}. Left alone, every float from Table 2 onward printed after the
 % bibliography, tens of pages from the text that cites it. dblfloatfix repairs the ordering
 % and lets a double float reach the bottom of a column; the fractions below let a tall
-% starred float be a top float instead of being sent to a float page. The two floats that sit
-% at that height limit, Tables 2 and 3, additionally carry `p' in their own placement
-% specifiers, so a float page is available to them and the queue never backs up; the note at
-% each of them says so. Do NOT force the queue out with \afterpage{\clearpage} before Sec. 6.5
+% starred float be a top float instead of being sent to a float page. The starred floats that sit
+% at that height limit additionally carry `p' in their own placement specifiers, so a float page is
+% available to them and the queue never backs up; the note at each of them says so. Give a new tall
+% `table*'/`figure*' the same `p'. Do NOT name those floats by number here: the numbering has moved
+% twice as tables crossed between the two documents, and a stale number in this comment sends the
+% next reader to the wrong float. Do NOT force the queue out with \afterpage{\clearpage} before Sec. 6.5
 % or before the Discussion: in two-column mode that fires at a column boundary rather than a
 % page boundary, so it ends the page with the right-hand column empty -- a blank half page
 % before the Discussion -- and it buys no placement that `p' does not.
