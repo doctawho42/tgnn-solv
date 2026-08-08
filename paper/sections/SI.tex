@@ -257,9 +257,17 @@ solubility-variance term and the $\sigma$-profile earth-mover term, which is app
 registry when the grounding stream is on; only the top two groups are load-bearing for the claims, and the
 \emph{Loss-simplification ablation} paragraph below tests which.
 
-\begin{table}[h]
-\centering\small
-\resizebox{\columnwidth}{!}{%
+% SET AT 10 PT AND MOVED TO THE FULL MEASURE, 2026-08-08.  This was a one-column `table' whose
+% tabular was wrapped in \resizebox{\columnwidth}{!}, and that is why it printed at 7.5pt against a
+% 12pt body -- \resizebox does not set a size, it scales whatever the box turns out to be, so the
+% type size was an OUTPUT of the column width and nobody chose it.  The natural width at
+% \footnotesize is about 322pt against a 241pt column, so the size cannot be fixed while the float
+% stays one column: it is a `table*' now, and the tabular sits at its natural width inside the full
+% measure.  Do not reintroduce \resizebox to recentre or tighten it -- that silently re-couples the
+% type size to the measure, which is the defect being repaired.
+\begin{table*}[tp]
+\centering
+{\footnotesize
 \begin{tabular}{@{}llr@{}}
 \toprule
 role & term & default wt. \\
@@ -289,7 +297,7 @@ term (zero through the configuration) and the $\sigma$-profile earth-mover term,
 registry entry.\tnk{a} A further $17$ registered terms are hard-wired to $0$, and one more (bridge)
 is zero through the configuration.}
 \label{tab:loss}
-\end{table}
+\end{table*}
 
 \paragraph{Loss-simplification ablation.}
 For a diagnostic result the elaborate objective is a potential confound: the paradox
@@ -533,21 +541,39 @@ risk at finite $n$.
 % qualification is printed.  A cell here that repeats a clause of the article is correct.
 % DO NOT shorten an article sentence on the ground that a row here already scopes it.
 %
-% THE LEDGER IS SPLIT ACROSS TWO FLOATS, AND MUST STAY SPLIT (2026-08-07).  Set as one
-% float it was 105.4pt TALLER THAN THE PAGE -- "LaTeX Warning: Float too large for page by
-% 105.36841pt" -- and LaTeX does not break a float, so the excess was set past the bottom of
-% the text block: the folio printed on top of note f, note g stopped mid-clause after "one-sided
-% in both directions", and note h did not reach the PDF at all.  All three referees reported it.
-% The page geometry is the same in this document as in the article (same class, same
-% layout=twocolumn), so the limit is the same limit.  `p' in the specifier does NOT help this
-% failure and never did: a float taller than \textheight overflows a float page exactly as it
-% overflows a text page.  The two parts carry the same number through \ContinuedFloat (the
-% `caption' package, already loaded by achemso), so \ref{tab:claims} and the "Table 4, note g"
-% pointers elsewhere in this document both still resolve, and no later table is renumbered.
-% The notes sit at the foot of the SECOND part, where a continued table's notes belong.
-% BEFORE MOVING A ROW BETWEEN THE TWO PARTS, or adding one, rebuild and grep the build output
-% for "Float too large": either part is within a few lines of the limit again the moment it
-% carries two blocks it was not sized for.
+% THE LEDGER IS SPLIT ACROSS THREE FLOATS, AND MUST STAY SPLIT (two from 2026-08-07, three
+% from 2026-08-08).  Set as one float it was 105.4pt TALLER THAN THE PAGE -- "LaTeX Warning:
+% Float too large for page by 105.36841pt" -- and LaTeX does not break a float, so the excess
+% was set past the bottom of the text block: the folio printed on top of note f, note g stopped
+% mid-clause after "one-sided in both directions", and note h did not reach the PDF at all.
+% All three referees reported it.  The page geometry is the same in this document as in the
+% article (same class, same layout=twocolumn), so the limit is the same limit.  `p' in the
+% specifier does NOT help this failure and never did: a float taller than \textheight overflows
+% a float page exactly as it overflows a text page.  The parts carry the same number through
+% \ContinuedFloat (the `caption' package, already loaded by achemso), so \ref{tab:claims} and
+% the "note g" pointers elsewhere in this document all still resolve, and no later table is
+% renumbered.  The notes sit at the foot of the LAST part, where a continued table's notes belong.
+%
+% WHY THREE AND NOT TWO, 2026-08-08.  The type went from \scriptsize to \footnotesize -- 8pt to
+% 10pt against a 12pt body, the size of the article's Tables 1-3 -- because both referees this
+% round named the size, and because at 8pt this is now the only place the scope of eighteen
+% claims is collected.  A p-column table does not grow by the ratio of the sizes: the cells
+% reflow, so the line COUNT rises with the type as well as the leading, and the measured cost
+% here was ~1.55x on the row blocks, not the ~1.25x an eyeballed estimate gives.  Two floats
+% could not hold that (block one alone reaches 470pt of a 701pt text block, and blocks one and
+% two together 760pt), so the five blocks were repacked one / two-plus-three / four-plus-five.
+% BEFORE MOVING A ROW BETWEEN THE PARTS, or adding one, rebuild and grep the build output for
+% "Float too large": each part is within a block or two of the limit.
+%
+% THE COLUMN WIDTHS ARE FRACTIONS OF \linewidth AND DO NOT SHRINK WITH THE TYPE.  They sum to
+% 0.95, which with 4 x \tabcolsep(4pt) prints a 493.4bp rule inside a 502.6bp measure -- 9.2bp
+% of slack, 4.6bp a side, MEASURED OFF THE PAGE and not off the specifier.  What the type size
+% does move is the \multicolumn block headings, which is where the 10pt reset first broke: they
+% were `l' cells, so the closure heading -- the long one, which carries the units the block is in
+% -- simply ran 14.3pt past the rule at the larger size and LaTeX set it anyway, an Overfull
+% \hbox being a warning.  All five headings are p-cells of the tabular's own width now, so they
+% wrap.  If any of this is touched, measure the printed rule's right edge against the text block;
+% a clean build is not the check.
 % ---------------------------------------------------------------------------
 \subsection{The claims ledger}
 \label{sec:si-ledger}
@@ -557,87 +583,113 @@ its scope. It is an index and not the place those scopes live. Every qualificati
 cell below---an $n$, a per-seed triple, ``one seed'', ``one checkpoint'', an interval that spans
 zero, a named exception, the one-sidedness of a margin---is also carried by the article sentence that
 makes the claim, which is where a reader meets it; nothing in the article depends on this table being
-open beside it. What the table adds is that the eighteen can be read against one another, and that
-the five blocks show at a glance which claims share a data set, a confound or an estimator.
+open beside it. What the table adds is that the eighteen can be read against one another. Two of the
+three columns do that at a glance, and the second is where a shared data set shows: the same $5608$
+labelled test rows carry the first of the five blocks and the last. The confounds and the estimator
+conventions do not read at a glance, and the table is not offered as showing them that way---each is
+a sentence, and the cells that carry them run to a few hundred characters, the two longest to five
+and seven hundred, so the third column is read a row at a time and not scanned.
 
 \begin{table*}[tp]
 \centering
 \caption{One row per load-bearing claim: what is claimed, the data set and its size, and
 the value measured with its uncertainty and its scope. Notes \emph{a}--\emph{h}, at the foot
-of the continuation, qualify a row or a column.}
+of the last part, qualify a row or a column.}
 \label{tab:claims}
-{\scriptsize
+{\footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.86}
-\begin{tabular}{@{}L{0.27\linewidth}L{0.19\linewidth}L{0.46\linewidth}@{}}
+\begin{tabular}{@{}L{0.27\linewidth}L{0.19\linewidth}L{0.49\linewidth}@{}}
 \toprule
 Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \midrule
-\multicolumn{3}{@{}l@{}}{\emph{The two senses of grounding} (\S\ref{sec:paradox})}\\
+\multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{The two senses of grounding} (\S\ref{sec:paradox})}\\
 Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($5608$ of $8103$), 3 seeds & $1.85\to2.25$; the per-seed values do not overlap; the gap carries the test-time input swap with it \\
 \ldots and still hurt when injected at training & labelled test rows\tnk{c}, seed $42$ & $1.80\to1.98$ (own baseline $1.80\to2.23$); one seed and a stream build not certified against its comparator's (\S\ref{sec:si-repro}), so a sign and not an effect size---free of the test-time swap, which the row above is not \\
 \ldots so part of that gap is test-time distribution shift & labelled test rows\tnk{c}, seed $42$ & share $0.59$ on one seed: a description of that seed, not a magnitude \\
 Training-time $\sigma$ supervision \emph{helps} (MAE) & labelled test rows, 3 seeds & $2.04\to1.85$; the per-seed values do not overlap; per-seed gains $0.237/0.075/0.281$ straddle the co-adapted arm's $+0.18$, so the two operations are not ordered by magnitude---and the only contrast here a $\sigma$-stream leak could inflate, the ungrounded arm carrying no stream (\S\ref{sec:data}) \\
 The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 3 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ at the worst seed---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $589$ of the $823$ groups in both arms at all three seeds. The substitution falls on the solvent channel \\
-\addlinespace[2pt]
-\multicolumn{3}{@{}l@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure}); margins in squared \lngi\ units, not the \lnx\ MAE of the block above}\\
-$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.26,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist; the pre-declared cross-fitted $\Binsuf^{\mathrm{up}}$, which came back looser and does not headline, puts the same cell at $+1.76$ $[+1.02,+2.49]$ (\S\ref{sec:si-crossfit}) \\
-\ldots\ on every other stratum of the map & broad IDAC, $59$ strata & \S\ref{sec:si-map}, Tables~\ref{tab:map-full}--\ref{tab:map-detail}, each with its margin, interval and the test it fails; none is stated as a finding\tnk{h} \\
-\ldots\ for either set \emph{as a whole} & broad IDAC ($477$); VT-2005-matched ($60$) & $+0.51$ (full $+0.95$); $-0.38$ compounding two cuts ($+0.01$ full); $+0.18$ less one publication; $+0.05$ on the smaller set: an average weighted by composition\tnk{f} \\
-$\Binsuf^{\mathrm{up}}$ near stratum-independent, $\mathrm{MSE}$ not & broad IDAC, $3$ boundable classes; $6$ with an estimate & $\times2.0$ against $\times25$; $\times6.8$ against $\times51$; $p{=}0.02$ against $2000$ null partitions of $9$ classes \\
-$\Bclos>\Binsuf$, 2010 on its \emph{own} typed latent\tnk{f} & broad IDAC ($477$); VT-2005-matched ($60$) & $+1.29$, $P>0.95/{\approx}0.9/{\approx}0.9$\tnk{e}; $-0.77$ at $P\approx0.3$ on the smaller set, where the ordering is lost: loss of resolution, not a reversal \\
 \bottomrule
 \end{tabular}
 }
 \end{table*}
 
-% Second part of the claim ledger; see the note above the first part before touching either.
+% SECOND part of the claim ledger; see the note above the first part before touching any of the
+% three.  It carries the two closure blocks, which is what fits beside its caption and header.
 \begin{table*}[tp]
 \ContinuedFloat
 \centering
-\caption{\emph{Continued.} The remaining three blocks of the ledger, and notes
-\emph{a}--\emph{h}, which qualify rows and columns of both parts.}
+\caption{\emph{Continued.} The two closure blocks of the ledger. Notes \emph{a}--\emph{h} are
+at the foot of the third part.}
 \label{tab:claims-cont}
-{\scriptsize
+{\footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.86}
-\begin{tabular}{@{}L{0.27\linewidth}L{0.19\linewidth}L{0.46\linewidth}@{}}
+\begin{tabular}{@{}L{0.27\linewidth}L{0.19\linewidth}L{0.49\linewidth}@{}}
 \toprule
 Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \midrule
-\multicolumn{3}{@{}l@{}}{\emph{Whether a better closure moves the ceiling} (\S\ref{sec:fidelity})}\\
+\multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure}); margins in squared \lngi\ units, not the \lnx\ MAE of the first block}\\
+$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.26,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist; the pre-declared cross-fitted $\Binsuf^{\mathrm{up}}$, which came back looser and does not headline, puts the same cell at $+1.76$ $[+1.02,+2.49]$ (\S\ref{sec:si-crossfit}) \\
+\ldots\ on every other stratum of the map & broad IDAC, $59$ strata & \S\ref{sec:si-map}, Tables~\ref{tab:map-full}--\ref{tab:map-detail}, each with its margin, interval and the test it fails; none is stated as a finding\tnk{h} \\
+\ldots\ for either set \emph{as a whole} & broad IDAC ($477$); VT-2005-matched ($60$) & $+0.51$ (full $+0.95$); $-0.38$ compounding two cuts ($+0.01$ full); $+0.18$ less one publication; $+0.05$ on the smaller set: an average weighted by composition\tnk{f} \\
+$\Binsuf^{\mathrm{up}}$ near stratum-independent, $\mathrm{MSE}$ not & broad IDAC, $3$ boundable classes; $6$ with an estimate & $\times2.0$ against $\times25$; $\times6.8$ against $\times51$; $p{=}0.02$ against $2000$ null partitions of $9$ classes \\
+$\Bclos>\Binsuf$, 2010 on its \emph{own} typed latent\tnk{f} & broad IDAC ($477$); VT-2005-matched ($60$) & $+1.29$, $P>0.95/{\approx}0.9/{\approx}0.9$\tnk{e}; $-0.77$ at $P\approx0.3$ on the smaller set, where the ordering is lost: loss of resolution, not a reversal \\
+\addlinespace[2pt]
+\multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Whether a better closure moves the ceiling} (\S\ref{sec:fidelity})}\\
 The $2002\to2010$ step lowers the error & broad IDAC ($477$) & $-0.99$ at $P\approx0.2$: no improvement, and not a measured equality either; under the full convention $-0.07$, $P\approx0.6$, and $+0.06$, $P\approx0.6$ with dispersion on \\
 \ldots but does on the VT-2005 set's chemistry & $57$ shared pairs, UD & $1.78\to0.77$, $P>0.95$, at fixed profile database and temperature, full convention; those $57$ pairs are also broad-set rows, so not an independent sample \\
 A fitted kernel residual transfers across solvents & VT-2005-matched ($60$), grouped folds & $-5\pm16\%$: spans zero; the $\pm$ prices optimiser noise only, and the fold spread that dominates it is not propagated, so no bound follows \\
-\addlinespace[2pt]
-\multicolumn{3}{@{}l@{}}{\emph{Mechanism} (\S\ref{sec:surrogate})}\\
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+% THIRD part of the claim ledger, and the one that carries notes a-h; see the note above the first
+% part before touching any of the three.  The notes are set one to a line (2026-08-08): run together
+% as a single \raggedright paragraph they were a ten-line block in which g -- the one-sidedness of
+% every margin in the paper -- and h -- the 59/15/6 counts -- had no visible boundary.
+\begin{table*}[tp]
+\ContinuedFloat
+\centering
+\caption{\emph{Continued.} The mechanism and accuracy blocks, and notes \emph{a}--\emph{h},
+which qualify rows and columns of all three parts.}
+\label{tab:claims-cont2}
+{\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.86}
+\begin{tabular}{@{}L{0.27\linewidth}L{0.19\linewidth}L{0.49\linewidth}@{}}
+\toprule
+Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
+\midrule
+\multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Mechanism} (\S\ref{sec:surrogate})}\\
 The latent departs from its reference along a shared direction & matched molecules ($44$), 3 seeds & $51\pm2\%$; the magnitude is not stable across analysis configurations, and these are a separate three-seed set of runs, not the arms of Fig.~\ref{fig:paradox}, whose latent departure is not measured \\
 \ldots and that departure's top-two mode share exceeds a phase-randomised null & one grounded checkpoint, same $44$ & $0.40$ against $0.22\pm0.01$, the $\pm$ being the null's spread; one checkpoint, and a wrong-molecule null is not cleared \\
 \ldots and that direction \emph{transfers} to molecules outside the fit & matched molecules ($44$), 3 seeds & $4.1\pm0.5\times$ a zero-drift null, with no constant-offset control on these seeds; the $\pm$ spans seeds at one partition; and the held-out half is homologue-saturated, so ``outside the fit'' is largely within-cluster interpolation \\
 That departure \emph{cancels} closure error & not measured & the one direct check is under-powered and runs against it \\
 \addlinespace[2pt]
-\multicolumn{3}{@{}l@{}}{\emph{Accuracy} (\S\ref{sec:discussion})}\\
+\multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Accuracy} (\S\ref{sec:discussion})}\\
 Physics arm vs.\ DirectGNN accuracy ($\Delta$MAE) & labelled test rows ($5608$ of $8103$) & $+0.14$ between separately tuned pipelines, so not attributable to the thermodynamic bottleneck \\
 \bottomrule
 \end{tabular}
 \tabnotes{\scriptsize%
-\tnk{a}\,The sets are defined in Table~\ref{tab:notation}.\quad
+\tnk{a}\,The sets are defined in Table~\ref{tab:notation}.\par
 \tnk{b}\,$P$ is a two-way (solute\,$\times$\,solvent) cluster-bootstrap frequency that the margin
-stays positive, reported as a band by the rounding rule at the head of this section.\quad
+stays positive, reported as a band by the rounding rule at the head of this section.\par
 \tnk{c}\,The same $5608$ rows: the seed-$42$ control arms carry the identical labelled set, so
-their cross-arm intersection with the arms of Table~\ref{tab:si-arms} is that set exactly.\quad
+their cross-arm intersection with the arms of Table~\ref{tab:si-arms} is that set exactly.\par
 \tnk{d}\,One estimator cell (\S\ref{sec:estimator}) for both sets, both kernels and every
-stratum.\quad
-\tnk{e}\,Bootstrap band over pair\,/\,two-way\,/\,source clusters.\quad
+stratum.\par
+\tnk{e}\,Bootstrap band over pair\,/\,two-way\,/\,source clusters.\par
 \tnk{f}\,An aggregate margin is a composition-weighted average, and the deletions and cuts recorded
 here are failures of the headline cell rather than robustness passes. These rows record what the
-aggregate was and how it fails; the rows above replace it.\quad
+aggregate was and how it fails; the rows above replace it.\par
 \tnk{g}\,The comparison is one-sided in both directions it can be read: a positive margin establishes
 $\Bclos>\Binsuf$, a non-positive one is failure to separate and licenses nothing. The margin's size
 is a lower bound on $\Bclos-\Binsuf$ and not an estimate of it, so an interval on a margin bounds
 that bound and not the difference (Lemma~\ref{prop:decomp}, \S\ref{sec:decomp}). $\Bclos$ is the
 error of the fixed map \emph{read at a computed profile}, so what a positive margin establishes is a
-property of that composite and not of the kernel alone (\S\ref{sec:badclosure}).\quad
+property of that composite and not of the kernel alone (\S\ref{sec:badclosure}).\par
 \tnk{h}\,Of fifty-nine strata, fifteen are boundable and six admissible; clause~(c) of
 \S\ref{sec:estimator} makes those six three distinct row sets, of which one is also positive and not
 demoted by its residual test---the glycol ethers, the one row set the rule leaves standing.}}
