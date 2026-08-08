@@ -1236,7 +1236,12 @@ resolves no finer than the four reaction series it is read on, and the solubilit
 out of the matched regime is not established.
 
 \paragraph{Where the accuracy stands, and the confound in it.} Table~\ref{tab:baselines} places every
-arm of this work beside the external models, in three blocks that may not be read across. The physics
+% "three blocks" -> "two", 2026-08-08.  Stale from before the 2026-08-08 cut, when the article's
+% copy still carried the as-published block: this work / external / as-published were three that
+% may not be read across.  Two of those are left, and the third head in the float is the scale
+% reference, which is on block one's own rows and is meant to be read against it -- the next
+% sentence but one does exactly that.  The float's caption already said two.
+arm of this work beside the external models, in two blocks that may not be read across. The physics
 arms trail their own control in the seed mean---the COSMO-SAC arms at every seed, the NRTL arm at
 two of three, being ahead at seed $42$ ($1.734$ against $1.749$; Table~\ref{tab:si-arms})---and the
 predict-the-mean row shows how little room sits above them.
@@ -1261,7 +1266,7 @@ inherits it we do not know: the only checkpoint ever scored on the temperature-w
 whose predictions are near-constant, so it is untested rather than answered
 (\S\ref{sec:supporting}, \S\ref{sec:si-mech}).
 
-The external block is not like-for-like and the table says so in its own rows. FastSolv and SolProp are deposited here on a \emph{by-solute} split, this work's arms on the harder solute-scaffold split, and the published figures are as published, on other corpora and in another unit; retraining the two on the scaffold split needs a GPU run we did not perform, and scoring released FastSolv weights on our test rows is invalid because FastSolv is trained on this corpus. One sentence survives all three caveats, and it is not a favourable one: this work's control, at $\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is the same order as published new-solute extrapolation---the published leaders run $0.83$ to $0.99$ in that unit and the physics-informed cycle $1.43$ to $2.16$---rather than an order away, and the physics arms, at $1.39$ to $1.60$, are worse than every published leader at every seed and every clip. What may be read from those figures is what survives the clip sweep and not the two decimals; the sweep, the published rows themselves and the full reading are in \S\ref{sec:si-baselines}.
+The external block is not like-for-like and the table says so in its own block heads. FastSolv and SolProp are deposited here on a \emph{by-solute} split, this work's arms on the harder solute-scaffold split, and the published figures are as published, on other corpora and in another unit; retraining the two on the scaffold split needs a GPU run we did not perform, and scoring released FastSolv weights on our test rows is invalid because FastSolv is trained on this corpus. One sentence survives all three caveats, and it is not a favourable one: this work's control, at $\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is the same order as published new-solute extrapolation---the published leaders run $0.83$ to $0.99$ in that unit and the physics-informed cycle $1.43$ to $2.16$---rather than an order away, and the physics arms, at $1.39$ to $1.60$, are worse than every published leader at every seed and every clip. What may be read from those figures is what survives the clip sweep and not the two decimals; the sweep, the published rows themselves and the full reading are in \S\ref{sec:si-baselines}.
 
 % ---------------------------------------------------------------------------
 % EXTERNAL BASELINES, IN THE ARTICLE (2026-08-02, editorial item A3).  The only comparison against
@@ -1291,6 +1296,14 @@ The external block is not like-for-like and the table says so in its own rows. F
 % The n column carries TWO sizes on purpose: the log10 S column is not computed on the rows the MAE
 % column is, and the rows it loses used to be ARM-DEPENDENT (2026-08-04 repair; see the generator's
 % `THE COMPARISON THIS TABLE MUST NOT FLATTER' block).
+% THE `Test set' COLUMN IS GONE AND \tabcolsep IS 2 pt, 2026-08-08.  The column printed the same
+% two strings nine times and both are in the block heads, so it said nothing and cost 116 pt --
+% which is why every model name wrapped onto two or three lines and the block contrast, the one
+% thing this table is for, was the hardest thing in it to see.  The 2 pt is not taste either: at
+% 3 pt the model column can be at most 263.3 pt and the longest name needs 268.4.  The arithmetic
+% and how to re-measure it are in the rows file's header; the five-column tabular measures
+% 503.1 pt against a 504.5 pt \textwidth, so a widened cell has 1.4 pt before it overflows and an
+% over-wide tabular in a centred float does NOT reliably raise an Overfull \hbox.
 % ---------------------------------------------------------------------------
 \begin{table*}[tp]
 \centering
@@ -1301,7 +1314,7 @@ random-pair rows, and the conversion and saturation clip behind the $\log_{10}S$
 Table~\ref{tab:si-baselines-full}.}
 \label{tab:baselines}
 {\footnotesize
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.95}
 \input{si_tables/external_baselines_rows_article}}
 \end{table*}
@@ -1374,9 +1387,21 @@ The nine remaining limitations are in \S\ref{sec:si-limitations}, keeping their 
 % cross-regime gap and the leak certification are stated where they are measured and in the
 % limitations; what survives here is the one-clause SCOPE each of them forces -- "on a contrast this
 % work does not certify leak-free", "where the instrument answered, not where the model is shown to
-% fail", "one chemistry at a time", "on runs of its own".  Those clauses are not decoration and are
+% fail", "survived a search over every stratum ... not established against that search ... no
+% independent database supplies a retest", "one chemistry at a time", "on runs of its own".  Those
+% clauses are not decoration and are
 % not restatements: delete one and the sentence it sits in claims more than the body supports.  Do
 % not expand them back into the caveats they stand for either.
+% THE SEARCH CLAUSE, ADDED 2026-08-08.  The multiplicity caveat was the one item on that list with
+% no scope clause here at all: the Conclusions carried the row set, the composite scope and "where
+% the instrument answered", so the last statement a reader meets was the only one of the four
+% (abstract, \S\ref{sec:broad}, limitation (vi), here) that did not say the set was searched for.
+% It is one clause, in this section's register -- no numbers, no section reference -- and it carries
+% all three pieces the other three statements carry: the search, the null it does not clear, and
+% the empty out-of-sample cell.  Do NOT expand it into the 59 strata, the 58%/10.1% null or the
+% \emph{not testable} verdict; those are printed where they are measured.  "The one independent
+% database supplies no retest" is the scope the third piece forces and is deliberately narrower
+% than "no database can test it": one database was searched, and that is all that was searched.
 \section{Conclusions}
 \label{sec:conclusion}
 Grounding a learned physical intermediate in reference values is two operations, not one, and here
@@ -1390,6 +1415,8 @@ computed conformer per molecule, and not its kernel alone---stands above the bou
 inputs fail to carry: the condition under which a more accurate input exposes a model's bias instead
 of removing it. That is the reading the failed substitution invites, measured on other data and not
 a test of it. It is also where the instrument answered rather than where the model is shown to fail,
+on a row set that survived a search over every stratum, is not established against that search, and
+for which the one independent database supplies no retest;
 and the answer came one chemistry at a time: a single figure for a whole data set is an average over that set's
 composition, a property of the set and not of the model. The intermediate paid for the arrangement.
 Trained through a model it cannot correct, and measured on runs of its own, it stopped reporting the

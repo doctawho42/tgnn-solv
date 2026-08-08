@@ -322,9 +322,16 @@ warm-up, so the $\sigma$ stream enters the warm-up only.
 
 \paragraph{The in-house closures, and where their validation stops.}
 % Artifact: results/b_insuff/closure_reference_validation.json (2002, rmse 0.0035) via
-% scripts/analysis/run_closure_reference_validation.py. The 2010 figure has no deposited
-% artifact -- scripts/analysis/validate_cosmo2010_layer.py printed to stdout on the run it
-% comes from -- which the SI states.
+% scripts/analysis/run_closure_reference_validation.py. The 2010 figure (rmse 1.4e-4) has no
+% deposited artifact -- scripts/analysis/validate_cosmo2010_layer.py printed to stdout on the
+% run it comes from -- which the SI states.
+% THE 2010 RMSE IS PRINTED HERE, 2026-08-08.  The sentence used to say only "reproduces the
+% NIST 2010 reference with dispersion off---that second figure quoted from its validator's
+% console", and there was no second figure in it: the 2002 layer printed 0.0035 and the 2010
+% layer printed nothing, so "that second figure" referred to a value the article never gave.
+% The number is \S\ref{sec:si-methods}'s (SI: "reproduces the NIST COSMO-SAC-2010 reference to
+% RMSE 1.4e-4 ln gamma").  Keep the console clause: it is the disclosure that this one value is
+% not on the deposited record, and the Data-availability section names it as one of four.
 The dispersion-off closures in the fidelity measurement (\S\ref{sec:fidelity}) are our own
 differentiable implementations, so those arms share one code path, and each consumes its own
 model-prescribed $\sigma$-averaging (Mullins for 2002, Hsieh for 2010). Our 2002 layer---the
@@ -333,7 +340,8 @@ channels---reproduces the NIST reference COSMO-SAC-2002~\cite{bell2020cosmosac} 
 $0.0035\,\ln\gamma$ on identical VT-2005 profiles, and our COSMO-SAC-2010/dsp
 layer~\cite{hsieh2010,hsieh2014dsp}, built on the \emph{typed} latent of three donor/acceptor-resolved
 $\sigma$-profiles per molecule in place of one, reproduces the NIST 2010 reference with dispersion
-\emph{off}---that second figure quoted from its validator's console, which wrote no artifact where
+\emph{off} to RMSE $1.4\times10^{-4}\,\ln\gamma$---that second figure quoted from its validator's
+console, which wrote no artifact where
 the 2002 one deposits its comparison, so it cannot be checked against the deposited record
 (\S\ref{sec:si-methods}). The dispersion term is \emph{not} validated to that standard, which is why every
 dispersion-off contrast is computed on our layers while the \emph{2010, dispersion on} runs are

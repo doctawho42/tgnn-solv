@@ -14,38 +14,58 @@
 %   - the two RANDOM-PAIR rows.  They are a split control -- the same two arms on a split
 %     where the solute is seen in training -- and the article makes no claim from them.
 %   - the note block, 489 words in twenty lines, which is the whole of it in the SI copy.
-% NO VALUE, NO ROW ORDER AND NO COLUMN IS CHANGED between the two files.  The one textual
-% difference is on the surviving FastSolv row: the full file keys it \tnk{a} to the note
+%   - THE `Test set' COLUMN, dropped 2026-08-08.  It printed `solute scaffold, this corpus'
+%     five times and `by-solute, this corpus' four times, which is what the two italic block
+%     heads already say -- so it carried no information at all, and it was the widest thing
+%     between the model names and the right margin.  Its 116 pt is what wrapped every model
+%     cell onto two or three lines, and the block contrast is what this table exists to show.
+%     The one thing the column said that a head did not was the word `by-solute', which is
+%     now in the third head.  Do NOT restore the column; if a future block needs a set that
+%     no head states, put it in that block's head.
+% NO VALUE AND NO ROW ORDER IS CHANGED between the two files.  The one textual
+% difference in a row is on the surviving FastSolv row: the full file keys it \tnk{a} to the note
 % that says what "re-scored" means, and with no note block here the word is set in the
 % row instead.  If the numbers move, re-run the generator, re-apply the four typesetting
-% edits listed in the full file, and re-cut this one from it.
+% edits listed in the full file, and re-cut this one from it -- then drop the Test-set column
+% and the two blocks above, which is the whole of the difference.
 % THE COLUMN HEADS ARE STACKED HERE AND NOT IN THE FULL FILE, and that is arithmetic rather
-% than taste.  The two L{} boxes are fractions of \linewidth, so they do not shrink when the
+% than taste.  The L{} box is a fraction of \linewidth, so it does not shrink when the
 % type does, while the four numeric columns are set to their widest cell and do.  At 8 pt the
-% whole thing measured 485 pt inside a 502.6 pt full-width float; at 10 pt the same specifier
+% whole thing measured 485 pt inside a 504.5 pt full-width float; at 10 pt the same specifier
 % measures 533 pt and printed 30 pt into the right margin (one Overfull \hbox).  Two heads were
 % wider than any number under them -- `n (ln x2/log10 S)' by 10 pt and `RMSE log10 S' by 14 pt --
-% so breaking all four over two lines returns 24 pt at no cost to any cell, and \tabcolsep 3 pt
-% with the model column at 0.27 returns the rest with about 9 pt to spare.  Anything that widens
-% a cell here must be re-measured against 502.6 pt.
-\begin{tabular}{@{}L{0.27\linewidth}L{0.23\linewidth}rrrr@{}}
+% so breaking all four over two lines returns 24 pt at no cost to any cell.
+% THE MEASURE, RE-DONE FOR FIVE COLUMNS (2026-08-08).  \textwidth in this document's table* is
+% 504.47 pt, measured with \typeout and not assumed.  The four numeric columns cost 217.2 pt
+% together (set by `(ln x2/log10 S)' at 62.7, `-0.03 +- 0.04' at 55.6 and two `1.70 +- 0.03'
+% at 47.8), and five columns with @{} at both ends cost 2*\tabcolsep*4 in gaps.  The longest
+% model name -- `TGNN, COSMO-SAC, reference sigma* substituted at evaluation' -- has a natural
+% width of 268.4 pt, so at \tabcolsep 3 pt the model column could be at most 263.3 pt and that
+% name would still wrap.  \tabcolsep 2 pt (in the article, beside the \input) buys the 8 pt that
+% closes it: 269.9 + 217.2 + 16 = 503.1 pt, which is 1.4 pt inside the measure, and every one of
+% the nine names then sets on one line.  Both margins are thin and NOTHING here is stretchy, so
+% anything that widens a cell or a block head must be re-measured against 504.47 pt --
+% \sbox the tabular and \typeout its \wd; the build does not reliably complain, because an
+% over-wide tabular in a centred float sticks out on both sides without an Overfull \hbox.
+% The widest block head is the third at 486.7 pt, which is inside the tabular and not binding.
+\begin{tabular}{@{}L{0.535\linewidth}rrrr@{}}
 \toprule
-Model & Test set & \shortstack[r]{$n$\\($\lnx$/$\log_{10}S$)} & \shortstack[r]{MAE\\$\lnx$} &
+Model & \shortstack[r]{$n$\\($\lnx$/$\log_{10}S$)} & \shortstack[r]{MAE\\$\lnx$} &
 \shortstack[r]{RMSE\\$\log_{10}S$} & \shortstack[r]{$R^2$\\$\lnx$} \\
 \midrule
-\multicolumn{6}{@{}l@{}}{\emph{This work, solute-scaffold split; mean $\pm$ s.d. over seeds, three unless the row says otherwise}}\\
-DirectGNN, same encoder, no closure \emph{(control)} & solute scaffold, this corpus & $5608$ / $5440$ & $1.70\pm0.03$ & $1.00\pm0.02$ & $0.42\pm0.03$ \\
-TGNN, NRTL closure (physics) & solute scaffold, this corpus & $5608$ / $5440$ & $1.79\pm0.07$ & $1.54\pm0.07$ & $0.34\pm0.03$ \\
-TGNN, COSMO-SAC closure, supervised $\hat\sigma$ (physics) & solute scaffold, this corpus & $5608$ / $5440$ & $1.85\pm0.05$ & $1.39\pm0.19$ & $0.33\pm0.05$ \\
-TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation & solute scaffold, this corpus & $5608$ / $5440$ & $2.25\pm0.02$ & $1.60\pm0.14$ & $-0.03\pm0.04$ \\
+\multicolumn{5}{@{}l@{}}{\emph{This work, solute-scaffold split; mean $\pm$ s.d. over seeds, three unless the row says otherwise}}\\
+DirectGNN, same encoder, no closure \emph{(control)} & $5608$ / $5440$ & $1.70\pm0.03$ & $1.00\pm0.02$ & $0.42\pm0.03$ \\
+TGNN, NRTL closure (physics) & $5608$ / $5440$ & $1.79\pm0.07$ & $1.54\pm0.07$ & $0.34\pm0.03$ \\
+TGNN, COSMO-SAC closure, supervised $\hat\sigma$ (physics) & $5608$ / $5440$ & $1.85\pm0.05$ & $1.39\pm0.19$ & $0.33\pm0.05$ \\
+TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation & $5608$ / $5440$ & $2.25\pm0.02$ & $1.60\pm0.14$ & $-0.03\pm0.04$ \\
 \addlinespace[2pt]
-\multicolumn{6}{@{}l@{}}{\emph{Scale reference on the same rows}}\\
-predict the test-set mean of $\lnx$ & solute scaffold, this corpus & $5608$ / $5440$ & $2.32$ & $1.33$ & $0.00$ \\
+\multicolumn{5}{@{}l@{}}{\emph{Scale reference on the same solute-scaffold rows}}\\
+predict the test-set mean of $\lnx$ & $5608$ / $5440$ & $2.32$ & $1.33$ & $0.00$ \\
 \addlinespace[2pt]
-\multicolumn{6}{@{}l@{}}{\emph{External models re-run on this corpus, one run each---a different split, so not a ranking against the block above}}\\
-FastSolv, retrained on this corpus, re-scored & by-solute, this corpus & $10287$ & $1.44$ & $0.84$ & $0.55$ \\
-SolProp cycle, released model $+$ 3-parameter recalibration & by-solute, this corpus & $10287$ & $2.34$ & $1.34$ & $-0.18$ \\
-SolProp cycle, released model, zero-shot & by-solute, this corpus & $10287$ & $2.36$ & $1.87$ & $-0.47$ \\
-SolProp encoder retrained on $\lnx$, cycle discarded & by-solute, this corpus & $10570$ / $10287$ & $1.62$ & $1.07$ & $0.39$ \\
+\multicolumn{5}{@{}l@{}}{\emph{External models re-run on this corpus on a by-solute split, one run each---not a ranking against the block above}}\\
+FastSolv, retrained on this corpus, re-scored & $10287$ & $1.44$ & $0.84$ & $0.55$ \\
+SolProp cycle, released model $+$ 3-parameter recalibration & $10287$ & $2.34$ & $1.34$ & $-0.18$ \\
+SolProp cycle, released model, zero-shot & $10287$ & $2.36$ & $1.87$ & $-0.47$ \\
+SolProp encoder retrained on $\lnx$, cycle discarded & $10570$ / $10287$ & $1.62$ & $1.07$ & $0.39$ \\
 \bottomrule
 \end{tabular}
