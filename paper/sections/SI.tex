@@ -672,7 +672,7 @@ in size. Dropping the finiteness clause outright
 therefore returns the same $5608$ rows, so no arm's failures are removed from any arm's score and
 no number in this paper moves. The set is fixed by which rows carry a label.
 
-Non-finiteness in \lnx\ is not the same event as the saturation that Table~\ref{tab:baselines}'s
+Non-finiteness in \lnx\ is not the same event as the saturation that Table~\ref{tab:si-baselines-full}'s
 clip note reports. That note counts rows whose predicted $x_2$ approaches $1$, where the \emph{unit conversion}
 to $\log_{10}S$ diverges while \lnx\ itself stays finite; those rows are inside the $5608$ and are
 scored, under the clip that note discloses.
@@ -2148,12 +2148,70 @@ robustness passes for a live verdict.
 % 2026-08-07.  Moved verbatim out of the article's \S\ref{sec:discussion}: the article
 % keeps the three caveats, the one sentence that survives them and the reading of the clip
 % sweep, and this is the account behind them.
-\paragraph{Reading Table~\ref{tab:baselines} across its three blocks, in full.} The external block is not like-for-like and the table says so in its own rows. FastSolv and SolProp
+%
+% THE FULL TABLE ARRIVED HERE 2026-08-08, and the article keeps a two-block cut of it.  The
+% article's copy had been seventeen rows and a 489-word note at 8 pt, filling 82% of a float page;
+% three referees named the type size, and at full measure the only way to 10 pt was to move rows.
+% What moved: the as-published block, the two random-pair rows, and the note block whole.  Both
+% floats read the SAME source file -- si_tables/external_baselines_rows.tex is the transcription of
+% record and si_tables/external_baselines_rows_article.tex is cut from it -- so a regenerated
+% number cannot land in one and not the other.  The note is printed HERE and nowhere else: the
+% sentences below that used to say "the caption" now say what carries the thing they name.
+\begin{table*}[tp]
+\centering
+\caption{Solubility accuracy in three blocks that may not be read across: this work, external
+models re-run here on a different split, and published figures on other corpora. A row carries two
+sample sizes where its two metric columns are not scored on the same rows, one where they coincide,
+and a dash where the value is quoted rather than computed here. Table~\ref{tab:baselines} prints
+the first two blocks without the random-pair rows.}
+\label{tab:si-baselines-full}
+{\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.88}
+\input{si_tables/external_baselines_rows}
+\tabnotes{\scriptsize%
+\emph{What the block-1 cells are.} Every one is the mean over seeds of that seed's own metric, with
+the population standard deviation over seeds beside it; no cell pools the seeds' rows.\quad
+\emph{The unit bridge.} $\log_{10}S$ is obtained from \lnx\ through the solvent's molarity, by one
+converter run on every row of the first two blocks and set out below. It
+carries \emph{no} temperature dependence and it needs a molarity, so the $168$ of the $5608$
+labelled test rows whose solvent has none carry no true $\log_{10}S$ and leave that column for
+\emph{every} arm: hence the two $n$. Block~1's $5608$ is itself the labelled subset of the $8103$
+test rows (Table~\ref{tab:notation}); both exclusions are read off the data alone, neither off a
+prediction. The scale-reference row runs its one constant \lnx\ prediction through the same bridge
+on the same $5440$ rows, so it is a reference in this column too.\quad
+\emph{The clip, and what the column owes it.} Predictions are clipped at $x_2=0.999999$ before
+conversion, so an arm that saturates keeps its row with a large finite error instead of converting to
+$+\infty$ and being dropped. Without that clip the exclusions would differ \emph{by arm}---$12$ to
+$195$ rows per seed for the three physics arms, none for the control, which never saturates---and
+would read the $\sigma$-oracle arm $0.26$ lower, the COSMO-SAC-grounded arm $0.31$ and the NRTL arm
+$0.48$, the control unchanged. The clip is a chosen constant and this column moves with it: swept
+from $x_2=1-10^{-3}$ to $1-10^{-10}$ it leaves the control at $1.00$ throughout and carries every
+physics arm across a range wider than the gaps between them. Two
+readings hold at every clip in that span, and separately at each of the three seeds: the control is
+below every physics arm, and every physics arm is above every published
+leader. Four do not, and each of the four fails on the seed axis as well as the clip one---the
+printed order of the NRTL and $\sigma$-oracle rows; whether a physics arm beats the scale reference;
+whether they sit below the better end of the published physics-informed cycle; and whether all three
+trail their control by more in this column than in MAE. The sweep and every cell of the four are
+below, and \S\ref{sec:discussion} takes only the readings that survive
+them.\quad
+\tnk{a}\,\emph{Re-scored}: the same checkpoint over the same rows with the single scaling it was
+trained under, the doubly standardising prediction path diagnosed below
+withdrawn rather than printed. This section gives the diagnosis, the withdrawn values
+and the control that reproduces them. The SolProp rows were always scored through a different path
+and are unaffected.\quad
+The third block is quoted as published, in mol\,L$^{-1}$, on other corpora and splits: no conversion
+of ours stands behind those six values. MAE is not available for that block, which reports RMSE and
+$\%\log S\pm1$, and we do not convert between them.}}
+\end{table*}
+
+\paragraph{Reading Table~\ref{tab:si-baselines-full} across its three blocks, in full.} The external block is not like-for-like and the table says so in its own rows. FastSolv and SolProp
 are deposited here on a \emph{by-solute} split, this work's arms on the harder solute-scaffold split;
 retraining them on the scaffold split needs a GPU run we did not perform, and scoring released
 FastSolv weights on our test rows is invalid because FastSolv is trained on BigSolDB, which is this
 corpus. The third block is as published, on other corpora, with $\log_{10}S$ in molarity against mole
-fraction here, so the dimension matches---through the conversion the caption defines, which puts our
+fraction here, so the dimension matches---through the conversion that table's note defines, which puts our
 $S$ per litre of \emph{solvent} where the quoted block's basis is unstated---and the task does not. One sentence survives all three caveats, and it is not a favourable one: this work's control, at
 $\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is the same order as published new-solute
 extrapolation rather than an order away. The published leaders run $0.83$ to $0.99$
@@ -2162,10 +2220,10 @@ leader---at one of its three seeds ($0.97$) it is under it; the
 physics arms, at $1.39$ to $1.60$, are worse than every published leader at every seed and every
 clip. The NRTL and grounded arms
 also trail their control by more here---an RMSE deficit---than in MAE, at every clip of the
-caption's sweep and at every seed; the $\sigma$-oracle does not, and \S\ref{sec:si-baselines} says
+note's sweep and at every seed; the $\sigma$-oracle does not, and the sweep below says
 where. Where
 they sit \emph{within} the cycle's range is not a reading
-this column supports: it moves with the saturation clip the caption defines---the control's figure
+this column supports: it moves with the saturation clip the table's note defines---the control's figure
 does not move with that clip and all three of theirs do---and at the tight end of that sweep the
 NRTL and grounded arms fall below the cycle's better end at every seed, the $\sigma$-oracle in its
 seed mean and at two of its three seeds but not at seed $43$. They are also worse, in
@@ -2173,7 +2231,7 @@ this column, than predicting one number for the entire test set: the scale refer
 the same rows, below all three printed figures. That is a reading of the seed-mean column at the
 deposited clip and not of the models---at seed $42$ the grounded arm is below the reference at every
 clip, $1.13$ against $1.33$ at the deposited one, and seed-averaged the grounded and NRTL arms fall
-under it at the tight end as well; the caption counts the cells.
+under it at the tight end as well; the table's note counts the cells.
 What may be read from the three figures is what survives the sweep---all three above every published
 leader and above their own control---and not the two decimals. The $0.75$
 aleatoric estimate \cite{osanloo2024}---itself a different functional on a different base from this
@@ -2214,8 +2272,8 @@ MAE $1.62$
 $10{,}287$ of those the conversion is finite on, against FastSolv's MAE $1.44$ and $0.65$ on
 $10{,}287$ rows in both units, and both direct arms are well ahead of the cycle's $2.34$.
 The two arms' \lnx\ figures are therefore not on quite the same rows;
-Table~\ref{tab:baselines} prints both sample sizes for the two rows of that block whose two metric
-columns disagree, and one figure for the four where they coincide. We quote the cycle as the physics-informed arm because only it
+Table~\ref{tab:si-baselines-full} prints both sample sizes for the two rows of that block whose two
+metric columns disagree, and one figure for the four where they coincide. We quote the cycle as the physics-informed arm because only it
 assembles the separately learned components; the retrained arm measures what discarding the closure
 achieves on this corpus, not a better physics-informed model. The regime-level reading is that on this corpus no
 black box, ours or external, escapes the accuracy ceiling---consistent with the
@@ -2324,7 +2382,7 @@ $V_{\mathrm{m}}$ (cm$^{3}$\,mol$^{-1}$) of one generated conformer where it has 
 unrelated to the Hammett reaction constant of \S\ref{sec:pka-main}). Since $x_2/(1-x_2)$ is a mole
 ratio, $S$ is moles of solute per litre of \emph{solvent} rather than of solution, and the two
 conventions diverge as $x_2\to1$. The same converter runs on every row of the first two blocks of
-Table~\ref{tab:baselines}. It carries \emph{no} temperature dependence---one ambient
+Table~\ref{tab:si-baselines-full}. It carries \emph{no} temperature dependence---one ambient
 $c_{\mathrm{solv}}$ at every $T$---and it needs a molarity, so the $168$ of the $5608$ labelled test
 rows whose solvent has none carry no true $\log_{10}S$ and leave that column for \emph{every} arm,
 which is why that table's rows carry two sample sizes. Predicting the mean of the true $\log_{10}S$,
@@ -2959,9 +3017,17 @@ Latent against its reference & $0,1,2$; mean$\pm$sd &
 Closure validation & none & the \emph{2002} NIST reproduction;
 Table~\ref{tab:closure-anchor}. The 2010 reproduction comes from a validator that wrote no
 artifact and is regenerated by neither \\
+% THE SECOND \ref IS BACK, 2026-08-08, and this time the table it names exists.  History: a
+% \ref{tab:si-published} stood here against a PLANNED split of tab:baselines -- the as-published
+% block and the two random-pair rows into an SI table -- that was never made, so the label was
+% defined in neither document, the SI printed `??' on p. S-66 and `make check' failed; the row was
+% cut back to tab:baselines alone.  The split has now been made, under the label
+% tab:si-baselines-full and for a different reason (the article's copy had to lose rows to reach
+% 10 pt), and the two floats read one source file.  Both are named because the random-pair rows this
+% row's middle cell describes are in the SI copy only.
 External baselines & one run each, on a
 \emph{by-solute} split and, for two of the rows, a \emph{random-pair} one &
-Tables~\ref{tab:baselines} and~\ref{tab:si-published} \\
+Tables~\ref{tab:baselines} and~\ref{tab:si-baselines-full} \\
 pKa second domain: decomposition, Hammett probe and bootstrap & $K{=}20$ within-scaffold splits; $G{=}4$ series as the cluster
 unit & \S\ref{sec:pka-main} \\
 Noise floor and encoder probe & none & \S\ref{sec:data},
@@ -3302,10 +3368,15 @@ stream build beside the split hash, which was not done for these runs.
 % of tab:claims under "the two senses of grounding" are untouched by the move and the count "five"
 % still holds.  tab:baselines stays in the article; tab:runs moved into this document on 2026-08-08,
 % so the protocol's "seed list of the sigma-grounding row" now names an S-numbered table, and every
-% \ref above resolves either way, so no entry had to be rewritten.  The same pass took the
-% as-published block and the two random-pair rows out of tab:baselines into tab:si-published; those
-% are external runs carrying no seed of ours, so no display this protocol names moved with them, and
-% the block-1 rows it does name are still in the article.
+% \ref above resolves either way, so no entry had to be rewritten.  An earlier pass had INTENDED to
+% take the as-published block and the two random-pair rows out of tab:baselines into an SI table
+% tab:si-published and recorded it as done -- BUT IT WAS NEVER MADE (found 2026-08-08), leaving a
+% \ref{tab:si-published} in tab:runs that resolved to nothing and printed `??' on p. S-66.
+% THE MOVE WAS MADE LATER THE SAME DAY, under the label tab:si-baselines-full, driven by type size
+% rather than by scope: the article's copy was 8 pt on a 12 pt body and reaches 10 pt only by losing
+% rows.  What is in this document and not in the article is the as-published block, the two
+% random-pair rows and the note block; the two floats read one source file.  Nothing this protocol
+% names moved, the block-1 rows it does name being in the article throughout.
 % Limitation (xii), which disposition D names, stayed in the article when limitations
 % (vii)-(xi) and (xiii) moved to sec:si-limitations, and sec:discussion keeps its label on Sec. 3.7,
 % so both dispositions still find their passage.  Gate B keeps its label sec:gateb, now inside
@@ -3363,7 +3434,8 @@ Table~\ref{tab:claims} under \emph{the two senses of grounding} and the $+0.14$ 
 the seed list of the $\sigma$-grounding row of Table~\ref{tab:runs}; the ungrounded, grounded and
 oracle bars of Fig.~\ref{fig:paradox} with their $R^2$; panels (b), (c) and (d) of
 Fig.~\ref{fig:parity-lnx2}; the block-1 grounded and $\sigma$-oracle rows of
-Table~\ref{tab:baselines} together with the clip sweep in its caption, the fuller sweep of
+Table~\ref{tab:baselines} together with the clip sweep in the note of
+Table~\ref{tab:si-baselines-full}, the fuller sweep of
 \S\ref{sec:si-baselines} and the readings \S\ref{sec:discussion} takes from both;
 Table~\ref{tab:si-arms} and the unrounded means, per-seed values and arm orderings
 \S\ref{sec:si-tables} reads off it; Table~\ref{tab:ranking} with the ranking and per-group

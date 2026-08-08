@@ -434,10 +434,12 @@ resamples, with which the margin it is attached to stays positive; it is not a $
 null. Such frequencies are quoted as bands---rounded to one decimal, with $>0.95$ and
 $<0.2$ closing the ends---because with $17$ solvent and $41$ solute clusters on the VT-2005-matched
 set they do not carry two-decimal resolution; the two-decimal values are in the deposited artifacts.
-The resampling intervals of this paper---the Abstract's, the margins of \S\ref{sec:measure} and the
+The resampling intervals of this paper---the Abstract's, the ranking and recalibration intervals of
+\S\ref{sec:decision}, the margins of \S\ref{sec:measure} and the
 pKa intervals of \S\ref{sec:pka-main}---are \emph{percentile} intervals: their endpoints are order
 statistics of a resampling distribution, with no bias correction and no studentisation, over the unit
-named beside each. \S\ref{sec:measure} resamples solute and solvent clusters two-way, $3000$ draws;
+named beside each. \S\ref{sec:decision} resamples the $107$ solute clusters, $4000$ draws, at the
+$95\%$ level; \S\ref{sec:measure} resamples solute and solvent clusters two-way, $3000$ draws;
 in \S\ref{sec:pka-main} the decomposition bounds resample molecules within each Hammett reaction
 series and the flip gap resamples the four series themselves, $4000$ draws. Not every $\pm$ or
 bracketed span below is one of those. Two in particular are not: the kernel-transfer figures of
@@ -472,6 +474,31 @@ wants all of them side by side will find the same eighteen collected as one tabl
 %   mechanism   -- in sections/compensation-surrogate.tex: the 51+-2% magnitude's instability
 %                  across analysis configurations, "one grounded checkpoint" on the top-two share,
 %                  and what the +-0.5 on the 4.1x spans.
+%
+% SECOND PASS, 2026-08-08, and the reason there had to be one.  Three referees read the moved
+% article and all three reported claims flatter than the cells they came from, which is the one
+% failure the move was run to avoid.  The first pass had swept the ledger's HEDGE clauses and not
+% its SET, n, LEVEL and RESAMPLING-UNIT columns, so what it missed is systematic rather than
+% scattered: a scope that lived in the "Set (n)" column, or in a P/interval the value cell carried
+% beside the point estimate, had nowhere in the prose to land and was silently dropped.  The seven
+% they named and the four the sweep added:
+%   named      -- the dispersion-on cell +0.06 at P~0.6 (\S\ref{sec:fidelity}: without it the
+%                 section said "not an improvement under either rule" of a step whose sign is not
+%                 established in EITHER direction); the two typed-latent floors +1.29 and -0.77
+%                 with their P bands, of which only the first stands; the kernel-residual null's
+%                 set and size (n=60, folds grouped by solvent); the 18.75-against-1.47's set and n
+%                 (in compensation-surrogate.tex); the cross-fitted +1.76's interval [+1.02,+2.49],
+%                 which the disclosed deviation from the pre-declaration turns on and which may
+%                 never again print as a bare point estimate; the clean pole's sign test p~0.31
+%                 beside the degraded pole's 1/16, and the clean pole's gap given the interval
+%                 treatment the degraded pole's already had; \S\ref{sec:decision}'s level and unit
+%                 (95%, the 107 solute clusters) plus the four parity slopes' seed.
+%   swept      -- the 57-shared-pair block's own value and P (1.78->0.77 at P>0.95: the article was
+%                 printing the P of the WEAKEST of the three blocks and none of the strongest);
+%                 "over the same three seeds" on the 1.85-vs-2.25 pair; the nine solvent classes
+%                 the 2000-partition null permutes; the 5608 rows the +0.14 dMAE is measured on.
+% THE RULE THIS LEAVES.  A ledger cell has FOUR columns' worth of scope, not one: claim, set, n,
+% and the value's own uncertainty.  Check a restoration against all four.
 % Do not shorten the prose by moving a scope back into that table.  Do not bring the table back
 % into this document.
 \subsection{Supervising the intermediate toward the reference, and substituting it at prediction time}
@@ -491,7 +518,7 @@ Substituting the reference profile for the learned one \emph{at inference} degra
 substitution alone is the effect this paper is named for. It erases any positive $R^2$
 (Fig.~\ref{fig:paradox}): the model predicts solubility better \emph{from its own learned
 $\sigma$-profile} than when \emph{given the external reference one} (MAE $1.85$ vs $2.25$, in \lnx\
-units, with no overlap between the two arms' per-seed values either). Of the figure's eight arms two are non-COSMO controls, DirectGNN and a fitted NRTL closure;
+units, over the same three seeds and with no overlap between the two arms' per-seed values either). Of the figure's eight arms two are non-COSMO controls, DirectGNN and a fitted NRTL closure;
 five COSMO-SAC arms differ only in how the $\sigma$ head is trained and in what it is fed, and the
 sixth (\emph{grounded\,$+$comb.}) differs instead in the closure, restoring the
 Staverman--Guggenheim combinatorial term. \emph{Ref.\ $\sigma$ (eval)} is the grounded checkpoint
@@ -550,9 +577,10 @@ Figure~\ref{fig:parity-lnx2} sets the same rows out predicted against measured, 
 three of the closure arms. Two things are visible there that the arm ordering is not. First, every
 arm is severely shrunk toward the corpus mean: the ordinary least-squares slope of predicted on
 measured is $0.515$ for DirectGNN, $0.416$ ungrounded, $0.528$ grounded and $0.690$ with the
-reference profile, none near $1$, and in every panel the median trace crosses the identity---sparingly
+reference profile---all four at seed $42$, the figure's seed, with no replicate behind
+them---none near $1$, and in every panel the median trace crosses the identity---sparingly
 soluble compounds are called more soluble than they are and highly soluble ones less. That shrinkage
-is not the closure's doing: the closure-free control's slope differs from the grounded closure's by
+is not the closure's doing: at that seed the closure-free control's slope differs from the grounded closure's by
 $0.013$, so whatever produces it lives in the encoder and the data. Second, the reference-profile arm is the
 \emph{least} shrunk and the worst. Its slope is the closest of the four to $1$ and its prediction
 spread exceeds the measurement's, yet its MAE is the highest and its $R^2$ is not distinguishable
@@ -584,6 +612,8 @@ Grouping the labelled test rows by solute and temperature and ranking the solven
 falls from $0.592/0.546/0.598$ to $0.365/0.369/0.410$ across the three seeds---pooled $-0.197$
 $[-0.282,-0.117]$, every per-seed interval excluding zero, and every one of the three larger than
 any difference between seed replicates of a single arm, the largest of which is $0.060$.
+Every interval here is a $95\%$ percentile bootstrap over those $107$ solute clusters, the
+effective sample rather than the $823$ groups.
 nDCG@3 falls by $-0.084$ $[-0.124,-0.043]$, and top-1 accuracy by $-0.107$ $[-0.192,-0.020]$. That
 last figure is quoted pooled and only pooled: two of its three per-seed intervals span zero, so it is
 the one of the three ranking metrics that does not hold seed by seed. The solvent the
@@ -801,7 +831,8 @@ $+1.06$ to $+2.19$, and the deletion test passes at every one of the $36$ cells 
 bins at $n{=}182$, so the cell the map reads is the coarser and the lower of the two. That sweep
 varies the coarsening's own settings and not the family of estimator: a pre-declared cross-fitted
 regressor, tested after this analysis was fixed, returns a \emph{looser} bound and moves this
-stratum to $+1.76$, leaving it the one admissible positive row set but with fewer cells around it,
+stratum to $+1.76$ $[+1.02,+2.49]$, at the deployed convention and row unit the $+2.04$ is read
+at, leaving it the one admissible positive row set but with fewer cells around it,
 and moves the chemistry-blind null the \emph{wrong} way. That null is re-run on both sides for
 that comparison, on the $473$ rows the cross-fitted estimator scores rather than the $477$ the map
 is built on, so its baseline column is not the $10.1\%$ and $17\%$ quoted below: against a
@@ -914,8 +945,9 @@ acceptor-only aprotics---the bound spans a factor of $2.0$ against errors spanni
 adding the three that carry an estimate without being boundable gives $6.8$ against $51$, that $6.8$
 being set by a mono-alcohol figure the artifact flags as an invalid bound on a stratum already
 excluded. The two orderings are unrelated---among those six the glycol ethers carry the lowest bound
-and the second-highest error---and against $2000$ random partitions into blocks of the observed
-class sizes, at the same cell, the chemical partition's range (largest minus smallest) in
+and the second-highest error---and against $2000$ random partitions of the broad set's $477$ rows
+into blocks of the observed sizes of its nine solvent
+classes, at the same cell, the chemical partition's range (largest minus smallest) in
 $\mathrm{MSE}$ exceeds every draw while its range in the bound is unremarkable ($p=0.26$); their
 ratio gives $p=0.02$. Every stratum's figures are in \S\ref{sec:si-map}. That is the
 estimator showing through: every stratum is summarised by eight quantile bins of one scalar, so the
@@ -967,12 +999,16 @@ If the ceiling is the closure, the direct remedy is a better closure. The standa
 step delivers one on the VT-2005-matched set and not on the broad IDAC set, and a block split
 identifies the factor that carries that reversal. The step more than halves the smaller set's error
 under the full convention ($P>0.95$), the convention under which the two kernels' published error
-figures are reported, and cuts it $42\%$ under the deployed one; on the broad IDAC set it is not an
-improvement under either rule, and neither rule measures it as an equality there---the step scores
+figures are reported, and cuts it $42\%$ under the deployed one; on the broad IDAC set ($477$) none
+of its three cells establishes an improvement, and none measures an equality either---the step scores
 $-0.99$ at $P\approx0.2$ under the deployed convention and $-0.07$ at $P\approx0.6$ under the full
-one, frequencies that leave a sign unresolved rather than fix it at zero. The reversal is the \emph{chemistry} and neither the profile database
+one, and, with the dispersion term on, $+0.06$ at $P\approx0.6$ under the full convention: a point
+estimate on the improving side, no better resolved than the two that are not. The broad set leaves
+the sign open in either direction and does not measure it at zero.
+The reversal is the \emph{chemistry} and neither the profile database
 nor the temperature range---with UD profiles, one extraction and one convention throughout, the
-\emph{2010, dispersion off} arm wins on the $57$ pairs shared with the smaller set, which are
+\emph{2010, dispersion off} arm wins on the $57$ pairs shared with the smaller set ($1.78\to0.77$ at
+$P>0.95$, full convention), which are
 broad-set rows as well and therefore not an independent sample of it, does not win
 on the complementary $420$, and still does not win on the $80$ complementary rows that are
 \emph{also} at $298$\,K, which is the block the temperature half of that claim rests on and the
@@ -980,11 +1016,14 @@ weakest of the three: $P\approx0.3$ and no interval, and the three blocks were n
 one another---and that block split is the whole of the evidence for the reversal being
 chemical. We claim only that \textbf{the fidelity lever we can demonstrate is confined to the smaller
 set's chemistry}, and that null is additionally a small-molecule and glycol-heavy one, so on
-drug-like solids the lever is untested rather than absent. The input-fixed control and its three
-limits, the three arms on both sets under both conventions (Table~\ref{tab:kernels}), the third block
-at $298$\,K, and the floor checks under the 2010 kernel's own typed latent---where the ordering is
-lost on the smaller set and holds on the broad one, loss of resolution rather than a demonstrated
-flip to the inputs---are in \S\ref{sec:si-fidelity}.
+drug-like solids the lever is untested rather than absent. Under the 2010 kernel's own typed latent,
+$306$-dimensional and so several times worse resolved, the floor checks return two aggregates of
+opposite sign---$+1.29$ on the broad IDAC set ($P>0.95$, ${\approx}0.9$, ${\approx}0.9$ over pair,
+two-way and source clusters) against $-0.77$ at $P\approx0.3$ on the VT-2005-matched set, only the
+first of them standing---which is loss of resolution and not a demonstrated flip to the inputs, a
+flip needing a \emph{lower} bound on $\Binsuf$. The
+input-fixed control and its three limits, the three arms on both sets under both conventions
+(Table~\ref{tab:kernels}), and the third block at $298$\,K are in \S\ref{sec:si-fidelity}.
 
 % COMPRESSED 2026-08-07 (page-reduction pass).  The kernel-residual negative in full -- the
 % random-fold 46+-5%, why only the grouped design is free of leakage, what the +- prices and what
@@ -999,7 +1038,8 @@ the map \emph{as it is deployed}: the fixed kernel together with the one compute
 reads, which is the composite $\Bclos$ is the error of (\S\ref{sec:decomp}) and the object the
 pipeline runs on. Which of the two carries the error is a question this section does not answer; nor
 does dominance say the composite is \emph{fixably} wrong. A small structure-preserving residual on
-the fixed COSMO-SAC exchange-energy kernel, fit on the reference VT-2005 profiles, removes
+the fixed COSMO-SAC exchange-energy kernel, fit and five-fold cross-validated on the $60$ pairs of
+the VT-2005-matched set on their reference VT-2005 profiles, removes
 $46\pm5\%$ of the reference-input error under random folds but $-5\pm16\%$ once folds are grouped so
 that no solvent is shared, and only the grouped design is free of leakage, the closure error being
 predominantly a between-solvent systematic. It gives a null and not a bound: the $\pm$ prices only
@@ -1130,13 +1170,15 @@ The decisive test is the same oracle swap, measured \emph{in-distribution} acros
 within-scaffold splits: the learned $\hat\sigma_{\mathrm H}$ replaced by the tabulated
 $\sigma_{\mathrm H}^\star$ in the same closure---the series label is read from the structure in both
 arms, so the swap moves one coordinate of $\zstar$---the sign of the change recorded per stratum. It
-flips. On the clean pole the reference \emph{improves} accuracy---MAE $0.48$ learned against $0.315$
-with the reference, better in $19$ of $20$ splits and in three of the four reaction series---so the
+flips. On the clean pole ($n{=}158$) the reference \emph{improves} accuracy---MAE $0.48$ learned against $0.315$
+with the reference, a gap of $-0.165$ at a $90\%$ CI of $[-0.28,-0.04]$, better in $19$ of $20$
+splits and in three of the four reaction series---so the
 ceiling there is the noisy learned estimate and not the closure, which is an internal positive
 control on real data. That control is the filtered $158$-record pole's and inherits its scope: on the
 unfiltered $163$ the closure floor is positive, and ``well specified'' is then not available to
-explain the swap's sign. On the degraded pole the same swap \emph{degrades} it---$0.83$ against $1.62$,
-worse in $20$ of $20$ splits and in all four series, gap $90\%$ CI $[{+}0.57,{+}0.95]$---the freely
+explain the swap's sign. On the degraded pole ($n{=}846$) the same swap \emph{degrades} it---$0.83$ against $1.62$,
+worse in $20$ of $20$ splits and in all four series, a gap of $+0.79$ at a $90\%$ CI of
+$[{+}0.57,{+}0.95]$---the freely
 learned constant absorbing what the zeroed positions carry and the tabulated one lacks. The sign of
 grounding therefore reverses inside one closure, in the direction Proposition~\ref{prop:tax} gives a
 priori and---consistently with the one-sided bound above, though not isolated by it---through the
@@ -1152,7 +1194,10 @@ to helping only under scaffold \emph{extrapolation}, where the learned constant 
 ($2.6{\pm}2.0$) back above the threshold---in the mean over the six splits, three of which still
 have grounding hurting. The clustering unit is the Hammett reaction series, of
 which only $G{=}4$ exist, so the bootstrap resolves nothing finer than series-level sign agreement,
-read as a sign test on four units ($p{=}1/16$ on the pole where grounding hurts). The construction,
+read as a sign test on four units: $p{=}1/16$ on the degraded pole, where grounding hurts and all
+four series agree, and $p\approx0.31$ on the clean one, where three of them do---so that test
+carries the degraded pole and not the positive control, which rests on its splits and its gap
+instead. The construction,
 the estimator validation and the measured fidelity sweep are in \S\ref{sec:pka}.
 
 \subsection{Scope, accuracy, and limitations}
@@ -1192,7 +1237,7 @@ arms trail their own control in the seed mean---the COSMO-SAC arms at every seed
 two of three, being ahead at seed $42$ ($1.734$ against $1.749$; Table~\ref{tab:si-arms})---and the
 predict-the-mean row shows how little room sits above them.
 The physics and control arms were tuned separately and no hyperparameter-matched control was run, so
-the global $\Delta\mathrm{MAE}$ of $+0.14$ between them---from the unrounded means, where
+the global $\Delta\mathrm{MAE}$ of $+0.14$ between them on the $5608$ labelled test rows---from the unrounded means, where
 Table~\ref{tab:baselines}'s rounded cells differ by $0.15$---carries no information about the
 thermodynamic bottleneck, and neither do the per-solvent-class map, the per-solute-class map, the
 novelty inversion or the data-efficiency trend, all of which resolve the \emph{same} difference along
@@ -1212,66 +1257,49 @@ inherits it we do not know: the only checkpoint ever scored on the temperature-w
 whose predictions are near-constant, so it is untested rather than answered
 (\S\ref{sec:supporting}, \S\ref{sec:si-mech}).
 
-The external block is not like-for-like and the table says so in its own rows. FastSolv and SolProp are deposited here on a \emph{by-solute} split, this work's arms on the harder solute-scaffold split, and the third block is as published, on other corpora and in another unit; retraining the two on the scaffold split needs a GPU run we did not perform, and scoring released FastSolv weights on our test rows is invalid because FastSolv is trained on this corpus. One sentence survives all three caveats, and it is not a favourable one: this work's control, at $\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is the same order as published new-solute extrapolation rather than an order away, and the physics arms are worse than every published leader at every seed and every clip. What may be read from those figures is what survives the caption's clip sweep and not the two decimals; the full reading is in \S\ref{sec:si-baselines}.
+The external block is not like-for-like and the table says so in its own rows. FastSolv and SolProp are deposited here on a \emph{by-solute} split, this work's arms on the harder solute-scaffold split, and the published figures are as published, on other corpora and in another unit; retraining the two on the scaffold split needs a GPU run we did not perform, and scoring released FastSolv weights on our test rows is invalid because FastSolv is trained on this corpus. One sentence survives all three caveats, and it is not a favourable one: this work's control, at $\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is the same order as published new-solute extrapolation---the published leaders run $0.83$ to $0.99$ in that unit and the physics-informed cycle $1.43$ to $2.16$---rather than an order away, and the physics arms, at $1.39$ to $1.60$, are worse than every published leader at every seed and every clip. What may be read from those figures is what survives the clip sweep and not the two decimals; the sweep, the published rows themselves and the full reading are in \S\ref{sec:si-baselines}.
 
 % ---------------------------------------------------------------------------
 % EXTERNAL BASELINES, IN THE ARTICLE (2026-08-02, editorial item A3).  The only comparison against
 % published solubility models used to be Supporting Information, which is what three referees
-% objected to.  THREE BLOCKS, EACH LABELLED WITH WHAT IT MAY BE COMPARED TO, and the table refuses
-% the flattering comparison in both directions: the physics arms trail their own control in block
-% one, and block two is on an easier split than block one so it is not a ranking.
-% Rows transcribed from results/external_baseline_comparison/table_article.tex; see the header of
-% si_tables/external_baselines_rows.tex for the four typesetting edits and the regeneration command.
+% objected to.  EACH BLOCK IS LABELLED WITH WHAT IT MAY BE COMPARED TO, and the table refuses the
+% flattering comparison in both directions: the physics arms trail their own control in block one,
+% and block two is on an easier split than block one so it is not a ranking.
+%
+% CUT TO 10 PT, 2026-08-08.  This float used to be the whole transcription -- seventeen rows in
+% three blocks, six columns, and a 489-word note in twenty lines -- set at \scriptsize, which is
+% 8 pt against a 12 pt body, and filling 82% of a float page that carried no body text.  All three
+% referees named the type size.  Nothing about the measure fixes it: this is already a full-width
+% `table*', so at 10 pt the only lever left is rows, and these went, in this order:
+%   (1) the note block, whole;
+%   (2) the third block, six rows quoted as published on other corpora in mol/L, three of whose
+%       four data columns are a dash;
+%   (3) the two random-pair rows, a split control the article makes no claim from.
+% Every one of them is printed in Table \ref{tab:si-baselines-full}, from the same source file,
+% and the caption says so.  What had to STAY is the comparison \S\ref{sec:discussion} makes
+% explicitly -- this work's arms against external models re-run on this corpus -- so blocks one
+% and two and the scale reference are here in full.  The published leaders' range is not a table
+% row any more, so the sentence that compares against it now prints it (2026-08-08); do not take
+% it back out on the grounds that a table has it.
+% Rows: si_tables/external_baselines_rows_article.tex, cut from the full transcription in
+% si_tables/external_baselines_rows.tex; see that file's header for the four typesetting edits
+% and the regeneration command.
 % The n column carries TWO sizes on purpose: the log10 S column is not computed on the rows the MAE
 % column is, and the rows it loses used to be ARM-DEPENDENT (2026-08-04 repair; see the generator's
 % `THE COMPARISON THIS TABLE MUST NOT FLATTER' block).
 % ---------------------------------------------------------------------------
 \begin{table*}[tp]
 \centering
-\caption{Solubility accuracy in three blocks that may not be read across: this work, external models
-re-run here on a different split, and published figures on other corpora. A row carries two sample
-sizes where its two metric columns are not scored on the same rows, one where they coincide, and a
-dash where the value is quoted rather than computed here.}
+\caption{Solubility accuracy in two blocks that may not be read across: this work on the
+solute-scaffold split, external models re-run here on an easier by-solute split. Two sample sizes
+appear where a row's two metric columns are not scored on the same rows. The published figures, the
+random-pair rows, and the conversion and saturation clip behind the $\log_{10}S$ column are in
+Table~\ref{tab:si-baselines-full}.}
 \label{tab:baselines}
-{\scriptsize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{0.88}
-\input{si_tables/external_baselines_rows}
-\tabnotes{\scriptsize%
-\emph{What the block-1 cells are.} Every one is the mean over seeds of that seed's own metric, with
-the population standard deviation over seeds beside it; no cell pools the seeds' rows.\quad
-\emph{The unit bridge.} $\log_{10}S$ is obtained from \lnx\ through the solvent's molarity, by one
-converter run on every row of the first two blocks and set out in \S\ref{sec:si-baselines}. It
-carries \emph{no} temperature dependence and it needs a molarity, so the $168$ of the $5608$
-labelled test rows whose solvent has none carry no true $\log_{10}S$ and leave that column for
-\emph{every} arm: hence the two $n$. Block~1's $5608$ is itself the labelled subset of the $8103$
-test rows (Table~\ref{tab:notation}); both exclusions are read off the data alone, neither off a
-prediction. The scale-reference row runs its one constant \lnx\ prediction through the same bridge
-on the same $5440$ rows, so it is a reference in this column too.\quad
-\emph{The clip, and what the column owes it.} Predictions are clipped at $x_2=0.999999$ before
-conversion, so an arm that saturates keeps its row with a large finite error instead of converting to
-$+\infty$ and being dropped. Without that clip the exclusions would differ \emph{by arm}---$12$ to
-$195$ rows per seed for the three physics arms, none for the control, which never saturates---and
-would read the $\sigma$-oracle arm $0.26$ lower, the COSMO-SAC-grounded arm $0.31$ and the NRTL arm
-$0.48$, the control unchanged. The clip is a chosen constant and this column moves with it: swept
-from $x_2=1-10^{-3}$ to $1-10^{-10}$ it leaves the control at $1.00$ throughout and carries every
-physics arm across a range wider than the gaps between them. Two
-readings hold at every clip in that span, and separately at each of the three seeds: the control is
-below every physics arm, and every physics arm is above every published
-leader. Four do not, and each of the four fails on the seed axis as well as the clip one---the
-printed order of the NRTL and $\sigma$-oracle rows; whether a physics arm beats the scale reference;
-whether they sit below the better end of the published physics-informed cycle; and whether all three
-trail their control by more in this column than in MAE. \S\ref{sec:si-baselines} carries the sweep
-and lists every cell of the four, and \S\ref{sec:discussion} takes only the readings that survive
-them.\quad
-\tnk{a}\,\emph{Re-scored}: the same checkpoint over the same rows with the single scaling it was
-trained under, the doubly standardising prediction path diagnosed in \S\ref{sec:si-baselines}
-withdrawn rather than printed. That section gives the diagnosis, the withdrawn values
-and the control that reproduces them. The SolProp rows were always scored through a different path
-and are unaffected.\quad
-The third block is quoted as published, in mol\,L$^{-1}$, on other corpora and splits: no conversion
-of ours stands behind those six values. MAE is not available for that block, which reports RMSE and
-$\%\log S\pm1$, and we do not convert between them.}}
+{\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.95}
+\input{si_tables/external_baselines_rows_article}}
 \end{table*}
 
 \paragraph{The sign rule's own prediction.} Proposition~\ref{prop:tax} predicts \emph{when} to expect
@@ -1408,7 +1436,8 @@ VT-2005-matched audit artifacts disagree on one out-of-fold estimate, and the CO
 reference reproduction (\S\ref{sec:model}) was printed to its validator's console and never written
 to an artifact at all. Two further defects are
 repaired rather than disclosed, each described where its numbers are printed: the two FastSolv
-retraining bundles were re-scored (Table~\ref{tab:baselines}, with the diagnosis, the withdrawn
+retraining bundles were re-scored (Tables~\ref{tab:baselines} and~\ref{tab:si-baselines-full}, with
+the diagnosis, the withdrawn
 values and the control that reproduces them in \S\ref{sec:si-baselines}) and the
 withdrawn bundle is kept beside the re-scored one, and the truncated seed-$44$ $\sigma$-oracle
 per-row file has been recovered complete and now stands in the deposit
