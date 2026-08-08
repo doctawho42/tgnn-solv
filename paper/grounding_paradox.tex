@@ -446,7 +446,7 @@ bracketed span below is one of those. Two in particular are not: the kernel-tran
 \S\ref{sec:badclosure} are a standard \emph{error} over five fit seeds, and the
 leave-one-publication-out span of \S\ref{sec:broad} is the range of that curve.
 Every claim below carries its set, its size and its scope in the sentence that makes it; a reader who
-wants all of them side by side will find the same eighteen collected as one table in
+wants all of them side by side will find the same nineteen collected as one table in
 \S\ref{sec:si-ledger} (Table~\ref{tab:claims}).
 
 % THE CLAIM LEDGER LEFT THIS DOCUMENT ON 2026-08-08 for \S\ref{sec:si-ledger}, whole and with its
@@ -1296,14 +1296,18 @@ The external block is not like-for-like and the table says so in its own block h
 % The n column carries TWO sizes on purpose: the log10 S column is not computed on the rows the MAE
 % column is, and the rows it loses used to be ARM-DEPENDENT (2026-08-04 repair; see the generator's
 % `THE COMPARISON THIS TABLE MUST NOT FLATTER' block).
-% THE `Test set' COLUMN IS GONE AND \tabcolsep IS 2 pt, 2026-08-08.  The column printed the same
-% two strings nine times and both are in the block heads, so it said nothing and cost 116 pt --
-% which is why every model name wrapped onto two or three lines and the block contrast, the one
-% thing this table is for, was the hardest thing in it to see.  The 2 pt is not taste either: at
-% 3 pt the model column can be at most 263.3 pt and the longest name needs 268.4.  The arithmetic
-% and how to re-measure it are in the rows file's header; the five-column tabular measures
-% 503.1 pt against a 504.5 pt \textwidth, so a widened cell has 1.4 pt before it overflows and an
-% over-wide tabular in a centred float does NOT reliably raise an Overfull \hbox.
+% THE `Test set' COLUMN IS GONE, 2026-08-08.  The column printed the same two strings nine times
+% and both are in the block heads, so it said nothing and cost 116 pt -- which is why every model
+% name wrapped onto two or three lines and the block contrast, the one thing this table is for,
+% was the hardest thing in it to see.
+% THERE IS NO \tabcolsep HERE ANY MORE, 2026-08-09.  Every one of the five columns' boundaries is
+% an explicit @{\hspace{}} in the rows file, because the spacing this table needs is NOT uniform:
+% the model column is ragged-right prose and the four numeric columns are right-aligned numbers
+% that abut.  Setting \tabcolsep here would change nothing and mislead the next editor.  The
+% arithmetic, the printed gutters and how to re-measure them are in the rows file's header; the
+% five-column tabular measures 502.1 pt against a 504.5 pt \textwidth, so a widened cell has
+% 2.4 pt before it overflows and an over-wide tabular in a centred float does NOT reliably raise
+% an Overfull \hbox.
 % ---------------------------------------------------------------------------
 \begin{table*}[tp]
 \centering
@@ -1314,7 +1318,6 @@ random-pair rows, and the conversion and saturation clip behind the $\log_{10}S$
 Table~\ref{tab:si-baselines-full}.}
 \label{tab:baselines}
 {\footnotesize
-\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.95}
 \input{si_tables/external_baselines_rows_article}}
 \end{table*}
@@ -1426,8 +1429,13 @@ price of reading a grounded latent as a measurement.
 The general statement is a design rule with a test attached. Wherever a predictor composes a fixed
 physical model over a learned intermediate for which an external reference exists, that reference
 measures which of the two limits accuracy, and where it answers, the answer decides the remedy: a
-more faithful physical model---the calculation that supplies its reference values included---or
-better inputs. The answer comes chemistry by chemistry rather than once for a field, and it comes
+more faithful physical model---the calculation that supplies its reference values included.
+% `---or better inputs' DELETED 2026-08-09.  Two referees stopped at the colon and took away a
+% two-sided instrument, which the next clause but one then has to take back and \S\ref{sec:discussion}
+% flatly denies: with \Binsuf\ bounded only from above, no cell can ever return "better inputs would
+% help here".  The remedy this rule names is the only one it can name.  Do not restore the phrase to
+% balance the sentence; the sentence is not balanced because the instrument is not.
+The answer comes chemistry by chemistry rather than once for a field, and it comes
 one-sided, so what the measurement returns is the chemistry on which better inputs are not the
 remedy---here one class of solvent, on which the standard route to a more faithful model did not
 clear the bar either. What this work establishes about the instrument is the map itself: which cells

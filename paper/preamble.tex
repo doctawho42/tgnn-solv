@@ -173,6 +173,16 @@
 % Hammett substituent constant, renamed from sigma so that it no longer collides with the
 % charge-density profile sigma of the main text.
 \newcommand{\hammett}{\ensuremath{\sigma_{\mathrm H}}}
+% TIGHT PLUS-MINUS, for a value +- its dispersion inside a NUMERIC TABLE COLUMN, and nowhere else.
+% \pm is a \mathbin, so TeX sets \medmuskip (4mu) either side of it; at the \footnotesize of the
+% article's tables that is 2.22pt a side, and the column gutter next to it was 4pt.  A reader
+% scanning a row therefore met 2.2 / 2.2 / 4.0 / 2.2 / 2.2 / 4.0 and the four cells read as one run
+% of tokens -- all three referees measured it independently on Table \ref{tab:baselines}.  The 3mu
+% taken back leaves a 0.56pt hairline inside the pair, which is what makes the pair one token, and
+% it frees 4.44pt in every column whose widest cell is a `a +- b' (three of the four there), which
+% is what pays for the wider gutter.  DO NOT use it in prose -- `mean $\pm$ s.d.' in a block head is
+% a word and keeps the ordinary spacing.
+\newcommand{\pmsd}{\mspace{-3mu}\pm\mspace{-3mu}}
 
 % Line breaking. emergencystretch 2.5em with the default hyphenation penalties left 240 underfull
 % boxes, 40 of them at badness 10000: loose lines that waste horizontal space. Allowing more

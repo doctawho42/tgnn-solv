@@ -556,12 +556,15 @@ risk at finite $n$.
 %
 % WHY THREE AND NOT TWO, 2026-08-08.  The type went from \scriptsize to \footnotesize -- 8pt to
 % 10pt against a 12pt body, the size of the article's Tables 1-3 -- because both referees this
-% round named the size, and because at 8pt this is now the only place the scope of eighteen
+% round named the size, and because at 8pt this is now the only place the scope of nineteen
 % claims is collected.  A p-column table does not grow by the ratio of the sizes: the cells
 % reflow, so the line COUNT rises with the type as well as the leading, and the measured cost
 % here was ~1.55x on the row blocks, not the ~1.25x an eyeballed estimate gives.  Two floats
 % could not hold that (block one alone reaches 470pt of a 701pt text block, and blocks one and
-% two together 760pt), so the five blocks were repacked one / two-plus-three / four-plus-five.
+% two together 760pt), so the blocks were repacked one / two-plus-three / four-plus-five.  The
+% SIXTH block, the second closure of \S\ref{sec:pka-main}, joined the second part on 2026-08-09
+% and went there rather than to the third because the second part sits alone on a float page with
+% room for it, while the third shares its page with body text that a taller float would displace.
 % BEFORE MOVING A ROW BETWEEN THE PARTS, or adding one, rebuild and grep the build output for
 % "Float too large": each part is within a block or two of the limit.
 %
@@ -574,18 +577,37 @@ risk at finite $n$.
 % \hbox being a warning.  All five headings are p-cells of the tabular's own width now, so they
 % wrap.  If any of this is touched, measure the printed rule's right edge against the text block;
 % a clean build is not the check.
+%
+% THE ROWS ARE SEPARATED, 2026-08-09, AND THE THREE SPACINGS ARE A HIERARCHY.  \arraystretch 0.86
+% shrinks the row STRUT, and a strut is all that stands between two multi-line p-cells: the row
+% boundary measured 10.2-10.6pt (0.86 x the strut's 3.6pt depth, plus 0.86 x its 8.4pt height)
+% against 12.0pt of \baselineskip INSIDE one claim's own wrapped text.  A row boundary was thus a
+% NEGATIVE cue -- two adjacent short rows ran together -- and all three referees reported it off
+% all three floats.  \arraystretch cannot fix it: for a cell taller than its strut the paragraph
+% sets the row's height and the stretch does nothing, which is why the defect appears only on the
+% wrapped rows.  So an explicit \addlinespace carries it, and the three spacings must stay ordered:
+%     12.0pt  leading inside one claim's wrapped text   (\baselineskip, do not touch)
+%     13.3pt  between two claims                        (\addlinespace[3pt], 13 of them)
+%     17.3pt  between two blocks                        (\addlinespace[7pt], before each block head)
+% The block value was 2pt and had to rise with the row value or the blocks would have separated
+% LESS than the rows inside them.  Cost: 12pt on the first part, 18pt + 5pt on the second, 9pt +
+% 5pt on the third -- and only the third's is paid in text, the other two sitting alone on float
+% pages.  Re-measure the same way the referees did, off the printed page and not the source:
+%   pdftotext -f 10 -l 12 -bbox-layout grounding_paradox_si.pdf -
+% and difference the yMin of consecutive lines in the third column, which is the tallest cell on
+% almost every row and therefore the column the boundary is read in.
 % ---------------------------------------------------------------------------
 \subsection{The claims ledger}
 \label{sec:si-ledger}
-Table~\ref{tab:claims} collects the article's eighteen load-bearing claims in one place: what is
+Table~\ref{tab:claims} collects the article's nineteen load-bearing claims in one place: what is
 claimed, the data set it was measured on and that set's size, and the value with its uncertainty and
 its scope. It is an index and not the place those scopes live. Every qualification printed in a value
 cell below---an $n$, a per-seed triple, ``one seed'', ``one checkpoint'', an interval that spans
 zero, a named exception, the one-sidedness of a margin---is also carried by the article sentence that
 makes the claim, which is where a reader meets it; nothing in the article depends on this table being
-open beside it. What the table adds is that the eighteen can be read against one another. Two of the
+open beside it. What the table adds is that the nineteen can be read against one another. Two of the
 three columns do that at a glance, and the second is where a shared data set shows: the same $5608$
-labelled test rows carry the first of the five blocks and the last. The confounds and the estimator
+labelled test rows carry the first of the six blocks and the last. The confounds and the estimator
 conventions do not read at a glance, and the table is not offered as showing them that way---each is
 a sentence, and the cells that carry them run to a few hundred characters, the two longest to five
 and seven hundred, so the third column is read a row at a time and not scanned.
@@ -605,9 +627,13 @@ Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \midrule
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{The two senses of grounding} (\S\ref{sec:paradox})}\\
 Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($5608$ of $8103$), 3 seeds & $1.85\to2.25$; the per-seed values do not overlap; the gap carries the test-time input swap with it \\
+\addlinespace[3pt]
 \ldots and still hurt when injected at training & labelled test rows\tnk{c}, seed $42$ & $1.80\to1.98$ (own baseline $1.80\to2.23$); one seed and a stream build not certified against its comparator's (\S\ref{sec:si-repro}), so a sign and not an effect size---free of the test-time swap, which the row above is not \\
+\addlinespace[3pt]
 \ldots so part of that gap is test-time distribution shift & labelled test rows\tnk{c}, seed $42$ & share $0.59$ on one seed: a description of that seed, not a magnitude \\
+\addlinespace[3pt]
 Training-time $\sigma$ supervision \emph{helps} (MAE) & labelled test rows, 3 seeds & $2.04\to1.85$; the per-seed values do not overlap; per-seed gains $0.237/0.075/0.281$ straddle the co-adapted arm's $+0.18$, so the two operations are not ordered by magnitude---and the only contrast here a $\sigma$-stream leak could inflate, the ungrounded arm carrying no stream (\S\ref{sec:data}) \\
+\addlinespace[3pt]
 The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 3 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ at the worst seed---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $589$ of the $823$ groups in both arms at all three seeds. The substitution falls on the solvent channel \\
 \bottomrule
 \end{tabular}
@@ -615,11 +641,12 @@ The evaluation substitution degrades the \emph{choice} of solvent, not only the 
 \end{table*}
 
 % SECOND part of the claim ledger; see the note above the first part before touching any of the
-% three.  It carries the two closure blocks, which is what fits beside its caption and header.
+% three.  It carries the three closure blocks, which is what fits beside its caption and header.
 \begin{table*}[tp]
 \ContinuedFloat
 \centering
-\caption{\emph{Continued.} The two closure blocks of the ledger. Notes \emph{a}--\emph{h} are
+\caption{\emph{Continued.} The three closure blocks of the ledger: two on the activity axis, one
+on a second closure in another domain. Notes \emph{a}--\emph{h} are
 at the foot of the third part.}
 \label{tab:claims-cont}
 {\footnotesize
@@ -631,15 +658,24 @@ Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \midrule
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure}); margins in squared \lngi\ units, not the \lnx\ MAE of the first block}\\
 $\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.26,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist; the pre-declared cross-fitted $\Binsuf^{\mathrm{up}}$, which came back looser and does not headline, puts the same cell at $+1.76$ $[+1.02,+2.49]$ (\S\ref{sec:si-crossfit}) \\
+\addlinespace[3pt]
 \ldots\ on every other stratum of the map & broad IDAC, $59$ strata & \S\ref{sec:si-map}, Tables~\ref{tab:map-full}--\ref{tab:map-detail}, each with its margin, interval and the test it fails; none is stated as a finding\tnk{h} \\
+\addlinespace[3pt]
 \ldots\ for either set \emph{as a whole} & broad IDAC ($477$); VT-2005-matched ($60$) & $+0.51$ (full $+0.95$); $-0.38$ compounding two cuts ($+0.01$ full); $+0.18$ less one publication; $+0.05$ on the smaller set: an average weighted by composition\tnk{f} \\
+\addlinespace[3pt]
 $\Binsuf^{\mathrm{up}}$ near stratum-independent, $\mathrm{MSE}$ not & broad IDAC, $3$ boundable classes; $6$ with an estimate & $\times2.0$ against $\times25$; $\times6.8$ against $\times51$; $p{=}0.02$ against $2000$ null partitions of $9$ classes \\
+\addlinespace[3pt]
 $\Bclos>\Binsuf$, 2010 on its \emph{own} typed latent\tnk{f} & broad IDAC ($477$); VT-2005-matched ($60$) & $+1.29$, $P>0.95/{\approx}0.9/{\approx}0.9$\tnk{e}; $-0.77$ at $P\approx0.3$ on the smaller set, where the ordering is lost: loss of resolution, not a reversal \\
-\addlinespace[2pt]
+\addlinespace[7pt]
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Whether a better closure moves the ceiling} (\S\ref{sec:fidelity})}\\
 The $2002\to2010$ step lowers the error & broad IDAC ($477$) & $-0.99$ at $P\approx0.2$: no improvement, and not a measured equality either; under the full convention $-0.07$, $P\approx0.6$, and $+0.06$, $P\approx0.6$ with dispersion on \\
+\addlinespace[3pt]
 \ldots but does on the VT-2005 set's chemistry & $57$ shared pairs, UD & $1.78\to0.77$, $P>0.95$, at fixed profile database and temperature, full convention; those $57$ pairs are also broad-set rows, so not an independent sample \\
+\addlinespace[3pt]
 A fitted kernel residual transfers across solvents & VT-2005-matched ($60$), grouped folds & $-5\pm16\%$: spans zero; the $\pm$ prices optimiser noise only, and the fold spread that dominates it is not propagated, so no bound follows \\
+\addlinespace[7pt]
+\multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{The same split on a second closure} (\S\ref{sec:pka-main}); MAE in $\mathrm pK_a$, not the squared \lngi\ of the two blocks above}\\
+A Hammett $\mathrm pK_a$ closure reverses the substitution's sign between its two poles & OPERA $\mathrm pK_a$, clean pole ($158$) and degraded ($846$); $K{=}20$ within-scaffold splits, $G{=}4$ series & MAE gap $-0.165$ $[-0.28,-0.04]$ on the clean pole, the reference better in $19$ of $20$ splits and in three of the four series, against $+0.79$ $[+0.57,+0.95]$ on the degraded, worse in $20$ of $20$ and in all four; $90\%$ intervals over the four series, which as a sign test read $p\approx0.31$ on the clean pole and $p{=}1/16$ on the degraded---so that test carries the degraded half and not the positive control. The clean pole is well specified only after the quality filter: on the $163$ rows before it its closure floor is $+0.55$, not $-0.2$ \\
 \bottomrule
 \end{tabular}
 }
@@ -664,16 +700,20 @@ Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \midrule
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Mechanism} (\S\ref{sec:surrogate})}\\
 The latent departs from its reference along a shared direction & matched molecules ($44$), 3 seeds & $51\pm2\%$; the magnitude is not stable across analysis configurations, and these are a separate three-seed set of runs, not the arms of Fig.~\ref{fig:paradox}, whose latent departure is not measured \\
+\addlinespace[3pt]
 \ldots and that departure's top-two mode share exceeds a phase-randomised null & one grounded checkpoint, same $44$ & $0.40$ against $0.22\pm0.01$, the $\pm$ being the null's spread; one checkpoint, and a wrong-molecule null is not cleared \\
+\addlinespace[3pt]
 \ldots and that direction \emph{transfers} to molecules outside the fit & matched molecules ($44$), 3 seeds & $4.1\pm0.5\times$ a zero-drift null, with no constant-offset control on these seeds; the $\pm$ spans seeds at one partition; and the held-out half is homologue-saturated, so ``outside the fit'' is largely within-cluster interpolation \\
+\addlinespace[3pt]
 That departure \emph{cancels} closure error & not measured & the one direct check is under-powered and runs against it \\
-\addlinespace[2pt]
+\addlinespace[7pt]
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Accuracy} (\S\ref{sec:discussion})}\\
 Physics arm vs.\ DirectGNN accuracy ($\Delta$MAE) & labelled test rows ($5608$ of $8103$) & $+0.14$ between separately tuned pipelines, so not attributable to the thermodynamic bottleneck \\
 \bottomrule
 \end{tabular}
 \tabnotes{\scriptsize%
-\tnk{a}\,The sets are defined in Table~\ref{tab:notation}.\par
+\tnk{a}\,The sets are defined in Table~\ref{tab:notation}, except the two $\mathrm pK_a$ poles of the
+second-closure block, which \S\ref{sec:pka-main} defines and Table~\ref{tab:notation} does not.\par
 \tnk{b}\,$P$ is a two-way (solute\,$\times$\,solvent) cluster-bootstrap frequency that the margin
 stays positive, reported as a band by the rounding rule at the head of this section.\par
 \tnk{c}\,The same $5608$ rows: the seed-$42$ control arms carry the identical labelled set, so
