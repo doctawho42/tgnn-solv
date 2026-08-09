@@ -30,16 +30,26 @@ Both arms, same schedule, intersection-locked to the same n = 5608 labelled test
 
 | arm | MAE | R² | per-seed MAE |
 |---|---|---|---|
-| ungrounded | 2.1241 ± 0.0540 | +0.124 ± 0.043 | 2.0816 / 2.1060 / 2.1849 |
-| grounded_a | **1.8908 ± 0.0063** | +0.307 ± 0.023 | 1.8961 / 1.8926 / 1.8838 |
+| ungrounded | 2.1241 ± 0.0441 | +0.124 ± 0.035 | 2.0816 / 2.1060 / 2.1849 |
+| grounded_a | **1.8908 ± 0.0052** | +0.307 ± 0.019 | 1.8961 / 1.8926 / 1.8838 |
 
-Per-seed gain **0.2333 ± 0.0603** (0.1855 / 0.2134 / 0.3011), one sign at all three seeds, and the
+Per-seed gain **0.2333 ± 0.0493** (0.1855 / 0.2134 / 0.3011), one sign at all three seeds, and the
 two arms do not overlap per seed: the worst grounded run (1.8961) beats the best ungrounded one
 (2.0816).
 
 Against the published, leak-uncertified 2.043 ± 0.040 → 1.846 ± 0.053, gain 0.198: the leak-free
 gain is **larger**, same sign, same non-overlap. On these three seeds the leak was not producing the
 gain.
+
+## A correction to this file's own first version
+
+The three ± above were first recorded as 0.0540 / 0.0063 / 0.0603. Those are **sample** standard
+deviations; every ± that spans seeds in this paper is a **population** one, stated at
+`sections/SI.tex` and again in Table S3's caption, and a sample figure is larger by exactly
+√(3/2) = 1.2247. The means, the signs and the per-seed non-overlap are unaffected. The wrong figures
+also stand in the commit message of `4d52fc4`, which is not rewritten; this note is the correction of
+record. They are the numbers an executor would have typed into five displays, and the discharge
+sheet's own final check would not have caught them — it greps *retired* values, not new ones.
 
 ## Two things in these files that must not be read as findings
 
