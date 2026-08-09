@@ -1,4 +1,44 @@
-# Gate A1, the leak-free re-run: interim record at three of five seeds
+# Gate A1, the leak-free re-run
+
+## SUPERSEDED, 2026-08-10 03:20: all ten arm-runs restarted from scratch
+
+Everything below describes the runs that landed at seeds 42–44 and were training at 45–46. They are
+**not the measurement of record any more**, and they never satisfied the protocol printed in §2.2.
+
+The provenance certificate — run for the first time on 2026-08-10, because the script that runs it
+did not exist on the VM — failed all six manifests of seeds 42–44:
+
+- the grounded arms carry the stream hash but **not the in-run leak check**: their manifests predate
+  `train.py`'s point-of-use certification block;
+- the ungrounded arms do not **assert** the absence of a σ stream, and §2.2 requires absence to be
+  asserted rather than inferred.
+
+The cause is one fact with three faces: the VM's tree stood at `bed7ba9`, the last pushed commit, and
+the certification block was written after it. The gate driver that runs the check was not there
+either, which is why the relaunch called the training driver directly and skipped it. Seeds 45/46,
+restarted on the current code at 03:07, did get the block — but at phase-2 epoch 34 of 70, so
+GPU-hours preceded the check for them too.
+
+**The stream is clean either way.** External certification, twice, against the same file by hash:
+0 leaks by canonical SMILES and 0 by Bemis–Murcko scaffold, `sha256 955a1862`, against 5101 held-out
+SMILES and 2702 held-out scaffolds. The in-run block then found something the external check had
+missed entirely: there are **two** streams, not one — `sigma_val`, 132 rows, `sha256 daf72c20`, also
+0/0. The external check looked at `sigma_train` alone because that is the file I remembered. A
+point-of-use check tests what the run opens; an external one tests what the checker recalls.
+
+**What replaced it.** All ten arm-runs (seeds 42–46 × two arms) restarted from scratch at 03:20 under
+the branch as pushed, with the certification running before the first GPU-hour: 10/10 logs carry the
+4b block, 0/10 are resumptions. The prior results, checkpoints and logs are kept at
+`results/e5_sigma_grounding_leakfree_precert`, `checkpoints/e5_leakfree_precert` and `~/a1_precert/`
+so the two triples can be compared — but the new one is the measurement of record, and the choice
+between them is not available after the fact.
+
+Expect the new per-seed values to differ: a run from scratch follows a different RNG trajectory from
+one resumed at epoch 30. The sign and the order of the gain are what the three landed seeds make
+likely, not the digits.
+
+---
+
 
 **Status: INCOMPLETE against the protocol printed in §2.2.** That paragraph commits to five seeds,
 42 through 46, and states its decision rule over *five* per-seed gains. Seeds 45 and 46 were
