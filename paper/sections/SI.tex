@@ -772,6 +772,11 @@ demoted by its residual test---the glycol ethers, the one row set the rule leave
 % deposits in that directory alone.  If a future arm emits a non-finite ln_x2_pred, the claim in
 % this subsection stops being true and intersection_keys silently becomes arm-dependent again --
 % re-run the audit before restating it.
+% AND THAT IS NOT HYPOTHETICAL: the five-seed re-run of sec:si-repro adds four trained deposits and
+% two sigma-oracle re-evaluations, so every count and every "three seeds" below is rewritten (22 ->
+% 28).  This subsection is ENROLLED in the re-run inventory as of 2026-08-10; the twin copy of the
+% count is "all twenty-two pass" in the deposit-recovery paragraph of sec:si-repro, and the two move
+% together or the document contradicts itself.
 \subsection{The scored row set, and why it is not arm-dependent}
 \label{sec:si-lock}
 Every accuracy number of \S\ref{sec:paradox} is on $5608$ rows, and the scaffold partition gives
@@ -3510,6 +3515,154 @@ stream build beside the split hash, which was not done for these runs.
 % so both dispositions still find their passage.  Gate B keeps its label sec:gateb, now inside
 % sec:surrogate, and the inventory's note that its two arms are seed-42 runs of their own still
 % holds.
+% 2026-08-10, THE THIRD RUN OF THE SAME-PASS RULE, WITH THREE OF THE FIVE SEEDS ALREADY LANDED AND
+% THE OTHER TWO IN TRAINING.  It was run from the RUNS and not from this list, because both previous
+% passes found their misses only by starting at the arms: every float, every numbered display and
+% every passage in both documents was read against what results/e5_sigma_grounding produces, and
+% the list was consulted afterwards.  It found two displays resting on a re-run arm and unenrolled,
+% one passage that had grown a fourth copy of the leak caveat, and three entries whose targets had
+% moved under them since 2026-08-07.
+%   UNENROLLED (1): the LABEL-NOISE-FLOOR sentence of \S\ref{sec:data}.  It prints the scaffold-split
+%     MAE as a range, "1.70 to 1.85", and compares it against the floor's larger functional -- and
+%     the upper endpoint of that range is the grounded arm's three-seed mean, so the factor of five
+%     it asserts is read off an arm the re-run replaces.  The disclosure paragraph of the same
+%     section was enrolled; this paragraph, immediately above it, was not.
+%   UNENROLLED (2): the DEPOSIT-RECOVERY paragraph of this section ("One deposited file was partial").
+%     It prints the sigma-oracle arm's three-seed cells before and after the seed-44 repair --
+%     2.26 -> 2.25 MAE, 1.57 -> 1.60 log10 S RMSE, -0.05 -> -0.03 R^2 -- and says that row of
+%     tab:baselines "is now a three-seed mean like the rest of its block".  That row is enrolled;
+%     the sentence stating what it now is was not, so a five-seed table would have printed beside a
+%     paragraph asserting it is three-seed.
+%   THE FOURTH CERTIFICATION PASSAGE: the opening sentence of the CONCLUSIONS carries "on a contrast
+%     this work does not certify leak-free".  It was added on 2026-08-07 (dab4994, rewritten at
+%     cbf3b39) -- the same day as, and AFTER, the pass at 4cacadd -- and the same-pass rule was not
+%     run for it.  Disposition D said "three passages" and there are four.  Branch 2 of the decision
+%     rule already rewrites this sentence, but only branch 2; the in-run certification answers the
+%     caveat in ALL THREE branches, which is what disposition D is for, so under branches 1 and 3 the
+%     clause would have stood after the thing it hedges had been certified.
+%   MOVED (1): the ledger is THREE FLOATS.  Counted in the source, not in this comment: six block
+%     headings and nineteen rows at 5/9/5, tab:claims / tab:claims-cont / tab:claims-cont2.  The five
+%     rows under "the two senses of grounding" are all still in tab:claims and the count "five" holds.
+%     THE ACCURACY ROW IS NOT: the +0.14 sits in tab:claims-cont2, a label that did not exist on
+%     2026-08-07, and this list named it as a row of tab:claims.  All three parts print as Table S2
+%     through \ContinuedFloat, so no printed cross-reference changed and only the source pointer did.
+%   MOVED (2): the baselines table is TWO FLOATS reading one source of record.  The block-1 grounded
+%     and sigma-oracle rows print in tab:baselines (nine rows, article) AND in tab:si-baselines-full
+%     (seventeen rows, here), off si_tables/external_baselines_rows.tex with the article's copy cut
+%     from it, so a regenerated value has to land in two files.  This list named the second float for
+%     its clip-sweep note alone.  The float count in the caption rule moves with it: FIVE floats, not
+%     four, carry re-run arms beside arms that were not re-run.  Both block-1 heads already carry the
+%     form of words ("three unless the row says otherwise").
+%   MOVED (3): "the disclosure above", the first of disposition D's passages, was a deictic that broke
+%     when this whole block moved out of the article on 2026-08-07.  What sits above it HERE is the
+%     provenance paragraph, which the same clause names separately.  It is named by label now.
+%   THE NINETEENTH LEDGER ROW (2026-08-09, the second closure) carries no re-run arm: OPERA pKa,
+%     K=20 within-scaffold splits, G=4 series.  Outside, and recorded so the next pass does not
+%     re-derive it.
+%   FIGURE 1 WAS DECIDED ON THE SCRIPT AND NOT BY ASSUMPTION, panel (b) having been rebuilt on
+%     2026-08-10 with a new encoding, a new geometry and a numbered axis.  scripts/analysis/
+%     make_overview_figure.py opens exactly one file, results/b_insuff/stratified_map_table.csv, and
+%     no artifact of results/e5_sigma_grounding.  Panel (a) is boxes and arrows: no numeral from any
+%     arm is drawn or computed, and its one arm-dependent element is the SIGN of the evaluation-time
+%     substitution, which this protocol fixes as unaffected in all three branches; the caption closes
+%     "Training-time supervision is not drawn", so the one sign that can flip is absent from the
+%     figure.  Panel (b) is the broad IDAC decomposition -- run family "none: the closure has no
+%     learnable parameters" -- and its six numbers are B_insuff^up 0.108/0.215/0.140 against MSE
+%     2.252/0.477/0.089 on 182/111/57 rows.  Both panels are OUTSIDE.  One trap, recorded because it
+%     will be met again: panel (b)'s glycol-ether MSE prints as 2.252 in squared ln gamma, which is
+%     the sigma-oracle arm's ln x2 MAE of 2.2517 to four figures.  Different axis, different unit,
+%     different set, and not an arm value.
+%   ALSO CHECKED AND LEFT OUT, in addition to what the 2026-08-06 pass banked: fig:arch names the
+%     sigma-oracle but draws it and prints no value; tab:si-temp carries no trained arm and says so;
+%     the article's black-box-probe paragraph is the control alone, as are the three SI tables it
+%     sends the reader to -- tab:crystal-decode, tab:temp-response, tab:factor-variance -- all of
+%     them read off the three DirectGNN checkpoints, which are not retrained;
+%     [REPAIRED 2026-08-10, FOURTH RUN.  This line first read "like tables S24-S26", copied forward
+%      from the 2026-08-06 note without re-resolving.  Off the .aux, S24-S26 are tab:hammett-sigma,
+%      tab:runs and tab:vt2005-rows -- and tab:runs is ENROLLED, so the line asserted that an
+%      enrolled display was the control alone.  The probe tables are S27-S29 today.  This is the
+%      exact failure the caution eight lines below names, committed in the same pass that wrote it:
+%      address every display by \ref{} label, never by a printed S-number.]  The
+%     data-efficiency endpoint quotes tab:si-arms' NRTL and DirectGNN rows, both outside by the
+%     boundary sentence below; SI limitation (vii) restates the noise-floor comparison without a
+%     number, so the repair to \S\ref{sec:data} does not reach it; and the run-family table still
+%     lists twelve families, matching \S\ref{sec:eval}.
+%   ONE CAUTION FOR THE NEXT PASS: the S-numbers inside the 2026-08-06 note above have drifted with
+%     the two relocations -- its "Table S17" is tab:ranking, now S19, and its "Tables S19 and S20"
+%     are the two maps, now S21 and S22.  That note is a dated record and is left as written; the
+%     operative list below addresses every display by \ref{} label, which is why nothing in it
+%     resolved wrongly.  Do not audit from printed numbers.
+% 2026-08-10, THE FOURTH RUN, WITH SEEDS 45 AND 46 IN TRAINING AND ABOUT TWELVE HOURS OUT.  The third
+% run swept the VALUE axis and swept it clean: every arm value was reproduced from the per-row CSVs,
+% every derived form generated and grepped, and no unenrolled printed value was found.  This run
+% swept two axes a value sweep cannot see -- printed SEED COUNTS and DEPOSIT BOOKKEEPING -- because
+% neither prints an arm value and both are falsified by the same event.  Nothing found was false on
+% the day it was read; everything found becomes false the day the last two seeds land.  Six
+% enrolments and two repairs:
+%   SEED COUNTS (3 enrolled).  sec:eval's row-set paragraph prints "three seeds" AND the per-seed
+%     universal "removing no row from any arm at any seed"; the compute ledger prints "(three
+%     seeds)"; the seeds-and-determinism paragraph prints a SECOND seed list, {42,43,44}, three
+%     printed pages BELOW the protocol that trains at 42-46 (S-77 against S-74; the "two pages
+%     above" this line first carried was wrong in both magnitude and direction).  Only the abstract's count and tab:runs' seed list
+%     had been enrolled.  Note that the third run READ sec:eval -- it banked the twelve-family count
+%     four lines below the seed count it missed -- which is what a value-only sweep does.
+%   DEPOSIT BOOKKEEPING (1 enrolled, sec:si-lock).  Five seeds on two arms add four trained deposits
+%     and two sigma-oracle re-evaluations, so 22 -> 28: the count, "identically at all three seeds",
+%     "at each of the three seeds" and "twenty-one as first deposited" are all rewritten.  It was in
+%     neither list, though its own source comment says to re-run the audit whenever an arm appears.
+%     It also CONTRADICTED an enrolled passage -- "All twenty-two pass" sits in the deposit-recovery
+%     paragraph, which IS enrolled -- so one copy of the count would have moved and the other not.
+%     Both copies are now enrolled and named as one number.
+%   THE CONCLUSIONS' SECOND SENTENCE (1 enrolled, 1 repair).  Its "at every seed" is a per-seed
+%     universal over the grounded and sigma-oracle arms and neither disposition reached it; the
+%     protocol's "unaffected in all three cases" fixes the substitution's SIGN against a stream leak
+%     and verifies no five-seed universal.  The address repair is recorded at the clause itself.
+%   TWO INSTANCES OUTSIDE THEIR ENROLMENT'S SCOPE (2 enrolled).  tab:runs' sigma-grounding row prints
+%     "the +0.41 and -0.20 of Sec. 3.1" in its third column while only its SEED LIST was enrolled, so
+%     branch 1 would have set a 42-46 seed list beside a three-seed pair in the same cell; and
+%     sec:surrogate's freeze contrast quotes "the +0.41 headline arms of Sec. 3.1" by name.  The
+%     2026-08-06 bank ruled sec:surrogate outside on its OWN runs, which is right and does not reach
+%     a headline value it quotes -- and this list names every restating passage, sec:map included, so
+%     a bare cross-reference was never the reason for the absence.
+%   THE CAPTION RULE'S FLOAT SET (re-derived, not patched).  The third run moved it from four to five
+%     for the float it was repairing and did not re-derive the rest.  Applying the stated criterion
+%     -- carries re-run arms beside arms that were not re-run -- to every float printing an enrolled
+%     value gives SEVEN: fig:paradox, fig:parity-lnx2, tab:baselines, tab:si-baselines-full,
+%     tab:si-arms, and the two ledger parts tab:claims (three re-run rows beside the two seed-42
+%     co-adaptation rows, whose caption statement the next sentence's keep-published disposition
+%     already requires) and tab:claims-cont2 (the enrolled +0.14 beside the {0,1,2} mechanism rows).
+%     tab:claims-cont carries no arm and stays out; tab:runs meets the criterion and discharges it in
+%     its seed column.  Both in-or-out verdicts are recorded so the next pass re-derives rather than
+%     patches.
+% 2026-08-10, FIFTH RUN, and it is the fourth run's own axis turned on the fourth run.  Two of these
+% are additions on the seed-count axis the fourth run was written for and still missed, which is the
+% third consecutive pass to find that a pass enrolled one copy of an assertion and not its twin:
+%   sec:intro prints the SAME per-seed universal as the Conclusions' second sentence -- "here it
+%     degrades prediction at every seed", identical assertion, identical two arms, and the fourth run
+%     enrolled the Conclusions copy while writing the reason that applies verbatim to this one.
+%   sec:si-methods' substitution-perturbation paragraph prints "over the three seeds" over three
+%     maxima taken across the grounded and sigma-oracle arms.  Its neighbour paragraph, the row-class
+%     split, was enrolled; this one is the same construction as the compute ledger's "(three seeds)"
+%     that the fourth run DID enrol, so it failed that run's own criterion.
+% AND ONE NARROWING, WHICH IS WHY IT IS DONE TODAY AND COULD NOT BE DONE LATER.  The fourth run
+% enrolled "sec:si-lock entire".  Resolved off the .aux, sec:si-lock is Sec. S3.2 and runs fifteen
+% printed pages, S-9 to S-24, carrying nine numbered floats of which exactly ONE (tab:si-arms, already
+% enrolled in its own right) touches a re-run arm; the other eight are the activity-axis estimator
+% grid, the bounds inventory and the stratification rule, whose run family is "none: the closure has
+% no learnable parameters".  The four statements the fourth run actually reasoned about all sit in the
+% section's opening two paragraphs, and the enrolment now names those.  Over-enrolment is the safe
+% direction -- it cannot print a five-seed number beside a three-seed one -- but it creates an
+% obligation that cannot be discharged, and the closing rule forbids narrowing the list once the
+% numbers exist.  Narrowing it to what was reasoned about is therefore a thing that had to happen
+% before seeds 45 and 46 land, or not at all.  It also contradicted this same paragraph's own
+% out-verdict on tab:claims-cont, which is ruled out for carrying no re-run arm.
+% TWO SPATIAL DESCRIPTIONS IN THE FOURTH RUN'S RECORD WERE WRONG AND ARE CORRECTED IN PLACE: the
+% label-noise-floor paragraph is IMMEDIATELY above the disclosure paragraph, not four above it, and
+% the seeds-and-determinism paragraph is three printed pages BELOW the protocol, not two above it.
+% Neither reached the operative list -- every enrolment there is addressed by \ref and by paragraph
+% name, and all of them resolve -- so nothing an editor executes was misdirected.  They are corrected
+% because this record is what the next pass reads, and a pass that navigates by a wrong description
+% is the exact failure the fourth run was convened to repair.
 \paragraph{What the leak-free re-run reports, and what it decides.}
 The re-run is specified here rather than described afterwards, so that its protocol is fixed before
 its numbers exist. It trains the ungrounded and the grounded arm at five seeds ($42$ through $46$)
@@ -3558,12 +3711,15 @@ its prose---\S\ref{sec:decision}, which carries the regression slopes read off
 Fig.~\ref{fig:parity-lnx2}, the ranking contrast and the solute-blind comparison, and
 \S\ref{sec:notdecided}, which carries its channel paragraph---the per-seed gains and the seed-$42$
 values included wherever they now print; the five rows of
-Table~\ref{tab:claims} under \emph{the two senses of grounding} and the $+0.14$ of its accuracy row;
-the seed list of the $\sigma$-grounding row of Table~\ref{tab:runs}; the ungrounded, grounded and
+Table~\ref{tab:claims} under \emph{the two senses of grounding}, and the $+0.14$ of the accuracy row
+of Table~\ref{tab:claims-cont2}, the ledger's third part;
+the $\sigma$-grounding row of Table~\ref{tab:runs} entire---its seed list, the mean$\pm$sd cell that
+carries it, and the $+0.41$ and $-0.20$ its third column prints, so that no cell of that row states a
+seed policy the cell beside it contradicts; the ungrounded, grounded and
 oracle bars of Fig.~\ref{fig:paradox} with their $R^2$; panels (b), (c) and (d) of
-Fig.~\ref{fig:parity-lnx2}; the block-1 grounded and $\sigma$-oracle rows of
-Table~\ref{tab:baselines} together with the clip sweep in the note of
-Table~\ref{tab:si-baselines-full}, the fuller sweep of
+Fig.~\ref{fig:parity-lnx2}; the block-1 grounded and $\sigma$-oracle rows, which print in
+Tables~\ref{tab:baselines} and~\ref{tab:si-baselines-full} off one source of record, so a regenerated
+value lands in both, with the clip sweep in the note of the second, the fuller sweep of
 \S\ref{sec:si-baselines} and the readings \S\ref{sec:discussion} takes from both;
 Table~\ref{tab:si-arms} and the unrounded means, per-seed values and arm orderings
 \S\ref{sec:si-tables} reads off it; Table~\ref{tab:ranking} with the ranking and per-group
@@ -3572,15 +3728,55 @@ checkpoint and its own $\sigma$-oracle re-evaluation and nothing else;
 \S\ref{sec:map} with Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map}, which resolve that same
 $+0.14$ along chemical axes and restate the two arm means it is taken from; the row-class split of
 the substitution in \S\ref{sec:si-methods}, whose $-0.000$, $+0.431$ and $+0.006$ put the $+0.41$ on
-the solvent channel; and the graphic for the table of contents, whose caveat that training on the
+the solvent channel; the label-noise-floor paragraph of \S\ref{sec:data}, whose scaffold-split range
+$1.70$ to $1.85$ takes its upper endpoint, and the factor of five it reads against the floor, from
+the grounded arm; the deposit-recovery paragraph below, whose before-and-after cells are that same
+$\sigma$-oracle row and move with it, the repair standing as a fact about the published
+deposit; the freeze contrast of \S\ref{sec:surrogate}, whose closing clause sets its $65\%$ against
+\emph{the $+0.41$ headline arms of \S\ref{sec:paradox}} by name and so prints an enrolled value
+outside the section that owns it, the runs it contrasts them with staying as published; the three
+printed seed statements the abstract's enrolment does not reach---\S\ref{sec:eval}'s row-set
+paragraph, which says the controlled comparisons are run at \emph{three} seeds and that the lock's
+finite-prediction clause removes no row from any arm \emph{at any seed}, and, in
+\S\ref{sec:si-repro}, the compute ledger's \emph{(three seeds)} and the seeds-and-determinism
+paragraph's \emph{$\{42,43,44\}$}, which is a second printed seed list for the same three arms, and
+in \S\ref{sec:si-methods} the substitution-perturbation paragraph's \emph{over the three seeds},
+whose three maxima are taken across the same arms;
+the opening two paragraphs of \S\ref{sec:si-lock}, which are bookkeeping over these arms' deposits
+and move on two axes at
+once---the $2495$-row remainder decomposes \emph{identically at all three seeds}, and the finiteness
+audit runs over \emph{twenty-two} per-row prediction files, the five intersecting arms and the
+$\sigma$-oracle \emph{at each of the three seeds} plus the four seed-$42$ control files, so the
+count, the seed statements and the parenthetical \emph{twenty-one as first deposited} are rewritten
+together, and the same count where the deposit-recovery paragraph prints it as \emph{all
+twenty-two pass} moves with them, the two copies being one number and not two;
+the Conclusions' second sentence (\S\ref{sec:conclusion}), whose first half asserts that training the
+intermediate toward its reference improved the model and whose second half asserts that supplying it
+at prediction time hurt \emph{at every seed}---a per-seed universal over the grounded and
+$\sigma$-oracle arms, two of whose five seeds do not exist yet, which the consistency of the
+substitution across builds fixes in sign but does not verify seed by seed;
+the same universal where \S\ref{sec:intro} states it---\emph{here it degrades prediction at every
+seed}---which is the identical assertion over the identical two arms and is rewritten with it;
+and the graphic for the table of contents, whose caveat that training on the
 reference is not certified leak-free is removed in all three branches alike, the re-run certifying
 the stream inside each training run whichever way its per-seed gains fall.
-Four of those floats---Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2},
-Tables~\ref{tab:baselines} and~\ref{tab:si-arms}---then carry re-run arms beside arms that were not
+Seven of those floats---Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2},
+Tables~\ref{tab:baselines}, \ref{tab:si-baselines-full}, \ref{tab:si-arms}, \ref{tab:claims}
+and~\ref{tab:claims-cont2}---then carry re-run arms beside arms that were not
 re-run, so each states
-in its caption which of its arms came from the re-run---Table~\ref{tab:baselines}'s block header
-already carries the form of words for it, and Fig.~\ref{fig:parity-lnx2} remains one seed for all
+in its caption which of its arms came from the re-run---the block-1 header of the two baselines
+floats already carries the form of words for it, and Fig.~\ref{fig:parity-lnx2} remains one seed for all
 four of its panels, the new seed $42$ in three of them and the published one in the control.
+The two ledger parts are on that list by the criterion and not by exception: the first prints three
+re-run rows beside the two seed-$42$ co-adaptation rows, whose $+0.18$ and $0.59$ the sentence below
+keeps published with the five-seed value beside them, which is a caption statement by disposition;
+and the third prints the enrolled $+0.14$ beside the four mechanism rows, measured on the
+$\{0,1,2\}$ surrogate runs and named in the same cell as not the arms of Fig.~\ref{fig:paradox}.
+Table~\ref{tab:claims-cont}, the ledger's second part, carries no re-run arm at all---its three
+blocks are the two activity-axis closures and the $\mathrm pK_a$ domain---and stays out.
+Table~\ref{tab:runs} meets the criterion too, its $\sigma$-grounding row sitting among eleven
+families that are not re-run, but discharges it in its seed column row by row, which is what that
+column is for, so its caption takes no addition.
 Table~\ref{tab:ranking} needs no such statement, both its arms being re-run;
 Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map} print no arm at all, every cell being a
 difference against the control, so each says in its caption that only the physics side is five-seed.
@@ -3589,13 +3785,35 @@ caption saying so, because the re-run supplies one side of each comparison and n
 Staverman--Guggenheim contrast $1.8457\to1.8788$, whose combinatorial arm is not retrained; the
 channel swap's $+0.27$, a seed-$42$ checkpoint that is not retrained either; and the co-adaptation
 control's $+0.18$ together with the $0.59$ share of \S\ref{sec:paradox}, which move only if the
-separate five-seed pass above is run. Three passages carry no arm value but state that the $0.20$ is
-uncertified---the disclosure above, limitation~(xii) of \S\ref{sec:discussion} and the provenance
-paragraph of \S\ref{sec:si-repro}---and the in-run certification answers all three, so each is
+separate five-seed pass above is run. Four passages carry no arm value but state that the $0.20$ is
+uncertified---the disclosure of \S\ref{sec:data}, limitation~(xii) of \S\ref{sec:discussion}, the
+grounding-stream provenance paragraph above, and the Conclusions' \emph{second} sentence
+(\S\ref{sec:conclusion}), whose \emph{on a contrast this work does not certify leak-free} is that
+caveat in that section's register---and the in-run certification answers all four, so each is
 rewritten to what the re-run certifies and limitation~(xii)'s $0.20$ moves with \S\ref{sec:paradox}'s.
+% TWO DIFFERENT SENTENCES OF THE CONCLUSIONS ARE NAMED, NOT ONE UNDER TWO DISPOSITIONS.  The address
+% here read "opening sentence" until 2026-08-10 and was wrong, and the note that stood in its place
+% built on the error, asserting that this clause and the decision rule's branch-2 mention were the
+% same sentence and warning that deleting either would uncover it.  Read the section:
+%   SENTENCE 1  "Grounding a learned physical intermediate in reference values is two operations,
+%               not one, and here they had opposite signs."  No caveat.  This is what BRANCH 2 of
+%               the decision rule rewrites, and rightly: "opposite signs" is the claim that fails
+%               if the per-seed gains straddle zero.
+%   SENTENCE 2  "Training the intermediate toward its reference improved the model, ON A CONTRAST
+%               THIS WORK DOES NOT CERTIFY LEAK-FREE; supplying that reference at prediction time
+%               made the model worse, AT EVERY SEED ..."  This is the caveat disposition D answers,
+%               in all three branches.
+% Under the old address an editor discharging disposition D in branch 1 or 3 would have gone to
+% sentence 1 and found nothing to rewrite, while in branch 2 the rule would have rewritten sentence 1
+% and left "training ... improved the model" -- the assertion branch 2 says is no longer established
+% -- standing in sentence 2, with that note discouraging the repair.  The decision rule is not
+% touched: sentence 2 is instead ENROLLED in the list above in its own right, on both its halves and
+% its per-seed universal, so it is regenerated from the five-seed arms in every branch and the
+% branch-2 case is covered from the inventory side.  Do not merge the two mentions back together.
 Nothing else moves, and the boundary is worth stating because
 two neighbouring numbers sit just outside it: neither the DirectGNN control nor the NRTL arm is
-retrained, so their rows in Tables~\ref{tab:baselines} and~\ref{tab:si-arms}, and the endpoint
+retrained, so their rows in Tables~\ref{tab:baselines}, \ref{tab:si-baselines-full}
+and~\ref{tab:si-arms}, and the endpoint
 comparison of \S\ref{sec:data-efficiency}---which is the NRTL arm against that control---stand as
 printed; and \S\ref{sec:measure} uses no trained model at all.
 
