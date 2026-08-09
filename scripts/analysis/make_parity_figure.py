@@ -249,10 +249,15 @@ def make_figure(series: dict, metrics: dict, out_dir: Path, stem: str,
         under = p < lo
         n_under = int(under.sum())
         if n_under:
-            ax.scatter(t[under], np.full(n_under, lo + 0.022 * (hi - lo)), s=9.0,
-                       marker="v", facecolors="none", edgecolors=colour, linewidths=0.55,
-                       clip_on=False, zorder=4.0)
-            ax.text(0.5, 0.055, f"{n_under} below axis", transform=ax.transAxes,
+            # Filled and translucent, not open: 69 outline triangles inside 10 ln units
+            # overlap into a fence of trapezoids (the frame clips each tip) and read as one
+            # solid bar. Filled at low alpha they stack into a density strip, which is the
+            # honest reading -- a pile-up, whose position along the MEASUREMENT axis is the
+            # part that carries information.  Seated a full marker-height above the spine.
+            ax.scatter(t[under], np.full(n_under, lo + 0.045 * (hi - lo)), s=7.0,
+                       marker="v", color=colour, alpha=0.40, linewidths=0.0,
+                       clip_on=True, zorder=4.0)
+            ax.text(0.5, 0.085, f"{n_under} below axis", transform=ax.transAxes,
                     ha="center", va="bottom", fontsize=6.6, color=INK)
         ax.set_xlim(lo, hi)
         ax.set_ylim(lo, hi)
@@ -296,8 +301,16 @@ def make_figure(series: dict, metrics: dict, out_dir: Path, stem: str,
     # WHICH SEED, said by the drawing.  The panels are one seed and the bars of
     # Fig. paradox are three; three caption sentences used to reconcile the two.  A label
     # is the cheaper fix, and it is a description of what is shown.
-    fig.text(0.998, 0.012, f"seed {seed}", ha="right", va="bottom",
-             fontsize=6.8, color=GRAY)
+    #
+    # Anchored to panel (a)'s axes, not to the FIGURE.  The panels carry an equal aspect
+    # with adjustable="box", so after tight_layout they shrink inside their allocation and
+    # leave a band of slack below the x-labels that savefig's tight bbox would otherwise
+    # crop away; a fig.text at y=0.01 pins that band open and prints the note a third of an
+    # inch adrift of the plot.  In axes fractions it sits on the x-label's own baseline,
+    # left of it (the label spans about 0.19..0.81, so this clears it) and under the
+    # y-label, which is the conventional figure-note corner.
+    axes[0].text(-0.30, -0.235, f"seed {seed}", transform=axes[0].transAxes,
+                 ha="left", va="top", fontsize=6.8, color=GRAY)
     out_dir.mkdir(parents=True, exist_ok=True)
     written = []
     for ext in ("pdf", "png"):

@@ -160,7 +160,11 @@ MAP_TABLE = ROOT / "results" / "b_insuff" / "stratified_map_table.csv"
 SALMON = "#E8A98C"   # the fixed closure and the external reference input
 TEAL = "#7FB5A6"     # the learned representation
 INK = "#4D4D4D"
-GRAY = "#9AA0A6"
+# GRAY (#9AA0A6, 2.51:1 on the panel fill) is GONE as of 2026-08-10.  It survived the 2026-08-09
+# contrast pass -- which replaced it everywhere in (b) -- only because panel (a) still set one
+# two-line sentence in it, and that sentence has now gone too.  Leaving the constant behind would
+# leave a below-floor colour in reach that _check_contrast() does not police, because nothing
+# would be using it to police.
 HURT = "#B5654A"
 PAPER = "#FBF9F7"
 
@@ -168,7 +172,7 @@ PAPER = "#FBF9F7"
 # SET IN #9AA0A6, which is 2.51:1 on the panel fill -- 44% under the 4.5:1 body-text floor -- and
 # the forty-four unboundable ticks were #DFD9D3 at 1.33:1, i.e. drawn below the threshold at which
 # the strip can be counted.  These are their replacements; _check_contrast() below is the guard.
-SUBINK = "#6E6E6E"    # secondary text: 4.85:1              (was GRAY, 2.51:1)
+SUBINK = "#6E6E6E"    # secondary text: 4.85:1              (was #9AA0A6, 2.51:1)
 STRIPO = "#6E6E6E"    # unboundable tick, OUTLINE only      (was #DFD9D3 filled, 1.33:1)
 TEAL_D = "#3E6E62"    # the input-bound block: 5.66:1 on paper, 3.01:1 against SALMON, so the two
                       # blocks survive greyscale printing without relying on an outline (the old
@@ -195,17 +199,16 @@ plt.rcParams.update({
     "savefig.dpi": 300, "savefig.bbox": None, "figure.dpi": 150,
 })
 
-# Panel (a) is unchanged -- nobody complained about it, and the brief for this pass was (b).  It is
-# redrawn at the new scale, so every size in it is multiplied back by the OLD page scale and every
-# y is remapped (below) to hold its printed distance from the panel title.  (a)'s printed geometry
-# and printed type sizes are therefore identical to the accepted figure's, to within the 0.96%
-# widening the honest media box brings.
+# OLD_PAGE_SCALE survives only for the two SHARED type sizes -- the panel letter, the panel title
+# and the suptitle -- which are (b)'s as much as (a)'s and are not this pass's to move.  Panel (a)'s
+# own geometry no longer goes through it: as of 2026-08-10 (a) is laid out in printed points from
+# its own panel box, like (b), so the "multiply back by the old page scale and remap every y" path
+# that carried the unrevised (a) through the 2026-08-09 rebuild is gone.
 OLD_PAGE_SCALE = 0.86427
-OLD_H_AX_PT = 136.87       # printed height of the accepted figure's axes, (0.86-0.03) x 164.91
 
 
 def _a(fs):
-    """A panel-(a) font size, in the units the accepted figure used."""
+    """A SHARED font size (panel letter, panel title, suptitle), in the accepted figure's units."""
     return fs * OLD_PAGE_SCALE
 
 
@@ -229,8 +232,8 @@ def _check_contrast():
                              ("TEAL_D", TEAL_D, 4.5)):
         r = _ratio(col, PAPER)
         assert r >= floor, f"{name} {col} is {r:.2f}:1 on the panel fill, floor {floor}"
-    # HURT is panel (a)'s colour too, so it is not (b)'s to darken; it carries one 8 pt display
-    # line here and nothing that has to be read closely.
+    # HURT now carries exactly one object in the whole figure -- (b)'s display line.  It left
+    # panel (a) on 2026-08-10 with the outcome it was colouring; see the note at the top.
     assert _ratio(HURT, PAPER) >= 4.0
     # the two blocks must be separable without hue, i.e. in a greyscale print
     assert _ratio(TEAL_D, SALMON) >= 2.5, f"teal/salmon {_ratio(TEAL_D, SALMON):.2f}:1"
@@ -248,8 +251,18 @@ def _check_contrast():
 # so "margin > 0" is exactly "the salmon block is longer than the teal one".  The admissibility
 # test is therefore already legible off any row, which is why this panel draws no threshold line
 # at MSE/2 -- the 2026-08-02 note that retired it stands, and this is the reason it stands.
+# 2026-08-10 THE CLASS NAME CARRIES ITS DEFINING CONDITION.  "aprotic acceptors" printed on page 4
+# and was defined nowhere in the article -- the SI's class rule (run_b_insuff_stratified_map.py:52)
+# is "no O-H or N-H, but a carbonyl, a nitrile, a pyridine-type" acceptor, and the negative half of
+# that rule is the whole of what a reader needs here.  The NAME is unchanged, because Table 2 and
+# Fig. 6 carry the numbers under it; only the gloss is new.  "glycol ethers" and "water" need none.
 DISPLAY = {"glycol_ether": "glycol ethers", "water": "water",
            "aprotic_acceptor": "aprotic acceptors"}
+# The gloss is a SEPARATE object at the secondary size and colour, so the row still reads
+# name / mark / verdict at one size and the definition sits under the eye without joining them.
+# "/" is "or"; the full "no O-H or N-H" is 8.5 pt too wide for the line and the type does not come
+# down to buy it -- 7.0 pt is (b)'s floor and this file's standing commitment.
+GLOSS = {"aprotic_acceptor": "(no O–H/N–H)"}
 
 
 def load_map():
@@ -281,7 +294,8 @@ def load_map():
         #   +  the sign does not survive deleting a contributing laboratory
         #   ++ the sign survives, but the margin is not positive
         mark = "\\ast" if (stable and positive) else ("\\dagger" if not stable else "\\ddagger")
-        out.append(dict(name=DISPLAY[r["stratum"]], mark=mark, n=int(r["n"]),
+        out.append(dict(name=DISPLAY[r["stratum"]], gloss=GLOSS.get(r["stratum"], ""),
+                        mark=mark, n=int(r["n"]),
                         b=float(r["b_insuff_up"]), mse=float(r["mse"])))
     assert [c["mark"] for c in out] == ["\\ast", "\\dagger", "\\ddagger"]
     return out
@@ -366,64 +380,119 @@ def wpt(artist):
     return artist.get_window_extent(renderer=_R).width / _PX
 
 
-for ax, letter, title, g in ((axa, "a", "The pipeline, and the paradox", GA),
+for ax, letter, title, g in ((axa, "a", "The pipeline, and the substitution", GA),
                              (axb, "b", "Where the error sits", GB)):
     ax.text(bx(9.0, g), by(TITLE_Y, g), letter, ha="left", va="center", fontsize=FS_LETTER,
             color=INK, fontweight="bold", zorder=1)
     ax.text(bx(21.0, g), by(TITLE_Y, g), title, ha="left", va="center", fontsize=FS_TITLE,
             color=INK, zorder=1)
 
-# ---------------- (a) the pipeline and the swap ----------------
-# Held to its accepted printed geometry: y_new places every element at the printed distance from
-# the panel title it had before, and every height is scaled by the same factor, so (a) is the
-# accepted drawing sitting in a taller box.  Only the extra air below it is new, and (b) spends it.
-_SY = OLD_H_AX_PT / (GA["ah"] / _PX)
-OLD_BOX_H_PT = 130.30          # printed height of the accepted figure's panel box
-_DROP = max(0.0, (BOX_H - OLD_BOX_H_PT) / 2.0)   # (a)'s share of the height (b) needed: the body
-_TA = by(TITLE_Y + _DROP, GA)                    # drops half of it, so the air is above and below
+# ---------------- (a) the pipeline and the substitution ----------------
+# 2026-08-10.  Printed points from (a)'s own panel box, the idiom (b) uses; nothing here is a
+# hand-tuned axes fraction and no size goes through OLD_PAGE_SCALE any more.  WHAT IS DRAWN AND
+# WHY NOTHING ELSE IS: four boxes and four arrows are the composed predictor of Eq. (1) -- inputs,
+# encoder, the learned intermediate, the fixed map -- and the fifth arrow is the one operation the
+# paper performs on it, putting the tabulated profile in the learned one's place.  There is no
+# outcome, no colour standing for an outcome, and no sentence: what the substitution does to the
+# prediction is a result, it is measured in Sec. 3, and page 4 is three sections early for it.
+FS_A_BOX = 7.6          # box labels; the panel's type floor, equal to (b)'s FS_NAME
+FS_A_LAB = 7.6          # the labels outside the boxes
+FS_A_SYM = 10.4         # the two profile symbols
+A_PAD_X, A_PAD_Y = 4.8, 4.2          # printed pt of air inside a box, around its label
+# A_PAD_X and GAP are set by ONE constraint and are not free: four boxes, four arrows and the
+# word "solubility" have to reach the right margin and stop, and the assertion below is where
+# that is enforced.  If a label in (a) ever gets longer, these come down, not the type.
+
+A_BW = GA["bw"]
+AL, AR = 8.0, A_BW - 8.0             # (a)'s text margin, its own, wider box notwithstanding
 
 
-def ya(y_old):
-    return _TA - (0.87 - y_old) * _SY
+def bxa(dx):
+    return bx(dx, GA)
 
 
-def ha(h_old):
-    return h_old * _SY
+def bya(dy):
+    return by(dy, GA)
 
 
-def box(ax, x, y, w, h, text, fc, ec=INK, fs=9.0, tc=INK, lw=1.1):
-    ax.add_patch(FancyBboxPatch((x, ya(y)), w, ha(h),
-                                boxstyle="round,pad=0.006,rounding_size=0.02",
-                                fc=fc, ec=ec, lw=lw, mutation_aspect=0.55, zorder=3))
-    ax.text(x + w / 2, ya(y) + ha(h) / 2, text, ha="center", va="center", fontsize=fs,
-            color=tc, zorder=4)
+def tw(s, fs, ax=None):
+    """Printed width of a string, measured rather than estimated."""
+    t = (ax or axa).text(0, 0, s, fontsize=fs)
+    w = t.get_window_extent(renderer=_R).width / _PX
+    t.remove()
+    return w
 
 
-def arrow(ax, p0, p1, color=INK, lw=1.6, mut=12):
-    ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle="-|>", color=color, lw=lw,
-                                 mutation_scale=mut, zorder=2))
+def abox(x0, x1, ytop, ybot, text, fc, ec=INK, fs=FS_A_BOX, tc=INK, lw=1.1):
+    """A rounded box on (a), cornered in printed pt, labelled on its centre."""
+    axa.add_patch(FancyBboxPatch((bxa(x0), bya(ybot)), bxa(x1) - bxa(x0), bya(ytop) - bya(ybot),
+                                 boxstyle="round,pad=0.004,rounding_size=0.018",
+                                 fc=fc, ec=ec, lw=lw, mutation_aspect=0.55, zorder=3))
+    axa.text(bxa((x0 + x1) / 2), bya((ytop + ybot) / 2), text, ha="center", va="center",
+             fontsize=fs, color=tc, zorder=4)
 
 
-y = 0.56
-box(axa, 0.06, y, 0.20, 0.15, "solute\n+ solvent", "white", fs=_a(8.2))
-box(axa, 0.30, y, 0.19, 0.15, "encoder", TEAL, fs=_a(8.2), tc="white", lw=0)
-box(axa, 0.53, y, 0.11, 0.15, r"$\hat\sigma$", TEAL, fs=_a(12.0), tc="white", lw=0)
-box(axa, 0.68, y, 0.30, 0.15, "thermodynamic\nmodel (fixed)", SALMON, fs=_a(8.2), tc=INK, lw=0)
-for p0, p1 in ((0.26, 0.30), (0.49, 0.53), (0.64, 0.68)):
-    arrow(axa, (p0, ya(y + 0.075)), (p1, ya(y + 0.075)))
-arrow(axa, (0.98, ya(y + 0.075)), (1.03, ya(y + 0.075)))
-axa.text(1.055, ya(y + 0.075), "solubility", ha="left", va="center", fontsize=_a(8.8), color=INK)
+def arrow(p0, p1, color=INK, lw=1.6, mut=11):
+    axa.add_patch(FancyArrowPatch(p0, p1, arrowstyle="-|>", color=color, lw=lw,
+                                  mutation_scale=mut, zorder=2))
 
-# the substitution
-box(axa, 0.53, 0.25, 0.11, 0.15, r"$\sigma^\star$", SALMON, fs=_a(12.0), tc=INK, lw=0)
-axa.text(0.50, ya(0.325), "external reference\nprofile (VT-2005)", ha="right", va="center",
-         fontsize=_a(8.2), color=INK)
-arrow(axa, (0.585, ya(0.40)), (0.585, ya(0.545)), color=HURT, lw=1.8)
-axa.text(0.66, ya(0.325), "substituting it makes\nthe prediction worse", ha="left", va="center",
-         fontsize=_a(8.8), color=HURT)
-axa.text(0.06, ya(0.10), "Either the fixed model is wrong, or the learned profile\n"
-                         "carries information the reference does not.",
-         ha="left", va="center", fontsize=_a(8.6), color=GRAY)
+
+# widths from the type, so a box can never be narrower than the words in it
+W_IN = max(tw("solute", FS_A_BOX), tw("+ solvent", FS_A_BOX)) + 2 * A_PAD_X
+W_ENC = tw("encoder", FS_A_BOX) + 2 * A_PAD_X
+W_SIG = tw(r"$\hat\sigma$", FS_A_SYM) + 2 * A_PAD_X
+W_MOD = max(tw("thermodynamic", FS_A_BOX), tw("model (fixed)", FS_A_BOX)) + 2 * A_PAD_X
+GAP = 7.5
+
+# ROWS.  The pipeline and the substitution are one block, centred between the title line and the
+# foot of the box -- so the schematic sits in the panel it has rather than where a deleted
+# paragraph used to hold it down.
+ROW_H = 2 * FS_A_BOX + 2 * A_PAD_Y                    # a two-line box
+# SIGMA-STAR IS DRAWN THE SIZE OF THE SLOT IT GOES INTO, not the size of its own glyph: the whole
+# content of (a)'s lower half is that one object can stand where the other does, and two boxes of
+# different heights deny it in the only channel a schematic has.
+SYM_H = ROW_H
+STACK = 26.0                                          # pipeline foot to sigma-star head
+BLOCK = ROW_H + STACK + SYM_H
+A_TOP, A_BOT = TITLE_Y + 12.0, BOX_H - 6.0
+P_TOP = A_TOP + (A_BOT - A_TOP - BLOCK) / 2.0
+P_BOT = P_TOP + ROW_H
+S_TOP = P_BOT + STACK
+S_BOT = S_TOP + SYM_H
+P_MID = (P_TOP + P_BOT) / 2.0
+S_MID = (S_TOP + S_BOT) / 2.0
+
+x = AL
+abox(x, x + W_IN, P_TOP, P_BOT, "solute\n+ solvent", "white")
+x += W_IN
+arrow((bxa(x), bya(P_MID)), (bxa(x + GAP), bya(P_MID)))
+x += GAP
+abox(x, x + W_ENC, P_TOP, P_BOT, "encoder", TEAL, tc="white", lw=0)
+x += W_ENC
+arrow((bxa(x), bya(P_MID)), (bxa(x + GAP), bya(P_MID)))
+x += GAP
+SIG_L, SIG_R = x, x + W_SIG
+abox(SIG_L, SIG_R, P_TOP, P_BOT, r"$\hat\sigma$", TEAL, fs=FS_A_SYM, tc="white", lw=0)
+x += W_SIG
+arrow((bxa(x), bya(P_MID)), (bxa(x + GAP), bya(P_MID)))
+x += GAP
+abox(x, x + W_MOD, P_TOP, P_BOT, "thermodynamic\nmodel (fixed)", SALMON, tc=INK, lw=0)
+x += W_MOD
+arrow((bxa(x), bya(P_MID)), (bxa(x + GAP), bya(P_MID)))
+axa.text(bxa(x + GAP + 3.0), bya(P_MID), "solubility", ha="left", va="center",
+         fontsize=FS_A_LAB, color=INK, zorder=4)
+assert x + GAP + 3.0 + tw("solubility", FS_A_LAB) <= AR, "(a)'s pipeline runs past its margin"
+
+# THE SUBSTITUTION, and only the substitution.  sigma-star sits under the slot it replaces, the
+# arrow points into that slot, and the two labels say where the value comes from and when it is
+# put in.  SALMON_D, not HURT: the colour names the object the arrow carries, not a verdict on it.
+SIG_C = (SIG_L + SIG_R) / 2.0
+abox(SIG_L, SIG_R, S_TOP, S_BOT, r"$\sigma^\star$", SALMON, fs=FS_A_SYM, tc=INK, lw=0)
+arrow((bxa(SIG_C), bya(S_TOP - 1.5)), (bxa(SIG_C), bya(P_BOT + 2.0)), color=SALMON_D, lw=1.8)
+axa.text(bxa(SIG_L - 6.0), bya(S_MID), "external reference\nprofile (VT-2005)", ha="right",
+         va="center", fontsize=FS_A_LAB, color=INK, zorder=4)
+axa.text(bxa(SIG_R + 6.0), bya(S_MID), "substituted at\nprediction time", ha="left",
+         va="center", fontsize=FS_A_LAB, color=SALMON_D, zorder=4)
 
 # ---------------- (b) the split, per solvent class ----------------
 #   name                      n     B_insuff^up   MSE     verdict
@@ -448,7 +517,12 @@ axa.text(0.06, ya(0.10), "Either the fixed model is wrong, or the learned profil
 
 # the dateline carries the two things the caption is not allowed to have to buy back in words --
 # the database this half of the figure is measured on, and n -- plus the unit the bars are in.
-say(L, 23.5, "$59$ strata, UD reference profiles ($n{=}477$), $(\\ln\\gamma)^2$", fs=FS_NAME)
+# 2026-08-10: THE DATABASE IS NAMED IN A WORD AND NOT IN INITIALS.  "UD reference profiles" put
+# initials on page 4 whose expansion is on page 7, in the abbreviation table; "Delaware (UD)" is
+# the same name, glossed at first mention, and it binds UD for every later use.  The name itself
+# is not droppable -- (a) and (b) are measured on DIFFERENT tabulated databases and the 2026-08-07
+# note above is what stops the two halves being read as one table.
+say(L, 23.5, "$59$ strata, Delaware (UD) profiles ($n{=}477$), $(\\ln\\gamma)^2$", fs=FS_NAME)
 
 # ---- the whole search, one tick per stratum ---------------------------------------------------
 # results/b_insuff/stratified_map_table.csv, set=broad_477, unit=row, convention=res: 59 strata
@@ -476,9 +550,13 @@ for i in range(N_STRATA):
                             ec="none" if boundable else STRIPO,
                             lw=0.0 if boundable else 0.5, zorder=3))
 _last_c = L + (N_STRATA - 1) * _pitch + _tw / 2      # centre of the standing stratum's tick
+# 2026-08-10: "$15$ BOUNDABLE" BECOMES "$15$ WITH A BOUND".  The word printed here on page 4 and
+# was defined on page 7; its plain-English form is already on this same line, four inches to the
+# left, in "44 with no bound".  Saying it the same way twice makes the pair one contrast instead
+# of a term and its negation, and costs two characters.  The COUNTS are untouched.
 say(L, 47.0, "$44$ with no bound")
 _stands = say(_last_c, 47.0, "$\\ast$", color=INK, ha="center")
-say(_last_c - 4.5, 47.0, "$15$ boundable, $1$ stands", color=INK, ha="right")
+say(_last_c - 4.5, 47.0, "$15$ with a bound, $1$ stands", color=INK, ha="right")
 
 # ---- legend, set as a header over the zone each colour occupies rather than as a lookup -------
 # The teal entry sits at the left margin, where every teal block starts; the salmon entry is
@@ -537,8 +615,15 @@ for k, c in enumerate(CLASSES):
     ny = ROW0 + k * ROW_PITCH
     yt, yb = ny + NAME_TO_BAR, ny + NAME_TO_BAR + BAR_H
     nm = say(L, ny, c["name"], fs=FS_NAME, color=INK)
-    mk = say(L + wpt(nm) + 2.4, ny, f"${c['mark']}$", fs=FS_NAME, color=INK)
-    say(L + wpt(nm) + 2.4 + wpt(mk) + 5.4, ny, REASONS[c["mark"]])
+    _x = L + wpt(nm) + 2.0
+    if c["gloss"]:
+        _gl = say(_x, ny, c["gloss"])
+        _x += wpt(_gl) + 2.0
+    mk = say(_x, ny, f"${c['mark']}$", fs=FS_NAME, color=INK)
+    _rx = _x + wpt(mk) + 4.4
+    _rs = say(_rx, ny, REASONS[c["mark"]])
+    # the name line now carries a gloss on one row, which makes it the panel's tightest line
+    assert _rx + wpt(_rs) <= R, f"{c['name']!r}: its name line runs past the margin"
     b, mse = c["b"], c["mse"]
     axb.add_patch(Rectangle((bx(L), by(yb)), bx(bar_x(min(b, mse))) - bx(L), by(yt) - by(yb),
                             fc=TEAL_D, ec="none", lw=0, zorder=3))
@@ -602,8 +687,24 @@ def _check_layout():
         if out > worst:
             worst, who = out, f"a {type(p).__name__}"
     assert worst <= -1.0, f"panel (b): {who!r} comes within {worst + 0.0:.2f} pt of its own border"
+    # 2026-08-10: (a) gets the same guard.  It never had one, which is part of how it went eleven
+    # months without a layout audit while (b) was rebuilt twice.
+    ba = PANEL_BOX["a"].get_window_extent(renderer=_R)
+    worst, who = -99.0, ""
     for t in axa.texts:
-        assert t.get_fontsize() >= 6.5
+        assert t.get_fontsize() >= 7.0, f"{t.get_text()!r} at {t.get_fontsize()} pt"
+        e = t.get_window_extent(renderer=_R)
+        out = max(ba.x0 - e.x0, e.x1 - ba.x1, ba.y0 - e.y0, e.y1 - ba.y1) / _PX
+        if out > worst:
+            worst, who = out, t.get_text()
+    for p in axa.patches:
+        if p is PANEL_BOX["a"]:
+            continue
+        e = p.get_window_extent(renderer=_R)
+        out = max(ba.x0 - e.x0, e.x1 - ba.x1, ba.y0 - e.y0, e.y1 - ba.y1) / _PX
+        if out > worst:
+            worst, who = out, f"a {type(p).__name__}"
+    assert worst <= -1.0, f"panel (a): {who!r} comes within {worst:.2f} pt of its own border"
 
 
 def _check_media_box(path):
