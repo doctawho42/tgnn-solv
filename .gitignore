@@ -142,6 +142,19 @@ results/e5_sigma_grounding/seed_4?/*
 !results/e5_sigma_grounding/seed_4?/*.summary.json
 !results/e5_sigma_grounding/THREE_SEED_SUMMARY.md
 !results/e5_sigma_grounding/ROW_SET_DECOMPOSITION.md
+
+# Gate A1, the leak-free re-run.  Same shape as the published run above: the per-seed cross-arm
+# comparison and the per-arm summaries, never the multi-megabyte prediction CSVs.  Note the file
+# name: comparison_both_arms.json, not comparison.json -- each arm ran as its own process and the
+# later one overwrote comparison.json with a single arm, so that file is NOT a cross-arm comparison
+# and is deliberately left untracked.
+!results/e5_sigma_grounding_leakfree
+results/e5_sigma_grounding_leakfree/*
+!results/e5_sigma_grounding_leakfree/seed_4?
+results/e5_sigma_grounding_leakfree/seed_4?/*
+!results/e5_sigma_grounding_leakfree/seed_4?/comparison_both_arms.json
+!results/e5_sigma_grounding_leakfree/seed_4?/*.summary.json
+!results/e5_sigma_grounding_leakfree/GATE_A1_RECORD.md
 # The solvent-ranking working behind Table S17 and the ranking paragraphs of Sec. 3.1 / S6:
 # the three-seed ranking and floor analysis, the paired arm-minus-own-floor intervals, and the
 # in-sample/leave-one-out affine recalibration with the per-group fitted slopes. The scripts read

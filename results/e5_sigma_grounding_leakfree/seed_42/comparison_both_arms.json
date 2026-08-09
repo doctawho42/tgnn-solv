@@ -1,0 +1,65 @@
+{
+  "n_locked": 5608,
+  "n_ring_bearing": 5608,
+  "n_acyclic": 0,
+  "per_arm": {
+    "ungrounded": {
+      "r2": 0.15654885214257985,
+      "mae": 2.081573489960748,
+      "lngamma_std": 1.2339532774109614,
+      "n": 5608
+    },
+    "grounded_a": {
+      "r2": 0.32338608688913195,
+      "mae": 1.8960953886606087,
+      "lngamma_std": 1.5618915871343295,
+      "n": 5608
+    }
+  },
+  "stratified": {
+    "ungrounded": {
+      "ring_bearing": {
+        "r2": 0.15654885214257985,
+        "mae": 2.081573489960748,
+        "lngamma_std": 1.2339532774109614,
+        "n": 5608
+      },
+      "acyclic": {
+        "r2": NaN,
+        "mae": NaN,
+        "lngamma_std": NaN,
+        "n": 0
+      }
+    },
+    "grounded_a": {
+      "ring_bearing": {
+        "r2": 0.32338608688913195,
+        "mae": 1.8960953886606087,
+        "lngamma_std": 1.5618915871343295,
+        "n": 5608
+      },
+      "acyclic": {
+        "r2": NaN,
+        "mae": NaN,
+        "lngamma_std": NaN,
+        "n": 0
+      }
+    }
+  },
+  "criteria": {
+    "rescue": {
+      "ungrounded": true,
+      "grounded_a": true
+    },
+    "keeps_constraint": {
+      "ungrounded": true,
+      "grounded_a": true
+    },
+    "matched_direct_r2": 0.15654885214257985,
+    "criteria_not_evaluated": {}
+  },
+  "lngamma_band": [
+    1.0,
+    2.0
+  ]
+}
