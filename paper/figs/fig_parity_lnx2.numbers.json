@@ -1,7 +1,7 @@
 {
   "axis_range": [
-    -23.226012725830078,
-    0.8933081817626953
+    -18.415835778564215,
+    0.6499947080016136
   ],
   "panels": {
     "directgnn": {
@@ -11,7 +11,8 @@
       "n": 5608,
       "mae_printed": "1.749",
       "r2_printed": "+0.385",
-      "ols_slope_pred_on_meas": 0.5152730511821637
+      "ols_slope_pred_on_meas": 0.5152730511821637,
+      "n_below_axis": 0
     },
     "ungrounded": {
       "label": "ungrounded $\\sigma$",
@@ -20,7 +21,8 @@
       "n": 5608,
       "mae_printed": "2.040",
       "r2_printed": "+0.187",
-      "ols_slope_pred_on_meas": 0.41565606062892535
+      "ols_slope_pred_on_meas": 0.41565606062892535,
+      "n_below_axis": 0
     },
     "grounded_a": {
       "label": "grounded $\\sigma$",
@@ -29,7 +31,8 @@
       "n": 5608,
       "mae_printed": "1.803",
       "r2_printed": "+0.370",
-      "ols_slope_pred_on_meas": 0.5281905827712405
+      "ols_slope_pred_on_meas": 0.5281905827712405,
+      "n_below_axis": 0
     },
     "oracle": {
       "label": "ref. $\\sigma$ (eval)",
@@ -38,7 +41,8 @@
       "n": 5608,
       "mae_printed": "2.232",
       "r2_printed": "-0.036",
-      "ols_slope_pred_on_meas": 0.6895345745346646
+      "ols_slope_pred_on_meas": 0.6895345745346646,
+      "n_below_axis": 69
     }
   },
   "seed": 42,

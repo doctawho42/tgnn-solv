@@ -142,6 +142,11 @@ results/e5_sigma_grounding/seed_4?/*
 !results/e5_sigma_grounding/seed_4?/*.summary.json
 !results/e5_sigma_grounding/THREE_SEED_SUMMARY.md
 !results/e5_sigma_grounding/ROW_SET_DECOMPOSITION.md
+# The two Section S1 slices of the substitution, each regenerable in seconds by the script named in
+# its own header: scripts/analysis/run_paradox_channel_split.py (the -0.000/+0.431/+0.006 row-class
+# split) and scripts/analysis/run_substitution_perturbation.py (the T_m / dH_fus / Phi maxima).
+!results/e5_sigma_grounding/section_s1_channel_split.json
+!results/e5_sigma_grounding/section_s1_substitution_perturbation.json
 
 # Gate A1, the leak-free re-run.  Same shape as the published run above: the per-seed cross-arm
 # comparison and the per-arm summaries, never the multi-megabyte prediction CSVs.  Note the file

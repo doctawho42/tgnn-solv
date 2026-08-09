@@ -1,0 +1,277 @@
+{
+  "root": "results/e5_sigma_grounding",
+  "published_root": null,
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "published_seeds": [],
+  "n_locked": [
+    5608
+  ],
+  "lock_arms": [
+    "directgnn",
+    "nrtl",
+    "grounded_a",
+    "grounded_b",
+    "ungrounded",
+    "oracle"
+  ],
+  "lock_arms_by_tree": {
+    "results/e5_sigma_grounding": [
+      "directgnn",
+      "nrtl",
+      "grounded_a",
+      "grounded_b",
+      "ungrounded",
+      "oracle"
+    ]
+  },
+  "lock_check": {
+    "trees": [
+      "results/e5_sigma_grounding"
+    ],
+    "identical": true,
+    "differences": []
+  },
+  "arms_from_published_root": [],
+  "sd_convention": "population standard deviation over seeds (ddof=0)",
+  "lock_source": "scripts/analysis/run_e5_comparison.py intersection_keys (supervised AND finite, T rounded to 6 dp), imported not reimplemented",
+  "arms": {
+    "directgnn": {
+      "label": "DirectGNN (no closure)",
+      "source_root": "results/e5_sigma_grounding",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mae_mean": 1.7021765850634498,
+      "mae_sd_population": 0.03301382785693155,
+      "r2_mean": 0.421453459810423,
+      "r2_sd_population": 0.029853272993102534,
+      "mae_per_seed": {
+        "42": 1.7485258443561382,
+        "43": 1.6741358618180238,
+        "44": 1.683868049016188
+      },
+      "r2_per_seed": {
+        "42": 0.3853401044055442,
+        "43": 0.45844940977057447,
+        "44": 0.4205708652551503
+      },
+      "n_per_seed": {
+        "42": 5608,
+        "43": 5608,
+        "44": 5608
+      }
+    },
+    "nrtl": {
+      "label": "NRTL closure",
+      "source_root": "results/e5_sigma_grounding",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mae_mean": 1.7949750799735205,
+      "mae_sd_population": 0.07054762162251763,
+      "r2_mean": 0.3421461675146898,
+      "r2_sd_population": 0.034400030403049814,
+      "mae_per_seed": {
+        "42": 1.7335323077831124,
+        "43": 1.7576226848893375,
+        "44": 1.8937702472481117
+      },
+      "r2_per_seed": {
+        "42": 0.38213036077074114,
+        "43": 0.34615389077855463,
+        "44": 0.29815425099477366
+      },
+      "n_per_seed": {
+        "42": 5608,
+        "43": 5608,
+        "44": 5608
+      }
+    },
+    "grounded_a": {
+      "label": "COSMO-SAC, learned $\\sigma$ (grounded)",
+      "source_root": "results/e5_sigma_grounding",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mae_mean": 1.8457231489714294,
+      "mae_sd_population": 0.05345794497643314,
+      "r2_mean": 0.32985565174813647,
+      "r2_sd_population": 0.047743131562797976,
+      "mae_per_seed": {
+        "42": 1.8034463284614253,
+        "43": 1.9211398298080251,
+        "44": 1.8125832886448376
+      },
+      "r2_per_seed": {
+        "42": 0.36988377247192183,
+        "43": 0.2627520800209142,
+        "44": 0.35693110275157336
+      },
+      "n_per_seed": {
+        "42": 5608,
+        "43": 5608,
+        "44": 5608
+      }
+    },
+    "grounded_b": {
+      "label": "\\quad $+$ Staverman--Guggenheim combinatorial",
+      "source_root": "results/e5_sigma_grounding",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mae_mean": 1.8788098850535715,
+      "mae_sd_population": 0.09102431401538308,
+      "r2_mean": 0.320343797060402,
+      "r2_sd_population": 0.054052121452885814,
+      "mae_per_seed": {
+        "42": 1.8051919038105257,
+        "43": 2.0070706839744963,
+        "44": 1.8241670673756931
+      },
+      "r2_per_seed": {
+        "42": 0.37825695449166585,
+        "43": 0.24817845305816977,
+        "44": 0.33459598363137033
+      },
+      "n_per_seed": {
+        "42": 5608,
+        "43": 5608,
+        "44": 5608
+      }
+    },
+    "ungrounded": {
+      "label": "COSMO-SAC, ungrounded $\\sigma$",
+      "source_root": "results/e5_sigma_grounding",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mae_mean": 2.0433939016030016,
+      "mae_sd_population": 0.039689842468546996,
+      "r2_mean": 0.18617073063085623,
+      "r2_sd_population": 0.011181996780188984,
+      "mae_per_seed": {
+        "42": 2.040348143711347,
+        "43": 1.9963784666935225,
+        "44": 2.0934550944041344
+      },
+      "r2_per_seed": {
+        "42": 0.18739781526060661,
+        "43": 0.19921098908616253,
+        "44": 0.1719033875457996
+      },
+      "n_per_seed": {
+        "42": 5608,
+        "43": 5608,
+        "44": 5608
+      }
+    },
+    "oracle": {
+      "label": "COSMO-SAC, reference $\\sigma$ ($\\sigma$-oracle)",
+      "source_root": "results/e5_sigma_grounding",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mae_mean": 2.2516593557390103,
+      "mae_sd_population": 0.021370717544407516,
+      "r2_mean": -0.02872346837405208,
+      "r2_sd_population": 0.035252720032496215,
+      "mae_per_seed": {
+        "42": 2.231697715161243,
+        "43": 2.281292428611944,
+        "44": 2.2419879234438436
+      },
+      "r2_per_seed": {
+        "42": -0.03614748471112583,
+        "43": -0.06770565642238391,
+        "44": 0.017682736011353506
+      },
+      "n_per_seed": {
+        "42": 5608,
+        "43": 5608,
+        "44": 5608
+      }
+    }
+  },
+  "controls": {
+    "channel_swap": {
+      "label": "channel swap",
+      "source_root": "results/e5_sigma_grounding",
+      "seeds": [
+        42
+      ],
+      "mae_per_seed": {
+        "42": 2.078033410031322
+      },
+      "r2_per_seed": {
+        "42": 0.12962276353236513
+      },
+      "n_per_seed": {
+        "42": 5608
+      },
+      "scored_on": "the lock the table arms define; the control is not in the lock"
+    },
+    "grounded_a_truetrain": {
+      "label": "training-time injection",
+      "source_root": "results/e5_sigma_grounding",
+      "seeds": [
+        42
+      ],
+      "mae_per_seed": {
+        "42": 1.9805765566482514
+      },
+      "r2_per_seed": {
+        "42": 0.28348024961670604
+      },
+      "n_per_seed": {
+        "42": 5608
+      },
+      "scored_on": "the lock the table arms define; the control is not in the lock"
+    }
+  },
+  "derived": {
+    "training_time_grounding_delta_mae": -0.1976707526315722,
+    "per_seed_grounding_gain": {
+      "42": 0.23690181524992182,
+      "43": 0.07523863688549737,
+      "44": 0.2808718057592967
+    },
+    "evaluation_time_substitution_delta_mae": 0.4059362067675809,
+    "grounded_minus_directgnn_mae": 0.1435465639079796,
+    "nrtl_mean_of_printed_per_seed_triple": 1.7953333333333334,
+    "nrtl_mean_unrounded": 1.7949750799735205,
+    "single_seed_controls": {
+      "seed": 42,
+      "learned_sigma_mae": 1.8034463284614253,
+      "learned_sigma_between_seed_range": 0.11769350134659984,
+      "learned_sigma_worst_seed_mae": 1.9211398298080251,
+      "evaluation_only_gap": 0.4282513866998179,
+      "training_time_injection_gap": 0.1771302281868261,
+      "channel_swap_gap": 0.27458708156989653,
+      "training_time_injection_gap_in_between_seed_ranges": 1.5050128185513736,
+      "channel_swap_gap_in_between_seed_ranges": 2.333069187577784,
+      "share_coadaptation_removes": 0.586387262976955,
+      "share_shift_per_learned_arm_sized_spread": 0.27482339812969925,
+      "share_holding_injection_against_other_seed_baselines": {
+        "43": 0.8349679357094242,
+        "44": 0.6087763047037269
+      },
+      "share_vs_three_seed_gap": 0.5636500877877046
+    }
+  }
+}

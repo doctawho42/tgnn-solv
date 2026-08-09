@@ -5,14 +5,54 @@ Deliberately carries no evidence grading. An opening figure should let a reader 
 yet know the topic see what is being done and what went wrong with it; the grading of claims
 by strength of evidence belongs to the Discussion.
 
-  (a) the pipeline and the paradox -- a learned encoder produces a charge-density profile that
-      a fixed thermodynamic model turns into a solubility; substituting an external reference
-      profile for the learned one makes the prediction worse.
+  (a) the pipeline and the substitution -- a learned encoder produces a charge-density profile
+      that a fixed thermodynamic model turns into a solubility, and an external reference
+      profile can be put in its place at prediction time.  A MECHANISM, NOT AN OUTCOME: see
+      the 2026-08-10 note.
   (b) where the error sits -- one-sided bounds on the misspecified-model and
       insufficient-input parts in the deployed residual-only convention, drawn PER SOLVENT
       CLASS, under a strip that draws the WHOLE search the three are taken from. Bounds,
       never a point split: the conditional variance is unestimable, so B_insuff is only ever
       an upper bound and B_closure only lower-bounded.
+
+2026-08-10 PANEL (a) DRAWS THE MECHANISM AND STOPS THERE, and every drawn term is now defined
+where it prints.  Panel (a) had never been revised -- it was carried through the 2026-08-09
+rebuild by an explicit "(a) is unchanged" clause -- and it was the half breaking the two rules
+the display pass is run against.  Four things went, and one thing arrived:
+
+  * THE INFERENCE WENT.  "Either the fixed model is wrong, or the learned profile carries
+    information the reference does not" is the paper's disjunction, and it was printed on
+    page 4, in a schematic, before either alternative exists for the reader.  A schematic may
+    say what is drawn; it may not pre-announce the reading.  Seventeen drawn words.
+  * THE RESULT WENT.  "substituting it makes the prediction worse" is a finding -- it is the
+    first clause of the paper's title -- set inside a figure whose brief is to show what is
+    done, not what came of it.  Replaced by the mechanism the arrow actually draws,
+    "substituted at prediction time", which is the Introduction's own phrase ("at the moment
+    of prediction").  The arrow is recoloured from HURT to SALMON_D for the same reason: HURT
+    is the palette's harm colour, so it was an outcome asserted in ink.  SALMON_D ties the
+    arrow to the salmon sigma-star it carries, i.e. the colour now names the object.
+  * THE TITLE WENT WITH THEM.  "The pipeline, and the paradox" names a paradox that page 4 has
+    not shown; "The pipeline, and the substitution" names the two things drawn.
+  * THREE UNDEFINED TERMS WENT.  "UD", "boundable" and "aprotic acceptors" printed on page 4
+    and were first defined on pages 7, 7 and nowhere -- against this file's own instruction,
+    four lines below the caption budget: "every term in it must be defined by then: keep it in
+    plain English".  UD is now glossed where it prints ("Delaware (UD)"); "boundable" is now
+    "with a bound", which also makes the strip's two labels a matched pair against "with no
+    bound"; and "aprotic acceptors" carries its defining condition, "(no O-H or N-H)" -- the
+    class rule at run_b_insuff_stratified_map.py:52 -- so the stratum keeps the name Table 2
+    and Fig. 6 give it while a reader on page 4 can still tell what it is.  Do not strip these
+    glosses: the class name is a term of art and "UD" is an institution's initials, and neither
+    is met before this page.  Note what was NOT done: "aprotic acceptors" was not renamed to
+    a plain paraphrase, because the drawn name has to match the tables that carry the numbers.
+  * WHAT ARRIVED IS AIR.  (a) drops from 39 drawn words to 20 and gains no element.  The panel
+    is re-laid in printed points from its own box (the idiom (b) has used since 2026-08-09)
+    instead of the OLD_PAGE_SCALE remap, so the schematic is centred in the box it now has
+    rather than sitting where a two-line paragraph used to leave it, and (a)'s type floor rises
+    from 7.09 pt to 7.6 pt -- (b)'s FS_NAME -- inside the room the deleted prose frees.
+
+  The float's HEIGHT AND WIDTH ARE UNCHANGED, deliberately: a shorter float reflows the body
+  from page 4 onward, and the page counts are fixed at 33 / 84.  The space bought is spent
+  inside panel (a), not given back to the text.
 
 2026-08-09 THE PANEL (b) REBUILD, and what it did NOT change. Every referee-forced item below
 is still here -- the strip with its three counts, three distinct marks with three distinct

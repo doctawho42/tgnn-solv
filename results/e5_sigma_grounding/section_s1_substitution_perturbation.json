@@ -1,0 +1,171 @@
+{
+  "root": "/Users/nikitapolomosnov/PycharmProjects/tgnn-solv/results/e5_sigma_grounding",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "rows": "all",
+  "grounded_name": "grounded_a_predictions.csv",
+  "oracle_name": "oracle_predictions.csv",
+  "per_seed": [
+    {
+      "seed": 42,
+      "n_rows": 8103,
+      "n_applied": 8066,
+      "n_unapplied": 37,
+      "quantities": {
+        "T_m": {
+          "column": "T_m_corrected",
+          "unit": "K",
+          "max_abs_delta_applied": 0.0245361328125,
+          "max_abs_delta_unapplied": 3.0517578125e-05,
+          "median_reference": 449.6536560058594,
+          "median_reference_applied": 450.1562805175781,
+          "max_abs_delta_applied_presolver": 0.0245361328125
+        },
+        "dH_fus": {
+          "column": "dH_fus_corrected",
+          "unit": "J/mol",
+          "max_abs_delta_applied": 0.716796875,
+          "max_abs_delta_unapplied": 0.00390625,
+          "median_reference": 36749.3203125,
+          "median_reference_applied": 36749.3203125,
+          "max_abs_delta_applied_presolver": 0.716796875
+        },
+        "Phi": {
+          "column": "Phi",
+          "unit": "-",
+          "max_abs_delta_applied": 0.0003685951232910156,
+          "max_abs_delta_unapplied": 1.430511474609375e-06,
+          "median_reference": 4.7246317863464355,
+          "median_reference_applied": 4.728869915008545
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "n_rows": 8103,
+      "n_applied": 8066,
+      "n_unapplied": 37,
+      "quantities": {
+        "T_m": {
+          "column": "T_m_corrected",
+          "unit": "K",
+          "max_abs_delta_applied": 0.022674560546875,
+          "max_abs_delta_unapplied": 0.0001220703125,
+          "median_reference": 449.03619384765625,
+          "median_reference_applied": 449.50103759765625,
+          "max_abs_delta_applied_presolver": 0.022674560546875
+        },
+        "dH_fus": {
+          "column": "dH_fus_corrected",
+          "unit": "J/mol",
+          "max_abs_delta_applied": 4.609375,
+          "max_abs_delta_unapplied": 0.044921875,
+          "median_reference": 33630.26171875,
+          "median_reference_applied": 33630.26171875,
+          "max_abs_delta_applied_presolver": 4.609375
+        },
+        "Phi": {
+          "column": "Phi",
+          "unit": "-",
+          "max_abs_delta_applied": 0.0007135868072509766,
+          "max_abs_delta_unapplied": 5.9604644775390625e-06,
+          "median_reference": 4.3610358238220215,
+          "median_reference_applied": 4.36982536315918
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "n_rows": 8103,
+      "n_applied": 8066,
+      "n_unapplied": 37,
+      "quantities": {
+        "T_m": {
+          "column": "T_m_corrected",
+          "unit": "K",
+          "max_abs_delta_applied": 0.00360107421875,
+          "max_abs_delta_unapplied": 3.0517578125e-05,
+          "median_reference": 448.0152893066406,
+          "median_reference_applied": 447.6130676269531,
+          "max_abs_delta_applied_presolver": 0.003509521484375
+        },
+        "dH_fus": {
+          "column": "dH_fus_corrected",
+          "unit": "J/mol",
+          "max_abs_delta_applied": 1.23046875,
+          "max_abs_delta_unapplied": 0.0078125,
+          "median_reference": 34135.65234375,
+          "median_reference_applied": 34243.310546875,
+          "max_abs_delta_applied_presolver": 1.306640625
+        },
+        "Phi": {
+          "column": "Phi",
+          "unit": "-",
+          "max_abs_delta_applied": 0.00021028518676757812,
+          "max_abs_delta_unapplied": 1.430511474609375e-06,
+          "median_reference": 4.530731201171875,
+          "median_reference_applied": 4.532005310058594
+        }
+      }
+    }
+  ],
+  "summary": {
+    "T_m": {
+      "column": "T_m_corrected",
+      "unit": "K",
+      "median_kind": "median",
+      "max_abs_delta_applied_over_seeds": 0.0245361328125,
+      "max_abs_delta_applied_argseed": 42,
+      "max_abs_delta_unapplied_over_seeds": 0.0001220703125,
+      "max_abs_delta_unapplied_argseed": 43,
+      "median_first_seed": 449.6536560058594,
+      "median_pooled": 449.03619384765625,
+      "median_pooled_applied": 449.1170959472656,
+      "median_mean_of_per_seed": 448.90171305338544,
+      "median_per_seed": {
+        "42": 449.6536560058594,
+        "43": 449.03619384765625,
+        "44": 448.0152893066406
+      }
+    },
+    "dH_fus": {
+      "column": "dH_fus_corrected",
+      "unit": "J/mol",
+      "median_kind": "median",
+      "max_abs_delta_applied_over_seeds": 4.609375,
+      "max_abs_delta_applied_argseed": 43,
+      "max_abs_delta_unapplied_over_seeds": 0.044921875,
+      "max_abs_delta_unapplied_argseed": 43,
+      "median_first_seed": 36749.3203125,
+      "median_pooled": 34788.3828125,
+      "median_pooled_applied": 34788.3828125,
+      "median_mean_of_per_seed": 34838.411458333336,
+      "median_per_seed": {
+        "42": 36749.3203125,
+        "43": 33630.26171875,
+        "44": 34135.65234375
+      }
+    },
+    "Phi": {
+      "column": "Phi",
+      "unit": "-",
+      "median_kind": "median_magnitude",
+      "max_abs_delta_applied_over_seeds": 0.0007135868072509766,
+      "max_abs_delta_applied_argseed": 43,
+      "max_abs_delta_unapplied_over_seeds": 5.9604644775390625e-06,
+      "max_abs_delta_unapplied_argseed": 43,
+      "median_first_seed": 4.7246317863464355,
+      "median_pooled": 4.533898830413818,
+      "median_pooled_applied": 4.5369873046875,
+      "median_mean_of_per_seed": 4.53879960378011,
+      "median_per_seed": {
+        "42": 4.7246317863464355,
+        "43": 4.3610358238220215,
+        "44": 4.530731201171875
+      }
+    }
+  }
+}

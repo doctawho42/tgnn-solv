@@ -21,10 +21,39 @@ Four panels, one per arm, all on the SAME rows and the SAME square axes:
                            substituted at evaluation
 
 (b) -> (c) is the paper's training-time sense of grounding; (c) -> (d) is its
-evaluation-time sense.  (a) is what both are measured against.  Arm names and colours are
-the ones fig_paradox already uses (make_paradox_figures.py): GRAY/TEAL/BLUE/SALMON, with
-SALMON reserved for the reference-input arm and TEAL for a learned representation.  Do not
-recolour one figure without the other.
+evaluation-time sense.  (a) is what both are measured against.
+
+ONE COLOUR PER ARM, AND WHICH FIGURE IT WAS TAKEN FROM
+------------------------------------------------------
+This figure is read by comparing panels, so no two arms may share a colour -- (a) and (c)
+were both TEAL until 2026-08-10, which drew the paper's control-versus-closure comparison
+in one hue.  The other figures of the two documents colour by ROLE, not by arm, and the
+role palette deliberately collides these two:
+
+  Fig. 1  overview       SALMON = fixed closure / external reference input; TEAL = learned rep.
+  Fig. 2  paradox bars   GRAY NRTL | TEAL DirectGNN | BLUE ungrounded | TEAL grounded |
+                         SALMON ref. sigma        <- TEAL is two different arms
+  Fig. S1 architecture   GRAY DirectGNN | SALMON sigma-oracle
+  Fig. S3 gamma parity   SALMON = reference-sigma closure
+  Fig. S6 data-efficiency SALMON = physics-grounded arm | TEAL = DirectGNN
+
+So no per-arm assignment can agree with Fig. 2 on both (a) and (c), and exactly one of them
+has to move.  The one that moves is the one the two documents ALREADY disagree about: the
+grounded arm is TEAL in Fig. 2 and SALMON in Fig. S6.  DirectGNN is TEAL in both Fig. 2 and
+Fig. S6, and the reference-input arm is SALMON in Figs. 1, 2, S1 and S3, so those two keep
+their colours and the grounded arm takes the house palette's fourth member, PURPLE.
+GRAY is not available for (a): Fig. 2 spends it on NRTL, two pages earlier, on the same rows.
+Figs. 2 and S6 were left alone (other agents hold that prose, and neither is this figure's
+to recolour); the disagreement they carry is theirs, not one introduced here.
+
+AXES ARE SET TO THE MEASUREMENT, NOT TO THE WORST PREDICTION
+------------------------------------------------------------
+Until 2026-08-10 the range was the union of measured AND predicted values over all four
+arms, which is [-23.2, +0.9] -- and the only thing that reached -23 was 69 predictions of
+one arm, so about 45% of every panel was blank paper and the identity ran through emptiness
+for a third of its length.  The range is now the measured range (the axis the reader
+calibrates against) plus a 4% margin; predictions falling outside it are drawn as capped
+markers at the frame, at their own measured x, and counted in the panel.  Only (d) has any.
 
 ROWS AND NUMBERS
 ----------------
@@ -44,8 +73,10 @@ others would put a different number of points in different panels of the same fi
 Seed 42 is deposited complete for all six arms plus both co-adaptation controls, and its
 per-seed MAE for every arm is already printed in tab:si-arms.  `--seed` overrides.
 
-CAVEAT THE CAPTION MUST CARRY: the panel headers are therefore one seed, and they differ
-from the three-seed means beside them in Fig. paradox by up to 0.04 in MAE.
+THE SEED IS PRINTED IN THE FIGURE, not reconciled in the caption.  The panel headers are one
+seed and the bars of Fig. paradox are three, and the caption used to spend three sentences
+saying so.  The drawing states which seed it is; the difference from the three-seed means is
+then a fact the reader can look up in tab:si-arms, not an argument the caption has to make.
 
 USAGE
     KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src python scripts/analysis/make_parity_figure.py \
@@ -76,11 +107,13 @@ from run_e5_comparison import (  # noqa: E402
     intersection_keys,
 )
 
-# Palette shared with make_paradox_figures.py -- see its module docstring.
-SALMON = "#E8A98C"   # reference-input (true-input) arm
-TEAL = "#7FB5A6"     # learned representation
-BLUE = "#8FB3DA"     # ungrounded
-GRAY = "#9AA0A6"
+# Palette shared with make_paradox_figures.py -- see its module docstring, and the
+# "ONE COLOUR PER ARM" section above for which figure each assignment was taken from.
+SALMON = "#E8A98C"   # (d) reference-input arm      -- as Figs. 1, 2, S1, S3
+TEAL = "#7FB5A6"     # (a) DirectGNN, the control   -- as Figs. 2, S6
+BLUE = "#8FB3DA"     # (b) ungrounded sigma         -- as Fig. 2
+PURPLE = "#B7A5DC"   # (c) grounded sigma           -- the arm Figs. 2 and S6 disagree about
+GRAY = "#9AA0A6"     # not an arm colour here: Fig. 2 spends GRAY on NRTL
 INK = "#4D4D4D"
 
 _DEFAULT_STYLE = Path.home() / ".claude/skills/repo-to-paper/assets/softpastel.mplstyle"
@@ -95,7 +128,7 @@ LOCK_ARMS = ["nrtl", "directgnn", "ungrounded", "grounded_a", "grounded_b", "ora
 PANELS = [
     ("directgnn", "DirectGNN", TEAL),
     ("ungrounded", "ungrounded $\\sigma$", BLUE),
-    ("grounded_a", "grounded $\\sigma$", TEAL),
+    ("grounded_a", "grounded $\\sigma$", PURPLE),
     ("oracle", "ref. $\\sigma$ (eval)", SALMON),
 ]
 LETTERS = "abcd"
@@ -115,7 +148,7 @@ def apply_style(style: str | None) -> None:
         "axes.grid": True, "axes.axisbelow": True, "grid.color": "#D9D9D9",
         "grid.linewidth": 0.6, "grid.alpha": 0.7, "legend.frameon": False,
         "patch.linewidth": 0.0,
-        "axes.prop_cycle": plt.cycler(color=[TEAL, SALMON, BLUE, GRAY]),
+        "axes.prop_cycle": plt.cycler(color=[TEAL, SALMON, BLUE, PURPLE, GRAY]),
     })
 
 
@@ -159,14 +192,20 @@ def binned_median(x: np.ndarray, y: np.ndarray, n_bins: int = 12):
     return np.asarray(xs), np.asarray(ys)
 
 
-def make_figure(series: dict, metrics: dict, out_dir: Path, stem: str) -> tuple[list, dict]:
+def make_figure(series: dict, metrics: dict, out_dir: Path, stem: str,
+                seed: int) -> tuple[list, dict]:
     drawn = [p for p in PANELS if p[0] in series]
     # Square panels on ONE shared range, so the 1:1 line is at 45 degrees in every panel
-    # and the four panels are directly comparable by eye. The range covers every point in
-    # every drawn arm -- nothing is clipped, and the empty lower-left corner is itself the
-    # statement that only one arm predicts that far down.
-    lo = min(min(t.min(), p.min()) for t, p in (series[a] for a, _, _ in drawn))
-    hi = max(max(t.max(), p.max()) for t, p in (series[a] for a, _, _ in drawn))
+    # and the four panels are directly comparable by eye.
+    #
+    # THE RANGE IS THE MEASUREMENT'S, with a 4% margin.  Measured ln x2 runs -17.71 to
+    # -0.06 on these rows, and three of the four arms predict entirely inside that; the
+    # fourth sends 69 of its 5608 predictions (1.2%) as low as -22.3.  Taking the union
+    # instead -- what this figure did until 2026-08-10 -- widened both axes by a quarter to
+    # accommodate those 69 marks and left the rest of the panel, and a third of the identity
+    # line, on blank paper.  Off-range predictions are drawn at the frame instead (below).
+    tvals = series[drawn[0][0]][0]
+    lo, hi = float(tvals.min()), float(tvals.max())
     pad = 0.04 * (hi - lo)
     lo, hi = lo - pad, hi + pad
 
@@ -186,23 +225,42 @@ def make_figure(series: dict, metrics: dict, out_dir: Path, stem: str) -> tuple[
     for k, ((arm, label, colour), ax) in enumerate(zip(drawn, axes)):
         t, p = series[arm]
         m = metrics[arm]
-        ax.plot([lo, hi], [lo, hi], ls="--", lw=0.9, color=INK, alpha=0.75, zorder=3)
         # rasterized: 5608 vector points x 4 panels is a multi-MB PDF that ACS production
         # renders slowly; the marks are a density field, not artwork.
         ax.scatter(t, p, s=2.0, color=colour, alpha=0.14, linewidths=0.0, zorder=2,
                    rasterized=True)
+        # The identity now runs THROUGH the cloud for its whole length rather than beside
+        # it, so it needs the same white-under-dark casing the median trace gets or the
+        # dense core swallows it.  Both strokes carry the SAME dash spec, so the white
+        # reads as a halo on each dash and not as a continuous stripe under a dashed line.
+        _DASH = (0, (4.2, 2.8))
+        for lw, col, z in ((2.5, "white", 3.1), (1.0, INK, 3.3)):
+            ax.plot([lo, hi], [lo, hi], ls=_DASH, lw=lw, color=col, zorder=z,
+                    solid_capstyle="butt")
         # The conditional trace is drawn white-under-dark so it stays legible where it
         # crosses the densest part of its own scatter.
         bx, by = binned_median(t, p)
         ax.plot(bx, by, color="white", lw=2.5, zorder=3.6, solid_capstyle="round")
         ax.plot(bx, by, color=INK, lw=1.2, zorder=3.8, solid_capstyle="round")
+        # Predictions below the frame are SHOWN, not dropped: one open triangle per row at
+        # its own measured x, pinned just inside the bottom spine, plus the count.  Any arm
+        # can have them; on these rows only (d) does, and where they sit on the measurement
+        # axis is the thing the old full-union range was spending half a panel to say.
+        under = p < lo
+        n_under = int(under.sum())
+        if n_under:
+            ax.scatter(t[under], np.full(n_under, lo + 0.022 * (hi - lo)), s=9.0,
+                       marker="v", facecolors="none", edgecolors=colour, linewidths=0.55,
+                       clip_on=False, zorder=4.0)
+            ax.text(0.5, 0.055, f"{n_under} below axis", transform=ax.transAxes,
+                    ha="center", va="bottom", fontsize=6.6, color=INK)
         ax.set_xlim(lo, hi)
         ax.set_ylim(lo, hi)
         ax.set_aspect("equal", adjustable="box")
-        ax.set_xticks([-20, -10, 0])
-        ax.set_yticks([-20, -10, 0])
-        ax.set_xticks([-15, -5], minor=True)
-        ax.set_yticks([-15, -5], minor=True)
+        ax.set_xticks([-15, -10, -5, 0])
+        ax.set_yticks([-15, -10, -5, 0])
+        ax.set_xticks([-17.5, -12.5, -7.5, -2.5], minor=True)
+        ax.set_yticks([-17.5, -12.5, -7.5, -2.5], minor=True)
         ax.tick_params(labelsize=BASE_TICK, length=2.4, pad=1.8)
         ax.tick_params(which="minor", length=1.4)
         ax.set_xlabel("measured $\\ln x_2$", fontsize=BASE_MATH, labelpad=2.0)
@@ -230,10 +288,16 @@ def make_figure(series: dict, metrics: dict, out_dir: Path, stem: str) -> tuple[
         slope = float(np.polyfit(t, p, 1)[0])
         printed[arm] = {"label": label, "mae": m["mae"], "r2": r2v, "n": m["n"],
                         "mae_printed": f"{m['mae']:.3f}", "r2_printed": f"{r2v:+.3f}",
-                        "ols_slope_pred_on_meas": slope}
+                        "ols_slope_pred_on_meas": slope, "n_below_axis": n_under}
     # w_pad buys the horizontal gap that keeps one panel's "0" tick label clear of the
-    # next panel's "-20"; the two sit at the shared boundary and collide at the default.
+    # next panel's leftmost label; the two sit at the shared boundary and collide at the
+    # default.
     fig.tight_layout(w_pad=1.9)
+    # WHICH SEED, said by the drawing.  The panels are one seed and the bars of
+    # Fig. paradox are three; three caption sentences used to reconcile the two.  A label
+    # is the cheaper fix, and it is a description of what is shown.
+    fig.text(0.998, 0.012, f"seed {seed}", ha="right", va="bottom",
+             fontsize=6.8, color=GRAY)
     out_dir.mkdir(parents=True, exist_ok=True)
     written = []
     for ext in ("pdf", "png"):
@@ -257,13 +321,14 @@ def main() -> None:
 
     apply_style(args.style)
     keys, series, metrics = load_locked(args.e5_dir, args.seed)
-    written, printed = make_figure(series, metrics, args.out_dir, args.stem)
+    written, printed = make_figure(series, metrics, args.out_dir, args.stem, args.seed)
     printed["seed"] = args.seed
     printed["n_locked"] = len(keys)
     print(f"n_locked = {len(keys)} (seed {args.seed})")
     for arm, rec in printed["panels"].items():
         print(f"  {arm:12s} MAE {rec['mae']:.4f} -> printed {rec['mae_printed']}   "
-              f"R2 {rec['r2']:+.4f} -> printed {rec['r2_printed']}   n {rec['n']}")
+              f"R2 {rec['r2']:+.4f} -> printed {rec['r2_printed']}   n {rec['n']}   "
+              f"below axis {rec['n_below_axis']}")
     print("axis range", [round(v, 2) for v in printed["axis_range"]])
     for w in written:
         print("wrote", w)

@@ -1,0 +1,391 @@
+{
+  "root": "/Users/nikitapolomosnov/PycharmProjects/tgnn-solv/results/e5_sigma_grounding",
+  "control_root": "/Users/nikitapolomosnov/PycharmProjects/tgnn-solv/results/e5_sigma_grounding",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "control_seeds": [
+    42,
+    43,
+    44
+  ],
+  "control_pairing": "seed-by-seed",
+  "control_arm": "directgnn",
+  "physics_arm": "grounded_a",
+  "lock_arms": [
+    "directgnn",
+    "grounded_a"
+  ],
+  "n_locked": 5608,
+  "morgan": {
+    "radius": 2,
+    "n_bits": 2048
+  },
+  "arm/control_mae": {
+    "mean": 1.7021765850634498,
+    "sd": 0.04043351635278169,
+    "sd_population": 0.03301382785693155,
+    "per_seed": [
+      1.7485258443561382,
+      1.6741358618180238,
+      1.683868049016188
+    ]
+  },
+  "arm/physics_mae": {
+    "mean": 1.8457231489714294,
+    "sd": 0.06547234394502024,
+    "sd_population": 0.05345794497643314,
+    "per_seed": [
+      1.8034463284614253,
+      1.9211398298080251,
+      1.8125832886448376
+    ]
+  },
+  "global/delta_mae": {
+    "mean": 0.14354656390797937,
+    "sd": 0.09689681279707449,
+    "sd_population": 0.07911591635160525,
+    "per_seed": [
+      0.05492048410528705,
+      0.24700396799000135,
+      0.12871523962864972
+    ]
+  },
+  "solvent/water": {
+    "mean": 0.5170776509090301,
+    "sd": 0.3544079362203692,
+    "sd_population": 0.289372868177583,
+    "per_seed": [
+      0.4049956942096764,
+      0.9139752141926267,
+      0.23226204432478736
+    ],
+    "n_rows": 436,
+    "printed": true
+  },
+  "solvent/alcohol": {
+    "mean": 0.15366519723595462,
+    "sd": 0.1360173774340985,
+    "sd_population": 0.11105772362169747,
+    "per_seed": [
+      0.00870238957056313,
+      0.27849223373628607,
+      0.17380096840101467
+    ],
+    "n_rows": 2748,
+    "printed": true
+  },
+  "solvent/carboxylic_acid": {
+    "mean": 0.3939253508560057,
+    "sd": 0.1553279704822464,
+    "sd_population": 0.12682475682119693,
+    "per_seed": [
+      0.3548237085342407,
+      0.2618843695012536,
+      0.5650679745325229
+    ],
+    "n_rows": 41,
+    "printed": true
+  },
+  "solvent/amide": {
+    "mean": -0.21524270494080158,
+    "sd": 0.10970759791079378,
+    "sd_population": 0.08957587859595686,
+    "per_seed": [
+      -0.32317886980314214,
+      -0.2187036680829615,
+      -0.10384557693630114
+    ],
+    "n_rows": 263,
+    "printed": true
+  },
+  "solvent/sulfoxide": {
+    "mean": 0.26179211869720337,
+    "sd": 0.24383367055534497,
+    "sd_population": 0.19908935832349672,
+    "per_seed": [
+      -0.014274940934292157,
+      0.35191852131555246,
+      0.44773277571034975
+    ],
+    "n_rows": 86,
+    "printed": true
+  },
+  "solvent/nitrile": {
+    "mean": 0.20480704668258873,
+    "sd": 0.1893747145522817,
+    "sd_population": 0.15462380694610206,
+    "per_seed": [
+      0.4151820182682031,
+      0.15128735559327278,
+      0.04795176618629027
+    ],
+    "n_rows": 252,
+    "printed": true
+  },
+  "solvent/halogenated": {
+    "mean": -0.28997263596938533,
+    "sd": 0.3565884483744937,
+    "sd_population": 0.29115324889609706,
+    "per_seed": [
+      0.08832149570052694,
+      -0.3383167047758362,
+      -0.6199226988328468
+    ],
+    "n_rows": 185,
+    "printed": true
+  },
+  "solvent/aromatic": {
+    "mean": 0.028387009274934243,
+    "sd": 0.6320493258431837,
+    "sd_population": 0.5160661135286339,
+    "per_seed": [
+      0.0020666496389232236,
+      0.6731853602798119,
+      -0.5900909820939324
+    ],
+    "n_rows": 157,
+    "printed": true
+  },
+  "solvent/hydrocarbon": {
+    "mean": 0.018944844901561675,
+    "sd": 0.504392384733237,
+    "sd_population": 0.41183465758067017,
+    "per_seed": [
+      -0.23125791579484933,
+      -0.31143221735954296,
+      0.5995246678590773
+    ],
+    "n_rows": 200,
+    "printed": true
+  },
+  "solvent/other": {
+    "mean": 0.13630880230276646,
+    "sd": 0.04746695287495054,
+    "sd_population": 0.038756604729454615,
+    "per_seed": [
+      0.08398344768812094,
+      0.1766013969336786,
+      0.14834156228649986
+    ],
+    "n_rows": 1240,
+    "printed": false
+  },
+  "solute/halogenated_aromatic": {
+    "mean": 0.03478845016533246,
+    "sd": 0.12255536376497624,
+    "sd_population": 0.10006603548845681,
+    "per_seed": [
+      0.11028785846082156,
+      0.10069537483523239,
+      -0.10661788280005657
+    ],
+    "n_rows": 1561,
+    "printed": true
+  },
+  "solute/heterocycle": {
+    "mean": 0.17282144643826744,
+    "sd": 0.15357414072239167,
+    "sd_population": 0.12539276081874626,
+    "per_seed": [
+      -0.0043089905191662226,
+      0.2540638972658549,
+      0.26870943256811364
+    ],
+    "n_rows": 2956,
+    "printed": true
+  },
+  "solute/other": {
+    "mean": 0.4115969671457562,
+    "sd": 0.11163043689591752,
+    "sd_population": 0.09114587005298494,
+    "per_seed": [
+      0.2858789956163881,
+      0.49910545934523853,
+      0.44980644647564205
+    ],
+    "n_rows": 224,
+    "printed": false
+  },
+  "solute/oxygenated": {
+    "mean": 0.3152110255232044,
+    "sd": 0.25524239105116625,
+    "sd_population": 0.20840453960109484,
+    "per_seed": [
+      0.024388294260041077,
+      0.5020383593915891,
+      0.41920642291798305
+    ],
+    "n_rows": 476,
+    "printed": true
+  },
+  "solute/polyaromatic": {
+    "mean": 0.2742743618372414,
+    "sd": 0.12146963472440762,
+    "sd_population": 0.09917954143901861,
+    "per_seed": [
+      0.24191789825757337,
+      0.40864593780746583,
+      0.17225924944668503
+    ],
+    "n_rows": 114,
+    "printed": true
+  },
+  "solute/sulfur_or_phosphorus": {
+    "mean": -0.12152087372849858,
+    "sd": 0.6044400154302936,
+    "sd_population": 0.4935232059747366,
+    "per_seed": [
+      0.1637102537637154,
+      0.2875248129187076,
+      -0.8157976878679187
+    ],
+    "n_rows": 277,
+    "printed": false
+  },
+  "salt_candidate/any_charge": {
+    "mean": 0.21977921529692046,
+    "sd": 0.28131738307010323,
+    "sd_population": 0.22969468143227464,
+    "per_seed": [
+      0.07786592172116635,
+      0.5437871075811842,
+      0.037684616588410824
+    ],
+    "n_rows": 735
+  },
+  "salt_candidate/multifrag": {
+    "mean": 0.06800973732367639,
+    "sd": 0.3387828861130798,
+    "sd_population": 0.27661506818815684,
+    "per_seed": [
+      -0.1500720588406126,
+      0.4583051314755302,
+      -0.10420386066388843
+    ],
+    "n_rows": 796
+  },
+  "salt_candidate/explicit_salt": {
+    "mean": 0.18129495565305667,
+    "sd": 0.5141410595916325,
+    "sd_population": 0.4197944172711262,
+    "per_seed": [
+      -0.19942401804422083,
+      0.7661551731197456,
+      -0.022846288116354696
+    ],
+    "n_rows": 380
+  },
+  "salt_candidate/multifrag_neutral": {
+    "mean": -0.03547195249643087,
+    "sd": 0.1877245333146185,
+    "sd_population": 0.153276439607639,
+    "per_seed": [
+      -0.10499094226039385,
+      0.17709595881975604,
+      -0.1785208740486548
+    ],
+    "n_rows": 416
+  },
+  "salt_candidate/charged_or_salt": {
+    "mean": 0.12752510078603066,
+    "sd": 0.2471020939542392,
+    "sd_population": 0.20175801485371803,
+    "per_seed": [
+      0.01177690745850013,
+      0.4112558148924317,
+      -0.040457419992839805
+    ],
+    "n_rows": 1151
+  },
+  "salt_audit/formal_charge_is_not_ionicity": {
+    "any_charge_solutes": 31,
+    "any_charge_rows": 735,
+    "every_fragment_net_neutral_solutes": 18,
+    "every_fragment_net_neutral_rows": 355,
+    "net_charged_fragment_solutes": 13,
+    "net_charged_fragment_rows": 380,
+    "note": "a formal charge in this corpus is mostly the nitro group's internal separation on a neutral molecule; only the net-charged-fragment solutes are ions, and they are exactly the explicit_salt stratum"
+  },
+  "solute/charged_salt": {
+    "mean": -0.03547195249643087,
+    "sd": 0.1877245333146185,
+    "sd_population": 0.153276439607639,
+    "per_seed": [
+      -0.10499094226039385,
+      0.17709595881975604,
+      -0.1785208740486548
+    ],
+    "n_rows": 416,
+    "definition": "multifrag_neutral"
+  },
+  "novelty/n_train_solutes": 15665,
+  "novelty/tanimoto_le_0.3": {
+    "mean": -0.041432636697234106,
+    "sd": 0.17538268031993617,
+    "sd_population": 0.14319935883516827,
+    "per_seed": [
+      0.0886777846245943,
+      0.027909114117166123,
+      -0.24088480883346275
+    ],
+    "n_rows": 559,
+    "n_solutes": 12
+  },
+  "novelty/tanimoto_gt_0.8": {
+    "mean": 0.5128822878884205,
+    "sd": 0.0866487241000875,
+    "sd_population": 0.07074838696947129,
+    "per_seed": [
+      0.4225383390637725,
+      0.5208188010943875,
+      0.5952897235071015
+    ],
+    "n_rows": 482,
+    "n_solutes": 17
+  },
+  "conservation": {
+    "solvent": {
+      "n_classes": 10,
+      "n_rows_covered": 5608,
+      "n_locked": 5608,
+      "n_rows_in_printed_classes": 4368,
+      "printed_classes_recomposed_per_seed": [
+        0.04667000909550836,
+        0.26699004585397584,
+        0.1231436645151576
+      ],
+      "printed_classes_recomposed_mean": 0.14560123982154727,
+      "partitions_locked_rows": true,
+      "recomposed_per_seed": [
+        0.05492048410528717,
+        0.2470039679900014,
+        0.1287152396286498
+      ],
+      "max_abs_deviation_from_global": 1.249000902703301e-16,
+      "n_rows_in_unprinted_classes": 1240
+    },
+    "solute": {
+      "n_classes": 6,
+      "n_rows_covered": 5608,
+      "n_locked": 5608,
+      "n_rows_in_printed_classes": 5107,
+      "printed_classes_recomposed_per_seed": [
+        0.03888964941292932,
+        0.23374863058862586,
+        0.16586144103511605
+      ],
+      "printed_classes_recomposed_mean": 0.1461665736788904,
+      "partitions_locked_rows": true,
+      "recomposed_per_seed": [
+        0.05492048410528711,
+        0.24700396799000138,
+        0.1287152396286498
+      ],
+      "max_abs_deviation_from_global": 8.326672684688674e-17,
+      "n_rows_in_unprinted_classes": 501
+    }
+  }
+}

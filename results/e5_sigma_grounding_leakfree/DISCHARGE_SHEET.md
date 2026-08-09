@@ -182,12 +182,51 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 
 ### Row 12 — Table S3, and the unrounded means / per-seed values / arm orderings §S3 reads off it
 - **Inventory name / label:** *"Table~\ref{tab:si-arms} and the unrounded means, per-seed values and arm orderings \S\ref{sec:si-tables} reads off it"* — `\label{tab:si-arms}` = Table S3, `\label{sec:si-tables}` = §S3.
-- **Prints:** table `paper/sections/SI.tex` **L836–856** (caption L838–841, label L842, rows **L848–853**), printed **p. S-14**; the reading paragraphs **L812–834** and the four-decimal list **L858–868**, printed **pp. S-13 to S-14**.
+- **Prints:** table `paper/sections/SI.tex` **L836–860** (caption L838–841, label L842, rows **`\input` at L857**, and since 2026-08-10 the rows themselves live in `paper/si_tables/si_arms_rows.tex`, generated — see **Command**), printed **p. S-14**; the reading paragraphs **L812–834** and the four-decimal list **L862–869**, printed **pp. S-13 to S-14**. (Line numbers re-resolved 2026-08-10 after the rewiring; the float still sets as Table S3 on p. S-14 and the SI is still 84 pp.)
 - **Prints now (table):** DirectGNN `1.70\pm0.03 / +0.42\pm0.03 / 1.749/1.674/1.684`; NRTL `1.79\pm0.07 / +0.34\pm0.03 / 1.734/1.758/1.894`; grounded `1.85\pm0.05 / +0.33\pm0.05 / 1.803/1.921/1.813`; `+SG comb.` `1.88\pm0.09 / +0.32\pm0.05 / 1.805/2.007/1.824`; ungrounded `2.04\pm0.04 / +0.19\pm0.01 / 2.040/1.996/2.093`; σ-oracle `2.25\pm0.02 / -0.03\pm0.04 / 2.232/2.281/2.242`.
   **Prints now (prose):** four-decimal means `1.7022, 1.7950, 1.8457, 1.8788, 2.0434, 2.2517`, population sd `0.033, 0.071, 0.053, 0.091, 0.040, 0.021`; NRTL rounding note `1.7953` / `1.794975` / `1.79`; `2.0434\to1.8457` (helps, `-0.20`), `1.8457\to2.2517` (hurts, `+0.41`); `0.1435` quoted as `+0.14` against rounded `1.85`/`1.70` differing by `0.15`; NRTL `1.734` against control `1.749` at seed 42; `1.8457\to1.8788`; `\sqrt{3/2}`; oracle-control block `1.98`, `2.08`, `1.803`, `1.921`, `+0.27` is `2.3` times the range, `+0.18` one and a half times it; `1.981-1.803=0.177` against `2.232-1.803=0.428`, share `0.59`; `0.118`, `\pm0.27`, `0.83` and `0.61`; `(0.406-0.177)/0.406=0.56`.
 - **Disposition:** **R** for the ungrounded, grounded and σ-oracle rows and every derived figure above; DirectGNN, NRTL and `+SG comb.` rows are **outside** (but the four-decimal list and the orderings that mix them are rewritten).
 - **Artifact:** `results/e5_sigma_grounding_leakfree/seed_*/comparison.json`, plus the published `results/e5_sigma_grounding/THREE_SEED_SUMMARY.md` pattern for the arms that stay.
-- **Command:** **no generator writes this table.** `THREE_SEED_SUMMARY.md` documents the procedure ("re-running `run_e5_comparison.py` per seed, then averaging `per_arm`") but is itself hand-written. Build the five-seed equivalent by hand from the per-seed JSONs. *This is the second row that will be missed, and it is the source of record for six of the derived numbers in §2.*
+- **Command:** ~~**no generator writes this table.**~~ **Updated 2026-08-10: one does now, and the table is wired to it.**
+  ```bash
+  KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src python scripts/analysis/make_si_arms_table.py \
+      --root results/e5_sigma_grounding_leakfree          # --root defaults to the published tree
+  ```
+  **Corrected 2026-08-10.** Pointed at the leak-free tree the script first emitted a **three-row**
+  Table S3: the re-run trains only the ungrounded, grounded and σ-oracle arms, and DirectGNN, NRTL
+  and `+SG comb.` — whose disposition here is **outside**, i.e. they stand as printed — were
+  dropped without a word on stdout or in the generated header, and the module's own
+  row-reproduction test passed on the truncated table. Arms absent from `--root` are now read from
+  `--published-root` (default: the published tree) at that tree's own seeds, each row carrying its
+  source tree and seed list into the header and the JSON; an arm in **neither** tree stops the
+  script. Because the `+0.14` §S3 quotes is then a difference between an arm in one tree and an arm
+  in the other, the two locks are compared key by key and a difference is fatal unless
+  `--allow-lock-mismatch` stamps it on the header.
+  `scripts/analysis/make_si_arms_table.py` writes `paper/si_tables/si_arms_rows.tex` (the column
+  header, `\midrule` and every row, `\input` by `sections/SI.tex` between `\toprule` and
+  `\bottomrule`) and `paper/si_tables/si_arms_table.json` (unrounded means, per-seed MAE and R²,
+  the two single-seed controls, and the derived quantities §S3's prose reads off the table:
+  `-0.1977`, `+0.4059`, `0.1435`, the NRTL `1.7953`/`1.794975` pair, the per-seed gains, the
+  seed-42 control block with the between-seed range and both shares). It imports
+  `run_e5_comparison.py` and calls its `intersection_keys`/`_metrics_on_keys`, so the lock is that
+  file's code and not a second copy of it; seeds are discovered from `seed_*`, so five need no
+  flag; the `±` is a population sd, as the caption says. Verified against the published tree: it
+  reproduces all six rows and both controls **character for character on the numerals**.
+  `--check` writes nothing and exits non-zero on any drift; `tests/test_si_arms_table.py` runs that
+  check against the tree the generated file's own `% ROOT:` header names, so the gate follows the
+  re-run without being edited, and additionally gates the four-decimal list, the NRTL rounding note
+  and the two-senses sentence in §S3's prose, which are still hand-transcribed.
+  *This was the second row that would have been missed, and it is the source of record for six of the
+  derived numbers in §2.* What is still hand-work here: the caption (seed count, `n`), and every
+  prose figure above that the JSON supplies but does not typeset.
+  **Corrected 2026-08-10 (second).** §S3's sensitivity on the `0.59` share — *"a spread the size of the
+  learned arm's `0.118` would move the share by about `±0.27`"* — was recorded as not being a function
+  of the artifacts and so not dischargeable by any generator. It is
+  `learned_sigma_between_seed_range / evaluation_only_gap` = `0.11769350 / 0.42825139` = `0.2748 →
+  0.27`, and **both operands were already in this generator's own JSON** under
+  `derived.single_seed_controls`. It is deposited now as
+  `share_shift_per_learned_arm_sized_spread` and gated in `tests/test_si_arms_table.py` beside the
+  `0.177`/`0.428`/`0.59` sentence, so it moves with the five seeds instead of standing stale.
 - **Branch:** `1|2|3`.
 
 ### Row 13 — Table S19, and §S6.1's ranking and recalibration readings
@@ -202,10 +241,75 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 ### Row 14 — §S6.4 with Tables S21 and S22
 - **Inventory name / label:** *"\S\ref{sec:map} with Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map}, which resolve that same $+0.14$ along chemical axes and restate the two arm means it is taken from"*.
 - **Prints:** `paper/sections/chemistry-map.tex` (65 lines) — heading+label **L1**, body **L3–14**, Table S21 **L16–37** (caption L18–20, label L21), Table S22 **L41–63** (caption L43–47, label L48), closing paragraph **L65**; printed **p. S-57** (§ and Table S21), **p. S-58** (Table S22).
-- **Prints now:** prose `1.70\pm0.03` control, `1.85\pm0.05` grounded, `\Delta MAE = +0.14`, per-seed span `+0.05` to `+0.25`, rounded pair differing by `0.15`, amide `-0.22\pm0.11`. Table S21: Water `+0.52\pm0.35`, Carboxylic acid `+0.39\pm0.16`, Sulfoxide `+0.26\pm0.24`, Nitrile `+0.21\pm0.19`, Alcohol `+0.15\pm0.14`, Aromatic `+0.03\pm0.63`, Hydrocarbon `+0.02\pm0.50`, Halogenated `-0.29\pm0.36`, Amide `-0.22\pm0.11`. Table S22: Oxygenated `+0.32`, Polyaromatic `+0.27`, Heterocycle `+0.17`, Halogenated-aromatic `\approx0`, Charged/salt `-0.04\pm0.19`, Tanimoto ≤0.3 `-0.04\pm0.18`, Tanimoto >0.8 `+0.51\pm0.09`.
+- **Prints now:** prose `1.70\pm0.03` control, `1.85\pm0.05` grounded, `\Delta MAE = +0.14`, per-seed span `+0.05` to `+0.25`, rounded pair differing by `0.15`, amide `-0.22\pm0.11`. Table S21: Water `+0.52\pm0.35`, Carboxylic acid `+0.39\pm0.16`, Sulfoxide `+0.26\pm0.24`, Nitrile `+0.20\pm0.19` (**was `+0.21`; repaired 2026-08-10, see Command**), Alcohol `+0.15\pm0.14`, Aromatic `+0.03\pm0.63`, Hydrocarbon `+0.02\pm0.50`, Halogenated `-0.29\pm0.36`, Amide `-0.22\pm0.11`. Table S22: Oxygenated `+0.32`, Polyaromatic `+0.27`, Heterocycle `+0.17`, Halogenated-aromatic `\approx0`, Charged/salt `-0.04\pm0.19`, Tanimoto ≤0.3 `-0.04\pm0.18`, Tanimoto >0.8 `+0.51\pm0.09`.
 - **Disposition:** **R** on the physics side only; the control side stays published, and both captions must say so (row 34).
-- **Artifact:** **none found.** Grepped the whole tree: every one of these seventeen values occurs **only** in `paper/sections/chemistry-map.tex`. There is no CSV, no JSON and no `results/` file behind them.
-- **Command:** **none exists.** No script in `scripts/` bins the e5 per-row predictions by solvent class, solute class or Tanimoto stratum and differences the arms. `make_map_table_tex.py` and `make_stratified_map_figure.py` are the *b_insuff* activity-axis map (`results/b_insuff/stratified_map_table.csv`) and are a different object on a different axis. **This is the row nobody can regenerate.** See §5.
+- **Artifact:** ~~**none found.**~~ **Updated 2026-08-10:** `results/e5_sigma_grounding/chemistry_map.json`, written by the generator below. Every cell carries its per-seed values, both spread conventions, its row count and the conservation check.
+- **Command:** ~~**none exists.**~~ **Updated 2026-08-10: one does now.**
+  ```bash
+  KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src python scripts/analysis/run_e5_chemistry_map.py \
+      --check --out-json results/e5_sigma_grounding/chemistry_map.json
+  # leak-free discharge (disposition R on the physics side only — the control stays published):
+  KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src python scripts/analysis/run_e5_chemistry_map.py \
+      --root results/e5_sigma_grounding_leakfree \
+      --control-root results/e5_sigma_grounding --control-seeds 42 43 44 --check
+  ```
+  **Corrected 2026-08-10.** The leak-free invocation as first written here carried `--seeds 42 43 44
+  45 46 --control-seeds 42 43 44 42 43`, and both halves of that were wrong. `--seeds` is now
+  discovered from the tree (the old hard-coded default `[42,43,44]` meant that pointing the script
+  at the five-seed tree *without* the flag silently used three and said nothing about the other
+  two). And padding the three control seeds out to five by repeating 42 and 43 counted those two
+  runs twice, which moved the DirectGNN control cell from the published `1.70 ± 0.03` to
+  `1.71 ± 0.04` — a cell whose disposition is that it does **not** move, since DirectGNN is not
+  retrained. A repeated seed is now refused. Unequal seed lists are **pooled**: the control's
+  stratum MAE is averaged over its own three seeds and each physics seed is differenced against
+  that one number, so every cell's `±` is the physics side's spread alone (which is what row 34
+  requires both captions to say) and the control's own mean and sd stay the published ones.
+  `control_pairing` in the JSON records which rule ran.
+  Definitions the generator pins, none of which was recorded anywhere before: solvent class =
+  `tgnn_solv.data.solvent_types.solvent_type_from_smiles` (the nine printed classes are exactly
+  `SOLVENT_TYPE_NAMES` minus `other`); solute class = `_coarse_solute_class`, imported live out of
+  `scripts/evaluation/run_prediction_error_slices.py` so it cannot drift; novelty stratum = maximum
+  Morgan(r=2, 2048-bit) Tanimoto of the test solute against the unique train solutes of
+  `notebooks/data/processed/train.csv`. **The two spread conventions in this section differ and both
+  are needed:** the section's two arm means print a *population* sd, every table cell a *sample* sd.
+  `tests/test_e5_chemistry_map.py` is the gate.
+  **Fifteen of the seventeen values reproduced to the printed decimal on the first pass. Both
+  exceptions were settled the same day, one by repairing the table and one by withdrawing a wrong
+  write-off; all seventeen now reproduce, and `--check` reports `19 of 19`.**
+  - **Nitrile printed `+0.21`; the tree gives `+0.2048`, i.e. `+0.20`. REPAIRED in the `.tex`
+    2026-08-10.** The sd (`0.19`) was right and the stratum is acetonitrile alone (n=252), so this
+    was a last-digit slip and not a definitional question: the value misses the `0.205` rounding
+    boundary by `2\times10^{-4}`. (Averaging the per-seed values after rounding each to 2 dp does
+    give `+0.21`, but that rule then breaks Water `+0.51` vs `+0.52` and Amide `-0.21` vs `-0.22`,
+    so it was not the table's rule. `tests/test_e5_chemistry_map.py` asserts that, rather than the
+    prose asserting it.) `+0.21` is now a **retired numeral** for the C6 re-grep.
+  - **Charged / salt `-0.04\pm0.19` IS recoverable: `multifrag_neutral`, and the 2026-08-10
+    write-off of this cell is WITHDRAWN.** The write-off ran: the one mask that hits both digits —
+    multi-fragment **with no formal charge**, `-0.0355\pm0.1877`, 416 rows — "excludes every charged
+    solute in the test set, so it cannot be what the row's name denotes", and the cell is therefore
+    unregenerable *in principle*. That does not survive enumerating the solutes. **In this corpus a
+    formal charge is mostly a nitro group.** Of the 31 formally-charged solutes on the locked rows
+    (735 rows), **18 (355 rows) have every fragment net-neutral** — nitroaromatics and nitramines,
+    `[N+](=O)[O-]` as RDKit writes it, not ions. The **13 that carry a net-charged fragment (380
+    rows) are exactly `explicit_salt`**, i.e. salts written *with* their charges. So the mask does
+    not exclude the charged solutes; it excludes the nitro compounds and one spelling of a salt, and
+    what it selects is the other spelling: nine acid-addition salts (drug hydrochlorides, two
+    tosylate forms, a phosphate, a malate) and four hydrates. That is a stated, reproducible
+    definition and it is now the generator's default (`--salt-def multifrag_neutral`,
+    `DEFAULT_SALT_DEF`), checked like its neighbours, with the nitro-versus-ion count deposited as
+    `salt_audit/formal_charge_is_not_ionicity`. **What is true and stays on the record:** the
+    printed row is the un-ionised salts only, *not* the union of both spellings — the 380
+    explicitly-ionised rows are outside it, and the union (`salt_candidate/multifrag`,
+    `+0.07\pm0.34`) is deposited beside it so the exclusion cannot be lost. The five-seed
+    substitution has a defined quantity to write into this cell.
+  Two further facts the section does not state and the generator now reports: Table S21's nine classes
+  cover **4368 of the 5608 locked rows** — the tenth class, `other`, holds **1240 rows (22.1%)** at
+  `+0.136\pm0.048` and is printed nowhere, and it is the ester/ketone/ether block (ethyl acetate 393,
+  acetone 375, dioxane 103, THF 74, …), i.e. aprotic dipolar acceptors like the amide class the section
+  reads its sign reversal off, sitting at `+0.14` rather than negative; Table S22's four classes cover
+  **5107**, leaving **501** (`sulfur_or_phosphorus` 277 at `-0.12`, `other` 224 at `+0.41`). Both
+  taxonomies do partition the locked rows, and the row-weighted recombination returns the global
+  `+0.1435` to `10^{-16}`.
 - **Branch:** `1|2|3`.
 
 ### Row 15 — the row-class split of the substitution, §S1
@@ -464,6 +568,10 @@ The two alternatives hold the numerator's arm at `1.981` and change the baseline
 seed 43 `1 − (1.981−1.921)/(2.281−1.921) = 1 − 0.060/0.360 = 0.833 → 0.83`;
 seed 44 `1 − (1.981−1.813)/(2.242−1.813) = 1 − 0.168/0.429 = 0.608 → 0.61`.
 The SI also prints the ratio that is *"a share of nothing"*: `(0.406 − 0.177)/0.406 = 0.56`.
+And the sensitivity beside it: the numerator was measured once, so a spread the size of the learned
+arm's own between-seed range would move the share by `range/(O₄₂−G₄₂)` = `0.11769/0.42825` = `0.2748
+→ ±0.27`. Both operands are Table S3's, so this substitutes with everything else; it is deposited as
+`derived.single_seed_controls.share_shift_per_learned_arm_sized_spread`.
 
 **5. The Staverman–Guggenheim contrast.** `G → Gb = 1.8457 → 1.8788`, i.e. `+0.0331`. Only the left
 side is a re-run arm; hence disposition **K**.
@@ -538,7 +646,7 @@ P0 fetch: seed_*/ per-row CSVs, checkpoints/e5_leakfree/, sigma_train.csv
                           ├─► J. row-class split over the per-row CSVs .................. row 15
                           │        └─► row 4's ≈7 solutes; row 22's three maxima
                           │
-                          └─► K. chemistry map (NO COMMAND — see §5) ................... row 14
+                          └─► K. chemistry map (run_e5_chemistry_map.py; 17/17 — see §5) row 14
                                    └─► needs row 6's +0.14 to be settled first, since
                                        §S6.4 restates the two arm means it is taken from
 
@@ -665,14 +773,25 @@ in §3.7 and in Table S3's rounding sentence (rows 6, 14, 11, 12).
 
 This is the real output of the sheet. Ordered worst first.
 
-**(1) §S6.4 and Tables S21/S22 — the chemistry maps (row 14). NO ARTIFACT AND NO COMMAND.**
-All seventeen printed values (`+0.52±0.35` water … `+0.51±0.09` Tanimoto>0.8) occur **only** in
-`paper/sections/chemistry-map.tex`. A grep of the whole repository — `results/`, `scripts/`,
-`notebooks/`, every `.py`/`.json`/`.csv`/`.md` — returns that file and nothing else. No script bins the
-e5 per-row predictions by solvent class, solute class or nearest-train Tanimoto and differences the two
-arms. `make_map_table_tex.py` / `make_stratified_map_figure.py` are the *b_insuff* activity-axis map, a
-different object on a different axis and a different set. **An enrolled display with two tables and
-nineteen numbers cannot be regenerated by anyone, and discharging it means writing the analysis first.**
+**(1) §S6.4 and Tables S21/S22 — the chemistry maps (row 14). ~~NO ARTIFACT AND NO COMMAND.~~
+~~DISCHARGED 2026-08-10 EXCEPT ONE CELL.~~ FULLY DISCHARGED 2026-08-10.** All seventeen printed values
+used to occur **only** in `paper/sections/chemistry-map.tex`; a grep of the whole repository returned
+that file and nothing else. `scripts/analysis/run_e5_chemistry_map.py` now bins the e5 per-row
+predictions by solvent class, solute class and nearest-train Tanimoto and differences the arms, writes
+`results/e5_sigma_grounding/chemistry_map.json`, and is gated by `tests/test_e5_chemistry_map.py`.
+(`make_map_table_tex.py` / `make_stratified_map_figure.py` remain the *b_insuff* activity-axis map, a
+different object on a different axis and a different set.) Fifteen of the seventeen reproduced on the
+first pass; **both exceptions were settled the same day and `--check` now reports `19 of 19`.** Nitrile
+printed `+0.21` where the data give `+0.20` — a last-digit slip, and **the table was repaired**. And
+**Charged / salt `-0.04±0.19` was written off as having no recoverable definition; that write-off is
+WITHDRAWN.** The mask that reproduces it (`multifrag_neutral`) was rejected for excluding every
+formally charged solute, but in this corpus a formal charge is mostly a nitro group: of 31
+formally-charged solutes, 18 have every fragment net-neutral, and the 13 real ions are exactly the
+salts written *with* their charges. The mask selects the same chemistry written *without* them —
+hydrochlorides, tosylates, a phosphate, a malate, hydrates — which is what the row names. It is the
+generator's default now, and the cell has a defined quantity for the five-seed substitution. **A
+negative gets the same audit as a positive: this one was banked for less than a day and was already
+wrong, and the thing that broke it was enumerating the thirteen molecules it was a claim about.**
 
 **(2) Table S3 (row 12) — NO GENERATOR.** The per-arm table and its four-decimal mean list are the source
 of record for six of the eleven derived numbers in §2, and nothing writes them.
