@@ -38,7 +38,7 @@ total cavity area as prefactor, and returns a number without error. The prescrib
 single 2002 profile from the typed set is instead their \emph{sum},
 $p=p_{\mathrm{nhb}}+p_{\mathrm{OH}}+p_{\mathrm{OT}}$ (Eq.~9 of Ref.~\cite{bell2020cosmosac}); the
 nonpolar-only read is neither that sum nor a documented mode. This single-channel arm scores
-$\mathrm{MSE}\ 1.263$ on the VT-2005-matched set, whereas the \emph{fair 2002} arm under the full convention (the same molecule supplied
+$\mathrm{MSE}\ 1.263$ on the VT-2005-matched set, whereas the \emph{2002, all channels} arm under the full convention (the same molecule supplied
 either to our differentiable layer or to \texttt{cCOSMO} with the full profile placed in the single
 nonpolar channel it actually reads) scores $1.757/1.758$. This is an issue for the library maintainers
 (a silently-wrong return where an error would be safer), not a defect of any published benchmark.
@@ -61,10 +61,9 @@ three-profile representation, the temperature-dependent electrostatic misfit
 $c_{\mathrm{ES}}(T)=A_{\mathrm{ES}}+B_{\mathrm{ES}}/T^2$, the typed hydrogen-bonding kernel, and an
 optional dispersion term in the tabulated parameter $\epsilon/k_{\mathrm{B}}$. With dispersion
 \emph{off} it reproduces the NIST COSMO-SAC-2010 reference to RMSE
-$1.4\times10^{-4}\,\ln\gamma$. That figure is quoted from the validation run's console output:
-unlike its 2002 counterpart, whose comparison is deposited,
-the 2010 validator wrote no artifact, so this one
-figure cannot be checked against the deposited record. The dispersion term is not validated to that standard, for two
+$1.4\times10^{-4}\,\ln\gamma$. That figure is not deposited: unlike its 2002 counterpart, whose
+comparison is on the deposited record, the 2010 validator wrote no artifact, so this one
+figure cannot be checked against that record. The dispersion term is not validated to that standard, for two
 reasons we state rather than absorb. It carries the tabulated coefficient at a single sign, the
 class-dependent sign reversal of Ref.~\cite{hsieh2014dsp} being unimplemented and unexercised on the
 matched set, which holds no water or carboxylic-acid pair; and no $\epsilon$ is tabulated for the
@@ -407,7 +406,7 @@ Cram\'er--Rao bound.
 \noindent Lemma~\ref{prop:decomp}, the identity this instrument rests on, is stated and proved in
 the article at \S\ref{sec:decomp}: the cross term vanishes because $g(\zstar)$ is
 $\sigma(\zstar)$-measurable when $\zstar$ is the closure's whole argument, the Jensen bound needs no
-smoothness, the law-of-total-variance bound needs only that a binning of $g(\zstar)$ coarsens
+smoothness, the binning bound needs only that a binning of $g(\zstar)$ coarsens
 $\sigma(\zstar)$, and $\Binsuf$ is a functional of the law of $(m,\zstar)$ alone and therefore the
 same quantity under both combinatorial conventions---which is why Table~\ref{tab:decomp} carries two
 valid upper bounds per set. Two consequences of that one-sidedness reconcile the bounding apparatus
@@ -536,7 +535,7 @@ risk at finite $n$.
 %   918   the row set and rule fixed before any margin was computed ........ sec:si-oos
 %  1000   the broad set's 185 leave-one-pair-out margins ................... sec:si-map-cells
 %         (its other half, the 11 of 60 VT-2005 deletions, is sec:si-robustness)
-%  1003   the Bessel-corrected within-bin variance ......................... sec:si-robustness
+%  1003   the unbiased within-bin variance ......................... sec:si-robustness
 %  1069   the held-out fold spread that goes unpropagated .................. sec:si-correctable
 %  1502   the two audit artifacts disagreeing on one out-of-fold estimate .. sec:si-robustness
 % Line numbers are as of 2026-08-10 and will drift; the anchor is the sentence, not the line.
@@ -665,7 +664,7 @@ claimed, the data set it was measured on and that set's size, and the value with
 its scope. It is an index and not the place those scopes live. Every qualification printed in a value
 cell below---an $n$, a per-seed triple, ``one seed'', ``one checkpoint'', an interval that spans
 zero, a named exception, the one-sidedness of a margin---is also carried by the article sentence that
-makes the claim, which is where a reader meets it; nothing in the article depends on this table being
+makes the claim; nothing in the article depends on this table being
 open beside it. What the table adds is that the nineteen can be read against one another. Two of the
 three columns do that at a glance, and the second is where a shared data set shows: the same $5608$
 labelled test rows carry the first of the six blocks and the last. The confounds and the estimator
@@ -718,7 +717,7 @@ at the foot of the third part.}
 Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \midrule
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure}); margins in squared \lngi\ units, not the \lnx\ MAE of the first block}\\
-$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.26,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist; the pre-declared cross-fitted $\Binsuf^{\mathrm{up}}$, which came back looser and does not headline, puts the same cell at $+1.76$ $[+1.02,+2.49]$ (\S\ref{sec:si-crossfit}) \\
+$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.26,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist; the pre-declared cross-fitted $\Binsuf^{\mathrm{up}}$, which came back looser and is not the estimator of record, puts the same cell at $+1.76$ $[+1.02,+2.49]$ (\S\ref{sec:si-crossfit}) \\
 \addlinespace[3pt]
 \ldots\ on every other stratum of the map & broad IDAC, $59$ strata & \S\ref{sec:si-map}, Tables~\ref{tab:map-full}--\ref{tab:map-detail}, each with its margin, interval and the test it fails; none is stated as a finding\tnk{h} \\
 \addlinespace[3pt]
@@ -967,24 +966,25 @@ squared \lngi\ units, and not on the \lnx\ axis the per-arm MAEs above are measu
 Three analyst choices set the separation margin on the VT-2005-matched set, and
 Table~\ref{tab:grid} reports every combination of them rather than one setting of each. The margin is
 positive in $66$ of the $72$ cells. The six exceptions are the coarsest conditionings---three bins
-under either combinatorial convention and four bins residual-only---where the law-of-total-variance
+under either combinatorial convention and four bins residual-only---where the binning-bound
 bound is valid but weakest. The grid is not a set of interchangeable settings, because two opposing
 biases run across it. Coarser bins condition on less, so the bound is weaker; finer bins condition on
 more but leave few points per bin, and the within-bin variance is then downward-biased in finite
-samples, which inflates the margin favourably. Neither end is unbiased. We headline the eight-bin cell under
-the \emph{unbiased} within-bin variance on an occupancy rule fixed in advance of the grid---the
+samples, which inflates the margin favourably. Neither end is unbiased. Every margin is read at the
+eight-bin cell under
+the \emph{unbiased} within-bin variance, on an occupancy rule fixed in advance of the grid---the
 coarsest binning that still leaves fewer than eight rows per bin, here $7.5$ at $n{=}60$---and we
 carry the same \emph{bin count} to the broad IDAC set, so the two are conditioned at the same
 granularity. On $477$ rows that is not the same occupancy rule (which would call for about $60$ bins)
 and is deliberately conservative. The broad set's margin grows with bin count over the grid as a
-whole, though not cell by cell: in the deployed convention under the unbiased variance it falls from
+whole, though not cell by cell: in the residual-only convention under the unbiased variance it falls from
 $+0.10$ at three bins to $+0.01$ at four, from $+0.57$ at seven to $+0.51$ at eight, and from $+0.83$
 at twenty to $+0.82$ at twenty-four. The endpoints are what the choice turns on: $+0.51$ at
 eight bins against $+0.96$ at forty-eight. Eight bins therefore gives a looser bound and a smaller
 margin there than the occupancy rule would. It is \emph{not} the least favourable cell of the
 middle range: seven bins residual-only under the
 unbiased variance gives $+0.01$ against the eight-bin $+0.05$, and twenty bins gives $+0.08$. Nothing
-turns on the choice---the whole middle range of the deployed convention lies between $+0.01$ and
+turns on the choice---the whole middle range of the residual-only convention lies between $+0.01$ and
 $+0.47$, all positive---but the reason for it is occupancy and not conservatism, and taking the least
 favourable middle cell instead gives $+0.01$ and the same verdict of an
 unresolved margin. The per-cell $P$ holds that cell's bin count fixed across
@@ -1002,7 +1002,7 @@ $j/8$, $j=1,\dots,7$, with a value falling exactly on an edge assigned to the up
 Neither $n$ divides by eight ($60/8=7.5$, $477/8=59.625$), and that alone is what makes standard
 implementations of the same phrase disagree; there are no exact ties in $g$ on either set under
 either convention, so each of them is a genuine coarsening of $\sigma(g)$ and the bound is valid
-under all of them. On the VT-2005-matched set at eight bins, the deployed convention and the unbiased variance,
+under all of them. On the VT-2005-matched set at eight bins, the residual-only convention and the unbiased variance,
 $\Binsuf^{\mathrm{up}}$ is $0.713$ under our rule, under the same edges with ties sent to the lower
 bin, and under the standard quantile-cut implementation alike; $0.624$ under an equal-length split of the
 $g$-sorted order (margin $+0.225$); $0.669$ under $\lfloor k\,\mathrm{rank}/n\rfloor$ ($+0.134$); and
@@ -1057,7 +1057,7 @@ cluster-bootstrap frequency that the margin is positive.}
 \noindent The same grid on the broad IDAC set is Table~\ref{tab:grid-rep}, now with its own
 per-cell bootstrap frequency rather than a bare range of point margins. None of its $56$ cells is
 negative. Within
-the \emph{deployed} residual-only convention the margin runs from $+0.01$ (four bins) and $+0.10$
+the \emph{residual-only} convention the margin runs from $+0.01$ (four bins) and $+0.10$
 (three bins) up to $+0.96$, with the eight-bin unbiased headline at $+0.51$; the frequencies at the
 two coarsest cells, $0.65$ and $0.42$, say that those conditionings do not resolve the ordering, and
 they are why the broad set's aggregate margin is not resolved at every conditioning. Under the
@@ -1099,7 +1099,7 @@ convention audit.}
 
 \paragraph{The same grid on the stratum the paper states.} The two grids above sweep the bin count
 for the sets taken \emph{whole}, and they are what establishes that the bin count is the analyst
-choice with the largest leverage here---the broad set's deployed margin runs from $+0.01$ to
+choice with the largest leverage here---the broad set's residual-only margin runs from $+0.01$ to
 $+0.96$ across Table~\ref{tab:grid-rep}. Every one of the $59$ strata of \S\ref{sec:si-map} is then
 computed at the single fixed eight-bin cell, so the one row set the rule leaves standing was
 reported at one cell of a grid that moves. Table~\ref{tab:grid-glycol} runs the grid of
@@ -1109,17 +1109,17 @@ fixed cell is \emph{coarser} than the rule that chose it and therefore condition
 weakens the bound and lowers the margin.
 
 The glycol-ether margin is positive in all $56$ cells of that grid at $P\geq0.99$ throughout, the
-deployed unbiased column running from $+1.06$ at three bins to $+2.19$ at forty-eight, with the
+residual-only unbiased column running from $+1.06$ at three bins to $+2.19$ at forty-eight, with the
 fixed cell's $+2.04$ sitting below the midpoint of that column and the occupancy rule's own
-$23$ bins giving $+2.17$ deployed and $+2.36$ full. The pair unit, $n{=}43$, supports ten of the fourteen bin counts and is
-positive in all $40$ of the cells it defines, $[+1.41,+2.83]$ deployed and $[+1.69,+3.10]$
+$23$ bins giving $+2.17$ residual-only and $+2.36$ full. The pair unit, $n{=}43$, supports ten of the fourteen bin counts and is
+positive in all $40$ of the cells it defines, $[+1.41,+2.83]$ residual-only and $[+1.69,+3.10]$
 full. Across the $36$ cells of the sweep where the leave-one-publication-out test can be run at
 all, the sign survives every deletion in all $36$, the worst leaving $+1.08$. Neither the sign nor
 the admissibility of that stratum is a property of the bin count. The other two admissible row sets
 behave differently and are reported here rather than left out: the acceptor-only aprotics are
 non-positive in every cell of the same grid, $[-0.55,-0.03]$ over the $44$ its $n{=}57$ defines,
 which licenses nothing by one-sidedness; and the alkane solutes are positive in all $56$ row-unit
-cells but lose the sign in two of the twenty pair-unit deployed cells and fail the deletion test at
+cells but lose the sign in two of the twenty pair-unit residual-only cells and fail the deletion test at
 eight of the forty cells where it runs, so that set is admissible at the fixed cell and not across
 the sweep---one more reason the finding is stated on the glycol ethers and not on it.
 
@@ -1162,7 +1162,9 @@ deposited stratum bin sweep.}
 \label{sec:si-decomp-arms}
 Table~\ref{tab:decomp} is the closure--insufficiency decomposition of \S\ref{sec:broad}--\S\ref{sec:vt2005}
 on both sets under both conventions, with the maximum-likelihood variance variant, the
-constant-offset (Jensen) row and the bootstrap bands. Table~\ref{tab:kernels} is the three
+constant-offset (Jensen) row and the bootstrap bands. Its headline columns are the residual-only
+ones on \emph{both} sets, one rule applied throughout; the full-convention columns beside them are
+the comparison and not a second headline. Table~\ref{tab:kernels} is the three
 COSMO-SAC arms of \S\ref{sec:fidelity} on both sets under both conventions, with the
 bootstrap frequencies, the $90\%$ margins and the block split of the $2002\to2010$ contrast into
 the $57$ pairs shared with the VT-2005-matched set, the complementary $420$ and the $80$ of those at
@@ -1175,10 +1177,13 @@ value and its uncertainty.
 % restore `!tp' if a later edit regrows it past the top-float height limit.
 \begin{table*}[!t]
 \centering
+% CAPTION CUT TO WHAT IS SHOWN, 2026-08-10 (editorial rule: a caption describes, it does not argue).
+% The bolded clause "the headline columns are the residual-only ones on BOTH sets, one rule applied
+% throughout; the full-convention columns are the comparison" is an argument about how to read the
+% table, and it now stands in the paragraph above, which is the body of this same subsection.
 \caption[The closure--insufficiency decomposition on both sets]{Closure--insufficiency decomposition on the reference-input activity path, as bounds rather
-than a point split. \textbf{The headline columns are the deployed residual-only ones on \emph{both}
-sets}, one rule applied throughout; the full-convention columns are the
-comparison.}
+than a point split. Each set is given under both combinatorial conventions, the residual-only
+column of each pair in bold.}
 \label{tab:decomp}
 % Width: the tabular must fit \textwidth (504.5 pt) inside table*. The stub is 0.34\linewidth
 % and the body \footnotesize; the qualifications that used to sit in the stub (the VT-2005-matched set's
@@ -1193,7 +1198,7 @@ comparison.}
 Quantity & \textbf{res}\tnk{b} & full\tnk{b} & \textbf{res}\tnk{b} & full\tnk{b} \\
 \midrule
 MSE$_{\text{total}}=\Bclos+\Binsuf$ (exact)      & $1.90$ & $1.91$ & $1.47$ & $1.80$ \\
-$\Binsuf$ upper bound (LOTV)\tnk{c} & $0.70$ & $0.48$ & $0.71$ & $0.61$ \\
+$\Binsuf$ upper bound\tnk{c} & $0.70$ & $0.48$ & $0.71$ & $0.61$ \\
 $\Bclos$ lower bound\tnk{d} & $1.21$ & $1.43$ & $0.76$ & $1.19$ \\
 $\Bclos$ lower, constant-offset (Jensen)\tnk{e} & $0.18$ & $0.71$ & $0.43$ & $0.72$ \\
 \quad separation margin\tnk{f} & $\mathbf{+0.51}$ & $+0.95$ & $\mathbf{+0.05}$ & $+0.58$ \\
@@ -1210,17 +1215,17 @@ Label noise $\sigma_\eta^2$ (IDAC) & \multicolumn{4}{l}{already inside every row
 \tnk{b}\,\emph{full}, with the Staverman--Guggenheim combinatorial term; \emph{res},
 residual-only.\quad
 \tnk{c}\,Law of total variance, at eight equal-count bins of $g(\zstar,T)$ under the unbiased
-(Bessel-corrected) within-bin variance. It fits no model to the data.\quad
+within-bin variance. It fits no model to the data.\quad
 \tnk{d}\,$\mathrm{MSE}-\Binsuf^{\mathrm{up}}$; this row decides the ordering.\quad
 \tnk{e}\,$(\Ex[m]-\Ex[g])^2$.\quad
 \tnk{f}\,$\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$, the quantity that orders the two terms.\quad
 \tnk{g}\,Pair\,/\,two-way\,/\,source clusters. The VT-2005-matched set supports the two-way clustering only, so it
 carries one entry per column.\quad
 \tnk{h}\,Same rows and bins, maximum-likelihood within-bin variance, as $\Binsuf$ upper\,/\,margin.\quad
-\tnk{i}\,Charged against the deployed MSE, as $\Binsuf$ upper\,/\,margin. Not headlined.\quad
+\tnk{i}\,Charged against the residual-only MSE, as $\Binsuf$ upper\,/\,margin. Not the reported pairing.\quad
 \tnk{j}\,The entries of Table~\ref{tab:bounds}: out-of-fold RF and ridge (random and blocked folds),
 $k$NN-in-$\zstar$, and the binning-free $\Ex[\Var(m\mid\text{pair})]$. Not a paper-wide inventory:
-the bin grids behind the LOTV selection are Tables~\ref{tab:grid} and~\ref{tab:grid-rep}, and the
+the bin grids behind the binning-bound selection are Tables~\ref{tab:grid} and~\ref{tab:grid-rep}, and the
 $\lngi$-stratified bounds, computed on VT-2005-matched subsets, are Table~\ref{tab:regime}.\quad
 \tnk{k}\,A \emph{component} of $\Binsuf$, not a term beside it (\S\ref{sec:decomp}).}}
 \end{table*}
@@ -1240,7 +1245,7 @@ reads the $2002\to2010$ reversal against profile database and temperature held f
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
 (a) Arm\tnk{a} & full\tnk{b} & res\tnk{b} & full\tnk{b} & res\tnk{b} \\
 \midrule
-fair 2002                    & $1.757$ & $1.436$ & $1.911$ & $1.902$ \\
+2002, all channels           & $1.757$ & $1.436$ & $1.911$ & $1.902$ \\
 2010, dispersion off         & $0.765$ & $0.831$ & $1.978$ & $2.893$ \\
 2010, dispersion on          & $0.785$\tnk{e} & ---\tnk{d}     & $1.855$ & ---     \\
 \addlinespace[2pt]
@@ -1257,8 +1262,8 @@ complementary ($420$)              & \multicolumn{2}{c}{$1.928\to2.143$} & ${\ap
 \bottomrule
 \end{tabular}
 \tabnotes{%
-\tnk{a}\,The three arms, named here and in the text: \emph{fair 2002}, COSMO-SAC-2002 in our
-NIST-validated layer reading all three profile channels; \emph{2010, dispersion off} and \emph{2010,
+\tnk{a}\,The three arms, named here and in the text: \emph{2002, all channels}, COSMO-SAC-2002 in our
+NIST-validated layer summing the segment contributions of all three profile channels; \emph{2010, dispersion off} and \emph{2010,
 dispersion on}, COSMO-SAC-2010 without and with the dispersion term (\S\ref{sec:fidelity}).\quad
 \tnk{b}\,\emph{full}\,/\,\emph{res} as in Table~\ref{tab:decomp}. \emph{Both} sets are scored on UD
 profiles here, the VT-2005-matched set included---Table~\ref{tab:decomp} scores the VT-2005-matched set on VT-2005 instead,
@@ -1282,8 +1287,10 @@ and no claim rests on that ordering (\S\ref{sec:fidelity}).}}
 Table~\ref{tab:bounds} lists
 every bound either set supports at the aggregate level, together with the
 corroborating estimators Table~\ref{tab:decomp} points here for instead of listing them row by
-row. The inclusion rule is note~\emph{a} of the table, and it is a rule for that table and not a
-claim of completeness over the paper: the LOTV half is a selection from two bin grids far too large
+row, and one estimator the VT-2005-matched set cannot support. The per-stratum bounds that replace
+the aggregate margin are the map of \S\ref{sec:si-map}.
+The inclusion rule is note~\emph{a} of the table, and it is a rule for that table and not a
+claim of completeness over the paper: the binning-bound half is a selection from two bin grids far too large
 to reproduce, and the $\lngi$-stratified bounds of Table~\ref{tab:regime} are computed on subsets of the
 VT-2005-matched set rather than on either whole set and are not in it. The deposited figure script
 regenerates it, printing the inventory as it goes, so the table can be
@@ -1306,11 +1313,12 @@ negative-margin cells Table~\ref{tab:grid} sets in bold, and both are listed her
 % _decomposition_panels() call that used to place the marks in the retired inventory figure.
 \begin{table*}[tp]
 \centering
-\caption[Upper bounds on the input-insufficiency term, both sets taken whole]{\textbf{Upper bounds on the input-insufficiency term $\Binsuf$}, on both sets taken
-whole---every bound the inclusion rule keeps, plus one estimator that set cannot
-support, with the value, what each fits and what
-qualifies it. What is included, and what is not: note~\emph{a}. The per-stratum bounds that
-replace the aggregate margin are Tables~\ref{tab:map-full}--\ref{tab:map-xtab}.}
+% CAPTION CUT TO WHAT IS SHOWN, 2026-08-10.  Two clauses left: "every bound the inclusion rule
+% keeps, plus one estimator that set cannot support" and the pointer at the map tables.  Both are
+% in the paragraph above, which is the body of this same run-in section.
+\caption[Upper bounds on the input-insufficiency term, both sets taken whole]{Upper bounds on the input-insufficiency term $\Binsuf$, on both sets taken whole. Columns: the
+value, what each estimator fits, and the note qualifying it. Which estimators are listed and which
+are not: note~\emph{a}.}
 \label{tab:bounds}
 % This table is near the height limit of the text block: at \arraystretch{1} its last rows run
 % past the block and into the folio. The 0.84 below buys back about five lines and leaves the
@@ -1324,11 +1332,11 @@ replace the aggregate margin are Tables~\ref{tab:map-full}--\ref{tab:map-xtab}.}
 Estimator\tnk{a} & $\Binsuf^{\mathrm{up}}$ & fits\tnk{b} & note\tnk{c} \\
 \midrule
 \multicolumn{4}{@{}l@{}}{\emph{Broad IDAC set} ($n{=}477$, UD profiles). $\mathrm{MSE}=1.902$; threshold $\mathrm{MSE}/2=0.951$; headline margin $+0.51$.}\\
-LOTV, $8$ bins, unbiased variance \textbf{[headline]}       & $0.697$ & no model ($\circ$) & \\
-LOTV, $8$ bins, maximum-likelihood variance                 & $0.685$ & no model ($\circ$) & \\
-LOTV, $3$ bins (coarsest)                                   & $0.901$ & no model ($\circ$) & \\
-LOTV, $4$ bins (least favourable)                           & $0.948$ & no model ($\circ$) & tightest margin on this set \\
-LOTV, $8$ bins, full convention (also valid)\tnk{d}         & $0.482$ & no model ($\circ$) & \\
+Binning bound, $8$ bins, unbiased variance \textbf{[headline]}& $0.697$ & no model ($\circ$) & \\
+Binning bound, $8$ bins, maximum-likelihood variance& $0.685$ & no model ($\circ$) & \\
+Binning bound, $3$ bins (coarsest)& $0.901$ & no model ($\circ$) & \\
+Binning bound, $4$ bins (least favourable)& $0.948$ & no model ($\circ$) & tightest margin on this set \\
+Binning bound, $8$ bins, full convention (also valid)\tnk{d}& $0.482$ & no model ($\circ$) & \\
 RF out-of-fold, folds blocked on the molecule pair          & $0.882$ & out-of-fold ($\diamond$) & \\
 ridge out-of-fold, folds blocked on the molecule pair       & $1.467$ & out-of-fold ($\diamond$) & above thr. \\
 RF out-of-fold, folds blocked on the pair, conditioning on $(\zstar,T)$ & $0.823$ & out-of-fold ($\diamond$) & \\
@@ -1338,11 +1346,11 @@ ridge out-of-fold, random folds                             & $0.801$ & out-of-f
 $\Ex[\Var(m\mid\text{pair})]$, binning-free, on the $359$ rows that support it & $0.046$ & no model ($\circ$) & single-source \\
 \midrule
 \multicolumn{4}{@{}l@{}}{\emph{VT-2005-matched} ($n{=}60$, VT-2005 profiles). $\mathrm{MSE}=1.472$; threshold $\mathrm{MSE}/2=0.736$; headline margin $+0.05$.}\\
-LOTV, $8$ bins, unbiased variance \textbf{[headline]}       & $0.713$ & no model ($\circ$) & \\
-LOTV, $8$ bins, maximum-likelihood variance                 & $0.618$ & no model ($\circ$) & \\
-LOTV, $3$ bins (coarsest, least favourable)                 & $1.000$ & no model ($\circ$) & above thr. \\
-LOTV, $4$ bins                                              & $0.866$ & no model ($\circ$) & above thr. \\
-LOTV, $8$ bins, full convention (also valid)\tnk{d}         & $0.608$ & no model ($\circ$) & \\
+Binning bound, $8$ bins, unbiased variance \textbf{[headline]}& $0.713$ & no model ($\circ$) & \\
+Binning bound, $8$ bins, maximum-likelihood variance& $0.618$ & no model ($\circ$) & \\
+Binning bound, $3$ bins (coarsest, least favourable)& $1.000$ & no model ($\circ$) & above thr. \\
+Binning bound, $4$ bins& $0.866$ & no model ($\circ$) & above thr. \\
+Binning bound, $8$ bins, full convention (also valid)\tnk{d}& $0.608$ & no model ($\circ$) & \\
 $k$NN-in-$\zstar$ (convention-independent; least conservative) & $0.400$ & out-of-fold ($\diamond$) & deflated \\
 $k$NN, neighbour from a distinct solute                     & $0.448$ & out-of-fold ($\diamond$) & \\
 $k$NN, neighbour from a distinct solvent                    & $1.458$ & out-of-fold ($\diamond$) & above thr. \\
@@ -1356,9 +1364,9 @@ $\Ex[\Var(m\mid\text{pair})]$\tnk{e}                         & --- & --- & no re
 \bottomrule
 \end{tabular}
 \tabnotes{%
-\tnk{a}\,One inclusion rule governs both sets, in two halves that differ in kind. The LOTV half is a
+\tnk{a}\,One inclusion rule governs both sets, in two halves that differ in kind. The binning-bound half is a
 \emph{selection} from bin grids too large to draw ($56$ cells on the broad set, $72$ on the VT-2005-matched set;
-Tables~\ref{tab:grid-rep} and~\ref{tab:grid}): \emph{within the deployed convention and under the
+Tables~\ref{tab:grid-rep} and~\ref{tab:grid}): \emph{within the residual-only convention and under the
 unbiased within-bin variance}, the headline cell, the \emph{coarsest}, the \emph{least favourable}
 and every such cell above the threshold, with the headline cell's maximum-likelihood variant and its
 full-convention counterpart listed beside it. Cells above the threshold under the other variance or
@@ -1367,8 +1375,8 @@ negative-margin ones in bold. The estimator half is every out-of-fold estimator 
 every fold design it records, vacuous designs included---the per-set guards on that are stated with
 the regeneration command above.\quad
 \tnk{b}\,What the estimator fits to the data. \emph{no model}
-($\circ$) for the law-of-total-variance (LOTV) cells and for $\Ex[\Var(m\mid\text{pair})]$,
-\emph{out-of-fold} ($\diamond$) for a fitted estimator. The LOTV bound, fitting nothing, is
+($\circ$) for the binning-bound cells and for $\Ex[\Var(m\mid\text{pair})]$,
+\emph{out-of-fold} ($\diamond$) for a fitted estimator. The binning bound, fitting nothing, is
 unaffected by any fold design.\quad
 \tnk{c}\,\emph{above thr.}, the bound exceeds that set's separation threshold $\mathrm{MSE}/2$, so
 that cell does not separate; \emph{vacuous}, it exceeds the total $\mathrm{MSE}$, which two of the
@@ -1378,7 +1386,7 @@ held-out row's own molecule pair in the training fold at a neighbouring temperat
 $51$ of the $102$ $\zstar$ coordinates; \emph{single-source}, every multi-row pair supporting the
 bound comes from one publication, so it is valid on those rows but samples no between-laboratory
 component and is not promoted.\quad
-\tnk{d}\,Computed under the other combinatorial rule and reported against the deployed-convention
+\tnk{d}\,Computed under the other combinatorial rule and reported against the residual-only-convention
 threshold beside it. It is valid there, and it is the only entry on either set that is not
 residual-only.\quad
 \tnk{e}\,The estimator that set cannot support.}}
@@ -1429,7 +1437,7 @@ $70$), halogenated non-H-bonding (7, $30$), hydrocarbon non-H-bonding (8--9, $16
 $25$ against amine N--H $8$; ester $30$, azine $23$, ketone or aldehyde $2$, nitrile $2$; halogenated
 aliphatic $18$ against halogenated aromatic $12$. All three levels are in the deposited table, and
 two of their cells are worth naming. The coarse \emph{acceptor-only} class, which merges the aryl
-ethers into the aprotic acceptors, carries a \emph{positive} margin ($+1.43$ deployed at
+ethers into the aprotic acceptors, carries a \emph{positive} margin ($+1.43$ residual-only at
 $P\approx0.7$) where its dominant child is negative---the composition effect of
 \S\ref{sec:broad} reappearing one level up, on $13$ rows. At the fine level the azine
 sub-family changes sign between conventions at $n{=}23$. Neither overturns a headline-level verdict,
@@ -1458,7 +1466,7 @@ maximum-likelihood within-bin variance $\Binsuf^{\mathrm{up}}\le\Var(m)$ identic
 deposited maximum-likelihood column satisfies in every stratum ($0.12$ against $0.80$ on the
 aprotic acceptors, $0.10$ against $3.07$ on the glycol ethers, $0.20$ against $1.42$ on water, $0.22$
 against $5.61$ on the N--H protics, $0.44$ against $3.66$ on the halogenated, $0.58$ against $0.60$
-on the mono-alcohols). The Bessel-corrected estimate the manuscript headlines can exceed $\Var(m)$
+on the mono-alcohols). The unbiased-variance estimate the manuscript reports can exceed $\Var(m)$
 once bins hold only a few rows, and does so exactly once: the mono-alcohols, $0.733$ against $0.604$
 at $n{=}35$ and four rows a bin, where the artifact raises its own exceedance flag. That
 flag fires only on a stratum already declared not boundable, which is the boundability criterion
@@ -1500,7 +1508,7 @@ unit\,$\times$\,convention cells, positivity in all four, and clause~(c) of \S\r
 the reduction to distinct row sets together with its asymmetric residual test.
 Preserved: the number of strata, the number of molecules per stratum, the
 containment lattice, and every row's $m$, $g$, source and pair. Destroyed: the association between
-chemistry and error. Every frequency here is that null on all $477$ rows under the coarsening, the
+chemistry and error. Every frequency here is that null on all $477$ rows under the binning bound, the
 row set and the estimator the map itself deploys; \S\ref{sec:si-crossfit} re-runs it on $473$ and
 its figures differ for that reason alone. Over $2000$ draws the chemical map's six admissible
 strata are above chance
@@ -1565,8 +1573,8 @@ which $182$ are already in the broad set, its remaining glycol-ether-classified 
 hydroxy-functionalised ionic liquids with no reference profile and no scoreable closure; and the
 VT-2005-matched set is inside the search. Before any margin was computed on the PGL rows we fixed
 the row set (the same solvent-classifier cascade, unmodified, minus any pair shared with the
-broad set), the estimator cell (the headline one: row unit, deployed convention, eight equal-count
-bins, Bessel within-bin variance), the admissibility rule (the manuscript's, with the source axis
+broad set), the estimator cell (the headline one: row unit, residual-only convention, eight equal-count
+bins, unbiased within-bin variance), the admissibility rule (the manuscript's, with the source axis
 declared to be the record file refined by the compilation label, which is the finest provenance
 these files carry and is coarser than the broad set's DOI), and the three verdicts available---
 confirmed, not confirmed, and not testable, the last counting as not confirmed for what the title
@@ -1612,7 +1620,7 @@ carries the pre-declaration in full.
 \centering
 \caption[The out-of-sample set, class by class]{\textbf{The out-of-sample set, class by class}: every solvent class of the PGL
 6th-edition set at the map's own headline cell---eight equal-count bins of $g(\zstar)$, unbiased
-within-bin variance, row unit, deployed residual-only convention. Rows in descending margin; the
+within-bin variance, row unit, residual-only convention. Rows in descending margin; the
 ten classes carry all $7889$ records. The last column gives, for each class, either what it shows
 or the clause of the admissibility rule it fails.}
 \label{tab:oos-map}
@@ -1638,11 +1646,11 @@ fewer than $16$ rows leaves the fixed cell undefined, and a sign that cannot be 
 untested rather than as a pass.}}
 \end{table*}
 
-\emph{The leave-one-out curves.} At the headline cell under the deployed convention, baseline
+\emph{The leave-one-out curves.} At the headline cell under the residual-only convention, baseline
 $+0.509$: leaving out \texttt{10.1021/acs.jced.7b00114} gives $+0.184$ and leaving out
 \texttt{10.1021/je020196d} ($105$ rows) $+0.419$, while the remaining thirteen deletions run from
 $+0.503$ to $+0.875$. Under the full convention the same curve is flat, $[+0.821,+1.073]$ against a
-baseline of $+0.947$, so the single-publication dependence is specific to the deployed
+baseline of $+0.947$, so the single-publication dependence is specific to the residual-only
 convention. All $185$ leave-one-pair-out margins lie in $[+0.422,+0.721]$ with median $+0.507$ and
 none non-positive, the seven most damaging deletions being \emph{five} of the six water-as-solute
 pairs interleaved with two glycol-ether ones; the sixth water pair ranks $178$th of $185$, so those
@@ -1669,8 +1677,8 @@ leave-one-source-out, and the VT-2005-matched set's own curves, are in the artif
 solute role, on the broad IDAC set
 ($477$ rows, $185$ pairs, $78$ solutes, $36$ solvents, $15$ source publications). Bars, points and
 shares are at the row unit
-under the deployed residual-only convention, at one estimator cell for every stratum---eight
-equal-count bins of $g(\zstar)$ with the Bessel within-bin variance. \textbf{(a)}~each stratum's
+under the residual-only convention, at one estimator cell for every stratum---eight
+equal-count bins of $g(\zstar)$ with the unbiased within-bin variance. \textbf{(a)}~each stratum's
 input-insufficiency bound and its total error; \textbf{(b)}~the margin between them with its $90\%$
 two-way cluster-bootstrap interval, the other three unit\,$\times$\,convention cells as grey ticks;
 \textbf{(c)}~each stratum's share of the set's squared error, the part carried by its largest source
@@ -1700,18 +1708,35 @@ panel~(c)'s shares do not sum down the column.}
 \subsection{The map, stratum by stratum}
 \label{sec:si-map}
 
+% THIS PARAGRAPH IS THE FOUR MAP CAPTIONS' ARGUMENT, MOVED OUT OF THEM ON 2026-08-10 (editorial
+% rule: a caption describes, it does not argue).  What came here, and out of which caption:
+%   tab:map-full  -- the 59-stratum inventory with the set's five counts, and "together the four
+%                    tables carry all 59, so nothing is dropped for being small";
+%   tab:map-fine  -- "a finer class is a subset of a coarser one, so these rows are the same
+%                    measurements re-partitioned and not new ones";
+%   tab:map-solute-- the 362-of-1711 overlap between stratum pairs;
+%   tab:map-xtab  -- "the whole-set row is the aggregate this work declines to state".
+% Every numeral that left a caption is in the sentences below; 362/1711 also print in the article's
+% limitation (vi) and 59/477/185/78/36/15 in \S\ref{sec:broad} and Fig.~\ref{fig:decomp}'s caption.
+The map runs over $59$ strata: the solvent axis at three granularities and the solute axis at two,
+plus their cross-tab and the set as a whole, over the broad IDAC set's $477$ rows, $185$ pairs,
+$78$ solutes, $36$ solvents and $15$ source publications. Tables~\ref{tab:map-full}--\ref{tab:map-xtab}
+carry all $59$ between them, so nothing is dropped for being small, and
+Table~\ref{tab:map-detail} carries on the same $59$ the columns those four do not. Rows at
+different granularities, and rows on the two axes, can be the same measurements: a finer solvent
+class is a subset of a coarser one, so the fine table re-partitions measurements rather than adding
+new ones, $362$ of the $1711$ stratum pairs share rows, and every row that keeps its sign carries
+its overlap with the others. The whole-set row of Table~\ref{tab:map-xtab} is the aggregate this
+work declines to state, printed with the rest.
+
 \begin{table*}[tp]
 \centering
 \caption[The map, solvent axis, in full]{\textbf{The map, solvent axis, in full}: every solvent stratum of the broad IDAC set,
 including the ones the estimator cannot bound, at the pre-declared cell---eight equal-count bins of
 $g(\zstar)$, unbiased within-bin variance, row
-unit, deployed residual-only convention---applied identically to all of them. \emph{full} is the
+unit, residual-only convention---applied identically to all of them. \emph{full} is the
 same cell under the full combinatorial convention. Every margin here and in Tables~\ref{tab:map-fine}--\ref{tab:map-xtab}, and the $\mathrm{MSE}$ and bound behind it, is in
-squared \lngi\ units. The map runs over $59$ strata in all: the
-solvent axis at three granularities and the solute axis at two, plus their cross-tab and the set as
-a whole, over $477$ rows, $185$ pairs, $78$ solutes, $36$ solvents and $15$ source publications.
-Together the four tables carry all $59$, so nothing is
-dropped for being small, and each row states either what it shows or the test it fails.}
+squared \lngi\ units. The last column states either what the row shows or the test it fails.}
 \label{tab:map-full}
 % linespread: this float was 10.2pt taller than the page ("Float too large for page"), so its
 % note block was set into the bottom margin, one line from being clipped the way Table 4's notes
@@ -1747,8 +1772,7 @@ $10.1\%$ (\S\ref{sec:si-null}, where the null's own two biases are given).}}
 \centering
 \caption[The map, solvent axis at the fine granularity]{\textbf{The map, solvent axis at the fine granularity}---the third solvent granularity, at
 the same estimator cell and under the same rule as Table~\ref{tab:map-full}, whose notes apply
-here unchanged. A finer class is a subset of a coarser one, so these rows are the same
-measurements re-partitioned and not new ones.}
+here unchanged.}
 \label{tab:map-fine}
 {\scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -1759,9 +1783,8 @@ measurements re-partitioned and not new ones.}
 \begin{table*}[tp]
 \centering
 \caption[The map, solute axis]{\textbf{The map, solute axis}---the solute half of the map, at the same
-estimator cell and under the same rule as Tables~\ref{tab:map-full} and~\ref{tab:map-fine}, whose notes apply here unchanged. Rows at different
-granularities, and rows on the two axes, can be the same measurements: $362$ of the $1711$ stratum
-pairs share rows, and every row that keeps its sign carries its overlap with the others.}
+estimator cell and under the same rule as Tables~\ref{tab:map-full} and~\ref{tab:map-fine}, whose
+notes apply here unchanged. Every row that keeps its sign carries its overlap with the others.}
 \label{tab:map-solute}
 {\scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -1773,8 +1796,8 @@ pairs share rows, and every row that keeps its sign carries its overlap with the
 \centering
 \caption[The map, the solvent-by-solute cross-tab and the set as a whole]{\textbf{The map, the solvent\,$\times$\,solute cross-tab and the set as a whole}---the
 last two granularities, at the same estimator cell and under the same
-rule as Tables~\ref{tab:map-full}--\ref{tab:map-solute}, whose notes apply here unchanged. The whole-set row is the aggregate
-this work declines to state, printed with the rest.}
+rule as Tables~\ref{tab:map-full}--\ref{tab:map-solute}, whose notes apply here unchanged. The last
+row is the set taken whole.}
 \label{tab:map-xtab}
 {\scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -1786,7 +1809,7 @@ this work declines to state, printed with the rest.}
 \centering
 \caption[The map's error, bound and source curve, stratum by stratum]{\textbf{The map's error, bound and source curve}, stratum by stratum, at the same headline
 cell as Tables~\ref{tab:map-full}--\ref{tab:map-xtab}---eight equal-count bins of $g(\zstar)$, unbiased within-bin variance,
-row unit, deployed residual-only convention. These are the columns those tables do not carry, on the
+row unit, residual-only convention. These are the columns those tables do not carry, on the
 same $59$ strata, whose margins, intervals and admissibility are printed there.}
 \label{tab:map-detail}
 % linespread: as for Table~\ref{tab:map-full} above -- this float was 4.3pt taller than the page
@@ -1826,7 +1849,7 @@ solvents ($30$ rows, $+3.39$) are not boundable either, and $83\%$ of that cell'
 the same publication; deleting it leaves $12$ rows, fewer than the fixed cell needs, so the sign
 cannot be verified. Neither may be used to explain a reversal. The coarse acceptor-only class, whose
 $+1.43$ this table names, is $96\%$ carried by that publication's $13$ aryl-ether rows and goes to
-$-0.19$ when it is removed. Water as a \emph{solvent} ($+0.05$ at $P\approx0.8$ deployed, $+0.57$
+$-0.19$ when it is removed. Water as a \emph{solvent} ($+0.05$ at $P\approx0.8$ residual-only, $+0.57$
 full) flips under two of its three deletions; the coarse donor-and-acceptor-oxygen class---``the
 hydroxylic solvents''---flips to $-0.42$ when \texttt{10.1021/je020196d} is removed, so it is the
 glycol-ether sub-class and not the hydroxylic solvents as a class that carries the finding; the
@@ -1852,7 +1875,7 @@ aromatic hydrocarbons. Naming water-as-solute and the halogenated solvents as tw
 count those $18$ rows twice, and adding the aryl ethers or the coarse acceptor-only class a further
 $13$. The two positive admissible cells overlap the same way: alkane\,$\cap$\,glycol-ether is $108$
 rows over $24$ pairs and carries the whole effect ($+2.51$ on those rows), while the glycol ethers
-minus the alkanes remain admissible---$74$ rows at $+1.40$ deployed and $+1.69$ full, under all
+minus the alkanes remain admissible---$74$ rows at $+1.40$ residual-only and $+1.69$ full, under all
 three deletions---and the alkanes minus the glycol ethers, $21$ rows, do not, being below the
 boundability threshold at the fixed cell and returning $-0.22$ there ($-0.01$ full). That is
 clause~(c) of \S\ref{sec:estimator} run on these two cells: the glycol ethers hold the more rows and
@@ -1892,10 +1915,10 @@ $-0.22$ there, so the alkanes' margin does not stand outside the glycol ethers--
 ethers' does stand outside the alkanes, on the $74$ rows at the $+1.40$ above. What demotes the cell
 is that residual, not the $84\%$ overlap and not the $-0.22$, which is itself
 sub-threshold. The acceptor-only aprotics ($57$ rows, $-0.19$, negative in
-all four cells, $P<0.2$ at both units under the deployed convention and $P\approx0.3$ under the full
+all four cells, $P<0.2$ at both units under the residual-only convention and $P\approx0.3$ under the full
 one, at an $\mathrm{MSE}$ of $0.089$ that is at the scale of the measurements) pass the rule and
 license nothing, the instrument being one-sided; their deletion test is additionally
-\emph{anti}-conservative, two of the four deletions leaving $n<40$, where the Bessel within-bin
+\emph{anti}-conservative, two of the four deletions leaving $n<40$, where the unbiased within-bin
 variance inflates---$0.140$ to $0.258$ on the $n{=}38$ remainder---and drives a negative margin
 further negative. That is the whole of the uniqueness claimed for the glycol ethers: the only row set
 admissible, positive and left standing by clause~(c)---\emph{not} the only admissible stratum and not
@@ -1930,8 +1953,8 @@ against $0.092$ on the acceptor-only aprotics, that last cell again returning a 
 $-0.05$ at $P\approx0.5$---but $57$ of the $60$ pairs are the broad set's own rows, so that
 agreement is a consistency check and not independent corroboration. What is this set's own is the
 granularity of its fragility: deleting the publication supplying $33$ of the pairs takes the margin
-to $-0.23$. Scored against VT-2005 profiles under the deployed residual-only convention and the
-\emph{unbiased} within-bin variance, the LOTV bound gives $\Binsuf\lesssim0.713$ and the separation
+to $-0.23$. Scored against VT-2005 profiles under the residual-only convention and the
+\emph{unbiased} within-bin variance, the binning bound gives $\Binsuf\lesssim0.713$ and the separation
 margin of $+0.05$; the maximum-likelihood variant biases the within-bin variance downward and so
 the margin upward to $+0.24$. That number stands with the broad set's aggregate, and on weaker
 evidence, four analyst choices setting it (\S\ref{sec:estimator}).
@@ -1953,17 +1976,17 @@ states neither.
 
 \paragraph{The constant-offset (Jensen) bound on both sets.} \S\ref{sec:estimator} promises these here.
 On the broad IDAC set $\Ex[m]=3.424$, $\Ex[g_{\mathrm{res}}]=2.998$ and $\Ex[g_{\mathrm{full}}]=2.579$,
-so the constant-offset bound is $\Bclos\ge0.182$ under the deployed residual-only convention and
-$\Bclos\ge0.715$ under the full one. Against the law-of-total-variance ceiling on $\Binsuf$ ($0.697$
+so the constant-offset bound is $\Bclos\ge0.182$ under the residual-only convention and
+$\Bclos\ge0.715$ under the full one. Against the binning bound on $\Binsuf$ ($0.697$
 residual-only, $0.482$ full) the assumption-free bound therefore separates under the full convention
-and inverts under the deployed one, exactly as it does on the VT-2005-matched set ($0.426$ against $0.713$) and by
-a wider margin---the deployed ratio is $0.26$ here against $0.60$ there. On this set it is in
+and inverts under the residual-only one, exactly as it does on the VT-2005-matched set ($0.426$ against $0.713$) and by
+a wider margin---the residual-only ratio is $0.26$ here against $0.60$ there. On this set it is in
 addition strictly slacker than the bound the decomposition already supplies,
 $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ ($0.182$ against $1.205$ residual-only, $0.715$ against
-$1.429$ full), so it adds nothing to the ordering under either convention; the deployed-convention
-separation rests on the law-of-total-variance bound alone, which is what \S\ref{sec:estimator} says.
+$1.429$ full), so it adds nothing to the ordering under either convention; the residual-only-convention
+separation rests on the binning bound alone, which is what \S\ref{sec:estimator} says.
 
-\paragraph{The broad set's matching rule, and two bounds we decline to headline.} Three details of
+\paragraph{The broad set's matching rule, and two bounds not carried forward.} Three details of
 \S\ref{sec:broad} follow. \emph{(a)~The matching asymmetry.} The VT-2005-matched set is
 matched to VT-2005 by canonical SMILES, a rule we defend there on the ground that a profile imported
 across a tautomer or protonation variant is the wrong $\zstar$. The broad IDAC set is matched to UD
@@ -1971,17 +1994,17 @@ by InChIKey with a first-block fallback, which is looser, and a wrong $\zstar$ i
 $\mathrm{MSE}$ and so $\Bclos$---that is, it runs against the ordering we claim. The exposure is
 small and we measure it rather than argue it: of the $90$ distinct molecules there, $86$ resolve by
 full InChIKey and four only through the first block, touching $12$ of the $477$ rows. On the $465$
-rows matched exactly the verdict is unchanged---deployed convention $\mathrm{MSE}\ 1.930$,
+rows matched exactly the verdict is unchanged---residual-only convention $\mathrm{MSE}\ 1.930$,
 $\Binsuf\lesssim0.70$, margin $+0.53$ at $P\approx0.9$; full convention $1.926$, $0.49$, $+0.94$ at
 $P>0.95$---so the looser rule is not carrying the result.
 \emph{(b)~The tighter of the two conventions' bounds.} $\Binsuf$ is the same population quantity
 under both conventions (step~(d) of the proof of Lemma~\ref{prop:decomp},
-\S\ref{sec:si-proofs}); what differs is the statistic the coarsening bins on,
+\S\ref{sec:si-proofs}); what differs is the statistic the binning bound bins on,
 $g_{\text{full}}(\zstar,T)$ or $g_{\text{res}}(\zstar,T)$, each a deterministic function of the same
 argument and each therefore giving a separately valid upper bound. The smaller of the two is
-consequently also a valid upper bound in population, and charging it against the deployed error gives
+consequently also a valid upper bound in population, and charging it against the residual-only error gives
 $1.902$ against $2\times0.48$, a margin of $+0.94$ (on the VT-2005-matched set, $1.472$ against $2\times0.61$,
-$+0.26$). We report this but do not headline it: a minimum over two finite-sample estimates is
+$+0.26$). It is reported and no margin is read from it: a minimum over two finite-sample estimates is
 anti-conservative even when each is valid in population, and the same-convention pairing is the
 conservative reading. \emph{(c)~The binning-free pair bound.} $\Ex[\Var(m\mid\text{pair})]=0.046$ is
 thirteen times tighter than the binning bound on the same $359$ rows ($0.61$), and would put the
@@ -2045,7 +2068,7 @@ reference would load onto the rows that carry the error. Neither set separates t
 A counter-test on the same closure points the same way, and is the one \S\ref{sec:measure} cites.
 The Staverman--Guggenheim combinatorial term is the physically \emph{more} complete treatment and
 acts only where the two molecules differ in size; restoring it \emph{increases} the VT-2005-matched set's
-reference-input error, $\mathrm{MSE}=1.47$ under the deployed residual-only convention against
+reference-input error, $\mathrm{MSE}=1.47$ under the residual-only convention against
 $1.80$ with the term in place (Table~\ref{tab:decomp}), the gap between the two being carried by the
 size-asymmetric pairs. A term that adds physics and costs accuracy is what a misspecified map does
 and not what missing information about the inputs would do. The same signature appears on the
@@ -2062,13 +2085,13 @@ Ref.~\cite{bell2020cosmosac}), which holds database, cavity area, volume and ave
 varies only the kernel. On the VT-2005-matched set that contrast is $2.047\to0.765$, two-way cluster bootstrap
 $P>0.95$ with $90\%$ margin $[+0.05,+2.90]$; the averaging step taken alone moves 2002 by $+0.29$ in
 the opposite direction and is not resolved ($P<0.2$, $[-0.79,+0.11]$). That averaging term is why
-the control's $2002$ endpoint is $2.047$ and not the $1.757$ of the \emph{fair 2002} arm, and why
+the control's $2002$ endpoint is $2.047$ and not the $1.757$ of the \emph{2002, all channels} arm, and why
 the input-fixed step ($1.28$) is \emph{larger} than the native-input one ($0.99$): the control is
 favourable to the conclusion it supports. The control cannot separate
 the donor/acceptor typing, which the 2002 kernel has no channel to consume and which is therefore
-charged to the kernel by construction. What fixes the \emph{fair 2002} arm at $1.757$ rather than
-lower is an implementation detail: the NIST reference implementation, handed a typed three-profile
-database, silently reads the nonpolar channel only, an arm scoring $1.26$ on the VT-2005-matched set
+charged to the kernel by construction. The \emph{2002, all channels} arm sits at $1.757$ rather
+than lower because the NIST reference implementation, handed a typed three-profile
+database, reads the nonpolar channel alone, an arm scoring $1.26$ on the VT-2005-matched set
 (\S\ref{sec:si-methods} gives it unrounded), which is not the reference closure, so the arm is taken
 from our own NIST-validated layer instead.
 \emph{(a)~The \emph{2010, dispersion on} arm's coverage.} \texttt{cCOSMO} returns no dispersion value for the three
@@ -2084,12 +2107,12 @@ $57$ and the $1.783$ quoted for the $334$ chromatographic rows are distinct numb
 molecule, $153$ in all, so the conditioning variable is $306$-dimensional and the resolution ratios
 are $307/477\approx0.64$ per row and $307/185\approx1.66$ per distinct pair on the broad IDAC set,
 and $306/60\approx5.1$ on the VT-2005-matched set, where all rows sit at $298$\,K and $T$ adds no dimension. Under
-the deployed residual-only convention the VT-2005-matched set gives $0.831$ against $\Binsuf\lesssim0.80$, hence
+the residual-only convention the VT-2005-matched set gives $0.831$ against $\Binsuf\lesssim0.80$, hence
 $\Bclos\gtrsim0.03$ and a margin of $-0.77$ at $P\approx0.3$; the broad IDAC set gives $2.893$
 against $\Binsuf\lesssim0.80$, hence $\Bclos\gtrsim2.09$ and a margin of $+1.29$ at $P\approx0.9$.
 Under the literature-standard full convention the same rows give $1.978$ against
 $\Binsuf\lesssim0.60$, margin $+0.78$ at $P\approx0.8$, and the VT-2005-matched set $0.765$ against $0.69$, margin
-$-0.61$. The switch to the deployed convention raises the 2010 kernel's broad-set error from
+$-0.61$. The switch to the residual-only convention raises the 2010 kernel's broad-set error from
 $1.978$ to $2.893$ and its floor bound from $0.60$ to $0.80$, so the wider margin comes from a
 worse closure and not from a tighter floor, and the reading does not move. On the broad set the binding
 clustering is the source-DOI bootstrap on $15$ clusters, whose $90\%$ interval $[-0.41,+4.53]$ still
@@ -2107,35 +2130,35 @@ implementation~\cite{bell2020cosmosac}, this comprehensive assessment~\cite{fing
 works citing them. It was not exhaustive, which is why the main text reads the result as an absence
 of evidence rather than as evidence of absence.
 \emph{(e)~The floor checks.} Each is same-database, same-latent and same-convention,
-stated under the deployed residual-only rule with the full-convention reading beside it.
-\emph{(1)}~Broad IDAC set: the fair 2002 error $1.902$ against $2\Binsuf\lesssim1.39$ on the
+stated under the residual-only rule with the full-convention reading beside it.
+\emph{(1)}~Broad IDAC set: the \emph{2002, all channels} error $1.902$ against $2\Binsuf\lesssim1.39$ on the
 \emph{same} UD profiles, margin $+0.51$ at $P\approx0.9$ ($1.911$ against $0.96$, $+0.95$, $P>0.95$
 full). \emph{(2)}~VT-2005-matched, VT-2005 against VT-2005: $1.472$ against $2\Binsuf\lesssim1.427$, so
 $\Bclos\gtrsim0.759$ against $\Binsuf\lesssim0.713$ and a margin of
 $+0.05$ ($1.80$ against $1.22$, $+0.58$ full; Table~\ref{tab:decomp}). The $1.757$ of~(a$'$) is those
 same $60$ pairs scored on \emph{UD} profiles, which is the whole difference between $1.80$ and
-$1.757$. Charged against a UD-native floor recomputed for those pairs, the deployed convention gives
+$1.757$. Charged against a UD-native floor recomputed for those pairs, the residual-only convention gives
 $1.436$ against $\Binsuf\lesssim0.71$, a margin of $+0.01$ at $P\approx0.8$, against $1.757$ versus a
 UD-native $\Binsuf\lesssim0.54$ and a margin of $+0.69$ full---so on UD profiles the VT-2005-matched set's own
 floor check is, under the rule we deploy, at zero.
 
 \subsection{Robustness of the closure/insufficiency separation}
 \label{sec:si-robustness}
-We stress-test the deployed-convention verdict
+We stress-test the residual-only-convention verdict
 $\Bclos>\Binsuf$ (\S\ref{sec:measure})---equivalently $\Binsuf<\mathrm{MSE}/2=0.74$ at
 $\mathrm{MSE}_{\mathrm{res}}=1.47$---four ways on the $n{=}60$ set.
 
 \emph{(i)~Estimator sensitivity.} The four random-fold $\Binsuf$ upper bounds of
-Table~\ref{tab:bounds} (the LOTV one is also the headline row of Table~\ref{tab:decomp})---$0.40$
-($k$-NN), $0.71$ (binning/LOTV at the headline unbiased variance; $0.62$ at the maximum-likelihood
+Table~\ref{tab:bounds} (the binning-bound one is also the headline row of Table~\ref{tab:decomp})---$0.40$
+($k$-NN), $0.71$ (the binning bound at the headline unbiased variance; $0.62$ at the maximum-likelihood
 one), $0.62$ (random forest), $0.62$ (ridge out-of-fold)---all fall below the
 $0.74$ threshold, the binning bound only just. The forest is the one estimator our two VT-2005-matched audit
 artifacts disagree on: the standalone decomposition run's own forest gives $0.565$ on these rows
 against the audit's $0.621$, a spread of the size a forest's own randomisation produces. The audit
 value is the one Table~\ref{tab:bounds} carries, because the audit artifact
-is what the inclusion rule names; both are below the threshold and neither is the headline.
+is what the inclusion rule names; both are below the threshold and neither is the bound relied on.
 The $k$-NN value is the smallest and least conservative input to $\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$,
-so we take the leakage-immune LOTV bound as the headline instead. The LOTV bound bins $g(\zstar)$ and is therefore
+so the leakage-immune binning bound is the one relied on instead. The binning bound bins $g(\zstar)$ and is therefore
 finite-sample downward-biased when points per bin are few, which would \emph{inflate} $\Bclos$ favourably.
 The two non-binning bounds (RF $0.62$, ridge $0.62$) are immune to that particular per-bin sparsity,
 but they do not provide independent corroboration: under random folds every held-out row shares its
@@ -2144,7 +2167,7 @@ anti-conservatively and in the same direction as the binning (\S\ref{sec:measure
 both molecules leaves no informative estimator on this set. The broad IDAC set behaves the same
 way once its own leak---a held-out row's molecule pair recurring at a neighbouring temperature---is
 blocked: the random forest goes from $0.15$ to $0.88$ and the ridge from $0.80$ to $1.47$, past its
-threshold. The headline should therefore be read as resting on the leakage-immune LOTV bound alone,
+threshold. The reported separation should therefore be read as resting on the leakage-immune binning bound alone,
 on either set, not on agreement between three estimators.
 The sole non-certifying configuration is a
 deliberately aggressive ridge, which lifts $\Binsuf$ to $0.88$ (then $\Bclos\ge0.59<0.88$): a sensitivity
@@ -2158,9 +2181,9 @@ The two worst-fit pairs, $1$-hexanamine and cyclohexylamine in methanol, carry $
 error; both rest on a single record, and $1$-hexanamine sits far off its own homologous series
 ($\lngi{=}2.62$ against $-0.78$ for $1$-butanamine in the same solvent), which is why we do not read
 that concentration as established chemistry. Deleting both leaves $\mathrm{MSE}\ 1.01$; charged
-against this the headline cell of the deployed convention---eight equal-count bins under the
+against this the headline cell of the residual-only convention---eight equal-count bins under the
 \emph{unbiased} within-bin variance---gives $\Binsuf^{\mathrm{up}}\ 0.5056$ and margin $-0.0015$, so
-the separation does \emph{not} survive the deletion where the paper headlines it. The four
+the separation does \emph{not} survive the deletion at the cell the paper reports. The four
 neighbouring cells do: $0.4370$ (margin $+0.14$) at eight bins under the maximum-likelihood variance,
 $0.4717$ ($+0.07$) at six bins unbiased, $0.4241$ ($+0.16$) at six bins maximum-likelihood, and, under
 the full convention on the same $58$ rows, $\mathrm{MSE}\ 1.20$ against $0.3309$ ($+0.53$) at eight
@@ -2174,7 +2197,7 @@ leave-one-solute folds (six equal-count bins): the exception drops methanol, the
 solute ($12$ pairs), and loses the separation ($-0.26$), as does dropping methanol as solute with
 pyridine as solvent ($n{=}28$; $-0.36$). Deleting methanol from both roles ($n{=}35$) holds only
 marginally---the margin falls from $0.35$ to $0.11$ at six bins and from $0.24$ to $0.003$ at eight,
-and inverts under the Bessel-corrected variance ($-0.03$, $-0.21$). Those fold counts and the
+and inverts under the unbiased within-bin variance ($-0.03$, $-0.21$). Those fold counts and the
 bootstraps use the maximum-likelihood variance at six bins. Repeated at the headline cell---eight
 bins, unbiased variance---the leave-one-solvent count is unchanged at $17/17$ (minimum margin
 $+0.03$), the leave-one-pair count falls to $56/60$ (minimum $-0.03$) and the leave-one-solute count
@@ -2182,7 +2205,7 @@ to $36/41$ (minimum $-0.22$); deletion of the eight highest-error pairs still ho
 
 \emph{(ii)~Leave-one-solvent-out.} Dropping each of the $17$ solvents in turn, the VT-2005-matched set's
 aggregate margin stays positive in all
-$17$ folds under the LOTV bound---a fold curve on a quantity \S\ref{sec:broad} retires, so it
+$17$ folds under the binning bound---a fold curve on a quantity \S\ref{sec:broad} retires, so it
 records what that aggregate did and not a robustness pass. Under the random-forest estimator it holds in only $2/17$, because an RF
 over-fits conditional variance in $102$ dimensions at $n{=}60$ (its out-of-fold MSE approaches $\Var(m)$),
 so its leave-one-out estimate is unstable---an estimator artifact, not a sign flip.
@@ -2192,7 +2215,7 @@ leaves the $\Bclos$ lower bound stable ($0.84\to0.70$), as expected since
 $\Bclos=\mathrm{MSE}-\Ex[\Var(m\mid\zstar)]$ is invariant to zero-mean noise.
 
 \emph{(iv)~Clustered-bootstrap interval.} A solvent-clustered bootstrap ($3000$ resamples of the $17$
-solvents, LOTV bound) makes the confidence explicit: the $\Bclos$ lower bound has median $0.93$
+solvents, binning bound) makes the confidence explicit: the $\Bclos$ lower bound has median $0.93$
 (CI$_{90}$ $[0.40,\,1.62]$), and the margin $\Bclos-\Binsuf$ has median $0.36$ (CI$_{90}$ $[-0.22,\,+0.97]$)
 with $P(\Bclos>\Binsuf)\approx0.89$ (single-axis; the conservative two-way solute$\times$solvent bootstrap,
 which also charges for repeated solutes, gives $\approx0.78$, the value reported in the main text). With
@@ -2205,7 +2228,7 @@ produced each is named. The separation on the VT-2005-matched set does not
 clear the $90\%$ level under either clustering, which is
 why the article treats it as supporting rather than decisive. On the broad IDAC set, with $78$
 solute and $36$ solvent clusters and a third clustering over $15$ source publications, the bands mean
-something; but they do not all clear. Under the deployed residual-only convention the margin
+something; but they do not all clear. Under the residual-only convention the margin
 bootstraps to $P>0.95$ over the $185$ molecule pairs ($90\%$ margin $[+0.23,+1.16]$) and only
 ${\approx}0.9$ two-way over the $78\times36$ solute/solvent clusters ($[-0.08,+2.16]$) and over the
 $15$ sources ($[-0.07,+1.74]$), with two
@@ -2222,7 +2245,7 @@ leaves the $\Bclos$ lower bound unchanged, and shrinks the margin by $\sigma_\et
 understate the separation but not create it. What the margin does bound is a \emph{systematic} label
 error correlated with $\zstar$, which enters $\Bclos$ rather than $\Binsuf$: on the VT-2005-matched set it would
 close the separation at root-mean-square $0.49\,\ln\gamma$ under the maximum-likelihood binning but
-at only ${\approx}0.21$ under the Bessel-corrected one. The matched IDAC is essentially
+at only ${\approx}0.21$ under the unbiased one. The matched IDAC is essentially
 single-method ($158/165$ gas chromatography), which makes a within-method systematic of $0.5$
 implausible; one of $0.21$ is not, so on the corrected binning that threat is \emph{not} excluded.
 The VT-2005-matched set's out-of-fold estimators cannot police it either: under random folds every held-out row
@@ -2234,17 +2257,17 @@ vacuously.
 \paragraph{In-regime ($\gamma$-stratified) separation.} The $n{=}60$ measurement is matched at low $\gamma$,
 while the paradox spans all $\gamma$. Stratifying the $n{=}60$ set by $\lngi$
 tests whether closure-dominance is a regime artifact. It is
-not: the ordering $\Bclos>\Binsuf$ (leakage-immune LOTV binning bound) holds in every
+not: the ordering $\Bclos>\Binsuf$ (leakage-immune binning bound) holds in every
 $\gamma$~stratum and \emph{strengthens} toward higher $\gamma$ (Table~\ref{tab:regime})---in the
 highest
 stratum ($\overline{\lngi}=2.94$, approaching the non-ideal regime) $\Bclos\ge2.68$ exceeds
 $\Binsuf\le0.67$ several-fold. The high-$\gamma$ strata are small
-($n=17$--$30$ in $102$ dimensions): the law-of-total-variance bound can be pushed toward zero by
+($n=17$--$30$ in $102$ dimensions): the binning bound can be pushed toward zero by
 too-few-points-per-bin, which mechanically widens the margin exactly where data is thinnest, so
 it is the several-fold separations rather than the precise values that carry the
 qualitative reading. The bound here bins each stratum into three equal-count bins (against eight in
 the main text) and uses the maximum-likelihood within-bin variance, as in the
-headline row of Table~\ref{tab:decomp}; recomputed with the unbiased (Bessel) one it rises to
+headline row of Table~\ref{tab:decomp}; recomputed with the unbiased one it rises to
 $0.08/0.95/0.81$ across the three strata, so each still separates, but the middle stratum only
 marginally ($0.95$ against its own $\mathrm{MSE}/2=0.96$). The $m>$ med.\ stratum separates
 through its upper (high-$\gamma$) half, and the \emph{isolated} moderate band
@@ -2256,8 +2279,8 @@ not prove---the conjecture that the same closure misspecification drives the all
 
 \begin{table}[h]
 \centering
-\caption[The closure/insufficiency verdict across activity-coefficient strata]{Closure/insufficiency verdict across $\lngi$ strata of the matched set (deployed
-residual-only convention; $\Binsuf^{\mathrm{up}}$ is the leakage-immune LOTV binning bound throughout,
+\caption[The closure/insufficiency verdict across activity-coefficient strata]{Closure/insufficiency verdict across $\lngi$ strata of the matched set (residual-only
+convention; $\Binsuf^{\mathrm{up}}$ is the leakage-immune binning bound throughout,
 at the maximum-likelihood within-bin variance).}
 \label{tab:regime}
 \resizebox{\columnwidth}{!}{%
@@ -2272,7 +2295,7 @@ high $\gamma$ ($m>1.5$)      & $17$ & $+2.94$ & $0.67$ & $2.68$ \\
 \end{tabular}}
 \end{table}
 
-The closure/insufficiency decomposition (full/res conventions; law-of-total-variance (LOTV), random-forest (RF), ridge, and
+The closure/insufficiency decomposition (full and residual-only conventions; binning-bound, random-forest (RF), ridge, and
 k\textsc{nn} estimators; solvent-clustered bootstrap; the pyridine stratum) is
 tabulated in \S\ref{sec:measure}. Figure~\ref{fig:parity} shows the shape of that error on the
 VT-2005-matched set: the reference-$\sigma$ closure's parity plot against the measured $\lngi$.
@@ -2293,15 +2316,15 @@ margin; each sharpens its scope. That aggregate is retired on other grounds
 (\S\ref{sec:broad}--\S\ref{sec:vt2005}), so these are recorded as what the four choices do and not as
 robustness passes for a live verdict.
 \begin{enumerate}
-  \item The deployed combinatorial default is residual-only. Under it the
+  \item The combinatorial default is residual-only. Under it the
   \emph{constant-offset} (Jensen) lower bound inverts
   ($\Bclos\ge0.43<\Binsuf\le0.71$; it separates only under the full convention,
   $\Bclos\ge0.72$ against $\Binsuf\le0.61$), so that assumption-free bound does not separate under
   deployment; Table~\ref{tab:decomp} carries that row for both sets, and
   the full-convention margin (the sharpened $\mathrm{MSE}-\Binsuf$ bound,
-  $1.19$ vs $0.61$) is a full-COSMO-SAC-only result. What separates under the deployed
+  $1.19$ vs $0.61$) is a full-COSMO-SAC-only result. What separates under the residual-only
   convention is the leakage-immune bound
-  $\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{LOTV}}\approx0.76>0.71$, which carries
+  $\Bclos\ge\mathrm{MSE}_{\mathrm{res}}-\Binsuf^{\mathrm{up}}\approx0.76>0.71$, which carries
   the headline claim, together with the combinatorial argument above. Every $\Binsuf$ ceiling quoted
   in this item is the unbiased within-bin variance, the headline setting of Table~\ref{tab:decomp};
   the maximum-likelihood pair ($0.85$ against $0.62$) is the demoted variant and is not quoted here.
@@ -2309,10 +2332,10 @@ robustness passes for a live verdict.
   systematic bias ($\sim$64\% of total error); within the largest single-solvent stratum
   (pyridine, $n{=}20$) the closure is nearly correct (stratum MSE $0.07$). Because
   solvent $\sigma$ is part of $\zstar$, these offsets are still decoder error and give an
-  independent solvent-conditional lower bound $\Bclos\ge0.89$ (full)/$0.56$ (res).
+  independent solvent-conditional lower bound $\Bclos\ge0.89$ (full)/$0.56$ (residual-only).
   \item Confidence on the full-convention constant-offset
   separation is the solvent-clustered bootstrap $P(\Bclos{>}\Binsuf)\approx0.85$ ($0.83$
-  vs the random-forest upper bound, $0.89$ vs the law-of-total-variance bound); we report
+  vs the random-forest upper bound, $0.89$ vs the binning bound); we report
   the solvent-clustered scheme rather than the less conservative i.i.d.-pair one because
   solvent dependence dominates. The leakage-immune margin ($0.76$ vs $0.71$) is a
   point estimate. The decomposition is checkpoint/seed-independent (the closure has zero
@@ -2327,7 +2350,7 @@ robustness passes for a live verdict.
 
 % A PRE-DECLARED ESTIMATOR CHANGE THAT LOST, banked 2026-08-06.  It belongs here, with the map
 % whose margins it would have rewritten, and nowhere else: the main text does not change, the
-% coarsening stays the headline estimator, and every margin printed in the article stands.
+% binning bound stays the headline estimator, and every margin printed in the article stands.
 \input{sections/crossfit-negative}
 
 \section{External baselines and ablations}
@@ -2351,11 +2374,16 @@ robustness passes for a live verdict.
 % sentences below that used to say "the caption" now say what carries the thing they name.
 \begin{table*}[tp]
 \centering
-\caption[Solubility accuracy, in three blocks that may not be read across]{Solubility accuracy in three blocks that may not be read across: this work, external
-models re-run here on a different split, and published figures on other corpora. A row carries two
-sample sizes where its two metric columns are not scored on the same rows, one where they coincide,
-and a dash where the value is quoted rather than computed here. Table~\ref{tab:baselines} prints
-the first two blocks without the random-pair rows.}
+% CAPTION CUT TO WHAT IS SHOWN, 2026-08-10.  Two clauses left it: "that may not be read across",
+% which is a reading rule and is stated in the paragraph below under its own head, and the pointer
+% at the article's cut of this float, which is now in that paragraph's first sentences.  The blocks
+% keep their own printed heads, which is where a reader of the float meets the split each is on.
+% NO NUMERAL MAY ENTER THIS CAPTION: it is one of the nine displays
+% scripts/analysis/check_hand_transcribed_displays.py binds, and an unbound numeral is fatal there.
+\caption[Solubility accuracy, in three blocks]{Solubility accuracy in three blocks: this work on the solute-scaffold split, external models
+re-run here on a by-solute and a random-pair split, and published figures on their own corpora and
+splits. A row carries two sample sizes where its two metric columns are not scored on the same
+rows, one where they coincide, and a dash where the value is quoted rather than computed here.}
 \label{tab:si-baselines-full}
 {\scriptsize
 \setlength{\tabcolsep}{4pt}
@@ -2399,6 +2427,9 @@ $\%\log S\pm1$, and we do not convert between them.}}
 \end{table*}
 
 \paragraph{What the three blocks may and may not be read across.}
+The three blocks of Table~\ref{tab:si-baselines-full} may not be read across, and
+Table~\ref{tab:baselines} prints the first two of them, without the random-pair rows, in the
+article.
 \S\ref{sec:discussion} states the three caveats under which this table may be read---two splits and
 two corpora, none of them like-for-like---and the one unfavourable sentence that survives them. Two
 of the three caveats take a further clause here. Scoring released FastSolv weights on our test rows
@@ -2407,11 +2438,15 @@ block's unit matches only through the conversion that table's note defines, whic
 litre of \emph{solvent} where the quoted block's basis is unstated: the dimension matches and the
 task does not.
 % WHAT THE SIX FIGURES ARE, spelled out 2026-08-10.  The article's ONLY external-benchmark sentence
-% quotes these six and quotes them bare; the corpora and the two works they are published in are in
-% the third block of the float above and nowhere in the article, and the markers there are this
-% document's S-numbers, which an article reader cannot resolve.  So the range is named with its
-% corpora and its sources in running text, once, here.  Do not compress back to "the leaders'
-% 0.83 to 0.99".
+% quoted these six bare; the corpora and the two works they are published in were in the third
+% block of the float above and nowhere in the article, and the markers there are this document's
+% S-numbers, which an article reader cannot resolve.  So the range is named with its corpora and
+% its sources in running text, once, here.  Do not compress back to "the leaders' 0.83 to 0.99".
+% LATER THE SAME DAY the article took the attribution too -- the two leaders with their two corpus
+% values each, the cycle, both corpora and both citations, in \S\ref{sec:discussion} -- so this
+% paragraph and that sentence now say the same thing in two documents, which is correct and not
+% duplication: the article must be sourceable on its own, and this is where the reading of the
+% clip sweep and the seed-by-seed cells that follow it live.  Keep the two in step.
 The six figures of the third block are all $\log_{10}S$ RMSE in
 mol\,L$^{-1}$ and come from one evaluation, Osanloo et~al.\ \cite{osanloo2024}, on two corpora: the
 SolProp test set, whose solutes are disjoint from its training corpus, and the Leeds set of Boobier
@@ -2917,7 +2952,7 @@ publication---are the cells the rule excludes. That split is the whole of the ev
 reversal being chemical.
 
 The floor checks are same-database, same-latent \emph{and} same-convention. The \emph{UD-native}
-check on the smaller set, the one commensurable with the broad set, is at zero under the deployed
+check on the smaller set, the one commensurable with the broad set, is at zero under the residual-only
 rule and $+0.69$ under the full convention. The two aggregates under the 2010 kernel's own typed
 latent, and the reading of them as loss of resolution rather than a demonstrated flip to the inputs,
 are in \S\ref{sec:fidelity}, and the resolution ratios behind them in
@@ -3015,18 +3050,18 @@ closure: limitations (ii), (iii), (v), (vii)--(xi) and (xiii)}
 % unqualified claim by their absence.  The article's own list is now (i), (iv), (vi) and (xii).
 \paragraph{(ii), (iii) and (v): the convention rule, the other admissible cells, and the
 constant-offset bound.}
-(ii)~Under the deployed convention no \emph{aggregate} margin is resolved on either set and only the
-literature-standard convention resolves one, while the headline convention is the deployed one; the
+(ii)~Under the residual-only convention no \emph{aggregate} margin is resolved on either set and only the
+literature-standard convention resolves one, while the headline convention is the residual-only one; the
 aggregate falls for the stronger reason of \S\ref{sec:broad} rather than for want of resolution.
 (iii)~Of the map's six admissible cells the glycol ethers are the only row set also positive and
 left standing by clause~(c), and not the only cell whose deletions all run; the halogenated solvents
 and the mono-alcohols keep their sign under the one deletion each admits, so they are unverified
 rather than shown to fail.
 (v)~The constant-offset margin is
-convention-specific and inverts under the deployed default on both sets; there the separation rests
-on the law-of-total-variance bound and the more-physics-worse effect. That bound is not itself
-convention-independent---only the estimand $\Binsuf$ is, Lemma~\ref{prop:decomp}(d)---so the deployed
-claim rests on it \emph{computed under the deployed convention}.
+convention-specific and inverts under the residual-only default on both sets; there the separation rests
+on the binning bound and the more-physics-worse effect. That bound is not itself
+convention-independent---only the estimand $\Binsuf$ is, Lemma~\ref{prop:decomp}(d)---so the headline
+claim rests on it \emph{computed under the residual-only convention}.
 
 The article's \S\ref{sec:discussion} carries limitations~(i), (iv) and~(vi), which scope what the two
 data sets and the estimator can deliver, and~(xii), which the leak-free re-run of \S\ref{sec:data}
@@ -3264,7 +3299,7 @@ and no pair carries a replicate, so on the VT-2005-matched set no two rows sit a
 IDAC set comes closer without reaching it: $359$ of its $477$ rows share a molecule pair with another
 row, but at a different temperature and hence at a different $(\zstar,T)$. On these two sets
 $\Binsuf$ is accordingly reached only as an upper bound---by coarsening in the
-law-of-total-variance cells, and out of fold in the fifteen fitted rows of
+binning-bound cells, and out of fold in the fifteen fitted rows of
 Table~\ref{tab:bounds}---and $\Bclos$ correspondingly only as a lower bound; where the latent is a
 scalar the headline estimate is the out-of-fold residual,
 one-sided in the same direction (\S\ref{sec:decomp}, \S\ref{sec:si-pka}).
@@ -3281,7 +3316,7 @@ stereo-labelled UD entry with the same connectivity. On the $465$ exactly matche
 distinct pairs) the decomposition is unchanged, read at the headline cell of the grid (eight
 equal-count bins, unbiased within-bin variance, edge values to the upper bin), which is what
 recomputes these two lines from the deposit:
-deployed convention $\mathrm{MSE}\ 1.930$, $\Binsuf\lesssim0.699$, margin $+0.53$ at $P\approx0.9$;
+residual-only convention $\mathrm{MSE}\ 1.930$, $\Binsuf\lesssim0.699$, margin $+0.53$ at $P\approx0.9$;
 full convention $1.926$, $0.495$, $+0.94$ at $P>0.95$.
 
 \emph{Composition, and where the squared error sits.} The set's chemistry is small in both
@@ -3290,7 +3325,7 @@ water and the four ethylene-glycol oligomers $293$ of the solvent rows. Its over
 paper's solubility corpus is correspondingly asymmetric---only $0.46\%$ of corpus rows carry a
 solute from this set, while $34$ of its $36$ solvents cover $59\%$ of corpus rows---which is what
 the main text means by the set covering the solvent side of deployment and not the solute side. The
-error concentrates in the same places: under the deployed convention $45\%$ of the squared error
+error concentrates in the same places: under the residual-only convention $45\%$ of the squared error
 sits in the four ethylene-glycol solvents and $32\%$ in the $37$ rows carrying water as solute, and
 under the full convention $49\%$ sits in those same four solvents. The fidelity null of
 \S\ref{sec:fidelity} is therefore a small-molecule and glycol-heavy null, and the same
@@ -3305,7 +3340,7 @@ pairs carry one row, $38$ carry five or more, and the largest carries $15$. Coun
 design ratio is $\dim(\zstar,T)/n=103/477\approx0.22$; counted per distinct pair, $0.56$, against
 $1.7$ on the VT-2005-matched set. Molecule-pair identity coarsens $(\zstar,T)$, so $\Ex[\Var(m\mid\text{pair})]$
 is a valid $\Binsuf$ upper bound over the $359$ rows that support it; it is $0.046$, under $1\%$ of
-$\Var(m)$ and thirteen times tighter than the binning bound on those same rows ($0.61$ deployed,
+$\Var(m)$ and thirteen times tighter than the binning bound on those same rows ($0.61$ residual-only,
 $0.39$ full). We report it and do not promote it, because all $67$ multi-row pairs come from a
 \emph{single} publication each: those rows are one laboratory's temperature series, so the bound omits
 the between-determination component of the superpopulation (\S\ref{sec:decomp}) while the binning
@@ -3316,17 +3351,17 @@ choice between conditioning on $\zstar$ and on $(\zstar,T)$ numerically immateri
 though only the latter is licensed by Lemma~\ref{prop:decomp} and it is the one we use. Collapsing to one
 row per pair (each the row nearest $298$\,K) gives $\mathrm{MSE}=1.679$, $\Binsuf\lesssim0.495$ and a
 margin of $+0.69$ at $P>0.95$ under the full convention ($1.540$, $0.635$, $+0.27$, $P\approx0.8$
-deployed). By method, $334$ rows are chromatographic, $37$ chemical or heterogeneous
+residual-only). By method, $334$ rows are chromatographic, $37$ chemical or heterogeneous
 equilibration and $106$ carry no method field; by source, $15$ publications in four journals
 (\emph{J.\ Chem.\ Eng.\ Data} $203$, \emph{J.\ Chem.\ Thermodyn.} $114$, \emph{Fluid Phase Equilib.}
 $108$, \emph{Thermochim.\ Acta} $52$), the largest single publication contributing $105$ rows. On the
 $334$ chromatographic rows alone, re-binned within the stratum, the activity error is
 $\mathrm{MSE}=1.783$ against $\Binsuf\lesssim0.36$ under the full convention---a margin of $+1.06$
 ($P>0.95$), wider than the full set's $+0.95$---and $1.474$ against $\Binsuf\lesssim0.58$ under the
-deployed one, a margin of $+0.31$ ($P\approx0.9$), narrower than the full set's $+0.51$. The cut
+residual-only one, a margin of $+0.31$ ($P\approx0.9$), narrower than the full set's $+0.51$. The cut
 therefore does not move the sign under either convention, and it does not uniformly widen the margin
 either. A DOI-clustered bootstrap of the full-set margin
-gives $P>0.95$ with $90\%$ $[+0.50,+1.57]$ (full) and $P\approx0.9$ with $[-0.07,+1.74]$ (deployed),
+gives $P>0.95$ with $90\%$ $[+0.50,+1.57]$ (full) and $P\approx0.9$ with $[-0.07,+1.74]$ (residual-only),
 and a pair-clustered one $P>0.95$ with $[+0.71,+1.27]$ and $[+0.23,+1.16]$ respectively.
 This is the stratification the $60$-pair VT-2005-matched set cannot support, and it is why the broad IDAC set
 carries the map: the quality cut that \emph{inverts} the enlarged $298$\,K set
@@ -3338,8 +3373,7 @@ standing, and the chemistry cut compounded with the pair collapse does not.
 % mechanics behind Table~\ref{tab:closure-anchor}'s "same set, through this paper's closure" block.
 % The article keeps the published two-database bracket, the fact that the deployed closure lands
 % inside it, and both open limits.
-\paragraph{Scoring the deployed closure against the published evaluation.} The deployed
-our differentiable COSMO-SAC layer---its own constants and damped fixed point---was run over the same
+\paragraph{Scoring the deployed closure against the published evaluation.} Our differentiable COSMO-SAC layer---its own constants and damped fixed point---was run over the same
 three record files De Souza et al.\ \cite{desouza2025cosmosac} score, with components resolved
 through the repository's CAS-to-InChIKey map and matched by exact InChIKey to this paper's VT-2005
 artifact: $7889$ of $8138$ usable records ($96.9\%$), $2279$ distinct pairs, each at its own
@@ -3348,7 +3382,7 @@ rows are the out-of-sample set of \S\ref{sec:broad}.
 
 % RELOCATED FROM Table 2's NOTE a ON 2026-08-08, in the readability pass, verbatim.  The note keeps
 % the one clause a reader of that table cannot do without -- which row is like-for-like and which
-% convention the deployed one is -- and this is the per-cell reading of the same block.
+% convention the residual-only one is -- and this is the per-cell reading of the same block.
 Within that block the error is not evenly spread, and the worst cell is water carried as the dilute
 solute in an organic solvent: AAD $2.02$ with a $+1.92$ bias on $468$ rows. At $298$\,K and
 non-aqueous---the regime the $n{=}60$ VT-2005-matched set occupies---AAD is $0.42$ on $1033$ rows,
@@ -3383,7 +3417,7 @@ as a replacement set because its verdict is quality-cut sensitive: it widens the
 $0.24$ to $0.35$ but \emph{inverts} it to $-0.13$ on the $100$ pairs labelled gas chromatography, and
 that sensitivity is unresolved at $298$\,K. It is not a verdict on the extraction, which matters
 because the broad IDAC set is built from the same pull: there the same cut leaves the sign alone
-under either convention ($+0.51\to+0.31$ deployed, $+0.95\to+1.06$ full). What differs is resolution,
+under either convention ($+0.51\to+0.31$ residual-only, $+0.95\to+1.06$ full). What differs is resolution,
 not provenance---at $298$\,K a $15$-row cut inverts a margin already inside the design's resolution,
 whereas on $477$ rows a $143$-row cut moves one without inverting it---so we use the enlarged pull
 where it is stratifiable and keep the strict $n{=}60$ set where the paradox's own oracle is
@@ -3802,7 +3836,7 @@ the grounded arm;
 $\sigma$-oracle row and move with it, the repair standing as a fact about the published
 deposit;
 \item the freeze contrast of \S\ref{sec:surrogate}, whose closing clause sets its $65\%$ against
-\emph{the $+0.41$ headline arms of \S\ref{sec:paradox}} by name and so prints an enrolled value
+\emph{the $+0.41$ arms of \S\ref{sec:paradox}} by name and so prints an enrolled value
 outside the section that owns it, the runs it contrasts them with staying as published;
 \item the three
 printed seed statements the abstract's enrolment does not reach---\S\ref{sec:eval}'s row-set
@@ -3897,7 +3931,7 @@ own-latent floors, the fitted kernel residual and the estimator grid. \textbf{Da
 row per measurement: pair identifier, solute and solvent SMILES, the UD compound key matched to each
 and which rule matched it (full InChIKey or first-block fallback), temperature, the experimental
 $\lngi$, the \emph{four} closure outputs---2002 and 2010-dispersion-off, each in the full and the
-residual-only combinatorial convention, so that the deployed-convention kernel contrast of
+residual-only combinatorial convention, so that the residual-only-convention kernel contrast of
 \S\ref{sec:fidelity} is recomputable from the file---the
 ThermoML method field, the source DOI and journal, and a flag for the $57$ rows shared with the
 \textbf{Data Set~S2} (printed in full as

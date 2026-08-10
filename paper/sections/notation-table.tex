@@ -2,25 +2,49 @@
 % History: this was a twelve-row glossary, cut earlier the same day to the two colliding symbols;
 % the referees then reported that the article's own vocabulary -- closure, kernel, arm, boundable,
 % admissible, margin, the two conventions, the two data sets, the two senses of grounding -- could
-% not be recovered without the Supporting Information.  It is a terminology table again, and it is
-% the ONE place each term is defined; the body uses them without re-glossing, which is where the
-% page it costs comes back.
+% not be recovered without the Supporting Information.
+%
+% WHAT THIS TABLE IS, AND WHAT IT IS NOT, corrected 2026-08-10.  It used to claim, in its own
+% caption, that "each term is defined here and used below without re-glossing".  That was false of
+% eleven of its rows: five of the terms are first used on page 1, in the abstract, and five more by
+% page 5, so the table was re-glossing after the fact a vocabulary the reader had already had to
+% guess at.  THE REPAIR IS IN THE RUNNING TEXT, not here: every term below is now defined in prose
+% at the point it is first used -- closure, kernel, arm, zstar, grounding, the two error terms, the
+% margin, the binning bound and the estimator cell in Sec. 2.1 and Sec. 2.5; the combinatorial
+% convention and the Staverman--Guggenheim term in Sec. 2.3; glycol ether and aprotic in Sec. 2.5;
+% the two data sets where each is introduced.  This table is the INDEX of those definitions, which
+% is what the caption now says.  Do not restore the "defined here" claim, and do not answer a
+% missing definition by adding a row: add the definition to the sentence that first uses the term.
+%
+% THE TABLE STAYS IN THE ARTICLE.  Moving it to the Supporting Information would re-open the
+% 2026-08-02 referee finding above -- three referees, calibrating against published JCIM papers,
+% reported that the article's own vocabulary could not be recovered without the SI -- so what was
+% done instead is the other option the editorial letter allows: simplify it.  Three things went out
+% on 2026-08-10 and none of them was a definition.  (1) Five section cross-references, which made
+% the cells of a glossary point at the text instead of standing on their own.  (2) The argument in
+% the B_clos/B_insuf row (that the error is the map's and the reference-producing procedure's
+% together and not the kernel's, and that the two bounds run opposite ways) -- printed in full in
+% Sec. 2.1.1 and again in the reading rule at the head of Sec. 3.5.  (3) The argument in the margin
+% row (what a positive margin establishes, that its size is a lower bound and not an estimate, and
+% that a non-positive one licenses nothing) -- printed in full in Sec. 2.1.1 and, again, in that
+% same reading rule.  Every clause deleted here was checked into at least one other place first.
+%
 % Entry rule: a term earns a row if it is used in more than one section AND is either coined here,
 % used in a narrower sense than the field's, or a symbol that collides.  A symbol used once and
 % defined where it appears does not get a row.
-% Caption and the \Ggap row STATE the notation and do not recount choosing it (2026-08-07): the
-% caption used to advertise "the two symbols that would otherwise collide" and the \Ggap row used to
-% say it was "renamed from \Gamma", but a reader of the published paper never met \Gamma in that
-% sense, so both were narrating an editorial decision.  The disambiguation the reader does need --
+% The \Ggap row STATES the notation and does not recount choosing it (2026-08-07): it used to say
+% the symbol was "renamed from \Gamma", but a reader of the published paper never met \Gamma in that
+% sense, so the row was narrating an editorial decision.  The disambiguation the reader does need --
 % that \Gamma_S is a different quantity, and that sigma carries four senses -- is in the rows.
 % Do not restore the rename; the macro comment in preamble.tex keeps that history for us.
 % `table*', full width, DELIBERATELY: at fifteen rows in one column each meaning wraps to three
 % lines and the float is taller than a column can hold, so LaTeX sends it to a float page of its
 % own and wastes two thirds of it.  Across the full measure each row is one or two lines.
-% If it grows past about eighteen rows, something in it is not load-bearing.
+% If it grows past about twenty rows, something in it is not load-bearing.
 \begin{table*}[t]
 \centering
-\caption{Terminology and notation. Each term is defined here and used below without re-glossing.}
+\caption{Terminology and notation. Each term is defined in the text where it is first used; this
+table collects those definitions in one place.}
 \label{tab:notation}
 {\footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -30,36 +54,35 @@
 Term & Meaning in this manuscript \\
 \midrule
 closure $g$ & the fixed, non-fitted physical map from the intermediate to the observable: here
-COSMO-SAC, in \S\ref{sec:pka-main} a Hammett relation \\
+COSMO-SAC, and a Hammett relation in the second chemical domain \\
 kernel & the segment-interaction energy inside COSMO-SAC; a closure variant is named for its
 kernel's year (\emph{2002}, \emph{2010}) \\
 arm & one trained configuration, or one closure variant evaluated; \emph{DirectGNN} is the
 closure-free control arm and \emph{TGNNSolv} the closure-carrying one, abbreviated \emph{TGNN} in
 Table~\ref{tab:baselines} \\
 $\zstar$, $\hat z$ & the closure's \emph{entire} argument at its reference (tabulated) value, and the
-network's own prediction of it; a \emph{$\sigma$-oracle} feeds $\zstar$ where $\hat z$ would go. In
-\S\ref{sec:pka-main} $\zstar$ is a pair and only one of its coordinates is learned \\
+network's own prediction of it; a \emph{$\sigma$-oracle} feeds $\zstar$ where $\hat z$ would go \\
 grounding & two opposite operations on one reference database: \emph{supervising} $\hat z$ against
 it during training, and \emph{substituting} $\zstar$ for $\hat z$ at evaluation \\
-$\Bclos$, $\Binsuf$ & the error of the closure \emph{as deployed}---the fixed map read at the
-tabulated intermediate, so a property of the map and of the procedure that produced that
-intermediate \emph{together}, and not of the kernel alone (\S\ref{sec:badclosure})---and what its
-inputs cannot resolve, Eq.~\eqref{eq:decomp}; $\Bclos$ is bounded below and $\Binsuf$ above, so the
-comparison is one-sided \\
-margin & $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$, the $\mathrm{MSE}$ of Eq.~\eqref{eq:decomp}---the
-closure read at $\zstar$ against its own target $m$, so in squared $m$ units, squared \lngi\ on the
-activity axis and not the solubility axis; positive establishes $\Bclos>\Binsuf$ and its size is a
-lower bound on $\Bclos-\Binsuf$ and not an estimate of it; non-positive is failure to separate and
-licenses nothing \\
+$\Bclos$, $\Binsuf$ & the error of the closure as deployed---the fixed map read at the tabulated
+intermediate---and what its inputs cannot resolve about the target: the two terms of
+Eq.~\eqref{eq:decomp} \\
+margin & $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$, with the $\mathrm{MSE}$ of Eq.~\eqref{eq:decomp}---the
+closure read at $\zstar$ against its own target $m$---so in squared $m$ units, squared \lngi\ on the
+activity axis and not the solubility axis \\
+binning bound & the upper bound $\Binsuf^{\mathrm{up}}$ of Lemma~\ref{prop:decomp}(c): the variance of
+$m$ within bins of $g(\zstar)$, which fits nothing to the data \\
+estimator cell & one setting of the binning bound's four analyst choices---bin count, bin edges,
+within-bin variance convention, combinatorial convention---together with the row or the pair as unit \\
 \Ggap & the grounding gap $R_{\mathrm{orc}}-R_{\mathrm{e2e}}$; distinct from $\Gamma_S$, the
 segment activity coefficient inside COSMO-SAC \\
 stratum, map & a chemically defined row set of the broad IDAC set, and the $59$ of them the
 estimator is run on \\
 boundable & $n\ge40$, so the fixed cell's eight bins hold five rows each \\
 admissible & boundable \emph{and} sign-stable under deletion of each contributing publication, in
-all four unit\,$\times$\,convention cells (\S\ref{sec:estimator}) \\
-full, deployed & the combinatorial convention: \emph{full} carries the Staverman--Guggenheim term,
-\emph{deployed} is residual-only and is what this pipeline runs \\
+all four unit\,$\times$\,convention cells \\
+full, residual-only & the combinatorial convention: \emph{full} carries the Staverman--Guggenheim
+size-and-shape term, \emph{residual-only} omits it and is what this pipeline runs \\
 UD & the University of Delaware $\sigma$-profile database \\
 labelled test rows & the $5608$ of the $8103$ scaffold-split test rows carrying a solubility
 measurement; the other $2495$ carry a melting point only and are scorable in no arm \\
@@ -67,7 +90,7 @@ broad IDAC set & $477$ IDAC\,$\cap$\,UD rows, $185$ pairs, all temperatures, UD 
 VT-2005-matched set & $60$ pairs at $298$\,K carrying a VT-2005 profile on both sides \\
 $\sigma$ & alone, the screening-charge-density profile; $\sigma(\cdot)$ with an argument, the
 generated $\sigma$-algebra; \hammett, the Hammett substituent constant, $\hammett^\star$ its
-tabulated value under the rule of \S\ref{sec:pka-main} and $\hat\sigma_{\mathrm H}$ the network's;
+tabulated value and $\hat\sigma_{\mathrm H}$ the network's;
 $\sigma_\eta$, experimental label noise \\
 \bottomrule
 \end{tabular}}

@@ -38,14 +38,15 @@ log-solubility to their negative sum:
          \;-\;\underbrace{\lng(x_2,T)}_{\text{activity}} ,
   \label{eq:sle}
 \end{equation}
-with the constant-$\Delta C_p$ correction omitted for clarity. The activity term is produced by a
+with the constant-$\Delta C_p$ correction---$\Delta C_p$ being the difference in heat capacity
+between the liquid and the solid---omitted for clarity. The activity term is produced by a
 \emph{differentiable closure} $g$: a graph encoder predicts a $\sigma$-profile---the distribution of
 screening charge density over a molecule, the histogram a COSMO model consumes---for each molecule,
 and COSMO-SAC \cite{lin2002}, a segment-activity reformulation of COSMO-RS, maps the pair of
 profiles to $\lng$. The segment-interaction energy inside that map---the electrostatic-misfit and
 hydrogen-bonding terms setting what two surface segments cost each other---is the closure's
 \emph{kernel}, the part the published revisions rewrite, so a closure variant is named for the year
-of its kernel: the deployed \emph{2002 kernel}, and the \emph{2010 kernel} that types segments as
+of its kernel: the \emph{2002 kernel} this pipeline runs, and the \emph{2010 kernel} that types segments as
 hydrogen-bond donors or acceptors instead of treating hydrogen bonding with one parameter. Write
 $\zstar$ for the \emph{reference} physical latent, the $\sigma$-profile tabulated in the VT-2005
 database \cite{mullins2006}, and $\hat z$ for the head's own prediction. Feeding $\zstar$ in place
@@ -56,8 +57,8 @@ closure and emits $\lnx$ directly, and the two were tuned separately (\S\ref{sec
 
 Everything below is stated for a general \emph{composed predictor} $\hat y=g(h(x))$ in which a fixed
 closure $g$ consumes a learned physical intermediate $z=h(x)$, against a matched free predictor that
-shares the encoder and drops $g$; solubility is one instance and the pKa closure of
-\S\ref{sec:pka-main} a second.
+shares the encoder and drops $g$; solubility is one instance, and a second is the closure of \S\ref{sec:pka-main} for $\mathrm pK_a$,
+the acid dissociation constant on a negative logarithmic scale.
 
 The crystal/activity split of Eq.~\eqref{eq:sle} is not identifiable from solubility alone. At
 infinite dilution with $\Delta C_p=0$ the observable is affine in $1/T$, and the activity intercept
@@ -110,7 +111,8 @@ $\zstar=(s,\hammett^\star)$ and the conditioning is on both.
 $\Bclos=\Ex[\Delta^2]\ge(\Ex[\Delta])^2=(\Ex[m]-\Ex[g])^2$, using $\Ex[\Ex(m\mid\zstar)]=\Ex[m]$.
 It needs \emph{no} smoothness assumption; its one requirement is that $m$ and $g$ share the $\lngi$
 reference state, which the closure validation of \S\ref{sec:model} establishes.
-\emph{(c) Law-of-total-variance upper bound.} For any binning $B=\mathrm{bin}(g(\zstar))$ one has
+\emph{(c) The binning bound, a law-of-total-variance upper bound.} For any binning
+$B=\mathrm{bin}(g(\zstar))$ one has
 $\sigma(B)\subseteq\sigma(\zstar)$, and conditioning on a coarser $\sigma$-algebra cannot reduce
 expected conditional variance: $\Ex[\Var(m\mid B)]\ge\Ex[\Var(m\mid\zstar)]=\Binsuf$.
 \emph{(d) The estimand is convention-free; the bound is not.}
@@ -119,7 +121,7 @@ involve $g$, so it is identical across closure conventions and any $\mathrm{MSE}
 is entirely $\Bclos(g_1)-\Bclos(g_2)$. The bound of~(c) is not convention-independent, and no
 contradiction arises: two conventions coarsen the same $\sigma(\zstar)$ along two different
 statistics, giving two valid upper bounds on one quantity, of which the minimum is again valid but
-is biased low in finite samples, so we report it and do not headline it.
+is biased low in finite samples; it is reported, and no margin below is read from it.
 \end{proof}
 
 \noindent $\Bclos$ is the systematic discrepancy of a fixed physical map in the sense of
@@ -210,7 +212,8 @@ $n$.
 \label{sec:data}
 Solubility measurements come from BigSolDB~2.0 \cite{krasnov2025bigsoldb}: $127{,}930$ rows over
 $15{,}665$ solutes and $221$ solvents between $243$ and $438$\,K, partitioned by Bemis--Murcko
-scaffold into $111{,}724$ training, $8{,}103$ validation and $8{,}103$ test rows so that every test
+scaffold---a molecule's ring systems together with the linkers joining them, side chains
+removed---into $111{,}724$ training, $8{,}103$ validation and $8{,}103$ test rows so that every test
 solute is unseen at training; a melting-point-independent miscibility/structure filter sets row
 membership, and crystal $\Tm$, $\dHfus$, Hansen parameters and infinite-dilution activity
 coefficients \lngi\ are merged on as per-solute labels where available. A split's rows do not all
@@ -243,54 +246,37 @@ solutions \cite{osanloo2024}, is a different functional on a different base, and
 pooled nor converted into one another anywhere below.
 
 \paragraph{Disclosure: the scaffold guarantee is not certified for these runs.}
-The released stream builder excludes any pool molecule whose scaffold appears in validation or test
-and aborts on a missing split file---but that is a property of the builder, not a certified property
-of the runs reported here. One $\sigma$-stream build on disk was generated against the wrong split
-files. Counted inside the stream, $91$ of its $1425$ rows are held-out solutes by canonical SMILES;
-counted where such a row can act, $7$ of the $147$ solutes spanned by the $5608$ labelled test rows
-have their own reference profile in that stream and $8$ have a scaffold relative in it, on $297$
-and $351$ of those rows. Solute coverage, not stream-row fraction, is the
-load-bearing figure for a scaffold split. Per-run stream provenance was not logged, so the artifacts
-cannot certify which build fed which arm. Each fact that bounds a leak bounds one contrast: the
-paradox contrast is one checkpoint evaluated two ways, and DirectGNN uses no stream. The
-grounded-versus-ungrounded supervision contrast is bounded by neither, because the ungrounded arm
-carries no $\sigma$ stream either, so the only arm a leak can reach there is the grounded one, and
-the $0.20$ gain of \S\ref{sec:paradox} stays uncertified until the leak-free re-run.
-\S\ref{sec:si-repro} gives the file evidence, each fact with the contrast it bounds, and the one
-molecule the leak touches in the $n{=}44$ analysis of \S\ref{sec:surrogate}. We therefore do
-not assert the scaffold guarantee for these runs.
+The released stream builder excludes any pool molecule whose scaffold appears in validation or test,
+but one $\sigma$-stream build on disk was generated against the wrong split files and per-run stream
+provenance was not logged, so the artifacts cannot certify which build fed which arm and the
+guarantee is a property of the builder rather than of these runs: $7$ of the $147$ solutes spanned
+by the $5608$ labelled test rows carry their own reference profile in that build and $8$ carry a
+scaffold relative. The ungrounded arm carries no $\sigma$ stream either, so the supervision contrast
+is the one a leak can reach and the $0.20$ gain of \S\ref{sec:paradox} is not certified leak-free until the
+re-run below. The file evidence, the contrast each fact bounds, and the one molecule the leak
+touches in the $n{=}44$ analysis of \S\ref{sec:surrogate} are in \S\ref{sec:si-repro}.
 
-% THE RE-RUN PRE-COMMITMENT MOVED TO \S\ref{sec:si-repro} ON 2026-08-07 (page-reduction pass),
-% verbatim and entire: the protocol, the three-branch decision rule and the display inventory with
-% its named exceptions and its same-pass rule.  What stays here is this summary, which must keep
-% three things a reader cannot reconstruct from the disclosure above: that the protocol was fixed
-% BEFORE the numbers exist, that the decision is stated in all three directions and not only the
-% favourable one, and that the list of displays the five-seed values replace is closed.  Do not
-% let this shrink to a bare cross-reference; the promise has to be legible without the SI open.
-% If a display carrying the ungrounded, grounded or sigma-oracle arm is added anywhere, it goes
-% into the inventory in \S\ref{sec:si-repro} in the same pass.
-\paragraph{What the leak-free re-run reports, and what it decides.}
-The re-run is specified before its numbers exist, and its protocol, its decision rule and the list
-of displays it rewrites are set out in full in \S\ref{sec:si-repro}. It trains the ungrounded and
-the grounded arm at five seeds ($42$ through $46$) under the published COSMO-SAC configuration,
-unchanged, on a $\sigma$ stream rebuilt against \emph{this} split's files and certified inside each
-training run---the run re-reads the stream and the split files and asserts that they share no
-molecule by canonical SMILES and none by Bemis--Murcko scaffold, and writes both SHA-256s into its
-manifest---and reads accuracy on the same $5608$ labelled test rows under the same cross-arm
-intersection rule (\S\ref{sec:eval}), reporting five per-seed values per arm rather than a mean
-alone. The decision is fixed in one direction only, since the supervision contrast alone hangs on
-it, and in three branches: if the five per-seed gains are of one sign the two senses of grounding
-keep their opposite signs and the published values are replaced by the re-run's; if they straddle
-zero, supervision has no established sign at five seeds and the abstract, \S\ref{sec:paradox}, the
-Conclusions and Table~\ref{tab:claims} are rewritten to report one operation with a sign and the
-other as unresolved; if they are of one sign and it is the opposite one, that is what is reported.
-Which displays the five-seed values replace is fixed here too rather than chosen afterwards---the
-three arms that carry those values, every float and passage resting on them, and the three numbers
-that instead keep their published value with the five-seed one beside them because the re-run
-supplies one side of the comparison and not the other---together with the boundary in both
-directions: neither the DirectGNN control nor the NRTL arm is retrained, and \S\ref{sec:measure}
-uses no trained model at all. The substitution result is unaffected in all three branches: it is
-one checkpoint evaluated two ways, and no $\sigma$-stream build can reach it.
+% THE RE-RUN PRE-COMMITMENT LIVES IN \S\ref{sec:si-repro}: the protocol, the three-branch decision
+% rule and the display inventory with its named exceptions and its same-pass rule.  What stays here
+% is this summary, which must keep three things a reader cannot reconstruct from the disclosure
+% above: that the protocol was fixed BEFORE the numbers exist, that the decision is stated in all
+% three directions and not only the favourable one, and that the list of displays the five-seed
+% values replace is closed.  Do not let this shrink to a bare cross-reference; the promise has to be
+% legible without the SI open.  If a display carrying the ungrounded, grounded or sigma-oracle arm
+% is added anywhere, it goes into the inventory in \S\ref{sec:si-repro} in the same pass.
+% 2026-08-10, READABILITY PASS: the protocol's mechanics -- the certification assertion, the two
+% SHA-256s, the intersection rule, the three arms and the boundary in both directions -- are printed
+% in \S\ref{sec:si-repro} and were printed twice.  This paragraph now carries the promise and not
+% the mechanics.  Every number it dropped is in that section.
+\paragraph{The leak-free re-run.} Its protocol is fixed before its numbers exist
+(\S\ref{sec:si-repro}): the ungrounded and the grounded arm at five seeds ($42$ through $46$), the
+published COSMO-SAC configuration unchanged, on a $\sigma$ stream rebuilt against \emph{this}
+split's files and certified inside each training run, read on the same $5608$ labelled test rows and
+reported seed by seed. So is the decision it settles, which the supervision contrast alone hangs on,
+stated in three branches and not in the favourable one alone---gains of one sign, gains straddling
+zero, gains of the opposite sign---and so is the list of displays the five-seed values replace. The
+substitution result is unaffected in all three branches: it is one checkpoint evaluated two ways,
+and no $\sigma$-stream build can reach it.
 
 \subsection{Model, closure, and training}
 \label{sec:model}
@@ -301,11 +287,12 @@ against this encoder and did not beat it, an observation recorded with no set, s
 interval attached to it (\S\ref{sec:si-methods}), so no accuracy comparison between backbones is
 claimed. A fusion head predicts $\Tm$ and $\dHfus$, giving the
 ideal term $\Phicry(T)$ of Eq.~\eqref{eq:sle}. The activity term \lng\ comes from one of three
-differentiable closures. Two are controls, the fitted NRTL model and its symmetric one-parameter
-collapse. The third, parameter-free, is the closure under study: a $\sigma$-profile head emitting a
+differentiable closures. Two are controls: the fitted NRTL (non-random two-liquid) excess-Gibbs-energy model, and its
+symmetric one-parameter collapse. The third, parameter-free, is the closure under study: a $\sigma$-profile head emitting a
 $51$-bin screening-charge-density profile per molecule, and a COSMO-SAC layer mapping the profile
-pair to \lng\ with an optional Staverman--Guggenheim combinatorial term---the \emph{full} versus
-\emph{deployed residual-only} distinction on which \S\ref{sec:estimator} and \S\ref{sec:measure}
+pair to \lng\ with an optional Staverman--Guggenheim combinatorial term, the contribution molecular
+size and shape make to the entropy of mixing---the \emph{full} versus
+\emph{residual-only} distinction on which \S\ref{sec:estimator} and \S\ref{sec:measure}
 turn. The saturated mole fraction solves $\lnx=-\Phicry(T)-\lng(x_2,T)$ as a damped fixed point in
 $x_2$; a bounded, gated adaptive correction perturbs the physical parameters rather than the output,
 so the physical decomposition survives it.
@@ -335,14 +322,15 @@ warm-up, so the $\sigma$ stream enters the warm-up only.
 The dispersion-off closures in the fidelity measurement (\S\ref{sec:fidelity}) are our own
 differentiable implementations, so those arms share one code path, and each consumes its own
 model-prescribed $\sigma$-averaging (Mullins for 2002, Hsieh for 2010). Our 2002 layer---the
-\emph{fair 2002} arm wherever the kernels are compared, because it reads all three profile
-channels---reproduces the NIST reference COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE
+\emph{2002, all channels} arm wherever the kernels are compared, so named because it sums the
+segment contributions of all three profile channels rather than the nonpolar one
+alone---reproduces the NIST reference COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE
 $0.0035\,\ln\gamma$ on identical VT-2005 profiles, and our COSMO-SAC-2010/dsp
 layer~\cite{hsieh2010,hsieh2014dsp}, built on the \emph{typed} latent of three donor/acceptor-resolved
 $\sigma$-profiles per molecule in place of one, reproduces the NIST 2010 reference with dispersion
-\emph{off} to RMSE $1.4\times10^{-4}\,\ln\gamma$---that second figure quoted from its validator's
-console, which wrote no artifact where
-the 2002 one deposits its comparison, so it cannot be checked against the deposited record
+\emph{off} to RMSE $1.4\times10^{-4}\,\ln\gamma$---that second figure is not deposited, its
+validator having written no artifact where the 2002 one deposits its comparison, so it cannot be
+checked against the deposited record
 (\S\ref{sec:si-methods}). The dispersion term is \emph{not} validated to that standard, which is why every
 dispersion-off contrast is computed on our layers while the \emph{2010, dispersion on} runs are
 quoted from \texttt{cCOSMO}, that reference implementation itself.
@@ -363,7 +351,7 @@ quoted from \texttt{cCOSMO}, that reference implementation itself.
 % records ours is AAD 0.7651 res / 0.9777 full -- inside -- and R^2 0.9192 res / 0.8818 full, the
 % full one clearing the lower end by 0.004 and printing as 0.88 against 0.88.  This paper's OWN two
 % sets are inside on AAD (1.1155, 0.8072) but NOT on R^2 (0.6079, 0.4031), and the table scores them
-% in the residual convention only.  Hence "in AAD" in the conclusion below.  Do not widen either
+% in the residual-only convention only.  Hence "in AAD" in the conclusion below.  Do not widen either
 % sentence back without re-reading the table.
 Reproducing a reference implementation fixes the code; it does not say whether the error this paper
 decomposes is the error a published COSMO-SAC has, or something peculiar to this data assembly.
@@ -376,8 +364,8 @@ in that sense an evaluation of the profiles it was handed, which is why $\Bclos$
 the composite of map and profile calculation and not on the kernel. We ran our own differentiable layer
 over the same records (\S\ref{sec:si-repro}), and on AAD it lands inside the
 bracket the published closure spans across profile databases, under both conventions; on $R^2$ it is
-inside in the deployed convention and level with the bracket's lower end in the full one, the two
-printing alike at $0.88$. This paper's own two sets are inside on AAD alone, and in the deployed
+inside in the residual-only convention and level with the bracket's lower end in the full one, the two
+printing alike at $0.88$. This paper's own two sets are inside on AAD alone, and in the residual-only
 convention only---their $R^2$, $0.61$ and $0.40$, is below the published range. Two limits stay open: the profile database is the one axis we
 cannot match, VT-2005 being what this paper deploys and the axis that publication shows dominates;
 and the publication's $6977$ points are not proven to be the same rows as the $7889$ scored here,
@@ -406,9 +394,14 @@ which half does not, is in \S\ref{sec:badclosure}.
 % ---------------------------------------------------------------------------
 \begin{table*}[tp]
 \centering
-\caption{The deployed closure against a published evaluation of the same closure. AAD is the mean
-absolute error in $\ln\gamma^\infty$. The middle block's per-cell and per-regime values are in
-\S\ref{sec:si-repro}.}
+% THE SECTION REFERENCE LEFT THIS CAPTION, 2026-08-10.  It read "The middle block's per-cell and
+% per-regime values are in \S\ref{sec:si-repro}", which was the only cross-reference in any caption
+% of this document; a caption states what is shown.  Nothing is lost by the deletion: the paragraph
+% above already says "We ran our own differentiable layer over the same records (\S\ref{sec:si-repro})",
+% which is the same destination on the same block, in the sentence that makes the claim.
+\caption{The deployed closure against a published evaluation of the same closure, and this paper's
+own two sets through it. AAD is the mean absolute error in $\ln\gamma^\infty$, $n$ the number of
+scored records.}
 \label{tab:closure-anchor}
 {\footnotesize
 \setlength{\tabcolsep}{8pt}
@@ -423,11 +416,11 @@ PGL 6th ed.\ IDAC set & BP-TZVPD-FINE & $6977$ & $0.68$ & $0.96$ \\
 \addlinespace[2pt]
 \multicolumn{5}{@{}l@{}}{\emph{The same set, through this paper's closure}}\\
 \quad full convention\tnk{a} & VT-2005 & $7889$ & $0.98$ & $0.88$ \\
-\quad residual (deployed) & VT-2005 & $7889$ & $0.77$ & $0.92$ \\
+\quad residual-only & VT-2005 & $7889$ & $0.77$ & $0.92$ \\
 \quad\quad non-aqueous rows & VT-2005 & $4347$ & $0.47$ & $0.68$ \\
 \quad\quad aqueous rows & VT-2005 & $3542$ & $1.13$ & $0.83$ \\
 \addlinespace[2pt]
-\multicolumn{5}{@{}l@{}}{\emph{This paper's own sets, residual convention}}\\
+\multicolumn{5}{@{}l@{}}{\emph{This paper's own sets, residual-only convention}}\\
 broad IDAC set & UD & $477$ & $1.12$ & $0.61$ \\
 VT-2005-matched set & VT-2005 & $60$ & $0.81$ & $0.40$ \\
 \bottomrule
@@ -495,11 +488,13 @@ seed count and the artifact it regenerates from.
 
 \subsection{Estimating the split: one cell, one convention, one rule}
 \label{sec:estimator}
-Four analyst choices set the law-of-total-variance bound---the bin count, where the equal-count bin
-edges fall, the within-bin variance convention, and the combinatorial convention---and all four are
-fixed here, before any margin is reported.
+Four analyst choices set the binning bound of Lemma~\ref{prop:decomp}(c)---the bin count, where the
+equal-count bin edges fall, the within-bin variance convention, and the combinatorial convention---and
+all four are fixed here, before any margin is reported. One setting of them, together with the choice
+of the row or the molecule pair as the unit, is an \emph{estimator cell}.
 
-\emph{The estimator cell.} Eight equal-count bins of $g(\zstar)$, the \emph{unbiased} within-bin
+\emph{The estimator cell.} Eight equal-count bins of $g(\zstar)$, the \emph{unbiased}
+(Bessel-corrected) within-bin
 variance, and the row unit, applied identically to every set and every stratum whatever its size.
 The bin count is the choice with the most leverage---it takes the broad set's aggregate margin from
 $+0.01$ to $+0.96$---so the cell is not left standing alone anywhere a finding rests on it: the
@@ -510,19 +505,23 @@ accordingly read that set's margin as consistent with zero and carry the claim o
 stratified form.
 
 \emph{The convention rule.} The margin depends on the combinatorial convention, so one rule governs
-both sets: headline the \emph{deployed} residual-only convention, pairing $\mathrm{MSE}$ and the
-bound computed under that same convention. Headlining the deployed convention on the smaller set and
-the full convention on the broad one would be the favourable choice on each set taken separately;
+both sets: every margin is read in the \emph{residual-only} convention, pairing
+$\mathrm{MSE}$ and the bound computed under that same convention. Taking the residual-only convention on
+the smaller set and the full convention on the broad one would be the favourable choice on each set
+taken separately;
 one rule applied to both costs the broad set's margin about half its value. The Jensen
 constant-offset bound is convention-specific---it separates under the full convention and inverts
-under the deployed default---so what is reported rests on the model-free law-of-total-variance
+under the residual-only default---so what is reported rests on the binning
 bound, which fits nothing and so lets no held-out row borrow strength from a near-twin. Both bounds
 are valid on the one population quantity, by Lemma~\ref{prop:decomp}(d), and so is the smaller.
 
 \emph{The stratification rule.} The broad set is stratifiable where the VT-2005-matched set's $60$
 pairs are not, on two axes that are pure functions of molecular structure: an ordered nine-class
 cascade of substructure tests over the solvent, hydrogen-bonding role first and dominant functional
-group second, and the solute's role as water or as an organic. The classifier reads a SMILES string
+group second, and the solute's role as water or as an organic. Every class name is a substructure
+test and not a chemical judgement: a \emph{glycol ether} here is a solvent carrying a hydroxyl group
+and two or more oxygens, and an \emph{aprotic} solvent one with no O--H or N--H hydrogen to donate.
+The classifier reads a SMILES string
 and nothing else---never $m$, $g$, the squared error, the source or the bootstrap---so no cell can
 have been chosen on its outcome, which is a property of the code rather than an assurance. A stratum
 is \emph{boundable} at $n\ge40$, where eight bins hold five rows; the smaller ones are reported at

@@ -8,13 +8,13 @@
 \contentsline {table}{\numberline {S8}{\ignorespaces The three COSMO-SAC arms, and the block split of the kernel contrast}}{S-21}{table.8}%
 \contentsline {table}{\numberline {S9}{\ignorespaces Upper bounds on the input-insufficiency term, both sets taken whole}}{S-22}{table.9}%
 \contentsline {table}{\numberline {S10}{\ignorespaces The out-of-sample set, class by class}}{S-26}{table.10}%
-\contentsline {table}{\numberline {S11}{\ignorespaces The map, solvent axis, in full}}{S-27}{table.11}%
-\contentsline {table}{\numberline {S12}{\ignorespaces The map, solvent axis at the fine granularity}}{S-28}{table.12}%
-\contentsline {table}{\numberline {S13}{\ignorespaces The map, solute axis}}{S-29}{table.13}%
-\contentsline {table}{\numberline {S14}{\ignorespaces The map, the solvent-by-solute cross-tab and the set as a whole}}{S-30}{table.14}%
-\contentsline {table}{\numberline {S15}{\ignorespaces The map's error, bound and source curve, stratum by stratum}}{S-31}{table.15}%
+\contentsline {table}{\numberline {S11}{\ignorespaces The map, solvent axis, in full}}{S-28}{table.11}%
+\contentsline {table}{\numberline {S12}{\ignorespaces The map, solvent axis at the fine granularity}}{S-29}{table.12}%
+\contentsline {table}{\numberline {S13}{\ignorespaces The map, solute axis}}{S-30}{table.13}%
+\contentsline {table}{\numberline {S14}{\ignorespaces The map, the solvent-by-solute cross-tab and the set as a whole}}{S-31}{table.14}%
+\contentsline {table}{\numberline {S15}{\ignorespaces The map's error, bound and source curve, stratum by stratum}}{S-32}{table.15}%
 \contentsline {table}{\numberline {S16}{\ignorespaces The closure/insufficiency verdict across activity-coefficient strata}}{S-40}{table.16}%
-\contentsline {table}{\numberline {S17}{\ignorespaces Solubility accuracy, in three blocks that may not be read across}}{S-45}{table.17}%
+\contentsline {table}{\numberline {S17}{\ignorespaces Solubility accuracy, in three blocks}}{S-45}{table.17}%
 \contentsline {table}{\numberline {S18}{\ignorespaces Same-pair high-temperature extrapolation}}{S-53}{table.18}%
 \contentsline {table}{\numberline {S19}{\ignorespaces Solvent ranking under the two profiles}}{S-55}{table.19}%
 \contentsline {table}{\numberline {S20}{\ignorespaces Fisher audit of the SLE design}}{S-57}{table.20}%
@@ -22,7 +22,7 @@
 \contentsline {table}{\numberline {S22}{\ignorespaces The asymptotic physics penalty per solute class and novelty stratum}}{S-60}{table.22}%
 \contentsline {table}{\numberline {S23}{\ignorespaces The data-efficiency sweep}}{S-61}{table.23}%
 \contentsline {table}{\numberline {S24}{\ignorespaces The fixed substituent list behind the Hammett constant}}{S-67}{table.24}%
-\contentsline {table}{\numberline {S25}{\ignorespaces Run families: which runs produced which numbers, and at how many seeds}}{S-70}{table.25}%
+\contentsline {table}{\numberline {S25}{\ignorespaces Run families: which runs produced which numbers, and at how many seeds}}{S-69}{table.25}%
 \contentsline {table}{\numberline {S26}{\ignorespaces Data Set S2 in full: the VT-2005-matched set, row by row}}{S-78}{table.26}%
 \contentsline {table}{\numberline {S27}{\ignorespaces Crystal-term decodability per seed, with its nulls}}{S-80}{table.27}%
 \contentsline {table}{\numberline {S28}{\ignorespaces The model's temperature response against the empirical slope}}{S-80}{table.28}%

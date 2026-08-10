@@ -496,7 +496,14 @@ def find_display(paper: Path, label: str) -> tuple[Path, str]:
 
 
 def caption_of(block: str) -> str:
-    m = re.search(r"\\caption\{", block)
+    # The optional argument is the SHORT caption, added to every Supporting Information float on
+    # 2026-08-10 so that \listoftables prints one line per float instead of the whole caption.
+    # It made six of the nine enrolled captions unreadable to this pattern -- tab:si-baselines-full,
+    # tab:si-arms, tab:claims, tab:claims-cont2, tab:solvent-map, tab:solute-map -- and the script
+    # reported each as MISSING, which is a checker that stopped checking rather than a display that
+    # went wrong.  The group is non-capturing and the balanced scan still starts at the MANDATORY
+    # brace, so the short caption is skipped rather than checked: it carries no numeral of its own.
+    m = re.search(r"\\caption(?:\[[^\]]*\])?\{", block)
     if not m:
         return ""
     start = m.end() - 1
