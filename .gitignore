@@ -184,3 +184,17 @@ results/e5_sigma_grounding/ranking/*
 !results/e5_sigma_grounding/ranking/rank_final_floorci.json
 !results/e5_sigma_grounding/ranking/rank_final_oos.py
 !results/e5_sigma_grounding/ranking/rank_final_oos.json
+
+# Deposits behind numbers the manuscript prints, un-ignored for the same reason the
+# b_insuff ones are: a printed figure whose artifact is not in the tree is a figure a
+# reader cannot check, and three of them were hand-transcribed from scratch files before
+# these existed.
+!results/profile_db_vs_iteration
+results/profile_db_vs_iteration/*
+!results/profile_db_vs_iteration/cross.json
+!results/multifragment_stratum
+results/multifragment_stratum/*
+!results/multifragment_stratum/summary.json
+!results/solver_iteration_audit
+results/solver_iteration_audit/*
+!results/solver_iteration_audit/outer_sle_counts.json

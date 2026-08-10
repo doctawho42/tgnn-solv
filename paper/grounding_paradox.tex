@@ -1711,6 +1711,15 @@ crystal factor on external labels is underpowered rather than null: $97.76\%$ of
 points the model was already trained on, and where the pool did carry something new the crystal head
 moved, its paired $\Tm$ MAE over the pool itself going $-12.233$~K $[-18.25,-6.27]$ on the $345$
 net-new molecules against $-0.371$~K $[-0.81,+0.05]$ on the $15{,}082$ duplicated ones.
+% THE HELD-OUT HALF OF THE SAME ESTIMAND PRINTS HERE.  The sentence above is the POOL side, and it
+% is the favourable one; the article printed it alone, so the crystal head's own property appeared
+% to have moved one way only.  On the held-out solutes it moves the other way, and the ungrounded
+% arm's re-scored per-row file (scripts/analysis/run_e2_held_out_tm_ci.py, whose gate reproduces all
+% four scalars of results/e2_with_crystal/e2_comparison.json) gives that half the interval the pool
+% half already had.  Do not print one side of this estimand without the other.
+On the held-out solutes the same head is the worse of the two: $\Tm$ MAE $45.0\to46.6$~K over the
+$2518$ test solutes carrying a label, a paired $+1.59$~K with a solute-clustered $95\%$ interval of
+$[+0.31,+2.85]$.
 % THE DOWNSTREAM HALF PRINTS ITS INTERVAL HERE, 2026-08-10, and it is the last of the four places the
 % Supporting Information's preamble declared itself not optional.  The crystal-head half was repaired
 % earlier the same day (the comment above); the solubility half was still standing on the arm
@@ -1718,7 +1727,7 @@ net-new molecules against $-0.371$~K $[-0.81,+0.05]$ on the $15{,}082$ duplicate
 % \S\ref{sec:e2} carries one that crosses zero.  A gap quoted without its clustering is a row count
 % pretending to be a sample: 5608 rows, 147 solutes.  Do not restore the bare gap.
 The downstream solubility half is weaker still than its row count suggests: the $+0.065$ \lnx\ MAE
-gap is $5608$ rows from $147$ test solutes, and clustered by solute it is $+0.088$ with a $95\%$
+gap against the grounded arm is $5608$ rows from $147$ test solutes, and clustered by solute it is $+0.088$ with a $95\%$
 interval of $[-0.127,+0.284]$, crossing zero
 (\S\ref{sec:e2}).
 % THE TEMPERATURE CLAIM PRINTS ITS SET AND ITS TWO VALUES HERE, 2026-08-10.  It rested on a

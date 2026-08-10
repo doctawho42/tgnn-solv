@@ -13,26 +13,28 @@ Whether the ceiling lies in the inputs rather than the closure can be tested by 
 % saying different things is the defect, and it is repaired HERE by separating the two quantities
 % rather than by choosing one: the held-out-solute measurement and the pool measurement are on
 % different sets and can both be true.
-% THE +1.59 K HAS NO INTERVAL AND CANNOT BE GIVEN ONE FROM THE DEPOSIT.  It is exactly
-% 46.596-45.003 (results/e2_with_crystal/e2_comparison.json), which on a common solute set is also
-% the mean of the paired per-solute differences; but only the GROUNDED arm's per-row predictions are
-% deposited (results/e2_with_crystal/test_predictions.csv, whose 2518 T_m-carrying solutes reproduce
-% 46.596 exactly), so the paired differences a bootstrap would resample do not exist on disk.  Say
-% that, do not drop the number, and do not attach an interval borrowed from the pool-side figures --
-% those are a different set.
+% THE +1.59 K NOW CARRIES ITS INTERVAL, and the sentence that said it could not is withdrawn.  That
+% sentence claimed only the GROUNDED arm's per-row predictions were recoverable, so the paired
+% per-solute differences a bootstrap resamples did not exist.  Both checkpoints are in the tree and
+% their model cards differ in exactly one key, crystal_aux_steps_per_epoch (8 vs 0): the ungrounded
+% arm was re-scored on the test split (checkpoints/proxy_corrected_cpu/tgnn_mpnn_cpu_h64L3.pt ->
+% results/e2_with_crystal/test_predictions_without_crystal.csv) and reproduces all four scalars of
+% e2_comparison.json to the last digit, which is the identification gate in
+% scripts/analysis/run_e2_held_out_tm_ci.py.  The interval below is that script's, solute-clustered.
+% Withholding an interval on the unfavourable half while the favourable half beside it kept one is
+% the defect the paragraph was written against; do not restore the excuse.
 Two quantities follow and they are on different sets. On the held-out solutes, neither the property
 the pool supplies nor solubility improved: melting-point MAE $45.0\to46.6$~K over the $n=2518$ test
-solutes carrying a $\Tm$ label, a difference of $+1.59$~K, and $\lnx$ MAE $1.81\to1.88$ over the
-$5608$ labelled test rows. That $+1.59$~K carries no interval anywhere in this submission, and it
-cannot be given one from the deposit: it is the difference of the two arms' melting-point MAEs,
-which on a common solute set is also the mean of their paired per-solute differences, but only the
-grounded arm's per-row predictions are deposited, so the paired differences a bootstrap would
-resample over are not recoverable. Read it as a point estimate with its sign and nothing more. On
+solutes carrying a $\Tm$ label, a paired difference of $+1.59$~K with a solute-clustered $95\%$
+interval of $[+0.31,+2.85]$, and $\lnx$ MAE $1.81\to1.88$ over the $5608$ labelled test rows. The
+melting-point half is therefore resolved against the grounded arm, and it is a shift rather than a
+change of regime: the middle half of the $2518$ solutes move between $-17$ and $+21$~K, and the
+grounded arm is the worse of the two on $1329$ of them. On
 the pool itself---a different set, and the one the next paragraph is about---the movement is
 resolved, on the pool as a whole and on its net-new part, and it runs the other way.
 
 That held-out-solute comparison did not test external crystal grounding, because the pool was barely external. Of its $15{,}427$ molecules, $15{,}082$---$97.76\%$---already carried a $\Tm$ label in the training corpus, $98.2\%$ of them agreeing with the in-corpus value to within a millikelvin (mean $|\Delta|$ $0.07$~K); the net-new contribution is $345$ molecules, $2.24\%$. The two label sets are drawn from the same open melting-point tables, and nothing in the pool builder counts the overlap. Where the pool did carry something new, the crystal head moved. Scored on the pool itself, $\Tm$ MAE falls $35.85\to35.21$~K (paired $-0.636$~K, $95\%$ CI $[-1.09,-0.20]$), splitting into $-0.371$~K $[-0.81,+0.05]$ on the $15{,}082$ duplicated molecules and $-12.233$~K $[-18.25,-6.27]$ on the $345$ new ones---thirty times the movement per molecule on the fraction that supplied information.
 
-Dose was not the constraint. The exported state is the one entering phase 3, after $79$ epochs, by which point the stream had run $632$ optimiser steps---$2.62$ passes over the pool, $93.0\%$ of it seen at least once, the loader reshuffling each epoch---and $240$ of those steps ran at loss weight $1.0$, the phase-1 melting-point weight that an unset stream weight inherits, not at the phase-2 value $0.05$. The downstream half of the held-out-solute comparison is in turn weaker than its row count suggests: the $+0.065$ $\lnx$ MAE gap is $5608$ rows from $147$ test solutes, and clustered by solute it is $+0.088$ with a $95\%$ interval of $[-0.127,+0.284]$, crossing zero. Nor is it the activity branch absorbing the crystal branch. Between the two arms the predicted $\Phicry$ differ by $1.25$ ln units per row on average; regressing the predicted $\ln\gamma_2$ on that difference gives a slope of $-0.08$ where full compensation would be $-1$, so $91\%$ of the crystal head's disagreement passes into $\lnx$. The activity-path $\Bclos/\Binsuf$ decomposition does not apply on this path in any case: the crystal ``closure'' is the near-exact ideal-solubility term $\Phi=(\dHfus/\Rgas)(1/T-1/\Tm)$, not a misspecified map.
+Dose was not the constraint. The exported state is the one entering phase 3, after $79$ epochs, by which point the stream had run $632$ optimiser steps---$2.62$ passes over the pool, $93.0\%$ of it seen at least once, the loader reshuffling each epoch---and $240$ of those steps ran at loss weight $1.0$, the phase-1 melting-point weight that an unset stream weight inherits, not at the phase-2 value $0.05$. The downstream half of the held-out-solute comparison is in turn weaker than its row count suggests: the $+0.065$ $\lnx$ MAE gap against the grounded arm is $5608$ rows from $147$ test solutes, and clustered by solute it is $+0.088$ with a $95\%$ interval of $[-0.127,+0.284]$, crossing zero. Nor is it the activity branch absorbing the crystal branch. Between the two arms the predicted $\Phicry$ differ by $1.25$ ln units per row on average; regressing the predicted $\ln\gamma_2$ on that difference gives a slope of $-0.08$ where full compensation would be $-1$, so $91\%$ of the crystal head's disagreement passes into $\lnx$. The activity-path $\Bclos/\Binsuf$ decomposition does not apply on this path in any case: the crystal ``closure'' is the ideal-solubility term $\Phi=(\dHfus/\Rgas)(1/T-1/\Tm)$, a fixed function of two solute properties rather than a fitted map, so it has no free parameters to be misspecified in. Exact it is not, and on one part of this row set it is not even the right equation: $796$ of these $5608$ rows carry a solute of more than one component, for which the solid in equilibrium is not the one-component crystal $\Phi$ is written for (\S\ref{sec:si-lock}).
 
 What the experiment licenses is narrower than a null on external crystal labels, and more useful: a grounding pool has to be measured by its net-new content before it can test anything. This one was scaffold-guarded correctly---none of the $2518$ evaluation solutes appears in it---and was redundant all the same, because the guard protects the estimand and says nothing about what the model already holds. A real test declares the net-new count in advance, the builder reporting it and refusing to run below a floor of a few thousand molecules, which in turn needs a melting-point source disjoint from the one the training corpus itself drew on. Compute is not the obstacle: the grounded arm here was an eight-hour CPU run, so three seeds by two arms is on the order of $50$ CPU-hours. Sourcing the labels is.

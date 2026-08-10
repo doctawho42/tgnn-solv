@@ -292,12 +292,22 @@ def test_the_prose_that_reads_off_the_table_carries_the_same_digits(regenerated)
     assert float(note.group(2)) == round(d["nrtl_mean_of_printed_per_seed_triple"], 2)
     assert float(note.group(3)) == round(d["nrtl_mean_unrounded"], 6)
 
-    # the oracle-control block: the share at the matched seed, both subtractions spelled out
+    # The oracle-control block: the share at the matched seed, all THREE subtractions spelled
+    # out.  RE-POINTED 2026-08-11.  The sentence grew a third subtraction -- "so co-adaptation
+    # carries off $0.428-0.177=0.251$ of that gap" -- between the second one and the share, and
+    # the pattern still ran the share straight off the second subtraction, so the gate failed
+    # rather than skipping (which is what this file is built to do) but 0.251 was never checked
+    # by anything.  The repair binds it, and it does NOT do so by loosening the pattern: the
+    # difference is asserted against the block's own two gaps, and the restated operands are
+    # asserted to be the same numbers the earlier clauses printed, so a sentence that quotes one
+    # figure twice with two values fails here.
     c = d["single_seed_controls"]
     ref = str(c["seed"])
     ctrl = re.search(r"at seed \$(\d+)\$ the injection costs \$" + bare + r"-" + bare + r"="
                      + bare + r"\$ where the evaluation-only substitution costs \$" + bare
-                     + r"-" + bare + r"=" + bare + r"\$, a share of " + num, text)
+                     + r"-" + bare + r"=" + bare
+                     + r"\$, so co-adaptation carries off \$" + bare + r"-" + bare + r"="
+                     + bare + r"\$ of that gap, a share of " + num, text)
     assert ctrl is not None, "the seed-42 share sentence of S3 changed shape; re-point this gate"
     g = ctrl.groups()
     inj = summary["controls"]["grounded_a_truetrain"]["mae_per_seed"][ref]
@@ -307,7 +317,27 @@ def test_the_prose_that_reads_off_the_table_carries_the_same_digits(regenerated)
     assert float(g[3]) == round(c["training_time_injection_gap"], 3)
     assert float(g[4]) == round(arms["oracle"]["mae_per_seed"][ref], 3)
     assert float(g[6]) == round(c["evaluation_only_gap"], 3)
-    assert float(g[7]) == round(c["share_coadaptation_removes"], 2)
+
+    # The third subtraction is the share's NUMERATOR, and the block carries both its operands,
+    # so it is a function of the artifact even though it is not a key of its own.
+    assert float(g[7]) == float(g[6]), (
+        "the restated evaluation-only gap disagrees with the one printed two clauses earlier")
+    assert float(g[8]) == float(g[3]), (
+        "the restated injection gap disagrees with the one printed two clauses earlier")
+    assert float(g[9]) == round(
+        c["evaluation_only_gap"] - c["training_time_injection_gap"], 3), (
+        "the co-adaptation numerator is not the artifact's two gaps differenced")
+    # ...and the printed arithmetic has to close on its own printed operands, which is a
+    # different check: a sentence can quote three artifact-true numbers that do not subtract.
+    assert float(g[9]) == pytest.approx(float(g[7]) - float(g[8]), abs=5e-4), (
+        "the printed subtraction does not reproduce from its own printed operands")
+
+    assert float(g[10]) == round(c["share_coadaptation_removes"], 2), (
+        "the printed share is not the block's share_coadaptation_removes")
+    # The share is that numerator over that denominator; if the sentence's own three figures do
+    # not give the share it prints, the reader is handed a ratio they cannot check.
+    assert float(g[10]) == round(float(g[9]) / float(g[7]), 2), (
+        "the printed share is not the printed numerator over the printed denominator")
 
     # ... the sensitivity S3 quotes on the share, whose two operands are both in this JSON.
     # It was written off as "not a function of the artifacts" and therefore not dischargeable by
@@ -319,16 +349,57 @@ def test_the_prose_that_reads_off_the_table_carries_the_same_digits(regenerated)
     assert float(sens.group(1)) == round(c["learned_sigma_between_seed_range"], 3)
     assert float(sens.group(2)) == round(c["share_shift_per_learned_arm_sized_spread"], 2)
 
-    # ... and the latitude on it: the injected arm held fixed, read against the other seeds
+    # ... and the latitude on it: the injected arm held fixed, read against the other seeds.
+    # RE-POINTED 2026-08-11, and the sentence had grown rather than merely moved: it now prints
+    # the three numerators and the three denominators as well as the shares, plus the injected
+    # arm to four decimals and the seed-43 numerator as it reads OFF the table's three-decimal
+    # columns (0.300) against its unrounded value (0.301).  Every one of those is a function of
+    # the same artifacts, so all of them are bound here rather than the two shares alone.
     other = c["share_holding_injection_against_other_seed_baselines"]
-    others = re.search(r"holding the injected arm at " + num + r" and reading it against the "
-                       r"seed-\$\d+\$ (?:and|,) [^.]*?learned baselines instead gives "
-                       r"((?:\$-?\d+\.\d+\$(?:,? and | *, *)?)+)", text)
+    others = re.search(
+        r"holding that arm at its single value " + num
+        + r" and recomputing at seeds \$(\d+)\$ and \$(\d+)\$, where the learned baseline and "
+        r"the substituted arm both move, gives " + num + r" and " + num
+        + r"\. It is that one arm's MAE that is fixed across the three readings and not the "
+        r"numerator, which is " + num + r", " + num + r" and " + num
+        + r" over denominators " + num + r", " + num + r" and " + num
+        + r" \(from the unrounded arm values, the injected arm being " + num
+        + r"; off the three-decimal columns of Table~\\ref\{tab:si-arms\} the seed-\$(\d+)\$ "
+        r"numerator reads " + num + r", and the share is " + num + r" either way\)", text)
     assert others is not None, "the other-seed baseline sentence of S3 changed shape"
-    assert float(others.group(1)) == round(inj, 3)
-    quoted = [float(x) for x in re.findall(r"\$(-?\d+\.\d+)\$", others.group(2))]
-    assert quoted == [round(v, 2) for v in other.values()], (
-        f"the sentence quotes {quoted} against {len(seeds) - 1} other seeds in the tree")
+    o = others.groups()
+    assert float(o[0]) == round(inj, 3)
+    # the two OTHER seeds, named in the order the block stores them
+    rest = sorted(other)
+    assert [o[1], o[2]] == rest, (
+        f"the sentence recomputes at seeds {[o[1], o[2]]}; the block carries {rest}")
+    assert [float(o[3]), float(o[4])] == [round(other[k], 2) for k in rest], (
+        "the two other-seed shares are not the block's")
+    # the three numerators and denominators: the reference seed first, then the two others, each
+    # read from the arms rather than from the sentence beside it
+    trio = [ref] + rest
+    assert [float(x) for x in o[5:8]] == [
+        round(arms["oracle"]["mae_per_seed"][k] - inj, 3) for k in trio], (
+        "a printed numerator is not that seed's oracle minus the one injected arm")
+    assert [float(x) for x in o[8:11]] == [
+        round(arms["oracle"]["mae_per_seed"][k] - arms["grounded_a"]["mae_per_seed"][k], 3)
+        for k in trio], (
+        "a printed denominator is not that seed's evaluation-only gap")
+    assert float(o[11]) == round(inj, 4), "the four-decimal injected arm is not the arm's value"
+    # ... and the parenthesis that documents its own rounding: off the table's three-decimal
+    # columns one numerator reads differently from its unrounded self, and the sentence says so.
+    # This is the one figure here that is NOT the artifact rounded -- it is the artifact rounded
+    # TWICE -- so it has to be computed that way or the note it makes would be unverifiable.
+    off = o[12]
+    assert off in rest, "the off-the-columns note names a seed the block does not carry"
+    assert float(o[13]) == round(
+        round(arms["oracle"]["mae_per_seed"][off], 3) - round(inj, 3), 3), (
+        "the off-the-columns numerator is not the table's two printed columns differenced")
+    assert float(o[13]) != round(arms["oracle"]["mae_per_seed"][off] - inj, 3), (
+        "the note claims the columns give a different numerator, and they do not; either the "
+        "discrepancy has gone away and the note should go with it, or the digits are wrong")
+    assert float(o[14]) == round(other[off], 2), (
+        "the 'either way' share disagrees with the share the block carries")
 
     senses = re.search(r"training-time supervision moves the arm from " + num + r" to " + num
                        + r" \(helps, " + num + r"\), evaluation-time substitution from " + num

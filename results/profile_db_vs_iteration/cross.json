@@ -1,0 +1,97 @@
+{
+ "what": "2002 full-convention MSE on the 60 VT-2005-matched rows, crossed over profile database x segment-iteration count x dtype",
+ "generated_by": "scripts/analysis/run_profile_database_vs_iteration_cross.py",
+ "cells": {
+  "VT-2005|n_iter=30|f32": 1.800407773418402,
+  "VT-2005|n_iter=30|f64": 1.8004079999534857,
+  "VT-2005|n_iter=300|f32": 1.7867485181875487,
+  "VT-2005|n_iter=300|f64": 1.7867485855345748,
+  "UD|n_iter=30|f32": 1.7712124054890162,
+  "UD|n_iter=30|f64": 1.771212621860969,
+  "UD|n_iter=300|f32": 1.7572442363572096,
+  "UD|n_iter=300|f64": 1.7572443485672047
+ },
+ "published_gap_vt30_minus_ud300": 0.043163424851197396,
+ "database_alone_at_common_count": {
+  "n_iter=30|f32": 0.02919536792938593,
+  "n_iter=30|f64": 0.02919537809251671,
+  "n_iter=300|f32": 0.02950428183033904,
+  "n_iter=300|f64": 0.029504236967370145
+ },
+ "count_alone": {
+  "VT-2005|f32": 0.013659255230853429,
+  "VT-2005|f64": 0.013659414418910831,
+  "UD|f32": 0.01396816913180654,
+  "UD|f64": 0.013968273293764266
+ },
+ "printed_in_note_b": {
+  "database_at_common_count": 0.029,
+  "count_at_common_database": 0.014,
+  "worst_two": [
+   "c1ccc2ccccc2c1",
+   "CCCCOC(C)=O"
+  ],
+  "worst_two_max_abs_dp": [
+   12.409,
+   2.739
+  ],
+  "remaining_42_agree_within_A2": 0.0576,
+  "n_within_tolerance": {
+   "1e-06": 0,
+   "0.0001": 0,
+   "0.001": 0,
+   "0.005": 0,
+   "0.01": 7
+  }
+ },
+ "molecules_identical_between_tabulations": {
+  "matched_60_set": "0 of 44",
+  "broad_set": "0 of 85",
+  "differ": [
+   "Brc1ccccc1",
+   "C#CCCCCC",
+   "C1=CCCCC1",
+   "C1CCNCC1",
+   "C1CCOC1",
+   "C=CCCCCC",
+   "CC#N",
+   "CC(C)(C)N",
+   "CC(C)=O",
+   "CC(C)Br",
+   "CC(Cl)CCl",
+   "CCC(C)N",
+   "CCCCCCC",
+   "CCCCCCCC",
+   "CCCCCCCCC",
+   "CCCCCCCCCC",
+   "CCCCCCCCCCC",
+   "CCCCCCCCCCCCCCCC",
+   "CCCCCCN",
+   "CCCCCOC(C)=O",
+   "CCCCCl",
+   "CCCCN",
+   "CCCCOC(C)=O",
+   "CCCN(CCC)CCC",
+   "CCCNCCC",
+   "CCNCC",
+   "CCc1ccccc1",
+   "CO",
+   "Cc1ccc(C)cc1",
+   "Cc1cccc(C)c1",
+   "Cc1cccc(C)n1",
+   "Cc1ccccc1",
+   "Cc1ccccc1C",
+   "Cc1ccccn1",
+   "Cc1cccnc1",
+   "Cc1ccncc1",
+   "Clc1ccccc1",
+   "Fc1ccccc1",
+   "Ic1ccccc1",
+   "NC1CCCCC1",
+   "OCCO",
+   "c1ccc2ccccc2c1",
+   "c1ccccc1",
+   "c1ccncc1"
+  ]
+ }
+}

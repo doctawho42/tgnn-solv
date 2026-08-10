@@ -73,12 +73,44 @@ remaining $57$ it returns the reference $0.785$, showing no divergence where bot
 dispersion-off contrast in the paper is therefore computed on our layers and cross-checked against
 the NIST \texttt{cCOSMO} reference, and the \emph{2010, dispersion on} runs are quoted from \texttt{cCOSMO}
 itself (\S\ref{sec:measure}).
+% (A) AND (B) OF THE 2026-08-11 SOLVER PASS.  The gradient sentence used to be unconditional --
+% "Gradients use the implicit-function theorem ... rather than backpropagation through the
+% iterations" -- and it is false for two of the three kernels.  solver.py:459 and :495 return before
+% use_impl is read (COSMO-SAC and the gamma_inf collapse), :534 gates the implicit branch on
+% self.training as well, and :527 turns it off for the corrected re-solve because model.py:1413
+% hands the solver literal tau.  So use_implicit_diff: true in configs/cosmo_sac.yaml is inert.
+% The claim is NOT deleted -- memory-constancy is a real property of the branch that does use it --
+% it is scoped to that branch, and the other branch's cost is stated beside it.
+% THE TWO OUTER COUNTS n_iter_train=5 / n_iter_eval=20 PRINT HERE FOR THE FIRST TIME, with the gap
+% measured, not asserted: scripts/analysis/run_outer_sle_iteration_audit.py ->
+% results/solver_iteration_audit/outer_sle_counts.json.  It re-solves the deposited NRTL rows from
+% (Phi, tau_12, tau_21, ln_gamma_inf), inverting NRTL's own ln_gamma_inf = tau_12 + tau_21 G_21 for
+% the kernel; its reproduction gate returns that arm's ln_x2_physics column to <=1.1e-3 on
+% 5607/5608 rows per seed, and its null arm (ideal closure, no x2 dependence) returns exactly 0.
+% Do not restate the per-row tail without the seed-mean line: the count is a large lever on 2.5% of
+% rows and a small one on the aggregate, and either half alone mis-states it.
 \paragraph{Solver, curriculum and loss.} The SLE fixed point is iterated as the damped map
 $x_2^{(k+1)}=\lambda\exp(-\Phicry(T)-\lng(x_2^{(k)},T))+(1-\lambda)x_2^{(k)}$ with closure-specific
-kernels. Gradients use the implicit-function theorem at the converged $x_2^\star$ (with
-$\eta=\partial\lng/\partial x_2$) rather than backpropagation through the iterations: exact at the
-fixed point, memory-constant in the iteration count, and well conditioned unless
-$1+x_2^\star\eta\to0$. The iteration counts above follow a convergence audit: a shorter $n{=}8$
+kernels, $\lambda=0.7$, for $5$ iterations in training and $20$ at evaluation. Those are a second
+pair of iteration counts, on the composition loop, distinct from the $16$ and $30$ of the segment
+loop above, and $\lambda$ is one configuration field read by both, so the two dampings move
+together. Re-solving the NRTL arm's deposited per-row kernels---which its deposit identifies
+exactly, the reconstruction returning that arm's own \lnx\ column---at the training count instead of
+the evaluation count moves $2.5\%$ of the labelled test rows by more than $0.05$ \lnx\ and its worst
+row by $9.20$, and the seed-mean MAE by $+0.0025$. Carrying the same rows to the fixed point instead
+moves that mean a further $+0.017$, against this arm's own $+0.093$ physics penalty over DirectGNN:
+the operator that arm is scored through is neither the one it was fitted
+against nor a converged one. The COSMO-SAC arms carry the same two counts and cannot be re-solved
+this way, their kernel being a $\sigma$-profile pair the deposit does not carry.
+Gradients on the full NRTL kernel use the implicit-function theorem at the converged $x_2^\star$
+(with $\eta=\partial\lng/\partial x_2$) rather than backpropagation through the iterations: exact at
+the fixed point, memory-constant in the iteration count, and well conditioned unless
+$1+x_2^\star\eta\to0$. That branch is taken in training only, and only on the first of that arm's
+two solves---the corrected re-solve is handed $\tau$ directly, which turns it off---while the
+COSMO-SAC and single-parameter kernels return before it is reached. Those are back-propagated
+through the iterations at a memory cost linear in the count, and the pinned COSMO-SAC recipe's
+implicit-differentiation setting has no effect on them. The segment counts follow a convergence
+audit of their own: a shorter $n{=}8$
 schedule fails a $5.86$-\lnx\ convergence test on strongly non-ideal pairs. The three-phase curriculum is (P1) auxiliary-property pretraining on crystal,
 Hansen and \lngi\ targets with no SLE loss; (P2) full SLE training, with the adaptive correction
 unfrozen partway and an optional crystal$\to$pair weight ramp; (P3) low-learning-rate stabilisation
@@ -897,6 +929,34 @@ clip note reports. That note counts rows whose predicted $x_2$ approaches $1$, w
 to $\log_{10}S$ diverges while \lnx\ itself stays finite; those rows are inside the $5608$ and are
 scored, under the clip that note discloses.
 
+% (C) OF THE 2026-08-11 SOLVER PASS, and the reason it prints as a DISCLOSURE and not as a filter.
+% scripts/analysis/run_multifragment_stratum_audit.py -> results/multifragment_stratum/summary.json
+% counts the stratum and scores it; it changes no row set, by construction.
+% THE ACCURACY HALF IS A NEGATIVE AND IT GETS ITS AUDIT: 26 clusters against 121, every one of the
+% twelve solute-clustered intervals crossing zero, and the sign flipping across seeds for three of
+% the four arms.  So the seed-mean differences are stated AS unresolved.  Do not promote them to an
+% effect on a later pass, and do not delete them either -- what the paragraph asserts is the
+% composition of the set and the arithmetic of removing it, both of which are exact.
+\paragraph{What the scored set holds that the ideal term is not written for.} $796$ of the $5608$
+rows---$14.2\%$, carried by $26$ of the $147$ test solutes---have a solute of more than one
+component: chloride, sodium, lithium, tosylate, malate and phosphate salts, two
+hexafluorophosphate ionic liquids and four hydrates. For none of those is the solid in equilibrium
+with the saturated solution the one-component crystal that $\Phi=(\dHfus/\Rgas)(1/T-1/\Tm)$ is
+written for, and not one of the $26$ carries a measured melting point---against $31$ of the $121$
+single-component solutes---so on each of those rows the crystal head supplies a $\Tm$ that no label
+anchors. Whether the arms pay for that there is unresolved, and they do not agree on the sign. Three are
+worse on the stratum than off it in the seed mean---by $+0.27$ \lnx\ for DirectGNN, $+0.18$ for the
+grounded learned-$\sigma$ arm and $+0.04$ for NRTL---while the ungrounded arm is \emph{better} on
+it, by $-0.16$. The effective sample size is $26$ solutes against $121$, only DirectGNN holds its
+sign at all three seeds, and all twelve solute-clustered $95\%$ intervals, the ungrounded arm's
+included, cross zero.
+What is resolved is the arithmetic of removing it, which is why it stays: dropping the stratum
+would move the DirectGNN mean by $-0.038$, the grounded learned-$\sigma$ mean by $-0.026$ and the
+NRTL mean by $-0.006$, widening the NRTL physics penalty from $+0.0928$ to $+0.1252$ and the
+learned-$\sigma$ penalty from the $+0.1435$ read off the table below to $+0.1560$. A filter
+applied at this stage would widen the very gap this paper reports, on the row set every number in
+both documents is keyed to.
+
 Table~\ref{tab:si-arms} gives the exact per-arm metrics behind the six three-seed bars of
 Fig.~\ref{fig:paradox}: three seeds on the labelled test rows
 ($n{=}5608$ of $8103$, those carrying a solubility measurement); the two single-seed co-adaptation bars are
@@ -1307,6 +1367,20 @@ $\lngi$-stratified bounds, computed on VT-2005-matched subsets, are Table~\ref{t
 
 % Relocated from prose (move 12 of the 2026-07-28 relocation plan): nine multi-value comparisons
 % across three kernels, two sets and two conventions. The sweeps behind it stay in App. C.
+%
+% NOTE (b) USED TO CALL THE PROFILE DATABASE THE WHOLE DIFFERENCE BETWEEN 1.80 AND 1.757, AND IT IS
+% NOT.  The two cells differ on three axes at once; crossing them on the same 60 rows, 2002 full
+% convention, gives VT-2005 1.800408 (30 iterations) / 1.786749 (300) and UD 1.771212 (30) /
+% 1.757244 (300), with float32-vs-float64 worth 2e-7.  So of the 0.0432 gap the database carries
+% 0.0292 at a common 30 and the iteration count 0.0137.  The residual database term is not a
+% displaced reference either: substituting the UD tabulation for naphthalene and butyl acetate --
+% the only two of the set's 44 molecules whose tabulations differ at all in bulk (L1 relative to the
+% UD profile, 30% and 10%; no other molecule of the 44 exceeds 0.16%, and none is bit-identical, so
+% do NOT write that the two tabulations "carry the same numbers") -- leaves 0.0027, and the 58 rows
+% touching neither part by 0.0028.  The 30 reproduces
+% results/b_insuff/decomposition.json conventions.full.mse_total and the 300 reproduces
+% results/b_insuff/fidelity_lever_fair2002.json corner.mse_2002_fair, both to the last printed digit.
+% Do not restore "the whole difference": the count is a second axis and it is not sized by the set.
 \begin{table*}[t]
 \centering
 \caption[The three COSMO-SAC arms, and the block split of the kernel contrast]{Activity error (MSE, squared $\lngi$ units) of the three COSMO-SAC arms, and the block split that
@@ -1342,8 +1416,13 @@ NIST-validated layer summing the segment contributions of all three profile chan
 dispersion on}, COSMO-SAC-2010 without and with the dispersion term (\S\ref{sec:fidelity}).\quad
 \tnk{b}\,\emph{full}\,/\,\emph{res} as in Table~\ref{tab:decomp}. \emph{Both} sets are scored on UD
 profiles here, the VT-2005-matched set included---Table~\ref{tab:decomp} scores the VT-2005-matched set on VT-2005 instead,
-and that database difference is the whole difference between its VT-2005/full $1.80$ and the $1.757$
-here (\S\ref{sec:fidelity}). Within a set, each arm uses the $\sigma$-profile averaging its own
+and at $30$ segment iterations against the $300$ behind the $1.757$ here, so its VT-2005/full $1.80$
+and that $1.757$ part on two axes. At $30$ iterations on both databases the two part by $0.029$ on
+that set's full-convention MSE and the count carries a further $0.014$. The two tabulations are not
+one calculation---no molecule of the $44$ agrees to $10^{-3}$\,\AA$^2$ per bin---but only two are a
+different calculation outright, naphthalene and butyl acetate at $12.4$ and $2.7$\,\AA$^2$ of
+worst-bin deviation against $0.058$ for the other $42$. The $0.029$ therefore sizes a re-tabulation
+and not a displaced reference (\S\ref{sec:fidelity}). Within a set, each arm uses the $\sigma$-profile averaging its own
 model prescribes (Mullins for 2002, Hsieh for 2010).\quad
 \tnk{c}\,$P$ is the two-way cluster-bootstrap frequency that the $2010$ arm is the better one, with
 the $90\%$ margin on the paired squared-error difference beneath it.\quad
@@ -2234,11 +2313,16 @@ stated under the residual-only rule with the full-convention reading beside it.
 full). \emph{(2)}~VT-2005-matched, VT-2005 against VT-2005: $1.472$ against $2\Binsuf\lesssim1.427$, so
 $\Bclos\gtrsim0.759$ against $\Binsuf\lesssim0.713$ and a margin of
 $+0.05$ ($1.80$ against $1.22$, $+0.58$ full; Table~\ref{tab:decomp}). The $1.757$ of~(a$'$) is those
-same $60$ pairs scored on \emph{UD} profiles, which is the whole difference between $1.80$ and
-$1.757$. Charged against a UD-native floor recomputed for those pairs, the residual-only convention gives
+same $60$ pairs scored on \emph{UD} profiles, and two axes separate it from the $1.80$: the profile
+database and the segment-iteration count, which the two artifacts do not share. At a common count the
+databases part by $+0.029$ of the full-convention $+0.043$ and the count carries $+0.014$
+(note~\emph{b} of Table~\ref{tab:decomp}). Charged against a UD-native floor recomputed for those pairs, the residual-only convention gives
 $1.436$ against $\Binsuf\lesssim0.71$, a margin of $+0.01$ at $P\approx0.8$, against $1.757$ versus a
 UD-native $\Binsuf\lesssim0.54$ and a margin of $+0.69$ full---so on UD profiles the VT-2005-matched set's own
-floor check is, under the rule we deploy, at zero.
+floor check is, under the rule we deploy, at zero. That last reading is the one the two axes reach:
+the residual-only $1.472$-against-$1.436$ gap is $+0.027$ database and $+0.009$ count, and the count
+term is the size of the $+0.01$ margin it is read against, so the residual-only floor check on UD
+profiles is at zero on either attribution and is not resolved by this set.
 
 \subsection{Robustness of the closure/insufficiency separation}
 \label{sec:si-robustness}
