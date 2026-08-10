@@ -147,3 +147,26 @@ systematic \emph{bias} ($+0.45\to+0.06$) but recovers little \emph{accuracy} ($R
 on the same rows), as expected if the closure, not the estimate, is the binding constraint. Both arms
 are seed $42$ only, and this is a statement about the one correction tested: an additive bounded
 residual on the output, gated, on this closure and this corpus.
+
+% ADDED 2026-08-11.  Deposit: results/closure_ladder/placebo_profile_diagnosis.csv (the learned
+% side, from row_meta_profiles over the substituted rows) and the reference side recomputed here
+% from results/sigma_profile_artifact/sigma_profiles.csv at the layer's own sigma_hb = 0.0084.
+% THE CHECK THAT MAKES THIS READABLE is that the reference is exactly zero, not small: cyclohexane,
+% acetone, toluene and THF all return 0.0000 A^2 in the donor window while ethanol returns 6.20 and
+% water 15.75.  So the comparison is against a table that does encode the chemistry.
+% Scope: measured on the one trained COSMO-SAC head in the tree, a retired checkpoint scored at its
+% own segment count.  Do not restate it as an arm measurement.
+\paragraph{The learned profile is chemically inadmissible in the window the closure's
+hydrogen-bond term reads.} COSMO-SAC's hydrogen-bonding contribution acts on segments beyond
+$|\sigma|=\sigma_{\mathrm{hb}}$, and for a molecule with no hydrogen-bond donor the donor side of
+that window must be empty. In the reference tabulation it is, exactly: cyclohexane, acetone, toluene
+and tetrahydrofuran each carry $0.000$\,\AA$^2$ of donor-window area, against $6.20$ for ethanol and
+$15.75$ for water. The learned profile carries $44.0$, $32.4$, $24.5$ and $50.7$\,\AA$^2$ in that
+same window---between $23\%$ and $36\%$ of each molecule's total surface---and every row of the
+scored set carries mass on both sides of it, so the hydrogen-bond kernel is active on every pair
+regardless of chemistry. This is a property of the head's parameterisation and not of its training
+signal: the profile is emitted through a softmax over the $51$ bins, which cannot return a zero, while
+$58\%$ of the reference table's bins are exactly zero. It is measured here on the one trained
+COSMO-SAC head the tree holds, so its size is not an arm result; that the window cannot be emptied
+at all is architectural, and a head able to emit zeros---a sparse simplex map in place of the
+softmax---is the change it calls for.

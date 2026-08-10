@@ -204,3 +204,11 @@ results/glycol_conformers/*
 !results/glycol_conformers/AMENDMENTS.json
 !results/glycol_conformers/RESULTS.json
 !results/glycol_conformers/SUMMARY.txt
+!results/closure_ladder
+results/closure_ladder/*
+!results/closure_ladder/PREREGISTRATION.md
+!results/closure_ladder/RESULTS.md
+!results/closure_ladder/ladder_table.csv
+!results/closure_ladder/placebo_profile_diagnosis.csv
+!results/closure_ladder/rank_correlation.json
+!results/closure_ladder/harness_identity.json

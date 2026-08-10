@@ -1,0 +1,27 @@
+{
+ "check_1_learned_arm_vs_deposited_untouched": {
+  "reference": "results/cosmo_sac/test_predictions.csv (untouched export_checkpoint_predictions.py, 2026-06-21)",
+  "max_abs_diff_all_8103_rows": 1.9188346862792969,
+  "max_abs_diff_5608_scored_rows": 1.4543533325195312e-05,
+  "n_rows_over_1e-5_all": 17,
+  "n_rows_over_1e-5_scored": 2,
+  "mae_scored_mine": 2.612898561618158,
+  "mae_scored_reference": 2.6128987663665644,
+  "note": "the 15 rows exceeding 1e-5 all carry has_solubility=False and never enter any metric; they are exotic phosphorane / macrocycle graphs",
+  "verdict": "PASS at 1.5e-5 on the scored rows; not bit-identical on 15 unscored rows"
+ },
+ "check_2_oracle_arm_vs_untouched_export": {
+  "reference": "export_checkpoint_predictions.py --sigma-oracle --sigma-oracle-side both, re-run today",
+  "max_abs_diff_all_8103_rows": 3.552713678800501e-15,
+  "max_abs_diff_5608_scored_rows": 3.552713678800501e-15,
+  "mae_scored_mine": 9.000278882083185,
+  "mae_scored_reference": 9.000278877514214,
+  "verdict": "PASS"
+ },
+ "check_3_NO_SG_is_a_provable_no_op": {
+  "why": "cosmo_sac_wire_volume absent from this checkpoint's model_card -> default False -> V is None -> CosmoSacLayer.ln_gamma_2 never applies the Staverman-Guggenheim term. Removing it must therefore change nothing.",
+  "max_abs_diff_learned_arm": 0.0,
+  "max_abs_diff_oracle_arm": 0.0,
+  "verdict": "PASS (bit-identical)"
+ }
+}
