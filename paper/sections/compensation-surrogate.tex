@@ -164,9 +164,18 @@ and tetrahydrofuran each carry $0.000$\,\AA$^2$ of donor-window area, against $6
 $15.75$ for water. The learned profile carries $44.0$, $32.4$, $24.5$ and $50.7$\,\AA$^2$ in that
 same window---between $23\%$ and $36\%$ of each molecule's total surface---and every row of the
 scored set carries mass on both sides of it, so the hydrogen-bond kernel is active on every pair
-regardless of chemistry. This is a property of the head's parameterisation and not of its training
-signal: the profile is emitted through a softmax over the $51$ bins, which cannot return a zero, while
-$58\%$ of the reference table's bins are exactly zero. It is measured here on the one trained
-COSMO-SAC head the tree holds, so its size is not an arm result; that the window cannot be emptied
-at all is architectural, and a head able to emit zeros---a sparse simplex map in place of the
-softmax---is the change it calls for.
+regardless of chemistry.
+
+Two causes are separable in principle and are not separated here, and the head this is measured on
+decides which is live. Its $\sigma$-supervision stream ran for zero steps: the profile received no
+supervision at all, and \S\ref{sec:ident} is the reason that matters---solubility alone does not
+determine the profile's shape, so an unsupervised profile is free in exactly the bins that carry no
+constraint. That accounts for a quantity of this size. The parameterisation accounts for something
+much smaller and of a different kind: the profile is emitted through a softmax over the $51$ bins,
+which cannot return an exact zero where $58\%$ of the reference table's bins are exactly zero, so no
+amount of supervision empties the window---but a softmax reaches $10^{-6}$ at a logit gap of ten, and
+a floor of that size is four orders below what is measured. The measurement therefore bounds neither
+cause on its own. What it does establish is that the window is not empty in a trained arm and that
+the closure's hydrogen-bond term is consequently live on every pair, which is a defect whichever
+cause carries it; a supervised arm separates the two, and a head able to emit zeros removes the
+architectural half.
