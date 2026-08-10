@@ -81,6 +81,7 @@ import argparse
 import importlib.util
 import json
 import sys
+import re
 from pathlib import Path
 from typing import Any
 
@@ -491,11 +492,63 @@ def _recombine(out: dict[str, Any], axis: str, n_locked: int, global_per_seed: l
     }
 
 
-def check(out: dict[str, Any]) -> list[str]:
+#: Which printed row of `chemistry-map.tex` each computed key is held to.  The row is matched by
+#: its label in the first tabular column; the value is parsed out of the file at check time, so a
+#: number edited in the manuscript and not here is a MISMATCH rather than an invisible drift.
+TEX_ROW: dict[str, str] = {
+    "solvent/water": "Water", "solvent/carboxylic_acid": "Carboxylic acid",
+    "solvent/sulfoxide": "Sulfoxide", "solvent/nitrile": "Nitrile",
+    "solvent/alcohol": "Alcohol", "solvent/aromatic": "Aromatic",
+    "solvent/hydrocarbon": "Hydrocarbon", "solvent/halogenated": "Halogenated",
+    "solvent/amide": "Amide", "solute/oxygenated": "Oxygenated",
+    "solute/polyaromatic": "Polyaromatic", "solute/heterocycle": "Heterocycle",
+    "solute/halogenated_aromatic": "Halogenated-aromatic",
+    "solute/charged_salt": "Charged / salt",
+    "novelty/tanimoto_le_0.3": r"Tanimoto $\leq0.3$",
+    "novelty/tanimoto_gt_0.8": r"Tanimoto $>0.8$",
+}
+
+_CELL = re.compile(r"\$([+-]?[\d.]+)\s*(?:\\pm\s*([\d.]+))?\s*\$")
+
+
+def parse_tex(path: Path) -> dict[str, tuple[float, float | None, bool]]:
+    """Read the printed value of every mapped row out of the manuscript source.
+
+    The frozen table this replaced was a second copy of the page, and a second copy is the
+    thing `--check` exists to detect: editing the manuscript and not the constant, or the
+    constant and not the manuscript, both passed.
+    """
+    text = path.read_text(encoding="utf-8")
+    found: dict[str, tuple[float, float | None, bool]] = {}
+    for key, label in TEX_ROW.items():
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not stripped.startswith(label) or "&" not in stripped:
+                continue
+            cell = stripped.split("&", 1)[1]
+            if r"\approx0" in cell:
+                found[key] = (0.0, None, True)
+            else:
+                m = _CELL.search(cell)
+                if m is None:
+                    continue
+                found[key] = (float(m.group(1)),
+                              float(m.group(2)) if m.group(2) else None, False)
+            break
+    missing = [k for k in TEX_ROW if k not in found]
+    if missing:
+        raise SystemExit(f"check: these rows were not found in {path}: {missing}")
+    return found
+
+
+def check(out: dict[str, Any], tex: Path | None = None) -> list[str]:
     """Compare against what the .tex prints today, at the decimal it prints."""
-    lines = ["", "CHECK against paper/sections/chemistry-map.tex (printed decimal)", "-" * 78]
+    tex = tex or (_REPO_ROOT / "paper" / "sections" / "chemistry-map.tex")
+    published = dict(PUBLISHED)
+    published.update(parse_tex(tex))
+    lines = ["", f"CHECK against {tex} (printed decimal, parsed at check time)", "-" * 78]
     failures = []
-    for key, (want_mean, want_sd, approx) in PUBLISHED.items():
+    for key, (want_mean, want_sd, approx) in published.items():
         got = out.get(key)
         if got is None:
             lines.append(f"{key:34s}  printed {want_mean:+.2f}  -- NOT COMPUTED (see notes)")
@@ -621,7 +674,12 @@ def main() -> None:
               f"the printed classes alone ({c['n_rows_in_printed_classes']} rows) recombine to "
               f"{c['printed_classes_recomposed_mean']:+.4f}")
     if args.check:
-        print("\n".join(check(out)))
+        report = check(out)
+        print("\n".join(report))
+        # A check that cannot fail is not a check.  The verdict line names the failures; the
+        # exit status has to carry it, or a caller in a pipeline reads success from a mismatch.
+        if any("MISMATCH" in line or "NOT COMPUTED" in line for line in report):
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

@@ -172,12 +172,31 @@ def collect(root: Path, seeds: list[int], arms=ARMS, controls=CONTROLS, *,
                        for key, _ in arms if not present[key]}
         _no_partial(pub_root, pub_present, pub_seeds)
 
+    # Arms the re-run PRODUCES may never be borrowed.  The re-run trains ungrounded and grounded
+    # and re-evaluates the grounded checkpoints under the reference profile, so all three are its
+    # own output; borrowing one from the published tree would print a published number in a row the
+    # inventory says is regenerated, and the two would be indistinguishable on the page.  The
+    # sigma-oracle is the live case: it lands after the two trained arms, so a table built in that
+    # window silently carried the published value.  DirectGNN, NRTL and the +SG arm are not
+    # retrained and their disposition is that they stand as published, so those may be borrowed.
+    RERUN_ARMS = {"ungrounded", "grounded_a", "oracle"}
     source: dict[str, tuple[Path, list[int]]] = {}
+    borrowed_rerun: list[str] = []
     for key, _ in arms:
         if present[key]:
             source[key] = (root, seeds)
         elif pub_present.get(key):
+            if key in RERUN_ARMS and pub_root is not None:
+                borrowed_rerun.append(key)
+                continue
             source[key] = (pub_root, pub_seeds)
+    if borrowed_rerun:
+        raise SystemExit(
+            f"make_si_arms_table: {borrowed_rerun} is an arm the re-run produces and it is not in "
+            f"{_rel(root)}; it exists only in {_rel(pub_root)}.  Refusing to print a published "
+            "value in a row the pre-commitment says is regenerated.  Run the arm, or build the "
+            "table against the published tree alone."
+        )
     missing = [k for k, _ in arms if k not in source]
     if missing:
         where = f"{_rel(root)}" + (f" or {_rel(pub_root)}" if pub_root else "")

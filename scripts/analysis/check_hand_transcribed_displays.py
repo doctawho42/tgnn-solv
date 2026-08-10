@@ -114,6 +114,18 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
+
+#: The parity figure deposits the numbers it drew beside the PDF.  A numeral printed INSIDE a
+#: figure cannot be read out of the .tex, so the caption's count of off-axis points is checked
+#: against that sidecar rather than against a recomputation: the question here is whether the
+#: caption agrees with the drawing, and the drawing is what the sidecar records.
+_PARITY_JSON = REPO / "paper" / "figs" / "fig_parity_lnx2.numbers.json"
+
+
+def _parity_sidecar() -> dict:
+    if not _PARITY_JSON.exists():
+        raise SystemExit(f"check: {_PARITY_JSON} is missing; regenerate the parity figure")
+    return json.loads(_PARITY_JSON.read_text(encoding="utf-8"))
 PUBLISHED_ROOT = REPO / "results" / "e5_sigma_grounding"
 
 # The five arms that intersect at every seed, plus the sigma-oracle re-evaluation.  The lock is
@@ -963,14 +975,21 @@ def caption_specs() -> list[CaptionSpec]:
         CaptionSpec(
             "fig:parity-lnx2", ("ungrounded", "grounded", "reference"), "float",
             binds=[
+                # Re-anchored 2026-08-10: the caption was rewritten when Figure 3 was redrawn,
+                # and the check caught it -- two numerals fell out of every binding and were
+                # reported UNREGISTERED, which is the property this file exists for.
                 Bind("the labelled row set",
-                     r"the same \$(\d+)\$\s*labelled test rows",
+                     r"on the \$(\d+)\$ labelled test rows",
                      lambda c: (str(c.root.n_lock),),
                      lambda c: f"cross-arm lock over {A(c,'grounded_a')}"),
-                Bind("the seed this figure draws, and how many exist",
-                     r"seed \$(\d+)\$ of (\w+)\.",
-                     lambda c: ("42", word(len(c.seeds))),
-                     lambda c: f"seed directories under {rel(c.root.root)}"),
+                # The seed moved OUT of the caption and INTO the figure, where the redraw prints
+                # it beside panel (a).  A numeral drawn inside a PDF is not reachable from here,
+                # so the caption no longer claims it and this binding no longer looks for it;
+                # the figure's own generator carries the seed in its .numbers.json sidecar.
+                Bind("the predictions drawn below the axis",
+                     r"its \$(\d+)\$ predictions that fall below it",
+                     lambda c: (str(_parity_sidecar()["panels"]["oracle"]["n_below_axis"]),),
+                     lambda c: rel(_PARITY_JSON)),
                 Bind("the composition of the locked rows",
                      r"\$(\d+)\$ solute--solvent pairs over \$(\d+)\$ solutes and \$(\d+)\$ solvents",
                      lambda c: (str(c.root.facts["n_pairs"]), str(c.root.facts["n_solutes"]),
@@ -981,16 +1000,12 @@ def caption_specs() -> list[CaptionSpec]:
                      lambda c: (str(int(np.floor(c.root.facts["t_min"]))),
                                 str(int(np.ceil(c.root.facts["t_max"])))),
                      lambda c: f"cross-arm lock over {A(c,'grounded_a')}"),
-                # "at most 0.05" is a bound, so it is checked as one: the largest per-panel
-                # departure is rounded UP to the printed precision.  Rounding it to nearest would
-                # let a true 0.051 print as "at most 0.05" and pass.
-                Bind("how far the drawn seed sits from the arm means",
-                     r"by at most \$([\d.]+)\$ in MAE",
-                     lambda c: (fmt(np.ceil(100 * max(
-                         abs(c.arm(a).mae[42] - c.arm(a).mae_mean)
-                         for a in ("directgnn", "ungrounded", "grounded_a", "oracle"))) / 100,
-                         2),),
-                     lambda c: A(c, "directgnn", "ungrounded", "grounded_a", "oracle")),
+                # RETIRED 2026-08-10 with the clause it checked.  The caption used to reconcile the
+                # panels' seed-42 statistics against Figure 2's three-seed bars in three sentences,
+                # one of which bounded the departure "by at most 0.05 in MAE"; the redraw prints the
+                # seed in the figure instead, so there is no such clause to check.  The binding is
+                # removed rather than re-anchored: a binding kept alive against text that no longer
+                # exists reports MISSING forever and trains a reader to ignore the report.
             ],
         ),
         CaptionSpec("tab:baselines", ("grounded", "oracle"), "float"),
