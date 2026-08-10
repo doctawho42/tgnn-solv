@@ -19,6 +19,29 @@ What is run here is exactly Sec. 1-6 of the declaration and nothing else:
 
     KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src \
         python scripts/analysis/run_b_insuff_crossfit_scoring.py --stage all
+
+THIS PASS STILL SEEDS FROM THE STRATUM NAME, AND ITS DEPOSIT SHOWS IT.  Recorded 2026-08-10,
+when the map's own seeding was repaired.  `build_map' below calls
+`stable_seed(label, uname, cname, f"{sname}::{lab}")' -- the NAME -- while
+`run_b_insuff_stratified_map.build' now passes the ROW SET's canonical name (see `row_set_key'
+there and the finding in `results/b_insuff/map_ci_precision.json'), so a row set carrying several
+names draws an independent 3000-draw replicate under each one HERE, and
+`crossfit_map_table.csv' prints them as if they were several quantities.  The size is readable in
+the deposit without re-running anything: the 182 glycol-ether rows appear under three names and
+their cross-fitted 90% interval prints [+1.02,+2.49], [+1.05,+2.47] and [+1.02,+2.49], the
+binning-estimator column [+1.26,+2.87], [+1.26,+2.84] and [+1.25,+2.85].  One quantity, three
+draws, second decimals that disagree.
+
+It was NOT repaired here, and the reason is not that it does not matter.  The declaration this
+pass scores (sha256 above) pins the bootstrap as imported machinery, and re-seeding it changes
+every restated cell of a deposit the manuscript quotes in nine places; that is a re-run and a
+re-audit, not an edit.  What the manuscript does instead is state the asymmetry where it quotes
+the number (`paper/sections/crossfit-negative.tex'): the value it is compared against is
+converged at 1.2e8 draws and this one is a single 3000-draw replicate, and the fall being argued
+for is six and twenty-five times the spread across those three printings.  A reader is therefore
+never shown two of these as two measurements.  Whoever re-runs this pass should pass the row
+set's canonical name here first, and expect the restated names -- not the canonical ones the
+manuscript quotes -- to move.
 """
 from __future__ import annotations
 

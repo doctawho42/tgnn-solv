@@ -16,7 +16,17 @@ re-run, because a generator is the wrong tool for a LaTeX table of prose:
                             with each other about the seed policy;
   * nine float captions  -- the seven the inventory's caption rule governs plus the two map
                             captions, which carry a differently-worded statement;
-  * the table-of-contents graphic, whose caveat is a string literal in a script that reads no data.
+  * the table-of-contents graphic, whose caveat is a string literal in a script that reads no data;
+  * THE ABSTRACT     -- added 2026-08-10.  When the author reversed the "no numerals" rule for it,
+                        $2.043$, $1.846$ and $2.252$ became the only printed arm means in either
+                        document that nothing verified, because this script finds a display by
+                        ``\label`` and the achemso ``abstract`` environment has none.  It is
+                        reached through the ``%<abstract-numerals>`` markers instead (see
+                        ``find_abstract``), and all ten of its numerals are bound: three arm means
+                        to the per-seed deposits the body's copies use, the margin sentence to
+                        ``glycol_ether_ci_converged.json``, the search size to the map's own
+                        stratum count.  Its two printed seed counts are told apart -- see
+                        ``abstract_row``.
 
 A generator cannot discharge those.  A CHECKER can: this script extracts every numeral from those
 displays and verifies it against the artifact it is supposed to come from, failing loudly with the
@@ -127,6 +137,32 @@ def _parity_sidecar() -> dict:
         raise SystemExit(f"check: {_PARITY_JSON} is missing; regenerate the parity figure")
     return json.loads(_PARITY_JSON.read_text(encoding="utf-8"))
 PUBLISHED_ROOT = REPO / "results" / "e5_sigma_grounding"
+
+#: The two artifacts behind the abstract's IDAC sentence.  The abstract, the body and the deposit
+#: have to agree about one interval, and this is the copy that decides.
+GLYCOL_CI = REPO / "results" / "b_insuff" / "glycol_ether_ci_converged.json"
+ADMISSIBILITY = REPO / "results" / "b_insuff" / "admissibility_table.csv"
+
+
+def glycol_deposit() -> dict:
+    if not GLYCOL_CI.exists():
+        raise SystemExit(f"check: {GLYCOL_CI} is missing; run "
+                         "scripts/analysis/run_b_insuff_glycol_ether_ci.py")
+    return json.loads(GLYCOL_CI.read_text(encoding="utf-8"))
+
+
+def map_stratum_count() -> int:
+    """The size of the search the glycol-ether row set is the survivor of.
+
+    The map's headline cell -- broad IDAC, row unit, deployed residual-only convention -- and the
+    count is of that cell's strata, which is what "$59$-fold search" names.
+    """
+    if not ADMISSIBILITY.exists():
+        raise SystemExit(f"check: {ADMISSIBILITY} is missing; run "
+                         "scripts/analysis/run_b_insuff_stratified_map.py")
+    df = pd.read_csv(ADMISSIBILITY)
+    cell = df[(df["set"] == "broad_477") & (df["unit"] == "row") & (df["convention"] == "res")]
+    return int(cell.groupby(["axis", "stratum"]).ngroups)
 
 # The five arms that intersect at every seed, plus the sigma-oracle re-evaluation.  The lock is
 # taken over whichever of these the root actually holds; run_e5_comparison.py's own docstring
@@ -493,6 +529,52 @@ def find_display(paper: Path, label: str) -> tuple[Path, str]:
         end = start + end_m.end()
         return path, text[start:end]
     raise SystemExit(f"label {label!r} not found in any of {_TEX_FILES}")
+
+
+#: The abstract's source markers.  See ``find_abstract``.
+ABSTRACT_OPEN = "%<abstract-numerals>"
+ABSTRACT_CLOSE = "%</abstract-numerals>"
+
+
+def find_abstract(paper: Path) -> str:
+    r"""The abstract's printed text, located by its source markers.
+
+    EVERY OTHER DISPLAY HERE IS LOCATED BY ``\label``, and the achemso ``abstract`` environment
+    carries none -- so when the author's 2026-08-10 ruling put the magnitudes back into the
+    abstract, $2.043$, $1.846$ and $2.252$ became the only printed arm means in either document
+    that no checker could reach.  They are also the three most exposed numerals in the
+    submission: page 1, read without the deposit beside them, and rewritten by the five-seed
+    re-run.
+
+    A ``\label`` inside ``abstract`` would be a label on nothing (achemso does not number the
+    block, and ``\ref`` to it prints the section it lands in), so the region is marked in the
+    source instead.  The markers are LaTeX comments, they reach no reader, and BOTH ARE
+    LOAD-BEARING: this function raises rather than returns when either is missing, when they do
+    not bracket an ``abstract`` environment, or when the environment they bracket is not the
+    document's own.  A checker that quietly stops covering a region reads exactly like one that
+    passed, which is the failure this whole script exists to prevent.
+    """
+    path = paper / "grounding_paradox.tex"
+    raw = path.read_text()
+    i, j = raw.find(ABSTRACT_OPEN), raw.find(ABSTRACT_CLOSE)
+    if i < 0 or j < 0:
+        raise SystemExit(
+            f"{rel(path)}: the abstract's source markers are gone ("
+            f"{ABSTRACT_OPEN if i < 0 else ''}{' and ' if i < 0 and j < 0 else ''}"
+            f"{ABSTRACT_CLOSE if j < 0 else ''} not found).  They are what gives this script a "
+            "handle on the abstract; restore them around \\begin{abstract}...\\end{abstract}."
+        )
+    if j < i:
+        raise SystemExit(f"{rel(path)}: the abstract's closing marker precedes its opening one")
+    region = re.search(r"\\begin\{abstract\}(.*?)\\end\{abstract\}", raw[i:j], re.S)
+    whole = re.search(r"\\begin\{abstract\}(.*?)\\end\{abstract\}", raw, re.S)
+    if region is None or whole is None:
+        raise SystemExit(f"{rel(path)}: the abstract markers no longer bracket an abstract "
+                         "environment")
+    if region.group(1) != whole.group(1):
+        raise SystemExit(f"{rel(path)}: the marked region is not the document's abstract -- the "
+                         "markers drifted, so they would certify the wrong text")
+    return normalise_ws(strip_comments(region.group(1)))
 
 
 def caption_of(block: str) -> str:
@@ -878,6 +960,81 @@ def accuracy_row() -> DisplayRow:
                  r"\$([-+][\d.]+)\$ between separately tuned",
                  lambda c: (fmt(c.physics_penalty, 2, sign=True),),
                  lambda c: A(c, "grounded_a", "directgnn")),
+        ],
+    )
+
+
+def abstract_row() -> DisplayRow:
+    r"""Page 1, every numeral of it.
+
+    THE THREE ARM MEANS ARE BOUND TO THE SAME ARTIFACT THE BODY'S COPIES USE -- the per-seed
+    prediction deposits under the results root -- so the abstract cannot drift from
+    \S\ref{sec:paradox} without one of the two failing.  The margin sentence is bound to the
+    glycol-ether deposit, which is what makes "the abstract, the body and the deposit agree" a
+    checked property rather than an intention: change the interval in the deposit and re-run, and
+    this fires until the abstract is re-typed.
+
+    TWO SEED COUNTS ARE PRINTED HERE AND THEY ARE NOT THE SAME COUNT.  "over three seeds" is the
+    sigma-grounding arms and is BOUND to the seeds actually in ``--root``, so the five-seed re-run
+    rewrites it and this check enforces that.  "on separate three-seed runs" is the n=44
+    compensation-surrogate family at seeds 0, 1 and 2, which the re-run does not touch; it is
+    change-DETECTED against the literal "three" and is not a fact about ``--root``.  An editor
+    discharging "the abstract's seed count" who changes that one has changed the wrong number,
+    and this is the check that says so.
+    """
+    dep = glycol_deposit()
+    rows, conv = dep["row_set"], dep["converged_interval"]
+    margin = dep["point_estimates"]["margin"]
+    return DisplayRow(
+        key="",
+        binds=[
+            Bind("the supervision arm means (ungrounded -> grounded)",
+                 r"from \$([\d.]+)\$ to \$([\d.]+)\$ over",
+                 lambda c: (fmt(c.arm("ungrounded").mae_mean, 3),
+                            fmt(c.arm("grounded_a").mae_mean, 3)),
+                 lambda c: A(c, "ungrounded", "grounded_a")),
+            Bind("the abstract's OWN seed count (the sigma-grounding arms)",
+                 r"over (\w+) seeds",
+                 lambda c: (word(len(c.seeds)),),
+                 lambda c: f"seed directories under {rel(c.root.root)}"),
+            Bind("the sigma-oracle arm mean",
+                 r"error to \$([\d.]+)\$ at inference",
+                 lambda c: (fmt(c.arm("oracle").mae_mean, 3),),
+                 lambda c: A(c, "oracle")),
+            Bind("the glycol-ether margin, its row and cluster counts, and its interval",
+                 r"by \$([\d.]+)\$ \(\$n\{=\}(\d+)\$, \$(\d+)\$ pairs, \$(\d+)\\%\$ interval "
+                 r"\$\[([-+][\d.]+),([-+][\d.]+)\]\$\)",
+                 # Rounded HERE, half-up, from the deposit's own endpoints -- not read out of its
+                 # ``printed_as`` field, so the deposit cannot pre-round its way past this check.
+                 lambda c: (fmt(margin, 2), str(rows["n"]), str(rows["n_pairs"]), "90",
+                            fmt(conv["ci90_lo"], 2, sign=True),
+                            fmt(conv["ci90_hi"], 2, sign=True)),
+                 lambda c: f"{rel(GLYCOL_CI)} (the $90$ is the estimator's declared coverage and "
+                           "is change-detected, not derived)"),
+            Bind("the size of the search that row set is the survivor of",
+                 r"survivor of a \$(\d+)\$-fold search",
+                 lambda c: (str(map_stratum_count()),),
+                 lambda c: f"{rel(ADMISSIBILITY)}, broad_477 / row unit / residual-only "
+                           "convention, distinct (axis, stratum)"),
+            Bind("the SURROGATE family's seed count -- DECLARED, not this tree's",
+                 r"on separate (\w+)-seed runs",
+                 lambda c: ("three",),
+                 lambda c: "the n=44 compensation-surrogate family at seeds 0, 1, 2, which the "
+                           "sigma-grounding re-run does not touch"),
+        ],
+        claims=[
+            # The abstract prints that interval to two decimals.  Whether it MAY is a property of
+            # the deposit, not of the sentence: at 12 x 100000 draws the lower endpoint stood
+            # 0.9 Monte-Carlo standard errors from a rounding boundary, so its printed second
+            # decimal was a property of the seed set.  This is the check that says the draw count
+            # is still high enough to have earned the digit.
+            Claim("the printed endpoints are determined at two decimals",
+                  lambda c: bool(conv.get("printing_is_determined")),
+                  lambda c: f"{rel(GLYCOL_CI)}: boundary_margin_se "
+                            f"{conv.get('boundary_margin_se')}, se "
+                            f"({conv.get('se_lo')}, {conv.get('se_hi')}) over "
+                            f"{conv.get('n_draws')} draws",
+                  quote="$[+1.25,+2.87]$ printed to two decimals"),
         ],
     )
 
@@ -1422,6 +1579,9 @@ def run_checks(ctx: Ctx) -> list[Finding]:
                                   ledger_notes_row(), ctx)
         findings += check_float(label, block, specs, ctx)
 
+    # ---- the abstract, which carries three arm means and no label to reach them by
+    findings += check_row("abstract (page 1)", find_abstract(paper), abstract_row(), ctx)
+
     # ---- the run-family table's sigma-grounding row
     _, runs_block = find_display(paper, "tab:runs")
     findings += check_float("tab:runs", runs_block,
@@ -1594,7 +1754,15 @@ LEDGER_DECLARED_ROWS: dict[str, list[DisplayRow]] = {
         DisplayRow(key="\\multicolumn{3}{@{}L{\\dimexpr0.95\\linewidth+4\\tabcolsep\\relax}@{}}{\\emph{Closure against inputs on the activit",
                    declared=[], owner=_BLOCK),
         DisplayRow(key="$\\Bclos>\\Binsuf$ on \\emph{glycol-ether} solvents\\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a low",
-                   declared=['182', '3', '+2.04', '+1.26', '+2.87', '+2.94', '0.95', '+1.60',
+                   # +1.25, not +1.26: the deposited interval was under-converged.  At the map's own 3000
+                   # draws the endpoint has a Monte-Carlo sd of 0.0195 and ranges [1.209, 1.295]
+                   # over forty seeds, so its second decimal was noise.  Converged at 1.2e8 draws
+                   # it is 1.25432, which stands 7.2 Monte-Carlo standard errors clear of the
+                   # 1.255 rounding boundary -- determined, under the deposit's own four-sigma rule.
+                   # NOT '43': the pair count prints in the article's own sentence and in the map
+                   # table, not in this ledger cell, whose set column reads "broad IDAC, 182,
+                   # 3 sources".  Added here by mistake on 2026-08-10 and reported STALE at once.
+                   declared=['182', '3', '+2.04', '+1.25', '+2.87', '+2.94', '0.95', '+1.60',
                              '59', '477', '58', '+1.76', '+1.02', '+2.49'],
                    owner=_IDAC),
         DisplayRow(key="\\ldots\\ on every other stratum of the map & broad IDAC, $59$ strata & \\S\\ref{sec:si-map}, Tables~\\ref{tab:map-",

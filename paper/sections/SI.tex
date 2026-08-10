@@ -780,7 +780,7 @@ at the foot of the third part.}
 Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \midrule
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Closure against inputs on the activity axis} (\S\ref{sec:measure}); margins in squared \lngi\ units, not the \lnx\ MAE of the first block}\\
-$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.26,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist; the pre-declared cross-fitted $\Binsuf^{\mathrm{up}}$, which came back looser and is not the estimator of record, puts the same cell at $+1.76$ $[+1.02,+2.49]$ (\S\ref{sec:si-crossfit}) \\
+$\Bclos>\Binsuf$ on \emph{glycol-ether} solvents\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a lower bound on $\Bclos-\Binsuf$, runs $+2.04$ $[+1.25,+2.87]$ to $+2.94$ over the four cells, $P>0.95$ in all of them; worst deletion $+1.60$---and the survivor of a $59$-fold search, at the ninetieth percentile of a chemistry-blind null on all $477$ rows that certifies some row set in $58\%$ of draws, and not testable out of sample, where no rows of that cell exist; the pre-declared cross-fitted $\Binsuf^{\mathrm{up}}$, which came back looser and is not the estimator of record, puts the same cell at $+1.76$ $[+1.02,+2.49]$ (\S\ref{sec:si-crossfit}) \\
 \addlinespace[3pt]
 \ldots\ on every other stratum of the map & broad IDAC, $59$ strata & \S\ref{sec:si-map}, Tables~\ref{tab:map-full}--\ref{tab:map-detail}, each with its margin, interval and the test it fails; none is stated as a finding\tnk{h} \\
 \addlinespace[3pt]
@@ -1801,8 +1801,15 @@ Table~\ref{tab:map-detail} carries on the same $59$ the columns those four do no
 different granularities, and rows on the two axes, can be the same measurements: a finer solvent
 class is a subset of a coarser one, so the fine table re-partitions measurements rather than adding
 new ones, $362$ of the $1711$ stratum pairs share rows, and every row that keeps its sign carries
-its overlap with the others. The whole-set row of Table~\ref{tab:map-xtab} is the aggregate this
-work declines to state, printed with the rest.
+its overlap with the others. Ten of the map's $43$ row sets are row-identical under more than one
+name; until 2026-08-10 the bootstrap seed was derived from the name, so each of those drew an
+independent replicate of one interval and the tables printed them side by side. The seed is now a
+function of the row set, one draw serves all of its names, and each row carries the row-set
+identity, so two rows of these tables cannot be read as two measurements
+(\texttt{row\_set\_id} in \texttt{stratified\_map\_table.csv}).
+\input{si_tables/map_ci_body}
+The whole-set row of
+Table~\ref{tab:map-xtab} is the aggregate this work declines to state, printed with the rest.
 
 \begin{table*}[tp]
 \centering
@@ -1819,16 +1826,18 @@ squared \lngi\ units. The last column states either what the row shows or the te
 % inside the L-columns, which only the leading reaches.  Do not raise it back without rebuilding
 % and grepping the build output for "Float too large".
 {\scriptsize\linespread{0.96}\selectfont
-\setlength{\tabcolsep}{3pt}
+% 2pt, not 3: the stated intervals gained a superscript and three of these four
+% tabulars then ran 8.7--16.6pt past the text block.  Column separation is the one
+% lever that buys width without narrowing a column, so it costs no wrapped line and
+% no float height.
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.7}
 \input{si_tables/stratified_map_rows}
 \tabnotes{\scriptsize%
 \tnk{a}\,Number of source publications, then the largest one and its share of that stratum's
 squared error. The keys, used in all five map tables:
 \input{si_tables/map_source_key}\quad
-\tnk{b}\,Two-way solute\,$\times$\,solvent cluster bootstrap, $3000$ draws; each endpoint carries
-$\pm0.02$ of Monte-Carlo spread. Row-identical strata print one interval, under the row set's
-first name above, and the glycol ethers print it converged.\quad
+\tnk{b}\,\input{si_tables/map_ci_note}\quad
 \tnk{c}\,In how many of the four unit\,$\times$\,convention cells the stratum is both boundable
 ($n\ge40$, so eight bins hold five rows) and keeps its margin's sign under deletion of each
 contributing publication; the rule of \S\ref{sec:estimator} requires all four, which six of the
@@ -1850,7 +1859,11 @@ the same estimator cell and under the same rule as Table~\ref{tab:map-full}, who
 here unchanged.}
 \label{tab:map-fine}
 {\scriptsize
-\setlength{\tabcolsep}{3pt}
+% 2pt, not 3: the stated intervals gained a superscript and three of these four
+% tabulars then ran 8.7--16.6pt past the text block.  Column separation is the one
+% lever that buys width without narrowing a column, so it costs no wrapped line and
+% no float height.
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.7}
 \input{si_tables/stratified_map_rows_fine}}
 \end{table*}
@@ -1862,7 +1875,11 @@ estimator cell and under the same rule as Tables~\ref{tab:map-full} and~\ref{tab
 notes apply here unchanged. Every row that keeps its sign carries its overlap with the others.}
 \label{tab:map-solute}
 {\scriptsize
-\setlength{\tabcolsep}{3pt}
+% 2pt, not 3: the stated intervals gained a superscript and three of these four
+% tabulars then ran 8.7--16.6pt past the text block.  Column separation is the one
+% lever that buys width without narrowing a column, so it costs no wrapped line and
+% no float height.
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.7}
 \input{si_tables/stratified_map_rows_solute}}
 \end{table*}
@@ -1875,7 +1892,11 @@ rule as Tables~\ref{tab:map-full}--\ref{tab:map-solute}, whose notes apply here 
 row is the set taken whole.}
 \label{tab:map-xtab}
 {\scriptsize
-\setlength{\tabcolsep}{3pt}
+% 2pt, not 3: the stated intervals gained a superscript and three of these four
+% tabulars then ran 8.7--16.6pt past the text block.  Column separation is the one
+% lever that buys width without narrowing a column, so it costs no wrapped line and
+% no float height.
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.7}
 \input{si_tables/stratified_map_rows_xtab}}
 \end{table*}
@@ -1983,7 +2004,8 @@ under either convention.
 % narration those tables already carry in table form.  Nothing was reworded in the move.
 \paragraph{The broad set: which chemistry does not separate, cell by cell.} Three of the six admissible cells are that same row set at
 three granularities. The remaining three are two row sets, and neither establishes anything. The
-alkane solutes ($129$ rows, $45$ pairs, $+1.38$, $[+0.79,+2.33]$) are admissible and positive, and
+alkane solutes ($129$ rows, $45$ pairs, $+1.38$, $[+0.8,+2.3]$---one decimal, which is what that
+cell's draw count determines, note~\emph{b} of Table~\ref{tab:map-full}) are admissible and positive, and
 clause~(c) demotes them to the glycol ethers, which hold more rows and hold $108$ of these $129$:
 the alkane residual outside them is $21$ rows, too few to bound at the fixed cell, and returns
 $-0.22$ there, so the alkanes' margin does not stand outside the glycol ethers---where the glycol
@@ -3874,9 +3896,64 @@ three and is regenerated from the five-seed arms by the script that produced it:
 % fixed until the five seeds land -- do NOT drop an item, merge two, or "tidy" an item's grammar
 % because it now begins a line; the check is that the concatenated items reproduce the sentence
 % word for word.
+% ITEM 1 IS THE ONE EXCEPTION TO THAT CHECK, AMENDED 2026-08-10, LATER THE SAME DAY, UNDER THE
+% SAME-PASS RULE AND BEFORE SEEDS 45 AND 46 LANDED.  The abstract began printing three arm means
+% that day -- the ungrounded 2.043, the grounded 1.846 and the sigma-oracle 2.252 -- when the
+% author reversed the standing "no numerals" rule for it (the argument is in the comment above
+% \begin{abstract}).  The enrolment it had said in as many words that the abstract carries NO VALUE
+% OF ITS OWN, so a five-seed pass executing this list would have left three three-seed numbers
+% standing on page 1 beside a regenerated Fig. 2 and a regenerated Table S2 -- the exact
+% contradiction the paragraph above says the list exists to prevent.  This is an ADDITION of values
+% to an item that already named the display, in the same pass that printed them, which is what the
+% same-pass rule requires; it is not a narrowing, and after the seeds land no such addition may be
+% made, which is also why no further value may be printed in the abstract after that day.
+% THE THREE FREQUENCIES, THE MARGIN AND THE SEARCH SIZE THE ABSTRACT ALSO PRINTS ARE OUTSIDE, and
+% the reason is recorded so the next pass does not re-derive it: 2.04, n=182, the 90% interval,
+% 59-fold, "in most draws" and "in a tenth" are all the broad-IDAC decomposition, whose run family
+% is "none: the closure has no learnable parameters", and \S\ref{sec:measure} uses no trained model
+% at all.  The abstract's unit \lnx\ is the seed statement, already enrolled.
+% THE ABSTRACT PRINTS "THREE" TWICE AND THIS ITEM ENROLS ONE OF THEM -- named on 2026-08-10 after a
+% read found the enrolment saying "the abstract's seed count" in the singular.  "over three seeds"
+% is the sigma-grounding arms and becomes five under branch 1.  "on separate three-seed runs" is
+% the n=44 compensation-surrogate family at seeds 0, 1 and 2, which this re-run does not train and
+% therefore does not touch, and it stays at three in every branch.  An editor discharging a
+% singular "seed count" could have changed the wrong one, in the direction of asserting five seeds
+% for a family that has three.  The item now names both, and
+% check_hand_transcribed_displays.py's abstract entry enforces the distinction mechanically: the
+% first is BOUND to the seeds in --root, the second is change-DETECTED against the literal "three"
+% and is not a fact about that tree.
+% WHAT THIS DOES TO THE BUDGET, checked rather than assumed, because a display with a hard ceiling
+% can be enrolled and still be impossible to discharge: the replacement is value-for-value at equal
+% length in branch 1, and branch 2 removes a gain claim rather than adding one, so no branch needs a
+% word the block does not have.  THE PAGE the script reads is 250 as rendered against a ceiling of
+% 250 -- AT it, with no word left, not under it; this comment said "wc_abstract.py reads 250" and
+% the script read 249, because it counted "$\ln x_2$" as one word where the page has two.  The
+% script models the operator spacing since 2026-08-10 and the two now agree.  Its --reserve flag is
+% not needed for this item, since the replacement is equal-length; if a later edit gives the
+% abstract a fourth value, re-do this check before, not after.
+% AND CHECK THE PAGE BUDGET, WHICH THIS PASS DID NOT.  Enrolling the three arm means rewrote this
+% item from eleven printed words to about ninety, and the Supporting Information went from 85 pages
+% to 86 -- measured after the fact, not before, because the only budget anyone checked was the
+% abstract's word ceiling.  What the extra page is: p. 83 is a WIDOW carrying the last five lines
+% of this appendix's closing paragraph, and the References then run 84--86 exactly as they ran
+% 83--85.  So the page is recoverable and it costs about six printed lines anywhere ahead of the
+% References -- no result, no table and no reference need go.  It is NOT spent here, and the reason
+% is that this very item is rewritten when the five seeds land, which reflows the tail again: a
+% typographic squeeze taken now would be paid for twice and measured against a document that no
+% longer exists.  Re-measure then (pdfinfo, and pdftotext the last four pages), and take the six
+% lines out of this item's own prose if the branch that lands makes it shorter.
 \begin{itemize}[leftmargin=1.15em,labelsep=0.4em,topsep=3pt,itemsep=2pt,parsep=0pt,partopsep=0pt]
 \item the abstract's
-seed count and its leak-free clause, which carry no value of their own;
+seed count---its \emph{over three seeds}, which is these arms, and not its \emph{separate
+three-seed runs}, which is the $n{=}44$ surrogate family at seeds $0$, $1$ and $2$ and stays at
+three---its leak-free clause, which goes in all three branches alike, and the three \lnx\ MAE
+means it prints---the ungrounded $2.043$, the grounded $1.846$, the $\sigma$-oracle $2.252$---which
+every branch replaces with five-seed means at the same three decimals, the word ceiling forbidding
+per-seed values in this display alone: branch~1 also moves that first seed count from three to five,
+leaving the refusal to order the two operations by size standing over them; branch~2 also rewrites
+the sentence carrying the first two, supervision then having no established sign; branch~3 prints
+that pair in the direction it then runs; and the $2.252$ moves with the grounded checkpoint
+throughout, the contrast it belongs to being unaffected in all three;
 \item \S\ref{sec:paradox} entire, together with the two sections that carry the rest of
 its prose---\S\ref{sec:decision}, which carries the regression slopes read off
 Fig.~\ref{fig:parity-lnx2}, the ranking contrast and the solute-blind comparison, and

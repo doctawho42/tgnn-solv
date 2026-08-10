@@ -27,11 +27,21 @@ THE RULE, and why three numbers are printed
            to hold under.
 
 ``as rendered``  the em-dash split, and additionally the spacing LaTeX itself
-           puts into a math atom: a comma inside ``$...$`` is punctuation and
-           is followed by a thin space, so ``$[+1.27,+2.83]$`` reaches the page
-           as ``[+1.27, +2.83]`` and any counter reading the PDF sees two
-           tokens where the source has one atom.  ``pdftotext`` on the built
-           article confirms it.  The first two rules count the SOURCE; this one
+           puts into a math atom.  TWO things space an atom, and for eight days
+           this rule modelled only the first:
+
+             * a comma inside ``$...$`` is punctuation and is followed by a thin
+               space, so ``$[+1.27,+2.83]$`` reaches the page as
+               ``[+1.27, +2.83]``: two tokens where the source has one atom;
+             * an OPERATOR NAME is set upright and followed by a thin space, so
+               ``$\\ln x_2$`` reaches the page as ``ln x2``: two tokens again.
+               Missing this made the script read 249 for an abstract the page
+               read 250, i.e. report a block AT its ceiling as one word under
+               it.  ``pdftotext -f 1 -l 1`` on the built article is the check,
+               and it is what caught it.
+
+           Explicit spacing commands (``\\,``, ``\\quad``) do the same and are
+           modelled with them.  The first two rules count the SOURCE; this one
            counts what the production editor's tool will count, so it is the
            strictest of the three and the one the budget is set against.
 
@@ -58,6 +68,48 @@ from pathlib import Path
 
 DEFAULT_TEX = Path(__file__).resolve().parents[2] / "paper" / "grounding_paradox.tex"
 
+#: Macros that reach the page as a word of their own.  TeX sets an operator name upright and
+#: follows it with a thin space, so ``$\ln x_2$`` is two page tokens ("ln x2") where the source
+#: is one math atom.  This is the list of the ones the manuscript uses plus the rest of TeX's
+#: standard log-like operators, so that adding one to the abstract does not silently under-count.
+#: The boundary is ``(?![A-Za-z])`` and NOT ``\b``: ``_`` is a word character to ``re``, so ``\b``
+#: does not fire in ``\log_{10}`` and that atom was being counted as one token where the page has
+#: two.  A letter after the name means a DIFFERENT macro -- ``\lnx`` is this manuscript's own --
+#: and must not match.
+_MATH_OPERATOR = re.compile(
+    r"\\(?:ln|log|lg|exp|sin|cos|tan|cot|sec|csc|sinh|cosh|tanh|coth|arcsin|arccos|arctan"
+    r"|min|max|inf|sup|lim|liminf|limsup|det|dim|arg|deg|gcd|hom|ker|Pr|operatorname)"
+    r"(?![A-Za-z])"
+)
+#: The manuscript's own shorthands for the quantities it names most, from ``paper/preamble.tex``.
+#: They expand to math atoms, so a block that writes ``\lnx`` reaches the page as the same two
+#: tokens as ``$\ln x_2$`` -- and the generic "strip every control sequence" rule below would
+#: otherwise delete them and count NOTHING.  Expanded before tokenising, in every rule, so the
+#: three counts stay comparable.
+_MANUSCRIPT_MACROS = {
+    r"\lnx": r"$\ln x_2$",
+    r"\lng": r"$\ln\gamma_2$",
+    r"\lngi": r"$\ln\gamma_2^\infty$",
+    r"\Phicry": r"$\Phi$",
+}
+#: Explicit spacing commands put a space on the page just as certainly.
+_MATH_SPACE = re.compile(r"\\[,;:!>]|\\quad\b|\\qquad\b|\\ ")
+_SPLIT = "\x00"
+
+
+def rendered_atom(atom: str) -> str:
+    """One placeholder per token ``atom`` reaches the PAGE as; ``$...$`` included.
+
+    A single-part atom yields exactly one placeholder and introduces no space, which is what
+    keeps ``$59$-fold`` one token: the page has no space there either.
+    """
+    inner = atom[1:-1]
+    inner = _MATH_OPERATOR.sub(lambda m: m.group(0) + _SPLIT, inner)
+    inner = _MATH_SPACE.sub(_SPLIT, inner)
+    inner = inner.replace(",", _SPLIT)
+    parts = [p for p in inner.split(_SPLIT) if p.strip()]
+    return " ".join("0" for _ in parts) if parts else "0"
+
 
 def extract_abstract(source: str) -> str:
     match = re.search(r"\\begin\{abstract\}(.*?)\\end\{abstract\}", source, re.S)
@@ -65,19 +117,20 @@ def extract_abstract(source: str) -> str:
         raise SystemExit("no \\begin{abstract} ... \\end{abstract} in that file")
     body = match.group(1)
     # comment lines never reach the reader
-    return "\n".join(l for l in body.split("\n") if not l.lstrip().startswith("%"))
+    return "\n".join(ln for ln in body.split("\n") if not ln.lstrip().startswith("%"))
 
 
 def tokenise(body: str, split_em_dash: bool = False, math_spacing: bool = False) -> list[str]:
     # a math atom is one word, whatever is inside it; the placeholder carries a
     # digit so the "must contain a letter or digit" filter keeps it, and no
     # space is introduced, so `$59$-fold` stays one token.  Under `math_spacing`
-    # the atom is replaced by one placeholder per comma-separated part instead,
-    # which is what LaTeX's punctuation spacing puts on the page.
+    # the atom is replaced by one placeholder per token it reaches the PAGE as
+    # (`rendered_atom`), which is what LaTeX's punctuation and operator spacing
+    # put there.
+    for macro, expansion in sorted(_MANUSCRIPT_MACROS.items(), key=lambda kv: -len(kv[0])):
+        body = re.sub(re.escape(macro) + r"(?![A-Za-z])", expansion.replace("\\", "\\\\"), body)
     if math_spacing:
-        text = re.sub(r"\$[^$]*\$",
-                      lambda m: " ".join("0" for _ in m.group(0).split(",")),
-                      body)
+        text = re.sub(r"\$[^$]*\$", lambda m: rendered_atom(m.group(0)), body)
     else:
         text = re.sub(r"\$[^$]*\$", "0", body)
     text = re.sub(r"\\emph\{([^}]*)\}", r"\1", text)
@@ -107,11 +160,16 @@ def main() -> int:
         page = tokenise(body, split_em_dash=True, math_spacing=True)
         joins = len(dashed) - len(plain)
         splits = len(page) - len(dashed)
-        verdict = "OVER" if len(page) > budget else "under"
+        # AT the ceiling is not under it: a block with no words left to spend behaves like one
+        # over budget the moment anything is added, and calling it "under" is how the note in
+        # the manuscript came to say "both under the ceiling" of a 250-word block.
+        verdict = ("OVER" if len(page) > budget
+                   else "AT (no words left)" if len(page) == budget
+                   else "under")
         print(f"{path}")
         print(f"  words            {len(plain)}")
         print(f"  em-dash split    {len(dashed)}   ({joins} em-dash-joined tokens)")
-        print(f"  as rendered      {len(page)}   ({splits} comma-split math atoms)")
+        print(f"  as rendered      {len(page)}   ({splits} extra tokens from spaced math atoms)")
         if args.reserve:
             print(f"  ceiling {args.ceiling} less {args.reserve} reserved = {budget}: {verdict}")
         else:

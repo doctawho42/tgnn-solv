@@ -32,14 +32,36 @@ WHAT THIS SCRIPT MEASURES
     endpoint -- twice the resolution the manuscript printed the endpoints to, which is the whole
     of the disagreement.  This is the number that says the second decimal of any single replicate
     is noise, and it is why the map's per-stratum intervals must not be read to that digit.
-2.  The converged interval, 12 x 100000 draws, whose standard error is ~0.001 per endpoint, so
-    the printed two decimals ARE determined.  This is what the manuscript now prints everywhere,
-    including in the abstract.
+2.  The converged interval, whose standard error must be small enough that the printed two
+    decimals ARE determined.  This is what the manuscript prints everywhere, including in the
+    abstract.
 
 The converged value is WIDER than the replicate the abstract had been quoting, [+1.26,+2.87]
 against [+1.27,+2.83] -- the replicate that happened to be attached to the coarsest name was also
 the narrowest of the four in the document.  That direction is recorded here because it is the
 direction that matters.
+
+WHY THE DRAW COUNT ROSE FROM 1.2e6 TO 1.2e8, 2026-08-10
+-------------------------------------------------------
+"The standard error is 0.001, so two decimals are determined" is not an argument about the
+standard error alone.  It is an argument about the standard error MEASURED AGAINST THE DISTANCE
+FROM THE VALUE TO THE NEAREST ROUNDING BOUNDARY, and at 12 x 100000 draws the lower endpoint sat
+0.0008 above the 1.2550 boundary with a standard error of 0.00091 -- less than one.  So the
+SECOND DECIMAL OF A NUMBER IN THE ABSTRACT was a property of the seed set: this one printed
++1.26, and an independent 6 x 40000 set centred the same endpoint at 1.2539, which prints +1.25.
+The upper endpoint was never in question (0.0039 clear of its boundary, 3.4 standard errors).
+
+The fix is not to choose.  The 5th percentile of this bootstrap is a definite number, and the
+seed dependence is Monte-Carlo error that buys down as 1/sqrt(draws), so the script now runs
+until the boundary distance is large in units of the standard error and REPORTS THAT RATIO
+(``boundary_margin_se`` in the deposit) rather than the standard error on its own.  A run whose
+endpoint lands within 4 standard errors of a boundary has not determined the digit it prints, and
+the deposit says so in ``printing_is_determined``; the manuscript's rule is that both endpoints
+must be determined before either is printed to two decimals.
+
+The replicates are the same ``two_way_boot`` at the same 100000 draws and the same seed sequence
+(900000 + s); only their NUMBER changed, so the 12 replicates of the earlier deposit are the
+first 12 of this one and the two estimates are nested rather than independent.
 
 Estimator cell, held fixed and equal to the map's headline cell: broad IDAC set, row unit,
 deployed residual-only convention (g_2002_res), eight equal-count bins of g, Bessel (ddof=1)
@@ -47,11 +69,20 @@ within-bin variance, two-way solute x solvent cluster bootstrap, 5th/95th percen
 
     KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src \
         python scripts/analysis/run_b_insuff_glycol_ether_ci.py
+
+``--replicates``/``--draws`` set the convergence budget and ``--jobs`` spreads the replicates over
+processes (the estimator is untouched; each worker runs the same ``two_way_boot`` on its own
+seeds).  The defaults are the deposited setting.  ``--replicates 12`` reproduces the 2026-08-07
+deposit exactly.
 """
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import sys
+from concurrent.futures import ProcessPoolExecutor
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import numpy as np
@@ -67,7 +98,12 @@ OUT = ROOT / "results" / "b_insuff" / "glycol_ether_ci_converged.json"
 N_BINS, DDOF = 8, 1
 MC_SEEDS = 40           # replicates at the map's own 3000 draws, to size its Monte-Carlo error
 MC_DRAWS = 3000
-CONV_REPS, CONV_DRAWS = 12, 100_000
+CONV_REPS, CONV_DRAWS = 1200, 100_000
+CONV_SEED0 = 900_000
+#: A printed endpoint is determined when it stands at least this many standard errors clear of the
+#: nearest rounding boundary at the decimal it is printed to.  Four, not two: the quantity is
+#: reported in an abstract, where it is read without the deposit beside it.
+BOUNDARY_SE_MIN = 4.0
 
 
 def lotv(g: np.ndarray, m: np.ndarray, n_bins: int = N_BINS, ddof: int = DDOF) -> float:
@@ -115,7 +151,58 @@ def two_way_boot(g, m, solute, solvent, n_boot: int, seed: int):
             float(np.percentile(out, 95)), k)
 
 
+#: Module-level so a spawned worker can reach it; the payload is 182 rows, so it travels by value.
+_ARGS: dict = {}
+
+
+def _init(g, m, solute, solvent, draws):
+    _ARGS.update(g=g, m=m, solute=solute, solvent=solvent, draws=draws)
+
+
+def _rep(seed: int):
+    return two_way_boot(_ARGS["g"], _ARGS["m"], _ARGS["solute"], _ARGS["solvent"],
+                        _ARGS["draws"], seed)
+
+
+def half_up(value: float, decimals: int = 2) -> float:
+    """The manuscript's rounding, half away from zero -- ``make_map_table_tex._round``'s rule.
+
+    ``round`` is half-to-even and its binary floats break ties the other way as often as not, so
+    a deposit rounded with it can disagree with the table generator that reads it.
+    """
+    q = Decimal(1).scaleb(-decimals)
+    d = Decimal(repr(abs(value))).quantize(q, rounding=ROUND_HALF_UP)
+    return float(-d if value < 0 else d)
+
+
+def boundary_margin(value: float, se: float, decimals: int = 2) -> tuple[float, float]:
+    """Distance from ``value`` to the nearest rounding BOUNDARY at ``decimals``, in units of ``se``.
+
+    The boundaries are the odd multiples of half the last printed digit -- 1.245, 1.255, 1.265 at
+    two decimals -- and they are NOT the printable values 1.25, 1.26.  The first version of this
+    function measured the distance to the nearest printable VALUE, which is the complement of what
+    it wanted, so it read an endpoint sitting 0.00022 from a boundary as "45.8 standard errors
+    clear" and an endpoint 0.00432 clear as "2.0".  It reported the safe endpoint as the unsafe one
+    and the unsafe one as safe.  That is the same class of error the whole deposit exists to catch,
+    one level up, and it is recorded rather than quietly corrected.
+
+    Returned as (distance, distance/se): the ratio is what says whether the printed digit is a fact
+    about the data or about the seed set.
+    """
+    step = 10.0 ** (-decimals)
+    half = step / 2.0
+    dist = half - abs(((value + half) % step) - half)
+    return dist, (dist / se if se > 0 else float("inf"))
+
+
 def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--replicates", type=int, default=CONV_REPS)
+    ap.add_argument("--draws", type=int, default=CONV_DRAWS)
+    ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
+    ap.add_argument("--out", type=Path, default=OUT)
+    args = ap.parse_args()
+
     df = pd.read_csv(BROAD)
     df["cls"] = [classify_solvent(s) for s in df["solvent_smiles"]]
     ge = df[df["cls"] == "glycol_ether"].reset_index(drop=True)
@@ -139,17 +226,34 @@ def main() -> int:
           f"lo {mc_lo.mean():+.4f} sd {mc_lo.std(ddof=1):.4f}, "
           f"hi {mc_hi.mean():+.4f} sd {mc_hi.std(ddof=1):.4f}")
 
-    reps = [two_way_boot(g, m, solute, solvent, CONV_DRAWS, 900_000 + s)
-            for s in range(CONV_REPS)]
+    seeds = [CONV_SEED0 + s for s in range(args.replicates)]
+    with ProcessPoolExecutor(max_workers=args.jobs, initializer=_init,
+                             initargs=(g, m, solute, solvent, args.draws)) as pool:
+        reps = list(pool.map(_rep, seeds, chunksize=4))
     los = np.array([r[1] for r in reps])
     his = np.array([r[2] for r in reps])
     Ps = np.array([r[0] for r in reps])
-    print(f"converged ({CONV_REPS} x {CONV_DRAWS}): "
-          f"[{los.mean():+.4f} (se {los.std(ddof=1)/np.sqrt(CONV_REPS):.4f}), "
-          f"{his.mean():+.4f} (se {his.std(ddof=1)/np.sqrt(CONV_REPS):.4f})] "
+    se_lo = float(los.std(ddof=1) / np.sqrt(len(los)))
+    se_hi = float(his.std(ddof=1) / np.sqrt(len(his)))
+    d_lo, k_lo = boundary_margin(float(los.mean()), se_lo)
+    d_hi, k_hi = boundary_margin(float(his.mean()), se_hi)
+    determined = bool(min(k_lo, k_hi) >= BOUNDARY_SE_MIN)
+    print(f"converged ({args.replicates} x {args.draws}): "
+          f"[{los.mean():+.5f} (se {se_lo:.5f}), {his.mean():+.5f} (se {se_hi:.5f})] "
           f"-> printed [{los.mean():+.2f}, {his.mean():+.2f}]")
+    print(f"boundary margin at 2 dp: lo {d_lo:.5f} = {k_lo:.1f} se, hi {d_hi:.5f} = {k_hi:.1f} se"
+          f"   -> printed digits {'DETERMINED' if determined else 'NOT DETERMINED'} "
+          f"(rule: >= {BOUNDARY_SE_MIN:.0f} se)")
 
-    OUT.write_text(json.dumps({
+    # The replicate endpoints, beside the deposit.  Every derived field above is a function of
+    # these two columns, so a corrected FORMULA never again costs the hours the draws cost: the
+    # first 1200x100000 run had to be repeated in full because the boundary margin was computed
+    # the wrong way round and nothing but the two summary means had been kept.
+    reps_out = args.out.with_name(args.out.stem + "_replicates.csv")
+    pd.DataFrame({"seed": seeds, "ci90_lo": los, "ci90_hi": his, "P_boot": Ps,
+                  "draws": args.draws}).to_csv(reps_out, index=False)
+
+    args.out.write_text(json.dumps({
         "what": "Converged 90% two-way (solute x solvent) cluster bootstrap interval on the "
                 "glycol-ether margin at the map's headline estimator cell (broad IDAC, row unit, "
                 "deployed residual-only convention, 8 equal-count bins, Bessel within-bin "
@@ -180,15 +284,23 @@ def main() -> int:
             "margin": round(margin(g, m), 6),
         },
         "converged_interval": {
-            "n_replicates": CONV_REPS,
-            "draws_per_replicate": CONV_DRAWS,
-            "n_draws": CONV_REPS * CONV_DRAWS,
-            "ci90_lo": round(float(los.mean()), 4),
-            "ci90_hi": round(float(his.mean()), 4),
-            "se_lo": round(float(los.std(ddof=1) / np.sqrt(CONV_REPS)), 5),
-            "se_hi": round(float(his.std(ddof=1) / np.sqrt(CONV_REPS)), 5),
+            "n_replicates": int(args.replicates),
+            "draws_per_replicate": int(args.draws),
+            "n_draws": int(args.replicates) * int(args.draws),
+            "seed_sequence": f"{CONV_SEED0}..{CONV_SEED0 + args.replicates - 1}",
+            "ci90_lo": round(float(los.mean()), 5),
+            "ci90_hi": round(float(his.mean()), 5),
+            "se_lo": round(se_lo, 5),
+            "se_hi": round(se_hi, 5),
             "P_boot": round(float(Ps.mean()), 4),
-            "printed_as": [round(float(los.mean()), 2), round(float(his.mean()), 2)],
+            "printed_as": [half_up(float(los.mean())), half_up(float(his.mean()))],
+            "replicates_csv": reps_out.name,
+            "printing_rule": "half-up to two decimals, and only if both endpoints stand at least "
+                             f"{BOUNDARY_SE_MIN:.0f} Monte-Carlo standard errors clear of the "
+                             "nearest rounding boundary",
+            "boundary_margin_se": {"lo": round(k_lo, 2), "hi": round(k_hi, 2)},
+            "boundary_distance": {"lo": round(d_lo, 5), "hi": round(d_hi, 5)},
+            "printing_is_determined": determined,
         },
         "monte_carlo_error_at_the_maps_own_3000_draws": {
             "n_seeds": MC_SEEDS,
@@ -215,7 +327,7 @@ def main() -> int:
                        "every endpoint within 1.8 sd of one mean",
         },
     }, indent=2) + "\n")
-    print(f"wrote {OUT}")
+    print(f"wrote {args.out}")
     return 0
 
 

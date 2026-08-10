@@ -17,18 +17,30 @@
     "margin": 2.036427
   },
   "converged_interval": {
-    "n_replicates": 12,
+    "n_replicates": 1200,
     "draws_per_replicate": 100000,
-    "n_draws": 1200000,
-    "ci90_lo": 1.2558,
-    "ci90_hi": 2.8689,
-    "se_lo": 0.00091,
-    "se_hi": 0.00115,
+    "n_draws": 120000000,
+    "seed_sequence": "900000..901199",
+    "ci90_lo": 1.25432,
+    "ci90_hi": 2.86978,
+    "se_lo": 9e-05,
+    "se_hi": 0.00011,
     "P_boot": 1.0,
     "printed_as": [
-      1.26,
+      1.25,
       2.87
-    ]
+    ],
+    "replicates_csv": "glycol_ether_ci_converged_replicates.csv",
+    "printing_rule": "half-up to two decimals, and only if both endpoints stand at least 4 Monte-Carlo standard errors clear of the nearest rounding boundary",
+    "boundary_margin_se": {
+      "lo": 7.2,
+      "hi": 43.89
+    },
+    "boundary_distance": {
+      "lo": 0.00068,
+      "hi": 0.00478
+    },
+    "printing_is_determined": true
   },
   "monte_carlo_error_at_the_maps_own_3000_draws": {
     "n_seeds": 40,

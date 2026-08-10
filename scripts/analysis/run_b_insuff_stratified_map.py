@@ -344,14 +344,67 @@ def classify_solute_family(smiles: str) -> str:
 # measurement
 # --------------------------------------------------------------------------------------------
 def stable_seed(*parts: str) -> int:
-    """A bootstrap seed that depends only on the stratum's name.
+    """A bootstrap seed that depends only on the strings it is given.
 
     Python's builtin hash() of a string is salted per interpreter process, so seeding from it
     would make the deposited bootstrap frequencies drift by a few thousandths between runs of
     the same script.  This does not.
+
+    What is PASSED here matters more than what it does; see `row_set_key' below.
     """
     return int(hashlib.blake2b("\x1f".join(parts).encode(), digest_size=4).hexdigest(), 16) % (
         2 ** 31)
+
+
+#: The order in which the manuscript reports the axes, and therefore the order in which a reader
+#: meets a row set that has several names.  It is `make_map_table_tex.AXES'.
+AXIS_ORDER = ["solvent_class", "solvent_class_coarse", "solvent_family_fine",
+              "solute_role", "solute_family", "solvent_class_x_solute_role", "whole_set"]
+
+
+def row_set_key(strata: list[tuple[str, str, "pd.Series"]]) -> dict[tuple[str, str], dict]:
+    """One seed, one identity and one interval per ROW SET, not per stratum NAME.
+
+    THE DEFECT THIS CLOSES, 2026-08-10.  Until now the bootstrap seed was `stable_seed(label,
+    unit, convention, "<axis>::<stratum>")' -- the stratum's NAME.  Ten of this map's row sets
+    carry more than one name (three select the same 182 glycol-ether rows, three the same 111
+    water rows, and so on), so each of those drew an INDEPENDENT 3000-draw replicate of one
+    quantity under each name, and the table printed them side by side as if they were separate
+    measurements.  Two referees reported the consequence on the glycol ethers, where the same
+    interval printed as [+1.27,+2.83], [+1.27,+2.87] and [+1.23,+2.90]; the spread is
+    Monte-Carlo error, larger than the second decimal all three were printed to
+    (`results/b_insuff/glycol_ether_ci_converged.json').
+
+    The seed is now a function of the ROW SET.  A row set's seed string is its CANONICAL NAME:
+    the first of its names in AXIS_ORDER above, ties broken alphabetically.  That is fixed by
+    position -- the order a reader meets the row set in -- and never by the value of an endpoint,
+    and it is the same rule `make_map_table_tex' uses to decide which name a pooled interval is
+    quoted under.  Two names of one row set therefore hold the IDENTICAL interval, bit for bit,
+    and each record carries `row_set_id' and `row_set_n_names' so the table says so rather than
+    leaving a reader to intersect it themselves.
+
+    Row sets with a single name keep the seed they had, because their canonical name is their
+    only name; the change is confined to the printings that were the defect.
+
+    Returns {(axis, stratum): {row_set_id, row_set_canonical, row_set_n_names}}.
+    """
+    groups: dict[tuple[int, ...], list[tuple[str, str]]] = {}
+    for sname, lab, mask in strata:
+        idx = tuple(int(i) for i in np.flatnonzero(np.asarray(mask)))
+        if not idx:
+            continue
+        groups.setdefault(idx, []).append((sname, lab))
+    out: dict[tuple[str, str], dict] = {}
+    for idx, names in groups.items():
+        names.sort(key=lambda nl: (AXIS_ORDER.index(nl[0]) if nl[0] in AXIS_ORDER
+                                   else len(AXIS_ORDER), nl[1]))
+        rid = hashlib.blake2b(",".join(map(str, idx)).encode(), digest_size=4).hexdigest()
+        for nl in names:
+            out[nl] = {"row_set_id": rid,
+                       "row_set_canonical": f"{names[0][0]}::{names[0][1]}",
+                       "row_set_n_names": len(names),
+                       "row_set_names": [f"{a}::{s}" for a, s in names]}
+    return out
 
 
 def adaptive_bins(n: int) -> int:
@@ -491,19 +544,33 @@ def build(df: pd.DataFrame, conv_cols: dict[str, str], label: str) -> dict:
     table = {}
     for uname, d in units.items():
         d = d.reset_index(drop=True)
-        for sname, lab, mask in strata_of(d):
+        strata = strata_of(d)
+        # One draw per ROW SET, not per stratum name.  See row_set_key.
+        rsk = row_set_key(strata)
+        for sname, lab, mask in strata:
             sub = d[mask.values if hasattr(mask, "values") else mask]
             if len(sub) == 0:
                 continue
             key = f"{sname}::{lab}"
             slot = table.setdefault(key, {"axis": sname, "stratum": lab})
+            ident = rsk[(sname, lab)]
             for cname, col in conv_cols.items():
-                seedv = stable_seed(label, uname, cname, key)
+                seedv = stable_seed(label, uname, cname, ident["row_set_canonical"])
                 rec = measure(sub[col].to_numpy(float), sub["m"].to_numpy(float),
                               sub["solute_smiles"].to_numpy(), sub["solvent_smiles"].to_numpy(),
                               pair=(sub["pair_key"].to_numpy() if uname == "row" else None),
                               T=(sub["T_K"].to_numpy(float) if uname == "row" else None),
                               source=sub["source_doi"].to_numpy(), seed=seedv)
+                # The seed is not the whole of the repair.  A reader holding the table has to be
+                # able to see that two rows are one row set without intersecting them, so the
+                # identity travels in the record and therefore in every deposited column.
+                rec["row_set_id"] = ident["row_set_id"]
+                rec["row_set_canonical"] = ident["row_set_canonical"]
+                rec["row_set_n_names"] = ident["row_set_n_names"]
+                rec["row_set_other_names"] = "|".join(
+                    n for n in ident["row_set_names"] if n != f"{sname}::{lab}")
+                rec["interval_is_a_restatement"] = bool(
+                    ident["row_set_canonical"] != f"{sname}::{lab}")
                 se = float(np.sum((sub["m"] - sub[col]) ** 2))
                 se_tot = float(np.sum((d["m"] - d[col]) ** 2))
                 rec["share_of_squared_error"] = round(se / se_tot, 4)
@@ -674,6 +741,10 @@ def admissibility(df: pd.DataFrame, conv_cols: dict[str, str], table: dict,
                 recs.append({
                     "set": setname, "axis": sname, "stratum": lab, "unit": uname,
                     "convention": cname,
+                    "row_set_id": rec.get("row_set_id"),
+                    "row_set_canonical": rec.get("row_set_canonical"),
+                    "row_set_n_names": rec.get("row_set_n_names"),
+                    "interval_is_a_restatement": rec.get("interval_is_a_restatement"),
                     "n": rec["n"], "n_pairs": rec["n_pairs"], "n_solutes": rec["n_solutes"],
                     "n_solvents": rec["n_solvents"],
                     "n_sources": n_src,
@@ -1017,6 +1088,34 @@ def main() -> int:
         "table": str(OVERLAP_CSV.relative_to(ROOT)),
         "margins_on_each_side_of_the_overlap": str(ADM_JSON.relative_to(ROOT)),
     }
+
+    # Identical rows under several names is a stronger statement than overlap, and it is the one
+    # the bootstrap was getting wrong: see row_set_key.
+    rs: dict[str, dict] = {}
+    for slot in broad_table.values():
+        r = slot.get("row::res")
+        if r is None or "row_set_id" not in r:
+            continue
+        e = rs.setdefault(r["row_set_id"], {"row_set_id": r["row_set_id"], "n": r["n"],
+                                            "canonical": r["row_set_canonical"], "names": []})
+        e["names"].append(f"{slot['axis']}::{slot['stratum']}")
+    multi = sorted((e for e in rs.values() if len(e["names"]) > 1), key=lambda e: -e["n"])
+    out["row_sets_under_several_names"] = {
+        "why": "the bootstrap seed was derived from the stratum NAME until 2026-08-10, so a row "
+               "set carrying several names drew an independent replicate under each and the map "
+               "printed them side by side as if they were separate measurements. The seed is now "
+               "a function of the ROW SET (its canonical name, the first of its names in the "
+               "manuscript's axis order), so every name of one row set holds the identical "
+               "interval, and every record carries row_set_id, row_set_n_names and "
+               "interval_is_a_restatement so the table says which rows are a restatement.",
+        "n_row_sets_row_unit": len(rs),
+        "n_row_sets_with_more_than_one_name": len(multi),
+        "n_duplicate_names": sum(len(e["names"]) - 1 for e in multi),
+        "row_sets": multi,
+        "printing_precision_of_these_intervals": "results/b_insuff/map_ci_precision.json",
+    }
+    print(f"[row sets] {len(multi)} of {len(rs)} row sets carry more than one name "
+          f"({sum(len(e['names']) - 1 for e in multi)} duplicate names); one interval each")
     adm_detail = {
         "per_stratum": adm_rows,
         "leave_one_source_out_curves": adm_curves,
@@ -1219,7 +1318,8 @@ def main() -> int:
     tab = pd.DataFrame(rows)
     tab.to_csv(OUT_CSV, index=False)
 
-    adm_cols = ["set", "axis", "stratum", "unit", "convention", "n", "n_pairs", "n_solutes",
+    adm_cols = ["set", "axis", "stratum", "row_set_id", "row_set_canonical", "row_set_n_names",
+                "interval_is_a_restatement", "unit", "convention", "n", "n_pairs", "n_solutes",
                 "n_solvents", "n_sources", "sources", "top_source",
                 "top_source_share_of_stratum_squared_error", "share_of_squared_error",
                 "mse", "b_insuff_up", "margin", "P_boot", "margin_ci90_lo", "margin_ci90_hi",

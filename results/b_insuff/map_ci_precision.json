@@ -1,0 +1,3001 @@
+{
+  "what": "One printing precision per row set for every interval the stratified map prints, chosen from that row set's own Monte-Carlo error at the map's 3000 draws and verified on the convergence run that bought it.",
+  "why": "The map draws N_BOOT=3000 resamples per stratum and printed the endpoints to two decimals. Two decimals are not determined at that draw count: over 200 seeds the endpoints of the map's own intervals carry Monte-Carlo standard deviations from 0.0009 to 0.223, so the second decimal of most of them was a property of the seed. The glycol-ether cell was converged in glycol_ether_ci_converged.json after two referees noticed it; this deposit is the same repair applied to the class, cell by cell rather than uniformly.",
+  "generated_by": "scripts/analysis/run_b_insuff_map_ci_precision.py",
+  "estimator_cell": {
+    "set": "broad_477",
+    "unit": "row",
+    "convention": "res",
+    "n_bins": 8,
+    "within_bin_variance": "Bessel (ddof=1)",
+    "bootstrap": "two-way solute x solvent cluster, 5th/95th percentiles",
+    "map_draw_count": 3000
+  },
+  "printing_rule": {
+    "rule": "an endpoint prints to d decimals only if it stands at least 4 Monte-Carlo standard errors clear of the nearest ROUNDING BOUNDARY at d decimals; an interval prints both endpoints at the coarser of what its two endpoints support",
+    "boundary_margin": "run_b_insuff_glycol_ether_ci.boundary_margin (the fixed version, which measures the distance to the boundary and not to the printable value)",
+    "ladder": "CONVERGE at two decimals if it costs at most the cap; else COARSEN to one; else STATE two decimals with the Monte-Carlo standard deviation beside them. Coarsening stops at one decimal because at zero the map's cells stop being distinguishable from one another.",
+    "target_chosen_before_the_run_and_only_demoted_after": "the precision is chosen from the 3000-draw study, then verified on the convergence run's own standard errors; the check can demote a cell and never promotes one",
+    "cap_draws_per_row_set": 1200000,
+    "convergence_replicates_per_row_set": 60
+  },
+  "counts": {
+    "row_sets_printing_an_interval": 24,
+    "printed_interval_cells": 35,
+    "duplicate_printings": 11,
+    "row_sets_carrying_more_than_one_name": 7,
+    "printed_endpoints": 48,
+    "endpoints_off_the_3000_draw_apparatus": 46,
+    "of_those_degenerate_no_seed_moves_them": 4,
+    "of_those_unsupported_at_two_decimals": 42,
+    "closest_endpoint_to_its_boundary_in_sd": 0.0,
+    "largest_clearance_of_any_movable_endpoint_in_sd": 0.8,
+    "median_clearance_of_a_movable_endpoint_in_sd": 0.1,
+    "clearance_is_measured_on": "the mean of the 200 seeds, which is the quantity a convergence run drives; measured instead on the single 3000-draw replicate the submission actually printed, the same endpoints give different clearances and the same verdicts (both are deposited per cell)",
+    "verdicts": {
+      "stated": 11,
+      "coarsened": 9,
+      "converged": 2,
+      "degenerate": 2
+    }
+  },
+  "harness_validation": {
+    "bincount_vs_Counter_bit_identical_at_the_glycol_map_seed": [
+      1.0,
+      1.2684232641458255,
+      2.833442376548631
+    ],
+    "first_40_seeds_reproduce_the_converged_deposit": {
+      "n_seeds": 40,
+      "lo_mean": 1.2534,
+      "lo_sd": 0.0195,
+      "lo_range": [
+        1.2089,
+        1.2951
+      ],
+      "hi_mean": 2.8635,
+      "hi_sd": 0.0197,
+      "hi_range": [
+        2.8131,
+        2.9011
+      ]
+    },
+    "seed_sequence_shared_with": "results/b_insuff/glycol_ether_ci_converged.json",
+    "relative_standard_error_of_an_sd_at_this_seed_count": 0.0501
+  },
+  "the_mechanism": {
+    "defect": "run_b_insuff_stratified_map.stable_seed derived the bootstrap seed from the STRATUM NAME, so a row set carrying several names drew an independent replicate under each and the table printed them as separate measurements.",
+    "fix": "the map now seeds from the ROW SET -- the seed string is the row set's canonical name, the first of its names in the map's own axis order -- and carries row_set_id in stratified_map_table.csv and admissibility_table.csv, so two names of one row set hold the identical interval and say so.",
+    "row_sets_with_more_than_one_name": [
+      {
+        "row_set_id": "0c6e6140",
+        "n": 182,
+        "names": [
+          "solvent_class::glycol_ether",
+          "solvent_family_fine::glycol_ether",
+          "solvent_class_x_solute_role::glycol_ether | organic_solute"
+        ],
+        "printed_pairs_in_the_submission": [
+          [
+            1.27,
+            2.83
+          ],
+          [
+            1.27,
+            2.87
+          ],
+          [
+            1.23,
+            2.9
+          ]
+        ],
+        "spread_across_names": {
+          "lo": 0.042,
+          "hi": 0.063
+        }
+      },
+      {
+        "row_set_id": "bdbedd1e",
+        "n": 111,
+        "names": [
+          "solvent_class::water",
+          "solvent_family_fine::water",
+          "solvent_class_x_solute_role::water | organic_solute"
+        ],
+        "printed_pairs_in_the_submission": [
+          [
+            -0.15,
+            0.39
+          ],
+          [
+            -0.16,
+            0.4
+          ],
+          [
+            -0.15,
+            0.39
+          ]
+        ],
+        "spread_across_names": {
+          "lo": 0.015,
+          "hi": 0.006
+        }
+      },
+      {
+        "row_set_id": "42504742",
+        "n": 57,
+        "names": [
+          "solvent_class::aprotic_acceptor",
+          "solvent_class_x_solute_role::aprotic_acceptor | organic_solute"
+        ],
+        "printed_pairs_in_the_submission": [
+          [
+            -0.44,
+            0.12
+          ],
+          [
+            -0.4,
+            0.12
+          ]
+        ],
+        "spread_across_names": {
+          "lo": 0.036,
+          "hi": 0.002
+        }
+      },
+      {
+        "row_set_id": "12b026f8",
+        "n": 37,
+        "names": [
+          "solute_role::water_solute",
+          "solute_family::water"
+        ],
+        "printed_pairs_in_the_submission": [
+          [
+            3.97,
+            9.49
+          ],
+          [
+            3.39,
+            9.5
+          ]
+        ],
+        "spread_across_names": {
+          "lo": 0.582,
+          "hi": 0.012
+        }
+      },
+      {
+        "row_set_id": "3a91251f",
+        "n": 35,
+        "names": [
+          "solvent_class::mono_alcohol",
+          "solvent_family_fine::mono_alcohol",
+          "solvent_class_x_solute_role::mono_alcohol | organic_solute"
+        ],
+        "printed_pairs_in_the_submission": [
+          [
+            0.18,
+            3.24
+          ],
+          [
+            0.29,
+            3.26
+          ],
+          [
+            0.3,
+            3.37
+          ]
+        ],
+        "spread_across_names": {
+          "lo": 0.12,
+          "hi": 0.13
+        }
+      },
+      {
+        "row_set_id": "c7d77ad1",
+        "n": 33,
+        "names": [
+          "solvent_class::nh_protic",
+          "solvent_class_coarse::hb_donor_N",
+          "solvent_class_x_solute_role::nh_protic | organic_solute"
+        ],
+        "printed_pairs_in_the_submission": [
+          [
+            -0.27,
+            1.96
+          ],
+          [
+            -0.3,
+            2.11
+          ],
+          [
+            -0.23,
+            1.99
+          ]
+        ],
+        "spread_across_names": {
+          "lo": 0.063,
+          "hi": 0.143
+        }
+      },
+      {
+        "row_set_id": "1d351941",
+        "n": 30,
+        "names": [
+          "solvent_class::halogenated",
+          "solvent_class_coarse::halogenated_nonHB"
+        ],
+        "printed_pairs_in_the_submission": [
+          [
+            0.86,
+            8.12
+          ],
+          [
+            1.1,
+            8.61
+          ]
+        ],
+        "spread_across_names": {
+          "lo": 0.24,
+          "hi": 0.495
+        }
+      }
+    ],
+    "as_submitted_snapshot": "results/b_insuff/stratified_map_table_pre_rowset_seed.csv"
+  },
+  "cells": [
+    {
+      "row_set_id": "72f34270",
+      "canonical_axis": "whole_set",
+      "canonical_stratum": "all",
+      "names": [
+        {
+          "axis": "whole_set",
+          "stratum": "all",
+          "printed_in": "tab:map-xtab"
+        }
+      ],
+      "n_printings": 1,
+      "n": 477,
+      "n_solutes": 78,
+      "n_solvents": 36,
+      "n_pairs": 185,
+      "n_sources": 15,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.08249,
+        "lo_sd": 0.01411,
+        "lo_range": [
+          -0.124,
+          -0.0474
+        ],
+        "hi_mean": 2.17094,
+        "hi_sd": 0.04148,
+        "hi_range": [
+          2.0783,
+          2.26
+        ],
+        "half_split_sd_lo": [
+          0.0131,
+          0.0151
+        ],
+        "half_split_sd_hi": [
+          0.0397,
+          0.0433
+        ],
+        "sd_over_width": 0.0184,
+        "distinct_resampled_margins_median": 3000
+      },
+      "draws_to_determine": {
+        "2dp": 5009754,
+        "1dp": 188394
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "whole_set",
+            "stratum": "all",
+            "printed_in": "tab:map-xtab",
+            "ci90_lo": -0.087,
+            "ci90_hi": 2.16,
+            "printed_as": [
+              -0.09,
+              2.16
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.14,
+              "hi": 0.12
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "coarsened",
+      "decimals": 1,
+      "n_replicates": 60,
+      "draws_per_replicate": 3140,
+      "n_draws": 188400,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "interval": {
+        "lo": -0.083192,
+        "hi": 2.177288,
+        "se_lo": 0.002057,
+        "se_hi": 0.005236,
+        "boundary_margin_se": {
+          "lo": 16.14,
+          "hi": 5.21
+        },
+        "printed_as": [
+          -0.1,
+          2.2
+        ],
+        "printed_decimals": 1,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.01411,
+          "hi": 0.04148
+        }
+      }
+    },
+    {
+      "row_set_id": "285bfa65",
+      "canonical_axis": "solute_role",
+      "canonical_stratum": "organic_solute",
+      "names": [
+        {
+          "axis": "solute_role",
+          "stratum": "organic_solute",
+          "printed_in": "tab:map-solute"
+        }
+      ],
+      "n_printings": 1,
+      "n": 440,
+      "n_solutes": 77,
+      "n_solvents": 30,
+      "n_pairs": 179,
+      "n_sources": 14,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.23067,
+        "lo_sd": 0.0121,
+        "lo_range": [
+          -0.2712,
+          -0.203
+        ],
+        "hi_mean": 1.34994,
+        "hi_sd": 0.02135,
+        "hi_range": [
+          1.2999,
+          1.4069
+        ],
+        "half_split_sd_lo": [
+          0.0109,
+          0.0132
+        ],
+        "half_split_sd_hi": [
+          0.0219,
+          0.0208
+        ],
+        "sd_over_width": 0.0135,
+        "distinct_resampled_margins_median": 3000
+      },
+      "draws_to_determine": {
+        "2dp": 894548,
+        "1dp": 7087080422
+      },
+      "planned_verdict": "converge",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solute_role",
+            "stratum": "organic_solute",
+            "printed_in": "tab:map-solute",
+            "ci90_lo": -0.232,
+            "ci90_hi": 1.356,
+            "printed_as": [
+              -0.23,
+              1.36
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.25,
+              "hi": 0.05
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "converged",
+      "decimals": 2,
+      "n_replicates": 60,
+      "draws_per_replicate": 14910,
+      "n_draws": 894600,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "interval": {
+        "lo": -0.231894,
+        "hi": 1.350342,
+        "se_lo": 0.000774,
+        "se_hi": 0.001127,
+        "boundary_margin_se": {
+          "lo": 4.01,
+          "hi": 4.13
+        },
+        "printed_as": [
+          -0.23,
+          1.35
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.0121,
+          "hi": 0.02135
+        }
+      }
+    },
+    {
+      "row_set_id": "7942512c",
+      "canonical_axis": "solvent_class_coarse",
+      "canonical_stratum": "hb_donor_acceptor_O",
+      "names": [
+        {
+          "axis": "solvent_class_coarse",
+          "stratum": "hb_donor_acceptor_O",
+          "printed_in": "tab:map-full"
+        }
+      ],
+      "n_printings": 1,
+      "n": 328,
+      "n_solutes": 48,
+      "n_solvents": 9,
+      "n_pairs": 75,
+      "n_sources": 8,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.1949,
+        "lo_sd": 0.01893,
+        "lo_range": [
+          -0.2373,
+          -0.1429
+        ],
+        "hi_mean": 2.16613,
+        "hi_sd": 0.02239,
+        "hi_range": [
+          2.1088,
+          2.2263
+        ],
+        "half_split_sd_lo": [
+          0.0192,
+          0.0187
+        ],
+        "half_split_sd_hi": [
+          0.0231,
+          0.0218
+        ],
+        "sd_over_width": 0.0095,
+        "distinct_resampled_margins_median": 3000
+      },
+      "draws_to_determine": {
+        "2dp": 1698613170,
+        "1dp": 92412
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solvent_class_coarse",
+            "stratum": "hb_donor_acceptor_O",
+            "printed_in": "tab:map-full",
+            "ci90_lo": -0.206,
+            "ci90_hi": 2.182,
+            "printed_as": [
+              -0.21,
+              2.18
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.05,
+              "hi": 0.13
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "coarsened",
+      "decimals": 1,
+      "n_replicates": 60,
+      "draws_per_replicate": 3000,
+      "n_draws": 180000,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "interval": {
+        "lo": -0.199372,
+        "hi": 2.167712,
+        "se_lo": 0.002494,
+        "se_hi": 0.003243,
+        "boundary_margin_se": {
+          "lo": 19.8,
+          "hi": 5.46
+        },
+        "printed_as": [
+          -0.2,
+          2.2
+        ],
+        "printed_decimals": 1,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.01893,
+          "hi": 0.02239
+        }
+      }
+    },
+    {
+      "row_set_id": "0c6e6140",
+      "canonical_axis": "solvent_class",
+      "canonical_stratum": "glycol_ether",
+      "names": [
+        {
+          "axis": "solvent_class",
+          "stratum": "glycol_ether",
+          "printed_in": "tab:map-full"
+        },
+        {
+          "axis": "solvent_family_fine",
+          "stratum": "glycol_ether",
+          "printed_in": "tab:map-fine"
+        },
+        {
+          "axis": "solvent_class_x_solute_role",
+          "stratum": "glycol_ether | organic_solute",
+          "printed_in": "tab:map-xtab"
+        }
+      ],
+      "n_printings": 3,
+      "n": 182,
+      "n_solutes": 19,
+      "n_solvents": 4,
+      "n_pairs": 43,
+      "n_sources": 3,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": 1.25407,
+        "lo_sd": 0.01822,
+        "lo_range": [
+          1.2089,
+          1.308
+        ],
+        "hi_mean": 2.86807,
+        "hi_sd": 0.02159,
+        "hi_range": [
+          2.8059,
+          2.9357
+        ],
+        "half_split_sd_lo": [
+          0.019,
+          0.0175
+        ],
+        "half_split_sd_hi": [
+          0.0222,
+          0.0201
+        ],
+        "sd_over_width": 0.0134,
+        "distinct_resampled_margins_median": 2999
+      },
+      "draws_to_determine": {
+        "2dp": 18624624,
+        "1dp": 959907
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 3,
+        "printings": [
+          {
+            "axis": "solvent_class",
+            "stratum": "glycol_ether",
+            "printed_in": "tab:map-full",
+            "ci90_lo": 1.268,
+            "ci90_hi": 2.833,
+            "printed_as": [
+              1.27,
+              2.83
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.16,
+              "hi": 0.09
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solvent_family_fine",
+            "stratum": "glycol_ether",
+            "printed_in": "tab:map-fine",
+            "ci90_lo": 1.266,
+            "ci90_hi": 2.873,
+            "printed_as": [
+              1.27,
+              2.87
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.05,
+              "hi": 0.09
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solvent_class_x_solute_role",
+            "stratum": "glycol_ether | organic_solute",
+            "printed_in": "tab:map-xtab",
+            "ci90_lo": 1.226,
+            "ci90_hi": 2.896,
+            "printed_as": [
+              1.23,
+              2.9
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.05,
+              "hi": 0.05
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.042,
+          "hi": 0.063
+        },
+        "distinct_printed_pairs": 3,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "converged",
+      "decimals": 2,
+      "n_replicates": 1200,
+      "draws_per_replicate": 100000,
+      "n_draws": 120000000,
+      "source": "results/b_insuff/glycol_ether_ci_converged.json",
+      "interval": {
+        "lo": 1.25432,
+        "hi": 2.86978,
+        "se_lo": 9e-05,
+        "se_hi": 0.00011,
+        "boundary_margin_se": {
+          "lo": 7.2,
+          "hi": 43.89
+        },
+        "printed_as": [
+          1.25,
+          2.87
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.01822,
+          "hi": 0.02159
+        }
+      }
+    },
+    {
+      "row_set_id": "7b59f9db",
+      "canonical_axis": "solute_family",
+      "canonical_stratum": "alkane",
+      "names": [
+        {
+          "axis": "solute_family",
+          "stratum": "alkane",
+          "printed_in": "tab:map-solute"
+        }
+      ],
+      "n_printings": 1,
+      "n": 129,
+      "n_solutes": 11,
+      "n_solvents": 10,
+      "n_pairs": 45,
+      "n_sources": 7,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": 0.80988,
+        "lo_sd": 0.02665,
+        "lo_range": [
+          0.7331,
+          0.8687
+        ],
+        "hi_mean": 2.31755,
+        "hi_sd": 0.01378,
+        "hi_range": [
+          2.2785,
+          2.3568
+        ],
+        "half_split_sd_lo": [
+          0.0252,
+          0.0281
+        ],
+        "half_split_sd_hi": [
+          0.0136,
+          0.014
+        ],
+        "sd_over_width": 0.0177,
+        "distinct_resampled_margins_median": 2999
+      },
+      "draws_to_determine": {
+        "2dp": 1432599,
+        "1dp": 21178
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solute_family",
+            "stratum": "alkane",
+            "printed_in": "tab:map-solute",
+            "ci90_lo": 0.793,
+            "ci90_hi": 2.33,
+            "printed_as": [
+              0.79,
+              2.33
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.08,
+              "hi": 0.36
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "coarsened",
+      "decimals": 1,
+      "n_replicates": 60,
+      "draws_per_replicate": 3000,
+      "n_draws": 180000,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "interval": {
+        "lo": 0.811533,
+        "hi": 2.316186,
+        "se_lo": 0.003769,
+        "se_hi": 0.001927,
+        "boundary_margin_se": {
+          "lo": 10.21,
+          "hi": 17.55
+        },
+        "printed_as": [
+          0.8,
+          2.3
+        ],
+        "printed_decimals": 1,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.02665,
+          "hi": 0.01378
+        }
+      }
+    },
+    {
+      "row_set_id": "bdbedd1e",
+      "canonical_axis": "solvent_class",
+      "canonical_stratum": "water",
+      "names": [
+        {
+          "axis": "solvent_class",
+          "stratum": "water",
+          "printed_in": "tab:map-full"
+        },
+        {
+          "axis": "solvent_family_fine",
+          "stratum": "water",
+          "printed_in": "tab:map-fine"
+        },
+        {
+          "axis": "solvent_class_x_solute_role",
+          "stratum": "water | organic_solute",
+          "printed_in": "tab:map-xtab"
+        }
+      ],
+      "n_printings": 3,
+      "n": 111,
+      "n_solutes": 15,
+      "n_solvents": 1,
+      "n_pairs": 15,
+      "n_sources": 3,
+      "one_way_only": true,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.14821,
+        "lo_sd": 0.00662,
+        "lo_range": [
+          -0.1668,
+          -0.1317
+        ],
+        "hi_mean": 0.39067,
+        "hi_sd": 0.00539,
+        "hi_range": [
+          0.3772,
+          0.4037
+        ],
+        "half_split_sd_lo": [
+          0.0068,
+          0.0065
+        ],
+        "half_split_sd_hi": [
+          0.0056,
+          0.0052
+        ],
+        "sd_over_width": 0.0123,
+        "distinct_resampled_margins_median": 3000
+      },
+      "draws_to_determine": {
+        "2dp": 204691,
+        "1dp": 654649
+      },
+      "planned_verdict": "converge",
+      "as_submitted": {
+        "n_names": 3,
+        "printings": [
+          {
+            "axis": "solvent_class",
+            "stratum": "water",
+            "printed_in": "tab:map-full",
+            "ci90_lo": -0.145,
+            "ci90_hi": 0.394,
+            "printed_as": [
+              -0.15,
+              0.39
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.0,
+              "hi": 0.19
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solvent_family_fine",
+            "stratum": "water",
+            "printed_in": "tab:map-fine",
+            "ci90_lo": -0.16,
+            "ci90_hi": 0.396,
+            "printed_as": [
+              -0.16,
+              0.4
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.76,
+              "hi": 0.19
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solvent_class_x_solute_role",
+            "stratum": "water | organic_solute",
+            "printed_in": "tab:map-xtab",
+            "ci90_lo": -0.148,
+            "ci90_hi": 0.39,
+            "printed_as": [
+              -0.15,
+              0.39
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.45,
+              "hi": 0.93
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.015,
+          "hi": 0.006
+        },
+        "distinct_printed_pairs": 2,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 60,
+      "draws_per_replicate": 3412,
+      "n_draws": 204720,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "demoted_by_the_verification_check": true,
+      "interval": {
+        "lo": -0.147123,
+        "hi": 0.39056,
+        "se_lo": 0.000813,
+        "se_hi": 0.000655,
+        "boundary_margin_se": {
+          "lo": 2.61,
+          "hi": 6.78
+        },
+        "printed_as": [
+          -0.15,
+          0.39
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.0066,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.00662,
+          "hi": 0.00539
+        }
+      }
+    },
+    {
+      "row_set_id": "301c4272",
+      "canonical_axis": "solute_family",
+      "canonical_stratum": "aromatic_hydrocarbon",
+      "names": [
+        {
+          "axis": "solute_family",
+          "stratum": "aromatic_hydrocarbon",
+          "printed_in": "tab:map-solute"
+        }
+      ],
+      "n_printings": 1,
+      "n": 71,
+      "n_solutes": 10,
+      "n_solvents": 9,
+      "n_pairs": 32,
+      "n_sources": 7,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.97388,
+        "lo_sd": 0.03056,
+        "lo_range": [
+          -1.0953,
+          -0.9105
+        ],
+        "hi_mean": 0.71773,
+        "hi_sd": 0.02893,
+        "hi_range": [
+          0.6338,
+          0.7995
+        ],
+        "half_split_sd_lo": [
+          0.0319,
+          0.0292
+        ],
+        "half_split_sd_hi": [
+          0.0307,
+          0.0269
+        ],
+        "sd_over_width": 0.0181,
+        "distinct_resampled_margins_median": 2985
+      },
+      "draws_to_determine": {
+        "2dp": 35686067,
+        "1dp": 78602
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solute_family",
+            "stratum": "aromatic_hydrocarbon",
+            "printed_in": "tab:map-solute",
+            "ci90_lo": -1.007,
+            "ci90_hi": 0.745,
+            "printed_as": [
+              -1.01,
+              0.75
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.07,
+              "hi": 0.0
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "coarsened",
+      "decimals": 1,
+      "n_replicates": 60,
+      "draws_per_replicate": 3000,
+      "n_draws": 180000,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "interval": {
+        "lo": -0.974361,
+        "hi": 0.717202,
+        "se_lo": 0.003997,
+        "se_hi": 0.004391,
+        "boundary_margin_se": {
+          "lo": 6.09,
+          "hi": 7.47
+        },
+        "printed_as": [
+          -1.0,
+          0.7
+        ],
+        "printed_decimals": 1,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.03056,
+          "hi": 0.02893
+        }
+      }
+    },
+    {
+      "row_set_id": "5e74c0cc",
+      "canonical_axis": "solvent_class_coarse",
+      "canonical_stratum": "hb_acceptor_only",
+      "names": [
+        {
+          "axis": "solvent_class_coarse",
+          "stratum": "hb_acceptor_only",
+          "printed_in": "tab:map-full"
+        }
+      ],
+      "n_printings": 1,
+      "n": 70,
+      "n_solutes": 37,
+      "n_solvents": 10,
+      "n_pairs": 59,
+      "n_sources": 5,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.29707,
+        "lo_sd": 0.01058,
+        "lo_range": [
+          -0.3249,
+          -0.2693
+        ],
+        "hi_mean": 6.20832,
+        "hi_sd": 0.14806,
+        "hi_range": [
+          5.8619,
+          6.6049
+        ],
+        "half_split_sd_lo": [
+          0.0099,
+          0.0111
+        ],
+        "half_split_sd_hi": [
+          0.1529,
+          0.143
+        ],
+        "sd_over_width": 0.0228,
+        "distinct_resampled_margins_median": 2915
+      },
+      "draws_to_determine": {
+        "2dp": 95738356,
+        "1dp": 605569
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solvent_class_coarse",
+            "stratum": "hb_acceptor_only",
+            "printed_in": "tab:map-full",
+            "ci90_lo": -0.281,
+            "ci90_hi": 6.194,
+            "printed_as": [
+              -0.28,
+              6.19
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.38,
+              "hi": 0.01
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 60,
+      "draws_per_replicate": 10093,
+      "n_draws": 605580,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "demoted_by_the_verification_check": true,
+      "interval": {
+        "lo": -0.296154,
+        "hi": 6.2118,
+        "se_lo": 0.000716,
+        "se_hi": 0.010741,
+        "boundary_margin_se": {
+          "lo": 1.61,
+          "hi": 0.3
+        },
+        "printed_as": [
+          -0.3,
+          6.21
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.1481,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.01058,
+          "hi": 0.14806
+        }
+      }
+    },
+    {
+      "row_set_id": "e7f61b41",
+      "canonical_axis": "solute_family",
+      "canonical_stratum": "ketone",
+      "names": [
+        {
+          "axis": "solute_family",
+          "stratum": "ketone",
+          "printed_in": "tab:map-solute"
+        }
+      ],
+      "n_printings": 1,
+      "n": 63,
+      "n_solutes": 10,
+      "n_solvents": 3,
+      "n_pairs": 11,
+      "n_sources": 3,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.85476,
+        "lo_sd": 0.018,
+        "lo_range": [
+          -0.8998,
+          -0.8119
+        ],
+        "hi_mean": 0.63253,
+        "hi_sd": 0.00564,
+        "hi_range": [
+          0.6133,
+          0.6475
+        ],
+        "half_split_sd_lo": [
+          0.0196,
+          0.0164
+        ],
+        "half_split_sd_hi": [
+          0.0051,
+          0.0061
+        ],
+        "sd_over_width": 0.0121,
+        "distinct_resampled_margins_median": 2094
+      },
+      "draws_to_determine": {
+        "2dp": 263287349,
+        "1dp": 687305
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solute_family",
+            "stratum": "ketone",
+            "printed_in": "tab:map-solute",
+            "ci90_lo": -0.849,
+            "ci90_hi": 0.638,
+            "printed_as": [
+              -0.85,
+              0.64
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.22,
+              "hi": 0.53
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 60,
+      "draws_per_replicate": 11456,
+      "n_draws": 687360,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "demoted_by_the_verification_check": true,
+      "interval": {
+        "lo": -0.852988,
+        "hi": 0.632682,
+        "se_lo": 0.00124,
+        "se_hi": 0.00038,
+        "boundary_margin_se": {
+          "lo": 1.62,
+          "hi": 6.1
+        },
+        "printed_as": [
+          -0.85,
+          0.63
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.018,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.018,
+          "hi": 0.00564
+        }
+      }
+    },
+    {
+      "row_set_id": "42504742",
+      "canonical_axis": "solvent_class",
+      "canonical_stratum": "aprotic_acceptor",
+      "names": [
+        {
+          "axis": "solvent_class",
+          "stratum": "aprotic_acceptor",
+          "printed_in": "tab:map-full"
+        },
+        {
+          "axis": "solvent_class_x_solute_role",
+          "stratum": "aprotic_acceptor | organic_solute",
+          "printed_in": "tab:map-xtab"
+        }
+      ],
+      "n_printings": 2,
+      "n": 57,
+      "n_solutes": 36,
+      "n_solvents": 8,
+      "n_pairs": 57,
+      "n_sources": 4,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.41396,
+        "lo_sd": 0.01139,
+        "lo_range": [
+          -0.4482,
+          -0.3867
+        ],
+        "hi_mean": 0.1214,
+        "hi_sd": 0.01054,
+        "hi_range": [
+          0.1003,
+          0.1567
+        ],
+        "half_split_sd_lo": [
+          0.0115,
+          0.0113
+        ],
+        "half_split_sd_hi": [
+          0.0101,
+          0.011
+        ],
+        "sd_over_width": 0.0213,
+        "distinct_resampled_margins_median": 2824
+      },
+      "draws_to_determine": {
+        "2dp": 5713744,
+        "1dp": 6514
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 2,
+        "printings": [
+          {
+            "axis": "solvent_class",
+            "stratum": "aprotic_acceptor",
+            "printed_in": "tab:map-full",
+            "ci90_lo": -0.435,
+            "ci90_hi": 0.124,
+            "printed_as": [
+              -0.44,
+              0.12
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.0,
+              "hi": 0.09
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solvent_class_x_solute_role",
+            "stratum": "aprotic_acceptor | organic_solute",
+            "printed_in": "tab:map-xtab",
+            "ci90_lo": -0.399,
+            "ci90_hi": 0.122,
+            "printed_as": [
+              -0.4,
+              0.12
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.35,
+              "hi": 0.28
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.036,
+          "hi": 0.002
+        },
+        "distinct_printed_pairs": 2,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "coarsened",
+      "decimals": 1,
+      "n_replicates": 60,
+      "draws_per_replicate": 3000,
+      "n_draws": 180000,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "interval": {
+        "lo": -0.413902,
+        "hi": 0.122308,
+        "se_lo": 0.001382,
+        "se_hi": 0.001473,
+        "boundary_margin_se": {
+          "lo": 26.11,
+          "hi": 18.8
+        },
+        "printed_as": [
+          -0.4,
+          0.1
+        ],
+        "printed_decimals": 1,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.01139,
+          "hi": 0.01054
+        }
+      }
+    },
+    {
+      "row_set_id": "4042bec3",
+      "canonical_axis": "solute_family",
+      "canonical_stratum": "mono_alcohol",
+      "names": [
+        {
+          "axis": "solute_family",
+          "stratum": "mono_alcohol",
+          "printed_in": "tab:map-solute"
+        }
+      ],
+      "n_printings": 1,
+      "n": 39,
+      "n_solutes": 5,
+      "n_solvents": 15,
+      "n_pairs": 21,
+      "n_sources": 5,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": 0.08475,
+        "lo_sd": 0.02881,
+        "lo_range": [
+          0.0125,
+          0.1562
+        ],
+        "hi_mean": 2.14167,
+        "hi_sd": 0.03146,
+        "hi_range": [
+          2.0778,
+          2.2384
+        ],
+        "half_split_sd_lo": [
+          0.0309,
+          0.0266
+        ],
+        "half_split_sd_hi": [
+          0.0302,
+          0.0328
+        ],
+        "sd_over_width": 0.0153,
+        "distinct_resampled_margins_median": 2583
+      },
+      "draws_to_determine": {
+        "2dp": 652479108,
+        "1dp": 684918
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solute_family",
+            "stratum": "mono_alcohol",
+            "printed_in": "tab:map-solute",
+            "ci90_lo": 0.086,
+            "ci90_hi": 2.097,
+            "printed_as": [
+              0.09,
+              2.1
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.03,
+              "hi": 0.06
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 60,
+      "draws_per_replicate": 11416,
+      "n_draws": 684960,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "demoted_by_the_verification_check": true,
+      "interval": {
+        "lo": 0.085054,
+        "hi": 2.149996,
+        "se_lo": 0.002066,
+        "se_hi": 0.002265,
+        "boundary_margin_se": {
+          "lo": 0.03,
+          "hi": 2.21
+        },
+        "printed_as": [
+          0.09,
+          2.15
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.0315,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.02881,
+          "hi": 0.03146
+        }
+      }
+    },
+    {
+      "row_set_id": "12b026f8",
+      "canonical_axis": "solute_role",
+      "canonical_stratum": "water_solute",
+      "names": [
+        {
+          "axis": "solute_role",
+          "stratum": "water_solute",
+          "printed_in": "tab:map-solute"
+        },
+        {
+          "axis": "solute_family",
+          "stratum": "water",
+          "printed_in": "tab:map-solute"
+        }
+      ],
+      "n_printings": 2,
+      "n": 37,
+      "n_solutes": 1,
+      "n_solvents": 6,
+      "n_pairs": 6,
+      "n_sources": 1,
+      "one_way_only": true,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": 3.83783,
+        "lo_sd": 0.17773,
+        "lo_range": [
+          3.3854,
+          4.077
+        ],
+        "hi_mean": 9.49628,
+        "hi_sd": 0.00871,
+        "hi_range": [
+          9.4903,
+          9.5504
+        ],
+        "half_split_sd_lo": [
+          0.1713,
+          0.1823
+        ],
+        "half_split_sd_hi": [
+          0.011,
+          0.0053
+        ],
+        "sd_over_width": 0.0314,
+        "distinct_resampled_margins_median": 408
+      },
+      "draws_to_determine": {
+        "2dp": 189929658,
+        "1dp": 10229329
+      },
+      "planned_verdict": "state",
+      "as_submitted": {
+        "n_names": 2,
+        "printings": [
+          {
+            "axis": "solute_role",
+            "stratum": "water_solute",
+            "printed_in": "tab:map-solute",
+            "ci90_lo": 3.967,
+            "ci90_hi": 9.49,
+            "printed_as": [
+              3.97,
+              9.49
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.01,
+              "hi": 0.57
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solute_family",
+            "stratum": "water",
+            "printed_in": "tab:map-solute",
+            "ci90_lo": 3.385,
+            "ci90_hi": 9.502,
+            "printed_as": [
+              3.39,
+              9.5
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.0,
+              "hi": 0.34
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.582,
+          "hi": 0.012
+        },
+        "distinct_printed_pairs": 2,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 200,
+      "draws_per_replicate": 3000,
+      "n_draws": 600000,
+      "source": "this script",
+      "interval": {
+        "lo": 3.837825,
+        "hi": 9.496282,
+        "se_lo": 0.012567,
+        "se_hi": 0.000616,
+        "boundary_margin_se": {
+          "lo": 0.22,
+          "hi": 2.08
+        },
+        "printed_as": [
+          3.84,
+          9.5
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.1777,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.17773,
+          "hi": 0.00871
+        }
+      }
+    },
+    {
+      "row_set_id": "3a91251f",
+      "canonical_axis": "solvent_class",
+      "canonical_stratum": "mono_alcohol",
+      "names": [
+        {
+          "axis": "solvent_class",
+          "stratum": "mono_alcohol",
+          "printed_in": "tab:map-full"
+        },
+        {
+          "axis": "solvent_family_fine",
+          "stratum": "mono_alcohol",
+          "printed_in": "tab:map-fine"
+        },
+        {
+          "axis": "solvent_class_x_solute_role",
+          "stratum": "mono_alcohol | organic_solute",
+          "printed_in": "tab:map-xtab"
+        }
+      ],
+      "n_printings": 3,
+      "n": 35,
+      "n_solutes": 14,
+      "n_solvents": 4,
+      "n_pairs": 17,
+      "n_sources": 2,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": 0.27297,
+        "lo_sd": 0.04359,
+        "lo_range": [
+          0.1255,
+          0.38
+        ],
+        "hi_mean": 3.30567,
+        "hi_sd": 0.10541,
+        "hi_range": [
+          3.0536,
+          3.564
+        ],
+        "half_split_sd_lo": [
+          0.0488,
+          0.0373
+        ],
+        "half_split_sd_hi": [
+          0.1079,
+          0.1032
+        ],
+        "sd_over_width": 0.0348,
+        "distinct_resampled_margins_median": 2100
+      },
+      "draws_to_determine": {
+        "2dp": 1176828069,
+        "1dp": 271444
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 3,
+        "printings": [
+          {
+            "axis": "solvent_class",
+            "stratum": "mono_alcohol",
+            "printed_in": "tab:map-full",
+            "ci90_lo": 0.182,
+            "ci90_hi": 3.238,
+            "printed_as": [
+              0.18,
+              3.24
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.07,
+              "hi": 0.03
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solvent_family_fine",
+            "stratum": "mono_alcohol",
+            "printed_in": "tab:map-fine",
+            "ci90_lo": 0.294,
+            "ci90_hi": 3.263,
+            "printed_as": [
+              0.29,
+              3.26
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.02,
+              "hi": 0.02
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solvent_class_x_solute_role",
+            "stratum": "mono_alcohol | organic_solute",
+            "printed_in": "tab:map-xtab",
+            "ci90_lo": 0.302,
+            "ci90_hi": 3.368,
+            "printed_as": [
+              0.3,
+              3.37
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.07,
+              "hi": 0.03
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.12,
+          "hi": 0.13
+        },
+        "distinct_printed_pairs": 3,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 60,
+      "draws_per_replicate": 4525,
+      "n_draws": 271500,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "demoted_by_the_verification_check": true,
+      "interval": {
+        "lo": 0.27562,
+        "hi": 3.31733,
+        "se_lo": 0.004667,
+        "se_hi": 0.011325,
+        "boundary_margin_se": {
+          "lo": 0.13,
+          "hi": 0.21
+        },
+        "printed_as": [
+          0.28,
+          3.32
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.1054,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.04359,
+          "hi": 0.10541
+        }
+      }
+    },
+    {
+      "row_set_id": "c7d77ad1",
+      "canonical_axis": "solvent_class",
+      "canonical_stratum": "nh_protic",
+      "names": [
+        {
+          "axis": "solvent_class",
+          "stratum": "nh_protic",
+          "printed_in": "tab:map-full"
+        },
+        {
+          "axis": "solvent_class_coarse",
+          "stratum": "hb_donor_N",
+          "printed_in": "tab:map-full"
+        },
+        {
+          "axis": "solvent_class_x_solute_role",
+          "stratum": "nh_protic | organic_solute",
+          "printed_in": "tab:map-xtab"
+        }
+      ],
+      "n_printings": 3,
+      "n": 33,
+      "n_solutes": 21,
+      "n_solvents": 10,
+      "n_pairs": 33,
+      "n_sources": 3,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.26412,
+        "lo_sd": 0.02923,
+        "lo_range": [
+          -0.3587,
+          -0.1965
+        ],
+        "hi_mean": 1.99934,
+        "hi_sd": 0.05569,
+        "hi_range": [
+          1.8664,
+          2.2315
+        ],
+        "half_split_sd_lo": [
+          0.0267,
+          0.0306
+        ],
+        "half_split_sd_hi": [
+          0.0602,
+          0.0511
+        ],
+        "sd_over_width": 0.0246,
+        "distinct_resampled_margins_median": 2601
+      },
+      "draws_to_determine": {
+        "2dp": 53398857,
+        "1dp": 205617
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 3,
+        "printings": [
+          {
+            "axis": "solvent_class",
+            "stratum": "nh_protic",
+            "printed_in": "tab:map-full",
+            "ci90_lo": -0.271,
+            "ci90_hi": 1.964,
+            "printed_as": [
+              -0.27,
+              1.96
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.14,
+              "hi": 0.02
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solvent_class_coarse",
+            "stratum": "hb_donor_N",
+            "printed_in": "tab:map-full",
+            "ci90_lo": -0.296,
+            "ci90_hi": 2.107,
+            "printed_as": [
+              -0.3,
+              2.11
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.03,
+              "hi": 0.04
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solvent_class_x_solute_role",
+            "stratum": "nh_protic | organic_solute",
+            "printed_in": "tab:map-xtab",
+            "ci90_lo": -0.233,
+            "ci90_hi": 1.994,
+            "printed_as": [
+              -0.23,
+              1.99
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.07,
+              "hi": 0.02
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.063,
+          "hi": 0.143
+        },
+        "distinct_printed_pairs": 3,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "coarsened",
+      "decimals": 1,
+      "n_replicates": 60,
+      "draws_per_replicate": 3427,
+      "n_draws": 205620,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "interval": {
+        "lo": -0.265144,
+        "hi": 1.998215,
+        "se_lo": 0.003301,
+        "se_hi": 0.006483,
+        "boundary_margin_se": {
+          "lo": 4.59,
+          "hi": 7.44
+        },
+        "printed_as": [
+          -0.3,
+          2.0
+        ],
+        "printed_decimals": 1,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.02923,
+          "hi": 0.05569
+        }
+      }
+    },
+    {
+      "row_set_id": "a71cb5ac",
+      "canonical_axis": "solute_family",
+      "canonical_stratum": "alkene",
+      "names": [
+        {
+          "axis": "solute_family",
+          "stratum": "alkene",
+          "printed_in": "tab:map-solute"
+        }
+      ],
+      "n_printings": 1,
+      "n": 32,
+      "n_solutes": 7,
+      "n_solvents": 5,
+      "n_pairs": 16,
+      "n_sources": 4,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": 0.15253,
+        "lo_sd": 0.03129,
+        "lo_range": [
+          0.0875,
+          0.2562
+        ],
+        "hi_mean": 3.39678,
+        "hi_sd": 0.02459,
+        "hi_range": [
+          3.3384,
+          3.4757
+        ],
+        "half_split_sd_lo": [
+          0.0304,
+          0.0322
+        ],
+        "half_split_sd_hi": [
+          0.0261,
+          0.0229
+        ],
+        "sd_over_width": 0.0096,
+        "distinct_resampled_margins_median": 2829
+      },
+      "draws_to_determine": {
+        "2dp": 9158747,
+        "1dp": 7322468
+      },
+      "planned_verdict": "state",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solute_family",
+            "stratum": "alkene",
+            "printed_in": "tab:map-solute",
+            "ci90_lo": 0.12,
+            "ci90_hi": 3.433,
+            "printed_as": [
+              0.12,
+              3.43
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.16,
+              "hi": 0.08
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 200,
+      "draws_per_replicate": 3000,
+      "n_draws": 600000,
+      "source": "this script",
+      "interval": {
+        "lo": 0.152533,
+        "hi": 3.39678,
+        "se_lo": 0.002212,
+        "se_hi": 0.001739,
+        "boundary_margin_se": {
+          "lo": 1.11,
+          "hi": 1.02
+        },
+        "printed_as": [
+          0.15,
+          3.4
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.0313,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.03129,
+          "hi": 0.02459
+        }
+      }
+    },
+    {
+      "row_set_id": "1d351941",
+      "canonical_axis": "solvent_class",
+      "canonical_stratum": "halogenated",
+      "names": [
+        {
+          "axis": "solvent_class",
+          "stratum": "halogenated",
+          "printed_in": "tab:map-full"
+        },
+        {
+          "axis": "solvent_class_coarse",
+          "stratum": "halogenated_nonHB",
+          "printed_in": "tab:map-full"
+        }
+      ],
+      "n_printings": 2,
+      "n": 30,
+      "n_solutes": 5,
+      "n_solvents": 4,
+      "n_pairs": 7,
+      "n_sources": 2,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": 1.02082,
+        "lo_sd": 0.07,
+        "lo_range": [
+          0.847,
+          1.1408
+        ],
+        "hi_mean": 8.43421,
+        "hi_sd": 0.22265,
+        "hi_range": [
+          7.7508,
+          8.6144
+        ],
+        "half_split_sd_lo": [
+          0.0684,
+          0.0696
+        ],
+        "half_split_sd_hi": [
+          0.2237,
+          0.2227
+        ],
+        "sd_over_width": 0.03,
+        "distinct_resampled_margins_median": 864
+      },
+      "draws_to_determine": {
+        "2dp": 3857568862,
+        "1dp": 9549646
+      },
+      "planned_verdict": "state",
+      "as_submitted": {
+        "n_names": 2,
+        "printings": [
+          {
+            "axis": "solvent_class",
+            "stratum": "halogenated",
+            "printed_in": "tab:map-full",
+            "ci90_lo": 0.857,
+            "ci90_hi": 8.118,
+            "printed_as": [
+              0.86,
+              8.12
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.03,
+              "hi": 0.01
+            },
+            "digits_supported": false
+          },
+          {
+            "axis": "solvent_class_coarse",
+            "stratum": "halogenated_nonHB",
+            "printed_in": "tab:map-full",
+            "ci90_lo": 1.097,
+            "ci90_hi": 8.613,
+            "printed_as": [
+              1.1,
+              8.61
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.03,
+              "hi": 0.01
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.24,
+          "hi": 0.495
+        },
+        "distinct_printed_pairs": 2,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 200,
+      "draws_per_replicate": 3000,
+      "n_draws": 600000,
+      "source": "this script",
+      "interval": {
+        "lo": 1.020822,
+        "hi": 8.434215,
+        "se_lo": 0.00495,
+        "se_hi": 0.015744,
+        "boundary_margin_se": {
+          "lo": 0.84,
+          "hi": 0.05
+        },
+        "printed_as": [
+          1.02,
+          8.43
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.2227,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.07,
+          "hi": 0.22265
+        }
+      }
+    },
+    {
+      "row_set_id": "9d21d0df",
+      "canonical_axis": "solvent_family_fine",
+      "canonical_stratum": "ester",
+      "names": [
+        {
+          "axis": "solvent_family_fine",
+          "stratum": "ester",
+          "printed_in": "tab:map-fine"
+        }
+      ],
+      "n_printings": 1,
+      "n": 30,
+      "n_solutes": 30,
+      "n_solvents": 1,
+      "n_pairs": 30,
+      "n_sources": 1,
+      "one_way_only": true,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.0843,
+        "lo_sd": 0.00091,
+        "lo_range": [
+          -0.0867,
+          -0.0822
+        ],
+        "hi_mean": 0.02522,
+        "hi_sd": 0.002,
+        "hi_range": [
+          0.0196,
+          0.0307
+        ],
+        "half_split_sd_lo": [
+          0.0009,
+          0.0009
+        ],
+        "half_split_sd_hi": [
+          0.0022,
+          0.0017
+        ],
+        "sd_over_width": 0.0183,
+        "distinct_resampled_margins_median": 3000
+      },
+      "draws_to_determine": {
+        "2dp": 3819891,
+        "1dp": 314
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solvent_family_fine",
+            "stratum": "ester",
+            "printed_in": "tab:map-fine",
+            "ci90_lo": -0.084,
+            "ci90_hi": 0.027,
+            "printed_as": [
+              -0.08,
+              0.03
+            ],
+            "clearance_in_map_sd": {
+              "lo": 1.09,
+              "hi": 1.0
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "coarsened",
+      "decimals": 1,
+      "n_replicates": 60,
+      "draws_per_replicate": 3000,
+      "n_draws": 180000,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "interval": {
+        "lo": -0.084281,
+        "hi": 0.025052,
+        "se_lo": 0.00011,
+        "se_hi": 0.000254,
+        "boundary_margin_se": {
+          "lo": 310.65,
+          "hi": 98.29
+        },
+        "printed_as": [
+          -0.1,
+          0.0
+        ],
+        "printed_decimals": 1,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.00091,
+          "hi": 0.002
+        }
+      }
+    },
+    {
+      "row_set_id": "7db3123d",
+      "canonical_axis": "solute_family",
+      "canonical_stratum": "aldehyde",
+      "names": [
+        {
+          "axis": "solute_family",
+          "stratum": "aldehyde",
+          "printed_in": "tab:map-solute"
+        }
+      ],
+      "n_printings": 1,
+      "n": 29,
+      "n_solutes": 3,
+      "n_solvents": 1,
+      "n_pairs": 3,
+      "n_sources": 1,
+      "one_way_only": true,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.50801,
+        "lo_sd": 0.0,
+        "lo_range": [
+          -0.508,
+          -0.508
+        ],
+        "hi_mean": 0.13028,
+        "hi_sd": 0.0,
+        "hi_range": [
+          0.1303,
+          0.1303
+        ],
+        "half_split_sd_lo": [
+          0.0,
+          0.0
+        ],
+        "half_split_sd_hi": [
+          0.0,
+          0.0
+        ],
+        "sd_over_width": 0.0,
+        "distinct_resampled_margins_median": 10
+      },
+      "draws_to_determine": {
+        "2dp": 0,
+        "1dp": 0
+      },
+      "planned_verdict": "degenerate",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solute_family",
+            "stratum": "aldehyde",
+            "printed_in": "tab:map-solute",
+            "ci90_lo": -0.508,
+            "ci90_hi": 0.13,
+            "printed_as": [
+              -0.51,
+              0.13
+            ],
+            "clearance_in_map_sd": {
+              "lo": 26953959115551.08,
+              "hi": 179693060770340.78
+            },
+            "digits_supported": true
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "degenerate",
+      "decimals": 2,
+      "n_replicates": 200,
+      "draws_per_replicate": 3000,
+      "n_draws": 600000,
+      "source": "this script",
+      "interval": {
+        "lo": -0.508008,
+        "hi": 0.130285,
+        "se_lo": 0.0,
+        "se_hi": 0.0,
+        "boundary_margin_se": {
+          "lo": null,
+          "hi": null
+        },
+        "printed_as": [
+          -0.51,
+          0.13
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.0,
+          "hi": 0.0
+        }
+      }
+    },
+    {
+      "row_set_id": "19551593",
+      "canonical_axis": "solute_family",
+      "canonical_stratum": "halogenated_aliphatic",
+      "names": [
+        {
+          "axis": "solute_family",
+          "stratum": "halogenated_aliphatic",
+          "printed_in": "tab:map-solute"
+        }
+      ],
+      "n_printings": 1,
+      "n": 27,
+      "n_solutes": 4,
+      "n_solvents": 6,
+      "n_pairs": 9,
+      "n_sources": 3,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": 0.15459,
+        "lo_sd": 0.02426,
+        "lo_range": [
+          0.0978,
+          0.2464
+        ],
+        "hi_mean": 1.99907,
+        "hi_sd": 0.00909,
+        "hi_range": [
+          1.9792,
+          2.0231
+        ],
+        "half_split_sd_lo": [
+          0.0231,
+          0.0253
+        ],
+        "half_split_sd_hi": [
+          0.0085,
+          0.0097
+        ],
+        "sd_over_width": 0.0132,
+        "distinct_resampled_margins_median": 1608
+      },
+      "draws_to_determine": {
+        "2dp": 167498845,
+        "1dp": 1340931
+      },
+      "planned_verdict": "state",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solute_family",
+            "stratum": "halogenated_aliphatic",
+            "printed_in": "tab:map-solute",
+            "ci90_lo": 0.146,
+            "ci90_hi": 1.988,
+            "printed_as": [
+              0.15,
+              1.99
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.04,
+              "hi": 0.33
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 200,
+      "draws_per_replicate": 3000,
+      "n_draws": 600000,
+      "source": "this script",
+      "interval": {
+        "lo": 0.154589,
+        "hi": 1.999071,
+        "se_lo": 0.001715,
+        "se_hi": 0.000643,
+        "boundary_margin_se": {
+          "lo": 0.24,
+          "hi": 6.34
+        },
+        "printed_as": [
+          0.15,
+          2.0
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.0243,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.02426,
+          "hi": 0.00909
+        }
+      }
+    },
+    {
+      "row_set_id": "a5012c43",
+      "canonical_axis": "solvent_family_fine",
+      "canonical_stratum": "amide_NH",
+      "names": [
+        {
+          "axis": "solvent_family_fine",
+          "stratum": "amide_NH",
+          "printed_in": "tab:map-fine"
+        }
+      ],
+      "n_printings": 1,
+      "n": 25,
+      "n_solutes": 20,
+      "n_solvents": 2,
+      "n_pairs": 25,
+      "n_sources": 2,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.3317,
+        "lo_sd": 0.0134,
+        "lo_range": [
+          -0.363,
+          -0.2937
+        ],
+        "hi_mean": 0.77601,
+        "hi_sd": 0.01498,
+        "hi_range": [
+          0.7324,
+          0.8214
+        ],
+        "half_split_sd_lo": [
+          0.0131,
+          0.0138
+        ],
+        "half_split_sd_hi": [
+          0.0154,
+          0.0146
+        ],
+        "sd_over_width": 0.0135,
+        "distinct_resampled_margins_median": 2782
+      },
+      "draws_to_determine": {
+        "2dp": 10652458,
+        "1dp": 25732
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solvent_family_fine",
+            "stratum": "amide_NH",
+            "printed_in": "tab:map-fine",
+            "ci90_lo": -0.337,
+            "ci90_hi": 0.764,
+            "printed_as": [
+              -0.34,
+              0.76
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.15,
+              "hi": 0.07
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "coarsened",
+      "decimals": 1,
+      "n_replicates": 60,
+      "draws_per_replicate": 3000,
+      "n_draws": 180000,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "interval": {
+        "lo": -0.329932,
+        "hi": 0.777808,
+        "se_lo": 0.001612,
+        "se_hi": 0.002092,
+        "boundary_margin_se": {
+          "lo": 12.45,
+          "hi": 13.29
+        },
+        "printed_as": [
+          -0.3,
+          0.8
+        ],
+        "printed_decimals": 1,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.0134,
+          "hi": 0.01498
+        }
+      }
+    },
+    {
+      "row_set_id": "88b0fef6",
+      "canonical_axis": "solvent_family_fine",
+      "canonical_stratum": "azine",
+      "names": [
+        {
+          "axis": "solvent_family_fine",
+          "stratum": "azine",
+          "printed_in": "tab:map-fine"
+        }
+      ],
+      "n_printings": 1,
+      "n": 23,
+      "n_solutes": 20,
+      "n_solvents": 5,
+      "n_pairs": 23,
+      "n_sources": 2,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.15145,
+        "lo_sd": 0.00637,
+        "lo_range": [
+          -0.1677,
+          -0.1333
+        ],
+        "hi_mean": 0.13588,
+        "hi_sd": 0.00899,
+        "hi_range": [
+          0.1109,
+          0.1653
+        ],
+        "half_split_sd_lo": [
+          0.0064,
+          0.0064
+        ],
+        "half_split_sd_hi": [
+          0.0088,
+          0.0092
+        ],
+        "sd_over_width": 0.0313,
+        "distinct_resampled_margins_median": 2059
+      },
+      "draws_to_determine": {
+        "2dp": 5001590,
+        "1dp": 925068
+      },
+      "planned_verdict": "coarsen",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solvent_family_fine",
+            "stratum": "azine",
+            "printed_in": "tab:map-fine",
+            "ci90_lo": -0.145,
+            "ci90_hi": 0.139,
+            "printed_as": [
+              -0.15,
+              0.14
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.0,
+              "hi": 0.44
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 60,
+      "draws_per_replicate": 15418,
+      "n_draws": 925080,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "demoted_by_the_verification_check": true,
+      "interval": {
+        "lo": -0.151147,
+        "hi": 0.135585,
+        "se_lo": 0.000337,
+        "se_hi": 0.000513,
+        "boundary_margin_se": {
+          "lo": 11.44,
+          "hi": 1.14
+        },
+        "printed_as": [
+          -0.15,
+          0.14
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.009,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.00637,
+          "hi": 0.00899
+        }
+      }
+    },
+    {
+      "row_set_id": "a67239dd",
+      "canonical_axis": "solvent_family_fine",
+      "canonical_stratum": "halogenated_aliphatic",
+      "names": [
+        {
+          "axis": "solvent_family_fine",
+          "stratum": "halogenated_aliphatic",
+          "printed_in": "tab:map-fine"
+        }
+      ],
+      "n_printings": 1,
+      "n": 18,
+      "n_solutes": 5,
+      "n_solvents": 2,
+      "n_pairs": 5,
+      "n_sources": 2,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.17173,
+        "lo_sd": 0.01086,
+        "lo_range": [
+          -0.1828,
+          -0.1581
+        ],
+        "hi_mean": 2.32782,
+        "hi_sd": 0.00412,
+        "hi_range": [
+          2.3174,
+          2.3347
+        ],
+        "half_split_sd_lo": [
+          0.0108,
+          0.011
+        ],
+        "half_split_sd_hi": [
+          0.0043,
+          0.004
+        ],
+        "sd_over_width": 0.0043,
+        "distinct_resampled_margins_median": 226
+      },
+      "draws_to_determine": {
+        "2dp": 528965,
+        "1dp": 11996
+      },
+      "planned_verdict": "converge",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solvent_family_fine",
+            "stratum": "halogenated_aliphatic",
+            "printed_in": "tab:map-fine",
+            "ci90_lo": -0.183,
+            "ci90_hi": 2.332,
+            "printed_as": [
+              -0.18,
+              2.33
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.18,
+              "hi": 0.73
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "coarsened",
+      "decimals": 1,
+      "n_replicates": 60,
+      "draws_per_replicate": 8817,
+      "n_draws": 529020,
+      "seed_sequence": "700000..700059",
+      "source": "this script",
+      "interval": {
+        "lo": -0.172111,
+        "hi": 2.328637,
+        "se_lo": 0.001297,
+        "se_hi": 0.000416,
+        "boundary_margin_se": {
+          "lo": 17.05,
+          "hi": 51.35
+        },
+        "printed_as": [
+          -0.2,
+          2.3
+        ],
+        "printed_decimals": 1,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.01086,
+          "hi": 0.00412
+        }
+      }
+    },
+    {
+      "row_set_id": "24fd4557",
+      "canonical_axis": "solvent_class_x_solute_role",
+      "canonical_stratum": "halogenated | water_solute",
+      "names": [
+        {
+          "axis": "solvent_class_x_solute_role",
+          "stratum": "halogenated | water_solute",
+          "printed_in": "tab:map-xtab"
+        }
+      ],
+      "n_printings": 1,
+      "n": 18,
+      "n_solutes": 1,
+      "n_solvents": 3,
+      "n_pairs": 3,
+      "n_sources": 1,
+      "one_way_only": true,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": 2.69684,
+        "lo_sd": 0.0,
+        "lo_range": [
+          2.6968,
+          2.6968
+        ],
+        "hi_mean": 9.43161,
+        "hi_sd": 0.0,
+        "hi_range": [
+          9.4316,
+          9.4316
+        ],
+        "half_split_sd_lo": [
+          0.0,
+          0.0
+        ],
+        "half_split_sd_hi": [
+          0.0,
+          0.0
+        ],
+        "sd_over_width": 0.0,
+        "distinct_resampled_margins_median": 10
+      },
+      "draws_to_determine": {
+        "2dp": 0,
+        "1dp": 0
+      },
+      "planned_verdict": "degenerate",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solvent_class_x_solute_role",
+            "stratum": "halogenated | water_solute",
+            "printed_in": "tab:map-xtab",
+            "ci90_lo": 2.697,
+            "ci90_hi": 9.432,
+            "printed_as": [
+              2.7,
+              9.43
+            ],
+            "clearance_in_map_sd": {
+              "lo": null,
+              "hi": null
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "degenerate",
+      "decimals": 2,
+      "n_replicates": 200,
+      "draws_per_replicate": 3000,
+      "n_draws": 600000,
+      "source": "this script",
+      "interval": {
+        "lo": 2.696837,
+        "hi": 9.43161,
+        "se_lo": 0.0,
+        "se_hi": 0.0,
+        "boundary_margin_se": {
+          "lo": null,
+          "hi": null
+        },
+        "printed_as": [
+          2.7,
+          9.43
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": null,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.0,
+          "hi": 0.0
+        }
+      }
+    },
+    {
+      "row_set_id": "72941143",
+      "canonical_axis": "solvent_class_coarse",
+      "canonical_stratum": "hydrocarbon_nonHB",
+      "names": [
+        {
+          "axis": "solvent_class_coarse",
+          "stratum": "hydrocarbon_nonHB",
+          "printed_in": "tab:map-full"
+        }
+      ],
+      "n_printings": 1,
+      "n": 16,
+      "n_solutes": 10,
+      "n_solvents": 3,
+      "n_pairs": 11,
+      "n_sources": 3,
+      "one_way_only": false,
+      "monte_carlo_at_the_maps_own_draws": {
+        "n_seeds": 200,
+        "n_draws_each": 3000,
+        "seed_sequence": "5000..5199",
+        "lo_mean": -0.06739,
+        "lo_sd": 0.02282,
+        "lo_range": [
+          -0.1054,
+          0.0107
+        ],
+        "hi_mean": 8.775,
+        "hi_sd": 0.13448,
+        "hi_range": [
+          8.5076,
+          8.8619
+        ],
+        "half_split_sd_lo": [
+          0.0251,
+          0.0203
+        ],
+        "half_split_sd_hi": [
+          0.1252,
+          0.1425
+        ],
+        "sd_over_width": 0.0152,
+        "distinct_resampled_margins_median": 1740
+      },
+      "draws_to_determine": {
+        "2dp": 115848771945004,
+        "1dp": 1388672
+      },
+      "planned_verdict": "state",
+      "as_submitted": {
+        "n_names": 1,
+        "printings": [
+          {
+            "axis": "solvent_class_coarse",
+            "stratum": "hydrocarbon_nonHB",
+            "printed_in": "tab:map-full",
+            "ci90_lo": -0.074,
+            "ci90_hi": 8.862,
+            "printed_as": [
+              -0.07,
+              8.86
+            ],
+            "clearance_in_map_sd": {
+              "lo": 0.04,
+              "hi": 0.02
+            },
+            "digits_supported": false
+          }
+        ],
+        "spread_across_names": {
+          "lo": 0.0,
+          "hi": 0.0
+        },
+        "distinct_printed_pairs": 1,
+        "source": "stratified_map_table_pre_rowset_seed.csv"
+      },
+      "verdict": "stated",
+      "decimals": 2,
+      "n_replicates": 200,
+      "draws_per_replicate": 3000,
+      "n_draws": 600000,
+      "source": "this script",
+      "interval": {
+        "lo": -0.067394,
+        "hi": 8.775003,
+        "se_lo": 0.001614,
+        "se_hi": 0.009509,
+        "boundary_margin_se": {
+          "lo": 1.48,
+          "hi": 0.0
+        },
+        "printed_as": [
+          -0.07,
+          8.78
+        ],
+        "printed_decimals": 2,
+        "printed_monte_carlo_sd": 0.1345,
+        "monte_carlo_sd_of_one_3000_draw_replicate": {
+          "lo": 0.02282,
+          "hi": 0.13448
+        }
+      }
+    }
+  ],
+  "table_csv": "results/b_insuff/map_ci_precision_table.csv",
+  "monte_carlo_replicates_csv": "results/b_insuff/map_ci_precision_mc3000.csv",
+  "convergence_replicates_csv": "results/b_insuff/map_ci_precision_replicates.csv"
+}

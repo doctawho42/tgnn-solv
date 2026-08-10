@@ -45,12 +45,17 @@ under the full one. The forest reached $0.823$.
 
 Every consequence runs against this work, and the numbers are printed here for that reason. The
 glycol-ether margin---the paper's one surviving stratified finding---falls from $+2.036$ to
-$+1.757$ at the fixed estimator cell, its $90\%$ two-way cluster interval from $[+1.26,+2.87]$ to
+$+1.757$ at the fixed estimator cell, its $90\%$ two-way cluster interval from $[+1.25,+2.87]$ to
 $[+1.02,+2.49]$ and its leave-one-publication-out envelope from $[+1.597,+2.866]$ to
 $[+1.342,+2.339]$, on the same $182$ rows either side---no dropped row carries a glycol-ether
-solvent. The envelopes are exact deletion extrema and print to three decimals; a bootstrap
-endpoint carries $\pm0.02$ of Monte-Carlo spread and prints to two (\S\ref{sec:si-map},
-note~\emph{b}).
+solvent. The envelopes are exact deletion extrema and print to three decimals. The two intervals
+are not on the same footing: $[+1.25,+2.87]$ is the two-way bootstrap run to convergence at
+$1.2\times10^{8}$ draws, while $[+1.02,+2.49]$ is one $3000$-draw replicate of this scoring pass,
+whose bootstrap is seeded per stratum name rather than per row set. That
+row set is drawn here under three names and prints $[+1.02,+2.49]$, $[+1.05,+2.47]$ and
+$[+1.02,+2.49]$, so the second decimal of the cross-fitted endpoint is seed and not estimator.
+The fall it is quoted for is larger than that spread by six times on the lower endpoint and
+twenty-five on the upper, which is why the comparison survives its own precision.
 The map is poorer in every count that reads a margin: admissible cells $35\to32$,
 strata admissible in all four unit\,$\times$\,convention cells $6\to5$, and distinct admissible
 positive row sets after the maximality reduction $2\to1$, the alkanes being the row set that

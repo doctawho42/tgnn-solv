@@ -90,14 +90,15 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 
 ---
 
-### Row 1 — the abstract's seed count and its leak-free clause
-- **Inventory name / label:** *"the abstract's seed count and its leak-free clause, which carry no value of their own"*. No `\label` (achemso `abstract` environment).
-- **Prints:** `paper/grounding_paradox.tex` **L266–288** (clause at **L272**); printed **p. 1**.
-- **Prints now:** `lowers mean absolute error, over three seeds, not certified leak-free`. No numerals anywhere in the abstract, by standing rule (three rules at L267–288).
-- **Disposition:** **R** — "over three seeds" → five; the leak-free clause goes.
-- **Artifact:** `results/e5_sigma_grounding_leakfree/provenance_certificate.json` (the clause), and the seed list itself.
-- **Command:** *none produces this prose.* It is hand-edited. The only mechanical gate is the word ceiling: `KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src python scripts/analysis/wc_abstract.py` — take the number the script prints, under its third rule ("as rendered"), ceiling 250.
-- **Branch:** `1|2|3` for the seed count and the clause. Under **branch 2** the abstract's *claim* is also rewritten (supervision recorded as unresolved).
+### Row 1 — the abstract's σ-grounding seed count, its leak-free clause, and its three arm means
+- **Inventory name / label:** *"the abstract's seed count … and the three ln x₂ MAE means it prints — the ungrounded 2.043, the grounded 1.846, the σ-oracle 2.252"*. No `\label` (achemso `abstract` environment); the region is marked in the source by `%<abstract-numerals>` … `%</abstract-numerals>`, which is how `check_hand_transcribed_displays.py` reaches it.
+- **WHICH "three" — the abstract prints the word twice and this row owns ONE of them.** *"over three seeds"* is these arms and is what branch 1 moves to five. *"on separate three-seed runs"* is the n=44 compensation-surrogate family at seeds 0, 1, 2, which this re-run does not train; **it stays at three in every branch and is not this row's**. Discharging the singular "seed count" by editing that phrase would assert five seeds for a family that has three. The checker binds the first to the seeds in `--root` and change-detects the second against the literal `three`.
+- **Prints:** `paper/grounding_paradox.tex`, comment block then `\begin{abstract}`; printed **p. 1**.
+- **Prints now:** `lowers $\ln x_2$ mean absolute error from 2.043 to 1.846 over three seeds; that gain is not certified leak-free` and `raises the error to 2.252`. **The "no numerals" rule was reversed by the author on 2026-08-10** and the abstract now carries magnitudes; the enrolment was amended in the same pass, before seeds 45/46 landed. The frequencies and the margin it also prints (`2.04`, `n=182`, the 90 % interval, `59`-fold, "most draws", "a tenth") are the broad-IDAC decomposition and are **outside** — that run family trains nothing.
+- **Disposition:** **R** — the three means are replaced by five-seed **means at three decimals** (per-seed values do not fit the ceiling, and the inventory says so); "over three seeds" → five; the leak-free clause goes.
+- **Artifact:** `results/e5_sigma_grounding_leakfree/seed_*/comparison.json` via the same aggregation as row 2 (the three means are row 2's own numbers), plus `provenance_certificate.json` for the clause and the seed list itself.
+- **Command:** two, and the second one is new. The **word ceiling**: `KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src python scripts/analysis/wc_abstract.py` — take the number the script prints, under its third rule ("as rendered"), ceiling 250. **The page reads 250 and so does the script**, which is *at* the ceiling with no word left, not under it; this line used to say "it reads 250" of the script, and the script read **249**, because it counted `$\ln x_2$` as one word where the page has two (`rendered_atom`, added 2026-08-10, models the operator spacing). The replacement is value-for-value at equal length, so no `--reserve` is needed; re-check before adding any fourth value, not after. And the **values**: `KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src python scripts/analysis/check_hand_transcribed_displays.py --root results/e5_sigma_grounding_leakfree`, which since 2026-08-10 binds the abstract's three arm means to the same per-seed deposits row 2 reads, and its seed count to the seeds in `--root`. The prose is still hand-edited from row 2's JSONs; what changed is that a wrong digit in it is now caught.
+- **Branch:** `1|2|3` for the seed count, the clause and all three values. Under **branch 2** the sentence carrying the first two is also rewritten (supervision recorded as unresolved); under **branch 3** the supervision pair prints in the direction it then runs. The `2.252` moves with the grounded checkpoint in every branch — its own contrast is unaffected in all three.
 
 ### Row 2 — §3.1 entire
 - **Inventory name / label:** *"§\ref{sec:paradox} entire … the per-seed gains and the seed-42 values included wherever they now print"* — `\label{sec:paradox}`.
@@ -693,7 +694,10 @@ then, and only then:
 - **L after E–I.** A caption that states what its rows are cannot be written before the rows exist.
 - **P last.** The abstract is the only display with a hard word ceiling, and its scope clause depends on
   the branch. Edit it after the branch is known, then re-run `wc_abstract.py` and take the script's
-  number, not a carried-forward one.
+  number, not a carried-forward one. **Since 2026-08-10 it also carries values** — the same three arm
+  means as row 2 — so P now depends on E as well as on the branch, and the two must print the same
+  three numbers at the same three decimals. If they disagree, row 2 is the source and the abstract is
+  the copy.
 
 ---
 
@@ -824,7 +828,10 @@ the script must be edited first.
 seeds-and-determinism paragraph, `sec:si-methods`'s two paragraphs, `sec:si-lock`'s two paragraphs, the deposit-recovery
 paragraph, §3.3's freeze clause, limitation (xii), §1's sentence, the Conclusions' two sentences, the
 abstract. Twenty-one of the thirty-six rows are prose, and every one is a hand transcription from a JSON.
-`wc_abstract.py` is the only mechanical gate anywhere in that set, and it checks a word count, not a value.
+`wc_abstract.py` was the only mechanical gate anywhere in that set, and it checks a word count, not a value.
+**One of the twenty-one is now value-checked**: since 2026-08-10 `check_hand_transcribed_displays.py`
+reaches the abstract through its source markers and binds its three arm means, its σ-grounding seed count,
+and its glycol-ether margin, row count, pair count and interval. Twenty remain prose no command recomputes.
 
 **(8) Row 15 (the row-class split) and row 22 (the substitution perturbation).**
 `run_paradox_channel_split.py` does compute row 15's slice but has **no argparse**, hard-codes an absolute

@@ -313,3 +313,25 @@
 # reason the note above this one gives. All three were re-verified against this build:
 # `pdftotext paper/grounding_paradox.pdf - | grep -n "899"' and `... | grep -n 2411.15101' each
 # return the line, on a page the bibliography-REGION rule excludes from the count.
+
+# 2026-08-10. THE MAP'S INTERVALS NOW PRINT AT THE PRECISION THEIR DRAW COUNT SUPPORTS.
+# Every value below is an endpoint of a stratified-map interval that was printed to two decimals
+# off a 3000-draw bootstrap. Over 200 seeds per row set the Monte-Carlo spread of such an endpoint
+# runs 0.0009 to 0.223 (results/b_insuff/map_ci_precision_mc3000.csv, 4800 replicates), and 42 of
+# the 46 endpoints drawn at that count stood inside four Monte-Carlo standard errors of the
+# rounding boundary their second decimal turns on -- the rule the converged glycol-ether deposit
+# declares. So each row set was given a verdict of its own: CONVERGED (two decimals, bought with
+# draws), COARSENED (one decimal, which the draw count does determine), STATED (two decimals with
+# the Monte-Carlo standard deviation printed beside them) or DEGENERATE (no seed moves it, because
+# the two-way resample has about ten distinct compositions). None of these numbers is a corrected
+# measurement: each is the same quantity, printed at a precision it now has.
++3.24  precision, restated with its Monte-Carlo spread: the 35-row mono-alcohol SOLVENT row set's upper endpoint. +3.24 was one 3000-draw replicate, which over 200 seeds ranges [+3.0536,+3.5640] with sd 0.1054; two decimals need 1.2e9 draws there and the run spent 271,500. The cell now prints [+0.28,+3.32] with that spread beside it (results/b_insuff/map_ci_precision.json, row set 3a91251f).
+-0.44  precision, coarsened to one decimal: the 57-row aprotic-acceptor row set's lower endpoint, one 3000-draw replicate of a quantity ranging [-0.4482,-0.3867] with sd 0.0114 over 200 seeds. Two decimals need 5.7e6 draws; the cell prints [-0.4,+0.1] (row set 42504742). It is also one of the three cells where the generator's old double rounding -- 3-decimal deposit rounded again to two -- printed a second decimal the exact endpoint does not: -0.43451 -> -0.435 -> -0.44, where -0.43451 prints -0.43.
++3.97  precision, restated with its Monte-Carlo spread: the 37-row water-as-solute row set's lower endpoint. One solute and six solvents, so the two-way resample is one-way; over 200 seeds the endpoint ranges [+3.3854,+4.0770] with sd 0.1777, the largest lower-endpoint spread in the map. Two decimals need 1.9e8 draws; the run spent 600,000 and the cell prints [+3.84,+9.50] with the spread beside it (row set 12b026f8).
++9.49  precision, restated with its Monte-Carlo spread: the SAME 37-row water-as-solute row set's upper endpoint, ranging [+9.4903,+9.5504] with sd 0.0087 over 200 seeds. An interval prints both endpoints at one precision, so this endpoint is carried by the lower one above; the cell now prints +9.50 (row set 12b026f8).
++8.12  precision, restated with its Monte-Carlo spread: the 30-row halogenated-solvent row set's upper endpoint, the worst cell in the map. Over 200 seeds it ranges [+7.7508,+8.6144] with sd 0.2226 -- eleven times the +-0.02 the manuscript had generalised from the glycol ethers -- and two decimals would need 3.9e9 draws. The cell now prints [+1.02,+8.43] with the spread beside it (row set 1d351941).
+-1.01  precision, coarsened to one decimal: the 71-row aromatic-hydrocarbon SOLUTE row set's lower endpoint, ranging [-1.0953,-0.9105] with sd 0.0306 over 200 seeds. Two decimals need 3.6e7 draws; the cell prints [-1.0,+0.7] (row set 301c4272). Its upper endpoint is the second of the three double-rounding cells: +0.74479 -> +0.745 -> +0.75, where the exact value prints +0.74.
++1.99  precision: TWO row sets printed this value and neither prints it now. The 33-row N--H protic row set printed it under its cross-tab name while its own first name printed +1.96 -- two replicates of one quantity, which is the seeding defect this pass closes -- and it is coarsened to [-0.3,+2.0] (row set c7d77ad1). The 27-row halogenated-aliphatic SOLUTE row set printed +1.99 as its upper endpoint and now prints [+0.15,+2.00] with its Monte-Carlo spread 0.0243 beside it (row set 19551593).
++3.43  precision, restated with its Monte-Carlo spread: the 32-row alkene-solute row set's upper endpoint, ranging [+3.3384,+3.4757] with sd 0.0246 over 200 seeds. Two decimals need 9.2e6 draws; the run spent 600,000 and the cell prints [+0.15,+3.40] (row set a71cb5ac).
++6.19  precision, restated with its Monte-Carlo spread: the 70-row acceptor-only row set's upper endpoint, ranging [+5.8619,+6.6049] with sd 0.1481 over 200 seeds. Two decimals need 9.6e7 draws; the cell prints [-0.30,+6.21] with the spread beside it (row set 5e74c0cc).
++8.86  precision, restated with its Monte-Carlo spread: the 16-row non-H-bonding hydrocarbon row set's upper endpoint, ranging [+8.5076,+8.8619] with sd 0.1345 over 200 seeds. Its lower endpoint sits 1e-4 from a rounding boundary, so two decimals there would cost 1.2e14 draws; the cell prints [-0.07,+8.78] with the spread beside it (row set 72941143).

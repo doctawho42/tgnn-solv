@@ -113,14 +113,49 @@ printed to; the four values in the manuscript sat within +-1.8 sd of one mean.
 So: row-identical strata now print ONE interval.  Which one is fixed by
 position, not by value -- the first name the row set gets in the manuscript's
 own axis order (``AXES``/``AXIS_RANK`` below), which is the order a reader meets
-it in and was not chosen by reading endpoints.  For the
-glycol-ether row set the printed interval is instead the CONVERGED one from
-``results/b_insuff/glycol_ether_ci_converged.json`` (1.2e6 draws, standard error
-0.001 on each endpoint, so the printed digits are determined), because that is
-the interval the abstract quotes and a claim in an abstract should not be one
-draw of a Monte-Carlo procedure.  It is WIDER than the replicate the manuscript
-had been printing, which is the direction that matters: [+1.26,+2.87] against
-[+1.27,+2.83].
+it in and was not chosen by reading endpoints.  The map itself now draws one
+bootstrap per row set rather than per name (``run_b_insuff_stratified_map.
+row_set_key``), so the two agree by construction instead of by this file
+suppressing the duplicates.
+
+AND THE SAME QUESTION, ASKED OF EVERY CELL, 2026-08-10
+------------------------------------------------------
+Converging the glycol ethers repaired the interval that had been NOTICED.  The
+apparatus behind it is the same for all of them: this generator prints 35 cells
+over 24 row sets and 48 endpoints, every one a 3000-draw replicate rounded to
+two decimals, and at that draw count two decimals are not determined.  Measured
+over 200 seeds per row set (``results/b_insuff/map_ci_precision.json``), 42 of
+the 46 endpoints that come off that apparatus stood inside four Monte-Carlo
+standard errors of a rounding boundary; the spread per endpoint runs 0.0009 to
+0.223, so the +-0.02 the glycol cell taught us was the RIGHT figure for a cell
+whose interval is 1.5 wide and 11x too small for the widest.
+
+Each row set therefore prints at ITS OWN precision, and this generator quotes
+``printed_as`` from that deposit with no rounding of its own:
+
+    converged   two decimals, bought with draws.  The glycol ethers keep the
+                1.2e8-draw deposit (``glycol_ether_ci_converged.json``), which
+                the abstract quotes.
+    coarsened   one decimal, which the draw count does determine.
+    stated      two decimals with the Monte-Carlo standard deviation printed as
+                a superscript on the interval, because neither precision was
+                affordable and the honest thing is to show the reader the digit
+                is not a datum.
+    degenerate  unmoved by any seed, because the two-way resample has about ten
+                distinct compositions.  Reproducible, not converged, and said so.
+
+Quoting ``printed_as`` also ends a second defect: the earlier generator read the
+3-decimal deposit and rounded it again to two, and on three cells the exact
+endpoint and the twice-rounded one printed DIFFERENT second decimals
+(``water`` lo, ``aromatic_hydrocarbon`` hi, ``aprotic_acceptor`` lo).
+
+READ ``printing_is_determined`` / ``boundary_margin_se`` OUT OF A DEPOSIT BEFORE
+TRUSTING ITS LAST DIGIT.  A small standard error is not on its own a licence: it
+is the standard error MEASURED AGAINST THE DISTANCE FROM THE ENDPOINT TO THE
+NEAREST ROUNDING BOUNDARY that decides.  At the glycol deposit's first setting
+(12 x 100000 draws) the lower endpoint sat 0.0008 above a boundary with a
+standard error of 0.00091, so which second decimal a number IN THE ABSTRACT
+printed was a property of the seed set.
 
     python scripts/analysis/make_map_table_tex.py
 """
@@ -137,6 +172,14 @@ SRC = ROOT / "results" / "b_insuff" / "admissibility_table.csv"
 OVERLAP = ROOT / "results" / "b_insuff" / "stratum_overlap.csv"
 SIDES = ROOT / "results" / "b_insuff" / "admissibility.json"
 CONVERGED = ROOT / "results" / "b_insuff" / "glycol_ether_ci_converged.json"
+PRECISION = ROOT / "results" / "b_insuff" / "map_ci_precision.json"
+#: The seed count behind every per-cell precision verdict; it is asserted against the deposit
+#: rather than trusted, so this note cannot drift from the run that produced the numbers.
+MC_SEEDS_NOTE = 200
+#: The map's own draw count, asserted against the deposit below for the same reason.
+MC_DRAWS_NOTE = 3000
+CI_NOTE = ROOT / "paper" / "si_tables" / "map_ci_note.tex"
+CI_BODY = ROOT / "paper" / "si_tables" / "map_ci_body.tex"
 OUT = ROOT / "paper" / "si_tables" / "stratified_map_rows.tex"
 OUT_SOLUTE = ROOT / "paper" / "si_tables" / "stratified_map_rows_solute.tex"
 OUT_ARTICLE = ROOT / "paper" / "si_tables" / "stratified_map_rows_article.tex"
@@ -251,6 +294,21 @@ def _round(x: float, nd: int) -> str:
     return str(Decimal(repr(abs(x))).quantize(q, rounding=ROUND_HALF_UP))
 
 
+def in_last_digit(x: float, decimals: int) -> str:
+    """A Monte-Carlo spread expressed in units of the last digit printed.
+
+    The superscript on a stated interval has to fit in a table column that had under a point of
+    slack, and 0.0066 set as a superscript is 16.6pt wide -- which is how the first version of
+    this pass pushed three of the four map tabulars past the text block.  In units of the last
+    printed digit the same number is `0.7', two characters, and it says the thing more directly:
+    the second decimal of that endpoint moves by 0.7 of itself between seeds, and 22 of itself in
+    the worst cell.  Rounded to two DECIMALS instead it would print 0.01, overstating it by half
+    again -- the same class of error as the digit it qualifies.
+    """
+    u = x / (10.0 ** -decimals)
+    return f"{u:.0f}" if u >= 10 else f"{u:.1f}"
+
+
 def fmt_signed(x: str, nd: int = 2) -> str:
     if x in ("", None):
         return "---"
@@ -337,29 +395,48 @@ def main() -> None:
     canonical = {k: min(members, key=rank)
                  for members in pools.values() for k in members}
 
-    conv = json.loads(CONVERGED.read_text()) if CONVERGED.exists() else None
-    conv_ci = None
-    if conv is not None:
-        c = conv["converged_interval"]
-        conv_ci = (str(c["ci90_lo"]), str(c["ci90_hi"]))
+    # ----------------------------------------------------------------- #
+    # ONE ROW SET, ONE INTERVAL, AT ONE PRECISION -- AND THE PRECISION IS
+    # THE ONE THAT ROW SET'S DRAW COUNT SUPPORTS.
+    # `map_ci_precision.json' carries, per row set, the interval, how many
+    # decimals it may be printed to, and (where the answer is "neither two
+    # nor one") the Monte-Carlo standard deviation to print beside it.  This
+    # generator does no rounding of its own: it quotes `printed_as', which
+    # the deposit computed from the exact endpoint.  That is also what ends
+    # the double rounding the earlier generator did, reading a 3-decimal CSV
+    # and rounding it again to two -- which moved the second decimal of three
+    # cells away from what the exact value prints.
+    # ----------------------------------------------------------------- #
+    prec = json.loads(PRECISION.read_text()) if PRECISION.exists() else None
+    prec_by_name: dict[tuple[str, str], dict] = {}
+    if prec is not None:
+        for cell in prec["cells"]:
+            for nm in cell["names"]:
+                prec_by_name[(nm["axis"], nm["stratum"])] = cell
 
-    def ci_of(k: tuple[str, str]) -> tuple[str, str]:
-        """The 90% margin interval this row prints.
+    def ci_cell(k: tuple[str, str]) -> str:
+        """The 90% margin interval this row prints, already formatted.
 
-        Row-identical strata share one interval -- the coarsest name's -- because
-        the map draws an independent bootstrap per stratum NAME and the spread
-        between those draws is Monte-Carlo, 0.02 per endpoint, not chemistry.
-        The glycol-ether row set quotes the converged deposit instead, since the
-        abstract quotes it and one 3000-draw replicate does not determine the
-        second decimal.
+        Row-identical strata share one interval, because the map drew an
+        independent bootstrap per stratum NAME and the spread between those
+        draws is Monte-Carlo error, not chemistry.  Which name it is quoted
+        under is fixed by position (``AXIS_RANK``), never by the endpoints.
         """
-        src = canonical.get(k, k)
-        if conv_ci is not None and src[1].split("|")[0].strip() == "glycol_ether":
-            return conv_ci
-        r = key.get(src)
-        if r is None:
-            r = key[k]
-        return r["margin_ci90_lo"], r["margin_ci90_hi"]
+        r = key.get(canonical.get(k, k)) or key[k]
+        if r["margin_ci90_lo"] in ("", None):
+            return "---"
+        cell = prec_by_name.get(k)
+        if cell is None:
+            raise SystemExit(f"{k} prints an interval that {PRECISION.name} does not cover; "
+                             "re-run scripts/analysis/run_b_insuff_map_ci_precision.py")
+        iv = cell["interval"]
+        lo, hi = iv["printed_as"]
+        nd = iv["printed_decimals"]
+        out = "$[" + fmt_signed(str(lo), nd).strip("$") + "," + \
+              fmt_signed(str(hi), nd).strip("$") + "]"
+        if iv["printed_monte_carlo_sd"]:
+            out += "^{" + in_last_digit(iv["printed_monte_carlo_sd"], nd) + "}"
+        return out + "$"
 
     def share_of(entry: dict) -> float:
         o = entry["rec"]
@@ -540,6 +617,11 @@ def main() -> None:
         lines.append("% results/b_insuff/admissibility_table.csv. Do not edit; re-run the script.")
         # 0.14 + 0.355 (was 0.15 + 0.38): at the wider pair the tabular ran 13.2 pt past
         # \textwidth in a table*, which prints as an overhang into the margin.
+        # The stated intervals carry a superscript, and three of the four map tabulars then ran
+        # 8.7-16.6pt past the text block.  The width was bought back from \tabcolsep in the
+        # floats (3pt -> 2pt, 18 gaps) and not from these two columns, because narrowing the
+        # reason column wraps its prose and the float that carries it is already at the page
+        # height: at 0.335 the tabular fitted and the float was 25.6pt too tall.
         lines.append(r"\begin{tabular}{@{}L{0.14\linewidth}rrlrlrcL{0.355\linewidth}@{}}")
         lines.append(r"\toprule")
         lines.append(r"Stratum & $n$ & pairs & sources\tnk{a} & margin & $90\%$ margin\tnk{b} "
@@ -566,7 +648,7 @@ def main() -> None:
                 lines.append(
                     f"{pretty(r['stratum'])} & ${r['n']}$ & ${r['n_pairs']}$ & {src} & "
                     f"{fmt_signed(r['margin'])} & "
-                    f"{fmt_ci(*ci_of((axis, r['stratum'])))} & "
+                    f"{ci_cell((axis, r['stratum']))} & "
                     f"{fmt_signed(full['margin'])} & ${r['cells_admissible']}$ & "
                     f"{shorten(r)} \\\\")
                 n_printed += 1
@@ -595,6 +677,94 @@ def main() -> None:
                      sorted(doi_key.items(), key=lambda kv: int(kv[1][1:])))
         + ".\n")
     print(f"wrote {KEY} ({len(doi_key)} sources)")
+
+    # ------------------------------------------------------------------------------------- #
+    # The interval note, GENERATED.  It states what each interval's precision is and why, and
+    # every number in it is read out of the precision deposit -- including the counts, which is
+    # the point: the sentence it replaces ("each endpoint carries +-0.02 of Monte-Carlo spread")
+    # was one cell's number generalised by hand to eleven, and 22 of the 48 endpoints exceed it.
+    # ------------------------------------------------------------------------------------- #
+    if prec is not None:
+        v = {k: 0 for k in ("converged", "coarsened", "stated", "degenerate")}
+        for c in prec["cells"]:
+            v[c["verdict"]] += 1
+        cnt = prec["counts"]
+        gly = next(c for c in prec["cells"] if c["canonical_stratum"] == "glycol_ether")
+        atoms = max(c["monte_carlo_at_the_maps_own_draws"]["distinct_resampled_margins_median"]
+                    for c in prec["cells"] if c["verdict"] == "degenerate")
+        got_seeds = {c["monte_carlo_at_the_maps_own_draws"]["n_seeds"] for c in prec["cells"]}
+        if got_seeds != {MC_SEEDS_NOTE}:
+            raise SystemExit(f"the note says {MC_SEEDS_NOTE} seeds; the deposit has {got_seeds}")
+        if prec["estimator_cell"]["map_draw_count"] != MC_DRAWS_NOTE:
+            raise SystemExit(f"the note says {MC_DRAWS_NOTE} draws; the deposit has "
+                             f"{prec['estimator_cell']['map_draw_count']}")
+        # The map's own row-set arithmetic, over ALL its strata and not only the ones that draw
+        # an interval, read out of the columns run_b_insuff_stratified_map now deposits.
+        seen: dict[str, int] = {}
+        for r in head_cells:
+            if r.get("row_set_id"):
+                seen[r["row_set_id"]] = int(r["row_set_n_names"])
+        n_multi = sum(1 for x in seen.values() if x > 1)
+        n_dup = sum(x - 1 for x in seen.values() if x > 1)
+        # Per ENDPOINT, not per cell: the smallest spread in the map is one endpoint of the
+        # ester cell, and taking the larger of a cell's two would hide it.
+        sds = [c["monte_carlo_at_the_maps_own_draws"][k]
+               for c in prec["cells"] if c["verdict"] != "degenerate"
+               for k in ("lo_sd", "hi_sd")]
+        # pretty(), not head_label(): the second degenerate cell is the halogenated solvents
+        # WITH WATER AS SOLUTE, and the map also carries a halogenated cell that is not
+        # degenerate, so the short label would name the wrong rows.
+        degen = "; ".join(pretty(c["canonical_stratum"])
+                          for c in prec["cells"] if c["verdict"] == "degenerate")
+        note = (
+            "Two-way solute\\,$\\times$\\,solvent cluster bootstrap, $5$th and $95$th "
+            "percentiles. Row-identical strata are one row set: drawn once and printed once, "
+            "under the row set's first name above and restated under the rest "
+            f"({n_multi} of {len(seen)} row sets, {n_dup} rows). Each prints at the precision its "
+            "own draw count determines---both endpoints four Monte-Carlo standard errors clear "
+            f"of the nearest rounding boundary, over ${MC_SEEDS_NOTE}$ seeds and verified on the "
+            f"run that bought it. Two carry two decimals (the glycol ethers, at "
+            f"${gly['n_draws'] / 1e8:.1f}\\times10^{{8}}$ draws), {v['coarsened']} carry one, and "
+            f"{v['stated']} carry two with a superscript giving their endpoints' Monte-Carlo "
+            f"standard deviation in units of that last digit. A further {v['degenerate']} "
+            f"({degen}) no seed moves at all, their two-way resample having about {atoms} "
+            "distinct compositions: a bootstrap with nothing left to resample, not a converged "
+            # NO FILESYSTEM PATH IN PRINTED TEXT.  This note carried
+            # \texttt{results/b_insuff/map_ci_precision.json} for one draft and was the only
+            # printed path in either document; every other deposit in the paper is named in
+            # prose ("the deposited per-cell record", "Data Set S1").  The path belongs in this
+            # generator's header comment, which is where a reader who wants the file will be.
+            "one. The per-cell verdict, its draw count and its cost at either precision are on "
+            "the deposited record (\\S\\ref{sec:si-map}).")
+        CI_NOTE.write_text(
+            "% GENERATED by scripts/analysis/make_map_table_tex.py from\n"
+            "% results/b_insuff/map_ci_precision.json. Do not edit; re-run the script.\n"
+            + note + "\n")
+        print(f"wrote {CI_NOTE} ({v})")
+
+        # The class statement, in the section body rather than in a table note, because it is
+        # about the apparatus and not about one float.  Generated for the same reason: the
+        # sentence it replaces generalised one cell's spread to eleven by hand.
+        body = (
+            f"The bootstrap draws {MC_DRAWS_NOTE} resamples per row set, which does not determine "
+            # `sds' excludes the degenerate cells, whose endpoints no seed moves; quoting a
+            # floor of 0 would read as convergence where it is a resample with nothing left in
+            # it, so the sentence has to say which endpoints the range is over.
+            f"a second decimal: over ${MC_SEEDS_NOTE}$ seeds the Monte-Carlo spread of an endpoint "
+            f"any seed moves runs ${min(sds):.4f}$ to ${max(sds):.3f}$, and "
+            f"{cnt['of_those_unsupported_at_two_decimals']} of the "
+            f"{cnt['endpoints_off_the_3000_draw_apparatus']} endpoints drawn at that count stand "
+            "inside four Monte-Carlo standard errors of the rounding boundary their second decimal "
+            f"turns on---the closest reaching {cnt['largest_clearance_of_any_movable_endpoint_in_sd']}"
+            f" and the median {cnt['median_clearance_of_a_movable_endpoint_in_sd']} of the four "
+            "required. Each interval is therefore printed at the precision its own draw count "
+            "supports, cell by cell, and note~\\emph{b} of Table~\\ref{tab:map-full} gives the "
+            "rule and the count at each precision.")
+        CI_BODY.write_text(
+            "% GENERATED by scripts/analysis/make_map_table_tex.py from\n"
+            "% results/b_insuff/map_ci_precision.json. Do not edit; re-run the script.\n"
+            + body + "\n")
+        print(f"wrote {CI_BODY}")
 
     # The companion body: the columns the main text's map does not carry, for the same 59 strata.
     det: list[str] = []

@@ -48,6 +48,17 @@ results/b_insuff/*
 # submission printed four independent 3000-draw replicates of it as four different numbers, so
 # the converged value is versioned and make_map_table_tex.py reads it at build time.
 !results/b_insuff/glycol_ether_ci_converged.json
+# The same question asked of every interval the map prints, 2026-08-10: one printing precision
+# per row set, chosen from that row set's own Monte-Carlo error and verified on the run that
+# bought it.  make_map_table_tex.py reads it at build time -- the map tables cannot be generated
+# without it -- and its `as_submitted' block is the record of what each stratum NAME printed while
+# the bootstrap was still seeded from the name, which the repair makes identical and would
+# otherwise erase.  The snapshot that block is computed from is versioned beside it; the two
+# replicate CSVs behind them (4800 + 960 rows) are regenerable from the deposited seed sequences
+# and are not, exactly as the glycol replicates above are not.
+!results/b_insuff/map_ci_precision.json
+!results/b_insuff/map_ci_precision_table.csv
+!results/b_insuff/stratified_map_table_pre_rowset_seed.csv
 # The constant-offset control that qualifies the transfer ratio of Sec. 6.4 / App. E.
 # Small, and it is the only source for a number the paper prints, so it is versioned.
 !results/compensation
