@@ -2242,6 +2242,25 @@ glycol ethers---the one stratum the rule leaves standing, and the class the casc
 conformer-dependent---are where that displacement is expected to be largest, so a displaced
 reference would load onto the rows that carry the error. Neither set separates the two
 (\S\ref{sec:si-repro}).
+
+On the conformational part of that displacement the stratum is no longer hedged but bounded, and
+the bound is computed rather than argued. Its four solvent references---ethane-1,2-diol and the di-,
+tri- and tetraethylene glycols---are single conformers, and we replaced each with a Boltzmann
+ensemble computed for this purpose: ETKDGv3 embedding, MMFF pre-screening, geometry optimisation at
+BP86/def2-SVP with CPCM($\varepsilon{=}\infty$), single points at BP86/def2-TZVP with Klamt radii,
+and Mullins averaging onto the same $51$-bin grid, weighted at $298.15$~K. The ensembles displace
+their references by $0.038$, $0.038$ and $0.074$ of the profile norm for the tri-, tetra- and
+diethylene glycols; ethane-1,2-diol collapses to one representative under the fixed clustering
+tolerance and is carried separately at $0.134$. Substituting all four moves the margin from
+$+2.036$ to $+2.270$, $90\%$ interval $[+1.36,+3.29]$ over the same two-way solute\,$\times$\,solvent
+resample---away from zero, not toward it---and an equal-norm random displacement of the same four
+profiles leaves $+1.678$ $[+1.520,+1.807]$, so the measured direction sits outside the random
+family and moves the margin the other way. Two scopes travel with that. It bounds conformational
+uncertainty in the four solvent references and nothing wider: displacing the $19$ solutes by the
+same norm moves the margin as much or more ($1.09$ and $2.67$ times, against a pre-declared bar of
+$0.5$), so reference uncertainty at large is not bounded here. And the ensemble direction is nearly
+orthogonal to the smooth broadening a displaced reference was expected to produce (cosine $0.04$ to
+$0.30$), so the two cannot stand in for one another.
 A counter-test on the same closure points the same way, and is the one \S\ref{sec:measure} cites.
 The Staverman--Guggenheim combinatorial term is the physically \emph{more} complete treatment and
 acts only where the two molecules differ in size; restoring it \emph{increases} the VT-2005-matched set's

@@ -1,0 +1,138 @@
+CONFORMATIONAL UNCERTAINTY OF THE FOUR GLYCOL REFERENCE SIGMA-PROFILES,
+AND WHAT IT DOES TO THE GLYCOL-ETHER SEPARATION MARGIN
+2026-08-11.  Pre-registered in PREREGISTRATION.json before any QM job was launched;
+one amendment, recorded in AMENDMENTS.json before any rescoring number existed.
+
+THE CONVENTION
+--------------
+delta = ||a-b||_2 / ||b||_2 on the AREA-WEIGHTED psigmaA 51-vector (units A^2, summing
+to the cavity area).  This is the convention of the tolerance curve (tol2.py displaces
+the raw second column of the UD .sigma file) and of the UD file's own header ("Rows are
+given as: sigma [e/A^2] ... then psigmaA [A^2]").
+
+The existing 8-molecule ORCA campaign quoted its departures on the SHAPE-NORMALISED
+profile (p/p.sum(), summing to 1).  Both were recomputed from that campaign's own .cpcm
+files before any threshold was read:
+
+    ensemble vs lowest conformer, 8 flexible molecules
+        AREA-WEIGHTED    median 0.0603   range [0.0319, 0.1460]
+        SHAPE-NORMALISED median 0.0599   range [0.0300, 0.1461]   <- the published one
+    ethane-1,2-diol weight-free max between any two conformers
+        AREA-WEIGHTED    0.4415          SHAPE-NORMALISED 0.4437  <- the quoted 0.444
+
+The two conventions differ only through conformer-to-conformer cavity-area variation,
+which is 0.7-2.7% here, so they agree to ~0.001 and the campaign's numbers are readable
+against the tolerance curve's thresholds.  This was measured, not assumed.
+
+STEP 1 -- REPRODUCTION: PASS
+----------------------------
+182 rows, 19 solutes, 4 solvents, 43 pairs, 3 sources.  Scored through
+tgnn_solv.layers.CosmoSacLayer().double().eval() with n_iter_eval = 300, residual-only,
+UD profiles -- the cell that wrote g_2002_res (run_b_insuff_convention_audit.py:254).
+
+    max |g - g_2002_res| = 9.104e-15
+    MSE 2.251842   B_insuff^up 0.107708   margin +2.036427     (deposit: identical)
+
+The segment-iteration count is a free hyperparameter (CLAUDE.md).  Holding rows and
+profiles fixed, the margin moves +0.0149 going 300 -> 30 and +0.2907 going 300 -> 8.
+Every arm below is scored at 300.
+
+STEP 2 -- THE ENSEMBLES
+-----------------------
+ETKDGv3 (<=400 embeds, seed 0xf00d) -> MMFF94 -> 10 kJ/mol window -> 0.5 A heavy-atom
+clustering -> 10 lowest-energy representatives; BP86/def2-SVP CPCM(eps=1e6,
+vdw_gaussian) Opt; BP86/def2-TZVP CPCM single point with Klamt COSMO-RS radii; Mullins
+r_av = 0.81764 on the 51-bin grid; Boltzmann at 298.15 K.  27 optimisations, 27 single
+points, all converged, none dropped.
+
+  molecule              n_conf  clusters  delta_conf  worst pair  area vs UD   top w
+  triethylene glycol      10      15       0.0377      0.1620      +2.20%      0.464
+  tetraethylene glycol    10      22       0.0378      0.2570      +2.26%      0.341
+  diethylene glycol        6       6       0.0744      0.3219      +1.13%      0.288
+  ethane-1,2-diol          1       1       0.0000      0.0000      -0.11%      1.000
+  ethane-1,2-diol (S1)     7       -       0.1340      0.4415      +0.47%      0.250
+
+All four fall in the pre-registered SMALL band (delta_conf <= 0.15), inside the range
+every molecule in the existing campaign fell in.
+
+Sanity gates, all passed: cavity area within 2.3% of UD (gate 5%); out-of-grid segment
+mass 0.0000 everywhere; profile-area conservation exact to 0.0; all optimisations
+converged.  The ORCA lowest conformer sits 0.295-0.354 from UD for tri-, tetra- and
+diethylene glycol, inside the cross-code floor measured on rigid one-conformer molecules
+(median 0.282, range [0.190, 0.403]); ethane-1,2-diol's tight-protocol conformer sits at
+0.433, just past that range, and it is 2.08 kJ/mol above the global minimum the wider
+search finds -- see AMENDMENTS.json A1.
+
+STEP 3 -- RESCORED MARGINS
+--------------------------
+Transfer: psigmaA_UD + (A_UD/A_low)(psigmaA_ens - psigmaA_low), clipped at 0.  Realised
+displacement on the UD profile: 0.0434 / 0.0403 / 0.0860 / 0.0000 (S1: 0.1457) -- 7-16%
+larger than delta_conf, because the UD profile's norm differs from the rescaled ORCA
+one; the transfer therefore errs slightly against the finding.
+
+  arm                        MSE     B_insuff   margin    90% interval        reps
+  baseline                 2.2518    0.1077    +2.0364   [+1.2551, +2.8692]    40
+  PRIMARY all four         2.4964    0.1132    +2.2700   [+1.3581, +3.2885]    40
+  S1 (wide-protocol EG)    2.4337    0.1099    +2.2138   [+1.3297, +3.1535]    40
+  triethylene alone        2.2844    0.1077    +2.0690   [+1.2791, +2.8894]    12
+  tetraethylene alone      2.2470    0.1077    +2.0316   [+1.2496, +2.8676]    12
+  diethylene alone         2.4686    0.1098    +2.2490   [+1.3394, +3.2780]    12
+  ethane-1,2-diol alone    2.2518    0.1077    +2.0364   [+1.2558, +2.8689]    12
+  raw swap, ensemble       8.1073    0.1474    +7.8125   [+4.7686,+11.2811]    12
+  raw swap, lowest conf.   7.7612    0.1474    +7.4664   [+4.5868,+10.8287]    12
+
+Two-way solute x solvent cluster bootstrap, 100000 draws per replicate, seeds
+900000...  The baseline recomputed at this budget gives [+1.2551, +2.8692] against the
+deposited converged [+1.25432, +2.86978] -- agreement to 0.0008 and 0.0006, of order the
+Monte-Carlo error of a 40-replicate mean.
+
+MSE decomposes exactly across the four solvent blocks: +0.0326 (tri) - 0.0048 (tetra)
++ 0.2168 (di) + 0.0000 (EG) = +0.2446, which is the primary arm's MSE shift to the last
+digit.  Diethylene glycol carries 89% of it.  The remaining non-additivity, +0.0055,
+sits in B_insuff^up, whose bins are global.
+
+The raw swaps are contaminated and are not read against the decision rule: substituting
+the ORCA lowest conformer alone -- conformational averaging removed -- already moves the
+margin +5.43, so 94% of the raw swap's movement is the cross-code/level difference and
+0.35 is the conformer ensemble.
+
+STEP 4 -- THE NULLS
+-------------------
+(a) RIGID-SOLUTE CONTROL: FAIL at its pre-registered threshold.  At the delta the primary
+    substitution imposes (delta* = 0.0424, the four-glycol mean), displacing the 19 rigid
+    solutes moves the margin by median |d| 0.3911 (random) and 0.0708 (broadening),
+    against 0.3579 and 0.0265 for the 4 solvents -- ratios 1.09 and 2.67, both above the
+    pre-registered bar of 0.5.  The pre-registered consequence and the revision recorded
+    against it are in RESULTS.json ("null_a_as_pre_registered"); in short, the FAIL
+    stands and the tolerance curve is not a chemistry-specific instrument, but Step 3
+    substitutes a measured displacement rather than reading a position off that curve, so
+    what the FAIL bounds is the generality of the conclusion, not its value.
+    Post-hoc and controlled (step4a): the pre-registered statistic adds a systematic shift
+    to a spread, and the arms displace 4 profiles against 19.  At a matched count of four
+    the ratio is 0.30; the solvent arm carries a systematic shift of -0.358 that the
+    solute arms do not (-0.051 at 19 profiles, +0.026 at 4).  No matched comparison is
+    clean -- each solvent enters ~45 of the 182 rows and each solute a median of 6.
+
+(b) RANDOM DIRECTION AT EQUAL NORM: PASS.  At delta* = 0.0424 the random family's margin
+    is +1.678 [5th, 95th: +1.520, +1.807] over 60 draws.  The measured physical
+    displacement gives +2.270 -- above the family's 95th percentile, and moving the margin
+    in the opposite direction.
+
+(c) The chemistry-blind relabelling null,
+    scripts/analysis/run_b_insuff_map_multiplicity_null.py, applies unchanged and was not
+    re-run.
+
+DESCRIPTIVE, NO THRESHOLD ATTACHED
+----------------------------------
+cos(measured ensemble displacement, equal-norm Gaussian broadening) = +0.040 (tri),
++0.299 (tetra), +0.125 (di).  The broadening family the tolerance curve used as its
+"physical direction" is close to orthogonal to the direction a real Boltzmann ensemble
+moves in; it accounts for at most 9% of the measured displacement's variance.  The
+delta = 0.35 broadening threshold was therefore never the threshold this question needed.
+
+VERDICT
+-------
+SURVIVES.  Every glycol's conformational displacement lands in the pre-registered small
+band, and substituting all four measured ensembles raises the margin from +2.036 to
++2.270 with a 90% interval of [+1.358, +3.289], entirely above zero and above the printed
+lower bound of +1.254.

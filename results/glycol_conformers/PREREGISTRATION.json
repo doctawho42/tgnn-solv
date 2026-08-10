@@ -1,0 +1,123 @@
+{
+  "title": "Pre-registration: does the reference sigma-profiles' conformational uncertainty move the glycol-ether separation margin?",
+  "written": "2026-08-11",
+  "deposited_before": "any QM job was launched",
+  "status_when_written": "no conformer search, no ORCA job, and no rescoring had been run for this study; only read-only inspection of the handover artifacts and of the deposited estimator cell",
+
+  "the_finding_under_test": {
+    "quantity": "margin = MSE - 2 * B_insuff^up on the glycol-ether stratum of the broad IDAC set",
+    "point_estimate": 2.036427,
+    "components": {"mse": 2.251842, "b_insuff_up": 0.107708},
+    "converged_90pct_interval": [1.25432, 2.86978],
+    "deposit": "results/b_insuff/glycol_ether_ci_converged.json",
+    "row_set": {"n_rows": 182, "n_solutes": 19, "n_solvents": 4, "n_pairs": 43, "n_sources": 3},
+    "why_conformers_matter": "all four solvents are flexible intramolecularly hydrogen-bonding polyols; all 19 solutes are rigid or nonpolar; the reference sigma-profiles are single-conformer, and the two available databases (UD/Delaware, VT-2005) carry the SAME conformer for all four glycols (relative L2 0.00029-0.00116), so no free external check exists"
+  },
+
+  "the_published_estimator_cell": {
+    "profiles": "UD/Delaware, ~/COSMOSAC/profiles/UD/sigma/<InChIKey>.sigma, second column = psigmaA in A^2",
+    "layer": "tgnn_solv.layers.CosmoSacLayer, .double().eval(), n_iter_eval = 300",
+    "convention": "residual-only (V2 = V1 = None), column g_2002_res of paper/si_tables/broad_idac_set_477.csv",
+    "estimator": "row unit, 8 equal-count bins of g, Bessel (ddof=1) within-bin variance, margin = MSE - 2*B_insuff^up",
+    "interval": "two-way (solute x solvent) cluster bootstrap, 5th/95th percentiles, draws with total multiplicity < 12 discarded; two_way_boot of scripts/analysis/run_b_insuff_glycol_ether_ci.py",
+    "segment_iteration_count_is_a_free_hyperparameter": "CLAUDE.md records that cosmo_sac_gamma_iter_train=8 and cosmo_sac_gamma_iter_eval=30 are different numbers and that sweeping the count alone moves ln x2 MAE by 1.08. The cell of record here is 300 (converged), read out of scripts/analysis/run_b_insuff_convention_audit.py:254, which is the script that wrote g_2002_res. Every arm of this study is scored at 300. The count's own effect on the margin is measured and reported separately (30 vs 300) so that it is never confused with a conformational effect.",
+    "reproduction_gate": "if g_2002_res is not reproduced to <= 1e-12 max absolute difference at this cell, the study STOPS and reports the failure to reproduce as the finding"
+  },
+
+  "THE_CONVENTION": {
+    "delta_of_record": "delta(a,b) = ||a - b||_2 / ||b||_2 computed on the AREA-WEIGHTED psigmaA 51-vector, units A^2, summing to the cavity area A; grid sigma = linspace(-0.025, 0.025, 51) e/A^2",
+    "this_is_the_convention_of_the_tolerance_curve": "tol2.py's rel(a,b) is computed on P0 = the raw parsed second column of the UD .sigma file, which the file header declares as psigmaA [A^2]; the random and broadening families displace that same vector. Verified by reading the file header and the script, not assumed.",
+    "the_existing_ORCA_campaign_uses_a_DIFFERENT_convention": "ens3.py's prof() returns P/P.sum() -- a SHAPE-NORMALISED profile summing to 1. Its quoted departures (ensemble vs lowest conformer: median 0.060, range 0.030-0.146; weight-free max between any two ethylene-glycol conformers: 0.444) are therefore NOT in the convention of the thresholds.",
+    "how_the_two_are_reconciled": "for a fixed molecule the two conventions differ only through conformer-to-conformer cavity-area variation: if A_a = A_b the relative L2 is identical. Before any threshold is read, the existing campaign's ethylene-glycol numbers are RECOMPUTED area-weighted from its retained .cpcm files and BOTH numbers are printed side by side for the same molecule, so the reader can see they are the same kind of number and how far apart the conventions put them.",
+    "no_threshold_is_read_against_a_delta_in_another_convention": true
+  },
+
+  "PRE_REGISTERED_DELTA_THRESHOLDS": {
+    "convention": "area-weighted psigmaA relative L2, as defined above",
+    "read_against": "delta_conf = ||psigmaA_ensemble - psigmaA_lowest||/||psigmaA_lowest||, the displacement a Boltzmann conformer ensemble imposes on a SINGLE-CONFORMER reference, per glycol",
+    "from_the_tolerance_curve": {
+      "broadening_the_physical_smoothing_direction": {
+        "printed_90pct_lower_bound_1.254_crossed_at_delta": 0.35,
+        "sign_flip_at_delta": 0.50
+      },
+      "random_direction_per_solvent_independent_gaussian": {
+        "printed_90pct_lower_bound_1.254_crossed_at_delta": 0.08,
+        "sign_flip_at_delta": 0.25
+      }
+    },
+    "bands": {
+      "small": {"range": "delta_conf <= 0.15", "rationale": "the whole range every molecule in the existing 8-molecule campaign fell in (0.030-0.146), and a factor >2 below the broadening threshold", "predicted_outcome": "SURVIVES"},
+      "moderate": {"range": "0.15 < delta_conf <= 0.35", "rationale": "past the existing campaign, short of the broadening threshold", "predicted_outcome": "to be read from the rescoring, not from the band"},
+      "large": {"range": "delta_conf > 0.35", "rationale": "at or past the displacement at which broadening alone crosses the printed lower bound", "predicted_outcome": "DOES NOT SURVIVE or BOUNDED"}
+    },
+    "the_bands_are_a_reading_aid_and_are_not_the_decision_rule": "the decision rule below rescores with the ACTUAL measured displacement and never consults the tolerance curve"
+  },
+
+  "PRIMARY_DECISION_RULE": {
+    "procedure": "transfer each glycol's measured conformational displacement onto its UD reference profile, rescore all 182 rows through the deployed CosmoSacLayer at the published cell, recompute MSE / B_insuff^up / margin, and re-run the two-way solute x solvent cluster bootstrap",
+    "SURVIVES": "rescored margin point estimate >= +1.254 (the printed 90% lower bound) AND rescored bootstrap 90% lower endpoint > 0",
+    "BOUNDED": "rescored margin point estimate < +1.254 AND rescored bootstrap 90% lower endpoint > 0 -- the separation holds in sign but the printed interval does not cover the reference's conformational uncertainty and the paper must print a bounded claim",
+    "DOES_NOT_SURVIVE": "rescored bootstrap 90% lower endpoint <= 0 -- the stratum's separation is not distinguishable from zero once reference conformational uncertainty is admitted",
+    "INDETERMINATE": "any of: the reproduction gate fails; fewer than two of the four glycols complete their ensembles; a QM sanity gate below fails and cannot be repaired. Reported as indeterminate, not as either outcome."
+  },
+
+  "THE_TRANSFER_AND_WHY_A_RAW_SWAP_IS_NOT_THE_PRIMARY": {
+    "primary_construction": "psigmaA_UD_ens[k] = max( psigmaA_UD[k] + (A_UD[k]/A_ORCA_lowest[k]) * (psigmaA_ens_ORCA[k] - psigmaA_lowest_ORCA[k]), 0 ), bin by bin",
+    "why_additive_with_an_area_rescale": "it carries the CONFORMATIONAL displacement, at its measured relative magnitude, onto the profile the manuscript actually scores, and the area rescale makes the transferred displacement's relative norm equal delta_conf up to the clip at zero. The clip at zero is the same clip tol2.py applies to its random family.",
+    "secondary_reported_but_not_decisive": "delta(ORCA ensemble vs UD database) and the margin under a RAW substitution of the ORCA ensemble for the UD profile. This quantity is contaminated: the existing campaign measured a cross-code floor of 0.187-0.402 (shape-normalised) between ORCA BP86/def2-TZVP/CPCM-Klamt and the database on RIGID molecules with one conformer, i.e. a displacement an order of magnitude larger than the conformational effect and having nothing to do with conformer choice. A raw swap therefore answers 'what if the reference had been computed by a different code at a different level', which is not the question. Both are reported; only the transfer is read against the decision rule.",
+    "named_limitation": "the additive transfer places the ORCA drift in the ORCA profile's sigma bins, and the UD profile sits ~0.2-0.4 away from the ORCA profile in shape, so the drift may land in slightly the wrong bins. This is stated in the report rather than corrected."
+  },
+
+  "ENSEMBLE_PROTOCOL_FIXED": {
+    "molecules": ["OCCOCCOCCO triethylene glycol ZIBGPFATKBEMQZ-UHFFFAOYSA-N", "OCCOCCOCCOCCO tetraethylene glycol UWHCKJMYHZGTIT-UHFFFAOYSA-N", "OCCO ethane-1,2-diol LYCAIKOWRPUZTN-UHFFFAOYSA-N", "OCCOCCO diethylene glycol MTHSVFCYNBDYFN-UHFFFAOYSA-N"],
+    "order_of_work": "tri- and tetraethylene glycol first (most flexible, least known); then ethane-1,2-diol; then diethylene glycol if the budget allows",
+    "conformer_search": "RDKit ETKDGv3, randomSeed 0xf00d, <= 400 embeddings; MMFF94 optimisation (maxIters 2000); retain cluster representatives within a 10 kJ/mol MMFF window of the global MMFF minimum; 0.5 A heavy-atom best-RMS clustering, lowest MMFF energy first",
+    "conformer_cap": {"value": 10, "why": "laptop compute budget, fixed in advance", "selection": "the 10 lowest-MMFF-energy cluster representatives", "diagnostic_reported": "fraction of MMFF Boltzmann weight at 298.15 K captured by the retained set", "truncation_bias": "toward zero -- with one conformer delta_conf is identically 0, and the retained set is the highest-weight one, so a truncated delta_conf under-states rather than over-states the ensemble displacement"},
+    "geometry": "ORCA 6.1.1, ! BP86 def2-SVP RIJCOSX def2/J Opt CPCM, %cpcm epsilon 1e6, surfacetype vdw_gaussian",
+    "single_point": "! BP86 def2-TZVP RIJCOSX def2/J CPCM, %cpcm epsilon 1e6, surfacetype vdw_gaussian, with Klamt COSMO-RS radii H 1.30 C 2.00 N 1.83 O 1.72 F 1.72 P 2.11 S 2.16 Cl 2.05 Br 2.16 I 2.32",
+    "sigma_averaging": "Mullins r_av = 0.81764 A on the same 51-bin grid linspace(-0.025, 0.025, 51), linear deposition into adjacent bins, weights per the existing pipeline's prof()",
+    "boltzmann": "w_i proportional to exp(-(E_i - E_min)/(k_B * 298.15)) from the def2-TZVP CPCM FINAL SINGLE POINT ENERGY, at 298.15 K",
+    "difference_from_the_existing_campaign": "the existing campaign used a 15 kJ/mol MMFF window and 0.35 A clustering; this study uses the handover's fixed 10 kJ/mol and 0.5 A. Ethane-1,2-diol is therefore re-run under THIS protocol so that at least one molecule carries a protocol-matched comparison against the existing campaign, and the existing campaign's ethane-1,2-diol is additionally recomputed in the area-weighted convention."
+  },
+
+  "QM_SANITY_GATES": {
+    "cavity_area": "mean ORCA cavity area within 5% of the UD database area for that molecule (the existing campaign hit <= 2% against VT-2005). A failure stops that molecule.",
+    "profile_area_conservation": "sum of psigmaA over the 51 bins equals the cavity surface area to within 1e-9 relative, minus any segment mass whose averaged sigma falls outside [-0.025, 0.025]; the out-of-grid mass fraction is reported per molecule.",
+    "lowest_conformer_vs_database": "delta(ORCA lowest-energy conformer vs UD) is reported per glycol against the existing campaign's rigid-molecule cross-code floor, recomputed in the same area-weighted convention. If a glycol's value materially exceeds that floor, that is evidence the database conformer is NOT the global minimum, and it is reported as such rather than absorbed into the conformational number.",
+    "convergence": "an ORCA job whose output carries no FINAL SINGLE POINT ENERGY, or whose optimisation did not converge, is dropped and the drop is reported."
+  },
+
+  "NULLS": {
+    "a_rigid_solute_control": {
+      "what": "apply a displacement of the SAME relative norm to the 19 SOLUTE profiles instead of the 4 solvent profiles, and recompute the margin",
+      "directions": ["Gaussian broadening of the solute profiles, width tuned so the mean relative displacement equals the mean delta imposed on the glycols in the primary substitution", "per-solute independent random Gaussian direction at that same delta, 60 draws, seed 0"],
+      "PASS": "|Delta margin| from displacing the 19 solutes is less than half the |Delta margin| from displacing the 4 solvents at equal delta",
+      "if_it_FAILS": "the tolerance curve is measuring the estimator's fragility to any displacement and not the chemistry, and the Step 3 rescoring means nothing; this is reported as the headline"
+    },
+    "b_random_direction_family_at_equal_norm": {
+      "what": "re-derive the random-direction family at the delta actually measured (per-solvent independent Gaussian, clipped at 0, 60 draws, seed 0) and compare its margin distribution against the single measured physical displacement",
+      "PASS": "the measured physical displacement's margin lies above the random family's median, materially -- i.e. the physical (smoothing) direction is more benign at equal norm",
+      "if_it_FAILS": "the ensemble result cannot be distinguished from any perturbation of its size, and the measured direction carries no extra information"
+    },
+    "c_chemistry_blind_relabelling": {
+      "what": "scripts/analysis/run_b_insuff_map_multiplicity_null.py",
+      "action": "applies unchanged; noted, NOT re-run"
+    }
+  },
+
+  "BOOTSTRAP_BUDGET": {
+    "estimator": "two_way_boot of scripts/analysis/run_b_insuff_glycol_ether_ci.py, unmodified",
+    "headline_arms": {"arms": ["unperturbed baseline", "all four glycols substituted"], "replicates": 40, "draws_per_replicate": 100000, "seeds": "900000..900039"},
+    "intermediate_arms": {"arms": ["most-displaced glycol alone", "each glycol alone (4)", "rigid-solute null"], "replicates": 12, "draws_per_replicate": 100000, "seeds": "900000..900011"},
+    "baseline_is_re_run_at_the_same_budget": "so that every comparison is between two numbers computed the same way; the re-run baseline is also checked against the deposited converged [1.25432, 2.86978]",
+    "reported": "mean of the replicate endpoints and the standard error of that mean"
+  },
+
+  "ALSO_REPORTED_BECAUSE_IT_IS_A_KNOWN_LEVER": {
+    "segment_iteration_sweep": "margin at n_iter_eval in {30, 300} on the unperturbed rows, so that the count's own effect is on the record beside the conformational effect and neither is mistaken for the other"
+  },
+
+  "AMENDMENT_RULE": "no threshold, band, decision rule, budget or protocol above may be adjusted after a result is seen. If the pre-registration turns out to have been wrong, the report says so explicitly, records the original and the revision with the reason, and reports BOTH outcomes.",
+
+  "NEITHER_OUTCOME_IS_PREFERRED": "a small displacement defends the finding and lets the paper print a bound instead of a hedge; a large one bounds the finding and is better learned now than from a referee. Both are printable and the report states which happened in the units of the claim."
+}

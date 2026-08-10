@@ -198,3 +198,9 @@ results/multifragment_stratum/*
 !results/solver_iteration_audit
 results/solver_iteration_audit/*
 !results/solver_iteration_audit/outer_sle_counts.json
+!results/glycol_conformers
+results/glycol_conformers/*
+!results/glycol_conformers/PREREGISTRATION.json
+!results/glycol_conformers/AMENDMENTS.json
+!results/glycol_conformers/RESULTS.json
+!results/glycol_conformers/SUMMARY.txt

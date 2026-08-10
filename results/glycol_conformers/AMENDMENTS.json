@@ -1,0 +1,12 @@
+{
+  "rule": "PREREGISTRATION.json forbids adjusting any threshold, band, decision rule, budget or protocol after a result is seen. Each entry below records what was added or found wrong, when in the sequence of work it was recorded, and what was NOT changed.",
+
+  "A1": {
+    "recorded": "2026-08-11, after the conformer search and BEFORE any ORCA job finished, any sigma-profile was built, or any rescoring number existed",
+    "what_was_found": "under the pre-registered search (ETKDGv3 <=400 embeds, MMFF94, 10 kJ/mol window, 0.5 A heavy-atom clustering) ethane-1,2-diol yields exactly ONE cluster representative. Its pre-registered delta_conf is therefore identically 0 and the protocol-matched comparison against the existing campaign that the pre-registration asked for is degenerate. Cluster counts inside the 10 kJ/mol window: triethylene glycol 15, tetraethylene glycol 22, diethylene glycol 6, ethane-1,2-diol 1.",
+    "why_it_happened": "the existing campaign used a 15 kJ/mol window and 0.35 A clustering and found 7 ethane-1,2-diol conformers; the handover's fixed protocol is strictly tighter on both axes, and ethane-1,2-diol's conformers are separated by less than 0.5 A heavy-atom RMSD (it has 4 heavy atoms).",
+    "what_was_NOT_changed": "the pre-registered protocol, the cap, the thresholds, the bands, the decision rule and the bootstrap budget all stand unaltered. The primary arm is scored exactly as pre-registered, ethane-1,2-diol contributing a zero displacement.",
+    "what_was_ADDED": "a clearly labelled SECONDARY arm S1, in which ethane-1,2-diol alone is displaced by the existing campaign's already-computed 15 kJ/mol / 0.35 A seven-conformer ensemble, recomputed in the area-weighted convention. This uses a measurement that already existed before this study began; it introduces no new degree of freedom and no new threshold. Both the primary and S1 outcomes are reported.",
+    "direction_of_the_bias_this_creates_in_the_primary": "toward zero -- the primary under-states the ensemble displacement on ethane-1,2-diol by construction, so a primary that SURVIVES is not established for that molecule by the primary alone, which is why S1 is reported beside it."
+  }
+}
