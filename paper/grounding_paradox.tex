@@ -1188,8 +1188,9 @@ $\pm0.02$ of Monte-Carlo spread at $3000$ is this cell's own and does not carry 
 measured per row set over $200$ seeds, the spread of an endpoint any seed moves runs $0.0009$ to
 $0.223$, and $42$ of the $46$ endpoints drawn at $3000$ stood inside four standard errors of the
 boundary their second decimal turns on. The other four are not the ones that converged: they are
-two cells whose two-way resample has about ten distinct compositions, so no seed moves them at
-all. Each interval in the map therefore prints at the precision its own
+two cells with one cluster on one of their two axes, so the resample is one-way over three
+clusters, about ten distinct compositions exist and no seed moves them at all. Each interval in
+the map therefore prints at the precision its own
 draw count determines, and the eleven that neither two decimals nor one would reach carry their
 Monte-Carlo spread beside them (note~\emph{b} of Table~\ref{tab:map-full}). It is not an
 artifact of one solute family: the $74$ rows
@@ -1203,7 +1204,8 @@ $+1.06$ to $+2.19$, and the deletion test passes at every one of the $36$ cells 
 bins at $n{=}182$, so the cell the map reads is the coarser and the lower of the two. That sweep
 varies the binning bound's own settings and not the family of estimator. A pre-declared cross-fitted
 regressor, tested after this analysis was fixed, returns a \emph{looser} bound: it moves this
-stratum to $+1.76$ $[+1.02,+2.49]$, leaving it the one admissible positive row set but with fewer
+stratum to $+1.76$ $[+1.02,+2.49]$---one $3000$-draw replicate, whose second decimal is seed and
+not estimator (\S\ref{sec:si-crossfit})---leaving it the one admissible positive row set but with fewer
 cells around it, and moves the chemistry-blind null the \emph{wrong} way. That figure is at the
 residual-only convention and row unit the $+2.04$ is read at.
 That null is re-run on both sides for

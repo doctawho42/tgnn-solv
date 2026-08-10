@@ -233,9 +233,23 @@
 # WIDER than the [+1.27, +2.83] the abstract had been quoting, which was the narrowest of the
 # four. Row-identical strata now print one interval throughout the map (make_map_table_tex.py),
 # which retires the duplicate replicates of five other row sets as well.
+#
+# SUPERSEDED IN PART BY THE PRECISION PASS OF THE SAME DAY, and the correction is recorded here
+# rather than by editing the paragraph above, because that paragraph is what the entries below
+# were written against. Two things changed. (1) The convergence run was extended from 1.2e6 to
+# 1.2e8 draws and the LOWER endpoint moved: 1.2558 -> 1.25432, which prints +1.25 and not +1.26.
+# At 1.2e6 that endpoint stood 0.88 Monte-Carlo standard errors from the boundary between the two
+# printings, i.e. the digit was undetermined; at 1.2e8 it stands 7.2. So +1.26 is a CORRECTED
+# MEASUREMENT and not a re-rounding, which is why it gets its own entry below rather than sitting
+# under this block's heading. (2) The "+-0.020 per endpoint" figure above is this cell's own and
+# does not carry to the rest of the map: measured per row set over 200 seeds the spread runs
+# 0.0009 to 0.223. Every entry below that quotes another row set's 3000-draw interval as "what
+# all three cells now print" names a value that has since been re-drawn at a higher count and
+# now prints differently; the deposited per-cell record carries what each prints.
+1.26    CORRECTED MEASUREMENT, not a re-rounding, and the only one in this file: the converged lower endpoint of the glycol-ether interval, glycol_ether_ci_converged.json ci90_lo. At 1.2e6 draws it read 1.2558 (printing +1.26) and stood 0.88 Monte-Carlo standard errors from the rounding boundary, so which second decimal it printed was not a property of the data. Re-run at 1.2e8 draws it reads 1.25432, standing 7.2 standard errors clear, and prints +1.25. Every site that carried +1.26 -- the abstract, Table 4, Sec. 3.4, the cross-fit section, the claims table and the map tables -- now carries +1.25. The number-conservation gate does not see this as a loss because an unrelated arm MSE of 1.26 survives elsewhere in the SI, which is exactly why the entry is written by hand.
 1.018   re-rounded, not lost: the cross-fitted arm's interval on the glycol ethers, crossfit_map_table.csv broad_473 solvent_class::glycol_ether ci90_cf = [1.0175, 2.4890]. A 3000-draw bootstrap endpoint carries +-0.02, so both arms of that sentence now print to two decimals, [+1.02,+2.49]; the leave-one-publication-out envelopes beside them are exact deletion extrema and keep their three.
 2.489   re-rounded, not lost: the same cross-fitted endpoint, ci90_cf upper 2.4890 -> +2.49. See 1.018 above.
-2.873   retired replicate: the coarsening arm's upper endpoint in the cross-fit section, crossfit_map_table.csv ci90_bin = [1.2603, 2.8732] -- one 3000-draw replicate of the interval whose converged value is 2.8689. That sentence now prints the converged [+1.26,+2.87], the same interval the abstract, Table 4, Sec. 3.4 and all three map tables now carry.
+2.873   retired replicate: the coarsening arm's upper endpoint in the cross-fit section, crossfit_map_table.csv ci90_bin = [1.2603, 2.8732] -- one 3000-draw replicate of the interval whose converged value is 2.86978. That sentence now prints the converged [+1.25,+2.87], the same interval the abstract, Table 4, Sec. 3.4 and all three map tables now carry. (The lower endpoint reads +1.25 and not +1.26 since the 1.2e8-draw re-run; see the 1.26 entry above.)
 3.26    retired replicate: the mono-alcohol interval as drawn under the name solvent_family_fine::mono_alcohol, [+0.29,+3.26]. It is the same 35 rows as solvent_class::mono_alcohol, whose replicate [+0.18,+3.24] all three cells now print. The margin +0.78 and the full-convention +1.09 are unchanged, and the row is inadmissible either way (n < 40).
 3.37    retired replicate: the same 35 mono-alcohol rows as drawn under solvent_class_x_solute_role::mono_alcohol | organic_solute, [+0.30,+3.37]. Superseded by [+0.18,+3.24] as above.
 8.61    retired replicate: the halogenated non-H-bonding interval as drawn under solvent_class_coarse::halogenated_nonHB, [+1.10,+8.61]. Same 30 rows as solvent_class::halogenated, whose [+0.86,+8.12] both cells now print. Margin +3.39 unchanged; inadmissible either way (n < 40, and one deletion leaves too few rows).

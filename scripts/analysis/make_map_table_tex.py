@@ -592,9 +592,15 @@ def main() -> None:
                       and q["admissible_this_cell"] != "True"]
             if others:
                 q = others[0]
+                # THE CONVENTION HAS ONE NAME AND IT IS NOT "deployed".  The 2026-08-10
+                # one-name-per-thing pass renamed the pair to `residual-only' against `full'
+                # and grounding_paradox.tex:84 forbids the old word in printed text.  That
+                # rename had been applied BY HAND to this script's generated output, so the
+                # first regeneration silently put "deployed convention" back into the SI.
+                # A prohibition that lives in the output of a generator is not enforced.
                 parts.append(f"passes here and fails at the {q['unit']} unit "
-                             f"({'deployed' if q['convention'] == 'res' else 'full'} convention), "
-                             + shorten_cell(q))
+                             f"({'residual-only' if q['convention'] == 'res' else 'full'} "
+                             "convention), " + shorten_cell(q))
             else:
                 parts.append("passes here, not in all four cells")
         return "; ".join(parts)
@@ -716,26 +722,41 @@ def main() -> None:
         # degenerate, so the short label would name the wrong rows.
         degen = "; ".join(pretty(c["canonical_stratum"])
                           for c in prec["cells"] if c["verdict"] == "degenerate")
+        # THE FOUR-STANDARD-ERROR PROPERTY BELONGS TO 11 OF THE 24 CELLS AND TO NO OTHERS, and
+        # the first version of this note asserted it of all of them.  It read "Each prints at the
+        # precision its own draw count determines---both endpoints four Monte-Carlo standard
+        # errors clear of the nearest rounding boundary", which is false for the 11 `stated' cells
+        # (their margins run 0.03 to 11.44 se) and undefined for the 2 degenerate ones.  It was
+        # written to abolish a blanket precision claim generalised from one cell and it made a
+        # blanket precision claim of its own; worse, the ARTICLE's version of the same sentence
+        # carried the exception list, so the paper was honest in one document and blanket in the
+        # other.  The `stated' cells are the ones where NO precision this table can print is
+        # determined, and their superscript is a warning rather than a refinement.  Say that.
+        converged = [c for c in prec["cells"] if c["verdict"] == "converged"]
+        conv_names = "; ".join(pretty(c["canonical_stratum"]) for c in converged)
         note = (
             "Two-way solute\\,$\\times$\\,solvent cluster bootstrap, $5$th and $95$th "
             "percentiles. Row-identical strata are one row set: drawn once and printed once, "
             "under the row set's first name above and restated under the rest "
             f"({n_multi} of {len(seen)} row sets, {n_dup} rows). Each prints at the precision its "
-            "own draw count determines---both endpoints four Monte-Carlo standard errors clear "
-            f"of the nearest rounding boundary, over ${MC_SEEDS_NOTE}$ seeds and verified on the "
-            f"run that bought it. Two carry two decimals (the glycol ethers, at "
-            f"${gly['n_draws'] / 1e8:.1f}\\times10^{{8}}$ draws), {v['coarsened']} carry one, and "
-            f"{v['stated']} carry two with a superscript giving their endpoints' Monte-Carlo "
-            f"standard deviation in units of that last digit. A further {v['degenerate']} "
-            f"({degen}) no seed moves at all, their two-way resample having about {atoms} "
-            "distinct compositions: a bootstrap with nothing left to resample, not a converged "
+            f"own draw count supports, decided cell by cell over ${MC_SEEDS_NOTE}$ seeds and "
+            f"verified on the run that bought it. {v['converged']} carry two decimals "
+            f"({conv_names}, the latter at ${gly['n_draws'] / 1e8:.1f}\\times10^{{8}}$ draws) and "
+            f"{v['coarsened']} carry one, both endpoints of each standing four Monte-Carlo "
+            f"standard errors clear of the nearest rounding boundary at that precision. For "
+            f"{v['stated']} no precision this table can print is determined: those carry two "
+            "decimals with a superscript giving their endpoints' Monte-Carlo standard deviation "
+            "in units of that last digit, and the superscript is the warning rather than a "
+            f"refinement. A further {v['degenerate']} ({degen}) no seed moves at all---each has "
+            "one cluster on one of its two axes, so the resample is one-way over three clusters "
+            f"and about {atoms} distinct compositions exist: a bootstrap with nothing left to "
             # NO FILESYSTEM PATH IN PRINTED TEXT.  This note carried
             # \texttt{results/b_insuff/map_ci_precision.json} for one draft and was the only
             # printed path in either document; every other deposit in the paper is named in
             # prose ("the deposited per-cell record", "Data Set S1").  The path belongs in this
             # generator's header comment, which is where a reader who wants the file will be.
-            "one. The per-cell verdict, its draw count and its cost at either precision are on "
-            "the deposited record (\\S\\ref{sec:si-map}).")
+            "resample, not a converged one. The per-cell verdict, its draw count and its cost at "
+            "either precision are on the deposited record (\\S\\ref{sec:si-map}).")
         CI_NOTE.write_text(
             "% GENERATED by scripts/analysis/make_map_table_tex.py from\n"
             "% results/b_insuff/map_ci_precision.json. Do not edit; re-run the script.\n"
@@ -745,8 +766,15 @@ def main() -> None:
         # The class statement, in the section body rather than in a table note, because it is
         # about the apparatus and not about one float.  Generated for the same reason: the
         # sentence it replaces generalised one cell's spread to eleven by hand.
+        redraws = [c.get("n_draws") or c["interval"]["n_draws"] for c in prec["cells"]]
+        redraw_lo, redraw_hi = min(redraws) / 1e5, max(redraws) / 1e8
         body = (
-            f"The bootstrap draws {MC_DRAWS_NOTE} resamples per row set, which does not determine "
+            # THE PRINTED COLUMN IS NO LONGER THE 3000-DRAW OUTPUT and this sentence used to open
+            # "The bootstrap draws 3000 resamples per row set", present tense, three lines above a
+            # table whose 11 `stated' cells now print second decimals the 3000-draw run did not
+            # give (mono-alcohol solvent [+0.18,+3.24] -> [+0.28,+3.32] and nine more).  A reader
+            # was told the count that was AUDITED and shown the intervals of a different run.
+            f"The map's own bootstrap draws {MC_DRAWS_NOTE} resamples per row set, which does not determine "
             # `sds' excludes the degenerate cells, whose endpoints no seed moves; quoting a
             # floor of 0 would read as convergence where it is a resample with nothing left in
             # it, so the sentence has to say which endpoints the range is over.
@@ -757,9 +785,12 @@ def main() -> None:
             "inside four Monte-Carlo standard errors of the rounding boundary their second decimal "
             f"turns on---the closest reaching {cnt['largest_clearance_of_any_movable_endpoint_in_sd']}"
             f" and the median {cnt['median_clearance_of_a_movable_endpoint_in_sd']} of the four "
-            "required. Each interval is therefore printed at the precision its own draw count "
-            "supports, cell by cell, and note~\\emph{b} of Table~\\ref{tab:map-full} gives the "
-            "rule and the count at each precision.")
+            f"required. The interval column of Tables~\\ref{{tab:map-full}} to~\\ref{{tab:map-xtab}} "
+            "is therefore not that output: every row set was re-drawn at a count chosen from its "
+            f"own Monte-Carlo error---${redraw_lo:.1f}\\times10^{{5}}$ to "
+            f"${redraw_hi:.1f}\\times10^{{8}}$ draws---and prints at the precision that count "
+            "supports, cell by cell. Note~\\emph{b} of Table~\\ref{tab:map-full} gives the rule "
+            "and the count at each precision.")
         CI_BODY.write_text(
             "% GENERATED by scripts/analysis/make_map_table_tex.py from\n"
             "% results/b_insuff/map_ci_precision.json. Do not edit; re-run the script.\n"

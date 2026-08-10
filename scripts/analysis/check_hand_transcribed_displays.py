@@ -556,7 +556,18 @@ def find_abstract(paper: Path) -> str:
     """
     path = paper / "grounding_paradox.tex"
     raw = path.read_text()
-    i, j = raw.find(ABSTRACT_OPEN), raw.find(ABSTRACT_CLOSE)
+    # THE OPENING MARKER WAS NOT LOAD-BEARING AND THIS FUNCTION SAID IT WAS.  A plain
+    # raw.find(ABSTRACT_OPEN) matches the first occurrence in the file, and the source comment
+    # that documents these markers PRINTS THE LITERAL ITSELF ~140 lines earlier ("The block is now
+    # delimited by the %<abstract-numerals> markers below").  So deleting the real marker left the
+    # region running from that mention to the close, the identity check still passed, and the
+    # script reported `pass' with coverage unchanged -- a checker that could not fail on the one
+    # deletion it declared fatal.  Anchor on \begin{abstract} and take the LAST marker before it.
+    anchor = raw.find("\\begin{abstract}")
+    if anchor < 0:
+        raise SystemExit("check_hand_transcribed_displays: no \\begin{abstract} in the article "
+                         "source; the abstract's numerals cannot be located.")
+    i, j = raw.rfind(ABSTRACT_OPEN, 0, anchor), raw.find(ABSTRACT_CLOSE, anchor)
     if i < 0 or j < 0:
         raise SystemExit(
             f"{rel(path)}: the abstract's source markers are gone ("
