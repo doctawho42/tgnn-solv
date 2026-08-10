@@ -24,7 +24,9 @@ measures how the light per-fraction budget interacts with training-set size at l
 the physics prior does. The sweep is also
 single-seed, its physics-arm MAEs are non-monotone, and its two arms differ from each other in
 capacity and in the per-arm optimisation settings of \S\ref{sec:eval}, and both are wider
-than the headline arms (hidden width $256$ and $128$ here, $64$ there). What survives is the level and
+than the headline arms (hidden width $256$ and $128$ here, $64$ there). Nothing in the sweep is
+therefore attributable to the thermodynamic bottleneck, and this paper makes no accuracy claim in
+either direction from it. What survives is the level and
 not the trend (Table~\ref{tab:data-eff}, plotted in Fig.~\ref{fig:data-eff})---the physics arm is
 worse at every fraction under a matched light budget---which is \emph{consistent
 with} the sign rule (Prop.~\ref{prop:tax}) rather than a sharp confirmation of it. The one inverting metric is
@@ -36,7 +38,7 @@ operative explanation.
 
 \begin{table}[t]
 \centering
-\caption{Data-efficiency sweep (train subsampled by solute, fixed scaffold test,
+\caption[The data-efficiency sweep]{Data-efficiency sweep (train subsampled by solute, fixed scaffold test,
 seed 42). $\Delta\mathrm{MAE}=\mathrm{MAE(physics)}-\mathrm{MAE(direct)}$.}
 \label{tab:data-eff}
 \resizebox{\columnwidth}{!}{%
@@ -58,11 +60,8 @@ $1.00$ & $2.98$ & $1.97$ & $+1.01$ & $-0.79$ & $+0.22$ \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_data_efficiency.pdf}
-\caption{Data-efficiency curve: physics-grounded arm (salmon) and DirectGNN (teal)
-as a function of training-data fraction. \emph{Scope:} one seed, five fractions, under a light
-per-fraction budget whose endpoint does not reproduce the headline comparison; the physics arm's
-MAEs are non-monotone. \emph{Caveat:} the two arms differ in capacity and in per-arm optimisation,
-so nothing drawn here is attributable to the thermodynamic bottleneck, and this paper makes no
-accuracy claim in either direction.}
+\caption[The data-efficiency curve]{Data-efficiency curve: scaffold-test MAE of the physics-grounded arm (salmon) and of
+DirectGNN (teal) at five training-data fractions, one seed. The plotted values are the MAE columns
+of Table~\ref{tab:data-eff}.}
 \label{fig:data-eff}
 \end{figure}

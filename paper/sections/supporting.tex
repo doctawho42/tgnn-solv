@@ -52,11 +52,15 @@ $5.9$ between separately trained arms). With its own learned profile the model o
 two solute-blind references, at every one of the twenty-four margins that comparison has---four
 metrics, three seeds, two floors. With the reference profile substituted, none of its own
 twenty-four margins separates it from those references: twenty-four of the twenty-four include zero,
-or twenty-three, one cell sitting on the boundary and changing side with the bootstrap draw. That
-cell is named in the caption below and discussed after it. Both arms remain far above the
+or twenty-three, one cell sitting on the boundary and changing side with the bootstrap draw; that
+cell is named and quantified below. Both arms remain far above the
 within-group permutation floor, so the substitution does not reduce the ordering to chance; what it
 leaves cannot be told apart from what a ranker never shown the solute produces, which is a failure
-to separate the two and not a demonstration that they are the same. Groups are formed on solute
+to separate the two and not a demonstration that they are the same. Of the paired
+reference-minus-learned differences, all three per-seed intervals exclude zero for $\rho$, $\tau$
+and nDCG@3, and only seed $42$'s does for top-1, which is why that row is quoted pooled. A floor
+built from the other arm is not a comparison, so each is rebuilt from the predictions of the arm it
+is set against. Groups are formed on solute
 and temperature rounded to $1$\,K, kept when they hold at least three distinct solvents, with
 duplicate measurements averaged per solvent. The effective
 sample is the $107$ solute clusters, not the $823$ groups, and every interval below is a $95\%$
@@ -64,23 +68,14 @@ bootstrap over those clusters.
 
 \begin{table*}[t]
 \centering
-\caption{Solvent ranking under the two $\sigma$-profiles, on the labelled test rows grouped by
-solute and temperature ($823$ groups, $107$ solute clusters, $\ge3$ solvents per group; $\rho$ and
-$\tau$ are undefined on a group whose predictions are all tied and so run on $823/807/808$ by seed,
-as \S\ref{sec:supporting} sets out). Both
-columns are one checkpoint per seed; only the profile injected into the closure differs.
-Per-seed values are $42/43/44$. The last column is the paired per-group difference averaged over
-the three seeds, with a $95\%$ cluster bootstrap over solutes; all three per-seed intervals exclude
-zero for $\rho$, $\tau$ and nDCG@3, and only seed $42$'s does for top-1, which is why that row is
-quoted pooled. The lower block gives each arm's margin over its \emph{own} solute-blind floors---a
-floor built from the other arm is not a comparison---and counts, over four metrics $\times$ three
-seeds $\times$ two floors, how many of those margins have an interval excluding zero. Each floor is
-rebuilt from the predictions of the arm it is set against. One reference-$\sigma$ cell decides that
-count on a knife edge and is named so nobody has to rediscover it: nDCG@3 at seed $44$ against its
-own shuffled-profile floor is $[-0.0008,+0.0762]$, inside the resampling noise of the boundary
-itself, and an independent recomputation places it on the other side. The reference-$\sigma$ count is
-therefore $0$ or $1$ according to the bootstrap draw; nothing here turns on which, and the margins
-themselves, printed above, are what the reading rests on.}
+\caption[Solvent ranking under the two profiles]{Solvent ranking under the two $\sigma$-profiles, on the labelled test rows grouped by
+solute and temperature ($823$ groups, $107$ solute clusters, $\ge3$ solvents per group). Both
+columns are one checkpoint per seed; only the profile injected into the closure differs, and
+per-seed values are $42/43/44$. The last column is the paired per-group difference averaged over
+the three seeds, with a $95\%$ cluster bootstrap over solutes. The lower block gives each arm's
+margin over its \emph{own} solute-blind floors, each rebuilt from the predictions of the arm it is
+set against, then counts over four metrics $\times$ three seeds $\times$ two floors how many of
+those margins have an interval excluding zero. The last row is the within-group permutation floor.}
 \label{tab:ranking}
 % Width: the tabular must fit \textwidth (504.5 pt) inside table*. At \small with the default
 % \tabcolsep it runs 85 pt over, and the stub is where that is won back -- the qualifications
@@ -115,8 +110,11 @@ small and all but one positive (the exception is top-1 at seed $43$ against its 
 floor, $-0.028$), and what the intervals say is that none of the twenty-four separates that arm from
 its floor---twenty-four of them, or twenty-three, the one cell on the boundary changing side with the
 bootstrap draw. Two are marginal rather than comfortable---seed $44$ against its own shuffled-profile
-floor, $\rho$ $[-0.005,+0.165]$ and nDCG@3 $[-0.0008,+0.0762]$, the second of which is that boundary
-cell and is discussed in the caption above---so
+floor, $\rho$ $[-0.005,+0.165]$ and nDCG@3 $[-0.0008,+0.0762]$. The second of those is the boundary
+cell, and it decides the count on a knife edge: its lower endpoint sits inside the resampling noise
+of the boundary itself, an independent recomputation places it on the other side, and the
+reference-$\sigma$ count of Table~\ref{tab:ranking} is therefore $0$ or $1$ according to the
+bootstrap draw. Nothing here turns on which; the margins themselves are what the reading rests on. So
 \emph{indistinguishable from its floor} is the description all twenty-four support, and
 \emph{below} it is not. The contrast survives excluding the $16$ groups where some solvent has no
 reference profile and the arm therefore runs on a mixture ($807$ groups: $-0.212/{-}0.158/{-}0.172$),

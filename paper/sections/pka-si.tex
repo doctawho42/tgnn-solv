@@ -1,10 +1,23 @@
 \section{The pKa closure: full construction, measured sweep, and trained comparison}
 \label{sec:si-pka}
-This section gives the full construction behind \S\ref{sec:pka}: a fixed
+% MERGED 2026-08-10.  A one-page \section of its own (sections/pka-domain.tex) used to stand
+% immediately before this one.  It opened by saying its result is stated in the article, restated
+% that result, deferred to this section nine times, and closed by saying the construction is here --
+% three statements of one result in a row, which is what makes an appendix obligatory reading.  The
+% precis is gone; its two sentences that printed nowhere else are folded in here (the subscript
+% convention on sigma_H, just below, and the placement of the crossover against plug-in efficiency
+% and quasi-maximum-likelihood, in "The crossover and its scope boundary"), together with the scope
+% clause on the a-priori channel assignment.
+% BOTH LABELS SIT ON THIS SECTION so that \S\ref{sec:pka} in the article and \S\ref{sec:si-pka}
+% everywhere else still resolve.  Do not remove either.
+\label{sec:pka}
+This section gives the full construction behind \S\ref{sec:pka-main}: a fixed
 Hammett linear-free-energy relationship (LFER) $g(\zstar)=\mathrm pK_{a,0}-\rho\,\hammett^\star$ over
 $\zstar=(s,\hammett^\star)$: the reaction series $s$, which fixes the per-scaffold Hansch--Leo--Taft
 constants $(\mathrm pK_{a,0},\rho)$, together with the Hammett substituent constant $\hammett$, whose
-tabulated Hansch--Leo values are the external reference for the coordinate the network predicts. The analogy is close: as with the $\sigma$-profile through COSMO-SAC, a
+tabulated Hansch--Leo values are the external reference for the coordinate the network predicts.
+That constant carries its subscript throughout, so that it cannot be confused with the
+$\sigma$-profile of \S\ref{sec:framework}. The analogy is close: as with the $\sigma$-profile through COSMO-SAC, a
 learnable physical descriptor is pushed through a fixed, approximate, differentiable map. The two
 classic LFER failure modes fall cleanly onto the two error channels of Lemma~\ref{prop:decomp}:
 \emph{resonance saturation}---a curvature in $\hammett$ that the linear closure structurally cannot
@@ -15,15 +28,16 @@ phenol, anilinium, pyridinium): records whose every substituted ring position is
 tabulated substituent are the near-exact ($\Bclos\!\approx\!0$) regime, and records carrying an ortho
 substituent or one outside the tabulated list---both of which enter $\hammett^\star$ as zero---the
 low-fidelity one. The assignment rule is a function of structure alone and never reads the residual,
-and it is stated in full next.
+and its mechanics are next.
 
-% RELOCATED FROM THE ARTICLE'S Sec. 3.6 ON 2026-08-07, VERBATIM, in the page-reduction pass. The
-% article keeps the definition of the two poles -- what makes a record clean, what makes it
-% degraded, the 158/846/571/275 counts and the not-benzenoid-against-heteroaromatic clause -- and
-% points here for the mechanics.  This paragraph and the estimator paragraph below are the only two
-% that moved; every number in them printed in the article before the move and prints here after it.
-\paragraph{The assignment rule in full.}
-The reference constant is assigned mechanically, and that rule is also what defines the two poles.
+% DE-DUPLICATED 2026-08-10.  This paragraph was the article's Sec. 3.6 rule relocated verbatim on
+% 2026-08-07; the article then kept the half of it that defines the two poles -- what makes a record
+% clean, what makes it degraded, the 158/846/571/275 counts and the not-benzenoid clause -- so both
+% documents printed that half.  What is here now is only the mechanics the article does not carry:
+% the fixed trial order, the ring-unambiguity conditions and the ring-bond-distance typing.
+\paragraph{The rule that selects a reaction series and types a ring position.}
+The reference constant is assigned mechanically, and that rule is also what defines the two poles of
+\S\ref{sec:pka-main}.
 The four kinds are tried in the fixed order benzoic acid, phenol, anilinium, pyridinium, and a record
 enters under the first of them whose ionizing group matches exactly once in the molecule, at a ring
 atom lying in exactly one ring and that ring six-membered and aromatic. An ionizing site the entering
@@ -36,27 +50,25 @@ positions are typed by shortest ring-bond distance from that ring atom---the one
 group, which for pyridinium is the ring nitrogen itself---one bond \emph{ortho}, two \emph{meta},
 three \emph{para}; and $\hammett^\star$ is the sum over the substituted positions
 of the Hansch--Leo constant of that substituent \emph{at that position}, $\sigma_m$ meta and
-$\sigma_p$ para, taken from the fixed list of nineteen substituents printed in
-\S\ref{sec:si-pka}; an unsubstituted parent has
-$\hammett^\star=0$. An ortho position carries no tabulated constant and enters the sum as zero, and
-so does a substituent outside the list. The first pole---the \emph{clean} one below---is the $158$
-records whose every substituted position is meta or para with a tabulated substituent; the
-\emph{degraded} pole is the $846$ where at least one position is neither---$571$ of them carrying an
-ortho substituent, the other $275$ an untabulated one---and there $\hammett^\star$ is the partial sum
-over the positions it can see. The split is not benzenoid against heteroaromatic: all four series occur on
-both sides, $32$ of the clean pole's records being pyridinium.
+$\sigma_p$ para, taken from the fixed list of nineteen substituents in
+Table~\ref{tab:hammett-sigma}; an unsubstituted parent has
+$\hammett^\star=0$. The zeroing of ortho and untabulated positions, and with it the definition of
+the clean and degraded poles and their counts, is \S\ref{sec:pka-main}'s.
 
 % RELOCATED FROM THE ARTICLE'S Sec. 3.6 ON 2026-08-07, VERBATIM.  The article keeps the three
 % clauses that scope the floors it prints -- not the eight-bin cell, a floor and not a separation
 % margin, and conditioning on the series being what Lemma 1 demands rather than the conservative
 % choice, with the pooled-series 8.3 against 5.1 -- and points here for the identity, the fold
 % design and the argument against Sec. 3.5.1's refusal of fitted estimators on solubility.
+% ANCHOR, 2026-08-10.  The article's pKa floor of 0.6 is only a floor if no fold hands a held-out
+% row what the closure's argument does not already carry, and that argument lives in this paragraph
+% and nowhere in the article, which points at this whole section (five printed pages) for it.
 \paragraph{The estimator, its identity, and its fold design.}
-That estimator is not the eight-bin coarsening cell of \S\ref{sec:estimator}, and its conditioning
-variable is not the constant alone; nor is the functional the same, the two figures just given being
-floors $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ on $\Bclos$, which when positive establish $\Bclos>0$,
-and not the separation margin $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$ of Table~\ref{tab:notation},
-which when positive would establish the stronger $\Bclos>\Binsuf$. The closure reads the reaction series too---$\mathrm pK_{a,0}$
+\label{par:pka-folds}
+\S\ref{sec:pka-main} scopes the two floors it prints: they are not measured with the eight-bin
+coarsening cell of \S\ref{sec:estimator}, and the functional is a floor on $\Bclos$ and not the
+separation margin of Table~\ref{tab:notation}. The estimator's identity and its fold design are
+here. The closure reads the reaction series too---$\mathrm pK_{a,0}$
 and $\rho$ are per-series---so the argument Lemma~\ref{prop:decomp} requires is the pair
 $\zstar=(s,\hammett^\star)$, series label and constant, and the estimand is
 $\Ex[\Var(\mathrm pK_a\mid s,\hammett^\star)]$. Neither coordinate needs binning: $s$ takes four values and
@@ -88,7 +100,7 @@ and the record degraded.
 
 \begin{table*}[tbp]
 \centering
-\caption{The fixed substituent list behind $\hammett^\star$: nineteen groups with the meta and para
+\caption[The fixed substituent list behind the Hammett constant]{The fixed substituent list behind $\hammett^\star$: nineteen groups with the meta and para
 Hammett constants summed over the substituted positions (\S\ref{sec:pka-main}). Patterns are tried
 in the order shown---down the first block, then the second, then the third---and the first match at a
 ring position wins. An ortho position, and any group not in this list, enters the sum as zero.}
@@ -146,7 +158,8 @@ than through a coarsening of the closure's argument (\S\ref{sec:decomp}): a with
 out-of-fold regression estimator gives $\Binsuf=4.5$
 ($95\%$~CI $[4.0,5.1]$; $\approx89\%$ of the error, on the unrounded $4.528$ against
 $5.094$---$\hammett^\star$ carries nothing from
-the zeroed positions, exactly the a-priori channel assignment), leaving a closure misspecification
+the zeroed positions, exactly the a-priori channel assignment, which the measurement is consistent
+with rather than establishes), leaving a closure misspecification
 $\Bclos=0.6$ ($[0.3,0.8]$, a stratified within-scaffold molecule bootstrap; both intervals are
 percentile intervals of $4000$ resamples of molecules within each series, at their sizes). Directly estimated is
 not point-identified: the estimator is an out-of-fold residual mean square, which is an upper
@@ -156,12 +169,11 @@ narrower only because a four-valued label and a scalar need no binning (\S\ref{s
 % The pooled-over-series figure (8.3) and the within-series one (4.5) both print from
 % scripts/analysis/run_pka_binsuff_conditioning_check.py, which calls the same
 % _binsuff_within_scaffold / _oof_mse used by run_pka_real_decomposition.py.
-\S\ref{sec:pka}). Conditioning on $s$ is what Lemma~\ref{prop:decomp} requires of a closure whose
-$(\mathrm pK_{a,0},\rho)$ are per-series, and it is also what keeps the bound from being vacuous:
-pooled over the four series the same estimator returns $8.3$, above the pole's own
-$\mathrm{MSE}$ of $5.1$, and licenses nothing. This is the
+\S\ref{sec:pka-main}). This is the
 near-exact-to-degraded transition, measured rather than asserted. This places the pKa closure near the phase-diagram boundary
-in its clean regime. \paragraph{Data quality control (uniform, closure-independent).} The trained runs use the canonical
+in its clean regime.
+
+\paragraph{Data quality control (uniform, closure-independent).} The trained runs use the canonical
 full OPERA set ($7904$ records). A small number of entries are supplied as pre-ionized microstates---an
 $[\mathrm{NH}^+]$-protonated aminopyridine at $\mathrm pK_a=-7.78$, a pyrylium $[\mathrm O^+]$, among
 others---inconsistent with a neutral-scaffold Hammett assignment, and they degrade the clean pole
@@ -192,7 +204,7 @@ the degraded pole is exactly the statement that all four series means favour the
 the clean pole that exactly one of them does, the other three favouring the oracle. Read as a sign test on
 four units those are $p{=}1/16$ and $p{\approx}0.31$; the interval endpoints quoted above are
 percentiles of the same $35$-outcome law and are no finer. This is the same small-$G$ caution applied
-on the solubility side (\S\ref{sec:si-tables}), where the $P$ values are likewise read as a coarse
+on the solubility side (\S\ref{sec:si-robustness}), where the $P$ values are likewise read as a coarse
 band rather than as two-decimal quantities. The split bootstrap adds nothing independent: the $20$
 splits resample train/test assignments over the same molecules (each molecule lands in ${\approx}4$
 test sets), so it prices split-to-split noise rather than molecule sampling, and with all $20$ degraded-pole
@@ -214,7 +226,11 @@ grounding hurts throughout; only scaffold extrapolation, where $\hat\sigma_{\mat
 pushes it back above the threshold and reverts the sign. That reversion is a property of the mean
 over the six splits and not of every split: three of the six still have grounding hurting, and the
 negative mean gap ($-1.04$) is carried by two splits at $-3.2$ and $-3.8$. The flip is therefore a within-distribution,
-fidelity-driven crossover, and the extrapolation reversion follows the same comparison. A trained
+fidelity-driven crossover, and the extrapolation reversion follows the same comparison. It is the
+sharp, two-sided form of the penalty sign rule (Prop.~\ref{prop:tax}): the half saying that a fitted
+intermediate can beat the true one is known---plug-in efficiency under correct specification
+\cite{hirano2003}, pseudo-true fitting under misspecification \cite{white1982}---and what is added
+here is the fidelity-set threshold at which the two halves change places. A trained
 physics-vs-DirectGNN comparison agrees in direction overall but has weak absolute errors and an
 untuned control; the load-bearing second-domain results are the decomposition above and the
 sign-consistent flip.
@@ -222,11 +238,10 @@ sign-consistent flip.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_pka_hammett.pdf}
-\caption{pKa through a Hammett LFER on a construction with known ground-truth
+\caption[pKa through a Hammett LFER on a known-ground-truth construction]{pKa through a Hammett LFER on a construction with known ground-truth
 channels. \emph{Left:} closure fidelity varied with a sufficient intermediate; grounding gap
 $\Ggap$, closure bias $\Bclos$, and the assumption-light Jensen bound. \emph{Right:} an
 ortho/steric insufficiency channel varied with a \emph{well-specified} closure; $\Bclos=0$ at each
-knob while $\Ggap$ rises with the insufficiency fraction, crossing zero near $0.25$.
-Scope: \S\ref{sec:si-pka}.}
+knob while $\Ggap$ rises with the insufficiency fraction, crossing zero near $0.25$.}
 \label{fig:pka}
 \end{figure*}

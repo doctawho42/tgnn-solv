@@ -88,6 +88,14 @@ and into the polar wings: fine-tuning makes the network represent molecules as m
 \emph{own grounded profile} does---the plotted drift being taken against that profile and not the
 reference, and the mode defined only up to sign, drawn in the mean drift's direction.
 
+% TWO POINTERS BECAME CLAIMS, 2026-08-10.  A structural audit of the compiled SI found both of the
+% cross-document references below carrying an article sentence that was not complete without them:
+% "A second, independent check ... points the same way" asserted a direction with no claim, no set,
+% no value and no uncertainty, and "one or two hydrogen-bonding directions" was a participation
+% ratio the article never printed -- and which the SI, in two places, cited the ARTICLE for.  Both
+% now print here what a reader needs to judge them, and both point at the paragraph that measures
+% them rather than at the five-page section that contains it.  Values: \S\ref{par:own-axis} and
+% \S\ref{par:fisher-geometry}.  Do not take the numbers back out and leave the pointer.
 \paragraph{Whether the departure cancels closure error.} It is not shown to, and the one direct
 check runs against it. Holding the cavity area at its reference value, the sole retained end-to-end
 SLE-trained COSMO-SAC checkpoint scores $18.75$ against $1.47$ on the $n{=}60$ VT-2005-matched pairs:
@@ -97,7 +105,11 @@ number---the checkpoint is the uncontrolled one, whose $82\%$ departure is half 
 $51\pm2\%$; the axis is wrong, the drift being produced at finite composition and scored at infinite
 dilution; and the check has almost no power in the direction that matters, so it separates ``no
 cancellation'' from ``large cancellation'' but not from ``some cancellation''. A second, independent
-check on the closure's own axis points the same way (\S\ref{sec:si-mech}). Both sit on that
+check points the same way on the closure's own axis: over those same $n{=}60$ pairs, sweeping the
+closure's hydrogen-bond coefficient at zero, one and two times its standard value gives mean squared
+errors $2.42/2.83/10.15$ on the strong-donor ones, so a \emph{more} polar profile moves $g$ further
+from $m$, and the sweep carries no interval because it varies a constant and not a sample
+(\S\ref{par:own-axis}). Both sit on that
 infinite-dilution axis, so neither refutes cancellation in the regime that generates the drift; they
 remove the one place it could have been measured, and the cancellation reading remains inferred from
 the paradox itself. What is established is weaker and still consequential: the model's ``physical''
@@ -107,7 +119,7 @@ interpretability of physics-grounded latents is not guaranteed under misspecific
 otherwise physically-faithful latent \cite{interno2026}. Its \emph{structure}---low-rank rather than
 diffuse---excludes a random collapse but not the structured shrinkage above. The full measurement,
 its nulls and the two controls are in \S\ref{sec:si-mech}.
-\paragraph{What leaves $\sigma$ under-determined by activity, and what freezing it buys.} The freedom that would make such a cancellation possible is the closure's geometry, measured in \S\ref{sec:si-mech}: at infinite dilution the activity map concentrates on one or two hydrogen-bonding directions, so the end-to-end head can move $\sigma$ along the remaining, low-sensitivity ones at little cost to the fit---the $\sigma$-profile form of Lemma~\ref{prop:ident}. Nothing there shows recovery of the physical profile to be impossible in principle. The sign of grounding turns on \emph{both} axes, and on which sense of grounding is meant.
+\paragraph{What leaves $\sigma$ under-determined by activity, and what freezing it buys.} The freedom that would make such a cancellation possible is the closure's geometry, measured in \S\ref{par:fisher-geometry}: at infinite dilution the activity map's Fisher spectrum is effectively rank one---participation ratio $1.0$ in aggregate and ${\approx}1.4$ of $51$ per molecule, the resolved direction lying on the hydrogen-bonding wings of the profile---so the end-to-end head can move $\sigma$ along the remaining, low-sensitivity coordinates at little cost to the fit---the $\sigma$-profile form of Lemma~\ref{prop:ident}. Nothing there shows recovery of the physical profile to be impossible in principle. The sign of grounding turns on \emph{both} axes, and on which sense of grounding is meant.
 Freezing the $\sigma$ head at its supervised warm-up state instead of letting it drift end to end
 cuts the reference-input penalty by $65\%$ ($\Delta\mathrm{MAE}$ from $+0.40$ to $+0.14$ over
 $n{=}5571$ matched test rows). Those are a separate matched pair of runs---one base resumed twice

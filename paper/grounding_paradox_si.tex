@@ -40,6 +40,11 @@
 % note in grounding_paradox.tex.
 \externaldocument[][nocite]{grounding_paradox}
 
+% enumitem is loaded HERE and not in preamble.tex, which the article shares: the one list that
+% needs it is the display inventory of \S\ref{sec:si-repro}, and loading a package that redefines
+% the standard list defaults into a document whose pagination is fixed buys nothing.
+\usepackage{enumitem}
+
 % ---------------------------------------------------------------------
 % S-NUMBERING for the four counters achemso's suppinfo option does not touch.
 % \thepage, \thefigure, \thetable, \thescheme and the citation markers are already
@@ -91,19 +96,92 @@ University, Moscow, Russia}
 % moves back from the SI, so the promise is trimmed to what this document actually keeps
 % and the one exception is named.  If the ablation is ever stated in the article, this
 % sentence goes back to the unqualified form; until then do not restore it.
+% NARROWED AGAIN 2026-08-10, and this time the exceptions are an inventory rather than
+% a single named one.  A structural audit of the compiled document found EIGHT article
+% sentences whose claim is incomplete without a destination here -- the six figures of the
+% external block, the rank of the activity map, the multiplicity null's two biases, the
+% reason the pre-declared cross-fitted estimator does not headline, the closure's own-axis
+% check, the pKa fold design, and limitations (ix), (x) and (xiii).  A promise a document
+% does not keep is worse than no promise, so the sentence now says what is true and the
+% list below is the reader's index of it.  EVERY ITEM LEAVES THIS LIST THE DAY THE
+% ARTICLE PRINTS ITS CLAIM, SET, UNCERTAINTY AND SCOPE -- not the day a pointer to it is
+% made prettier.  Do not restore the unqualified form while any item remains.
 \noindent
 This document is the Supporting Information for the article named above. Its own
 sections, tables, figures, equations and lemmas carry an S---\S\ref{sec:si-methods},
 Table~\ref{tab:si-arms}, Fig.~\ref{fig:arch}, Eq.~\eqref{eq:cosmo},
 Lemma~\ref{prop:ident}---and a reference without one, such as \S\ref{sec:measure} or
 Table~\ref{tab:baselines}, is to the article, whose Table~\ref{tab:notation} defines the terminology
-used here, including IDAC, infinite-dilution activity coefficient. With one exception, every result
-here is one the article states: for each of them the claim, the set it is measured on, its
-uncertainty and its scope are in the article's own text, and what this document adds is the proof,
-the per-row table, the robustness grid, the control and the negative behind each. The exception is
-the loss-simplification ablation of \S\ref{sec:si-methods}, a pre-registered check that the paradox
-is not an artifact of the objective, whose numbers appear in this document alone; it contradicts
-nothing the article states, and the article draws nothing from it.
+used here, including IDAC, infinite-dilution activity coefficient. Nearly every result here is one
+the article states, and for those the claim, the set it is measured on, its uncertainty and its
+scope are in the article's own text, while what this document adds is the proof, the per-row table,
+the robustness grid, the control and the negative behind each. The rest are these, listed so that
+nobody has to find them by being surprised. One is a result the article does not draw on: the
+loss-simplification ablation of \S\ref{sec:si-methods}, a pre-registered check that the paradox is
+not an artifact of the objective, whose numbers appear in this document alone and which contradicts
+nothing the article states. The others are quantities an article sentence rests on and does not
+itself print: the published external accuracy figures with the corpora and the sources they are
+published on (Table~\ref{tab:si-baselines-full} and the paragraph that reads it); the rank of the
+activity map and the direction it resolves (\S\ref{par:fisher-geometry}); the two biases of the
+chemistry-blind multiplicity null (\S\ref{sec:si-null}); the reason the pre-declared cross-fitted
+estimator does not headline (\S\ref{par:crossfit-deviation}); the closure's own-axis check on
+polarity (\S\ref{par:own-axis}); the fold
+design behind the $\mathrm pK_a$ closure floor (\S\ref{par:pka-folds}); and limitations~(ix), (x)
+and~(xiii) (\S\ref{sec:si-limitations}). For those, this document is not optional.
+
+% ---------------------------------------------------------------------
+% NAVIGATION, added 2026-08-10.  Eighty-odd pages, eleven sections, thirty-one labelled floats, and
+% eighty-seven references fired into this document from the article, sixty of them at a section --
+% and until this pass the only index was the PDF bookmark panel, which does not print, does not
+% survive a printout, and is not on the referee's annotated copy.  Three lists carry it now:
+%   \tableofcontents  at tocdepth 2, so the eleven sections AND their subsections print.  A section
+%     line alone is not navigation here: \S\ref{sec:si-tables} is thirty-three pages long.
+%   \listoftables     thirty-one labelled floats over twenty-nine printed numbers (two are
+%     \ContinuedFloat parts of the claims ledger and take no second line).  The article names
+%     sixteen tables of this document by number, so this is the map from "Table S17" to a page,
+%     and of the three lists it is the one a reader is most likely to arrive needing.
+%   \listoffigures    nine lines, the only place the nine are collected.
+% ORDER: the orientation paragraph above stays FIRST, because it says what the S on every number in
+% these three lists means; a contents page read before it is a page of unexplained S-numbers.
+% These write .toc/.lot/.lof and need the second and third xelatex pass to settle, which `make both'
+% already runs and `make clean' already removes.  A retitled heading updates its contents line by
+% itself -- do NOT hand-maintain a second copy of any title here.
+% ---------------------------------------------------------------------
+% THE PAGE-NUMBER BOX HAD TO BE WIDENED.  Every folio in this document is "S-nn", four characters,
+% and LaTeX's \@pnumwidth is 1.55em, sized for "nn": the first build of these lists reported an
+% Overfull \hbox of 3.59996pt on EVERY contents, table and figure line -- 65 of them -- and set the
+% folio into the right margin. 2.4em holds "S-nn" with room; \@tocrmarg must stay about 1em larger
+% than \@pnumwidth or the dot leader runs into the folio. The two numberline widths are the section
+% and subsection number boxes, widened for "S12" and "S3.12"; at the stock 1.5em/2.3em the widest
+% numbers touch their titles. Re-measure these if a thirteenth section or a hundredth page appears.
+\makeatletter
+\renewcommand*\@pnumwidth{2.4em}
+\renewcommand*\@tocrmarg{3.4em}
+\renewcommand*\l@subsection{\@dottedtocline{2}{2.2em}{3.0em}}
+% \l@section is article.cls's own, verbatim, with its hard-coded 1.5em number box widened to
+% 2.2em. At 1.5em the three-character numbers S10, S11 and S12 overflowed the line by 3.012pt and
+% the title started inside the number's box. Everything else here -- the penalty, the 1.0em space
+% above a section line, the bold, the leaders -- is the class's and must stay, or section lines
+% stop reading as the top level of the list.
+\renewcommand*\l@section[2]{%
+  \ifnum \c@tocdepth >\z@
+    \addpenalty\@secpenalty
+    \addvspace{1.0em \@plus\p@}%
+    \setlength\@tempdima{2.2em}%
+    \begingroup
+      \parindent \z@ \rightskip \@pnumwidth
+      \parfillskip -\@pnumwidth
+      \leavevmode \bfseries
+      \advance\leftskip\@tempdima
+      \hskip -\leftskip
+      #1\nobreak\hfil \nobreak\hb@xt@\@pnumwidth{\hss #2}\par
+    \endgroup
+  \fi}
+\makeatother
+\setcounter{tocdepth}{2}
+\tableofcontents
+\listoftables
+\listoffigures
 
 \input{sections/SI}
 

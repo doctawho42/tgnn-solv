@@ -4,15 +4,11 @@
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_fidelity_dial.pdf}
-\caption{Closure-fidelity sweep on synthetic, non-chemical teacher functions. As the
+\caption[The closure-fidelity sweep on synthetic teacher functions]{Closure-fidelity sweep on synthetic, non-chemical teacher functions. As the
 closure is made more misspecified (fidelity $F$ falling from $1$; axis reversed), the reference-input
 penalty $\Delta R^2=R^2_{\text{oracle}}-R^2_{\text{head}}$ falls monotonically below zero. Each curve
 is one of four teacher families, averaged over six misspecification forms, which the panel does not
-resolve. No point is marked for the real closure. \emph{Caveat:} here $\Delta R^2$ \emph{equals}
-$\Bclos$ by design, so the sweep is a check on the construction and not an independent test of the
-hypothesis; and the four curves are visually coincident because the teacher factor carries no
-information in this construction, not because the effect is domain-general. Scope:
-\S\ref{sec:dial}.}
+resolve; the four curves are visually coincident. No point is marked for the real closure.}
 \label{fig:dial}
 \end{figure}
 
