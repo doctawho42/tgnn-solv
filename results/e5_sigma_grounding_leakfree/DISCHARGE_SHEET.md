@@ -1,8 +1,8 @@
-# Discharge sheet for the §2.2 / §S9 leak-free re-run pre-commitment
+# Discharge sheet for the §2.2 / `sec:si-repro` leak-free re-run pre-commitment
 
 **Built 2026-08-10 at HEAD `1df7ccd`, with seeds 42/43/44 landed and 45/46 in training.**
 This sheet is *derived from* the display inventory that lives at `paper/sections/SI.tex`
-`\label{sec:si-repro}` (printed §S9, p. S-74 to S-76). **That inventory is settled and this sheet does
+`\label{sec:si-repro}` — resolve it through the .aux; the number it prints at has already moved once, on 2026-08-10. **That inventory is settled and this sheet does
 not amend it.** Where this sheet records something the inventory does not, it says so in the
 `WATCH` section at the end and takes no action there — the inventory may not be edited once the
 five-seed numbers exist, and this sheet exists so that nothing *has* to be.
@@ -16,6 +16,15 @@ and the inventory's own fourth run recorded an S-number that had drifted three p
 Article 33 pp. SI S-84. The sheet has **36 rows**.
 
 ---
+
+
+> **Addresses in this sheet are LABELS, not printed section numbers.** They were numbers until
+> 2026-08-10, when merging the two pKa sections removed a section ahead of the pre-commitment: five
+> occurrences of "§S9" then pointed at the black-box probe instead of at the protocol they name, and
+> the Supporting Information split §S3 into twelve subsections under them. Nothing had moved that a
+> reader would notice; the sheet had simply stopped meaning what it said. Resolve a label through
+> `paper/grounding_paradox_si.aux` when you need its printed number, and do not write the number down.
+
 
 ## 0. Preconditions — two of them are currently blocking
 
@@ -91,7 +100,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Branch:** `1|2|3` for the seed count and the clause. Under **branch 2** the abstract's *claim* is also rewritten (supervision recorded as unresolved).
 
 ### Row 2 — §3.1 entire
-- **Inventory name / label:** *"§\ref{sec:paradox} entire … the per-seed gains and the seed-42 values included wherever they now print"* — `\label{sec:paradox}` = §3.1.
+- **Inventory name / label:** *"§\ref{sec:paradox} entire … the per-seed gains and the seed-42 values included wherever they now print"* — `\label{sec:paradox}`.
 - **Prints:** `paper/grounding_paradox.tex` **L508–551** (heading L508, label L509); printed **pp. 12–13**.
 - **Prints now:** `5608` of `8103`; ungrounded `2.043\pm0.040` → grounded `1.846\pm0.053`, *"a gain of `0.20` over three seeds"*; `MAE 1.85 vs 2.25`; the headline `+0.41`; at seed 42 `+0.18` (`1.803\to1.981`) against `+0.43` (`1.803\to2.232`); *"a share of `0.59` at seed 42"*, with `0.83` and `0.61` beside it; channel swap `+0.27`, to `2.08`; *"about twice what supervision gains (`+0.41` against `-0.20`)"*; per-seed gains `0.237`, `0.075`, `0.281`.
 - **Disposition:** **R**, except the three K-numbers that live inside it (rows 27–29), which keep their published value with the five-seed one beside.
@@ -100,7 +109,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Branch:** `1|2|3` for every value. **Branch 2** additionally rewrites the section's claim and (row 35) its heading.
 
 ### Row 3 — §3.2, which carries the slopes, the ranking contrast and the solute-blind comparison
-- **Inventory name / label:** *"§\ref{sec:decision}, which carries the regression slopes read off Fig.~\ref{fig:parity-lnx2}, the ranking contrast and the solute-blind comparison"* — `\label{sec:decision}` = §3.2.
+- **Inventory name / label:** *"§\ref{sec:decision}, which carries the regression slopes read off Fig.~\ref{fig:parity-lnx2}, the ranking contrast and the solute-blind comparison"* — `\label{sec:decision}`.
 - **Prints:** `paper/grounding_paradox.tex` **L567–658**; printed **pp. 13–15**.
 - **Prints now:** slopes `0.515` DirectGNN / `0.416` ungrounded / `0.528` grounded / `0.690` reference, *"all four at seed 42"*; `0.013`; `823` groups over `107` solutes; Spearman `0.592/0.546/0.598` → `0.365/0.369/0.410`, pooled `-0.197` `[-0.282,-0.117]`, largest seed-replicate difference `0.060`; nDCG@3 `-0.084` `[-0.124,-0.043]`; top-1 `-0.107` `[-0.192,-0.020]`; the selected solvent changes in `40` to `53\%` of groups; best-solvent hit rates `20.0/23.2/21.5\%` against `6.2/14.5/12.2\%`; affine recalibration removes `86\%`, `+0.431` `[+0.308,+0.553]` → `+0.060` `[+0.021,+0.101]`; out-of-sample `+1.09` `[+0.3,+2.2]`, `550` groups, `+0.28/+0.07/+0.04`; map decreases in `10` to `12\%` / `17` to `19\%`; `589` of `823`, ρ `-0.148` `[-0.218,-0.079]`, nDCG@3 `-0.068` `[-0.110,-0.026]`; twenty-four intervals, `[-0.0008,+0.0762]`; permutation floor `\rho=0.00\pm0.02`.
 - **Disposition:** **R**.
@@ -109,7 +118,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Branch:** `1|2|3`.
 
 ### Row 4 — §3.4's channel paragraph
-- **Inventory name / label:** *"§\ref{sec:notdecided}, which carries its channel paragraph"* — `\label{sec:notdecided}` = §3.4.
+- **Inventory name / label:** *"§\ref{sec:notdecided}, which carries its channel paragraph"* — `\label{sec:notdecided}`.
 - **Prints:** `paper/grounding_paradox.tex` **L688–692**; printed **p. 18**.
 - **Prints now:** *"the both-channel substitution the attribution would need covers only `\approx7` solutes"*.
 - **Disposition:** **R**.
@@ -118,7 +127,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Branch:** `1|2|3`.
 
 ### Row 5 — the five rows of Table S2 under *the two senses of grounding*
-- **Inventory name / label:** *"the five rows of Table~\ref{tab:claims} under \emph{the two senses of grounding}"* — `\label{tab:claims}` = Table S2 (part 1).
+- **Inventory name / label:** *"the five rows of Table~\ref{tab:claims} under \emph{the two senses of grounding}"* — `\label{tab:claims}` (part 1).
 - **Prints:** `paper/sections/SI.tex` **L647–673** (caption L649–651, label L652, block head **L660**, the five rows **L661, 663, 665, 667, 669**); printed **p. S-10**.
 - **Prints now:** row 1 `1.85\to2.25`; row 2 `1.80\to1.98` (own baseline `1.80\to2.23`), seed `42`; row 3 `share 0.59 on one seed`; row 4 `2.04\to1.85`, per-seed gains `0.237/0.075/0.281`, straddling `+0.18`; row 5 `823` groups / `107` solutes, ρ `-0.197` `[-0.282,-0.117]`, nDCG@3 `-0.084` `[-0.124,-0.043]`, top-1 `-0.107` `[-0.192,-0.020]`, `\max|\Delta\Phi|=4.2\times10^{-4}`, `86\%`, `589` of `823`. Set column: `labelled test rows ($5608$ of $8103$), 3 seeds`.
 - **Disposition:** **R** (rows 2 and 3 are the K-numbers of row 29 — published value kept, five-seed beside).
@@ -127,7 +136,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Branch:** `1|2|3` for the values; **branch 2** rewrites the supervision row (row 4 of the block) to record the operation as unresolved — the decision rule names it explicitly.
 
 ### Row 6 — the `+0.14` accuracy row of Table S2, part 3
-- **Inventory name / label:** *"the $+0.14$ of the accuracy row of Table~\ref{tab:claims-cont2}, the ledger's third part"* — `\label{tab:claims-cont2}` = Table S2 (part 3, `\ContinuedFloat`).
+- **Inventory name / label:** *"the $+0.14$ of the accuracy row of Table~\ref{tab:claims-cont2}, the ledger's third part"* — `\label{tab:claims-cont2}` (part 3, `\ContinuedFloat`).
 - **Prints:** `paper/sections/SI.tex` **L720–762** (caption L723–724, label L725, accuracy block head **L742**, the row **L743**); printed **p. S-12**.
 - **Prints now:** `Physics arm vs.\ DirectGNN accuracy ($\Delta$MAE) & labelled test rows ($5608$ of $8103$) & $+0.14$ between separately tuned pipelines`.
 - **Disposition:** **R** — the physics side only; DirectGNN is not retrained.
@@ -136,7 +145,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Branch:** `1|2|3`.
 
 ### Row 7 — the σ-grounding row of Table S25, entire
-- **Inventory name / label:** *"the $\sigma$-grounding row of Table~\ref{tab:runs} entire---its seed list, the mean$\pm$sd cell that carries it, and the $+0.41$ and $-0.20$ its third column prints"* — `\label{tab:runs}` = Table S25.
+- **Inventory name / label:** *"the $\sigma$-grounding row of Table~\ref{tab:runs} entire---its seed list, the mean$\pm$sd cell that carries it, and the $+0.41$ and $-0.20$ its third column prints"* — `\label{tab:runs}`.
 - **Prints:** `paper/sections/SI.tex` **L3122–3175** (the row at **L3134–3136**); printed **p. S-69**.
 - **Prints now:** `$42,43,44$, mean$\pm$sd on the $n{=}5608$ labelled test rows` | `Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2}, Table~\ref{tab:si-arms}, the $+0.41$ and $-0.20$ of \S\ref{sec:paradox}`.
 - **Disposition:** **R**, all three cells together *"so that no cell of that row states a seed policy the cell beside it contradicts"*.
@@ -164,7 +173,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 
 ### Row 10 — the block-1 grounded and σ-oracle rows of Tables 3 and S17
 - **Inventory name / label:** *"the block-1 grounded and $\sigma$-oracle rows, which print in Tables~\ref{tab:baselines} and~\ref{tab:si-baselines-full} off one source of record, so a regenerated value lands in both"*.
-- **Prints:** one source file, two floats. Source: `paper/si_tables/external_baselines_rows.tex` — block head **L43**, grounded row **L46**, σ-oracle row **L47**; and `paper/si_tables/external_baselines_rows_article.tex` (the article's cut) — block head **L109**, grounded row **L112**, σ-oracle row **L113**. Floats: `\label{tab:baselines}` = Table 3, `paper/grounding_paradox.tex` **L1314–1325** (caption L1316–1320, label L1321), printed **p. 28**; `\label{tab:si-baselines-full}` = Table S17, `paper/sections/SI.tex` **L2293–2340** (caption L2295–2299, label L2300), printed **p. S-43**.
+- **Prints:** one source file, two floats. Source: `paper/si_tables/external_baselines_rows.tex` — block head **L43**, grounded row **L46**, σ-oracle row **L47**; and `paper/si_tables/external_baselines_rows_article.tex` (the article's cut) — block head **L109**, grounded row **L112**, σ-oracle row **L113**. Floats: `\label{tab:baselines}` = Table 3, `paper/grounding_paradox.tex` **L1314–1325** (caption L1316–1320, label L1321), printed **p. 28**; `\label{tab:si-baselines-full}`, `paper/sections/SI.tex` **L2293–2340** (caption L2295–2299, label L2300), printed **p. S-43**.
 - **Prints now:** grounded row `$5608$ / $5440$ | $1.85\pm0.05$ | $1.39\pm0.19$ | $0.33\pm0.05$`; σ-oracle row `$5608$ / $5440$ | $2.25\pm0.02$ | $1.60\pm0.14$ | $-0.03\pm0.04$`. Block head (both files): *"three unless the row says otherwise"*.
 - **Disposition:** **R**, in both files. The DirectGNN, NRTL and predict-the-mean rows are **outside**.
 - **Artifact:** `results/external_baseline_comparison/{table_rows.csv,table_article.tex,summary.json}`.
@@ -172,7 +181,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Branch:** `1|2|3`.
 
 ### Row 11 — the clip sweep, the fuller sweep of §S4, and §3.7's readings off both
-- **Inventory name / label:** *"with the clip sweep in the note of the second, the fuller sweep of \S\ref{sec:si-baselines} and the readings \S\ref{sec:discussion} takes from both"* — `\label{sec:si-baselines}` = §S4, `\label{sec:discussion}` = §3.7.
+- **Inventory name / label:** *"with the clip sweep in the note of the second, the fuller sweep of \S\ref{sec:si-baselines} and the readings \S\ref{sec:discussion} takes from both"* — `\label{sec:si-baselines}`, `\label{sec:discussion}`.
 - **Prints:** clip note `paper/sections/SI.tex` **L2314–2331** (inside the `\tabnotes` block L2305–2339), printed **p. S-43**; §S4's reading paragraph **L2342–2378**, printed **pp. S-43 to S-44**; §3.7's paragraph `paper/grounding_paradox.tex` **L1270**, printed **p. 27**.
 - **Prints now:** clip note — *"$12$ to $195$ rows per seed for the three physics arms, none for the control"*, and without the clip the σ-oracle reads `0.26` lower, grounded `0.31`, NRTL `0.48`; sweep from `1-10^{-3}` to `1-10^{-10}`, control at `1.00` throughout. §S4 — control `1.00`, at one seed `0.97`; published leaders `0.83` to `0.99`, cycle `1.43` to `2.16`; physics arms `1.39` to `1.60`; scale reference `1.33`; seed-42 grounded `1.13` against `1.33`; `0.75` aleatoric; `0.61`/`0.45` random-pair; FastSolv `1.44` vs `1.02`, SolProp encoder `1.62` vs `0.64`; re-scored by-solute `0.84`. §3.7 — the same `1.00` / `0.83`–`0.99` / `1.43`–`2.16` / `1.39`–`1.60` sentence.
 - **Disposition:** **R** for the grounded and σ-oracle cells and every reading that quotes them. The FastSolv/SolProp/published values and the control are **outside**.
@@ -180,8 +189,8 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Command:** same as row 10 — the sweep is emitted by the same script. **The §S4 and §3.7 prose is hand-transcribed and no command produces it.**
 - **Branch:** `1|2|3`.
 
-### Row 12 — Table S3, and the unrounded means / per-seed values / arm orderings §S3 reads off it
-- **Inventory name / label:** *"Table~\ref{tab:si-arms} and the unrounded means, per-seed values and arm orderings \S\ref{sec:si-tables} reads off it"* — `\label{tab:si-arms}` = Table S3, `\label{sec:si-tables}` = §S3.
+### Row 12 — Table S3, and the unrounded means / per-seed values / arm orderings `sec:si-tables` reads off it
+- **Inventory name / label:** *"Table~\ref{tab:si-arms} and the unrounded means, per-seed values and arm orderings \S\ref{sec:si-tables} reads off it"* — `\label{tab:si-arms}` and `\label{sec:si-tables}` — resolve both through the .aux rather than trusting a number written here.
 - **Prints:** table `paper/sections/SI.tex` **L836–860** (caption L838–841, label L842, rows **`\input` at L857**, and since 2026-08-10 the rows themselves live in `paper/si_tables/si_arms_rows.tex`, generated — see **Command**), printed **p. S-14**; the reading paragraphs **L812–834** and the four-decimal list **L862–869**, printed **pp. S-13 to S-14**. (Line numbers re-resolved 2026-08-10 after the rewiring; the float still sets as Table S3 on p. S-14 and the SI is still 84 pp.)
 - **Prints now (table):** DirectGNN `1.70\pm0.03 / +0.42\pm0.03 / 1.749/1.674/1.684`; NRTL `1.79\pm0.07 / +0.34\pm0.03 / 1.734/1.758/1.894`; grounded `1.85\pm0.05 / +0.33\pm0.05 / 1.803/1.921/1.813`; `+SG comb.` `1.88\pm0.09 / +0.32\pm0.05 / 1.805/2.007/1.824`; ungrounded `2.04\pm0.04 / +0.19\pm0.01 / 2.040/1.996/2.093`; σ-oracle `2.25\pm0.02 / -0.03\pm0.04 / 2.232/2.281/2.242`.
   **Prints now (prose):** four-decimal means `1.7022, 1.7950, 1.8457, 1.8788, 2.0434, 2.2517`, population sd `0.033, 0.071, 0.053, 0.091, 0.040, 0.021`; NRTL rounding note `1.7953` / `1.794975` / `1.79`; `2.0434\to1.8457` (helps, `-0.20`), `1.8457\to2.2517` (hurts, `+0.41`); `0.1435` quoted as `+0.14` against rounded `1.85`/`1.70` differing by `0.15`; NRTL `1.734` against control `1.749` at seed 42; `1.8457\to1.8788`; `\sqrt{3/2}`; oracle-control block `1.98`, `2.08`, `1.803`, `1.921`, `+0.27` is `2.3` times the range, `+0.18` one and a half times it; `1.981-1.803=0.177` against `2.232-1.803=0.428`, share `0.59`; `0.118`, `\pm0.27`, `0.83` and `0.61`; `(0.406-0.177)/0.406=0.56`.
@@ -199,13 +208,13 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
   row-reproduction test passed on the truncated table. Arms absent from `--root` are now read from
   `--published-root` (default: the published tree) at that tree's own seeds, each row carrying its
   source tree and seed list into the header and the JSON; an arm in **neither** tree stops the
-  script. Because the `+0.14` §S3 quotes is then a difference between an arm in one tree and an arm
+  script. Because the `+0.14` `sec:si-tables` quotes is then a difference between an arm in one tree and an arm
   in the other, the two locks are compared key by key and a difference is fatal unless
   `--allow-lock-mismatch` stamps it on the header.
   `scripts/analysis/make_si_arms_table.py` writes `paper/si_tables/si_arms_rows.tex` (the column
   header, `\midrule` and every row, `\input` by `sections/SI.tex` between `\toprule` and
   `\bottomrule`) and `paper/si_tables/si_arms_table.json` (unrounded means, per-seed MAE and R²,
-  the two single-seed controls, and the derived quantities §S3's prose reads off the table:
+  the two single-seed controls, and the derived quantities `sec:si-tables`'s prose reads off the table:
   `-0.1977`, `+0.4059`, `0.1435`, the NRTL `1.7953`/`1.794975` pair, the per-seed gains, the
   seed-42 control block with the between-seed range and both shares). It imports
   `run_e5_comparison.py` and calls its `intersection_keys`/`_metrics_on_keys`, so the lock is that
@@ -215,11 +224,11 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
   `--check` writes nothing and exits non-zero on any drift; `tests/test_si_arms_table.py` runs that
   check against the tree the generated file's own `% ROOT:` header names, so the gate follows the
   re-run without being edited, and additionally gates the four-decimal list, the NRTL rounding note
-  and the two-senses sentence in §S3's prose, which are still hand-transcribed.
+  and the two-senses sentence in `sec:si-tables`'s prose, which are still hand-transcribed.
   *This was the second row that would have been missed, and it is the source of record for six of the
   derived numbers in §2.* What is still hand-work here: the caption (seed count, `n`), and every
   prose figure above that the JSON supplies but does not typeset.
-  **Corrected 2026-08-10 (second).** §S3's sensitivity on the `0.59` share — *"a spread the size of the
+  **Corrected 2026-08-10 (second).** `sec:si-tables`'s sensitivity on the `0.59` share — *"a spread the size of the
   learned arm's `0.118` would move the share by about `±0.27`"* — was recorded as not being a function
   of the artifacts and so not dischargeable by any generator. It is
   `learned_sigma_between_seed_range / evaluation_only_gap` = `0.11769350 / 0.42825139` = `0.2748 →
@@ -230,7 +239,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Branch:** `1|2|3`.
 
 ### Row 13 — Table S19, and §S6.1's ranking and recalibration readings
-- **Inventory name / label:** *"Table~\ref{tab:ranking} with the ranking and per-group recalibration readings \S\ref{sec:supporting} sets around it, whose two columns are the grounded checkpoint and its own $\sigma$-oracle re-evaluation and nothing else"* — `\label{tab:ranking}` = Table S19, `\label{sec:supporting}` = §S6.1.
+- **Inventory name / label:** *"Table~\ref{tab:ranking} with the ranking and per-group recalibration readings \S\ref{sec:supporting} sets around it, whose two columns are the grounded checkpoint and its own $\sigma$-oracle re-evaluation and nothing else"* — `\label{tab:ranking}`, `\label{sec:supporting}`.
 - **Prints:** `paper/sections/supporting.tex` **L65–107** (the float; caption L67–83, label L84, rows L92–103) and **L109–135** (the readings); printed **p. S-53** (table), **pp. S-52 to S-53** (readings).
 - **Prints now:** ρ `0.592/0.546/0.598` vs `0.365/0.369/0.410`, `-0.197` `[-0.282,-0.117]`; τ `0.518/0.469/0.521` vs `0.303/0.306/0.333`, `-0.188` `[-0.263,-0.118]`; nDCG@3 `0.796/0.748/0.792` vs `0.697/0.690/0.698`, `-0.084` `[-0.124,-0.043]`; top-1 `0.586/0.515/0.548` vs `0.447/0.428/0.454`, `-0.107` `[-0.192,-0.020]`; shuffled-profile floor margins `+0.120/+0.209/+0.264` vs `+0.039/+0.033/+0.079`; label floor `+0.240/+0.207/+0.273` vs `+0.038/+0.037/+0.080`; `24` vs `0` of 24; permutation floor `0.00\pm0.02`. Readings add `-0.028`, `[-0.005,+0.165]`, `[-0.0008,+0.0762]`, `16` groups / `807` groups `-0.212/-0.158/-0.172`, jackknife `[-0.239,-0.211]`, `[-0.190,-0.157]`, `[-0.203,-0.171]`, `|\Delta\rho|\le0.060`, DirectGNN-minus-learned `-0.056/+0.053/-0.040`.
 - **Disposition:** **R** — *both* columns are re-run arms.
@@ -238,7 +247,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Command:** `python results/e5_sigma_grounding/ranking/rank_final.py <outdir>` then `rank_final_floorci.py <outdir>`. Same hard-coded-`BASE`/`SEEDS` friction as row 3. The generic `scripts/analysis/run_ranking_eval.py --predictions-csv … --out-json …` computes the four metrics but **not** the floors, the clustered bootstrap or the recalibration, so it does not discharge this row alone.
 - **Branch:** `1|2|3`.
 
-### Row 14 — §S6.4 with Tables S21 and S22
+### Row 14 — `sec:map` with Tables S21 and S22
 - **Inventory name / label:** *"\S\ref{sec:map} with Tables~\ref{tab:solvent-map} and~\ref{tab:solute-map}, which resolve that same $+0.14$ along chemical axes and restate the two arm means it is taken from"*.
 - **Prints:** `paper/sections/chemistry-map.tex` (65 lines) — heading+label **L1**, body **L3–14**, Table S21 **L16–37** (caption L18–20, label L21), Table S22 **L41–63** (caption L43–47, label L48), closing paragraph **L65**; printed **p. S-57** (§ and Table S21), **p. S-58** (Table S22).
 - **Prints now:** prose `1.70\pm0.03` control, `1.85\pm0.05` grounded, `\Delta MAE = +0.14`, per-seed span `+0.05` to `+0.25`, rounded pair differing by `0.15`, amide `-0.22\pm0.11`. Table S21: Water `+0.52\pm0.35`, Carboxylic acid `+0.39\pm0.16`, Sulfoxide `+0.26\pm0.24`, Nitrile `+0.20\pm0.19` (**was `+0.21`; repaired 2026-08-10, see Command**), Alcohol `+0.15\pm0.14`, Aromatic `+0.03\pm0.63`, Hydrocarbon `+0.02\pm0.50`, Halogenated `-0.29\pm0.36`, Amide `-0.22\pm0.11`. Table S22: Oxygenated `+0.32`, Polyaromatic `+0.27`, Heterocycle `+0.17`, Halogenated-aromatic `\approx0`, Charged/salt `-0.04\pm0.19`, Tanimoto ≤0.3 `-0.04\pm0.18`, Tanimoto >0.8 `+0.51\pm0.09`.
@@ -312,7 +321,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
   `+0.1435` to `10^{-16}`.
 - **Branch:** `1|2|3`.
 
-### Row 15 — the row-class split of the substitution, §S1
+### Row 15 — the row-class split of the substitution, `sec:si-methods`
 - **Inventory name / label:** *"the row-class split of the substitution in \S\ref{sec:si-methods}, whose $-0.000$, $+0.431$ and $+0.006$ put the $+0.41$ on the solvent channel"*.
 - **Prints:** `paper/sections/SI.tex` **L214–229** (the paragraph *What the match rule reaches, and which side carries the effect*); printed **p. S-5**.
 - **Prints now:** `5571` (`99.3\%`; `64` of `70` solvents), `297` (`5.3\%`; `7` of `147` solutes), split `37` / `5274` / `297`; MAE differences `-0.000\pm0.000`, `+0.431\pm0.036`, `+0.006\pm0.025`; agreement to `5\times10^{-6}`.
@@ -330,7 +339,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Command:** **none for the enrolled part.** The factor of five is a hand division; `run_noise_floor_estimate.py` regenerates the floor side only, which does not move.
 - **Branch:** `1|2|3`.
 
-### Row 17 — the deposit-recovery paragraph of §S9
+### Row 17 — the deposit-recovery paragraph of `sec:si-repro`
 - **Inventory name / label:** *"the deposit-recovery paragraph below, whose before-and-after cells are that same $\sigma$-oracle row and move with it, the repair standing as a fact about the published deposit"*.
 - **Prints:** `paper/sections/SI.tex` **L3933–3949** (the paragraph; `All twenty-two pass` at **L3949**) and **L3951–3958** (the follow-on carrying the σ-oracle row's before/after cells); printed **p. S-78**.
 - **Prints now:** `295` of `8103` rows; `198{,}190` bytes of `5{,}213{,}388`; the summary block `n_{rows}=8103`, `n` labelled `=5608`, MAE `2.24199`, RMSE `2.96058`, `R^2=0.01768`, bias `1.00945`, matched subset `n=5571` MAE `2.24373`; `37` rows, `5\times10^{-6}`; **`All twenty-two pass`**; and the row move `2.26\pm0.02 \to 2.25\pm0.02` MAE, `1.57\pm0.17 \to 1.60\pm0.14` log₁₀S RMSE, `-0.05\pm0.02 \to -0.03\pm0.04` R².
@@ -358,7 +367,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Branch:** `1|2|3`.
 
 ### Row 20 — the compute ledger's *(three seeds)*
-- **Inventory name / label:** *"the compute ledger's \emph{(three seeds)}"*, in §S9.
+- **Inventory name / label:** *"the compute ledger's \emph{(three seeds)}"*, in `sec:si-repro`.
 - **Prints:** `paper/sections/SI.tex` **L3901–3922** (the parenthetical at **L3902**); printed **p. S-77**.
 - **Prints now:** *"The headline $\sigma$-grounding comparison (Fig.~\ref{fig:paradox}, Table~\ref{tab:si-arms}) is a full-corpus GPU run (three seeds)"*.
 - **Disposition:** **R**.
@@ -374,7 +383,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Branch:** `1|2|3`.
 - **Note on the address:** the inventory's own record places this paragraph at S-77 against the protocol at S-74. Resolved off today's build it is **S-78** against **S-74**. The `\ref`-and-paragraph-name address in the operative list resolves correctly; only the parenthetical page drifted.
 
-### Row 22 — §S1's substitution-perturbation paragraph, *over the three seeds*
+### Row 22 — `sec:si-methods`'s substitution-perturbation paragraph, *over the three seeds*
 - **Inventory name / label:** *"in \S\ref{sec:si-methods} the substitution-perturbation paragraph's \emph{over the three seeds}, whose three maxima are taken across the same arms"*.
 - **Prints:** `paper/sections/SI.tex` **L199–212**; printed **p. S-5**.
 - **Prints now:** `0.025` K against a median of `450` K; `4.6` J mol⁻¹ against `3.7\times10^{4}`; `\Phi` by at most `7\times10^{-4}` against a median magnitude of `4.7`; on unsubstituted rows `1.2\times10^{-4}` K, `0.045` J mol⁻¹, `6\times10^{-6}`.
@@ -383,8 +392,8 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 - **Command:** **none dedicated.** Hand pass over the per-row CSVs.
 - **Branch:** `1|2|3`.
 
-### Row 23 — the opening two paragraphs of §S3.2
-- **Inventory name / label:** *"the opening two paragraphs of \S\ref{sec:si-lock}, which are bookkeeping over these arms' deposits and move on two axes at once"* — narrowed on 2026-08-10 from "§S3.2 entire" to these two paragraphs.
+### Row 23 — the opening two paragraphs of `sec:si-lock`
+- **Inventory name / label:** *"the opening two paragraphs of \S\ref{sec:si-lock}, which are bookkeeping over these arms' deposits and move on two axes at once"* — narrowed on 2026-08-10 from "`sec:si-lock` entire" to these two paragraphs.
 - **Prints:** `paper/sections/SI.tex` **L782–787** (para 1) and **L789–802** (para 2); printed **p. S-9**.
 - **Prints now:** `5608`, `8103`, `2495`, *"decomposes with no remainder, identically at all three seeds"*, `0` duplicate-key rows; *"Audited over all **twenty-two** per-row prediction files … the five intersecting arms and the $\sigma$-oracle **at each of the three seeds**, plus the two co-adaptation controls and the two output-residual arms at seed $42$"*; *"All twenty-two are full length"*; *"(**Twenty-one** were full length as first deposited …)"*.
 - **Disposition:** **R** — the count `22 → 28` (see §2 item 11), the two seed statements, and the parenthetical, *"rewritten together"*, with the twin `All twenty-two pass` of row 17 moving as one number.
@@ -424,7 +433,7 @@ removed/rewritten in all three branches. **BRANCH**: which of the three branches
 
 ### Row 27 — the Staverman–Guggenheim contrast `1.8457 → 1.8788`
 - **Inventory name:** *"the Staverman--Guggenheim contrast $1.8457\to1.8788$, whose combinatorial arm is not retrained"*.
-- **Prints:** `paper/sections/SI.tex` **L831–834** (§S3, above Table S3); printed **p. S-13**. Restated in §3.1 as the sixth arm of Fig. 2 (`paper/grounding_paradox.tex` L523–526, p. 12) and as Table S3's `+SG comb.` row `1.88\pm0.09`.
+- **Prints:** `paper/sections/SI.tex` **L831–834** (`sec:si-tables`, above Table S3); printed **p. S-13**. Restated in §3.1 as the sixth arm of Fig. 2 (`paper/grounding_paradox.tex` L523–526, p. 12) and as Table S3's `+SG comb.` row `1.88\pm0.09`.
 - **Prints now:** `1.8457\to1.8788`.
 - **Disposition:** **K**. Left side is a re-run arm; right side (`grounded_b`) is not.
 - **Artifact:** published `results/e5_sigma_grounding/seed_*/grounded_b_predictions.csv`; new grounded mean from row 12.
@@ -468,7 +477,7 @@ All four are answered by the in-run certification, *"so each is rewritten to wha
 - **Command:** none. Hand edit.
 - **Branch:** `1|2|3`.
 
-### Row 32 — the grounding-stream provenance paragraph of §S9
+### Row 32 — the grounding-stream provenance paragraph of `sec:si-repro`
 - **Prints:** `paper/sections/SI.tex` **L3379–3440** (the uncertified clause at **L3433–3434**); printed **pp. S-73 to S-74**.
 - **Prints now:** `1319` of `1427`; `1425` rows, `106` (`99` train, `7` validation), `2702` scaffolds; `91` / `65` / `64` / `26`; `2634` and `2467` distinct solutes; `5608` / `147`; `7` and `8`, `297` and `351`, `5.3\%` and `6.3\%`; `57` remaining leaked molecules; *"it stays uncertified against the scaffold split until the leak-free re-run"*.
 - **Command:** `certify_leakfree_rerun.py`. Prose hand-edited. The *published* build's leak counts stand as a fact about that build.
@@ -558,7 +567,7 @@ Seed 42: `O₄₂ − G₄₂ = 2.232 − 1.803 = 0.429 → +0.43`.
 
 **3. The physics penalty, printed `+0.14`.**
 `ΔMAE = G − D = 1.8457 − 1.7022 = 0.1435 → +0.14`. The rounded cells `1.85` and `1.70` differ by
-`0.15`; the paper prints `+0.14` and says why in three places (Table S3's prose, §S6.4's footnote,
+`0.15`; the paper prints `+0.14` and says why in three places (Table S3's prose, `sec:map`'s footnote,
 §3.7). **Only `G` moves.**
 
 **4. The `0.59` share.**
@@ -648,7 +657,7 @@ P0 fetch: seed_*/ per-row CSVs, checkpoints/e5_leakfree/, sigma_train.csv
                           │
                           └─► K. chemistry map (run_e5_chemistry_map.py; 17/17 — see §5) row 14
                                    └─► needs row 6's +0.14 to be settled first, since
-                                       §S6.4 restates the two arm means it is taken from
+                                       `sec:map` restates the two arm means it is taken from
 
 then, and only then:
    L. tab:claims / tab:claims-cont2 / tab:runs cells ........... rows 5, 6, 7
@@ -764,7 +773,7 @@ an assertion enrolled and its twin not. Verify by grep that each of these pairs 
 `twenty-two` (rows 17 and 23); `at every seed` (rows 24 and 25); `three seeds` (rows 19, 20, 21, 22, and
 the TOC graphic's second line — see WATCH); the block-1 rows of `tab:baselines` and
 `tab:si-baselines-full` (row 10, one source file, two floats); the `+0.41` in §3.1, in `tab:runs`'s third
-column and in §3.3's freeze clause (rows 2, 7, 18); the `+0.14` in `tab:claims-cont2`, in §S6.4's prose,
+column and in §3.3's freeze clause (rows 2, 7, 18); the `+0.14` in `tab:claims-cont2`, in `sec:map`'s prose,
 in §3.7 and in Table S3's rounding sentence (rows 6, 14, 11, 12).
 
 ---
@@ -773,7 +782,7 @@ in §3.7 and in Table S3's rounding sentence (rows 6, 14, 11, 12).
 
 This is the real output of the sheet. Ordered worst first.
 
-**(1) §S6.4 and Tables S21/S22 — the chemistry maps (row 14). ~~NO ARTIFACT AND NO COMMAND.~~
+**(1) `sec:map` and Tables S21/S22 — the chemistry maps (row 14). ~~NO ARTIFACT AND NO COMMAND.~~
 ~~DISCHARGED 2026-08-10 EXCEPT ONE CELL.~~ FULLY DISCHARGED 2026-08-10.** All seventeen printed values
 used to occur **only** in `paper/sections/chemistry-map.tex`; a grep of the whole repository returned
 that file and nothing else. `scripts/analysis/run_e5_chemistry_map.py` now bins the e5 per-row
@@ -812,7 +821,7 @@ the script must be edited first.
 
 **(7) Every enrolled prose passage — NO COMMAND.** §3.1, §3.2, §3.4, §S4's reading paragraph, §3.7's,
 §2.2's noise-floor and disclosure paragraphs, §2.4's row-set paragraph, the compute ledger, the
-seeds-and-determinism paragraph, §S1's two paragraphs, §S3.2's two paragraphs, the deposit-recovery
+seeds-and-determinism paragraph, `sec:si-methods`'s two paragraphs, `sec:si-lock`'s two paragraphs, the deposit-recovery
 paragraph, §3.3's freeze clause, limitation (xii), §1's sentence, the Conclusions' two sentences, the
 abstract. Twenty-one of the thirty-six rows are prose, and every one is a hand transcription from a JSON.
 `wc_abstract.py` is the only mechanical gate anywhere in that set, and it checks a word count, not a value.
