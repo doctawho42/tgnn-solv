@@ -53,7 +53,10 @@
 % article states Lemma 1 (the closure/insufficiency decomposition) in its own text,
 % so an unprefixed "Lemma 2" in this document would read as the article's next lemma
 % instead of as this document's first. With the renaming the two sequences are
-% Lemma 1 in the article and Lemmas S1, S2, Theorem S1, Proposition S1 here.
+% Lemma 1 and Proposition 1 in the article, and Lemmas S1, S2 and Theorem S1 here.
+% 2026-08-10: this document states NO proposition any more -- Proposition 1's statement went back
+% to the article's Sec. 2.1.2 and only its proof stayed -- so \theproposition below currently
+% renames nothing. It is kept because the next proposition stated here must be S1 and not 2.
 % ---------------------------------------------------------------------
 \renewcommand{\thesection}{S\arabic{section}}
 \renewcommand{\thesubsection}{S\arabic{section}.\arabic{subsection}}
@@ -69,8 +72,8 @@
 % is the article's own title verbatim -- which is also how the two are matched up at
 % deposit. Keep the two \title arguments identical; if the article is retitled,
 % retitle this file in the same pass.
-\title{Substituting Reference $\sigma$-Profiles Degrades Solubility Prediction; on Activity Data,
-Bounding a Deployed COSMO-SAC Against Its Inputs Returns a Map, Not a Verdict}
+\title{Substituting Reference $\sigma$-Profiles for Learned Ones Degrades COSMO-SAC Solubility
+Prediction}
 
 \author{N.~L. Polomoshnov}
 \affiliation[MSU]{Faculty of Bioengineering and Bioinformatics, Lomonosov Moscow State
@@ -102,10 +105,10 @@ University, Moscow, Russia}
 % external block, the rank of the activity map, the multiplicity null's two biases, the
 % reason the pre-declared cross-fitted estimator does not headline, the closure's own-axis
 % check, the pKa fold design, and limitations (ix), (x) and (xiii).  A promise a document
-% does not keep is worse than no promise, so the sentence now says what is true and the
-% list below is the reader's index of it.  EVERY ITEM LEAVES THIS LIST THE DAY THE
+% does not keep is worse than no promise, so the sentence said what was true and the list
+% below was the reader's index of it.  EVERY ITEM LEAVES THIS LIST THE DAY THE
 % ARTICLE PRINTS ITS CLAIM, SET, UNCERTAINTY AND SCOPE -- not the day a pointer to it is
-% made prettier.  Do not restore the unqualified form while any item remains.
+% made prettier.
 %
 % THE LIST WAS AUDITED AGAINST THE COMPILED ARTICLE, 2026-08-10, and it was wrong in both
 % directions.  FIVE ITEMS LEFT IT:
@@ -123,16 +126,54 @@ University, Moscow, Russia}
 %     and the one it did not anticipate; and gives the folds as five within each series, pooled
 %     by n, with the argument that no fold can leak into a regressor whose only input is the
 %     constant within a series.
-% ONE ITEM JOINED IT: the crystal-grounding null.  The article states, flatly and with no
-% uncertainty of any kind, that the attempt "tested nothing" and gives the pool's 97.76%
-% redundancy for it.  What qualifies that -- that where the pool was new the crystal head DID
-% move, by -12.233 K with a 95% CI of [-18.25, -6.27] on the 345 net-new molecules against
-% -0.371 K [-0.81, +0.05] on the 15,082 duplicated ones, and that the downstream ln x2 gap
-% clustered by solute is +0.088 with an interval crossing zero -- prints in \S\ref{sec:e2} and
-% nowhere in the article.  It is the one entry here of a different kind from the rest: the
-% others are quantities the article does not print, this is one it prints unqualified.
-% THE STANDING INSTRUCTION.  Re-read this list against the compiled article whenever a claim
-% moves between the two documents, in the same pass.  Both errors above are the cost of not.
+% ONE ITEM JOINED IT: the crystal-grounding null.
+%
+% AND ON 2026-08-10, LATER THE SAME DAY, THE LIST EMPTIED OF ITS NON-OPTIONAL ENTRIES -- which is
+% the point of the referee item that emptied it ("all three referees returned: the Supporting
+% Information is not optional; this is what closes it").  The four were discharged INTO THE ARTICLE,
+% each into the sentence that rested on it, not paraphrased and not summarised:
+%   * the multiplicity null's two biases -> \S\ref{sec:broad}, immediately after the null's own
+%     frequencies, with the 62-against-50 and 0.56-against-0.70 halves of bias (1) and the
+%     single direction bias (2) runs in.  What stays here is the draw-by-draw record and why the
+%     exactly matched null cannot be built.
+%   * limitation (ix) -> the black-box probe paragraph, with the 13 solutes that cannot be
+%     enlarged and the corpus's r = +0.24 slope carrying -dHfus/R.
+%   * limitation (x)  -> \S\ref{sec:notdecided}, with G_gap unmeasured under any modern closure on
+%     either axis and what each of the two settling runs needs.
+%   * limitation (xiii) -> the Data availability statement, where the deposit is described.
+%   * the crystal-grounding null -> \S\ref{sec:discussion}, whose sentence already carried the two
+%     T_m intervals after the morning's pass and now carries the downstream +0.088 [-0.127,+0.284]
+%     as well.
+% ONE ENTRY REMAINS AND IT IS NOT OF THAT KIND: the loss-simplification ablation, which no article
+% sentence rests on.  So this document is now, for every claim the article makes, the evidence
+% behind a claim and not a part of the claim -- and the paragraph below says exactly that.
+%
+% A FIFTH SENTENCE FAILED, AND THE PROMISE IS NOT A PROMISE ANY MORE -- 2026-08-10, later still.
+% The pass above replaced the qualified form with the UNQUALIFIED "Every claim the article makes is
+% stated there in full", on the strength of a list that had just been audited.  An adversarial read
+% of the compiled page found the sentence false the same day: \S\ref{sec:discussion}'s temperature-
+% extrapolation claim named no split, no n, no magnitude and no uncertainty, all four of which
+% printed only in \S\ref{sec:supporting}.  That is twice in one day that a universal statement this
+% document makes about itself has been wrong, which is the defect the whole apparatus exists to
+% catch.
+% BOTH HALVES WERE DONE, AND DELIBERATELY.  (1) The material was brought across -- the article now
+% prints the 309.75/330 K cut, the 1751 shared pairs, the 3343 test rows, 0.37 against 1.29 in ln x2
+% and the fact that neither carries an interval -- because the standing instruction above is that an
+% item leaves the list the day the article prints its claim, set, uncertainty and scope, and the
+% cost was ten lines.  (2) The sentence below was rewritten anyway, because an unqualified universal
+% is not repaired by being made true today: it is unfalsifiable to a reader, who cannot check it
+% without checking every claim, and it silently converts the next drift into a lie.  What replaces
+% it states the DIVISION OF LABOUR and its consequence -- a claim of the article that prints its set,
+% uncertainty or scope only here is an ERROR, not a design -- which is falsifiable by a single
+% counterexample and stays true whether or not one is found.  A four-item exception list was NOT
+% restored: the list is empty of that kind of entry, and an empty list of exceptions is the same
+% universal claim written longhand.
+% DO NOT restore "Every claim the article makes is stated there in full", and do not add a count of
+% how many sentences failed the audit: a reader cannot check that number either.
+% THE STANDING INSTRUCTION IS UNCHANGED.  Re-read this list against the compiled article whenever a
+% claim moves between the two documents, in the same pass; and if an article sentence is ever again
+% left resting on a quantity that prints only here, the qualified form comes back with that item
+% named.  Both errors above are the cost of not.
 \noindent
 This document is the Supporting Information for the article named above. Its own
 sections, tables, figures, equations and lemmas carry an S---\S\ref{sec:si-methods},
@@ -140,20 +181,18 @@ Table~\ref{tab:si-arms}, Fig.~\ref{fig:arch}, Eq.~\eqref{eq:cosmo},
 Lemma~\ref{prop:ident}---and a reference without one, such as \S\ref{sec:measure} or
 Table~\ref{tab:baselines}, is to the article, which defines the terminology used here---including
 IDAC, infinite-dilution activity coefficient---in the text and indexes it in
-Table~\ref{tab:notation}. Nearly every result here is one
-the article states, and for those the claim, the set it is measured on, its uncertainty and its
-scope are in the article's own text, while what this document adds is the proof, the per-row table,
-the robustness grid, the control and the negative behind each. The rest are these, listed so that
-nobody has to find them by being surprised. One is a result the article does not draw on: the
-loss-simplification ablation of \S\ref{sec:si-methods}, a pre-registered check that the paradox is
-not an artifact of the objective, whose numbers appear in this document alone and which contradicts
-nothing the article states. Two are quantities an article sentence rests on and does not itself
-print: the two biases of the chemistry-blind multiplicity null (\S\ref{sec:si-null}), and
-limitations~(ix), (x) and~(xiii) (\S\ref{sec:si-limitations}). One is a result the article prints
-without its qualification: the crystal-grounding attempt, which the article records as having
-tested nothing, its pool being melting points the model already held---where that pool was new the
-crystal head moved, and the downstream solubility gap has an interval crossing zero
-(\S\ref{sec:e2}). For those four, this document is not optional.
+Table~\ref{tab:notation}. What this document adds to the article is evidence and not claim: the
+proof, the per-row table, the robustness grid, the control and the negative behind a statement the
+article has already made in its own text, with the set it is measured on, its uncertainty and its
+scope. That division is a rule the two documents are held to and not a property either can certify
+of itself. It was audited claim by claim against the compiled article, and the sentences that failed
+it were repaired by moving the missing quantity into the article rather than by qualifying the
+sentence here; so a claim of the article whose set, uncertainty or scope prints only in this
+document is an error in this submission and not a division of labour between the two.
+One result here is not a claim of the article at all, and is named so that nobody finds it by
+being surprised: the loss-simplification ablation of \S\ref{sec:si-methods}, a pre-registered check
+that the paradox is not an artifact of the objective, whose numbers appear in this document alone,
+which contradicts nothing the article states and which no article sentence rests on.
 
 % ---------------------------------------------------------------------
 % NAVIGATION, added 2026-08-10.  Eighty-odd pages, eleven sections, thirty-one labelled floats, and

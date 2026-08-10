@@ -196,14 +196,31 @@ One coupling is worth stating rather than glossing, because ``only the profile c
 quite exact. The bounded correction reads a compact summary of the solver's inputs which includes
 the closure's own $\tau$, so a substituted profile perturbs the correction, and through it the
 corrected crystal parameters the solver receives. The perturbation is small. Over the three seeds,
-on the rows where the substitution applied, it moves $\Tm$ by at most $0.025$\,K against a median of
+on the $8066$ of the $8103$ test rows where the substitution applied, it moves $\Tm$ by at most
+$0.025$\,K against a median of
 $450$\,K, $\dHfus$ by at most $4.6$\,J\,mol$^{-1}$ against a median of $3.5\times10^{4}$, and
 $\Phi$---the quantity that actually enters the SLE---by at most $7\times10^{-4}$ against a median
-magnitude of $4.5$. On the rows where the substitution did not apply the same quantities still move,
+magnitude of $4.5$. Each maximum is the largest of the three per-seed maxima---for $\Phi$ those are
+$3.7$, $7.1$ and $2.1$ in units of $10^{-4}$, the worst at seed $43$---and each median is over those
+rows with the three seeds pooled; the per-seed medians of $|\Phi|$ are $4.72$, $4.36$ and $4.53$, so
+a single-seed reading of this quantity is not the three-seed one, and \S\ref{sec:eval} prints the
+three-seed one.
+On the rows where the substitution did not apply the same quantities still move,
 by $1.2\times10^{-4}$\,K, $0.045$\,J\,mol$^{-1}$ and $6\times10^{-6}$, which is the residue of
 forwarding one checkpoint twice on a GPU and sets the floor these figures should be read against. So
 $\Phi$ is not bit-identical between the two evaluations, and the fourth decimal of a per-row
 $\Phi$ comparison between them is not meaningful; nothing at the scale of the $+0.41$ turns on it.
+% REFEREE ITEM 3, 2026-08-10.  The $4.2\times10^{-4}$ of \S\ref{sec:decision}, Table~\ref{tab:claims}
+% and \S\ref{sec:supporting} is THIS quantity on a SUBSET of these rows, not a competing value for
+% it; the sentence below says so at the point both numbers are in view, and every other place either
+% number prints now names its row set.  Source: rank_final.json integrity.phi_max_abs_diff_vs_grounded_a,
+% oracle vs grounded_a, = 2.81/4.20/1.52 x 10^{-4} at seeds 42/43/44 on the 5608-row lock.
+Restricted to the $5608$ labelled test rows that every solubility figure in the article is scored on,
+the same worst-seed maximum is $4.2\times10^{-4}$: that is the figure \S\ref{sec:decision},
+Table~\ref{tab:claims} and \S\ref{sec:supporting} print, and it is smaller than the $7\times10^{-4}$
+above because those rows are a subset of the $8066$, not because a different quantity is being
+measured. The separately trained arms differ over the same $5608$ rows by $4.4$ to $5.9$ in $\Phi$,
+four orders of magnitude more.
 
 All three oracle applications---evaluation-only, the training-time injection, and the
 channel swap---use the same table and the same both-sides rule; the two training-time arms differ
@@ -325,6 +342,55 @@ $\lnx$ MAE $1.87$, within $0.1$ of the full-loss base), ruling out a degenerate-
 \section{Proofs}
 \label{sec:si-proofs}
 
+% THE PROOF OF THE ARTICLE'S LEMMA 1 ARRIVED HERE ON 2026-08-10 (referee 3).  It stood in the
+% article's Computational Methods section, inline, and was the only one of this submission's five
+% proofs outside this section.  The article keeps the STATEMENT, the measurability condition and the
+% three settings of z* -- the first because it is the result and the other two because they are
+% conditions of use -- and the algebra is here.  Its label prop:decomp is defined in the ARTICLE and
+% is referred to here, which is why the header below is a \ref and not a \label.
+% It comes FIRST in this section because it is the article's first numbered result and the three
+% lemmas below it read it: prop:ident is cited from the same page of the article, and thm:gap's
+% part (d) applies this identity by name.
+%
+% THE 1.57pt OVERFULL HBOX in this document is one of these proof headers, which are set as a single
+% unbreakable label box (see the \renewenvironment{proof} in preamble.tex, which already moves the
+% head out of the label for exactly this reason).  This header was measured against the column
+% before it was written and does not add a second: keep it at or below the width of "Proof of
+% Theorem~S1 (grounding-gap sandwich)" if it is ever reworded.
+
+\begin{proof}[Proof of Lemma~\ref{prop:decomp} (closure--insufficiency decomposition)]
+\emph{(a) The identity, and the cross-term condition.} $g(\zstar)$ is $\sigma(\zstar)$-measurable by
+construction, since $\zstar$ is the closure's whole argument. Split the residual as
+$m-g(\zstar)=[m-\Ex(m\mid\zstar)]+[\Ex(m\mid\zstar)-g(\zstar)]$, square and take expectations; the
+squared terms are $\Binsuf$ and $\Bclos$, and the cross term vanishes by the tower rule,
+$\Ex[(m-\Ex(m\mid\zstar))(\Ex(m\mid\zstar)-g(\zstar))]
+=\Ex[(\Ex(m\mid\zstar)-g(\zstar))\,\Ex(m-\Ex(m\mid\zstar)\mid\zstar)]=0$, because the second factor
+is $\sigma(\zstar)$-measurable. \textbf{That measurability is the condition, and it fails if any
+argument of $g$ is left out of the conditioning variable}: with $g=g(\zstar,T)$ and $T$ excluded,
+the cross term need not vanish and the binning in~(c) is no longer a coarsening of the conditioning
+$\sigma$-algebra, so neither the identity nor the upper bound survives. Where $g$ reads a
+temperature---the broad IDAC set of \S\ref{sec:broad}, $\dim=103$---we accordingly take
+$\zstar=(\text{profile pair},T)$; on the VT-2005-matched set every row sits at $298$\,K and the two
+readings coincide. The same rule fixes $\zstar$ in the second domain: the Hammett closure of
+\S\ref{sec:pka-main} reads a per-series constant pair as well as the substituent constant, so there
+$\zstar=(s,\hammett^\star)$ and the conditioning is on both.
+\emph{(b) Jensen lower bound.} With $\Delta(\zstar)=\Ex(m\mid\zstar)-g(\zstar)$,
+$\Bclos=\Ex[\Delta^2]\ge(\Ex[\Delta])^2=(\Ex[m]-\Ex[g])^2$, using $\Ex[\Ex(m\mid\zstar)]=\Ex[m]$.
+It needs \emph{no} smoothness assumption; its one requirement is that $m$ and $g$ share the $\lngi$
+reference state, which the closure validation of \S\ref{sec:model} establishes.
+\emph{(c) The binning bound, a law-of-total-variance upper bound.} For any binning
+$B=\mathrm{bin}(g(\zstar))$ one has
+$\sigma(B)\subseteq\sigma(\zstar)$, and conditioning on a coarser $\sigma$-algebra cannot reduce
+expected conditional variance: $\Ex[\Var(m\mid B)]\ge\Ex[\Var(m\mid\zstar)]=\Binsuf$.
+\emph{(d) The estimand is convention-free; the bound is not.}
+$\Binsuf=\Ex[\Var(m\mid\zstar)]$ is a functional of the law of $(m,\zstar)$ alone and does not
+involve $g$, so it is identical across closure conventions and any $\mathrm{MSE}(g_1)-\mathrm{MSE}(g_2)$
+is entirely $\Bclos(g_1)-\Bclos(g_2)$. The bound of~(c) is not convention-independent, and no
+contradiction arises: two conventions coarsen the same $\sigma(\zstar)$ along two different
+statistics, giving two valid upper bounds on one quantity, of which the minimum is again valid but
+is biased low in finite samples; it is reported, and no margin below is read from it.
+\end{proof}
+
 \begin{lemma}[Structural non-identifiability of the SLE split]\label{prop:ident}
 Consider the infinite-dilution SLE observable $\mu(T)=-\Phicry(T)-\lngi(T)$ with
 $\Delta C_p=0$, so that $\Phicry(T)=(\dHfus/\Rgas)(1/T-1/\Tm)$ is affine in $u=1/T$,
@@ -397,14 +463,18 @@ $\Pi_{\mathcal H}v\neq v$ and $\mathcal I_{\mathrm{eff}}>0$, with a finite
 Cram\'er--Rao bound.
 \end{proof}
 
-% LEMMA 1'S PROOF IS IN THE ARTICLE, not here (2026-08-02, editorial item A3). All three referees
-% reported that the article's central identity could not be checked without this document, so the
-% proof -- all four parts, including the cross-term measurability condition and the
-% convention-independence of the estimand -- moved into \S\ref{sec:decomp}, where the identity is
-% stated. It is NOT duplicated here: a proof printed twice drifts. Table~\ref{tab:decomp}'s two
-% bounds per set are part (d) of that proof in the article.
-\noindent Lemma~\ref{prop:decomp}, the identity this instrument rests on, is stated and proved in
-the article at \S\ref{sec:decomp}: the cross term vanishes because $g(\zstar)$ is
+% LEMMA 1 IS STATED IN THE ARTICLE AND PROVED AT THE HEAD OF THIS SECTION.  History: the proof was
+% here until 2026-08-02, moved into \S\ref{sec:decomp} by editorial item A3 (three referees reported
+% that the article's central identity could not be checked without this document), and came back on
+% 2026-08-10 on referee 3's trade against referee 1's Proposition 1 request.  What answers the A3
+% finding now is that the article carries the STATEMENT in four lettered parts, together with the
+% cross-term measurability condition and the three settings of z* -- the two parts of the proof that
+% are conditions of USE -- so the identity can still be checked there.
+% This paragraph is the recapitulation a reader of THIS document needs where it is used, and it is
+% not a second statement of the lemma: it has no numbered environment and no part labels.
+% Table~\ref{tab:decomp}'s two bounds per set are part (d).
+\noindent Lemma~\ref{prop:decomp}, the identity this instrument rests on, is stated in
+the article at \S\ref{sec:decomp} and proved at the head of this section: the cross term vanishes because $g(\zstar)$ is
 $\sigma(\zstar)$-measurable when $\zstar$ is the closure's whole argument, the Jensen bound needs no
 smoothness, the binning bound needs only that a binning of $g(\zstar)$ coarsens
 $\sigma(\zstar)$, and $\Binsuf$ is a functional of the law of $(m,\zstar)$ alone and therefore the
@@ -465,31 +535,24 @@ $R_{\mathrm{e2e}}=0$ while $R_{\mathrm{orc}}=1$, hence $\Ggap=1>0=\Bclos$. Thus 
 does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 \end{proof}
 
-% PROPOSITION 1 IS STATED AND PROVED HERE (moved out of the article on 2026-08-07, page-reduction
-% pass). Its label is therefore defined in THIS document and must NOT also be defined in the
-% article -- the two documents share one label namespace through xr-hyper, and
-% check_split_refs.py fails on a name defined in both. What the article keeps at \S\ref{sec:tax}
-% is the penalty decomposition, the rule in words and its three scope sentences.
-\noindent The article states the sign rule in words at \S\ref{sec:tax}, against the
-asymptote-plus-variance form of the physics penalty
-$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ it is written
-against, and $\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$. It is stated and proved here.
-% PROPOSITION 1'S STATEMENT MOVED HERE FROM THE ARTICLE'S Sec. 2.1.2 ON 2026-08-07 (page-reduction
-% pass), so that it stands beside the proof that was already here.  The article keeps the penalty
-% decomposition, the rule in words and its three scope sentences, and refers to this statement by
-% label.  Do not restate the rule's scope here: it is the article's, at \S\ref{sec:tax}.
-\begin{proposition}[Sign of the physics penalty]\label{prop:tax}
-Write $\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
-$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$ with
-$V(n)\downarrow0$, so that the physics penalty at budget $n$ is
+% PROPOSITION 1 IS STATED IN THE ARTICLE (\S\ref{sec:tax}) AND PROVED HERE, from 2026-08-10.
+% History: it was stated in the article until 2026-08-07, moved here whole by the page-reduction
+% pass, and its STATEMENT was moved back by referee 1's must-fix on 2026-08-10 -- the article was
+% left citing the proposition as an a priori prediction in three sections while printing only
+% T(n) = Delta_infty - D(n), seven of whose symbols appeared nowhere a reader could reach.  The
+% proof did not go back with it, on referee 3's trade: a reader needs the statement and does not
+% need the algebra, and the algebra's place is the document the other four proofs are in.
+% ITS LABEL IS NOW DEFINED IN THE ARTICLE AND MUST NOT ALSO BE DEFINED HERE -- the two documents
+% share one label namespace through xr-hyper, and check_split_refs.py fails on a name defined in
+% both.  The proof header below refers to it with \ref and declares nothing.
+% Do not restate the proposition here to save the reader a page turn: two statements of one
+% proposition in one submission is how the two drift apart.
+\noindent Proposition~\ref{prop:tax} is stated in the article at \S\ref{sec:tax}, in the
+asymptote-plus-variance form
 $\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ with
-$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$. Then
-(i)~$\mathcal{T}(n)<0$ (physics helps) iff
-$V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)>\Delta_\infty$: the variance a constrained prior saves
-must exceed its asymptotic bias. (ii)~If $\Delta_\infty>0$ and the variance gap vanishes
-($V_{\mathrm{direct}}-V_{\mathrm{phys}}\to0$), there is a critical budget $n^\star$ beyond which
-$\mathcal{T}(n)>0$ for all $n>n^\star$.
-\end{proposition}
+$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$, together with the scope the rule is
+read under. It is proved here, with the limiting refinement~(iii) that the statement there defers
+to this section.
 \begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the physics penalty)]
 \sloppy\relpenalty=0 \binoppenalty=0
 Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$ and
@@ -694,7 +757,7 @@ Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($56
 \addlinespace[3pt]
 Training-time $\sigma$ supervision \emph{helps} (MAE) & labelled test rows, 3 seeds & $2.04\to1.85$; the per-seed values do not overlap; per-seed gains $0.237/0.075/0.281$ straddle the co-adapted arm's $+0.18$, so the two operations are not ordered by magnitude---and the only contrast here a $\sigma$-stream leak could inflate, the ungrounded arm carrying no stream (\S\ref{sec:data}) \\
 \addlinespace[3pt]
-The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 3 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ at the worst seed---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $589$ of the $823$ groups in both arms at all three seeds. The substitution falls on the solvent channel \\
+The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 3 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ over the labelled rows of this row's own set at the worst seed, the same quantity over the full test set, labelled rows and unlabelled together, being larger (\S\ref{sec:si-methods})---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $589$ of the $823$ groups in both arms at all three seeds. The substitution falls on the solvent channel \\
 \bottomrule
 \end{tabular}
 }
@@ -942,12 +1005,24 @@ channel swap is certified to have trained on the same $\sigma$-stream build as t
 comparator both are read against, and the file times exclude no history in either direction
 (\S\ref{sec:si-repro}). Both are penalties of uncertified stream provenance. How large a share of the gap co-adaptation carries off can
 be read only on the seed the two arms share: at seed $42$ the injection costs $1.981-1.803=0.177$
-where the evaluation-only substitution costs $2.232-1.803=0.428$, a share of $0.59$. We report that
-share as a description of seed $42$ and not as a magnitude, because it is not resolved. Its
-numerator was measured once, so the injected arm's own between-seed spread is unmeasured, and a
-spread the size of the learned arm's $0.118$ would move the share by about $\pm0.27$; holding the
-injected arm at $1.981$ and reading it against the seed-$43$ and seed-$44$ learned baselines instead
-gives $0.83$ and $0.61$. What survives that latitude is the sign---at the matched seed part of the
+where the evaluation-only substitution costs $2.232-1.803=0.428$, so co-adaptation carries off
+$0.428-0.177=0.251$ of that gap, a share of $0.59$. We report that
+% REFEREE ITEM 4, 2026-08-10.  This paragraph said "its numerator was measured once" and the article
+% said "the same numerator", and neither is what the three readings hold fixed.  The quantity
+% measured once is the INJECTED arm, 1.9806 unrounded; at seeds 43 and 44 the learned baseline AND
+% the substituted arm both take their own values, so the numerator -- substituted minus injected --
+% moves with the substituted arm.  The three shares 0.59/0.83/0.61 were and remain correct.
+% All six inputs are the per-seed columns of Table~\ref{tab:si-arms} / si_tables/si_arms_table.json.
+share as a description of seed $42$ and not as a magnitude, because it is not resolved. The injected
+arm is the quantity that was measured once, so its own between-seed spread is unmeasured, and a
+spread the size of the learned arm's $0.118$ would move the share by about $\pm0.27$; holding that
+arm at its single value $1.981$ and recomputing at seeds $43$ and $44$, where the learned baseline
+and the substituted arm both move, gives $0.83$ and $0.61$. It is that one arm's MAE that is fixed
+across the three readings and not the numerator, which is $0.251$, $0.301$ and $0.261$ over
+denominators $0.428$, $0.360$ and $0.429$ (from the unrounded arm values, the injected arm being
+$1.9806$; off the three-decimal columns of Table~\ref{tab:si-arms} the seed-$43$ numerator reads
+$0.300$, and the share is $0.83$ either way).
+What survives that latitude is the sign---at the matched seed part of the
 evaluation-only gap does go with co-adaptation, which is what makes the co-adapted arm the one free
 of the test-time swap---and the sign, not the share, is what the claim rests on. The ratio
 $(0.406-0.177)/0.406=0.56$ sets the one-seed injection against the three-seed mean gap; it is a
@@ -2825,7 +2900,7 @@ corrected data---while the recovered crystal grounding differs by hundreds of ke
 the same solubility, which is Lemma~\ref{prop:ident} made concrete.
 \paragraph{Crystal grounding on physical labels.} When the crystal head is supervised
 on measured melting points it predicts $\Tm$ to $45$\,K MAE, about $4\times$ better than
-a Joback group-contribution reference---so the flat downstream result of
+a Joback group-contribution reference---so the unresolved downstream result of
 \S\ref{sec:e2} is not an inability to learn crystal properties. That experiment's
 external pool was $97.76\%$ melting points the model was already trained on.
 \paragraph{The $\Delta C_p=0$ approximation.} The ideal term omits the constant-heat-
@@ -3065,7 +3140,9 @@ claim rests on it \emph{computed under the residual-only convention}.
 
 The article's \S\ref{sec:discussion} carries limitations~(i), (iv) and~(vi), which scope what the two
 data sets and the estimator can deliver, and~(xii), which the leak-free re-run of \S\ref{sec:data}
-rewrites. The remaining nine are here, keeping those numerals.
+rewrites. The remaining nine are here, keeping those numerals. Each of the nine is also stated in
+the article, in the section whose claim it qualifies---\S\ref{sec:discussion}'s index says which---so
+what is added here is the detail that qualifies it and not the qualification itself.
 
 (vii)~Absolute scaffold
 accuracy is encoder-bound but well \emph{above} the inter-lab noise floor of \S\ref{sec:data}, so
@@ -4023,9 +4100,16 @@ the convention audit, produces the convention-rule material: both sets'
 margins and clustered bootstraps under each combinatorial convention, the per-cell broad-set
 grid of Table~\ref{tab:grid-rep}, the InChIKey match-rule audit and its exactly matched re-estimate,
 the pair-conditional bound and its single-source diagnosis, the typed latent's dimensions, and the
-two deposited row-level tables. Those files are among the artifacts
-limitation~(x) records as uncheckable until the repository is released; the two deposited tables are
-the part of that material which can be checked without it.
+two deposited row-level tables.
+% ITEM 4 OF THE 2026-08-10 REFEREE ROUND.  This sentence pointed at "limitation (x)", which is the
+% closure-fidelity contrast and the two runs that would settle it -- nothing to do with what a
+% reader can check.  The limitation about the deposit is (xiii), and it does not say the artifacts
+% are "uncheckable until the repository is released" either: it says the numbers are checkable only
+% by RE-RUNNING the released code, whose inputs are larger than the repository carries, so a
+% released repository is not by itself the remedy.  Both halves are corrected, not just the numeral.
+Those files are regenerated by the released code rather than deposited, which is the
+exposure limitation~(xiii) records; the two deposited tables are the part of this material a reader
+can check without running anything.
 \paragraph{Seeds and determinism.} The controlled comparisons of \S\ref{sec:paradox} use seeds
 $\{42,43,44\}$ and
 are reported on the labelled test rows ($5608$ of $8103$; \S\ref{sec:si-lock}); the

@@ -272,5 +272,44 @@
 # that the newly written generators do not reproduce, repaired against the artifact. No sentence
 # was removed and no page moved (article 33 pp, SI S-84, 6699 numeric tokens before and after).
 37000  corrected basis, not a corrected value: Sec. S1's coupling sentence says "over the three seeds", but its median dH_fus of 3.7e4 was seed 42's alone. Pooled over the deposited seeds 42/43/44 -- results/e5_sigma_grounding/section_s1_substitution_perturbation.json, summary.dH_fus.median_pooled = 34788.38, written by scripts/analysis/run_substitution_perturbation.py off the grounded_a/oracle per-row exports -- it is 3.479e4, and the sentence now prints 3.5e4. The three MAXIMA in the same sentence were genuine three-seed maxima and are unchanged; the T_m median moved 449.65 -> 449.04 and still prints 450 at the two significant figures it is quoted to. --expect-published now checks the medians on the pooled basis and refuses the first-seed one.
-4.7    same sentence, same cause: the median |Phi| printed as 4.7 is seed 42's 4.7246; pooled over the three seeds it is 4.5339 (same artifact, summary.Phi.median_pooled), so the sentence now prints 4.5. The value 4.7 still prints elsewhere in the document and this entry retires only this occurrence.
+4.7    same sentence, same cause: the median |Phi| printed as 4.7 is seed 42's 4.7246; pooled over the three seeds it is 4.5339 (same artifact, summary.Phi.median_pooled), so the sentence now prints 4.5. The value 4.7 still prints elsewhere in the document and this entry retires only this occurrence. EXTENDED 2026-08-10, referee item 2: that pass repaired Sec. S1 and left the article's own copy of the sentence (Sec. 2.4, sections/methods.tex) still printing 4.7 under the same three-seed clause, which is the second of the two places. Both now print 4.5 and both name the set it is a median over -- the 8066 substituted rows of the 8103 test rows, three seeds pooled. Sec. S1 additionally prints the three per-seed medians 4.72/4.36/4.53, so the seed-42 value is still on the page as what it is.
 0.21   rounding slip in Table S21's Nitrile cell, repaired to +0.20: the stratum is acetonitrile alone (n=252) and its three-seed mean is +0.20481 -- results/e5_sigma_grounding/chemistry_map.json, "solvent/nitrile".mean, written by scripts/analysis/run_e5_chemistry_map.py -- which misses the 0.205 rounding boundary by 2e-4. The sd 0.19 was right and is unchanged. (Rounding each seed before averaging does give +0.21, but that rule then breaks Water +0.51 vs +0.52 and Amide -0.21 vs -0.22, so it was not the table's rule; tests/test_e5_chemistry_map.py asserts that.) The value 0.21 still prints on six other pages and only this cell is retired.
+
+# 2026-08-10 referee round (items 1-4). Two tier-A entries, NEITHER a retired value: both are the
+# same extraction artifact the 2411.15101 entry above already documents, re-triggered because the
+# four repairs lengthened two paragraphs and reflowed the pages under them. Every value below was
+# read back out of the built PDF before its line was written. Article 33 pp, SI 85 pp, unchanged.
+-1.803       tokenisation artifact, not a loss: Sec. S3.2 prints "1.981-1.803=0.177" and "2.232-1.803=0.428" exactly as it did, but the paragraph is one clause longer (the co-adaptation numerator is now named), so the line justifies wider and pdftotext emits "1.981 - 1.803" with spaces where it emitted "1.981-1.803". The checker reads a minus after a space as a sign, so the two tokens that were the single value -1.803 are now the two values 1.981 and 1.803. `pdftotext paper/grounding_paradox_si.pdf - | grep -n "1.803"' returns all four occurrences, two of them in that sentence. No signed -1.803 is a measurement anywhere in this submission; if one ever becomes one, delete this line.
+2602.12218   checker artifact, not a loss: the arXiv identifier of Ref. interno2026 (The Observer Effect in World Models) is still printed in the article's reference list -- `pdftotext paper/grounding_paradox.pdf - | grep 12218' returns it on p. 32 -- on a page the bibliography-REGION rule now excludes, the list having reflowed by four lines. Same cause and same remedy as the 2411.15101 entry above.
+
+# NOT ENTRIES, a note, and deliberately not allowlisted. The same bibliography reflow moved three
+# BARE INTEGERS out of the counted set as well: 2024 (the year of Ref. mohan2024), and 899 and 913
+# (the page range of Ref. lin2002, Ind. Eng. Chem. Res. 41, 899-913). All three are still on the
+# page -- grep the article PDF for "2411.15101 2024" and for "899" -- and all three are tier B, so
+# they do not gate. Allowlisting a bare 2024 or a bare 913 would blind the checker to every other
+# occurrence of those values for the sake of a folio move, which is the wrong trade.
+
+# 2026-08-10 referee round (items 1-5). NO ENTRIES, a note. This pass added numbers and moved two
+# proofs between the documents; it retired none. The checker reports zero tier-A values gone from
+# the submission. The nineteen tier-A "lost an occurrence" lines are of three kinds, all read back
+# out of the built PDFs before this note was written:
+#   (a) THREE SI SECTION NUMERALS -- 3.6, 6.3 and 6.7 -- each of which was a pointer in the
+#       Supporting Information's orientation paragraph to the multiplicity null's two biases, the
+#       crystal-grounding qualification and limitations (ix)/(x)/(xiii). All three quantities are
+#       now printed in the ARTICLE, in the sentences that rest on them, so the paragraph no longer
+#       needs to send anybody there and the pointers went with the sentence. Every one of the three
+#       section numbers still prints elsewhere in the submission (3.6 on eight pages, 6.3 on four,
+#       6.7 on three), and the values they pointed at -- 62/50, 0.56/0.70, r=+0.24, +0.088 with
+#       [-0.127,+0.284] -- are gained, not lost.
+#   (b) REFLOW. The article grew by one page (33 -> 34 in total: the body and bibliography went
+#       32 -> 33 and the TOC-graphic page after them is unchanged), so its reference list moved
+#       under it and pdftotext's line grouping changed. Every value named in that group is still
+#       printed and the report says so on the same line.
+#   (c) TWO SENTENCES SPLIT IN THREE for referee item 2, which moves a number from one sentence to
+#       the next without changing it: the max |dPhi| 4.2e-4 clause of Sec. 3.2 and the bin-count
+#       grid clause of Sec. 3.5.1. Both values print in the same paragraph they always did.
+# The three tier-B values the checker calls gone -- 899 and 913 (the page range of Ref. lin2002)
+# and 2024 (the year of Ref. mohan2024) -- are group (b) and are still NOT allowlisted, for the
+# reason the note above this one gives. All three were re-verified against this build:
+# `pdftotext paper/grounding_paradox.pdf - | grep -n "899"' and `... | grep -n 2411.15101' each
+# return the line, on a page the bibliography-REGION rule excludes from the count.

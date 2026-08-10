@@ -3,11 +3,17 @@
 % theory section, so the identity and its proof live here.
 %
 % SELF-CONTAINMENT (2026-08-02, editorial item A3).  A reader must be able to check the METHOD
-% without the Supporting Information.  That is why THIS file now carries, in full: Lemma 1 with its
-% proof and the cross-term condition; Proposition 1's statement; the noise-floor derivation with
+% without the Supporting Information.  That is why THIS file now carries, in full: Lemma 1's
+% statement, together with the cross-term condition and the three settings of z* that are conditions
+% of its use; Proposition 1's statement; the noise-floor derivation with
 % both functionals; the closure's validation against a reference implementation AND against a
 % published evaluation of the same closure; the terminology table; and the run-family table.  Do
 % not send any of those back to the Supporting Information to buy pages.
+% WHAT IS DELIBERATELY NOT HERE, from 2026-08-10: the PROOFS.  All five now stand together in
+% \S\ref{sec:si-proofs} (referee 3's trade against referee 1's request that Proposition 1's
+% statement come back).  A statement is what a reader needs to check a method; the algebra behind it
+% is what they consult once.  Do not move a proof back into this file to make it self-contained --
+% self-containment is a property of the STATEMENTS and the conditions, and those are all here.
 %
 % WHAT MAY NOT LEAVE THIS SECTION -- a reader of the article alone must never be able to conclude
 % that a control was not run:
@@ -48,8 +54,14 @@ hydrogen-bonding terms setting what two surface segments cost each other---is th
 \emph{kernel}, the part the published revisions rewrite, so a closure variant is named for the year
 of its kernel: the \emph{2002 kernel} this pipeline runs, and the \emph{2010 kernel} that types segments as
 hydrogen-bond donors or acceptors instead of treating hydrogen bonding with one parameter. Write
-$\zstar$ for the \emph{reference} physical latent, the $\sigma$-profile tabulated in the VT-2005
-database \cite{mullins2006}, and $\hat z$ for the head's own prediction. Feeding $\zstar$ in place
+$\zstar$ for the \emph{reference} physical latent, a tabulated $\sigma$-profile, and $\hat z$ for the
+head's own prediction. \textbf{Two profile databases supply $\zstar$ below and they are never
+interchangeable}: \emph{VT-2005}, the Virginia Tech 2005 tabulation \cite{mullins2006}, is what the
+$\sigma$ head is supervised against and what is substituted for $\hat z$ at prediction time, and
+\emph{UD}, the University of Delaware successor tabulation, is what the activity-coefficient rows of
+\S\ref{sec:broad} are matched to. Every set, margin and figure below names which of the two it is
+computed on, and no quantity is read across them; the one place they are deliberately set against
+each other is the database-to-database bracket of \S\ref{sec:badclosure}. Feeding $\zstar$ in place
 of $\hat z$ (a $\sigma$-oracle) isolates the closure from encoder error: if the closure were well
 specified, $g(\zstar)$ should be the best available activity estimate. Each trained configuration,
 and each closure variant evaluated, is an \emph{arm}; a \emph{DirectGNN} control arm drops the
@@ -76,9 +88,18 @@ Let $m$ be the closure's target---here the experimental infinite-dilution activi
 (IDAC) $\lngi$, in \S\ref{sec:pka-main} the measured $\mathrm pK_a$---and $g(\zstar)$ the closure
 evaluated on the reference latent.
 
+% THE STATEMENT IS LETTERED (a)-(d) FROM 2026-08-10, and the lettering is load-bearing rather than
+% cosmetic.  The letters used to be the PROOF's, and \S\ref{sec:estimator} and Table~\ref{tab:notation}
+% cite "(c)" and "(d)" from this document three times; with the proof moved to
+% \S\ref{sec:si-proofs} those three call sites would have pointed at part labels printed only in the
+% other document.  Lettering the statement is what keeps them resolvable here.  Part (d) is stated
+% and not merely proved for the same reason: \S\ref{sec:estimator}'s convention rule reads it, and
+% limitation (v) reads it again.  The proof in \S\ref{sec:si-proofs} proves (a)-(d) under the same
+% four letters; if either is relettered, releter both in the same pass.
 \begin{lemma}[Exact closure--insufficiency decomposition and its one-sided bounds]\label{prop:decomp}
-For a \emph{fixed} (non-fitted) closure $g$, with $\zstar$ denoting the closure's \emph{entire}
-argument (the profile pair together with the temperature wherever the closure reads one),
+Let $g$ be a \emph{fixed} (non-fitted) closure and let $\zstar$ denote its \emph{entire}
+argument (the profile pair together with the temperature wherever the closure reads one). Then
+\emph{(a)}~the reference-input mean squared error splits exactly,
 \begin{equation}
 \begin{aligned}
   \underbrace{\Ex\big[(m-g(\zstar))^2\big]}_{\text{ref.-input MSE}}
@@ -87,42 +108,36 @@ argument (the profile pair together with the temperature wherever the closure re
 \end{aligned}
   \label{eq:decomp}
 \end{equation}
-the cross term vanishing identically. Moreover $\Bclos\ge(\Ex[m]-\Ex[g])^2$, and
-$\Binsuf\le\Ex[\Var(m\mid\mathrm{bin}(g(\zstar)))]$ for any binning of $g(\zstar)$.
+the cross term vanishing identically; \emph{(b)}~$\Bclos\ge(\Ex[m]-\Ex[g])^2$;
+\emph{(c)}~$\Binsuf\le\Ex[\Var(m\mid\mathrm{bin}(g(\zstar)))]$ for any binning of $g(\zstar)$; and
+\emph{(d)}~$\Binsuf$ is a functional of the law of $(m,\zstar)$ alone and does not involve $g$, so
+it is identical across closure conventions, while the bound in~(c) is not.
 \end{lemma}
 
-\begin{proof}
-\emph{(a) The identity, and the cross-term condition.} $g(\zstar)$ is $\sigma(\zstar)$-measurable by
-construction, since $\zstar$ is the closure's whole argument. Split the residual as
-$m-g(\zstar)=[m-\Ex(m\mid\zstar)]+[\Ex(m\mid\zstar)-g(\zstar)]$, square and take expectations; the
-squared terms are $\Binsuf$ and $\Bclos$, and the cross term vanishes by the tower rule,
-$\Ex[(m-\Ex(m\mid\zstar))(\Ex(m\mid\zstar)-g(\zstar))]
-=\Ex[(\Ex(m\mid\zstar)-g(\zstar))\,\Ex(m-\Ex(m\mid\zstar)\mid\zstar)]=0$, because the second factor
-is $\sigma(\zstar)$-measurable. \textbf{That measurability is the condition, and it fails if any
-argument of $g$ is left out of the conditioning variable}: with $g=g(\zstar,T)$ and $T$ excluded,
-the cross term need not vanish and the binning in~(c) is no longer a coarsening of the conditioning
-$\sigma$-algebra, so neither the identity nor the upper bound survives. Where $g$ reads a
-temperature---the broad IDAC set of \S\ref{sec:broad}, $\dim=103$---we accordingly take
-$\zstar=(\text{profile pair},T)$; on the VT-2005-matched set every row sits at $298$\,K and the two
-readings coincide. The same rule fixes $\zstar$ in the second domain: the Hammett closure of
+% THE PROOF OF LEMMA 1 MOVED TO \S\ref{sec:si-proofs} ON 2026-08-10 (referee 3, the trade against
+% referee 1's Proposition 1 request, and made on an in-venue precedent: JCIM articles routinely state
+% a result in the body and deposit its derivation in the Supporting Information).  Four of this
+% submission's five proofs were already there; this was the odd one out, and it is thirty lines of
+% tower-rule algebra in a Computational Methods section.
+% WHAT DID NOT GO WITH IT, and why each is METHOD and not proof.  (1) The measurability CONDITION and
+% its failure mode: it is what makes the identity applicable or not to a given closure, so a reader
+% deciding whether this instrument fits their own composed model needs it before they reach for the
+% Supporting Information.  (2) How z* is actually fixed on each of the three sets this paper runs
+% the instrument on -- that is an analyst choice made in this work, not a step in a proof, and the
+% file's own rule ("the estimator cell, the convention rule, the stratification rule and the
+% admissibility rule, all four fixed here, before any margin is reported") covers it.
+% Both are below, in two sentences, and both are ALSO inside the proof where they belong to the
+% argument.  Do not delete them here as duplicates: one is the condition of use and one is the proof.
+\noindent The proof is in \S\ref{sec:si-proofs}. Two of its parts are conditions of use rather than
+steps, and both are stated here. \textbf{The identity holds because $g(\zstar)$ is
+$\sigma(\zstar)$-measurable, and it fails if any argument of $g$ is left out of the conditioning
+variable}: with $g=g(\zstar,T)$ and $T$ excluded, the cross term need not vanish and the binning is
+no longer a coarsening of the conditioning $\sigma$-algebra, so neither the identity nor the upper
+bound survives. Where $g$ reads a temperature---the broad IDAC set of \S\ref{sec:broad},
+$\dim=103$---we accordingly take $\zstar=(\text{profile pair},T)$; on the VT-2005-matched set every
+row sits at $298$\,K and the two readings coincide; and the Hammett closure of
 \S\ref{sec:pka-main} reads a per-series constant pair as well as the substituent constant, so there
 $\zstar=(s,\hammett^\star)$ and the conditioning is on both.
-\emph{(b) Jensen lower bound.} With $\Delta(\zstar)=\Ex(m\mid\zstar)-g(\zstar)$,
-$\Bclos=\Ex[\Delta^2]\ge(\Ex[\Delta])^2=(\Ex[m]-\Ex[g])^2$, using $\Ex[\Ex(m\mid\zstar)]=\Ex[m]$.
-It needs \emph{no} smoothness assumption; its one requirement is that $m$ and $g$ share the $\lngi$
-reference state, which the closure validation of \S\ref{sec:model} establishes.
-\emph{(c) The binning bound, a law-of-total-variance upper bound.} For any binning
-$B=\mathrm{bin}(g(\zstar))$ one has
-$\sigma(B)\subseteq\sigma(\zstar)$, and conditioning on a coarser $\sigma$-algebra cannot reduce
-expected conditional variance: $\Ex[\Var(m\mid B)]\ge\Ex[\Var(m\mid\zstar)]=\Binsuf$.
-\emph{(d) The estimand is convention-free; the bound is not.}
-$\Binsuf=\Ex[\Var(m\mid\zstar)]$ is a functional of the law of $(m,\zstar)$ alone and does not
-involve $g$, so it is identical across closure conventions and any $\mathrm{MSE}(g_1)-\mathrm{MSE}(g_2)$
-is entirely $\Bclos(g_1)-\Bclos(g_2)$. The bound of~(c) is not convention-independent, and no
-contradiction arises: two conventions coarsen the same $\sigma(\zstar)$ along two different
-statistics, giving two valid upper bounds on one quantity, of which the minimum is again valid but
-is biased low in finite samples; it is reported, and no margin below is read from it.
-\end{proof}
 
 \noindent $\Bclos$ is the systematic discrepancy of a fixed physical map in the sense of
 Kennedy--O'Hagan \cite{kennedy2001,brynjarsdottir2014}, and its dominance over $\Binsuf$ is the
@@ -181,22 +196,46 @@ giving $\Bclos=0$ yet $\Ggap>0$. We therefore read $\Ggap$ as corroborating evid
 model-dominance conclusion on the decomposition.
 
 % PROPOSITION 1 MOVED TO \S\ref{sec:si-proofs} ON 2026-08-07 (page-reduction pass), where its proof
-% and the limiting refinement already were, so the statement now sits with what proves it.  The
-% label prop:tax is unchanged and every \ref to it in both documents still resolves.  WHAT MUST STAY
-% HERE is the decomposition of the penalty that the rule is about, the rule's content in words, and
-% the SCOPE SENTENCES -- a penalty at the budget actually trained, no optimal-grounding theorem, no
-% out-of-distribution claim -- because \S\ref{sec:pka-main} and \S\ref{sec:discussion} both read the
-% rule and would otherwise read it unscoped.
+% and the limiting refinement already were, so the statement now sits with what proves it.
+%
+% AND THE STATEMENT CAME BACK ON 2026-08-10 (referee 1, must-fix), while the proof stayed there.
+% The reason the earlier move was wrong: this paragraph gave the reader T(n) = Delta_infty - D(n)
+% and nothing else, and SEVEN symbols in that line -- R_e2e, R_direct_infty, V_phys, V_direct,
+% Delta_infty, D, n^star -- appear in no display, no definition and no row of Table 1, while three
+% later sections (\S\ref{sec:pka-main}, \S\ref{sec:discussion}, \S\ref{sec:data-efficiency}) cite
+% the proposition as an A PRIORI PREDICTION the measurements are then read against.  A prediction
+% a reader cannot state cannot be checked against a measurement.
+% WHAT COMES BACK AND WHAT DOES NOT.  The STATEMENT is here: the two asymptote-plus-variance
+% expansions that define every one of those symbols, and the two parts (i) and (ii).  The PROOF
+% stays in \S\ref{sec:si-proofs} together with the limiting refinement (iii) -- referee 3's trade,
+% and the same trade Lemma 1 now takes.  The label prop:tax is DEFINED HERE from this date; the
+% Supporting Information's proof header refers to it by \ref and must not redefine it, which
+% scripts/analysis/check_split_refs.py enforces.
+% THE SCOPE SENTENCES STAY WHERE THEY WERE, after the statement -- a penalty at the budget actually
+% trained, no optimal-grounding theorem, no out-of-distribution claim -- because
+% \S\ref{sec:pka-main} and \S\ref{sec:discussion} both read the rule and would otherwise read it
+% unscoped.  Do not move a scope into the proposition body: the proposition is a statement about
+% two risk expansions and says nothing about what this paper measured.
 \paragraph{The sign rule, and scope.}\label{sec:tax} Whether the \emph{trained} physics model
-outperforms the \emph{trained} black box at sample size $n$ follows a sign rule. Writing each
-trained risk as an asymptote plus estimation variance, the \emph{physics penalty at budget $n$} is
-$\mathcal{T}(n)\approx\Delta_\infty-D(n)$, where
-$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$ is its \emph{asymptotic} part and
-$D:=V_{\mathrm{direct}}-V_{\mathrm{phys}}$ the variance a constrained prior saves. Physics helps
-exactly when that saving exceeds the asymptotic bias; and if $\Delta_\infty>0$ while the variance
-gap vanishes, there is a critical budget beyond which it does not
-(Proposition~\ref{prop:tax}, \S\ref{sec:si-proofs}, with the limiting refinement in which
-$\Delta_\infty=\Bclos-\Ggap$ when the control is asymptotically Bayes).
+outperforms the \emph{trained} black box at sample size $n$ follows a sign rule.
+
+\begin{proposition}[Sign of the physics penalty]\label{prop:tax}
+Write $\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
+$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$, with
+$R_{\mathrm{e2e}}$ and $R_{\mathrm{direct},\infty}$ the two asymptotic risks, $V(n)\downarrow0$ the
+estimation variance of each estimator at budget $n$, so that the \emph{physics penalty at budget
+$n$} is
+$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ with
+$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$ its \emph{asymptotic} part and
+$D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$ the variance a constrained prior saves. Then
+\emph{(i)}~$\mathcal{T}(n)<0$ (physics helps) if and only if $D(n)>\Delta_\infty$: the variance a
+constrained prior saves must exceed its asymptotic bias. \emph{(ii)}~If $\Delta_\infty>0$ and the
+variance gap vanishes ($D(n)\to0$), there is a critical budget $n^\star$ beyond which
+$\mathcal{T}(n)>0$ for all $n>n^\star$.
+\end{proposition}
+
+\noindent The proof, and a limiting refinement in which $\Delta_\infty=\Bclos-\Ggap$ when the
+control is asymptotically Bayes, are in \S\ref{sec:si-proofs}.
 The consequence used below is that a prior is predicted to hurt precisely in the mature-data,
 low-noise, well-covered regime. Each physics-versus-control difference reported here is a penalty at
 the budget actually trained, not an asymptotic one; there is no ``optimal grounding'' theorem, and
@@ -302,10 +341,12 @@ grounding. Each stream is a sidecar of \emph{self-solvent} rows (no solubility l
 factor's mask active) interleaved into training under the guard above, grounding the crystal factor
 from the melting-point pool and the activity factor from the $\sigma$-profile database, and so
 identifying from external data a factor that solubility alone leaves non-identifiable and that a
-black-box predictor cannot use. Training runs a three-stage curriculum under a weighted loss: a warm-up on the auxiliary
-streams alone, then joint training against solubility, then a low-rate stabilisation stage. The
-schedule pinned for the arms of Fig.~\ref{fig:paradox} freezes the $\sigma$ head at the end of the
-warm-up, so the $\sigma$ stream enters the warm-up only.
+black-box predictor cannot use. Training runs a three-stage curriculum under a weighted loss, and
+the stages are named by number wherever one of them is referred to below: \emph{P1}, a warm-up on
+the auxiliary streams alone; \emph{P2}, joint training against solubility; \emph{P3}, a low-rate
+stabilisation stage. The
+schedule pinned for the arms of Fig.~\ref{fig:paradox} freezes the $\sigma$ head at the end of P1,
+so the $\sigma$ stream enters the warm-up only.
 
 \paragraph{The in-house closures, and where their validation stops.}
 % Artifact: results/b_insuff/closure_reference_validation.json (2002, rmse 0.0035) via
@@ -441,7 +482,21 @@ the residual term's $A_2/a_{\mathrm{eff}}$ prefactor as part of replacing that o
 than as a separate choice. Solute and solvent are matched independently. Nothing else is replaced,
 the crystal head reading a solute-only embedding the substitution does not reach; the bounded
 correction does read the closure's own parameters, so the crystal values the solver finally receives
-shift by a little, at most $7\times10^{-4}$ in $\Phi$ against a median magnitude of $4.7$.
+% ITEMS 2 AND 3 OF THE 2026-08-10 REFEREE ROUND, both settled from
+% results/e5_sigma_grounding/section_s1_substitution_perturbation.json and
+% results/e5_sigma_grounding/ranking/rank_final.json (integrity.phi_max_abs_diff_vs_grounded_a).
+% (2) The median magnitude read 4.7 here and 4.5 in \S\ref{sec:si-methods}: 4.7246 is the SEED-42
+% median under a sentence that says three seeds, and the pooled three-seed median is 4.5339 over all
+% test rows and 4.5370 over the substituted ones -- 4.5 either way.  Both places now print 4.5 and
+% both name the set.
+% (3) The two maxima are the SAME quantity over DIFFERENT row sets, and each must say which: 7.1e-4
+% (seed 43) is over the 8066 substituted rows of all 8103 test rows, 4.2e-4 (seed 43) over the 5608
+% labelled rows the results are scored on, which are a subset -- so the smaller figure is not a
+% competing value.  Both sets are now named wherever either number prints.
+shift by a little: pooled over the three seeds and over the $8066$ of the $8103$ test rows where the
+substitution applied, at most $7\times10^{-4}$ in $\Phi$, against a median $|\Phi|$ of $4.5$ on that
+same pooled set. Restricted to the $5608$ labelled rows every solubility figure below is scored on,
+that maximum is $4.2\times10^{-4}$.
 \S\ref{sec:si-methods} lists every replaced and unreplaced quantity, and
 gives what the match rule reaches: the reference table covers $99.3\%$ of the labelled test rows on
 the solvent side and $5.3\%$ on the solute side, so the substitution contrast below is carried by
