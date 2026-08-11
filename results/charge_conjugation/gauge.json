@@ -1,0 +1,882 @@
+{
+  "what": "charge conjugation sigma -> -sigma as a gauge freedom of the COSMO-SAC closure",
+  "reference_profiles": "results/sigma_profile_artifact/sigma_profiles.csv",
+  "n_reference_molecules": 1432,
+  "temperatures_K": [
+    273.15,
+    298.15,
+    323.15
+  ],
+  "noise_floor_ln": 0.7,
+  "seed": 3,
+  "kernel": {
+    "range_kcal_per_mol": [
+      -23.582429885864258,
+      20.583402633666992
+    ],
+    "max_abs_dw_minus_JdwJ": 1.9073486328125e-06,
+    "max_abs_misfit_residual": 4.76837158203125e-07,
+    "max_abs_hb_residual": 1.9073486328125e-06,
+    "float32_eps_times_max_abs_dw": 2.8112447125749895e-06,
+    "reading": "the residual sits below float32 roundoff, so the invariance is exact"
+  },
+  "scope_conditions": {
+    "typed_2010_kernel_residual_by_T": {
+      "273.15": 0.0,
+      "298.15": 0.0,
+      "373.15": 0.0
+    },
+    "whole_153_reversal_residual_by_T": {
+      "273.15": 7.541075362862728,
+      "298.15": 7.541075362862728,
+      "373.15": 7.541075362862728
+    },
+    "asymmetric_grid_residual": 9.77735710144043,
+    "reading": "the invariance holds for the modern typed kernel exactly, under the BLOCKWISE flip only, and only on a grid symmetric about zero; the whole-grid reversal permutes the profile types and an off-centre grid makes the flip unrepresentable as a bin permutation, and neither is the symmetry being claimed"
+  },
+  "global_mirror": {
+    "n_pairs": 64,
+    "mean_abs_ln_gamma": 1.239003300666809,
+    "max_abs_change_under_mirror": 5.602836608886719e-06
+  },
+  "single_molecule_flip": {
+    "statistic": "z = ||d|| / sigma where d is the per-solvent displacement in ln gamma under the flip, CENTRED (the per-solute constant is absorbed free by the crystal head); a branch counts as unidentifiable when z < 2.0",
+    "n_molecules_per_draw": 150,
+    "n_draws": 6,
+    "coverage_S": [
+      2,
+      5,
+      9,
+      30
+    ],
+    "coverage_note": "the corpus gives a solute a median of 9 distinct solvents in train and 5 in test, and 26.5% of test solutes have two or fewer",
+    "noise_sigmas_ln": [
+      0.45,
+      0.7
+    ],
+    "by_coverage": {
+      "2": {
+        "median_rss_flip": {
+          "median_over_draws": 0.48779915273189545,
+          "min": 0.42423661053180695,
+          "max": 0.7571953237056732
+        },
+        "median_rss_matched_shift": {
+          "median_over_draws": 0.9785929024219513,
+          "min": 0.9089370369911194,
+          "max": 1.0501579642295837
+        },
+        "sigma_0.45": {
+          "fraction_flip_undetectable": {
+            "median_over_draws": 0.5833333333333333,
+            "min": 0.5533333333333333,
+            "max": 0.6266666666666667
+          },
+          "fraction_matched_shift_undetectable": {
+            "median_over_draws": 0.4766666666666667,
+            "min": 0.4266666666666667,
+            "max": 0.5
+          },
+          "top_asymmetry_quartile_flip_undetectable": {
+            "median_over_draws": 0.435340022296544,
+            "min": 0.21212121212121213,
+            "max": 0.5238095238095238
+          }
+        },
+        "sigma_0.7": {
+          "fraction_flip_undetectable": {
+            "median_over_draws": 0.6566666666666667,
+            "min": 0.6266666666666667,
+            "max": 0.6866666666666666
+          },
+          "fraction_matched_shift_undetectable": {
+            "median_over_draws": 0.62,
+            "min": 0.5866666666666667,
+            "max": 0.66
+          },
+          "top_asymmetry_quartile_flip_undetectable": {
+            "median_over_draws": 0.48644688644688644,
+            "min": 0.2727272727272727,
+            "max": 0.6666666666666666
+          }
+        }
+      },
+      "5": {
+        "median_rss_flip": {
+          "median_over_draws": 2.047397345304489,
+          "min": 1.7394717931747437,
+          "max": 2.4631820917129517
+        },
+        "median_rss_matched_shift": {
+          "median_over_draws": 2.4129106402397156,
+          "min": 2.2581623792648315,
+          "max": 2.8355616331100464
+        },
+        "sigma_0.45": {
+          "fraction_flip_undetectable": {
+            "median_over_draws": 0.37,
+            "min": 0.32666666666666666,
+            "max": 0.43333333333333335
+          },
+          "fraction_matched_shift_undetectable": {
+            "median_over_draws": 0.2,
+            "min": 0.16,
+            "max": 0.23333333333333334
+          },
+          "top_asymmetry_quartile_flip_undetectable": {
+            "median_over_draws": 0.212143928035982,
+            "min": 0.15151515151515152,
+            "max": 0.23809523809523808
+          }
+        },
+        "sigma_0.7": {
+          "fraction_flip_undetectable": {
+            "median_over_draws": 0.44999999999999996,
+            "min": 0.4,
+            "max": 0.4666666666666667
+          },
+          "fraction_matched_shift_undetectable": {
+            "median_over_draws": 0.29333333333333333,
+            "min": 0.26666666666666666,
+            "max": 0.3333333333333333
+          },
+          "top_asymmetry_quartile_flip_undetectable": {
+            "median_over_draws": 0.2857142857142857,
+            "min": 0.21212121212121213,
+            "max": 0.34782608695652173
+          }
+        }
+      },
+      "9": {
+        "median_rss_flip": {
+          "median_over_draws": 3.500955045223236,
+          "min": 3.4197102785110474,
+          "max": 4.445461750030518
+        },
+        "median_rss_matched_shift": {
+          "median_over_draws": 4.019972383975983,
+          "min": 3.501510500907898,
+          "max": 4.616951942443848
+        },
+        "sigma_0.45": {
+          "fraction_flip_undetectable": {
+            "median_over_draws": 0.2866666666666667,
+            "min": 0.26,
+            "max": 0.32
+          },
+          "fraction_matched_shift_undetectable": {
+            "median_over_draws": 0.09333333333333334,
+            "min": 0.06,
+            "max": 0.13333333333333333
+          },
+          "top_asymmetry_quartile_flip_undetectable": {
+            "median_over_draws": 0.11149068322981366,
+            "min": 0.06896551724137931,
+            "max": 0.12121212121212122
+          }
+        },
+        "sigma_0.7": {
+          "fraction_flip_undetectable": {
+            "median_over_draws": 0.3733333333333333,
+            "min": 0.3466666666666667,
+            "max": 0.4
+          },
+          "fraction_matched_shift_undetectable": {
+            "median_over_draws": 0.19,
+            "min": 0.14,
+            "max": 0.23333333333333334
+          },
+          "top_asymmetry_quartile_flip_undetectable": {
+            "median_over_draws": 0.1978021978021978,
+            "min": 0.10344827586206896,
+            "max": 0.2391304347826087
+          }
+        }
+      },
+      "30": {
+        "median_rss_flip": {
+          "median_over_draws": 8.412270545959473,
+          "min": 6.986691474914551,
+          "max": 9.329286098480225
+        },
+        "median_rss_matched_shift": {
+          "median_over_draws": 8.050201535224915,
+          "min": 7.188215494155884,
+          "max": 9.443325519561768
+        },
+        "sigma_0.45": {
+          "fraction_flip_undetectable": {
+            "median_over_draws": 0.15999999999999998,
+            "min": 0.14666666666666667,
+            "max": 0.18666666666666668
+          },
+          "fraction_matched_shift_undetectable": {
+            "median_over_draws": 0.013333333333333334,
+            "min": 0.0,
+            "max": 0.02
+          },
+          "top_asymmetry_quartile_flip_undetectable": {
+            "median_over_draws": 0.06305418719211822,
+            "min": 0.030303030303030304,
+            "max": 0.09523809523809523
+          }
+        },
+        "sigma_0.7": {
+          "fraction_flip_undetectable": {
+            "median_over_draws": 0.23333333333333334,
+            "min": 0.2,
+            "max": 0.26666666666666666
+          },
+          "fraction_matched_shift_undetectable": {
+            "median_over_draws": 0.043333333333333335,
+            "min": 0.013333333333333334,
+            "max": 0.06
+          },
+          "top_asymmetry_quartile_flip_undetectable": {
+            "median_over_draws": 0.10062111801242235,
+            "min": 0.06060606060606061,
+            "max": 0.16666666666666666
+          }
+        }
+      }
+    },
+    "specificity_control": "the matched-shift arm is a WRONG profile of the same L1 size as the flip. It is the arm that decides whether charge conjugation is a special direction or whether the closure is simply insensitive to the profile; without it the flip fraction means nothing on its own.",
+    "per_draw": [
+      {
+        "n_by_S": {
+          "2": {
+            "median_rss_flip": 0.5018299520015717,
+            "median_rss_matched_shift": 1.0487322807312012,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.5933333333333334,
+              "fraction_matched_shift_undetectable": 0.46,
+              "by_own_asymmetry_quartile": [
+                0.8709677419354839,
+                0.6,
+                0.48717948717948717,
+                0.45714285714285713
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.66,
+              "fraction_matched_shift_undetectable": 0.66,
+              "by_own_asymmetry_quartile": [
+                0.8709677419354839,
+                0.7333333333333333,
+                0.5641025641025641,
+                0.4857142857142857
+              ]
+            }
+          },
+          "5": {
+            "median_rss_flip": 2.079097628593445,
+            "median_rss_matched_shift": 2.4131219387054443,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.3466666666666667,
+              "fraction_matched_shift_undetectable": 0.21333333333333335,
+              "by_own_asymmetry_quartile": [
+                0.6774193548387096,
+                0.3333333333333333,
+                0.20512820512820512,
+                0.22857142857142856
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.4266666666666667,
+              "fraction_matched_shift_undetectable": 0.3333333333333333,
+              "by_own_asymmetry_quartile": [
+                0.7096774193548387,
+                0.4,
+                0.358974358974359,
+                0.2857142857142857
+              ]
+            }
+          },
+          "9": {
+            "median_rss_flip": 3.474911093711853,
+            "median_rss_matched_shift": 3.51589572429657,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.26666666666666666,
+              "fraction_matched_shift_undetectable": 0.10666666666666667,
+              "by_own_asymmetry_quartile": [
+                0.6451612903225806,
+                0.24444444444444444,
+                0.1282051282051282,
+                0.11428571428571428
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.36666666666666664,
+              "fraction_matched_shift_undetectable": 0.23333333333333334,
+              "by_own_asymmetry_quartile": [
+                0.7096774193548387,
+                0.35555555555555557,
+                0.23076923076923078,
+                0.22857142857142856
+              ]
+            }
+          },
+          "30": {
+            "median_rss_flip": 8.342252731323242,
+            "median_rss_matched_shift": 8.465570449829102,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.15333333333333332,
+              "fraction_matched_shift_undetectable": 0.013333333333333334,
+              "by_own_asymmetry_quartile": [
+                0.6129032258064516,
+                0.022222222222222223,
+                0.02564102564102564,
+                0.05714285714285714
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.21333333333333335,
+              "fraction_matched_shift_undetectable": 0.04,
+              "by_own_asymmetry_quartile": [
+                0.6451612903225806,
+                0.13333333333333333,
+                0.05128205128205128,
+                0.11428571428571428
+              ]
+            }
+          }
+        }
+      },
+      {
+        "n_by_S": {
+          "2": {
+            "median_rss_flip": 0.7571953237056732,
+            "median_rss_matched_shift": 0.9218935966491699,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.5533333333333333,
+              "fraction_matched_shift_undetectable": 0.49333333333333335,
+              "by_own_asymmetry_quartile": [
+                0.8,
+                0.6136363636363636,
+                0.5526315789473685,
+                0.21212121212121213
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.6266666666666667,
+              "fraction_matched_shift_undetectable": 0.62,
+              "by_own_asymmetry_quartile": [
+                0.8571428571428571,
+                0.7045454545454546,
+                0.631578947368421,
+                0.2727272727272727
+              ]
+            }
+          },
+          "5": {
+            "median_rss_flip": 2.4631820917129517,
+            "median_rss_matched_shift": 2.412699341773987,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.32666666666666666,
+              "fraction_matched_shift_undetectable": 0.19333333333333333,
+              "by_own_asymmetry_quartile": [
+                0.6857142857142857,
+                0.25,
+                0.23684210526315788,
+                0.15151515151515152
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.4,
+              "fraction_matched_shift_undetectable": 0.26666666666666666,
+              "by_own_asymmetry_quartile": [
+                0.7714285714285715,
+                0.29545454545454547,
+                0.34210526315789475,
+                0.21212121212121213
+              ]
+            }
+          },
+          "9": {
+            "median_rss_flip": 4.445461750030518,
+            "median_rss_matched_shift": 4.272665500640869,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.2866666666666667,
+              "fraction_matched_shift_undetectable": 0.1,
+              "by_own_asymmetry_quartile": [
+                0.6857142857142857,
+                0.20454545454545456,
+                0.15789473684210525,
+                0.12121212121212122
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.36666666666666664,
+              "fraction_matched_shift_undetectable": 0.18666666666666668,
+              "by_own_asymmetry_quartile": [
+                0.7142857142857143,
+                0.2727272727272727,
+                0.3157894736842105,
+                0.18181818181818182
+              ]
+            }
+          },
+          "30": {
+            "median_rss_flip": 9.329286098480225,
+            "median_rss_matched_shift": 9.008399486541748,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.15333333333333332,
+              "fraction_matched_shift_undetectable": 0.013333333333333334,
+              "by_own_asymmetry_quartile": [
+                0.5142857142857142,
+                0.045454545454545456,
+                0.05263157894736842,
+                0.030303030303030304
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.20666666666666667,
+              "fraction_matched_shift_undetectable": 0.04666666666666667,
+              "by_own_asymmetry_quartile": [
+                0.5428571428571428,
+                0.11363636363636363,
+                0.13157894736842105,
+                0.06060606060606061
+              ]
+            }
+          }
+        }
+      },
+      {
+        "n_by_S": {
+          "2": {
+            "median_rss_flip": 0.42423661053180695,
+            "median_rss_matched_shift": 1.0501579642295837,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.5866666666666667,
+              "fraction_matched_shift_undetectable": 0.4266666666666667,
+              "by_own_asymmetry_quartile": [
+                0.8536585365853658,
+                0.5454545454545454,
+                0.4864864864864865,
+                0.4358974358974359
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.6533333333333333,
+              "fraction_matched_shift_undetectable": 0.5866666666666667,
+              "by_own_asymmetry_quartile": [
+                0.8780487804878049,
+                0.696969696969697,
+                0.5405405405405406,
+                0.48717948717948717
+              ]
+            }
+          },
+          "5": {
+            "median_rss_flip": 1.7394717931747437,
+            "median_rss_matched_shift": 2.493734359741211,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.3933333333333333,
+              "fraction_matched_shift_undetectable": 0.16,
+              "by_own_asymmetry_quartile": [
+                0.7317073170731707,
+                0.3939393939393939,
+                0.21621621621621623,
+                0.20512820512820512
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.4666666666666667,
+              "fraction_matched_shift_undetectable": 0.2866666666666667,
+              "by_own_asymmetry_quartile": [
+                0.7804878048780488,
+                0.48484848484848486,
+                0.32432432432432434,
+                0.2564102564102564
+              ]
+            }
+          },
+          "9": {
+            "median_rss_flip": 3.526998996734619,
+            "median_rss_matched_shift": 3.501510500907898,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.2866666666666667,
+              "fraction_matched_shift_undetectable": 0.06,
+              "by_own_asymmetry_quartile": [
+                0.6341463414634146,
+                0.2727272727272727,
+                0.10810810810810811,
+                0.10256410256410256
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.4,
+              "fraction_matched_shift_undetectable": 0.14,
+              "by_own_asymmetry_quartile": [
+                0.7560975609756098,
+                0.42424242424242425,
+                0.1891891891891892,
+                0.20512820512820512
+              ]
+            }
+          },
+          "30": {
+            "median_rss_flip": 8.482288360595703,
+            "median_rss_matched_shift": 7.6348326206207275,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.17333333333333334,
+              "fraction_matched_shift_undetectable": 0.006666666666666667,
+              "by_own_asymmetry_quartile": [
+                0.5121951219512195,
+                0.0,
+                0.05405405405405406,
+                0.07692307692307693
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.26666666666666666,
+              "fraction_matched_shift_undetectable": 0.013333333333333334,
+              "by_own_asymmetry_quartile": [
+                0.6341463414634146,
+                0.18181818181818182,
+                0.08108108108108109,
+                0.1282051282051282
+              ]
+            }
+          }
+        }
+      },
+      {
+        "n_by_S": {
+          "2": {
+            "median_rss_flip": 0.4530009329319,
+            "median_rss_matched_shift": 0.9089370369911194,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.6266666666666667,
+              "fraction_matched_shift_undetectable": 0.5,
+              "by_own_asymmetry_quartile": [
+                0.8974358974358975,
+                0.6052631578947368,
+                0.45161290322580644,
+                0.5238095238095238
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.6866666666666666,
+              "fraction_matched_shift_undetectable": 0.5866666666666667,
+              "by_own_asymmetry_quartile": [
+                0.8974358974358975,
+                0.6842105263157895,
+                0.45161290322580644,
+                0.6666666666666666
+              ]
+            }
+          },
+          "5": {
+            "median_rss_flip": 1.755272924900055,
+            "median_rss_matched_shift": 2.8355616331100464,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.38666666666666666,
+              "fraction_matched_shift_undetectable": 0.23333333333333334,
+              "by_own_asymmetry_quartile": [
+                0.7435897435897436,
+                0.3157894736842105,
+                0.22580645161290322,
+                0.23809523809523808
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.4533333333333333,
+              "fraction_matched_shift_undetectable": 0.3,
+              "by_own_asymmetry_quartile": [
+                0.7948717948717948,
+                0.4473684210526316,
+                0.25806451612903225,
+                0.2857142857142857
+              ]
+            }
+          },
+          "9": {
+            "median_rss_flip": 3.4472169876098633,
+            "median_rss_matched_shift": 4.616951942443848,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.2866666666666667,
+              "fraction_matched_shift_undetectable": 0.08,
+              "by_own_asymmetry_quartile": [
+                0.6666666666666666,
+                0.15789473684210525,
+                0.1935483870967742,
+                0.11904761904761904
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.38,
+              "fraction_matched_shift_undetectable": 0.16666666666666666,
+              "by_own_asymmetry_quartile": [
+                0.8205128205128205,
+                0.2894736842105263,
+                0.1935483870967742,
+                0.19047619047619047
+              ]
+            }
+          },
+          "30": {
+            "median_rss_flip": 6.986691474914551,
+            "median_rss_matched_shift": 9.443325519561768,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.18666666666666668,
+              "fraction_matched_shift_undetectable": 0.02,
+              "by_own_asymmetry_quartile": [
+                0.48717948717948717,
+                0.10526315789473684,
+                0.03225806451612903,
+                0.09523809523809523
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.25333333333333335,
+              "fraction_matched_shift_undetectable": 0.04666666666666667,
+              "by_own_asymmetry_quartile": [
+                0.6153846153846154,
+                0.13157894736842105,
+                0.06451612903225806,
+                0.16666666666666666
+              ]
+            }
+          }
+        }
+      },
+      {
+        "n_by_S": {
+          "2": {
+            "median_rss_flip": 0.6272333562374115,
+            "median_rss_matched_shift": 0.9171815812587738,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.5533333333333333,
+              "fraction_matched_shift_undetectable": 0.4866666666666667,
+              "by_own_asymmetry_quartile": [
+                0.7619047619047619,
+                0.4838709677419355,
+                0.5161290322580645,
+                0.43478260869565216
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.6266666666666667,
+              "fraction_matched_shift_undetectable": 0.6266666666666667,
+              "by_own_asymmetry_quartile": [
+                0.8333333333333334,
+                0.5806451612903226,
+                0.5806451612903226,
+                0.5
+              ]
+            }
+          },
+          "5": {
+            "median_rss_flip": 2.2271130084991455,
+            "median_rss_matched_shift": 2.2742305994033813,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.35333333333333333,
+              "fraction_matched_shift_undetectable": 0.16666666666666666,
+              "by_own_asymmetry_quartile": [
+                0.6666666666666666,
+                0.16129032258064516,
+                0.3225806451612903,
+                0.21739130434782608
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.44666666666666666,
+              "fraction_matched_shift_undetectable": 0.28,
+              "by_own_asymmetry_quartile": [
+                0.6904761904761905,
+                0.2903225806451613,
+                0.41935483870967744,
+                0.34782608695652173
+              ]
+            }
+          },
+          "9": {
+            "median_rss_flip": 3.677784562110901,
+            "median_rss_matched_shift": 3.767279267311096,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.26,
+              "fraction_matched_shift_undetectable": 0.08666666666666667,
+              "by_own_asymmetry_quartile": [
+                0.5952380952380952,
+                0.0967741935483871,
+                0.1935483870967742,
+                0.10869565217391304
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.3466666666666667,
+              "fraction_matched_shift_undetectable": 0.19333333333333333,
+              "by_own_asymmetry_quartile": [
+                0.5952380952380952,
+                0.16129032258064516,
+                0.3548387096774194,
+                0.2391304347826087
+              ]
+            }
+          },
+          "30": {
+            "median_rss_flip": 9.27114200592041,
+            "median_rss_matched_shift": 7.536252021789551,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.14666666666666667,
+              "fraction_matched_shift_undetectable": 0.013333333333333334,
+              "by_own_asymmetry_quartile": [
+                0.4523809523809524,
+                0.03225806451612903,
+                0.0,
+                0.043478260869565216
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.2,
+              "fraction_matched_shift_undetectable": 0.02666666666666667,
+              "by_own_asymmetry_quartile": [
+                0.5238095238095238,
+                0.03225806451612903,
+                0.0967741935483871,
+                0.08695652173913043
+              ]
+            }
+          }
+        }
+      },
+      {
+        "n_by_S": {
+          "2": {
+            "median_rss_flip": 0.47376835346221924,
+            "median_rss_matched_shift": 1.0352922081947327,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.58,
+              "fraction_matched_shift_undetectable": 0.4666666666666667,
+              "by_own_asymmetry_quartile": [
+                0.8064516129032258,
+                0.6222222222222222,
+                0.5555555555555556,
+                0.3103448275862069
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.66,
+              "fraction_matched_shift_undetectable": 0.62,
+              "by_own_asymmetry_quartile": [
+                0.8387096774193549,
+                0.7111111111111111,
+                0.6222222222222222,
+                0.4482758620689655
+              ]
+            }
+          },
+          "5": {
+            "median_rss_flip": 2.0156970620155334,
+            "median_rss_matched_shift": 2.2581623792648315,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.43333333333333335,
+              "fraction_matched_shift_undetectable": 0.20666666666666667,
+              "by_own_asymmetry_quartile": [
+                0.7741935483870968,
+                0.4444444444444444,
+                0.3333333333333333,
+                0.20689655172413793
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.4666666666666667,
+              "fraction_matched_shift_undetectable": 0.31333333333333335,
+              "by_own_asymmetry_quartile": [
+                0.7741935483870968,
+                0.4666666666666667,
+                0.35555555555555557,
+                0.3103448275862069
+              ]
+            }
+          },
+          "9": {
+            "median_rss_flip": 3.4197102785110474,
+            "median_rss_matched_shift": 4.326269149780273,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.32,
+              "fraction_matched_shift_undetectable": 0.13333333333333333,
+              "by_own_asymmetry_quartile": [
+                0.7419354838709677,
+                0.28888888888888886,
+                0.2222222222222222,
+                0.06896551724137931
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.3933333333333333,
+              "fraction_matched_shift_undetectable": 0.20666666666666667,
+              "by_own_asymmetry_quartile": [
+                0.7741935483870968,
+                0.4444444444444444,
+                0.26666666666666666,
+                0.10344827586206896
+              ]
+            }
+          },
+          "30": {
+            "median_rss_flip": 8.26236629486084,
+            "median_rss_matched_shift": 7.188215494155884,
+            "sigma_0.45": {
+              "fraction_flip_undetectable": 0.16666666666666666,
+              "fraction_matched_shift_undetectable": 0.0,
+              "by_own_asymmetry_quartile": [
+                0.5161290322580645,
+                0.06666666666666667,
+                0.08888888888888889,
+                0.06896551724137931
+              ]
+            },
+            "sigma_0.7": {
+              "fraction_flip_undetectable": 0.25333333333333335,
+              "fraction_matched_shift_undetectable": 0.06,
+              "by_own_asymmetry_quartile": [
+                0.6774193548387096,
+                0.17777777777777778,
+                0.15555555555555556,
+                0.06896551724137931
+              ]
+            }
+          }
+        }
+      }
+    ]
+  },
+  "parity_even_kernel_intersection": {
+    "n_variants": 12,
+    "grid": "sigma_hb in {0.0064,0.0084,0.0104} x c_hb in {85580,42790} x alpha' in {16466.72,8233.36}",
+    "what_is_measured": "min over corrections supported OUTSIDE the donor window of the residual of J(d+c), relative to |J d|; d moves mass into the donor window",
+    "per_solute": [
+      {
+        "solute": "C1=CC=C(C=C1)C#N",
+        "residual_by_n_kernels": {
+          "1": 1.8748932643350638e-05,
+          "2": 2.1036357419786303e-05,
+          "4": 2.9151962853042233e-05,
+          "12": 6.613254809296222e-05
+        }
+      },
+      {
+        "solute": "CCCC(CC)CC",
+        "residual_by_n_kernels": {
+          "1": 5.835668769491126e-16,
+          "2": 9.343176752920134e-16,
+          "4": 1.2702000952451482e-15,
+          "12": 5.881956539411932e-16
+        }
+      },
+      {
+        "solute": "CN=C=O",
+        "residual_by_n_kernels": {
+          "1": 5.933074501268959e-16,
+          "2": 7.499599770854309e-16,
+          "4": 3.575073150437961e-16,
+          "12": 8.470935636031782e-16
+        }
+      }
+    ],
+    "reading": "stacking twelve kernels leaves the residual at the same order as one, because every variant is parity-even and intersecting their null spaces cannot break a symmetry they all share"
+  }
+}
