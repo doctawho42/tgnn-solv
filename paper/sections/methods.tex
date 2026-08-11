@@ -49,7 +49,7 @@ between the liquid and the solid. That term is absent from the displayed equatio
 absent from the deployed model, which fixes $\Delta C_p=0$; the head that would predict it is off in
 the pinned configuration. The exposure is one-signed and not small. At the group-contribution value
 this corpus carries, $60$\,J\,mol$^{-1}$\,K$^{-1}$, the omitted term is a median $0.32$ and a mean
-$0.40$ in \lnx\ over the $1318$ labelled test rows that carry a measured $\Tm$, positive on every one
+$0.40$ in \lnx\ over the $1318$ labelled test rows that carry a measured $\Tm$, $31$ solutes, positive on every one
 of them, which is the size of the substitution penalty of \S\ref{sec:paradox} and twice the
 supervision gain. It enters the physics arms and not the closure-free control, and it cancels
 exactly in the evaluation-time substitution, where $\Phicry$ is common to the two arms
@@ -383,8 +383,11 @@ here train at $16$ segment iterations and are scored at $30$. Sixteen was chosen
 within $6\times10^{-5}$ of $30$ on these weights, so the two agree by construction on this
 configuration and not as a property of the count; a checkpoint fitted at a different count is scored
 through an operator it was never fitted against. The exposure that carries to the substitution
-contrast is not measured. The NRTL arm can be re-solved from its deposit and moves by $+0.0025$ in
-seed-mean MAE at the training count and a further $+0.017$ to convergence; the COSMO-SAC arms cannot,
+contrast is not measured. A second, independent truncation sits outside it---the SLE fixed point in
+$x_2$, run to a different count in training than in scoring---and only that one can be re-solved from
+a deposit: the NRTL arm moves by $+0.0025$ in seed-mean MAE at its training count and a further
+$+0.017$ to convergence on the outer loop. That figure prices the outer loop and not the segment one.
+The COSMO-SAC arms can be re-solved on neither,
 their kernel being a $\sigma$-profile pair no deposit and no retained checkpoint carries
 (\S\ref{sec:si-methods}). The saturated mole fraction solves $\lnx=-\Phicry(T)-\lng(x_2,T)$ as a damped fixed point in
 $x_2$; a bounded, gated adaptive correction perturbs the physical parameters rather than the output,

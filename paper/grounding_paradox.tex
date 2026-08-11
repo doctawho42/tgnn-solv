@@ -1002,7 +1002,9 @@ Group the labelled test rows by solute and temperature and rank the solvents ins
 ($823$ groups over $107$ solutes; Table~\ref{tab:ranking}). The mean per-solute Spearman correlation
 then falls from $0.592/0.546/0.598$ to $0.365/0.369/0.410$ across the three seeds, pooled $-0.197$
 $[-0.282,-0.117]$, every per-seed interval excluding zero. Each of the three falls is larger than
-any difference between seed replicates of a single arm, the largest of which is $0.060$.
+any difference between seed replicates of a single arm on this measure, the largest of which is
+$0.060$; the deposit carries that benchmark for the rank correlation only, so it is not read against
+the two measures below.
 Every interval here is a $95\%$ percentile bootstrap over those $107$ solute clusters, the
 effective sample rather than the $823$ groups.
 Normalised discounted cumulative gain over the top three solvents (nDCG@3) falls by $-0.084$
@@ -1226,8 +1228,10 @@ $\Binsuf$ is negligible (\S\ref{sec:si-tables}). What is reported rests on the b
 broad IDAC set---$477$ rows, $185$ pairs, $78$ solutes, $36$ solvents, $15$ source
 publications---on the solvent axis at three granularities and the solute axis at two, plus their
 cross-tab and the set as a whole. Fifteen have $n\ge40$ and are boundable, the only ones whose
-margins the rule can act on, and Table~\ref{tab:map-article} prints all fifteen with their
-$n$, their sources, their margins, their intervals and the condition each is in. The other $44$,
+margins the rule can act on. Table~\ref{tab:map-article} prints seven of them---every one the rule
+leaves standing and the classes they are read against---with their
+$n$, their sources, their margins, their intervals and the condition each is in; the remaining eight
+are in \S\ref{sec:si-map} in the same columns. The other $44$,
 including the $24$ that carry no estimate at all, are
 printed with the test each fails in \S\ref{sec:si-map}
 (Tables~\ref{tab:map-full}--\ref{tab:map-detail} and Fig.~\ref{fig:decomp}), every stratum with its
@@ -1723,9 +1727,12 @@ floor is $+0.55$ rather than $-0.2$, positive and establishing $\Bclos>0$ by the
 On the degraded pole ($n{=}846$) it degrades to RMSE $2.26$, of which the out-of-fold
 within-series regressor places at
 most $4.5$ of the $5.1$ total in input insufficiency and hence at least $0.6$ in the closure---both
-figures one-sided, in the same direction as the solubility bounds. That pole's RMSE is essentially
-unchanged by the filter, so the filter does not manufacture the contrast between the two poles; what
-it decides is the sign of the clean pole's floor.
+figures one-sided, in the same direction as the solubility bounds. The filter leaves that pole where
+it was and moves the other by a factor of eleven in $\mathrm{MSE}$, $3.33$ to $0.30$: before it the
+two poles differ by half an order of magnitude and after it by more than one, so a large part of the
+contrast between them is what the filter makes. The reversal itself does not rest on that---it is a
+sign, measured within each pole---but the poles' separation in level does, and so does the sign of
+the clean pole's floor.
 
 % THE ESTIMATOR'S CONSTRUCTION AND ITS VALIDATION MOVED TO \S\ref{sec:si-pka} ON 2026-08-07
 % (page-reduction pass), verbatim: the out-of-fold identity, the fold-design argument against

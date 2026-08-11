@@ -120,7 +120,7 @@ Where it can be measured it is large. The one trained COSMO-SAC head the tree re
 $8$-iteration run of \S\ref{sec:si-mech}---scores $2.61$ at $30$ against $1.92$ at $8$ on the same
 labelled rows, and its substitution penalty over the $5571$ rows whose solvent carries a reference
 profile is $+4.32$ at $8$ against $+6.43$ at $30$, a movement of half the penalty's own size. That
-head's penalty is ten times the one reported here and its predictions move the other way under the
+head's penalty is fifteen times the one reported here, at the count that one is measured at, and its predictions move the other way under the
 substitution, so those
 figures size the lever on a head of this architecture and do not transfer to these arms.
 Gradients on the full NRTL kernel use the implicit-function theorem at the converged $x_2^\star$
@@ -3026,8 +3026,11 @@ acceptor-only pairs and $1.205/0.867/0.578$ on the inert ones. All three classes
 they do not agree: the strong donors worsen with the coefficient, the acceptor-only pairs are flat
 until the doubling and then worsen, and the inert pairs improve monotonically. What the three
 together are consistent with is $\Bclos$ sitting in the hydrogen-bond kernel; they do not localise it
-there, since the classes are assigned by solvent alone and six of the eight inert-class pairs carry a
-hydrogen-bonding solute, whose own segment activity the coefficient scales at infinite dilution. Nor
+there, since the classes are assigned by solvent alone and five of the eight inert-class pairs carry a
+solute with donor-window mass of its own, whose segment activity the coefficient scales at infinite
+dilution; for the other three---$3$-methylpyridine once and tripropylamine twice, all at $0.000$\,\AA$^2$
+in that window---it has no route at all, the exchange energy being a product of a donor and an
+acceptor segment, and those three are unaccounted. Nor
 is any of it a statement about profile polarity: the sweep varies a kernel constant, and no step
 connects a constant to a profile. The strong-donor column carries one further result, printed
 because it is not favourable to the closure this paper deploys: at $c_{\mathrm{hb}}=0$ the error on
@@ -3095,7 +3098,7 @@ vs.\ oracle-$\sigma$) whose two arms share the \emph{identical} crystal term ($\
 of $4.2\times10^{-4}$ over the scored rows), so any $\Delta C_p$
 error cancels exactly in that comparison.
 What it is not orthogonal to is the \emph{mechanism} of \S\ref{sec:surrogate}. Setting
-$\Delta C_p=0$ leaves $\Phicry$ too large by a median $0.32$ and a mean $0.40$ in \lnx\ on the $1318$
+$\Delta C_p=0$ leaves $\Phicry$ too large by a median $0.32$ and a mean $0.40$ in \lnx\ on the $31$ solutes carrying the $1318$
 labelled test rows with a measured $\Tm$ (at $60$\,J\,mol$^{-1}$\,K$^{-1}$), positive on every one of
 them, and the crystal head is externally supervised toward measured $\Tm$ and $\dHfus$, so it is not
 free to absorb the bias; what absorbs it is \lng, which is the $\sigma$ head. A drift toward the

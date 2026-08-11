@@ -126,12 +126,14 @@ The three classes separate by
 direction rather than by size: both hydrogen-bonding classes rise with the coefficient---the
 acceptor-only pairs by tenfold and the strong donors by fourfold---while the inert class falls
 monotonically by half. That is consistent with $\Bclos$ sitting in the hydrogen-bond kernel and does
-not localise it there. The classes are assigned by the \emph{solvent} alone, and six of the eight
-inert-class pairs carry a hydrogen-bonding solute---five primary or secondary amines and one
-pyridine, all against benzene or hexadecane---whose own pure-component segment activity the
+not localise it there. The classes are assigned by the \emph{solvent} alone, and five of the eight
+inert-class pairs carry a solute that does have donor-window mass---five primary or secondary amines,
+$1.2$ to $3.8$\,\AA$^2$ of it against benzene---whose own pure-component segment activity the
 coefficient scales at infinite dilution. The coefficient therefore has a route into the class its
-name says it should not touch, and the improvement there is not evidence of a knob acting where it
-should not. It says nothing about a more polar \emph{profile}, a coefficient not
+name says it should not touch. For the other three it has none: $3$-methylpyridine and
+tripropylamine, twice, carry $0.000$\,\AA$^2$ there, and the exchange energy is a product of a donor
+and an acceptor segment, so no scaling of the coefficient reaches them. Those three are unaccounted,
+and the improvement on the class as a whole is not evidence of a knob acting where it should not. It says nothing about a more polar \emph{profile}, a coefficient not
 being a profile. On the strong donors
 the error at $c_{\mathrm{hb}}=0$ is $2.42$ against $2.83$ at the standard value, so switching the
 deployed hydrogen-bonding term off lowers the error on the class it governs---on $28$ pairs, $13$ of
@@ -235,7 +237,7 @@ supervision at all, and \S\ref{sec:ident} is the reason that matters---solubilit
 determine the profile's shape, so an unsupervised profile is free in exactly the bins that carry no
 constraint. That accounts for a quantity of this size. The parameterisation accounts for something
 much smaller and of a different kind: the profile is emitted through a softmax over the $51$ bins,
-which cannot return an exact zero where $57\%$ of the reference table's bins are exactly zero, so no
+which cannot return an exact zero where $57\%$ of the reference table's bins, over its $1424$ profiles, are exactly zero, so no
 amount of supervision empties the window---but a softmax reaches $10^{-6}$ at a logit gap of ten, and
 a floor of that size is four orders below what is measured. The measurement therefore bounds neither
 cause on its own. What it does establish is that the window is not empty in a trained arm and that
