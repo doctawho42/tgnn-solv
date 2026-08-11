@@ -52,7 +52,7 @@
     "arm_A_shape_only_median_abs": 0.3318883776664734,
     "arm_B_volume_only_median_abs": 0.152137890458107,
     "arm_B_area_only_median_abs": 0.1894305944442749,
-    "reading": "On arm A the residual term is a function of the two SHAPES alone: a 20% role mismatch on the area or on the volume moves ln gamma_2 by exactly zero, so the whole violation is the profile disagreement and tying the sigma-head restores the identity. On arm B the same role split also reaches ln gamma_2 through head_aux's V_m, and a volume mismatch alone breaks the identity with the profiles in perfect agreement -- so there the repair has to cover the aux head as well.",
+    "reading": "On arm A a 20% role mismatch on the area or on the volume moves ln gamma_2 by exactly zero, so the profile disagreement is the whole of the identity violation and tying the sigma-head restores the identity. That zero is the SELF-PAIR DEGENERACY and not a shape-only functional form: with both roles on one shape s, p_mix = s = p2_pure, the bracket lnGamma_mix - lnGamma_2pure is identically zero, and the A2/a_eff prefactor multiplies zero. Away from a self-pair the area is live -- holding the shape and scaling A2 by 20% scales the residual term by about 1.20 at x2 = 1e-3 against a distinct partner. On arm B the same role split also reaches ln gamma_2 through head_aux's V_m, and a volume mismatch alone breaks the identity with the profiles in perfect agreement, so there the repair has to cover the aux head as well.",
     "config_gate": "cosmo_sac_wire_volume (config.py:184, default False; configs/cosmo_sac.yaml:36 sets arm A false, arm B flips it via --set). model.py:563-571 is the branch."
   }
 }

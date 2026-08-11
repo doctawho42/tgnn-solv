@@ -10,6 +10,14 @@ on the other arm.  The role-adapted readout feeds THREE numbers, not one:
   (2) the cavity AREA A                     -> the residual prefactor and the SG area fraction
   (3) the molar VOLUME V_m from head_aux    -> the Staverman-Guggenheim term only
 
+WHAT THE ZERO IN CHANNELS (2) AND (3) IS, AND IS NOT.  On arm A they return exactly zero, but that
+is the self-pair degeneracy, not evidence that the residual term is a function of the shapes alone.
+With both roles carrying one shape s, p_mix = s = p2_pure, so the bracket lnGamma_mix -
+lnGamma_2pure is identically zero and the A2/a_eff prefactor multiplies zero.  Away from a self-pair
+the area is live: holding the shape and scaling A2 by 20% scales the residual term by about 1.20 at
+x2 = 1e-3.  Reading the zero as a functional-form statement generalises a degenerate case, which is
+the same error the 102 untestable self-pairs in self_pair.json exist to prevent.
+
 Channel (3) never touches the sigma-profile.  It is dead when cosmo_sac_wire_volume is False
 (the default and configs/cosmo_sac.yaml's arm A, residual-only), where model.py:570-571 passes
 V=None and CosmoSacLayer.ln_gamma_2 skips the combinatorial term entirely.  It is live on arm B,
@@ -123,12 +131,17 @@ def main() -> int:
         "arm_B_volume_only_median_abs": b["volume_only_median_abs"],
         "arm_B_area_only_median_abs": b["area_only_median_abs"],
         "reading": (
-            "On arm A the residual term is a function of the two SHAPES alone: a 20% role "
-            "mismatch on the area or on the volume moves ln gamma_2 by exactly zero, so the "
-            "whole violation is the profile disagreement and tying the sigma-head restores the "
-            "identity. On arm B the same role split also reaches ln gamma_2 through head_aux's "
-            "V_m, and a volume mismatch alone breaks the identity with the profiles in perfect "
-            "agreement -- so there the repair has to cover the aux head as well."
+            "On arm A a 20% role mismatch on the area or on the volume moves ln gamma_2 by "
+            "exactly zero, so the profile disagreement is the whole of the identity violation "
+            "and tying the sigma-head restores the identity. That zero is the SELF-PAIR "
+            "DEGENERACY and not a shape-only functional form: with both roles on one shape s, "
+            "p_mix = s = p2_pure, the bracket lnGamma_mix - lnGamma_2pure is identically zero, "
+            "and the A2/a_eff prefactor multiplies zero. Away from a self-pair the area is live "
+            "-- holding the shape and scaling A2 by 20% scales the residual term by about 1.20 "
+            "at x2 = 1e-3 against a distinct partner. On arm B the same role split also reaches "
+            "ln gamma_2 through head_aux's V_m, and a volume mismatch alone breaks the identity "
+            "with the profiles in perfect agreement, so there the repair has to cover the aux "
+            "head as well."
         ),
         "config_gate": (
             "cosmo_sac_wire_volume (config.py:184, default False; configs/cosmo_sac.yaml:36 "

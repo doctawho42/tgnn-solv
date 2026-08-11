@@ -592,13 +592,23 @@ is the role gap and nothing else.
 % readouts.  So on that arm tying the sigma-head alone leaves the identity broken.  Measured, not
 % argued: run_self_pair_channels.py, n=256 reference molecules, one channel given a 20% role
 % mismatch and the other two held exactly equal.  20% is the order the measured adapter divergence
-% implies.  Area and volume return EXACTLY 0.0000 with the combinatorial term off, which is the
-% stronger statement -- the residual term is a function of the shapes alone, not merely dominated
-% by them.
+% implies.  Area and volume return EXACTLY 0.0000 with the combinatorial term off, but that is the
+% SELF-PAIR DEGENERACY and not a shape-only functional form, and the first version of this
+% paragraph stated it as the latter.  With both roles on one shape s, p_mix = s = p2_pure, the
+% bracket ln Gamma_mix - ln Gamma_2pure is identically zero, and the A_2/a_eff prefactor multiplies
+% zero.  Away from a self-pair the area is live: holding the shape and scaling A_2 by 20% scales the
+% residual term by 1.1994 at x2 = 1e-3 over 256 reference molecules against a distinct partner,
+% which is the prefactor, exactly as this section and the SI already say elsewhere.  Do not restate
+% the zero as "a function of the shapes alone" -- that reading generalises a degenerate case, which
+% is the same error the 102 untestable self-pairs above exist to prevent.
 Which channel of that gap carries it decides how large the repair is. The role-adapted readout
-feeds three numbers, and on the arms this paper reports the residual term is a function of the two
-profile shapes alone: giving the two roles a $20\%$ mismatch on the cavity area, or on the molar
-volume, moves $\ln\gamma_2$ by exactly zero, so the profile disagreement is the whole of it. On the
+feeds three numbers, and on the arms this paper reports only one of them carries the violation: the
+residual term is the bracket $\ln\Gamma_{S,\mathrm{mix}}-\ln\Gamma_{S,2}^{\mathrm{pure}}$ scaled by
+$A_2/a_{\mathrm{eff}}$, and when the two roles agree on the shape that bracket is identically zero
+whatever the areas, so giving the two roles a $20\%$ mismatch on the cavity area, or on the molar
+volume, moves $\ln\gamma_2$ by exactly zero. The area is not thereby inert---it multiplies the
+residual term through that prefactor---but on a self-pair it multiplies zero, so the profile
+disagreement is the whole of the identity violation. On the
 one arm that restores the combinatorial term the same split also reaches $\ln\gamma_2$ through the
 auxiliary head's volume, and there a mismatch on the volume alone gives a median $|\ln\gamma_2|$ of
 $0.152$ with the two profiles in perfect agreement. The substitution overwrites both roles at once

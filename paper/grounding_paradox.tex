@@ -1905,10 +1905,21 @@ novelty inversion or the data-efficiency trend, all of which resolve the \emph{s
 chemical axes. We claim no accuracy result in either direction; those strata are reported in
 \S\ref{sec:map} and \S\ref{sec:data-efficiency} as descriptions of where two particular pipelines
 differ, and no conclusion rests on them. Running the matched control is the direct repair and we have
-not run it. What survives the confound is every \emph{within-checkpoint} contrast, where the two
-sides share one trained model and one tuning: \S\ref{sec:paradox}, \S\ref{sec:decision} (the ranking
-result included), \S\ref{sec:surrogate} with the output correction folded into it, and
-\S\ref{sec:measure}, which uses no trained model at all. Separately, and not as an
+not run it.
+% CORRECTED 2026-08-12, round four.  The immunity was granted at SECTION granularity and three
+% contrasts inside those sections do not qualify: the supervision gain of sec:paradox is two
+% trainings differing in warm-up budget, the co-adaptation control there is a second training at one
+% seed, and the shrinkage slopes of sec:decision read across the separately tuned control at one
+% seed.  Naming them costs one sentence and stops the paragraph from covering more than it can.
+What survives the confound is every \emph{within-checkpoint} contrast, where the two
+sides share one trained model and one tuning: the evaluation-time substitution of
+\S\ref{sec:paradox} and \S\ref{sec:decision}, the ranking
+result included, \S\ref{sec:surrogate} with the output correction folded into it, and
+\S\ref{sec:measure}, which uses no trained model at all. Three contrasts inside those sections take
+no immunity from this paragraph: the supervision gain of \S\ref{sec:paradox} is two trainings that
+differ in warm-up budget, the co-adaptation control there is a second training at one seed, and the
+shrinkage slopes of \S\ref{sec:decision} are read across the separately tuned control at one seed.
+Separately, and not as an
 accuracy claim about the bottleneck: no configuration we ran attains a lower \emph{seed-mean} error
 than the control---at one seed the NRTL arm does---and our one attempt to move the ceiling by grounding the
 % ITEM 1 OF THE 2026-08-10 REFEREE ROUND.  This sentence read "tested nothing", which is a null, and
