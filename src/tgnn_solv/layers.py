@@ -1702,7 +1702,42 @@ class CosmoSac2010Layer(nn.Module):
         self.exp_clamp = g("tau_clamp", 30.0)
         self.eps = g("eps", 1e-10)
 
-        sigma_grid = torch.linspace(sigma_min, sigma_max, n_bins)      # (51,)
+        # The grid is built the way the NIST reference builds it -- sigma_min + delta*m in
+        # float64 -- and NOT with torch.linspace, because the hydrogen-bond mask below tests
+        # sigma_m*sigma_n against zero and linspace does not put the centre bin ON zero.
+        # linspace gives sigma_25 = -8.149e-10 (float32) / +8.674e-19 (float64); NIST's
+        # `-0.025 + (2*0.025/50)*m` gives exactly 0.0.  With a non-zero centre bin, sigma_25*sigma_n
+        # and sigma_25*sigma_(50-n) carry OPPOSITE signs, so exactly one of every mirrored pair
+        # passes the strict test: 25 of 51 entries per block-pair, 75 of 153 on the centre row,
+        # each awarding a full c_hb*(sigma_m-sigma_n)^2 to a segment that carries no screening
+        # charge and cannot hydrogen-bond.  NIST has the same strict comparison
+        # (`c_hb = (sigma_m*sigma_n >= 0) ? 0 : cc`, COSMO.hpp:341) and is spared only by its
+        # exact zero, so this was a DIVERGENCE from the reference, not a shared convention.
+        # The float64 form below is bit-identical to NIST's on the default grid.
+        # WHAT IT DOES NOT DO, measured rather than assumed: it does not move the NIST comparison
+        # at all.  validate_cosmo2010_layer.py over 300 UD pairs returns RMSE 1.9e-4 / max 1.8e-3
+        # both before and after, to every printed digit and the same worst pairs, so the residual
+        # discrepancy against cCOSMO has some other cause.  The reason the fix is invisible there
+        # is that on all 80 UD compounds the OH and OT blocks carry EXACTLY zero area in the centre
+        # bin (NHB carries a median 7.7%, and c_hb(NHB, anything) = 0) -- a tabulated profile puts
+        # a zero-charge segment in the non-hydrogen-bonding type by construction.
+        # NOTHING IN THE TREE MOVES, checked and not assumed: the four scripts that use this layer
+        # (run_b_insuff_convention_audit, run_b_insuff_representative_audit,
+        # run_fidelity_lever_fair2002, run_fidelity_lever_inhouse) all feed TABULATED typed
+        # profiles from UD sigma3/, and no script anywhere pairs this layer with a checkpoint, so
+        # the learned-sigma -> 2010 path this file's validator docstring mentions does not exist.
+        # WHY IT IS KEPT ANYWAY: the guarantee that spares the reference is a property of the
+        # TABLE, not of the closure -- a predicted typed profile with any OH/OT mass at sigma = 0
+        # would fire the artefact, silently, and this repository predicts sigma-profiles for a
+        # living.  The fix also makes this kernel's charge-conjugation invariance exact
+        # (max|dw - J dw J| goes 2.5086 -> 0.0000e+00 in both precisions), which the gauge audit
+        # in run_charge_conjugation_gauge.py reads.
+        # NOT applied to CosmoSacLayer (2002): its kernel thresholds at +-sigma_hb = 0.0084, so a
+        # centre bin off by 1e-10 crosses nothing there, and changing it would perturb every
+        # deposited 2002 number for no gain.
+        _delta = (sigma_max - sigma_min) / (n_bins - 1)
+        sigma_grid = (sigma_min + _delta * torch.arange(n_bins, dtype=torch.float64)).to(
+            torch.get_default_dtype())                                  # (51,)
         sigma_cat = sigma_grid.repeat(self.N_TYPE)                      # (153,) NHB|OH|OT
         self.n_bins = n_bins
         self.n_grid = self.N_TYPE * n_bins
