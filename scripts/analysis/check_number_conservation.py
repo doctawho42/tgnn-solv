@@ -430,14 +430,26 @@ def _tag_scripts(line: list[Word]) -> None:
         return
     heights = [w.height for w in line]
     baselines = [w.y1 for w in line]
+    # WHAT COUNTS AS "FULL SIZE" IS MEASURED AGAINST THE TALLEST GLYPH ON THE LINE, not against the
+    # line's median height (corrected 2026-08-11).  The guard exists to protect tall delimiters and
+    # operators, which sit BELOW the baseline and would otherwise be tagged as subscripts; the
+    # median is the wrong reference for it because a line dense with math collapses it.  On SI p.6
+    # the line "|m p*(sigma_m) - A*|/A* is at most 7 x 10^-16." carries six 10.6 pt math glyphs
+    # against five 11.96 pt body words, four 15.5 pt delimiters and five 7.1 pt scripts, so its
+    # median height is 10.6 and the 10.36 pt exponent "-16" passed `height >= 0.95 * median' as body
+    # text: it was never tagged `super', the scientific-notation fold never fired, and 7e-16 was
+    # reported as a number the document had stopped printing.  It had not; it had changed line.  The
+    # same sentence one page later, on an ordinary line, folded correctly.  Against the line maximum
+    # the guard still protects every tall glyph and no longer swallows exponents.
     mh = statistics.median(heights)
+    tallest = max(heights)
     mb = statistics.median(baselines)
-    if mh <= 0:
+    if mh <= 0 or tallest <= 0:
         return
     tol = 0.15 * mh
     for w in line:
-        if w.height >= 0.95 * mh:
-            continue                       # full-size glyphs are body text
+        if w.height >= 0.95 * tallest:
+            continue                       # the line's full-size glyphs are body text
         if w.y1 < mb - tol:
             w.script = "super"
         elif w.y1 > mb + tol:

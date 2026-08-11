@@ -111,8 +111,14 @@
 % defined". `nocite' stops the import: each document numbers its citations only from
 % its own bibliography.
 \externaldocument[][nocite]{grounding_paradox_si}
-% TITLE, 2026-08-10 (third revision).  ONE clause, ten words.  Keep it identical to the \title in
-% grounding_paradox_si.tex.
+% TITLE, 2026-08-11 (fourth revision).  ONE clause, twelve words.  Keep it identical to the \title
+% in grounding_paradox_si.tex.
+%
+% "SOLVENT" ENTERED 2026-08-11 (referee round 6).  The substitution the paper is named for reaches
+% 99.3% of the labelled test rows on the solvent side and 5.3% on the solute side (\S\ref{sec:eval}),
+% so what is measured is the substitution of a reference SOLVENT profile; \S\ref{sec:eval} and
+% \S\ref{sec:discussion} said so and the title did not.  Twelve words is JCIM's stated preference,
+% so the word is affordable and the scope is no longer left to the body.
 %
 % WHY IT IS ONE CLAUSE NOW.  JCIM's guide for authors asks for "preferably 12 words or fewer"; the
 % two-clause form below ran to 22, and all three referees this round stopped on the same structural
@@ -198,8 +204,8 @@
 %   There is no "at Inference".  The two operations differ by when the reference enters, and the
 %       title names only the one it is about; adding the timing costs a word and buys a distinction
 %       that has no counterpart in the title to be told apart from.  The abstract draws it.
-\title{Substituting Reference $\sigma$-Profiles for Learned Ones Degrades COSMO-SAC Solubility
-Prediction}
+\title{Substituting Reference Solvent $\sigma$-Profiles for Learned Ones Degrades COSMO-SAC
+Solubility Prediction}
 
 % NOTE: achemso re-typesets the arguments of \affiliation and \email, so anything outstanding here is
 % written as a plain comment rather than through \pending.
@@ -531,26 +537,28 @@ infinite-dilution activity coefficients, model misspecification, representation 
 \begin{abstract}
 Physics-informed models route predictions through physical quantities;
 accurate references should help. We measure that for solid--liquid
-solubility: a graph neural network predicts charge-density profiles a quantum-chemical
-database tabulates; fixed COSMO-SAC and a crystal term turn two into a solubility.
+solubility: a graph network predicts the charge-density profiles a
+database tabulates; COSMO-SAC's fixed residual term and a crystal term turn two into a solubility.
 Supervising the profile against that database
 lowers $\ln x_2$ mean absolute error from $2.043$ to $1.846$ over three seeds; that gain is not
-certified leak-free. Substituting the reference for the learned profile raises the
-error to $2.252$ at inference; the rise during training is smaller, at one seed, where it
+certified leak-free, surviving deletion of every test solute a leak reaches. Substituting the
+reference for the learned one raises the
+error to $2.252$ at inference, the training-time rise smaller, at one seed where it
 co-adapts. Grounding's two
 operations cannot be ordered by size; only their directions hold. On infinite-dilution
-activity data another such database bounds a deployed thermodynamic model's error from below,
-its inputs' from above. The input bound barely moves. That is an
-estimator property, not chemistry; the error moves. One admissibility rule leaves
-glycol-ether solvents standing, where that model's error exceeds its
-inputs' by $2.04$ ($n{=}182$, $43$ pairs, $90\%$ interval $[+1.25,+2.87]$). That margin is a lower
-bound; no other subset stands, neither set whole, nothing on solubility. That set is the survivor of a
-$59$-fold search, not an established effect: chemistry-blind relabelling certifies something in
-most draws, reaching that margin in a tenth under the binning bound. A pre-declared out-of-sample
-test returned \emph{not testable}: the one independent database holds no glycol-ether solvent
-with an organic solute. The profile departs from its
+activity data another database bounds a deployed thermodynamic model's error from below,
+its inputs' from above; that input bound barely moves, an
+estimator property and not chemistry, while the error moves. One admissibility rule leaves
+glycol-ether solvents standing, $182$ rows over $4$ solvents and $19$ nonpolar solutes, its
+error exceeding its
+inputs' by $2.04$ ($90\%$ interval $[+1.25,+2.87]$), and $1.76$ under the
+pre-declared estimator. Both are lower
+bounds; no other subset stands, nor the set whole, nor solubility. That set is a
+$59$-fold search's survivor, not an established effect: chemistry-blind relabelling reaches its
+margin in a tenth of draws under the first bound and a seventh under the other. The
+profile departs from its
 reference along a shared direction, on separate three-seed runs. A Hammett $\mathrm pK_a$
-closure reverses the substitution's sign where its constants suffice.
+closure reverses the substitution's sign in distribution, where its constants suffice.
 \end{abstract}
 %</abstract-numerals>
 
@@ -609,14 +617,17 @@ components. What that buys is decomposability: each part is a quantity chemists 
 so it can be supervised against reference data a direct regressor has no way to use. On accuracy the
 black box leads and the physics-informed cycle trails it. Learned surrogates for the activity
 coefficient have advanced quickly, and split the same way. Winter et al.\ \cite{winter2022} predict
-\lngi\ from SMILES with a language model and Sanchez-Medina et al.\ \cite{sanchezmedina2023} embed a
-Gibbs--Helmholtz constraint in a graph network for its temperature dependence, both making the
+\lngi\ from SMILES with a language model, and Sanchez-Medina et al.\ \cite{sanchezmedina2023} and
+Wang et al.\ \cite{wang2026ghgeat} embed a
+Gibbs--Helmholtz constraint in a graph network for its temperature dependence, all making the
 activity coefficient the regression target; a second line instead keeps a mechanistic model and
 learns its input. COSMO-SAC \cite{lin2002} is a segment-activity reformulation of Klamt's COSMO-RS,
 and the $\sigma$-profile it consumes---screening-charge density over a molecule's cavity---is that
 framework's construct, tabulated from quantum chemistry \cite{mullins2006}. Predicting it from
 structure removes that calculation from the pipeline; TeNNet-SAC \cite{yang2025tennet} does so while
-also learning the segment-activity kernel, and gains from truer profiles.
+also learning the segment-activity kernel and the cavity geometry, and reports accuracy better than
+COSMO-SAC's after end-to-end fine-tuning---the opposite headline from this one, on the same broad
+construction, and \S\ref{sec:surrogate} sets the two side by side.
 
 When a fixed physical structure improves or degrades a learned model is the broader question of
 physics-informed machine learning \cite{karniadakis2021}, whose dominant forms impose structure as a
@@ -624,14 +635,14 @@ differentiable object: a governing equation enforced through the loss \cite{rais
 hybrids composing learned components with fixed mechanistic maps \cite{willard2022}, and operator
 learning with a trainable correction to a misspecified equation \cite{ma2026}. The prevailing
 expectation is that more physics improves generalisation, yet the same structure has documented
-failure modes in which it makes optimisation or accuracy worse \cite{krishnapriyan2021}: in neural
+failure modes in which it makes optimisation or accuracy worse \cite{krishnapriyan2021}. In neural
 PDE solvers, a learnable term added to a fixed discretised operator absorbs truncation artifacts
 rather than physics, so the apparent interpretability is illusory \cite{mohan2024}---though that
 error source is numerical and has no external reference. The same concern appears in
-\emph{concept-bottleneck models}---networks routed through a layer of named, human-interpretable
-concepts, so that the prediction is made from those concepts and nothing else, which is the same
-shape as a learned intermediate feeding a fixed physical map---where it is called \emph{concept
-leakage}: a learned concept silently encodes information
+\emph{concept-bottleneck models}: networks routed through a layer of named, human-interpretable
+concepts, so that the prediction is made from those concepts and nothing else. That is the same
+shape as a learned intermediate feeding a fixed physical map, and there the failure is called
+\emph{concept leakage}---a learned concept silently encodes information
 beyond its nominal meaning \cite{mahinpei2021,margeloiu2021,havasi2022}. Recent work traces one
 route to it to the downstream model: a misspecified head forces the encoder to deform the concept
 into carrying a dependence the head cannot represent \cite{parisini2025}, and overwriting a frozen
@@ -831,15 +842,27 @@ single-seed control arms below carry that identical set, so nothing here is comp
 sets. Supervising the
 $\sigma$ head against the database \emph{during training} improves solubility MAE from
 $2.043\pm0.040$ (ungrounded) to $1.846\pm0.053$ (grounded), a gain of $0.20$ over three seeds, the
-two arms' per-seed values not overlapping. The
+two arms' per-seed values not overlapping. Those spreads are over initialisation and batch ordering
+and price nothing about which solutes fell in the test set; pooling the three seeds and resampling
+the $147$ test solute clusters puts the gain at $+0.198$, $95\%$ percentile interval
+$[+0.06,+0.33]$. The
 ungrounded arm carries no $\sigma$ stream, so this is the one contrast in the paper that the
 uncertified stream build of \S\ref{sec:data} could inflate rather than one the arguments there bound
-(\S\ref{sec:si-repro}).
+(\S\ref{sec:si-repro}). Deleting every solute that build can reach---the $8$ of the $147$ carrying
+their own reference profile or a scaffold relative in it, on $351$ of the $5608$ rows---leaves
+$2.036$ against $1.864$ on the remaining $139$ solute clusters, a gain of $+0.172$
+$[+0.03,+0.31]$. That bounds
+where the leak can act and does not certify the build: it removes the rows a leaked profile scores,
+not the effect a leaked profile had on the weights.
 Substituting the reference profile for the learned one \emph{at inference} degrades it, and that
 substitution alone is the effect this paper is named for. It erases any positive $R^2$
 (Fig.~\ref{fig:paradox}): the model predicts solubility better \emph{from its own learned
 $\sigma$-profile} than when \emph{given the external reference one} (MAE $1.85$ vs $2.25$, in \lnx\
-units, over the same three seeds and with no overlap between the two arms' per-seed values either). Of the figure's eight arms two are non-COSMO controls, DirectGNN and a fitted NRTL closure;
+units, over the same three seeds and with no overlap between the two arms' per-seed values either).
+Resampling the same $147$ solute clusters over the pooled three seeds puts that penalty at $+0.406$,
+$95\%$ percentile interval $[+0.29,+0.53]$; the median per-row gap is $+0.32$ against the mean's
+$+0.41$, so the effect is present at the middle of the distribution and heavier above it.
+Of the figure's eight arms two are non-COSMO controls, DirectGNN and a fitted NRTL closure;
 five COSMO-SAC arms differ only in how the $\sigma$ head is trained and in what it is fed, and the
 sixth (\emph{grounded\,$+$comb.}) differs instead in the closure, restoring the
 Staverman--Guggenheim combinatorial term. \emph{Ref.\ $\sigma$ (eval)} is the grounded checkpoint
@@ -915,8 +938,15 @@ $0.013$, so whatever produces it lives in the encoder and the data. Second, the 
 \emph{least} shrunk and the worst. Its slope is the closest of the four to $1$ and its prediction
 spread exceeds the measurement's, yet its MAE is the highest and its $R^2$ is not distinguishable
 from zero; substituting the reference restores spread that is not aligned with the truth, and its
-worst region is the sparingly-soluble tail it appears to reach. That is the misspecified map made
-visible on the solubility axis.
+worst region is the sparingly-soluble tail it appears to reach. That tail is where the closure is
+driven hardest: at seed $42$ the substituted arm returns $174$ rows with $\lng>10$ against none in
+the learned arm, whose largest is $9.70$ against the substituted arm's $19.5$, and $179$ of its
+\lnx\ predictions fall below $-15$, to a minimum of $-22.3$ where the corpus itself stops at
+$-17.7$. The worst $500$ of the $5608$ rows carry $0.32$ of that seed's $+0.43$ mean gap.
+Neither arm's fixed point is re-solved to convergence there, both being scored at the
+$30$ segment iterations of \S\ref{sec:model}, so those rows are the ones on which the truncation is
+least certified as well as the ones on which the two profiles differ most. That is the misspecified
+map made visible on the solubility axis.
 
 % RANKING (2026-08-06).  Added here and not in the SI because it says what the paradox IS about:
 % the substitution costs a decision, not a calibration.  Both sides are ONE checkpoint, re-run with
@@ -953,8 +983,8 @@ model would select changes in $40$ to $53\%$ of groups, asymmetrically: the lear
 picks the measured best solvent in $20.0/23.2/21.5\%$ of groups, the reference profile alone in
 $6.2/14.5/12.2\%$. None of that is a level. Fitting a separate affine recalibration inside every
 group---a slope as well as an intercept, the largest concession a reading on which the substitution
-merely miscalibrates can ask for---removes $86\%$ of the MAE gap, $+0.431$ $[+0.308,+0.553]$ to
-$+0.060$ $[+0.021,+0.101]$, which is the restored, misaligned spread of the paragraph above in
+merely miscalibrates can ask for---removes $86\%$ of the MAE gap, $+0.431$ $[+0.31,+0.56]$ to
+$+0.060$ $[+0.02,+0.10]$, which is the restored, misaligned spread of the paragraph above in
 another currency. That map is fitted on the rows it is then scored on, two free parameters against a
 median of five solvents, so it bounds what the concession can buy rather than measuring it. Refitted
 leaving out the row it scores, it removes none of the gap: $+1.09$ $[+0.3,+2.2]$ pooled. On the
@@ -1165,7 +1195,9 @@ $\Binsuf$ is negligible (\S\ref{sec:si-tables}). What is reported rests on the b
 broad IDAC set---$477$ rows, $185$ pairs, $78$ solutes, $36$ solvents, $15$ source
 publications---on the solvent axis at three granularities and the solute axis at two, plus their
 cross-tab and the set as a whole. Fifteen have $n\ge40$ and are boundable, the only ones whose
-margins the rule can act on. The other $44$, including the $24$ that carry no estimate at all, are
+margins the rule can act on, and Table~\ref{tab:map-article} prints all fifteen with their
+$n$, their sources, their margins, their intervals and the condition each is in. The other $44$,
+including the $24$ that carry no estimate at all, are
 printed with the test each fails in \S\ref{sec:si-map}
 (Tables~\ref{tab:map-full}--\ref{tab:map-detail} and Fig.~\ref{fig:decomp}), every stratum with its
 error, its bound, its interval and its share of the set's squared error, nothing dropped for
@@ -1174,15 +1206,29 @@ Six of the fifteen are \emph{admissible}. Clause~(c) of the rule makes those six
 distinct row sets, of which one is both positive and not demoted by its residual test: the
 glycol-ether solvents. \textbf{That row
 set is the one the admissibility rule leaves standing}, at a margin a chemistry-blind relabelling of
-the same molecules reaches in $10.1\%$ of draws (below). On $182$ rows over $43$
-pairs from three publications carrying
-$45\%$ of the set's squared error, the closure's own error exceeds what input insufficiency can
+the same molecules reaches in $10.1\%$ of draws (below). Its clusters are few and its chemistry is
+narrow, and both belong in the sentence that states it. The $182$ rows over $43$
+pairs carrying $45\%$ of the set's squared error span $4$ solvents---ethane-1,2-diol and the di-,
+tri- and tetraethylene glycols, one homologous series---and $19$ solutes, every one of them a
+hydrocarbon or a halobenzene ($108$ alkane rows, $48$ aromatic hydrocarbon, $24$ alkene, $2$
+halogenated aromatic); $175$ of the $182$ rows are gas chromatography, and two of the three
+publications carry $177$ of them.
+On those rows the closure's own error exceeds what input insufficiency can
 account for by at least $+2.04$, that bound carrying a $90\%$ interval of $[+1.25,+2.87]$ at the
 residual-only convention and reaching $+2.94$
 at the pair unit under the full one. It is positive in all four cells at $P>0.95$ in each, and under
 every single-publication
 deletion, the worst leaving $+1.60$ when \texttt{10.1016/j.jct.2016.10.013}, which carries $53\%$ of
-that stratum's squared error, is removed. That interval is the two-way cluster bootstrap run to
+that stratum's squared error, is removed. The unit the stratum's chemistry actually varies over is
+the solvent, and the deletion that unit calls for is not the publication's: three publications map
+onto four molecules, so leaving one out is the sharper test. Deleting each glycol in turn leaves
+$+1.72$, $+1.94$, $+2.05$ and $+2.29$, and taken one at a time the four give $+3.17$, $+2.44$,
+$+1.71$ and $+1.21$, falling monotonically with chain length on $41$, $36$, $56$ and $49$ rows. The
+sign survives every deletion; the magnitude runs over a factor of two and is set by the shortest
+oligomer. Read the four one-at-a-time values as a shape and not as four bounds: diethylene glycol's
+$36$ rows are below the $n\ge40$ the map's own boundability rule asks of a cell, so that one is
+printed here for the trend it belongs to and is not admissible on its own.
+That interval is the two-way cluster bootstrap run to
 convergence, at $1.2\times10^{8}$ draws against the $3000$ each cell of the map draws. Its
 $\pm0.02$ of Monte-Carlo spread at $3000$ is this cell's own and does not carry to the others:
 measured per row set over $200$ seeds, the spread of an endpoint any seed moves runs $0.0009$ to
@@ -1192,7 +1238,12 @@ two cells with one cluster on one of their two axes, so the resample is one-way 
 clusters, about ten distinct compositions exist and no seed moves them at all. Each interval in
 the map therefore prints at the precision its own
 draw count determines, and the eleven that neither two decimals nor one would reach carry their
-Monte-Carlo spread beside them (note~\emph{b} of Table~\ref{tab:map-full}). It is not an
+Monte-Carlo spread beside them (note~\emph{b} of Table~\ref{tab:map-full}). That rule settles the
+Monte-Carlo question and not the sampling one, and the two are different: the second decimal of
+$[+1.25,+2.87]$ is a property of the draw count, while the interval's solvent axis resamples the
+same four molecules the deletions above delete, so how far the endpoints would travel over a
+different four glycols is not a question this bootstrap or any other on these rows can answer. The
+deletion spread is the honest width on that axis. It is not an
 artifact of one solute family: the $74$ rows
 left when its alkane solutes are dropped keep the sign at $+1.40$ residual-only and $+1.69$ full, under
 all three deletions. Nor is it a property of the estimator cell. Table~\ref{tab:grid-rep}'s
@@ -1207,12 +1258,16 @@ regressor, tested after this analysis was fixed, returns a \emph{looser} bound: 
 stratum to $+1.76$ $[+1.02,+2.49]$---one $3000$-draw replicate, whose second decimal is seed and
 not estimator (\S\ref{sec:si-crossfit})---leaving it the one admissible positive row set but with fewer
 cells around it, and moves the chemistry-blind null the \emph{wrong} way. That figure is at the
-residual-only convention and row unit the $+2.04$ is read at.
+residual-only convention and row unit the $+2.04$ is read at. Under the declaration's conservative
+fold variant, grouped on the source publication rather than the molecule pair, no admissible
+positive row set survives at all: this stratum's cross-fitted bound there is $4.92$ against an
+$\mathrm{MSE}$ of $2.25$, for a margin of $-7.58$, on $15$ source groups split five ways.
 That null is re-run on both sides for
 that comparison, on the $473$ rows the cross-fitted estimator scores rather than the $477$ the map
 is built on, so its baseline column is not the $10.1\%$ and $17\%$ quoted below. Against a
 binning-bound baseline of $0.094$ on those rows the cross-fit gives $p(D)=0.137$, and the share of
-certifying draws that reach the observed maximum goes from $16\%$ to $54\%$. The
+certifying draws that reach the observed maximum goes from $16\%$ to $54\%$---the difference between
+a margin at the ninetieth percentile of its own search null and one near the median of it. The
 declaration required the cross-fitted estimator to be adopted \textsc{unconditionally} if it passed
 a validity gate that reads no margin, and it passed; every margin printed in this paper is
 nevertheless the binning bound's. That deviation runs in this paper's favour, and it is a choice made
@@ -1225,6 +1280,68 @@ deviation is that the number it was made after is a single global comparison of 
 row set and not a per-cell selection, and that the poorer cross-fitted map is printed cell by cell
 in \S\ref{par:crossfit-deviation}, where the declared rule can be held against it. What the sweep establishes is therefore robustness within
 the binning bound, not across estimators.
+
+% ===========================================================================================
+% THE MAP, PROMOTED INTO THE ARTICLE 2026-08-11 (referee round 6, all three referees).  The
+% instrument's output was legible in the article only as the three-bar strip of Fig. 1b, and a
+% referee could not check "no other stratum separates" without the Supporting Information.  These
+% are the FIFTEEN strata the fixed estimator can bound -- the only rows the admissibility rule can
+% act on -- on both axes and at every granularity.  The two bodies are GENERATED by
+% scripts/analysis/make_map_table_tex.py from results/b_insuff/admissibility_table.csv, the same
+% generator and the same cell as the SI's five map tables; the 44 unboundable strata stay there.
+% Do not edit the bodies here.  If a granularity is added to the map, it lands in both places in
+% the same pass.
+% ===========================================================================================
+\begin{table*}[tp]
+\centering
+\caption[The map: every stratum the estimator can bound]{\textbf{The map: every stratum the fixed estimator can bound}---the $15$ of the $59$ with
+$n\ge40$, at the pre-declared cell (eight equal-count bins of $g(\zstar)$, unbiased within-bin
+variance, row unit, residual-only convention), applied identically to all of them. \emph{full} is
+the same cell under the full combinatorial convention. Every margin, and the $\mathrm{MSE}$ and
+bound behind it, is in squared \lngi. The last column states what the row shows or the test it
+fails. The other $44$ strata, the $24$ of them carrying no estimate at all included, are in
+\S\ref{sec:si-map} at this same cell.}
+\label{tab:map-article}
+{\scriptsize\linespread{0.96}\selectfont
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.7}
+\input{si_tables/stratified_map_rows_article}
+\tabnotes{\scriptsize%
+\tnk{a}\,Number of source publications, then the largest one and its share of that stratum's
+squared error. The keys: \input{si_tables/map_source_key}\quad
+\tnk{b}\,\input{si_tables/map_ci_note}\quad
+\tnk{c}\,In how many of the four unit\,$\times$\,convention cells the stratum is both boundable and
+sign-stable under deletion of each contributing publication; the rule of \S\ref{sec:estimator}
+requires all four, which six of the $59$ satisfy---three distinct row sets.\quad
+\tnk{d}\,The condition the row is in, not a label for it. A one-source cell cannot be tested and a
+deletion leaving fewer than $16$ rows leaves the cell undefined, so both read as untested rather
+than as passes. A margin is one-sided: positive puts $\Bclos>\Binsuf$ on those rows at that cell,
+non-positive is a failure to separate and licenses nothing.\quad
+\tnk{e}\,The search behind every row, in the two nulls of the paragraph below. Under the binning
+bound of record, a chemistry-blind relabelling of the same molecules certifies at least one row set
+in $58\%$ of $2000$ draws, reaches $+2.04$ or more in $10.1\%$ of all draws and in $17\%$ of the
+draws that certify anything, and separates the six admissible strata from chance ($p=0.01$) but not
+the two admissible positive row sets ($p=0.286$). Under the pre-declared cross-fitted estimator, on
+the $473$ rows it scores, the same relabelling reaches the observed maximum in $13.7\%$ of all draws
+and in $54\%$ of the certifying ones, against $9.4\%$ and $16\%$ for the binning bound on those same
+rows.}}
+\end{table*}
+
+% The solute half of the same fifteen.  Two floats and not one: stacked, the two tabulars and the
+% note block run 201pt past the page.  The notes are Table~\ref{tab:map-article}'s and are not
+% repeated, which is the arrangement the five SI map tables already use.
+\begin{table*}[tp]
+\centering
+\caption[The map, solute axis: the boundable strata]{\textbf{The map, solute axis}---the rest of the fifteen boundable strata, at the same
+estimator cell and under the same rule as Table~\ref{tab:map-article}, whose notes apply here
+unchanged. The alkane row is the second admissible positive row set, and clause~(c) demotes it to
+the glycol ethers.}
+\label{tab:map-article-solute}
+{\scriptsize\linespread{0.96}\selectfont
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.7}
+\input{si_tables/stratified_map_rows_article_solute}}
+\end{table*}
 
 What the row set does not have is a multiplicity null it clears, and this belongs beside the
 finding rather than in a limitation. It is by construction the survivor of a $59$-fold search.
@@ -1459,7 +1576,11 @@ optimiser noise over five fit seeds, the held-out fold spread that dominates it 
 Where it fails is chemically placed, and placed differently on the two sets. On the VT-2005-matched
 set $90\%$ of the squared error falls on strong hydrogen-bond-donor solvents and the closure is
 near-exact on acceptor-only ones---the chemistry COSMO-SAC's documented single-parameter H-bond term
-governs, the term the donor/acceptor-typed 2010 closure was built to replace. Half of that reading
+governs, the term the donor/acceptor-typed 2010 closure was built to
+replace \cite{hsieh2010,fingerhut2017}. That the $2002$ kernel fails on hydroxylic and aqueous
+systems is established, and the localisation restates it rather than discovering it; what is new is
+that on one such chemistry the failure is bounded against what the closure's inputs cannot resolve.
+Half of that reading
 carries to the published evaluation of Table~\ref{tab:closure-anchor} and half does not, and on the
 broad set neither it nor its replacement reproduces, so we state neither
 (\S\ref{sec:si-fidelity}). It places the error in a \emph{chemistry} and not in one component of the
@@ -1469,8 +1590,12 @@ than open. Replacing the four glycol-ether solvent references with Boltzmann con
 computed at BP86/def2-TZVP with CPCM moves the stratum's margin from $+2.04$ to $+2.27$, $90\%$
 interval $[+1.36,+3.29]$, and an equal-norm random displacement leaves $+1.68$---so the separation
 is not an artefact of those references' conformations, though displacing the solutes by the same
-norm moves it as much, and reference uncertainty at large is not bounded by this
-(\S\ref{sec:si-fidelity}).
+norm moves it as much. Reference uncertainty at large is not bounded by that, and its scale is
+measured: two defensible calculations of the same rigid molecule's profile differ by a median
+relative-$L_2$ of $0.282$, four to eight times the conformational displacement, and substituting a
+recomputed lowest conformer for the tabulated one moves this stratum's margin by $+5.43$ against the
+ensemble's $+0.23$. Every substitution reported in this paper is therefore scoped to the VT-2005
+tabulation's level of theory (\S\ref{sec:si-fidelity}).
 
 % COMPRESSED 2026-08-07 (page-reduction pass).  The exposure arithmetic in full -- the single
 % reference conformer and protonation state, the successor Delaware database revising about a third
@@ -1543,15 +1668,22 @@ Lemma~\ref{prop:decomp}: \emph{resonance saturation}, a curvature the linear clo
 represent, lands in $\Bclos$, while what the zeroed positions carry---ortho field and steric effects,
 and whatever an untabulated substituent contributes---is information the intermediate lacks and lands
 in $\Binsuf$. The two poles differ accordingly. On the clean one, the chemistry the relation was
-built for ($n{=}158$), it is well specified: RMSE $0.55$, and the lower
-bound $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ on the non-negative $\Bclos$ is $-0.2$ ($95\%$~CI
-$[-0.4,-0.0]$)---below zero, where a lower bound sits when the closure predicts as well as a flexible
-regressor on its own argument---while the per-scaffold systematic offsets are $\le0.19$ in
-$\mathrm pK_a$, whose square is the independent Jensen lower bound: $\le0.034$, $11\%$ of the
-$0.303$ total. \textbf{That pole reads as well specified only after the quality filter}: the rule is
+built for ($n{=}158$), the closure predicts to RMSE $0.55$, and the two available bounds on $\Bclos$
+disagree about what that leaves. The binning-free floor $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ is
+$-0.2$ ($95\%$~CI $[-0.4,-0.0]$), and it establishes nothing about this closure: the out-of-fold
+$\Binsuf^{\mathrm{up}}$ is $0.500$ against an $\mathrm{MSE}$ of $0.302$, so that difference is
+negative whatever the closure, and what those $158$ rows across four series show is that a flexible
+regressor on the closure's own argument predicts worse than the closure does. The
+Lemma~\ref{prop:decomp}(b) bound is informative and runs the other way. The per-scaffold systematic
+offsets reach $0.429$ in $\mathrm pK_a$ on phenol ($+0.303$ anilinium, $+0.034$ benzoic acid,
+$-0.198$ pyridinium), and the $n$-weighted mean of their squares bounds $\Bclos$ below at $0.083$,
+$27\%$ of the $0.303$ total, and at $0.184$ or $61\%$ on phenol alone. At least a quarter of the
+clean pole's error is closure error, so the pole is not shown to be well specified.
+The quality filter moves the floor and not that conclusion: the rule is
 closure-independent---net formal charge $\neq0$, applied uniformly to both poles, never reading a
 residual---but it drops five pre-ionized microstates, and on the $163$ rows before it the same
-floor is $+0.55$ rather than $-0.2$, i.e.\ positive and establishing $\Bclos>0$ (\S\ref{sec:si-pka}).
+floor is $+0.55$ rather than $-0.2$, positive and establishing $\Bclos>0$ by the other route as well
+(\S\ref{sec:si-pka}).
 On the degraded pole ($n{=}846$) it degrades to RMSE $2.26$, of which the same
 estimator places at
 most $4.5$ of the $5.1$ total in input insufficiency and hence at least $0.6$ in the closure---both
@@ -1605,16 +1737,21 @@ flips. On the clean pole ($n{=}158$) the reference \emph{improves} accuracy---MA
 with the reference, a gap of $-0.165$ at a $90\%$ CI of $[-0.28,-0.04]$, better in $19$ of $20$
 splits and in three of the four reaction series---so the
 ceiling there is the noisy learned estimate and not the closure, which is an internal positive
-control on real data. That control is the filtered $158$-record pole's and inherits its scope: on the
-unfiltered $163$ the closure floor is positive, and ``well specified'' is then not available to
-explain the swap's sign. On the degraded pole ($n{=}846$) the same swap \emph{degrades} it---$0.83$ against $1.62$,
+control on real data. It is a control on the swap's sign and not on the closure's specification: the
+Jensen bound puts at least a quarter of that pole's error in the closure, so the reference wins there
+against a closure carrying error of its own.
+On the degraded pole ($n{=}846$) the same swap \emph{degrades} it---$0.83$ against $1.62$,
 worse in $20$ of $20$ splits and in all four series, a gap of $+0.79$ at a $90\%$ CI of
 $[{+}0.57,{+}0.95]$---the freely
 learned constant absorbing what the zeroed positions carry and the tabulated one lacks. The sign of
-grounding therefore reverses inside one closure, in the direction Proposition~\ref{prop:tax} gives a
-priori and---consistently with the one-sided bound above, though not isolated by it---through the
-insufficiency channel rather than the closure-error cancellation
-of \S\ref{sec:surrogate}. Both signs are one comparison: the sign of the grounding gap is by
+grounding therefore reverses inside one closure, in the direction the two poles' construction fixes
+in advance---which ring positions the Hansch--Leo table can see, complete on one pole and a partial
+sum on the other---with Remark~\ref{prop:tax} supplying the vocabulary and not the prediction.
+That the reversal runs through the insufficiency channel rather than through the closure-error
+cancellation of \S\ref{sec:surrogate} is unsupported on the clean side, where the bound above leaves
+at least $27\%$ of the error in the closure; on the degraded side the same estimator leaves
+at most $87\%$ of the error in insufficiency, and there the attribution stands.
+Both signs are one comparison: the sign of the grounding gap is by
 construction that of the learned arm's error against the fidelity-set oracle error, and what a
 competence sweep adds is that the oracle side of it does not move with the training budget while the
 learned side does. The
@@ -1623,7 +1760,15 @@ four budgets swept, while the degraded pole's threshold ($1.62$) is high enough 
 arm beats it across the whole interpolation range, down to $12\%$ of the data, and grounding reverts
 to helping only under scaffold \emph{extrapolation}, where the learned constant breaks
 ($2.6{\pm}2.0$) back above the threshold---in the mean over the six splits, three of which still
-have grounding hurting. The clustering unit is the Hammett reaction series, of
+have grounding hurting. \textbf{The flip is an in-distribution result and the scaffold protocol does
+not certify it.} Re-running the same $K{=}20$ certification on a scaffold split rather than a
+stratified one, the reference helps on \emph{both} poles: the clean pole's gap is $-0.61$ and the
+degraded pole's $-1.10$, with a series-cluster interval of $[-1.86,+0.37]$ and $P=0.28$ there, so
+the degraded pole's ``grounding hurts'' half does not certify and the reversal does not either.
+Every solubility result in this paper is measured on a scaffold split, and this is the one place the
+protocol changes; what the scaffold run confirms is the mechanism rather than the flip, the learned
+constant breaking under extrapolation and rising above the oracle threshold on both poles.
+The clustering unit is the Hammett reaction series, of
 which only $G{=}4$ exist, so the bootstrap resolves nothing finer than series-level sign agreement,
 read as a sign test on four units: $p{=}1/16$ on the degraded pole, where grounding hurts and all
 four series agree, and $p\approx0.31$ on the clean one, where three of them do---so that test
@@ -1713,10 +1858,10 @@ than the control---at one seed the NRTL arm does---and our one attempt to move t
 % a wrong positive, so the claim is now what the measurement supports: the arm is UNDERPOWERED for
 % external crystal grounding, and the net-new subset moved.  Do not compress this back to "tested
 % nothing" -- the two CIs are the evidence that the word would contradict.
-crystal factor on external labels is underpowered rather than null: $97.76\%$ of its pool was melting
-points the model was already trained on, and where the pool did carry something new the crystal head
-moved, its paired $\Tm$ MAE over the pool itself going $-12.233$~K $[-18.25,-6.27]$ on the $345$
-net-new molecules against $-0.371$~K $[-0.81,+0.05]$ on the $15{,}082$ duplicated ones.
+crystal factor on external labels is underpowered rather than null. $97.76\%$ of its pool was melting
+points the model was already trained on. Where the pool did carry something new the crystal head
+moved: its paired $\Tm$ MAE over the pool itself went $-12.233$~K $[-18.25,-6.27]$ on the $345$
+net-new molecules, against $-0.371$~K $[-0.81,+0.05]$ on the $15{,}082$ duplicated ones.
 % THE HELD-OUT HALF OF THE SAME ESTIMAND PRINTS HERE.  The sentence above is the POOL side, and it
 % is the favourable one; the article printed it alone, so the crystal head's own property appeared
 % to have moved one way only.  On the held-out solutes it moves the other way, and the ungrounded
@@ -1765,9 +1910,9 @@ is one whose predictions are near-constant, so it is untested rather than answer
 % document's bibliography (osanloo2024 and vermeire2022solprop are cited in the Introduction), so
 % the attribution costs no new reference.  The Leeds set is named and not cited: no verified entry
 % for Boobier et al. exists in references_verified.bib, and the evaluation of record for all six
-% figures is Osanloo et al., which is cited.  "None of the six carries a published uncertainty" is
+% figures is Attia et al., which is cited (the key osanloo2024 is a historical key for that entry).  "None of the six carries a published uncertainty" is
 % the clause that keeps a range from being read as a spread; do not drop it to save words.
-The external block is not like-for-like and the table says so in its own block heads. FastSolv and SolProp are deposited here on a \emph{by-solute} split, this work's arms on the harder solute-scaffold split, and the published figures are as published, on other corpora and in another unit; retraining the two on the scaffold split needs a GPU run we did not perform, and scoring released FastSolv weights on our test rows is invalid because FastSolv is trained on this corpus. One sentence survives all three caveats, and it is not a favourable one: this work's control, at $\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is the same order as published new-solute extrapolation---the published leaders run $0.83$ to $0.99$ in that unit and the physics-informed cycle $1.43$ to $2.16$---rather than an order away, and the physics arms, at $1.39$ to $1.60$, are worse than every published leader at every seed and every clip. Those six published figures are $\log_{10}S$ RMSE in mol\,L$^{-1}$ from a single evaluation, Osanloo et al.\ \cite{osanloo2024}, on two corpora: the SolProp test set, whose solutes are disjoint from its training corpus, and the near-ambient Leeds set of Boobier et al. The leaders are that work's two direct models---the solution-FASTPROP ensemble at $0.83$ and $0.95$ and its solution-CHEMPROP companion at $0.83$ and $0.99$---and the physics-informed cycle is SolProp \cite{vermeire2022solprop}, scored in the same evaluation at $1.43$ and $2.16$. Each range is two point values on two corpora rather than a spread, and none of the six carries a published uncertainty. What may be read from those figures is what survives the clip sweep and not the two decimals; the sweep, the random-pair rows and the conversion behind the $\log_{10}S$ column are in \S\ref{sec:si-baselines}.
+The external block is not like-for-like and the table says so in its own block heads. FastSolv and SolProp are deposited here on a \emph{by-solute} split, this work's arms on the harder solute-scaffold split, and the published figures are as published, on other corpora and in another unit; scoring released FastSolv weights on our test rows is invalid because FastSolv is trained on this corpus. So there is no like-for-like external comparison in this paper. That is a budget and not a barrier: the FastSolv harness deposited here retrains from a train/validation/test triple and accepts this split's own files, and the run was not made, so the one number that would place these arms against published work on the split they are argued on does not exist. One sentence survives the caveats that remain, and it is not a favourable one: this work's control, at $\log_{10}S$ RMSE $1.00$ on held-out scaffolds, is the same order as published new-solute extrapolation---the published leaders run $0.83$ to $0.99$ in that unit and the physics-informed cycle $1.43$ to $2.16$---rather than an order away, and the physics arms, at $1.39$ to $1.60$, are worse than every published leader at every seed and every clip. Those six published figures are $\log_{10}S$ RMSE in mol\,L$^{-1}$ from a single evaluation, Attia et al.\ \cite{osanloo2024}, on two corpora: the SolProp test set, whose solutes are disjoint from its training corpus, and the near-ambient Leeds set of Boobier et al.\ \cite{boobier2020}. The leaders are that work's two direct models---the solution-FASTPROP ensemble at $0.83$ and $0.95$ and its solution-CHEMPROP companion at $0.83$ and $0.99$---and the physics-informed cycle is SolProp \cite{vermeire2022solprop}, scored in the same evaluation at $1.43$ and $2.16$. Each range is two point values on two corpora rather than a spread, and none of the six carries a published uncertainty. What may be read from those figures is what survives the clip sweep and not the two decimals; the sweep, the random-pair rows and the conversion behind the $\log_{10}S$ column are in \S\ref{sec:si-baselines}.
 
 % ---------------------------------------------------------------------------
 % EXTERNAL BASELINES, IN THE ARTICLE (2026-08-02, editorial item A3).  The only comparison against
@@ -1832,7 +1977,7 @@ appear where a row's two metric columns are not scored on the same rows, one whe
 \input{si_tables/external_baselines_rows_article}}
 \end{table*}
 
-\paragraph{The sign rule's own prediction.} Proposition~\ref{prop:tax} predicts \emph{when} to expect
+\paragraph{The sign rule's own prediction.} Remark~\ref{prop:tax} predicts \emph{when} to expect
 these negatives: a prior hurts precisely in the mature-data, low-noise, well-covered regime. The
 synthetic sweep (Fig.~\ref{fig:dial}) is true by construction there, so it verifies the instrument
 rather than the hypothesis, while the pKa closure exercises the sufficiency channel on real data.
@@ -1890,8 +2035,18 @@ withholds a chemistry from an allocation of grounding effort.
 
 \paragraph{Limitations: what is untested, and what is not auditable.} (xii)~The scaffold-leak guard is a property of the released stream builder and not a certified
 property of these runs, so the $0.20$ supervision gain is the one reported number a leak could
-inflate and is uncertified until the leak-free re-run (\S\ref{sec:data}); the arguments that bound
-the other contrasts do not restore auditability.
+inflate and is uncertified until the leak-free re-run (\S\ref{sec:data}); deleting the eight
+reachable solutes leaves $+0.17$ $[+0.03,+0.31]$, which bounds where a leak can act and does not
+restore auditability, and neither do the arguments that bound the other contrasts.
+(xiv)~Two terms the thermodynamics asks for are set to zero in the deployed model, and both are
+absorbed at training time by the same learned $\sigma$ head. $\Delta C_p$ is zero in the ideal term,
+one-signed and worth a median $0.32$ in \lnx\ where a melting point is measured
+(\S\ref{sec:framework}). The Staverman--Guggenheim combinatorial term is off in every arm the
+paradox is reported on, and the $\sigma$ head emits a profile shape and a cavity area but no cavity
+volume, so evaluating that term needs a volume from elsewhere, as the one arm that restores it takes
+one. Both cancel in the
+evaluation-time substitution and neither cancels in the training that produced the drift of
+\S\ref{sec:surrogate}, so the mechanism there is not isolated to the activity kernel.
 % THE INDEX WAS RE-CUT, 2026-08-10, in the pass that brought (ix), (x) and (xiii) into the article.
 % It used to be one 101-word sentence listing nine numerals under one verb, and three of its entries
 % became wrong the moment their content moved here: a reader sent to \S\ref{sec:si-limitations} for
@@ -2013,7 +2168,7 @@ A.~V. Rudik: Writing -- review \& editing.
 \section*{Conflicts of interest}
 \noindent There are no conflicts to declare.
 
-\section*{Data availability}
+\section*{Data and Software Availability}
 The analysis code, and those intermediate artifacts small enough to version, are available at
 \url{https://github.com/doctawho42/tgnn-solv} (commit
 \pending[hash to be supplied at submission]) under the MIT licence, that commit being the one
@@ -2052,8 +2207,11 @@ that does not deliver the provenance of the closure evaluations inside them, nor
 \begin{acknowledgement}
 This research received no external funding.
 Computations were carried out on commercial cloud services (Google Colab Pro+, Modal, and Google Cloud Platform) using NVIDIA T4 and L4 GPUs.
-% AI-use disclosure removed at the author's request; to be rewritten before submission. ACS asks for
-% one, so this must not be forgotten -- it is item 5 of the pre-submission checklist above.
+Generative-AI use: \pending[the tools used, and at which stages, to be stated by the authors].
+% The disclosure ACS requires names the tools and the stages they were used at, and that is author
+% knowledge, not manuscript content -- it cannot be written here without being invented.  It is now
+% a \pending so that it prints in red on every draft instead of sitting in a comment: item 5 of the
+% pre-submission checklist above, and the last of the five to be settled.
 \end{acknowledgement}
 
 % The Supporting Information is a separate document, grounding_paradox_si.tex. This paragraph is what
@@ -2062,15 +2220,14 @@ Computations were carried out on commercial cloud services (Google Colab Pro+, M
 \begin{suppinfo}
 The Supporting Information is a separate document. Its sections, tables, figures and equations are
 numbered S1, S2, \ldots, and every reference above that carries an S is to it. It contains
-supplementary methods; the proofs of Lemma~\ref{prop:decomp} and Proposition~\ref{prop:tax} and
+supplementary methods; the proofs of Lemma~\ref{prop:decomp} and Remark~\ref{prop:tax} and
 three further results; per-arm tables and decomposition robustness; the map's
 $59$ strata in full, including the $44$ the estimator cannot bound; further external ablations;
 supplementary mechanism results; supplementary diagnostics and broad negatives; the second-domain
 pKa construction; data provenance and reproducibility; the black-box probe tables; the synthetic
 closure-fidelity family; and the positioning against adjacent literatures. Two machine-readable
-tables are deposited with it: the $477$-row broad IDAC set (Data Set~S1,
-\texttt{broad\_idac\_set\_477.csv}) and the $60$-row VT-2005-matched set (Data Set~S2,
-\texttt{vt2005\_matched\_set\_60.csv}); their columns are listed in \S\ref{sec:si-repro}.
+tables are deposited with it: the $477$-row broad IDAC set (Data Set~S1) and the $60$-row
+VT-2005-matched set (Data Set~S2); their columns are listed in \S\ref{sec:si-repro}.
 \end{suppinfo}
 
 % DO NOT \input sections/SI here. It is the SI document's body now, it declares S-numbered

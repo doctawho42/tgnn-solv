@@ -146,14 +146,20 @@ intermediate leaves the oracle marginally ahead. The oracle-$\hammett$ pipeline
 data. On the OPERA experimental $\mathrm pK_a$ compilation \cite{mansouri2019opera} ($7{,}904$
 records under the same net-neutral filter), applying the same decomposition to the fixed Hammett
 closure yields a \emph{measured} fidelity sweep. On the clean meta/para series ($n{=}158$) the closure
-predicts experimental $\mathrm pK_a$ to RMSE $0.55$, with the closure at the input-insufficiency floor:
-the leakage-immune lower bound $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ is $-0.2$ ($95\%$~CI $[-0.4,-0.0]$),
-i.e.\ below zero, as a lower bound on the non-negative $\Bclos$ must sit when the LFER predicts as well
-as a flexible within-scaffold regressor. There $\Bclos$ is not separately resolvable and is consistent
-with a well-specified closure. The per-scaffold systematic offsets are $\le0.19$ in $\mathrm pK_a$,
-the largest $0.184$ on phenol; Lemma~\ref{prop:decomp}(b) bounds $\Bclos$ below by their \emph{square},
-so the Jensen bound here is $\le0.034$ against a total of $0.303$, or $11\%$---read unsquared it
-would be $63\%$ and would contradict the sentence it supports. The degraded pole ($n{=}846$)
+predicts experimental $\mathrm pK_a$ to RMSE $0.55$. The leakage-immune lower bound
+$\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ is $-0.2$ ($95\%$~CI $[-0.4,-0.0]$), below zero, and it is
+uninformative here rather than reassuring: the out-of-fold $\Binsuf^{\mathrm{up}}$ is $0.5003$
+against an $\mathrm{MSE}$ of $0.3023$, so that difference is negative for every closure whatever,
+and what the $158$ rows across four series establish is that the within-scaffold regressor predicts
+worse than the LFER does. The second bound is informative and points the other way.
+Lemma~\ref{prop:decomp}(b) bounds $\Bclos$ below by the \emph{square} of the per-scaffold systematic
+offset, and the deposit's per-scaffold Jensen field is already that square: its entries
+$0.0918/0.0011/0.1837/0.0392$ are the squares of the offsets $+0.303$ anilinium, $+0.034$
+benzoic acid, $+0.429$ phenol, $-0.198$ pyridinium. The offsets reach $0.429$ in $\mathrm pK_a$, and
+the $n$-weighted mean of the squares is $0.083$ against a total of $0.303$, or $27\%$; on phenol
+alone it is $0.184$, or $61\%$. At least a quarter of this pole's error is closure error, so the
+pole is not shown to be well specified, and neither bound available on it says that it is.
+The degraded pole ($n{=}846$)
 degrades to RMSE $2.26$, dominated by input insufficiency. Here $\zstar$ is the pair
 $(s,\hammett^\star)$---the reaction series, which fixes $(\mathrm pK_{a,0},\rho)$, and the constant---and
 neither coordinate needs binning, four labels and a scalar, so---unlike the solubility
@@ -173,9 +179,13 @@ narrower only because a four-valued label and a scalar need no binning (\S\ref{s
 % The pooled-over-series figure (8.3) and the within-series one (4.5) both print from
 % scripts/analysis/run_pka_binsuff_conditioning_check.py, which calls the same
 % _binsuff_within_scaffold / _oof_mse used by run_pka_real_decomposition.py.
-\S\ref{sec:pka-main}). This is the
-near-exact-to-degraded transition, measured rather than asserted. This places the pKa closure near the phase-diagram boundary
-in its clean regime.
+\S\ref{sec:pka-main}). The two poles differ by a factor of $17$ in $\mathrm{MSE}$, and that is the
+transition, measured rather than asserted. The clean pole is the milder regime and not the
+well-specified one. Run the same Jensen bound on both and the closure floor is $0.083$ there against
+$0.654$ on the degraded pole, $27\%$ of the first pole's error and $13\%$ of the second's, so what
+grows between the poles is the total and the insufficiency inside it---at most $73\%$ on the clean
+pole and at most $87\%$ on the degraded---while a closure error of at least a quarter is present on
+the pole the relation was built for.
 
 \paragraph{Data quality control (uniform, closure-independent).} The trained runs use the canonical
 full OPERA set ($7904$ records). A small number of entries are supplied as pre-ionized microstates---an
@@ -188,7 +198,9 @@ This removes $5$ of $163$ clean-pole rows (restoring that pole to RMSE ${\approx
 of $1198$ degraded-pole rows (leaving $846$; that pole's RMSE is essentially unchanged, so the filter
 does not manufacture the sign), for $1004$ Hammett-amenable rows. The clean pole's floor does turn on
 it: $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ is $+0.55$ on the $163$ unfiltered rows against the $-0.2$
-reported on the $158$ filtered, so that pole reads as well specified only after the filter.
+reported on the $158$ filtered. That sensitivity decides which of the two bounds carries the pole and
+not whether the closure is well specified there, since the Jensen bound puts $\Bclos\ge0.083$ on the
+filtered rows regardless.
 
 \paragraph{Evidence for the flip.} We train the physics arm (encoder $\to\hat\sigma_{\mathrm H}\to$ fixed LFER)
 on $K{=}20$ stratified $80/20$-within-scaffold splits---a Bemis--Murcko split collapses the meta/para
@@ -197,7 +209,20 @@ deterministic oracle, per stratum. Clean pole: learned MAE $0.48\pm0.09$ vs orac
 $-0.165$, oracle better in $19/20$ splits, $90\%$ CI $[-0.28,-0.04]$. Degraded pole: learned $0.83\pm0.07$ vs
 oracle $1.62\pm0.08$, gap $+0.79$, oracle worse in $20/20$ splits, $90\%$ CI $[+0.57,+0.95]$ (both
 intervals the $5$th and $95$th percentiles of $4000$ draws of the scaffold-cluster bootstrap, one
-cluster per reaction series).
+cluster per reaction series). Both halves certify, and the flip with them.
+
+\paragraph{The same certification on a scaffold split, where it fails.} The run above is
+in-distribution, and the companion run at the same $K{=}20$ on a Bemis--Murcko scaffold split is
+deposited beside it. There the reference helps on both poles and nothing flips. Clean pole: learned
+$0.97\pm0.66$ vs oracle $0.37\pm0.14$, gap $-0.61$, oracle better in $20/20$ splits, cluster CI
+$[-1.13,-0.24]$---the ``reference helps'' half certifies. Degraded pole: learned $2.73\pm1.72$ vs
+oracle $1.63\pm0.32$, gap $-1.10$, oracle better in $12$ of $20$ splits, cluster CI
+$[-1.86,+0.37]$ at $P=0.28$---the ``reference hurts'' half does not certify, and neither does the
+reversal. Both arms degrade under the harder protocol and the learned one degrades further, which is
+the crossover mechanism of the paragraph below acting on both poles at once; the flip itself is a
+within-distribution phenomenon and is reported as one. Every solubility result in this paper is
+measured on a scaffold split, so this is the one place the protocol differs from the rest, and the
+reason it does is that a scaffold split collapses the meta/para pole to two ring systems.
 
 \paragraph{What the two bootstraps do and do not resolve.} We report the sign statements above rather
 than the bootstrap $P$ values, because neither bootstrap here carries the resolution a two-decimal $P$
@@ -231,7 +256,7 @@ pushes it back above the threshold and reverts the sign. That reversion is a pro
 over the six splits and not of every split: three of the six still have grounding hurting, and the
 negative mean gap ($-1.04$) is carried by two splits at $-3.2$ and $-3.8$. The flip is therefore a within-distribution,
 fidelity-driven crossover, and the extrapolation reversion follows the same comparison. It is the
-sharp, two-sided form of the penalty sign rule (Prop.~\ref{prop:tax}): the half saying that a fitted
+sharp, two-sided form of the penalty sign rule (Remark~\ref{prop:tax}): the half saying that a fitted
 intermediate can beat the true one is known---plug-in efficiency under correct specification
 \cite{hirano2003}, pseudo-true fitting under misspecification \cite{white1982}---and what is added
 here is the fidelity-set threshold at which the two halves change places. A trained

@@ -44,8 +44,18 @@ log-solubility to their negative sum:
          \;-\;\underbrace{\lng(x_2,T)}_{\text{activity}} ,
   \label{eq:sle}
 \end{equation}
-with the constant-$\Delta C_p$ correction---$\Delta C_p$ being the difference in heat capacity
-between the liquid and the solid---omitted for clarity. The activity term is produced by a
+with no constant-$\Delta C_p$ correction---$\Delta C_p$ being the difference in heat capacity
+between the liquid and the solid. That term is absent from the displayed equation because it is
+absent from the deployed model, which fixes $\Delta C_p=0$; the head that would predict it is off in
+the pinned configuration. The exposure is one-signed and not small. At the group-contribution value
+this corpus carries, $60$\,J\,mol$^{-1}$\,K$^{-1}$, the omitted term is a median $0.32$ and a mean
+$0.40$ in \lnx\ over the $1318$ labelled test rows that carry a measured $\Tm$, positive on every one
+of them, which is the size of the substitution penalty of \S\ref{sec:paradox} and twice the
+supervision gain. It enters the physics arms and not the closure-free control, and it cancels
+exactly in the evaluation-time substitution, where $\Phicry$ is common to the two arms
+(\S\ref{sec:si-methods}). What it does not cancel out of is the training of the $\sigma$ head, which
+is fitted through a crystal term carrying a bias of that size and in that direction; \S\ref{sec:surrogate}
+reads the consequence. The activity term is produced by a
 \emph{differentiable closure} $g$: a graph encoder predicts a $\sigma$-profile---the distribution of
 screening charge density over a molecule, the histogram a COSMO model consumes---for each molecule,
 and COSMO-SAC \cite{lin2002}, a segment-activity reformulation of COSMO-RS, maps the pair of
@@ -145,8 +155,9 @@ empirical content of the claim that the ceiling is set by the closure rather tha
 \textbf{What $\Bclos$ is the error of is a composite object.} The identity compares $g(\zstar)$
 against $\Ex[m\mid\zstar]$, and $\zstar$ is not measured but produced by a procedure---for
 $\sigma$-profiles a quantum-chemical calculation on one conformer and one protonation state per
-molecule at one level of theory---so $\Bclos$ is a joint property of the map and of the procedure that produced the reference
-it reads, and not of the kernel's functional form alone: a displaced reference loads onto $\Bclos$
+molecule at one level of theory. $\Bclos$ is therefore a joint property of the map and of the
+procedure that produced the reference it reads, and not of the kernel's functional form alone. A
+displaced reference loads onto $\Bclos$
 through the curvature of $g$ even where $g$ is exactly specified (\S\ref{sec:si-repro}). The
 deployed pipeline consumes that same composite, so it is the object a practitioner faces, but every
 attribution below is to the pair and not to the kernel. Where model-discrepancy calibration
@@ -219,7 +230,7 @@ model-dominance conclusion on the decomposition.
 \paragraph{The sign rule, and scope.}\label{sec:tax} Whether the \emph{trained} physics model
 outperforms the \emph{trained} black box at sample size $n$ follows a sign rule.
 
-\begin{proposition}[Sign of the physics penalty]\label{prop:tax}
+\begin{remark}[Sign of the physics penalty]\label{prop:tax}
 Write $\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
 $\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$, with
 $R_{\mathrm{e2e}}$ and $R_{\mathrm{direct},\infty}$ the two asymptotic risks, $V(n)\downarrow0$ the
@@ -232,10 +243,15 @@ $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$ the variance a constrained p
 constrained prior saves must exceed its asymptotic bias. \emph{(ii)}~If $\Delta_\infty>0$ and the
 variance gap vanishes ($D(n)\to0$), there is a critical budget $n^\star$ beyond which
 $\mathcal{T}(n)>0$ for all $n>n^\star$.
-\end{proposition}
+\end{remark}
 
-\noindent The proof, and a limiting refinement in which $\Delta_\infty=\Bclos-\Ggap$ when the
-control is asymptotically Bayes, are in \S\ref{sec:si-proofs}.
+\noindent Both clauses are rearrangements of the definitions above, and this is stated as a remark
+for that reason: given the two expansions, \emph{(i)} is an identity and \emph{(ii)} its limit.
+What it supplies is vocabulary---a name for the asymptotic part, a name for what a constrained prior
+saves, and the budget at which they change places---and not a prediction any measurement below is
+tested against. The limiting refinement in which $\Delta_\infty=\Bclos-\Ggap$ when the
+control is asymptotically Bayes is not a rearrangement and is in \S\ref{sec:si-proofs}, with the
+working of both clauses.
 The consequence used below is that a prior is predicted to hurt precisely in the mature-data,
 low-noise, well-covered regime. Each physics-versus-control difference reported here is a penalty at
 the budget actually trained, not an asymptotic one; there is no ``optimal grounding'' theorem, and
@@ -247,13 +263,13 @@ $n$.
 
 \input{sections/notation-table}
 
-\subsection{Data, splits, and labels}
+\subsection{Data curation: sources, splits, and labels}
 \label{sec:data}
 Solubility measurements come from BigSolDB~2.0 \cite{krasnov2025bigsoldb}: $127{,}930$ rows over
-$15{,}665$ solutes and $221$ solvents between $243$ and $438$\,K, partitioned by Bemis--Murcko
+$15{,}665$ solutes and $221$ solvents between $243$ and $438$\,K. The partition is by Bemis--Murcko
 scaffold---a molecule's ring systems together with the linkers joining them, side chains
-removed---into $111{,}724$ training, $8{,}103$ validation and $8{,}103$ test rows so that every test
-solute is unseen at training; a melting-point-independent miscibility/structure filter sets row
+removed---into $111{,}724$ training, $8{,}103$ validation and $8{,}103$ test rows, so that every test
+solute is unseen at training. A melting-point-independent miscibility/structure filter sets row
 membership, and crystal $\Tm$, $\dHfus$, Hansen parameters and infinite-dilution activity
 coefficients \lngi\ are merged on as per-solute labels where available. A split's rows do not all
 carry the same label: of the $8{,}103$ test rows, $5608$ carry a solubility measurement and the
@@ -285,12 +301,12 @@ solutions \cite{osanloo2024}, is a different functional on a different base, and
 pooled nor converted into one another anywhere below.
 
 \paragraph{Disclosure: the scaffold guarantee is not certified for these runs.}
-The released stream builder excludes any pool molecule whose scaffold appears in validation or test,
-but one $\sigma$-stream build on disk was generated against the wrong split files and per-run stream
-provenance was not logged, so the artifacts cannot certify which build fed which arm and the
-guarantee is a property of the builder rather than of these runs: $7$ of the $147$ solutes spanned
-by the $5608$ labelled test rows carry their own reference profile in that build and $8$ carry a
-scaffold relative. The ungrounded arm carries no $\sigma$ stream either, so the supervision contrast
+The released stream builder excludes any pool molecule whose scaffold appears in validation or test.
+One $\sigma$-stream build on disk was nevertheless generated against the wrong split files, and
+per-run stream provenance was not logged, so the artifacts cannot certify which build fed which arm
+and the guarantee is a property of the builder rather than of these runs. Of the $147$ solutes
+spanned by the $5608$ labelled test rows, $7$ carry their own reference profile in that build and
+$8$ carry a scaffold relative. The ungrounded arm carries no $\sigma$ stream either, so the supervision contrast
 is the one a leak can reach and the $0.20$ gain of \S\ref{sec:paradox} is not certified leak-free until the
 re-run below. The file evidence, the contrast each fact bounds, and the one molecule the leak
 touches in the $n{=}44$ analysis of \S\ref{sec:surrogate} are in \S\ref{sec:si-repro}.
@@ -329,10 +345,29 @@ ideal term $\Phicry(T)$ of Eq.~\eqref{eq:sle}. The activity term \lng\ comes fro
 differentiable closures. Two are controls: the fitted NRTL (non-random two-liquid) excess-Gibbs-energy model, and its
 symmetric one-parameter collapse. The third, parameter-free, is the closure under study: a $\sigma$-profile head emitting a
 $51$-bin screening-charge-density profile per molecule, and a COSMO-SAC layer mapping the profile
-pair to \lng\ with an optional Staverman--Guggenheim combinatorial term, the contribution molecular
-size and shape make to the entropy of mixing---the \emph{full} versus
-\emph{residual-only} distinction on which \S\ref{sec:estimator} and \S\ref{sec:measure}
-turn. The saturated mole fraction solves $\lnx=-\Phicry(T)-\lng(x_2,T)$ as a damped fixed point in
+pair to \lng. \textbf{That layer runs COSMO-SAC's residual, segment-activity part alone.} The
+Staverman--Guggenheim combinatorial term---the contribution molecular size and shape make to the
+entropy of mixing, and the second factor of $\gamma=\gamma^{\mathrm{res}}\gamma^{\mathrm{SG}}$ in
+Lin--Sandler---is off in every arm the substitution result is reported on, and the $\sigma$ head
+emits a profile shape and a cavity area but no cavity volume, so the term cannot be evaluated from
+the $\sigma$ head's own output. That is a model-form choice and not an analyst convention: the kernel
+constants the layer uses are the $2002$ values, regressed with the combinatorial term present, so
+the residual-only setting runs a fitted kernel outside its parameterisation. Its size on a published
+evaluation is a mean shift of $-0.74$ in $\lngi$ over $7889$ records, from $+0.03$ to $-0.71$ in
+bias. The two settings are the \emph{full} versus \emph{residual-only} pair on which
+\S\ref{sec:estimator} and \S\ref{sec:measure}
+turn, and one arm of Fig.~\ref{fig:paradox} restores the term by taking a molar volume from a
+separate auxiliary head and passing it detached, so the combinatorial term is active but the
+solubility loss cannot train it. Inside the layer, the segment activities are themselves a fixed point, truncated at a count
+that is a free hyperparameter and is \emph{not} the same in training and scoring: the COSMO-SAC arms
+here train at $16$ segment iterations and are scored at $30$. Sixteen was chosen because it lands
+within $6\times10^{-5}$ of $30$ on these weights, so the two agree by construction on this
+configuration and not as a property of the count; a checkpoint fitted at a different count is scored
+through an operator it was never fitted against. The exposure that carries to the substitution
+contrast is not measured. The NRTL arm can be re-solved from its deposit and moves by $+0.0025$ in
+seed-mean MAE at the training count and a further $+0.017$ to convergence; the COSMO-SAC arms cannot,
+their kernel being a $\sigma$-profile pair no deposit and no retained checkpoint carries
+(\S\ref{sec:si-methods}). The saturated mole fraction solves $\lnx=-\Phicry(T)-\lng(x_2,T)$ as a damped fixed point in
 $x_2$; a bounded, gated adaptive correction perturbs the physical parameters rather than the output,
 so the physical decomposition survives it.
 
@@ -366,10 +401,10 @@ model-prescribed $\sigma$-averaging (Mullins for 2002, Hsieh for 2010). Our 2002
 \emph{2002, all channels} arm wherever the kernels are compared, so named because it sums the
 segment contributions of all three profile channels rather than the nonpolar one
 alone---reproduces the NIST reference COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE
-$0.0035\,\ln\gamma$ on identical VT-2005 profiles, and our COSMO-SAC-2010/dsp
+$0.0035\,\ln\gamma$ on identical VT-2005 profiles. Our COSMO-SAC-2010/dsp
 layer~\cite{hsieh2010,hsieh2014dsp}, built on the \emph{typed} latent of three donor/acceptor-resolved
 $\sigma$-profiles per molecule in place of one, reproduces the NIST 2010 reference with dispersion
-\emph{off} to RMSE $1.4\times10^{-4}\,\ln\gamma$---that second figure is not deposited, its
+\emph{off} to RMSE $1.4\times10^{-4}\,\ln\gamma$. That second figure is not deposited, its
 validator having written no artifact where the 2002 one deposits its comparison, so it cannot be
 checked against the deposited record
 (\S\ref{sec:si-methods}). The dispersion term is \emph{not} validated to that standard, which is why every
@@ -414,6 +449,15 @@ the record selection not being stated file by file. Subject to those, the closur
 in \S\ref{sec:measure} is, in AAD, the error a published COSMO-SAC has; which half of this paper's chemical
 localisation carries across to that set, on $130$ times the data and someone else's compilation, and
 which half does not, is in \S\ref{sec:badclosure}.
+The same publication scores a later kernel on the same records, and its rows are in the table because
+they put the deployed one in its place: COSMO-SAC-HB2, which types segments as donors or acceptors,
+reaches AAD $0.46$ to $0.48$ at $R^2$ $0.96$ to $0.97$, about half the deployed closure's $0.77$ and
+a third of the $1.75$ that anchors the profile-database bracket. This pipeline runs the $2002$ kernel
+because it is the one whose differentiable re-implementation can be checked against a public
+reference here, and the results below are substitutions inside a fixed map rather than claims that
+the map is the best available. \S\ref{sec:badclosure} runs the $2002\to2010$ step on this paper's own
+sets and finds the improvement confined to the smaller set's chemistry. Every ceiling this paper
+reports is accordingly this kernel's ceiling and not COSMO-SAC's.
 
 % ---------------------------------------------------------------------------
 % GENERATED by scripts/analysis/run_published_idac_closure_check.py; the full-convention row is
@@ -455,6 +499,11 @@ COSMO-SAC-2002 on & profiles & $n$ & AAD & $R^2$ \\
 PGL 6th ed.\ IDAC set & HF-TZVP & $6977$ & $1.75$ & $0.88$ \\
 PGL 6th ed.\ IDAC set & BP-TZVPD-FINE & $6977$ & $0.68$ & $0.96$ \\
 \addlinespace[2pt]
+\multicolumn{5}{@{}l@{}}{\emph{A later kernel on the same evaluation \cite{desouza2025cosmosac}}: COSMO-SAC-HB2\tnk{b}}\\
+PGL 6th ed.\ IDAC set & HF-TZVP & $6977$ & $0.48$ & $0.96$ \\
+PGL 6th ed.\ IDAC set & BP-TZVP & $6977$ & $0.48$ & $0.97$ \\
+PGL 6th ed.\ IDAC set & BP-TZVPD-FINE & $6977$ & $0.46$ & $0.97$ \\
+\addlinespace[2pt]
 \multicolumn{5}{@{}l@{}}{\emph{The same set, through this paper's closure}}\\
 \quad full convention\tnk{a} & VT-2005 & $7889$ & $0.98$ & $0.88$ \\
 \quad residual-only & VT-2005 & $7889$ & $0.77$ & $0.92$ \\
@@ -468,7 +517,9 @@ VT-2005-matched set & VT-2005 & $60$ & $0.81$ & $0.40$ \\
 \end{tabular}
 \tabnotes{%
 \tnk{a}\,The like-for-like row, a published COSMO-SAC carrying its Staverman--Guggenheim term; the
-residual row is the convention this paper's $\Bclos$ is measured in.}}
+residual row is the setting this paper's $\Bclos$ is measured in.\\
+\tnk{b}\,A donor/acceptor-typed hydrogen-bonding kernel, not the kernel this paper deploys. Printed
+because it is on the same $6977$ records and beats the deployed closure by a factor of about two.}}
 \end{table*}
 
 \subsection{Evaluation protocol, and the DirectGNN control}
@@ -543,10 +594,16 @@ seed count and the artifact it regenerates from.
 
 \subsection{Estimating the split: one cell, one convention, one rule}
 \label{sec:estimator}
+The instrument this section fixes is a procedure, and it takes three inputs and nothing else: a fixed
+closure $g$, a table of reference values $\zstar$ its argument can be read at, and measurements $m$
+of its target on rows where both exist. It returns, per chemically defined row set, the closure's own
+error $\mathrm{MSE}$, an upper bound on what the inputs cannot resolve, the margin between them, a
+cluster interval on that margin, and a verdict of admissible or not with the test that decided it.
 Four analyst choices set the binning bound of Lemma~\ref{prop:decomp}(c)---the bin count, where the
 equal-count bin edges fall, the within-bin variance convention, and the combinatorial convention---and
 all four are fixed here, before any margin is reported. One setting of them, together with the choice
-of the row or the molecule pair as the unit, is an \emph{estimator cell}.
+of the row or the molecule pair as the unit, is an \emph{estimator cell}. The four rules below are
+the procedure in full; the map of \S\ref{sec:broad} is what running it on this closure returns.
 
 \emph{The estimator cell.} Eight equal-count bins of $g(\zstar)$, the \emph{unbiased}
 (Bessel-corrected) within-bin

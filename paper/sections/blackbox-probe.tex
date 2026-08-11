@@ -22,12 +22,19 @@ surrogate, the thermodynamics might still be present implicitly in the control, 
 represent it. It is not. A ridge probe of the control's pair representation recovers the model's own
 prediction at $R^{2}=0.98$ but not the measured ideal-solubility term. It is scored on $13$ held-out
 solutes / $527$ rows at zero solute overlap, and that term is $92.2\%$ between-solute variance, so
-the effective $n$ is $13$ clusters and not $527$ rows: $R^{2}=-0.506/{+}0.111/{+}0.027$
-at seeds $42/43/44$, permutation $p=0.894/0.055/0.177$ against a $1000$-draw null, and a between-seed
-range of $0.616$ (sd $0.334$) larger than any one of the three values, so a single seed would have
-been unreadable and seed $43$ alone would have read as a near-miss. The null itself reaches
-$R^{2}\approx0.32$--$0.38$ at this sample size, so what the negative supports is an upper bound at
-$R^{2}\lesssim0.30$ rather than an exclusion. That bound is limitation~(ix), and two things fix its
+the effective $n$ is $13$ clusters and not $527$ rows. The three seeds give
+$R^{2}=-0.506/{+}0.111/{+}0.027$
+at $42/43/44$, with permutation $p=0.894/0.055/0.177$ against a $1000$-draw null. Their between-seed
+range of $0.616$ (sd $0.334$) is larger than any one of the three values, so a single seed would have
+been unreadable and seed $43$ alone would have read as a near-miss. What the negative supports is
+therefore not an exclusion, and the level below which it excludes nothing is not computed here. What
+the deposit does fix is the null's shape and the design's own noise: the permutation null's $95$th
+percentile is $0.105/0.117/0.096$ over $1000$ draws and its maximum $0.316/0.380/0.346$, while the
+measured value moves $0.616$ between seeds, from $-0.506$ to $+0.111$, further than the largest of
+those maxima. A
+design whose seed-to-seed movement is larger than its null's whole support cannot exclude anything below
+that null's ceiling, and no power calculation was run to say how far above it the design reaches.
+That is limitation~(ix), and two things fix its
 size rather than the encoder's. The $13$ solutes cannot be enlarged, the reference scarcity of
 \S\ref{sec:data} being what caps them, and the temperature probe rests on the same $13$. And the
 crystal-slope test is capped by the corpus rather than by the probe: this corpus's empirical

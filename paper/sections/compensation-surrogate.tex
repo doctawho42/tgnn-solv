@@ -72,11 +72,11 @@ Two nulls it does not clear travel with that: the mean-centred share has no matc
 and a wrong-molecule null built from real reference profiles does \emph{not} clear ($0.772$,
 $p=1.00$), so if the case for preferring the phase-randomised null is not accepted the spectrum is
 uninformative rather than supporting. One distortion operator fitted on half the $44$ molecules
-predicts the drift on the other half $4.1\pm0.5\times$ better than the zero-drift null---the $\pm$
-spanning the three seeds at one partition of the $44$ and not the partitions---a
-deliberately weak null, uncontrolled on these three seeds, against which a molecule-independent
+predicts the drift on the other half $4.1\pm0.5\times$ better than the zero-drift null, the $\pm$
+spanning the three seeds at one partition of the $44$ and not the partitions. That null is a
+deliberately weak one and is uncontrolled on these three seeds: a molecule-independent
 constant offset already reaches $2.1\times$ on the one companion run where that control can be
-computed, so the ratio stands against the identity null alone and structure \emph{beyond} an offset
+computed. So the ratio stands against the identity null alone, and structure \emph{beyond} an offset
 rests on the mean-centred spectrum. The held-out half is also homologue-saturated---six $n$-alkanes,
 four halobenzenes, five pyridines and four butyl and hexyl amines among the $44$, and the median
 held-out molecule sits $16\%$ of its own profile norm from its nearest training-half
@@ -100,19 +100,33 @@ reference, and the mode defined only up to sign, drawn in the mean drift's direc
 check runs against it. Holding the cavity area at its reference value, the sole retained end-to-end
 SLE-trained COSMO-SAC checkpoint scores $18.75$ against $1.47$ on the $n{=}60$ VT-2005-matched pairs:
 on the activity axis its drifted
-profile is an order of magnitude \emph{worse} through the same closure. Three limits sit on that
+profile is an order of magnitude \emph{worse} through the same closure. Four limits sit on that
 number---the checkpoint is the uncontrolled one, whose $82\%$ departure is half again the three-seed
-$51\pm2\%$; the axis is wrong, the drift being produced at finite composition and scored at infinite
+$51\pm2\%$; that checkpoint is a retired run on a different split, trained at $8$ segment iterations
+and scored at $30$, and its own scaffold-split accuracy is MAE $2.61$ at $R^2=-0.31$, worse than
+every arm of Fig.~\ref{fig:paradox}; the axis is wrong, the drift being produced at finite composition and scored at infinite
 dilution; and the check has almost no power in the direction that matters, so it separates ``no
-cancellation'' from ``large cancellation'' but not from ``some cancellation''. A second, independent
-check points the same way on the closure's own axis: over those same $n{=}60$ pairs, sweeping the
-closure's hydrogen-bond coefficient at zero, one and two times its standard value gives mean squared
-errors $2.42/2.83/10.15$ on the strong-donor ones, so a \emph{more} polar profile moves $g$ further
-from $m$, and the sweep carries no interval because it varies a constant and not a sample
-(\S\ref{par:own-axis}). Both sit on that
-infinite-dilution axis, so neither refutes cancellation in the regime that generates the drift; they
+cancellation'' from ``large cancellation'' but not from ``some cancellation''. The kernel sweep
+reported beside it does not add a second check in the same direction, and it is stated here for what
+it does bound. Sweeping the closure's hydrogen-bond coefficient at zero, one and two times its
+standard value over those same $n{=}60$ pairs gives mean squared errors $2.42/2.83/10.15$ on the
+strong-donor pairs, $0.090/0.092/0.918$ on the acceptor-only ones and $1.205/0.867/0.578$ on the
+inert ones. What that localises is $\Bclos$ to the hydrogen-bond kernel, and the three classes separate by
+direction rather than by size: both hydrogen-bonding classes rise with the coefficient---the
+acceptor-only pairs by tenfold and the strong donors by fourfold---while the inert class falls,
+monotonically, by half. It says nothing about a more polar \emph{profile}, a coefficient not
+being a profile. It also carries an unflattering reading of the deployed kernel: on the strong donors
+the error at $c_{\mathrm{hb}}=0$ is $2.42$ against $2.83$ at the standard value, so
+COSMO-SAC-2002's hydrogen-bonding term is net harmful on the class it governs.
+Neither the two-MSE check nor the sweep refutes cancellation in the regime that generates the drift;
+they sit on the infinite-dilution axis, they
 remove the one place it could have been measured, and the cancellation reading remains inferred from
-the paradox itself. What is established is weaker and still consequential: the model's ``physical''
+the paradox itself. A second reading is live and is not excluded here. $\Delta C_p$ is zero in the
+deployed ideal term, worth a one-signed median $0.32$ in \lnx\ on the test rows carrying a measured
+melting point (\S\ref{sec:framework}), and the crystal head is supervised toward measured $\Tm$ and
+$\dHfus$ and cannot absorb it, so the residual lands in \lng---and a profile pushed toward its polar
+wings is what compensating an over-large $\Phicry$ looks like. The design does not separate that from
+a misspecified activity kernel. What is established is weaker and still consequential: the model's ``physical''
 intermediate is not the molecule's charge distribution, consistent with cautions that the
 interpretability of physics-grounded latents is not guaranteed under misspecification
 \cite{brynjarsdottir2014,takeishi2021}, and that adapting a representation can itself collapse an
@@ -128,9 +142,31 @@ difference between two runs and not a mean over any---and not the $+0.41$ arms o
 \S\ref{sec:paradox}. A near-physical
 intermediate makes the pipeline far more robust to substituting the reference $\sigma$. Supervision
 alone does not, however, \emph{flip} the sign here---the penalty stays positive, the closure still
-being the low-fidelity COSMO-SAC-2002 and the warm-up $\sigma$ itself only partly physical. The full
-flip needs supervision \emph{and} fidelity together, which is what TeNNet-SAC \cite{yang2025tennet}
-has and this pipeline does not.
+being the low-fidelity COSMO-SAC-2002 and the warm-up $\sigma$ itself only partly physical.
+
+\paragraph{The nearest published construction, which reports the opposite sign.} TeNNet-SAC
+\cite{yang2025tennet} is this pipeline's closest relative in print: a $\sigma$-profile predictor
+feeding a COSMO-SAC-shaped segment-activity model, with its profile and geometry predictors trained
+on $39{,}745$ quantum solvation calculations and its segment-activity predictor pretrained on a
+million synthetic points and then fine-tuned end to end on experimental activity coefficients. It
+reports accuracy comparable to COSMO-SAC in its base form and, after that fine-tuning, consistently
+better than COSMO-SAC across its benchmarks. Three differences separate it
+from what is measured here, and only the last is a hypothesis. The first is which operation is
+scored. TeNNet-SAC's gain is a training-time gain from supervising and then fine-tuning a learned
+profile, and that is the operation this work also finds positive ($+0.20$, \S\ref{sec:paradox}); the
+operation this work finds negative is substituting a tabulated profile for the learned one at
+inference, which TeNNet-SAC does not report. On that reading the two results do not conflict.
+The second is that it carries a geometry predictor for molecular volume and surface area, so its
+composed model can evaluate the combinatorial contribution this one cannot (\S\ref{sec:model}).
+The third is that its segment-activity kernel is trainable and this one is fixed at the
+$2002$ parameterisation. If the sign of the substitution turns on whether the kernel can move, the
+finding here is about a fixed $2002$ kernel and not about routing a prediction through a physical
+intermediate, and \S\ref{sec:notdecided} already records that no grounding gap has been measured
+under any modern closure. Nothing here measures that: it would take the same two arms retrained
+against the $2010$/dispersion kernel end to end, which is limitation~(x)'s named run and was not
+made. What it would take to reconcile the two through profile fidelity instead is a
+$\sigma$-profile departure on TeNNet-SAC's side well below the $36\pm1\%$ this pipeline reaches under
+supervision and the $51\pm2\%$ it reaches after fine-tuning; that departure is not reported there.
 
 % GATE B, 2026-08-07.  This was a subsection of its own (\S3.4 under the incumbent numbering); the
 % phenomenon-first restructure folds it in here as this section's closing paragraph, because it
@@ -164,7 +200,14 @@ and tetrahydrofuran each carry $0.000$\,\AA$^2$ of donor-window area, against $6
 $15.75$ for water. The learned profile carries $44.0$, $32.4$, $24.5$ and $50.7$\,\AA$^2$ in that
 same window---between $23\%$ and $36\%$ of each molecule's total surface---and every row of the
 scored set carries mass on both sides of it, so the hydrogen-bond kernel is active on every pair
-regardless of chemistry.
+regardless of chemistry. Those areas are read off the one trained COSMO-SAC head the tree holds,
+which is a retired run on a different split, trained at $8$ segment iterations and scored at $30$,
+and scoring MAE $2.61$ at $R^2=-0.31$ on the scaffold split---worse than every arm of
+Fig.~\ref{fig:paradox}. The null arm that separates architecture from training sits in the same
+deposit and is reported here because it exists. Measured as a fraction of profile mass in the same
+extreme bins, where the reference tabulation's median is $0.000$, an \emph{untrained} network of this
+architecture reaches $0.212$ against the trained head's $0.189$. The window is full before any
+training, and training emptied it slightly rather than filling it.
 
 Two causes are separable in principle and are not separated here, and the head this is measured on
 decides which is live. Its $\sigma$-supervision stream ran for zero steps: the profile received no
@@ -172,7 +215,7 @@ supervision at all, and \S\ref{sec:ident} is the reason that matters---solubilit
 determine the profile's shape, so an unsupervised profile is free in exactly the bins that carry no
 constraint. That accounts for a quantity of this size. The parameterisation accounts for something
 much smaller and of a different kind: the profile is emitted through a softmax over the $51$ bins,
-which cannot return an exact zero where $58\%$ of the reference table's bins are exactly zero, so no
+which cannot return an exact zero where $57\%$ of the reference table's bins are exactly zero, so no
 amount of supervision empties the window---but a softmax reaches $10^{-6}$ at a logit gap of ten, and
 a floor of that size is four orders below what is measured. The measurement therefore bounds neither
 cause on its own. What it does establish is that the window is not empty in a trained arm and that

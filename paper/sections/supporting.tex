@@ -136,8 +136,11 @@ solute--solvent--temperature cells, $107$ solute clusters. No recalibration; an 
 group's own mean subtracted from prediction and from truth; and an affine map, slope and intercept
 fitted per group by ordinary least squares of measured on predicted \lnx. What is reported is the
 mean of the per-group MAEs and the paired reference-minus-learned difference, bootstrapped over
-solute clusters as everywhere here. In sample, pooled over the three seeds, the ladder is $+0.431$
-$[+0.308,+0.553]$ raw, $+0.371$ $[+0.269,+0.474]$ offset-only and $+0.060$ $[+0.021,+0.101]$ affine;
+solute clusters as everywhere here. Every interval in this ladder is printed to two decimals: the
+convergence-and-printing rule the glycol-ether interval obeys (\S\ref{sec:si-map}) was not run for
+these, so their third decimal is not certified against Monte-Carlo error. In sample, pooled over the
+three seeds, the ladder is $+0.431$
+$[+0.31,+0.56]$ raw, $+0.371$ $[+0.27,+0.48]$ offset-only and $+0.060$ $[+0.02,+0.10]$ affine;
 per seed the affine residual is $+0.069/{+}0.030/{+}0.081$, the middle one spanning zero, which is
 why it is quoted pooled.
 

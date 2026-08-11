@@ -101,7 +101,14 @@ row by $9.20$, and the seed-mean MAE by $+0.0025$. Carrying the same rows to the
 moves that mean a further $+0.017$, against this arm's own $+0.093$ physics penalty over DirectGNN:
 the operator that arm is scored through is neither the one it was fitted
 against nor a converged one. The COSMO-SAC arms carry the same two counts and cannot be re-solved
-this way, their kernel being a $\sigma$-profile pair the deposit does not carry.
+this way, their kernel being a $\sigma$-profile pair the deposit does not carry; nor can the weights
+be re-run, the tree retaining the three DirectGNN checkpoints of Fig.~\ref{fig:paradox} and none of
+the COSMO-SAC ones. On tabulated profiles at $298$\,K the count is worth $0.014$ in $\mathrm{MSE}$
+over the low-$\gamma$ $n{=}60$ set, and that is the only bound available: the substituted arm produces
+$174$ rows above $\lng=10$ where the learned arm produces none, and no bound measured on a low-$\gamma$
+set at one temperature carries to those rows. The convergence exposure on the substitution contrast
+is therefore unmeasured, and the two profiles it compares---a broad softmax against a tabulation with
+$57\%$ exactly-zero bins---need not reach the fixed point at the same rate.
 Gradients on the full NRTL kernel use the implicit-function theorem at the converged $x_2^\star$
 (with $\eta=\partial\lng/\partial x_2$) rather than backpropagation through the iterations: exact at
 the fixed point, memory-constant in the iteration count, and well conditioned unless
@@ -579,13 +586,13 @@ does not certify $\Bclos>0$; the decomposition (Lemma~\ref{prop:decomp}) does.
 % both.  The proof header below refers to it with \ref and declares nothing.
 % Do not restate the proposition here to save the reader a page turn: two statements of one
 % proposition in one submission is how the two drift apart.
-\noindent Proposition~\ref{prop:tax} is stated in the article at \S\ref{sec:tax}, in the
+\noindent Remark~\ref{prop:tax} is stated in the article at \S\ref{sec:tax}, in the
 asymptote-plus-variance form
 $\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ with
 $\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$, together with the scope the rule is
 read under. It is proved here, with the limiting refinement~(iii) that the statement there defers
 to this section.
-\begin{proof}[Proof of Proposition~\ref{prop:tax} (sign of the physics penalty)]
+\begin{proof}[Proof of Remark~\ref{prop:tax} (sign of the physics penalty)]
 \sloppy\relpenalty=0 \binoppenalty=0
 Write $D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$ and
 $\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$, so that
@@ -605,7 +612,7 @@ merely from $V_{\mathrm{direct}}\to0$; under that condition and A2,
 $\Delta_\infty=R_{\mathrm{e2e}}-R_{\mathrm{free}}=\Bclos-\Ggap$ by \eqref{eq:gap}.
 \end{proof}
 
-\noindent The variance term $D(n)$ of Proposition~\ref{prop:tax} is what carries the semiparametric
+\noindent The variance term $D(n)$ of Remark~\ref{prop:tax} is what carries the semiparametric
 phenomenon \S\ref{sec:tax} appeals to, in which an estimated propensity outperforms the
 known-true one \cite{hirano2003,robins1997}: a fitted nuisance can be the more \emph{efficient}
 estimator even when its bias is no smaller, so a true-valued input need not give the lower total
@@ -830,7 +837,7 @@ The $2002\to2010$ step lowers the error & broad IDAC ($477$) & $-0.99$ at $P\app
 A fitted kernel residual transfers across solvents & VT-2005-matched ($60$), grouped folds & $-5\pm16\%$: spans zero; the $\pm$ prices optimiser noise only, and the fold spread that dominates it is not propagated, so no bound follows \\
 \addlinespace[7pt]
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{The same split on a second closure} (\S\ref{sec:pka-main}); MAE in $\mathrm pK_a$, not the squared \lngi\ of the two blocks above}\\
-A Hammett $\mathrm pK_a$ closure reverses the substitution's sign between its two poles & OPERA $\mathrm pK_a$, clean pole ($158$) and degraded ($846$); $K{=}20$ within-scaffold splits, $G{=}4$ series & MAE gap $-0.165$ $[-0.28,-0.04]$ on the clean pole, the reference better in $19$ of $20$ splits and in three of the four series, against $+0.79$ $[+0.57,+0.95]$ on the degraded, worse in $20$ of $20$ and in all four; $90\%$ intervals over the four series, which as a sign test read $p\approx0.31$ on the clean pole and $p{=}1/16$ on the degraded---so that test carries the degraded half and not the positive control. The clean pole is well specified only after the quality filter: on the $163$ rows before it its closure floor is $+0.55$ in squared $\mathrm pK_a$, not $-0.2$ \\
+A Hammett $\mathrm pK_a$ closure reverses the substitution's sign between its two poles & OPERA $\mathrm pK_a$, clean pole ($158$) and degraded ($846$); $K{=}20$ within-scaffold splits, $G{=}4$ series; certified in distribution only & MAE gap $-0.165$ $[-0.28,-0.04]$ on the clean pole, the reference better in $19$ of $20$ splits and in three of the four series, against $+0.79$ $[+0.57,+0.95]$ on the degraded, worse in $20$ of $20$ and in all four; $90\%$ intervals over the four series, which as a sign test read $p\approx0.31$ on the clean pole and $p{=}1/16$ on the degraded---so that test carries the degraded half and not the positive control. Neither pole is shown well specified: the clean pole's Jensen bound is $\Bclos\ge0.083$ in squared $\mathrm pK_a$, $27\%$ of its $0.303$, and its binning-free floor ($-0.2$ filtered, $+0.55$ on the $163$ rows before the filter) is negative for any closure whatever once $\Binsuf^{\mathrm{up}}$ exceeds the $\mathrm{MSE}$. On a Bemis--Murcko split the degraded pole's gap turns negative with its cluster interval spanning zero, so neither that half nor the reversal is established out of sample (\S\ref{sec:si-pka}) \\
 \bottomrule
 \end{tabular}
 }
@@ -2261,13 +2268,32 @@ same norm moves the margin as much or more ($1.09$ and $2.67$ times, against a p
 $0.5$), so reference uncertainty at large is not bounded here. And the ensemble direction is nearly
 orthogonal to the smooth broadening a displaced reference was expected to produce (cosine $0.04$ to
 $0.30$), so the two cannot stand in for one another.
+What that bound does not reach is the reference calculation itself, and the size of what it does not
+reach is measured on the same four molecules. Against a BP86/def2-TZVP CPCM($\varepsilon{\to}\infty$)
+recomputation, rigid single-conformer molecules put the cross-code floor---two defensible
+$\sigma$-profile calculations of the same molecule---at a median relative-$L_2$ of $0.282$, range
+$0.190$ to $0.403$, four to eight times the conformational displacement bounded above. Swapping the
+recomputed lowest conformer for the tabulated profile moves the glycol margin from $+2.036$ to
+$+7.466$, against $+0.234$ for the conformer ensemble, so $95.7\%$ of that movement is the
+code-and-level difference. Those raw swaps mix two profile conventions and are not read against the
+decision rule; what they establish is that the closure's response to the choice of reference
+calculation dwarfs the effect this stratum reports, and that every substitution result in this paper
+is scoped to the VT-2005 tabulation's level of theory.
+
 A counter-test on the same closure points the same way, and is the one \S\ref{sec:measure} cites.
 The Staverman--Guggenheim combinatorial term is the physically \emph{more} complete treatment and
 acts only where the two molecules differ in size; restoring it \emph{increases} the VT-2005-matched set's
 reference-input error, $\mathrm{MSE}=1.47$ under the residual-only convention against
 $1.80$ with the term in place (Table~\ref{tab:decomp}), the gap between the two being carried by the
 size-asymmetric pairs. A term that adds physics and costs accuracy is what a misspecified map does
-and not what missing information about the inputs would do. The same signature appears on the
+and not what missing information about the inputs would do. It is equally what compensating errors
+do, and this design cannot tell the two apart. The residual part alone is not a model anyone fitted:
+its constants were regressed with the combinatorial term present (\S\ref{sec:model}), so deleting
+that term removes a one-signed, size-dependent contribution from a kernel carrying its own
+size-dependent misfit, and the two can cancel. Improved agreement under the deletion is then a
+statement about the cancellation and not about which term is misspecified. The size-asymmetric
+pairs---where $\gamma^{\mathrm{SG}}$ is largest---are where the gap sits, which is what that reading
+predicts and not what distinguishes it. The same signature appears on the
 solubility axis, where restoring the term makes the grounded learned-$\sigma$ arm slightly worse
 (Table~\ref{tab:si-arms}).
 
@@ -2649,9 +2675,9 @@ task does not.
 % duplication: the article must be sourceable on its own, and this is where the reading of the
 % clip sweep and the seed-by-seed cells that follow it live.  Keep the two in step.
 The six figures of the third block are all $\log_{10}S$ RMSE in
-mol\,L$^{-1}$ and come from one evaluation, Osanloo et~al.\ \cite{osanloo2024}, on two corpora: the
+mol\,L$^{-1}$ and come from one evaluation, Attia et~al.\ \cite{osanloo2024}, on two corpora: the
 SolProp test set, whose solutes are disjoint from its training corpus, and the Leeds set of Boobier
-et~al.\ near room temperature. The \emph{leaders} are that work's two direct models, the
+et~al.\ \cite{boobier2020} near room temperature. The \emph{leaders} are that work's two direct models, the
 solution-FASTPROP ensemble and its solution-CHEMPROP companion, at $0.83$ and $0.83$ on the first
 corpus and $0.95$ and $0.99$ on the second; the \emph{physics-informed cycle} is SolProp
 \cite{vermeire2022solprop}, scored in the same evaluation at $1.43$ and $2.16$ on those same two
@@ -2690,8 +2716,8 @@ on those same checkpoints and not a retraining (diagnosis and withdrawn values b
 row reads $\log_{10}S$ RMSE $0.84$, inside the published $0.83$ to $0.95$ but on an easier split than
 this work's arms are held to.
 
-We evaluated the direct state-of-the-art model (FastSolv \cite{osanloo2024}) and the
-physics-informed state-of-the-art model (SolProp \cite{vermeire2022solprop}) on a
+We evaluated the leading published direct model (FastSolv \cite{osanloo2024}) and the
+leading published physics-informed model (SolProp \cite{vermeire2022solprop}) on a
 by-solute test split ($n\approx10$--$12$k). The two arms are not obtained
 the same way, and the difference matters below: FastSolv is retrained on our corpus, whereas SolProp
 is the released pretrained thermodynamic cycle---the arm that instantiates the physics---mapped onto
@@ -2978,14 +3004,22 @@ The second check of \S\ref{sec:surrogate}: on
 the $n{=}60$ VT-2005-matched set the reference-input closure \emph{under}-predicts, its mean output being $+0.10$
 under the residual-only convention and $-0.10$ under the full one against a mean target
 $m=+0.75$. Sweeping its hydrogen-bond coefficient at zero, one and two times the standard value
-gives mean squared errors $2.42/2.83/10.15$ on the strong-donor pairs: raising the coefficient makes
-them worse and zeroing it makes them better, so a \emph{more} polar profile moves $g$ further from
-$m$, which is the direction opposite to a compensating drift. No interval is quoted because none
+gives mean squared errors $2.42/2.83/10.15$ on the strong-donor pairs, $0.090/0.092/0.918$ on the
+acceptor-only pairs and $1.205/0.867/0.578$ on the inert ones. All three classes are printed because
+they do not agree: the strong donors worsen with the coefficient, the acceptor-only pairs are flat
+until the doubling and then worsen, and the inert pairs improve monotonically. What the three
+together license is what the deposit reads them as---$\Bclos$ is localised to the hydrogen-bond
+kernel---and not a statement about profile polarity, since the sweep varies a kernel constant and no
+step connects a constant to a profile. The strong-donor column carries one further result, printed
+because it is not favourable to the closure this paper deploys: at $c_{\mathrm{hb}}=0$ the error is
+$2.42$ against $2.83$ at the standard value, so the $2002$ kernel's single-parameter hydrogen-bonding
+term is net harmful on the class it exists for. No interval is quoted because none
 exists to quote: the sweep re-evaluates one fixed closure on one fixed set of pairs at three
 coefficient values, so its only sampling variation is the set's, and what it establishes is the sign
 of a derivative and not a magnitude. It is independent of the two-MSE check above in what it varies
 ---the closure's own parameter rather than the profile handed to it---and dependent on it in the set
-it varies them over.
+it varies them over. What it is not is a second check against cancellation, and \S\ref{sec:surrogate}
+does not read it as one.
 \paragraph{The reference ladder.} A relative deviation carries no absolute scale, which is what the
 ladder supplies. Its rungs are built from the reference profiles the grounded arm was supervised on,
 so it calibrates that deviation rather than competing with it. The rungs calibrating the $51\%$ departure of
@@ -3031,15 +3065,26 @@ a Joback group-contribution reference---so the unresolved downstream result of
 external pool was $97.76\%$ melting points the model was already trained on.
 \paragraph{The $\Delta C_p=0$ approximation.} The ideal term omits the constant-heat-
 capacity correction; a group-contribution audit finds a nonzero $\Delta C_p$ for
-$1441$ of $1525$ solutes ($108{,}287$ rows), so this is a bounded model-form
-approximation. It cannot produce either headline result. The closure/insufficiency
+$1441$ of $1525$ solutes ($108{,}287$ rows), so this is a model-form
+omission and not a rounding. It cannot produce either headline \emph{value}, and the arithmetic that
+says so is about the evaluation and not about the training. The closure/insufficiency
 decomposition is measured on the activity target ($\lngi$, at $298$\,K on the VT-2005-matched set and at each
 row's own temperature over $273$--$403$\,K on the broad IDAC set), where $\Delta C_p$
 does not enter at all on either set: the ideal term is not evaluated in the decomposition, so no
 temperature range of it is at issue. The grounding paradox is an arm-to-arm difference (learned-$\sigma$
-vs.\ oracle-$\sigma$) whose two arms share the \emph{identical} crystal term, so any $\Delta C_p$
-error cancels exactly in the comparison. It is thus orthogonal to the activity closure, not a
-source of the paradox.
+vs.\ oracle-$\sigma$) whose two arms share the \emph{identical} crystal term ($\max|\Delta\Phicry|$
+of $4.2\times10^{-4}$ over the scored rows), so any $\Delta C_p$
+error cancels exactly in that comparison.
+What it is not orthogonal to is the \emph{mechanism} of \S\ref{sec:surrogate}. Setting
+$\Delta C_p=0$ leaves $\Phicry$ too large by a median $0.32$ and a mean $0.40$ in \lnx\ on the $1318$
+labelled test rows with a measured $\Tm$ (at $60$\,J\,mol$^{-1}$\,K$^{-1}$), positive on every one of
+them, and the crystal head is externally supervised toward measured $\Tm$ and $\dHfus$, so it is not
+free to absorb the bias; what absorbs it is \lng, which is the $\sigma$ head. A drift toward the
+polar wings is what compensating a one-signed excess in $\Phicry$ would look like. The latent drift
+of \S\ref{sec:surrogate} therefore has a live crystal-side explanation alongside the
+activity-kernel one, and nothing here separates them. Settling it means retraining the grounded and
+$\sigma$-oracle arms at nonzero $\Delta C_p$; the configuration field exists and the run was not
+made.
 \paragraph{Fusion-supervision scarcity.} Direct $\dHfus$ labels are extremely sparse:
 $1279$ training rows across $31$ solutes, and essentially none in validation or test.
 This is the quantitative basis of the identifiability argument---there is almost no
@@ -3265,8 +3310,9 @@ convention-independent---only the estimand $\Binsuf$ is, Lemma~\ref{prop:decomp}
 claim rests on it \emph{computed under the residual-only convention}.
 
 The article's \S\ref{sec:discussion} carries limitations~(i), (iv) and~(vi), which scope what the two
-data sets and the estimator can deliver, and~(xii), which the leak-free re-run of \S\ref{sec:data}
-rewrites. The remaining nine are here, keeping those numerals. Each of the nine is also stated in
+data sets and the estimator can deliver, (xii), which the leak-free re-run of \S\ref{sec:data}
+rewrites, and~(xiv), which names two terms the deployed model sets to zero. The remaining nine are
+here, keeping those numerals. Each of the nine is also stated in
 the article, in the section whose claim it qualifies---\S\ref{sec:discussion}'s index says which---so
 what is added here is the detail that qualifies it and not the qualification itself.
 
@@ -3282,7 +3328,12 @@ are in \S\ref{sec:surrogate}.
 (ix)~The probe on the unconstrained control is
 bounded by the same reference scarcity: its crystal-term and temperature tests rest on $13$ held-out
 solutes and cannot be enlarged, so the negative there is a bound and not a
-demonstration that no crystal information is present; the crystal-slope test is additionally limited
+demonstration that no crystal information is present. How low that bound reaches is not computed: no
+power calculation was run on those $13$ clusters, and the measured
+$R^2$ moves $0.616$ between seeds, $-0.506$ to $+0.111$, further than the largest maximum the
+$1000$-draw permutation null reaches ($95$th
+percentiles $0.105/0.117/0.096$, maxima $0.316/0.380/0.346$), so nothing below the null's own ceiling
+is excluded. The crystal-slope test is additionally limited
 by the corpus, whose empirical slope carries $-\Delta H_{\text{fus}}/R$ at $r=+0.24$. The
 scaffold-organisation result needs no external reference, but its two partitions nearly coincide by
 construction, so a ratio near one is weak evidence of within-scaffold indistinguishability
@@ -4289,8 +4340,8 @@ two deposited row-level tables.
 % by RE-RUNNING the released code, whose inputs are larger than the repository carries, so a
 % released repository is not by itself the remedy.  Both halves are corrected, not just the numeral.
 Those files are regenerated by the released code rather than deposited, which is the
-exposure limitation~(xiii) records; the two deposited tables are the part of this material a reader
-can check without running anything.
+exposure limitation~(xiii) records; the two deposited tables are the part of this material that is
+checkable without running anything.
 \paragraph{Seeds and determinism.} The controlled comparisons of \S\ref{sec:paradox} use seeds
 $\{42,43,44\}$ and
 are reported on the labelled test rows ($5608$ of $8103$; \S\ref{sec:si-lock}); the
@@ -4461,7 +4512,7 @@ they are sharp is Murphy and DeGroot's reliability--resolution decomposition
 identity that partitions a squared error, but on a \emph{fixed} operator with an external reference
 for the intermediate rather than on a forecast--outcome pair. A misspecified model still converges
 to a pseudo-true limit under White's quasi-maximum-likelihood account \cite{white1982}, which is
-what $\Delta_\infty$ of Proposition~\ref{prop:tax} names for a composed predictor. That a
+what $\Delta_\infty$ of Remark~\ref{prop:tax} names for a composed predictor. That a
 decomposition may be only weakly constrained by the data is the subject of parameter sloppiness
 \cite{transtrum2015,gutenkunst2007} and of structural versus practical identifiability
 \cite{raue2009,villaverde2016}---the setting of Lemma~\ref{prop:ident}. That apparent skill may
@@ -4471,7 +4522,7 @@ why every arm difference in this paper is reported as a difference between two s
 pipelines (\S\ref{sec:discussion}). Finally, that a constrained prior lowers variance at the cost of a
 bias confined to the directions the data leave undetermined is the null-space reading of
 regularisation \cite{engl1996,hansen1998} and of null-space priors in inverse problems
-\cite{schwab2019}, which is the frame in which Proposition~\ref{prop:tax} is stated.
+\cite{schwab2019}, which is the frame in which Remark~\ref{prop:tax} is stated.
 
 % Last flush before \bibliography. Without it the deferred float queue (Fig.~\ref{fig:dial} is
 % the last entry) empties into the middle of the reference list. This used to sit at the end of

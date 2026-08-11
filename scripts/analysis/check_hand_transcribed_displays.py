@@ -142,6 +142,32 @@ PUBLISHED_ROOT = REPO / "results" / "e5_sigma_grounding"
 #: have to agree about one interval, and this is the copy that decides.
 GLYCOL_CI = REPO / "results" / "b_insuff" / "glycol_ether_ci_converged.json"
 ADMISSIBILITY = REPO / "results" / "b_insuff" / "admissibility_table.csv"
+#: The cross-fitted map, added 2026-08-11: the abstract now prints BOTH estimators' margin for the
+#: glycol-ether row set, so the pre-declared estimator's value needs a binding of its own.
+CROSSFIT_MAP = REPO / "results" / "b_insuff" / "crossfit_map_table.csv"
+# The pKa reversal's OUT-OF-DISTRIBUTION certification, added to the claims ledger 2026-08-11.
+PKA_SCAFFOLD = REPO / "results" / "pka_hammett" / "flip_certify_scaffold.json"
+
+
+def crossfit_glycol_margin() -> float:
+    """The pre-declared cross-fitted estimator's margin on the glycol-ether row set.
+
+    Read at the SAME cell the binning-bound margin is read at -- broad_473, solvent_class axis,
+    row unit, residual-only convention, pair-grouped folds, the declared regressor -- so the two
+    numbers the abstract sets side by side differ in the estimator and in nothing else.
+    """
+    if not CROSSFIT_MAP.exists():
+        raise SystemExit(f"check: {CROSSFIT_MAP} is missing; run "
+                         "scripts/analysis/run_b_insuff_crossfit_scoring.py")
+    df = pd.read_csv(CROSSFIT_MAP)
+    cell = df[(df["set"] == "broad_473") & (df["axis"] == "solvent_class")
+              & (df["stratum"] == "glycol_ether") & (df["unit"] == "row")
+              & (df["convention"] == "res") & (df["fold_scheme"] == "pair")
+              & (df["model"] == "rf")]
+    if len(cell) != 1:
+        raise SystemExit("check: the cross-fitted glycol-ether cell is no longer unique "
+                         f"({len(cell)} rows matched); re-anchor crossfit_glycol_margin()")
+    return float(cell["margin_cf"].iloc[0])
 
 
 def glycol_deposit() -> dict:
@@ -534,6 +560,11 @@ def find_display(paper: Path, label: str) -> tuple[Path, str]:
 #: The abstract's source markers.  See ``find_abstract``.
 ABSTRACT_OPEN = "%<abstract-numerals>"
 ABSTRACT_CLOSE = "%</abstract-numerals>"
+
+
+def _pka_scaf():
+    """The degraded pole's block of the scaffold-split flip certification."""
+    return json.loads(PKA_SCAFFOLD.read_text())["strata"]["low_F (ortho/hetero)"]
 
 
 def find_abstract(paper: Path) -> str:
@@ -1012,18 +1043,29 @@ def abstract_row() -> DisplayRow:
                  r"error to \$([\d.]+)\$ at inference",
                  lambda c: (fmt(c.arm("oracle").mae_mean, 3),),
                  lambda c: A(c, "oracle")),
-            Bind("the glycol-ether margin, its row and cluster counts, and its interval",
-                 r"by \$([\d.]+)\$ \(\$n\{=\}(\d+)\$, \$(\d+)\$ pairs, \$(\d+)\\%\$ interval "
-                 r"\$\[([-+][\d.]+),([-+][\d.]+)\]\$\)",
+            # RE-ANCHORED 2026-08-11.  The abstract's parenthetical used to carry rows and PAIRS;
+            # it now carries rows and the two CLUSTER counts, and it prints both estimators'
+            # margins.  Every numeral in the sentence is bound, the two cluster counts included.
+            Bind("the glycol-ether margin, its row and cluster counts, its interval, and the "
+                 "pre-declared estimator's margin",
+                 # "nonpolar" and not "hydrocarbon", 2026-08-11: two of the 19 are halobenzenes
+                 # (Clc1ccccc1, Fc1ccccc1), which the body one page later says and the abstract
+                 # did not.  This gate FAILED on the change rather than skipping, which is what it
+                 # is for; re-point it here rather than loosening the word out of the pattern.
+                 r"standing, \$(\d+)\$ rows over \$(\d+)\$ solvents and \$(\d+)\$ nonpolar "
+                 r"solutes, its error exceeding its inputs' by \$([\d.]+)\$ \(\$(\d+)\\%\$ interval "
+                 r"\$\[([-+][\d.]+),([-+][\d.]+)\]\$\), and \$([\d.]+)\$ under",
                  # Rounded HERE, half-up, from the deposit's own endpoints -- not read out of its
                  # ``printed_as`` field, so the deposit cannot pre-round its way past this check.
-                 lambda c: (fmt(margin, 2), str(rows["n"]), str(rows["n_pairs"]), "90",
+                 lambda c: (str(rows["n"]), str(rows["n_solvents"]), str(rows["n_solutes"]),
+                            fmt(margin, 2), "90",
                             fmt(conv["ci90_lo"], 2, sign=True),
-                            fmt(conv["ci90_hi"], 2, sign=True)),
-                 lambda c: f"{rel(GLYCOL_CI)} (the $90$ is the estimator's declared coverage and "
-                           "is change-detected, not derived)"),
+                            fmt(conv["ci90_hi"], 2, sign=True),
+                            fmt(crossfit_glycol_margin(), 2)),
+                 lambda c: f"{rel(GLYCOL_CI)} and {rel(CROSSFIT_MAP)} (the $90$ is the "
+                           "estimator's declared coverage and is change-detected, not derived)"),
             Bind("the size of the search that row set is the survivor of",
-                 r"survivor of a \$(\d+)\$-fold search",
+                 r"is a \$(\d+)\$-fold search's survivor",
                  lambda c: (str(map_stratum_count()),),
                  lambda c: f"{rel(ADMISSIBILITY)}, broad_477 / row unit / residual-only "
                            "convention, distinct (axis, stratum)"),
@@ -1799,9 +1841,13 @@ LEDGER_DECLARED_ROWS: dict[str, list[DisplayRow]] = {
         DisplayRow(key="\\multicolumn{3}{@{}L{\\dimexpr0.95\\linewidth+4\\tabcolsep\\relax}@{}}{\\emph{The same split on a second closure} (",
                    declared=[], owner=_BLOCK),
         DisplayRow(key="A Hammett $\\mathrm pK_a$ closure reverses the substitution's sign between its two poles & OPERA $\\mathrm pK_a$",
+                   # 0.083 / 27 / 0.303 entered 2026-08-11: the row used to end on "the clean
+                   # pole is well specified only after the quality filter", which read a Jensen
+                   # bound that had been squared twice.  It now carries the corrected bound and
+                   # the MSE it is a share of.
                    declared=['158', '846', '20', '4', '-0.165', '-0.28', '-0.04', '19', '20',
                              '+0.79', '+0.57', '+0.95', '20', '20', '90', '0.31', '1', '16',
-                             '163', '+0.55', '-0.2'],
+                             '0.083', '27', '0.303', '-0.2', '163', '+0.55'],
                    owner=_PKA),
     ],
     "tab:claims-cont2": [
