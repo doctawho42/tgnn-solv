@@ -107,8 +107,22 @@ the COSMO-SAC ones. On tabulated profiles at $298$\,K the count is worth $0.014$
 over the low-$\gamma$ $n{=}60$ set, and that is the only bound available: the substituted arm produces
 $174$ rows above $\lng=10$ where the learned arm produces none, and no bound measured on a low-$\gamma$
 set at one temperature carries to those rows. The convergence exposure on the substitution contrast
-is therefore unmeasured, and the two profiles it compares---a broad softmax against a tabulation with
+is therefore unmeasured on these arms, and the two profiles it compares---a broad softmax against a
+tabulation with
 $57\%$ exactly-zero bins---need not reach the fixed point at the same rate.
+% ADDED 2026-08-11 (round 7, referee CHEM item 1).  "Unmeasured" was the whole disclosure, and the
+% lever is not small.  Artifacts: results/softmax_floor/gate.json (the reproduction and both
+% counts' supervised MAE) and results/softmax_floor/ladder_table.csv (substitute_reference_both,
+% solvent_substitutable, iter 8 and 30).  THE SCOPING CLAUSE IS THE POINT: this head does not
+% reproduce the phenomenon -- opposite direction, ten times the size -- so the two counts bound the
+% lever's size on a COSMO-SAC head of this architecture and say nothing about the +0.41 itself.
+Where it can be measured it is large. The one trained COSMO-SAC head the tree retains---the retired
+$8$-iteration run of \S\ref{sec:si-mech}---scores $2.61$ at $30$ against $1.92$ at $8$ on the same
+labelled rows, and its substitution penalty over the $5571$ rows whose solvent carries a reference
+profile is $+4.32$ at $8$ against $+6.43$ at $30$, a movement of half the penalty's own size. That
+head's penalty is ten times the one reported here and its predictions move the other way under the
+substitution, so those
+figures size the lever on a head of this architecture and do not transfer to these arms.
 Gradients on the full NRTL kernel use the implicit-function theorem at the converged $x_2^\star$
 (with $\eta=\partial\lng/\partial x_2$) rather than backpropagation through the iterations: exact at
 the fixed point, memory-constant in the iteration count, and well conditioned unless
@@ -2174,8 +2188,11 @@ separation rests on the binning bound alone, which is what \S\ref{sec:estimator}
 \S\ref{sec:broad} follow. \emph{(a)~The matching asymmetry.} The VT-2005-matched set is
 matched to VT-2005 by canonical SMILES, a rule we defend there on the ground that a profile imported
 across a tautomer or protonation variant is the wrong $\zstar$. The broad IDAC set is matched to UD
-by InChIKey with a first-block fallback, which is looser, and a wrong $\zstar$ inflates
-$\mathrm{MSE}$ and so $\Bclos$---that is, it runs against the ordering we claim. The exposure is
+by InChIKey with a first-block fallback, which is looser. A displaced $\zstar$ inflates
+$\mathrm{MSE}$ and so $\Bclos$, but it also inflates the conditional variance the binning bound
+estimates, and under a Berkson-type displacement it loads onto $\Bclos$ through the curvature of $g$
+as well (\S\ref{sec:si-repro}); its direction on the margin is unsigned and we do not read it as
+conservative. The exposure is
 small and we measure it rather than argue it: of the $90$ distinct molecules there, $86$ resolve by
 full InChIKey and four only through the first block, touching $12$ of the $477$ rows. On the $465$
 rows matched exactly the verdict is unchanged---residual-only convention $\mathrm{MSE}\ 1.930$,
@@ -3008,12 +3025,14 @@ gives mean squared errors $2.42/2.83/10.15$ on the strong-donor pairs, $0.090/0.
 acceptor-only pairs and $1.205/0.867/0.578$ on the inert ones. All three classes are printed because
 they do not agree: the strong donors worsen with the coefficient, the acceptor-only pairs are flat
 until the doubling and then worsen, and the inert pairs improve monotonically. What the three
-together license is what the deposit reads them as---$\Bclos$ is localised to the hydrogen-bond
-kernel---and not a statement about profile polarity, since the sweep varies a kernel constant and no
-step connects a constant to a profile. The strong-donor column carries one further result, printed
-because it is not favourable to the closure this paper deploys: at $c_{\mathrm{hb}}=0$ the error is
-$2.42$ against $2.83$ at the standard value, so the $2002$ kernel's single-parameter hydrogen-bonding
-term is net harmful on the class it exists for. No interval is quoted because none
+together are consistent with is $\Bclos$ sitting in the hydrogen-bond kernel; they do not localise it
+there, since the classes are assigned by solvent alone and six of the eight inert-class pairs carry a
+hydrogen-bonding solute, whose own segment activity the coefficient scales at infinite dilution. Nor
+is any of it a statement about profile polarity: the sweep varies a kernel constant, and no step
+connects a constant to a profile. The strong-donor column carries one further result, printed
+because it is not favourable to the closure this paper deploys: at $c_{\mathrm{hb}}=0$ the error on
+its $28$ pairs is $2.42$ against $2.83$ at the standard value, so on that class the $2002$ kernel's
+single-parameter hydrogen-bonding term costs more than it buys. No interval is quoted because none
 exists to quote: the sweep re-evaluates one fixed closure on one fixed set of pairs at three
 coefficient values, so its only sampling variation is the set's, and what it establishes is the sign
 of a derivative and not a magnitude. It is independent of the two-MSE check above in what it varies
@@ -3329,11 +3348,11 @@ are in \S\ref{sec:surrogate}.
 bounded by the same reference scarcity: its crystal-term and temperature tests rest on $13$ held-out
 solutes and cannot be enlarged, so the negative there is a bound and not a
 demonstration that no crystal information is present. How low that bound reaches is not computed: no
-power calculation was run on those $13$ clusters, and the measured
-$R^2$ moves $0.616$ between seeds, $-0.506$ to $+0.111$, further than the largest maximum the
-$1000$-draw permutation null reaches ($95$th
-percentiles $0.105/0.117/0.096$, maxima $0.316/0.380/0.346$), so nothing below the null's own ceiling
-is excluded. The crystal-slope test is additionally limited
+power calculation was run on those $13$ clusters, and each of the three measured $R^2$
+($-0.506/{+}0.111/{+}0.027$) sits at or below its own $1000$-draw permutation null's ceiling ($95$th
+percentiles $0.105/0.117/0.096$, maxima $0.316/0.380/0.346$), so nothing below that ceiling is
+excluded. The between-seed spread is not read against the null's support: the null is two-sided and
+reaches below the lowest measured value, so its support is the wider of the two. The crystal-slope test is additionally limited
 by the corpus, whose empirical slope carries $-\Delta H_{\text{fus}}/R$ at $r=+0.24$. The
 scaffold-organisation result needs no external reference, but its two partitions nearly coincide by
 construction, so a ratio near one is weak evidence of within-scaffold indistinguishability
@@ -3725,7 +3744,8 @@ Those are counts over the split \emph{files}, which carry the auxiliary melting-
 (auxiliary-only, no solubility label) alongside the labelled ones and so span $2634$ and
 $2467$ distinct solutes. Every test metric in this paper is computed on the $5608$ labelled rows,
 which span $147$ solutes, and that is the set a leak can act on. Of those $147$, $7$ have their own
-reference profile in the defective stream and $8$ have a scaffold relative in it, on $297$ and
+reference profile in the defective stream and $8$---those $7$ among them---have a scaffold relative
+in it, so the second count is the union and not an addition, on $297$ and
 $351$ of the $5608$ rows, $5.3\%$ and $6.3\%$. For a scaffold split solute
 coverage is the load-bearing statistic rather than the fraction of stream rows, so these are the
 figures the disclosure of \S\ref{sec:data} carries; the correctly guarded build leaves zero of each.

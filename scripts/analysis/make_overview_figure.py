@@ -574,8 +574,22 @@ def swatch(dx, dy, fc, ec):
 swatch(L, LEG_Y, TEAL_D, TEAL_D)
 axb.plot([bx(L + SW_W)] * 2, [by(LEG_Y - SW_H / 2 - 1.2), by(LEG_Y + SW_H / 2 + 1.2)],
          lw=1.2, color=INK, zorder=5, solid_capstyle="butt")
+# "the model" BECAME "the map as deployed", 2026-08-11 (round 7, referee CHEM item 9).  The block
+# is B_closure, which is the error of the composite of the FIXED KERNEL and the one-conformer
+# gas-phase calculation that produced z*, and the profile-calculation share of it is left unbounded
+# in the text.  A reader who meets "the model" against "the inputs" concludes the kernel is the
+# culprit and the profiles are exonerated, which is the one split this design cannot make.  The
+# caption carries the unbounded share.  Do not shorten this back to a word for the kernel alone.
+# THE MEASURE SETS THE WORDING.  "the map as deployed, at least" runs 104 pt and leaves the salmon
+# swatch overlapping the teal label's last word; the room between the two legend entries is about
+# 96 pt at this type size.  CORRECTED 2026-08-11: "the map" is NOT the paper's term for the
+# composite.  The paper defines the composite as "the fixed map together with the calculation that
+# produced z*", so "the map" names the kernel side ALONE and this rationale had it backwards.  The
+# short entry is kept because the caption says in full which of the two the bound is on, and the
+# legend cannot carry that in the 96 pt available; it is the caption and not the legend that
+# disambiguates.
 say(L + SW_W + 4.0, LEG_Y, "the inputs, at most", color=TEAL_W)
-_rl = say(R, LEG_Y, "the model, at least", color=SALMON_D, ha="right")
+_rl = say(R, LEG_Y, "the fixed map, at least", color=SALMON_D, ha="right")
 swatch(R - wpt(_rl) - 4.0 - SW_W, LEG_Y, SALMON, SALMON_D)
 
 # ---- the three rows ---------------------------------------------------------------------------

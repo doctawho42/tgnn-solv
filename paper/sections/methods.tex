@@ -274,7 +274,25 @@ membership, and crystal $\Tm$, $\dHfus$, Hansen parameters and infinite-dilution
 coefficients \lngi\ are merged on as per-solute labels where available. A split's rows do not all
 carry the same label: of the $8{,}103$ test rows, $5608$ carry a solubility measurement and the
 other $2495$ carry a melting point and no solubility, so every accuracy number below is on $5608$
-rows and says so (\S\ref{sec:eval}). Crystal supervision is
+rows and says so (\S\ref{sec:eval}).
+% ITEM 4 OF THE 2026-08-11 REFEREE ROUND.  Whether the scored corpus honours the equation the
+% article DISPLAYS is a methods fact and printed only in \S\ref{sec:si-lock}.  Both halves are
+% exact: the stratum count and composition, and the arithmetic of removing it, which runs against
+% this paper (dropping it WIDENS the physics penalty).  The accuracy half of that paragraph is a
+% negative with 26 clusters and twelve intervals crossing zero and stays there; do not import it.
+% The solid-form sentence names an uncontrolled variable in both label sources; it asserts no size,
+% because none is measured here.
+$796$ of those $5608$ rows, $14.2\%$ of them, carried by $26$ of the $147$ test solutes, have a
+solute of more than one component---salts, two ionic liquids and four hydrates---for which the solid
+in equilibrium with the saturated solution is not the one-component crystal Eq.~\ref{eq:sle}'s ideal
+term is written for, and not one of those $26$ carries a measured melting point. They stay in:
+dropping the stratum moves the control's mean and the grounded arm's the same way and widens the
+physics penalty this paper reports, so removing it at this stage would flatter the comparison
+(\S\ref{sec:si-lock}). Solid form is uncontrolled on both label sources---the solubility rows
+aggregate literature measurements on whatever form each laboratory had, and the $\Tm/\dHfus$ labels
+are merged from a separate compilation that need not refer to the same one---so a polymorph
+difference enters the ideal term as a systematic and the inter-laboratory disagreement below as
+part of its spread; neither document separates it. Crystal supervision is
 scarce---the test and validation splits contain essentially no measured $\dHfus$, the quantitative
 basis of the identifiability argument (\S\ref{sec:framework}). The external single-component data
 used for grounding are an open crystal-property pool ($\sim$15{,}000 melting points), the VT-2005
@@ -306,7 +324,8 @@ One $\sigma$-stream build on disk was nevertheless generated against the wrong s
 per-run stream provenance was not logged, so the artifacts cannot certify which build fed which arm
 and the guarantee is a property of the builder rather than of these runs. Of the $147$ solutes
 spanned by the $5608$ labelled test rows, $7$ carry their own reference profile in that build and
-$8$ carry a scaffold relative. The ungrounded arm carries no $\sigma$ stream either, so the supervision contrast
+$8$, those $7$ among them, carry a scaffold relative, so the second count is the union and deleting
+it deletes both. The ungrounded arm carries no $\sigma$ stream either, so the supervision contrast
 is the one a leak can reach and the $0.20$ gain of \S\ref{sec:paradox} is not certified leak-free until the
 re-run below. The file evidence, the contrast each fact bounds, and the one molecule the leak
 touches in the $n{=}44$ analysis of \S\ref{sec:surrogate} are in \S\ref{sec:si-repro}.
@@ -530,7 +549,25 @@ object and not two: the $\sigma$-head emits a normalised $51$-bin shape and a ca
 product is the area-weighted profile the closure reads, and for a matched molecule that pair is
 replaced by the tabulated pair, which stands in the same relation---so the reference area reaches
 the residual term's $A_2/a_{\mathrm{eff}}$ prefactor as part of replacing that one object rather
-than as a separate choice. Solute and solvent are matched independently. Nothing else is replaced,
+than as a separate choice.
+% ITEM 5 OF THE 2026-08-11 REFEREE ROUND.  The substitution swaps a shape and a SIZE at once, and
+% A_2/a_eff is a multiplicative prefactor on the residual term, so a reader is owed which of the
+% two objects the fidelity metric of \S\ref{sec:surrogate} is taken on and how far the learned area
+% sits from the tabulated one.  The metric is on the NORMALISED shape (both sides normalised to sum
+% to 1 in run_compensation_surrogate.py's load_true_shapes/predict_sigma_hat), so it carries no
+% information about the area at all.  The area ratio on these arms is unrecoverable -- the tree
+% keeps no COSMO-SAC weights -- and on the head where it can be read it is 1.008 solute / 1.579
+% solvent (results/softmax_floor/profile_geometry.json).  Do not state the departure without saying
+% which object it is on.
+The departure this paper reports between the two,
+$36\pm1\%$ and $51\pm2\%$ in \S\ref{sec:surrogate}, is a relative $L_2$ distance between
+\emph{shapes}, both sides normalised, and prices no part of the area. How far the deployed arms'
+areas sit from the tabulated ones is not recoverable from the retained artifacts, which keep none of
+their weights; on the one trained COSMO-SAC head the tree keeps, the learned cavity area is a median
+$1.01$ times the tabulated one over the solutes it scores and $1.58$ times it over the solvents. That
+head reproduces neither the size nor the direction of the substitution penalty reported here, so
+those two ratios price the quantity and not the arms.
+Solute and solvent are matched independently. Nothing else is replaced,
 the crystal head reading a solute-only embedding the substitution does not reach; the bounded
 correction does read the closure's own parameters, so the crystal values the solver finally receives
 % ITEMS 2 AND 3 OF THE 2026-08-10 REFEREE ROUND, both settled from

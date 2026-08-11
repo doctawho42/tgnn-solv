@@ -157,7 +157,13 @@ offset, and the deposit's per-scaffold Jensen field is already that square: its 
 $0.0918/0.0011/0.1837/0.0392$ are the squares of the offsets $+0.303$ anilinium, $+0.034$
 benzoic acid, $+0.429$ phenol, $-0.198$ pyridinium. The offsets reach $0.429$ in $\mathrm pK_a$, and
 the $n$-weighted mean of the squares is $0.083$ against a total of $0.303$, or $27\%$; on phenol
-alone it is $0.184$, or $61\%$. At least a quarter of this pole's error is closure error, so the
+alone it is $0.184$ against that series' own $\mathrm{MSE}$ of $0.371$, or half of it.
+% DENOMINATOR REPAIR, 2026-08-11 (round 7).  This read "0.184, or 61%", which is phenol's numerator
+% over the POOLED denominator: 0.1837/0.3023.  Phenol's own MSE is 0.609^2 = 0.371, so the share on
+% phenol alone is 50%, and phenol carries only 34% of the pooled squared error -- a bound quoted as
+% 61% of the pooled total exceeded that series' entire contribution to it.  The 27% is unaffected
+% (0.0827/0.3023) and is the load-bearing figure.
+At least a quarter of this pole's error is closure error, so the
 pole is not shown to be well specified, and neither bound available on it says that it is.
 The degraded pole ($n{=}846$)
 degrades to RMSE $2.26$, dominated by input insufficiency. Here $\zstar$ is the pair

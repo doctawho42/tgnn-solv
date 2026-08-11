@@ -45,7 +45,9 @@ the phenomenon, for that reason and not as evidence for why either operation has
 checkpointed before and after solubility fine-tuning, over the $n{=}44$ matched molecules and
 repeated at three seeds. Those three runs are \emph{not} the arms that produce the paradox: they are
 a separate set, trained with the $\sigma$ head left unfrozen through fine-tuning, where the four
-COSMO-SAC arms of \S\ref{sec:paradox} hold the head from P2 onward---how far \emph{their} latent
+COSMO-SAC arms of \S\ref{sec:paradox} hold the head from P2 onward. That freeze holds the head and
+not the encoder feeding it, so those arms' profiles are not pinned at their warm-up value either;
+how far \emph{their} latent
 drifted is not measured and cannot be recovered from the deposit. What follows is therefore measured
 on runs of its own and is not established of the checkpoints whose paradox it is offered to explain.
 Under $\sigma$ supervision the head reproduces the reference profile to within $36\pm1\%$, so the
@@ -102,7 +104,7 @@ SLE-trained COSMO-SAC checkpoint scores $18.75$ against $1.47$ on the $n{=}60$ V
 on the activity axis its drifted
 profile is an order of magnitude \emph{worse} through the same closure. Four limits sit on that
 number---the checkpoint is the uncontrolled one, whose $82\%$ departure is half again the three-seed
-$51\pm2\%$; that checkpoint is a retired run on a different split, trained at $8$ segment iterations
+$51\pm2\%$; that checkpoint is a retired run, trained at $8$ segment iterations
 and scored at $30$, and its own scaffold-split accuracy is MAE $2.61$ at $R^2=-0.31$, worse than
 every arm of Fig.~\ref{fig:paradox}; the axis is wrong, the drift being produced at finite composition and scored at infinite
 dilution; and the check has almost no power in the direction that matters, so it separates ``no
@@ -111,13 +113,30 @@ reported beside it does not add a second check in the same direction, and it is 
 it does bound. Sweeping the closure's hydrogen-bond coefficient at zero, one and two times its
 standard value over those same $n{=}60$ pairs gives mean squared errors $2.42/2.83/10.15$ on the
 strong-donor pairs, $0.090/0.092/0.918$ on the acceptor-only ones and $1.205/0.867/0.578$ on the
-inert ones. What that localises is $\Bclos$ to the hydrogen-bond kernel, and the three classes separate by
+inert ones. % ITEM 1 OF THE 2026-08-11 REFEREE ROUND.  Two claims came off this sweep that the sweep does not
+% carry.  (a) "localises B_clos to the hydrogen-bond kernel" is contradicted by the paragraph's own
+% third triple: the INERT class, which has no hydrogen bonding for the coefficient to act through,
+% improves monotonically as the coefficient doubles, and a knob that moves the class it should not
+% touch is absorbing something the class assignment does not name.  (b) "net harmful on the class it
+% governs" was a two-point interval-free comparison on 28 pairs of the set \S\ref{sec:vt2005}
+% refuses to stratify, 13 of those pairs carrying one solvent.  Both now print with what they rest
+% on.  Class counts from results/b_insuff/closure_validation.json (28/24/8) and the solvent column
+% of results/b_insuff/matched_pairs.csv.  Do not restore either claim.
+The three classes separate by
 direction rather than by size: both hydrogen-bonding classes rise with the coefficient---the
-acceptor-only pairs by tenfold and the strong donors by fourfold---while the inert class falls,
-monotonically, by half. It says nothing about a more polar \emph{profile}, a coefficient not
-being a profile. It also carries an unflattering reading of the deployed kernel: on the strong donors
-the error at $c_{\mathrm{hb}}=0$ is $2.42$ against $2.83$ at the standard value, so
-COSMO-SAC-2002's hydrogen-bonding term is net harmful on the class it governs.
+acceptor-only pairs by tenfold and the strong donors by fourfold---while the inert class falls
+monotonically by half. That is consistent with $\Bclos$ sitting in the hydrogen-bond kernel and does
+not localise it there. The classes are assigned by the \emph{solvent} alone, and six of the eight
+inert-class pairs carry a hydrogen-bonding solute---five primary or secondary amines and one
+pyridine, all against benzene or hexadecane---whose own pure-component segment activity the
+coefficient scales at infinite dilution. The coefficient therefore has a route into the class its
+name says it should not touch, and the improvement there is not evidence of a knob acting where it
+should not. It says nothing about a more polar \emph{profile}, a coefficient not
+being a profile. On the strong donors
+the error at $c_{\mathrm{hb}}=0$ is $2.42$ against $2.83$ at the standard value, so switching the
+deployed hydrogen-bonding term off lowers the error on the class it governs---on $28$ pairs, $13$ of
+them carrying one solvent and $20$ carrying two, with no interval, on the set \S\ref{sec:vt2005}
+declines to stratify at all.
 Neither the two-MSE check nor the sweep refutes cancellation in the regime that generates the drift;
 they sit on the infinite-dilution axis, they
 remove the one place it could have been measured, and the cancellation reading remains inferred from
@@ -136,7 +155,8 @@ its nulls and the two controls are in \S\ref{sec:si-mech}.
 \paragraph{What leaves $\sigma$ under-determined by activity, and what freezing it buys.} The freedom that would make such a cancellation possible is the closure's geometry, measured in \S\ref{par:fisher-geometry}: at infinite dilution the activity map's Fisher spectrum is effectively rank one---participation ratio $1.0$ in aggregate and ${\approx}1.4$ of $51$ per molecule, the resolved direction lying on the hydrogen-bonding wings of the profile---so the end-to-end head can move $\sigma$ along the remaining, low-sensitivity coordinates at little cost to the fit---the $\sigma$-profile form of Lemma~\ref{prop:ident}. Nothing there shows recovery of the physical profile to be impossible in principle. The sign of grounding turns on \emph{both} axes, and on which sense of grounding is meant.
 Freezing the $\sigma$ head at its supervised warm-up state instead of letting it drift end to end
 cuts the reference-input penalty by $65\%$ ($\Delta\mathrm{MAE}$ from $+0.40$ to $+0.14$ over
-$n{=}5571$ matched test rows). Those are a separate matched pair of runs---one base resumed twice
+$n{=}5571$ matched test rows). Those are a separate matched pair of runs---one base, at a shorter P1
+than the pinned schedule, resumed twice
 with the freeze off and on, so a single pair carrying no seed replicate, and the $65\%$ is a
 difference between two runs and not a mean over any---and not the $+0.41$ arms of
 \S\ref{sec:paradox}. A near-physical
@@ -201,7 +221,7 @@ $15.75$ for water. The learned profile carries $44.0$, $32.4$, $24.5$ and $50.7$
 same window---between $23\%$ and $36\%$ of each molecule's total surface---and every row of the
 scored set carries mass on both sides of it, so the hydrogen-bond kernel is active on every pair
 regardless of chemistry. Those areas are read off the one trained COSMO-SAC head the tree holds,
-which is a retired run on a different split, trained at $8$ segment iterations and scored at $30$,
+which is a retired run, trained at $8$ segment iterations and scored at $30$,
 and scoring MAE $2.61$ at $R^2=-0.31$ on the scaffold split---worse than every arm of
 Fig.~\ref{fig:paradox}. The null arm that separates architecture from training sits in the same
 deposit and is reported here because it exists. Measured as a fraction of profile mass in the same

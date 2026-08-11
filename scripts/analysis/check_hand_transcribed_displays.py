@@ -145,8 +145,6 @@ ADMISSIBILITY = REPO / "results" / "b_insuff" / "admissibility_table.csv"
 #: The cross-fitted map, added 2026-08-11: the abstract now prints BOTH estimators' margin for the
 #: glycol-ether row set, so the pre-declared estimator's value needs a binding of its own.
 CROSSFIT_MAP = REPO / "results" / "b_insuff" / "crossfit_map_table.csv"
-# The pKa reversal's OUT-OF-DISTRIBUTION certification, added to the claims ledger 2026-08-11.
-PKA_SCAFFOLD = REPO / "results" / "pka_hammett" / "flip_certify_scaffold.json"
 
 
 def crossfit_glycol_margin() -> float:
@@ -560,11 +558,6 @@ def find_display(paper: Path, label: str) -> tuple[Path, str]:
 #: The abstract's source markers.  See ``find_abstract``.
 ABSTRACT_OPEN = "%<abstract-numerals>"
 ABSTRACT_CLOSE = "%</abstract-numerals>"
-
-
-def _pka_scaf():
-    """The degraded pole's block of the scaffold-split flip certification."""
-    return json.loads(PKA_SCAFFOLD.read_text())["strata"]["low_F (ortho/hetero)"]
 
 
 def find_abstract(paper: Path) -> str:
@@ -1048,11 +1041,16 @@ def abstract_row() -> DisplayRow:
             # margins.  Every numeral in the sentence is bound, the two cluster counts included.
             Bind("the glycol-ether margin, its row and cluster counts, its interval, and the "
                  "pre-declared estimator's margin",
-                 # "nonpolar" and not "hydrocarbon", 2026-08-11: two of the 19 are halobenzenes
-                 # (Clc1ccccc1, Fc1ccccc1), which the body one page later says and the abstract
-                 # did not.  This gate FAILED on the change rather than skipping, which is what it
-                 # is for; re-point it here rather than loosening the word out of the pattern.
-                 r"standing, \$(\d+)\$ rows over \$(\d+)\$ solvents and \$(\d+)\$ nonpolar "
+                 # THE CLASS NAME IS THE BODY'S NOW, 2026-08-11 (round 7): "hydrocarbon and
+                 # halobenzene" and not "nonpolar".  Two of the 19 are halobenzenes
+                 # (Clc1ccccc1, Fc1ccccc1); "nonpolar" is right in this closure's own typing --
+                 # a halobenzene is entirely non-hydrogen-bonding -- but in a solution-thermo
+                 # abstract it reads as a claim about dipolarity, which chlorobenzene refutes.
+                 # The body one page later already says "a hydrocarbon or a halobenzene".  This
+                 # gate FAILS on the change rather than skipping, which is what it is for;
+                 # re-point it here rather than loosening the class out of the pattern.
+                 r"standing, \$(\d+)\$ rows over \$(\d+)\$ solvents and \$(\d+)\$ hydrocarbon and "
+                 r"halobenzene "
                  r"solutes, its error exceeding its inputs' by \$([\d.]+)\$ \(\$(\d+)\\%\$ interval "
                  r"\$\[([-+][\d.]+),([-+][\d.]+)\]\$\), and \$([\d.]+)\$ under",
                  # Rounded HERE, half-up, from the deposit's own endpoints -- not read out of its
@@ -1203,8 +1201,13 @@ def caption_specs() -> list[CaptionSpec]:
                 # it beside panel (a).  A numeral drawn inside a PDF is not reachable from here,
                 # so the caption no longer claims it and this binding no longer looks for it;
                 # the figure's own generator carries the seed in its .numbers.json sidecar.
+                # RE-ANCHORED 2026-08-11 (round 7): the caption said the axes "span the measured
+                # range" and called these the predictions that fall "below it", where the frame is
+                # the measured range padded by 4% (make_parity_figure.py) and 69 is the count below
+                # the PADDED frame -- 87 fall below the measured minimum itself.  The caption now
+                # says frame; the count is unchanged and still comes from the sidecar.
                 Bind("the predictions drawn below the axis",
-                     r"its \$(\d+)\$ predictions that fall below it",
+                     r"its \$(\d+)\$ predictions that fall\s+below",
                      lambda c: (str(_parity_sidecar()["panels"]["oracle"]["n_below_axis"]),),
                      lambda c: rel(_PARITY_JSON)),
                 Bind("the composition of the locked rows",

@@ -65,7 +65,25 @@ systematic argues for---that count is $0$. No admissible positive row set surviv
 glycol-ether stratum included: at source-grouped folds its cross-fitted bound is $4.92$ against an
 $\mathrm{MSE}$ of $2.25$, so its margin is $-7.58$. Fifteen source groups over five folds leave each
 fold's regressor extrapolating across publications, which is the design the scheme is chosen for and
-also what makes its bound this loose; the two readings of that number are not separated here.
+also what makes its bound this loose.
+% THE TWO READINGS ARE SEPARATED NOW, 2026-08-11 (round 7, referee METHOD item 6).  This sentence
+% used to end "the two readings of that number are not separated here"; the deposited stratum rows
+% settle it, so the either/or goes.  Deposit: results/glycol_external_scope/in_sample_stratum_182_rows.csv
+% -- 43 pairs, 182 pair x T cells, every one of them from a single publication; the two sources
+% carrying 177 of the 182 rows supply disjoint glycols (ethylene and diethylene against tri- and
+% tetraethylene).  Do not restore the either/or.
+The stratum's own rows separate them. No pair in it is measured by more than one
+publication---none of the $43$, and none of the $182$ pair-by-temperature cells---and the two
+publications carrying $177$ of the rows supply disjoint glycols, the ethylene and diethylene
+oligomers against the tri- and tetraethylene ones. The source partition therefore almost coincides
+with the solvent partition, and where it does not the exception is small: ethylene glycol alone is
+carried by two publications, $36$ rows against $5$. A source-grouped fold accordingly holds out a
+whole solvent in three of the four cases and all but five of its rows in the fourth, so it prices
+chain-length extrapolation and samples almost no between-laboratory component, which is what the
+pair bound is refused for above. Its bound
+exceeds the stratum's own total error, which $\Binsuf$ itself cannot do, an upper bound on it being free to be arbitrarily loose, and its regressor
+scores $R^2=-0.60$ out of fold on these rows: at this fold count the estimator failed, and $-7.58$
+is uninformative about this closure rather than a reversal of it.
 The count of \emph{boundable} strata does not move, $15$ of $59$ under both estimators,
 because boundability is the $n\ge40$ test and the declaration froze it. The retired whole-set
 aggregate does not return: its margin falls from $+0.944$ to $+0.211$ (full) and from $+0.506$ to
