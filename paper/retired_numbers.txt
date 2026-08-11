@@ -374,3 +374,19 @@
 -0.058  superseded by a larger and better-scoped measurement: this was the MEDIAN SIGNED ln gamma_2 over 40 self-pairs, which mixed the testable cases with the ones the solver puts at x2 = 1 where the identity cannot be read. The sentence now prints the median ABSOLUTE value over the 2532 testable self-pairs of the 2634 distinct test solutes, 0.154, and names the 102 it cannot test and why.
 0.279   superseded by the same re-measurement: the mean magnitude over those 40 is now the mean magnitude over the 2532 testable, 0.286. The two are close, which is the point -- the 40-solute sample was not wrong about the size, it was silent about which of its rows could carry the test at all.
 2504.14094  checker artifact, not a loss: an arXiv identifier in the reference list. Adding specht2024hanna reflowed the bibliography by one entry, moving this reference onto a page the checker's bibliography-region rule excludes. `pdftotext paper/grounding_paradox.pdf - | grep 14094` still returns it. Same class as the 2606.03469 and 2411.15101 entries above.
+
+# 2026-08-12, later. The COSMO-SAC-2010 layer's reference reproduction was one of four defects the
+# Data-availability section disclosed: the figure was quoted off a console and its validator had
+# written no artifact, so it could not be checked against the deposited record. The validator was
+# run at its defaults and now deposits
+# results/b_insuff/closure_reference_validation_2010.json. The defect list is three.
+1.4e-4  not reproduced by the validator that was written to check it: at the script's defaults --
+        80 compounds, 400 infinite-dilution pairs at 298.15 K on identical typed profiles, float64,
+        200 iterations, dispersion off -- the deposited comparison is RMSE 1.6e-4, with the largest
+        single departure 1.7e-3 and the combinatorial term matching to 0.0e+00, so the whole of the
+        discrepancy sits in the residual term. The earlier run's compound set is not recoverable, so
+        the two figures are not reconciled and the deposited one stands; both documents print 1.6e-4.
+        The deposit is from the code AFTER the centre-bin repair of commit be6493b, and that repair
+        does not move this comparison: 300-pair runs before and after return RMSE 1.9e-4 / max 1.8e-3
+        to every printed digit and the same five worst pairs, because the tabulated OH and OT
+        profiles carry exactly zero area in the bin the repair concerns.
