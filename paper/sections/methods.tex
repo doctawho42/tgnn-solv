@@ -417,6 +417,18 @@ so the $\sigma$ stream enters the warm-up only.
 % The number is \S\ref{sec:si-methods}'s (SI: "reproduces the NIST COSMO-SAC-2010 reference to
 % RMSE 1.4e-4 ln gamma").  Keep the console clause: it is the disclosure that this one value is
 % not on the deposited record, and the Data-availability section names it as one of four.
+% SUPERSEDED 2026-08-12.  The validator was run and the artifact deposited, so the disclosure
+% clause is gone from here, from the SI and from the Data-availability count, which is now three.
+% results/b_insuff/closure_reference_validation_2010.json, from
+% scripts/analysis/validate_cosmo2010_layer.py at its defaults (80 compounds, 400 pairs, 200
+% iterations, float64, dispersion off).  The reproducible figure is 1.6e-4, not the 1.4e-4 that
+% was quoted off a console; the previous run's compound set is not recoverable, so the two are not
+% reconciled, and the deposited one is the one that stands.  The combinatorial term matches to
+% 0.0e+00, so the whole discrepancy is in the residual term.
+% The run is from the code as it stands AFTER the centre-bin repair in CosmoSac2010Layer
+% (commit be6493b): that repair does not move this comparison at all -- 300-pair runs before and
+% after return RMSE 1.9e-4 / max 1.8e-3 to every printed digit -- because the tabulated OH and OT
+% profiles carry exactly zero area in the bin it concerns.
 The dispersion-off closures in the fidelity measurement (\S\ref{sec:fidelity}) are our own
 differentiable implementations, so those arms share one code path, and each consumes its own
 model-prescribed $\sigma$-averaging (Mullins for 2002, Hsieh for 2010). Our 2002 layer---the
@@ -426,9 +438,8 @@ alone---reproduces the NIST reference COSMO-SAC-2002~\cite{bell2020cosmosac} to 
 $0.0035\,\ln\gamma$ on identical VT-2005 profiles. Our COSMO-SAC-2010/dsp
 layer~\cite{hsieh2010,hsieh2014dsp}, built on the \emph{typed} latent of three donor/acceptor-resolved
 $\sigma$-profiles per molecule in place of one, reproduces the NIST 2010 reference with dispersion
-\emph{off} to RMSE $1.4\times10^{-4}\,\ln\gamma$. That second figure is not deposited, its
-validator having written no artifact where the 2002 one deposits its comparison, so it cannot be
-checked against the deposited record
+\emph{off} to RMSE $1.6\times10^{-4}\,\ln\gamma$ over $400$ pairs, the largest single departure
+being $1.7\times10^{-3}$
 (\S\ref{sec:si-methods}). The dispersion term is \emph{not} validated to that standard, which is why every
 dispersion-off contrast is computed on our layers while the \emph{2010, dispersion on} runs are
 quoted from \texttt{cCOSMO}, that reference implementation itself.
