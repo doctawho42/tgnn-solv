@@ -215,3 +215,4 @@ results/closure_ladder/*
 !results/role_asymmetry
 results/role_asymmetry/*
 !results/role_asymmetry/self_pair.json
+!results/role_asymmetry/self_pair_channels.json

@@ -572,9 +572,28 @@ residual term vanishes identically, so $\ln\gamma_2$ is zero by composition and 
 agreement---and on the $2532$ that are testable the median $|\ln\gamma_2|$ is $0.154$, the mean
 $0.286$ and the largest $5.78$, with $95\%$ above $0.01$. With
 one profile on both sides the same computation returns zero to machine precision, so the violation
-is the role gap and nothing else. The substitution overwrites both roles at once and therefore also
-closes that gap, which is a second thing it changes besides the profile values; the two are not
-separated here. Tying the two roles is the change this calls for, and it is a retraining.
+is the role gap and nothing else.
+% ADDED 2026-08-12.  The prescription at the end of this paragraph was unqualified and is wrong on
+% one arm.  The role-adapted readout feeds THREE numbers, not one -- profile shape, cavity area,
+% molar volume -- and the third never touches the sigma-profile: it reaches ln gamma only through
+% the Staverman-Guggenheim term, off on the arms the paradox is reported on and restored on one
+% arm, which takes its volume from the auxiliary head applied to the SAME two role-adapted
+% readouts.  So on that arm tying the sigma-head alone leaves the identity broken.  Measured, not
+% argued: run_self_pair_channels.py, n=256 reference molecules, one channel given a 20% role
+% mismatch and the other two held exactly equal.  20% is the order the measured adapter divergence
+% implies.  Area and volume return EXACTLY 0.0000 with the combinatorial term off, which is the
+% stronger statement -- the residual term is a function of the shapes alone, not merely dominated
+% by them.
+Which channel of that gap carries it decides how large the repair is. The role-adapted readout
+feeds three numbers, and on the arms this paper reports the residual term is a function of the two
+profile shapes alone: giving the two roles a $20\%$ mismatch on the cavity area, or on the molar
+volume, moves $\ln\gamma_2$ by exactly zero, so the profile disagreement is the whole of it. On the
+one arm that restores the combinatorial term the same split also reaches $\ln\gamma_2$ through the
+auxiliary head's volume, and there a mismatch on the volume alone gives a median $|\ln\gamma_2|$ of
+$0.152$ with the two profiles in perfect agreement. The substitution overwrites both roles at once
+and therefore also closes that gap, which is a second thing it changes besides the profile values;
+the two are not separated here. Tying the two roles is the change this calls for; where the size
+term is live it has to reach the auxiliary head as well, and either way it is a retraining.
 % ITEM 5 OF THE 2026-08-11 REFEREE ROUND.  The substitution swaps a shape and a SIZE at once, and
 % A_2/a_eff is a multiplicative prefactor on the residual term, so a reader is owed which of the
 % two objects the fidelity metric of \S\ref{sec:surrogate} is taken on and how far the learned area
