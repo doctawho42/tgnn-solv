@@ -18,5 +18,15 @@
   "max_abs_diff": 0.32136955857276917,
   "cosine": -0.014814644120633602
  },
- "null": "one profile on both sides returns 0.0 to machine precision (results/substitution_mechanism/gate.json self_solvation_max_abs)"
+ "null": "one profile on both sides returns 0.0 to machine precision (results/substitution_mechanism/gate.json self_solvation_max_abs)",
+ "self_pair_all_test_solutes": {
+  "n_solutes": 2634,
+  "n_degenerate_solver_at_x2_1": 102,
+  "n_testable": 2532,
+  "median_abs_ln_gamma": 0.15384991466999054,
+  "mean_abs": 0.2859402298927307,
+  "max_abs": 5.775304794311523,
+  "frac_gt_0p01": 0.9502369668246445,
+  "note": "a self-pair is untestable where the solver sits at x2=1: the residual term vanishes identically there, so ln gamma_2 = 0 by composition and not by profile agreement."
+ }
 }

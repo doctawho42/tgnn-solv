@@ -565,9 +565,12 @@ A property of the head bears on what that substitution does, and it is a defect 
 choice. The encoder carries a separate learned adapter for the solute and the solvent role, and the
 $\sigma$-head reads whichever the molecule occupies, so one molecule has \emph{two} predicted
 profiles. A $\sigma$-profile is a property of a molecule alone, and the closure reads the pair, so
-the model can and does violate an identity no activity model may violate: on a self-pair, where
-$\ln\gamma_2$ must be exactly zero, the deployed model returns a median $-0.058$, a mean magnitude
-of $0.279$ and a maximum of $1.31$ over $40$ solutes, nonzero beyond $0.01$ on $95\%$ of them. With
+the model can and does violate an identity no activity model may violate. On a self-pair
+$\ln\gamma_2$ must be exactly zero. Feeding every one of the $2634$ distinct test solutes to both
+roles at its own temperature, $102$ are untestable---the solver sits at $x_2=1$ there, where the
+residual term vanishes identically, so $\ln\gamma_2$ is zero by composition and not by profile
+agreement---and on the $2532$ that are testable the median $|\ln\gamma_2|$ is $0.154$, the mean
+$0.286$ and the largest $5.78$, with $95\%$ above $0.01$. With
 one profile on both sides the same computation returns zero to machine precision, so the violation
 is the role gap and nothing else. The substitution overwrites both roles at once and therefore also
 closes that gap, which is a second thing it changes besides the profile values; the two are not

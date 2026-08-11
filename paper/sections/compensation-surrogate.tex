@@ -169,15 +169,28 @@ being the low-fidelity COSMO-SAC-2002 and the warm-up $\sigma$ itself only partl
 \paragraph{The nearest published construction, which reports the opposite sign.} TeNNet-SAC
 \cite{yang2025tennet} is this pipeline's closest relative in print: a $\sigma$-profile predictor
 feeding a COSMO-SAC-shaped segment-activity model, with its profile and geometry predictors trained
-on $39{,}745$ quantum solvation calculations and its segment-activity predictor pretrained on a
-million synthetic points and then fine-tuned end to end on experimental activity coefficients. It
+on quantum-chemical $\sigma$-profiles and geometries for $39{,}745$ molecules and its
+segment-activity predictor pretrained on a million synthetic points and then fine-tuned on
+experimental activity coefficients. That fine-tuning is not end to end: only the output head of the
+segment-activity predictor is updated, and the profile and geometry predictors stay frozen. It
 reports accuracy comparable to COSMO-SAC in its base form and, after that fine-tuning, consistently
 better than COSMO-SAC across its benchmarks. Three differences separate it
 from what is measured here, and only the last is a hypothesis. The first is which operation is
 scored. TeNNet-SAC's gain is a training-time gain from supervising and then fine-tuning a learned
 profile, and that is the operation this work also finds positive ($+0.20$, \S\ref{sec:paradox}); the
 operation this work finds negative is substituting a tabulated profile for the learned one at
-inference, which TeNNet-SAC does not report. On that reading the two results do not conflict.
+inference, which TeNNet-SAC does not report. On that reading the two results do not conflict---and
+the frozen predictors sharpen it: the one published construction that keeps a $\sigma$-profile
+intermediate and succeeds both supervises that intermediate externally and never lets the activity
+model's gradient reach it. What is measured here is the complement, an intermediate trained through
+the closure with neither, and it stops reporting the quantity it is named for
+(\S\ref{sec:eval}). A third design avoids the question by removing the intermediate: HANNA
+\cite{specht2024hanna} parameterises the excess Gibbs energy directly from SMILES with no quantum
+chemistry, hard-coding the pure-component limit, the Gibbs--Duhem relation and permutation symmetry
+in the \emph{architecture} rather than the loss, and reports higher accuracy than UNIFAC over
+$317{,}421$ mixture points. Between them the two published designs bracket what this work
+measures: admissibility can be bought with quantum labels or built into the functional form, and
+this model does neither.
 The second is that it carries a geometry predictor for molecular volume and surface area, so its
 composed model can evaluate the combinatorial contribution this one cannot (\S\ref{sec:model}).
 The third is that its segment-activity kernel is trainable and this one is fixed at the
