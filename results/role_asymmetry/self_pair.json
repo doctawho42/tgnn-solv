@@ -1,0 +1,22 @@
+{
+ "what": "gamma(i in i) must be 1 for any activity model. This model gives one molecule two sigma-profiles, one per encoder role, so it does not.",
+ "checkpoint": "checkpoints/cosmo_sac/tgnn_cosmo.pt",
+ "n_self_pairs": 40,
+ "ln_gamma_2_self_pair": {
+  "median": -0.05787530541419983,
+  "mean_abs": 0.27854520082473755,
+  "max_abs": 1.3063280582427979,
+  "frac_abs_gt_0p01": 0.95
+ },
+ "role_adapters": {
+  "tensors": [
+   "gnn.solute_adapter.0.bias",
+   "gnn.solute_adapter.0.weight",
+   "gnn.solvent_adapter.0.bias",
+   "gnn.solvent_adapter.0.weight"
+  ],
+  "max_abs_diff": 0.32136955857276917,
+  "cosine": -0.014814644120633602
+ },
+ "null": "one profile on both sides returns 0.0 to machine precision (results/substitution_mechanism/gate.json self_solvation_max_abs)"
+}

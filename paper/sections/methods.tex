@@ -553,6 +553,25 @@ product is the area-weighted profile the closure reads, and for a matched molecu
 replaced by the tabulated pair, which stands in the same relation---so the reference area reaches
 the residual term's $A_2/a_{\mathrm{eff}}$ prefactor as part of replacing that one object rather
 than as a separate choice.
+
+% ADDED 2026-08-11.  A referee of the first round named this and it was not disclosed.  Verified
+% here directly rather than taken from a report: the checkpoint's two role adapters are separate
+% 64x64 layers whose weight vectors are near-orthogonal (cosine -0.015, max|diff| 0.32), and 40
+% self-pairs pushed through the deployed model return the numbers below.  The instrument's own null
+% is exact and is deposited: one profile on both sides returns 0.0 to machine precision.
+% SCOPE, and keep it: the sizes are from the one trained COSMO-SAC head the tree holds, a retired
+% checkpoint.  What is architectural is that the two roles are untied at all.
+A property of the head bears on what that substitution does, and it is a defect rather than a
+choice. The encoder carries a separate learned adapter for the solute and the solvent role, and the
+$\sigma$-head reads whichever the molecule occupies, so one molecule has \emph{two} predicted
+profiles. A $\sigma$-profile is a property of a molecule alone, and the closure reads the pair, so
+the model can and does violate an identity no activity model may violate: on a self-pair, where
+$\ln\gamma_2$ must be exactly zero, the deployed model returns a median $-0.058$, a mean magnitude
+of $0.279$ and a maximum of $1.31$ over $40$ solutes, nonzero beyond $0.01$ on $95\%$ of them. With
+one profile on both sides the same computation returns zero to machine precision, so the violation
+is the role gap and nothing else. The substitution overwrites both roles at once and therefore also
+closes that gap, which is a second thing it changes besides the profile values; the two are not
+separated here. Tying the two roles is the change this calls for, and it is a retraining.
 % ITEM 5 OF THE 2026-08-11 REFEREE ROUND.  The substitution swaps a shape and a SIZE at once, and
 % A_2/a_eff is a multiplicative prefactor on the residual term, so a reader is owed which of the
 % two objects the fidelity metric of \S\ref{sec:surrogate} is taken on and how far the learned area

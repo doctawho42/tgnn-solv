@@ -212,3 +212,6 @@ results/closure_ladder/*
 !results/closure_ladder/placebo_profile_diagnosis.csv
 !results/closure_ladder/rank_correlation.json
 !results/closure_ladder/harness_identity.json
+!results/role_asymmetry
+results/role_asymmetry/*
+!results/role_asymmetry/self_pair.json
