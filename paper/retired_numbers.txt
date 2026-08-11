@@ -390,3 +390,24 @@
         does not move this comparison: 300-pair runs before and after return RMSE 1.9e-4 / max 1.8e-3
         to every printed digit and the same five worst pairs, because the tabulated OH and OT
         profiles carry exactly zero area in the bin the repair concerns.
+
+# 2026-08-12, round four. The ranking intervals of Sec. 3.2 and the corpus descriptors of Sec. 2.1.
+0.56    wrong deposit: the sentence it closes says the affine map "is fitted on the rows it is then
+        scored on", so the quantity is IN-SAMPLE, and the in-sample deposit
+        (results/e5_sigma_grounding/ranking/rank_final.json, pooled_over_seeds.mae.ci95) is
+        [0.30775, 0.55329] -> +0.55. The +0.56 is the upper endpoint of rank_final_oos.json
+        ([0.30938, 0.55627]), the OUT-OF-SAMPLE companion. The lower endpoint, +0.31, is the same to
+        two decimals in both and is unaffected.
+-0.282  precision, same repair the three intervals above already carry: at the 4000 draws behind
+-0.117  them a third decimal is a property of the bootstrap seed. The deposit reads
+-0.124   spearman [-0.28199, -0.11689], ndcg [-0.12364, -0.04283], top1 [-0.19233, -0.01973]; all
+-0.043   three now print to two decimals, and the sentence says why. No sign and no exclusion of
+-0.192   zero changes.
+-0.020
+15,665  wrong population: attributed to BigSolDB 2.0 alongside 127,930 rows, but 15,665 solutes and
+221     221 solvents are the TRAINING SPLIT's counts. Recomputed from
+        notebooks/data/processed/{train,val,test}.csv: train 111,724 rows / 15,665 solutes / 221
+        solvents; all three splits 127,930 / 20,766 / 228; the has_solubility rows alone 108,287 /
+        1525 / 212. The sentence paired one population's row count with another's solute and solvent
+        counts under a third's attribution, and now gives BigSolDB's own 108,287 / 1525 / 212 and
+        then the modelled corpus's 127,930 / 20,766 / 228.

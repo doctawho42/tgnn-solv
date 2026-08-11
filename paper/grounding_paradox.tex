@@ -1001,21 +1001,24 @@ co-adaptation would do to an ordering is unmeasured here.
 Group the labelled test rows by solute and temperature and rank the solvents inside each group
 ($823$ groups over $107$ solutes; Table~\ref{tab:ranking}). The mean per-solute Spearman correlation
 then falls from $0.592/0.546/0.598$ to $0.365/0.369/0.410$ across the three seeds, pooled $-0.197$
-$[-0.282,-0.117]$, every per-seed interval excluding zero. Each of the three falls is larger than
+$[-0.28,-0.12]$, every per-seed interval excluding zero. Each of the three falls is larger than
 any difference between seed replicates of a single arm on this measure, the largest of which is
 $0.060$; the deposit carries that benchmark for the rank correlation only, so it is not read against
 the two measures below.
 Every interval here is a $95\%$ percentile bootstrap over those $107$ solute clusters, the
-effective sample rather than the $823$ groups.
+effective sample rather than the $823$ groups. Two decimals is the precision the draw count
+determines and not the precision the deposit records: at the $4000$ draws behind them a third
+decimal is a property of the bootstrap seed, so the coarsening rule \S\ref{sec:si-map} states for
+the map is applied to these as well.
 Normalised discounted cumulative gain over the top three solvents (nDCG@3) falls by $-0.084$
-$[-0.124,-0.043]$, and top-1 accuracy by $-0.107$ $[-0.192,-0.020]$. That
+$[-0.12,-0.04]$, and top-1 accuracy by $-0.107$ $[-0.19,-0.02]$. That
 last figure is quoted pooled and only pooled: two of its three per-seed intervals span zero, so it is
 the one of the three ranking metrics that does not hold seed by seed. The solvent the
 model would select changes in $40$ to $53\%$ of groups, asymmetrically: the learned profile alone
 picks the measured best solvent in $20.0/23.2/21.5\%$ of groups, the reference profile alone in
 $6.2/14.5/12.2\%$. None of that is a level. Fitting a separate affine recalibration inside every
 group---a slope as well as an intercept, the largest concession a reading on which the substitution
-merely miscalibrates can ask for---removes $86\%$ of the MAE gap, $+0.431$ $[+0.31,+0.56]$ to
+merely miscalibrates can ask for---removes $86\%$ of the MAE gap, $+0.431$ $[+0.31,+0.55]$ to
 $+0.060$ $[+0.02,+0.10]$, which is the restored, misaligned spread of the paragraph above in
 another currency. That map is fitted on the rows it is then scored on, two free parameters against a
 median of five solvents, so it bounds what the concession can buy rather than measuring it. Refitted

@@ -265,8 +265,17 @@ $n$.
 
 \subsection{Data curation: sources, splits, and labels}
 \label{sec:data}
-Solubility measurements come from BigSolDB~2.0 \cite{krasnov2025bigsoldb}: $127{,}930$ rows over
-$15{,}665$ solutes and $221$ solvents between $243$ and $438$\,K. The partition is by Bemis--Murcko
+% CORRECTED 2026-08-12, round four.  The sentence paired three numbers from three different
+% populations under one attribution: 127,930 is the whole modelled corpus, 15,665 solutes and 221
+% solvents are the TRAINING SPLIT's counts, and BigSolDB 2.0 itself contributes 108,287 rows over
+% 1525 solutes and 212 solvents.  Recomputed from notebooks/data/processed/{train,val,test}.csv:
+% train 111,724 / 15,665 / 221; all three splits 127,930 / 20,766 / 228; the has_solubility rows
+% alone 108,287 / 1525 / 212.  The solute count jumps because the melting-point rows are
+% single-component crystal labels on molecules that carry no solubility measurement.
+Solubility measurements come from BigSolDB~2.0 \cite{krasnov2025bigsoldb}: $108{,}287$ rows over
+$1525$ solutes and $212$ solvents. Melting points merged in as single-component crystal labels bring
+the modelled corpus to $127{,}930$ rows over $20{,}766$ solutes and $228$ solvents between $243$ and
+$438$\,K. The partition is by Bemis--Murcko
 scaffold---a molecule's ring systems together with the linkers joining them, side chains
 removed---into $111{,}724$ training, $8{,}103$ validation and $8{,}103$ test rows, so that every test
 solute is unseen at training. A melting-point-independent miscibility/structure filter sets row
