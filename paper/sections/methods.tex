@@ -388,9 +388,18 @@ turn, and one arm of Fig.~\ref{fig:paradox} restores the term by taking a molar 
 separate auxiliary head and passing it detached, so the combinatorial term is active but the
 solubility loss cannot train it. Inside the layer, the segment activities are themselves a fixed point, truncated at a count
 that is a free hyperparameter and is \emph{not} the same in training and scoring: the COSMO-SAC arms
-here train at $16$ segment iterations and are scored at $30$. Sixteen was chosen because it lands
-within $6\times10^{-5}$ of $30$ on these weights, so the two agree by construction on this
-configuration and not as a property of the count; a checkpoint fitted at a different count is scored
+here train at $16$ segment iterations and are scored at $30$.
+% CORRECTED 2026-08-12, round four.  "on these weights" was false provenance and it is the clause
+% that makes the mismatch read as benign.  The 16 was set in ed8c4ce against a convergence
+% regression test, tests/test_cosmo_sac_iter_convergence.py, whose _profiles builds two hand-written
+% Gaussian sigma-profiles: no trained weight and no tabulated profile enters it, so the 6e-5 is a
+% property of that test's configuration and says nothing about the arms.  The rest of the sentence
+% -- that a checkpoint fitted at one count and scored at another goes through an operator it was
+% never fitted against -- is unaffected and is the point.
+Sixteen was chosen against a
+convergence regression test on hand-built Gaussian $\sigma$-profiles, where the $16$-against-$30$
+gap is $6\times10^{-5}$; no trained weight and no tabulated profile enters that test, so the two
+counts are not shown to agree on these arms, and a checkpoint fitted at a different count is scored
 through an operator it was never fitted against. The exposure that carries to the substitution
 contrast is not measured. A second, independent truncation sits outside it---the SLE fixed point in
 $x_2$, run to a different count in training than in scoring---and only that one can be re-solved from
