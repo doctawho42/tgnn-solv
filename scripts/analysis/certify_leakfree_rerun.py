@@ -302,16 +302,25 @@ def main() -> int:
                     seed_entry[f"{args.ungrounded_arm}_mae"]
                     - seed_entry[f"{args.grounded_arm}_mae"]
                 )
-        comparison = sdir / "comparison.json"
-        if comparison.exists():
+        # comparison_both_arms.json FIRST, and that order is load-bearing. Each arm ran as its
+        # own process and the later one overwrote comparison.json with a single arm, so that file
+        # is not a cross-arm comparison; the repository deliberately does not track it (see
+        # .gitignore, results/e5_sigma_grounding_leakfree block). Requiring it, as this script
+        # did, made the certification unpassable on a clean checkout -- the artifact it asked for
+        # is the one the project decided not to keep.
+        candidates = [sdir / "comparison_both_arms.json", sdir / "comparison.json"]
+        comparison = next((c for c in candidates if c.exists()), None)
+        if comparison is not None:
             payload = json.loads(comparison.read_text())
+            seed_entry["comparison_file"] = comparison.name
             seed_entry["comparison_n_locked"] = payload.get("n_locked")
             if payload.get("n_locked") != seed_entry.get("n_locked"):
-                _fail(problems, f"seed {seed}: comparison.json n_locked="
+                _fail(problems, f"seed {seed}: {comparison.name} n_locked="
                                 f"{payload.get('n_locked')} disagrees with the recomputed "
                                 f"{seed_entry.get('n_locked')}")
         else:
-            _fail(problems, f"seed {seed}: missing {comparison}")
+            _fail(problems, f"seed {seed}: neither comparison_both_arms.json nor "
+                            f"comparison.json is in {sdir}")
         seed_entry["seed"] = seed
         report["per_seed"][str(seed)] = seed_entry
         per_seed_rows.append(seed_entry)
