@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/home/nikitapolomosnov/tgnn-solv/checkpoints/e5_leakfree/ungrounded_seed46.pt",
+  "data": "/home/nikitapolomosnov/tgnn-solv/notebooks/data/processed/test.csv",
+  "output": "/home/nikitapolomosnov/tgnn-solv/results/e5_sigma_grounding_leakfree/seed_46/ungrounded_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 2.1415887241000666,
+  "rmse": 2.8159289944926424,
+  "r2": 0.11132802512508189,
+  "bias": 0.8455152732961826,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.540575324188281,
+  "pred_std_ratio": 0.8505133174959486
+}

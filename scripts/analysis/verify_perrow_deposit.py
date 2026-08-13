@@ -153,12 +153,18 @@ def main() -> int:
         ok = (len(df) == N_TEST_ROWS and lab == N_LABELLED
               and complete_last_line and nonfinite == 0 and not mismatches)
         failures += (not ok)
-        print(f"{str(f.relative_to(REPO)):<58} {len(df):>6} {lab:>6} "
+        # resolve() first: paths reach here relative when the caller passes them relative, and
+        # Path.relative_to raises on a relative-against-absolute pair rather than coping.
+        try:
+            shown = f.resolve().relative_to(REPO)
+        except ValueError:
+            shown = f
+        print(f"{str(shown):<58} {len(df):>6} {lab:>6} "
               f"{'ok' if complete_last_line else 'TRUNC':>9} {nonfinite:>10} "
               f"{summary_state:>11}")
         for m in mismatches:
             print(f"    ! {m}")
-        report.append({"file": str(f.relative_to(REPO)), "seed": seed, "arm": arm,
+        report.append({"file": str(shown), "seed": seed, "arm": arm,
                        "n_rows": int(len(df)), "n_labelled": lab,
                        "last_line_complete": complete_last_line,
                        "n_nonfinite_ln_x2_pred": nonfinite,
