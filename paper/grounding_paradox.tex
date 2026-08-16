@@ -922,8 +922,9 @@ operations is larger is therefore unresolved, and only their signs are carried f
 % the sigma-oracle bar swaps the input at evaluation only, and that DirectGNN was tuned
 % separately -- are both in the body within a paragraph of this float.  Do not restore them.
 \caption{Controlled comparison on the $5608$ labelled test rows of the scaffold split.
-Solid bars: three seeds,
-mean $\pm$ a population standard deviation over them. The two hatched bars are the
+Solid bars: five seeds,
+mean $\pm$ a population standard deviation over them. The ungrounded, grounded and $\sigma$-oracle
+arms come from the five-seed leak-free re-run. The two hatched bars are the
 co-adaptation controls, seed $42$ only, so they carry no error bar and no $R^2$, and keep an empty
 slot in the right panel. Dashed in the left panel only, the DirectGNN reference.}
 \label{fig:paradox}
@@ -1901,8 +1902,8 @@ arms trail their own control in the seed mean---the COSMO-SAC arms at every seed
 two of three, being ahead at seed $42$ ($1.734$ against $1.749$; Table~\ref{tab:si-arms})---and the
 predict-the-mean row shows how little room sits above them.
 The physics and control arms were tuned separately and no hyperparameter-matched control was run, so
-the global $\Delta\mathrm{MAE}$ of $+0.14$ between them on the $5608$ labelled test rows---from the unrounded means, where
-Table~\ref{tab:baselines}'s rounded cells differ by $0.15$---carries no information about the
+the global $\Delta\mathrm{MAE}$ of $+0.23$ between them on the $5608$ labelled test rows---from the unrounded means, and
+Table~\ref{tab:baselines}'s rounded cells differ by the same $0.23$---carries no information about the
 thermodynamic bottleneck, and neither do the per-solvent-class map, the per-solute-class map, the
 novelty inversion or the data-efficiency trend, all of which resolve the \emph{same} difference along
 chemical axes. We claim no accuracy result in either direction; those strata are reported in

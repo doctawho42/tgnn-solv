@@ -1246,8 +1246,12 @@ def caption_specs() -> list[CaptionSpec]:
             "tab:si-arms", ("ungrounded", "grounded", "oracle"), "float",
             binds=[
                 Bind("the seed count and the row set",
-                     r"\((\d+) seeds, the \$n\{=\}(\d+)\$ labelled test rows\)",
-                     lambda c: (str(len(c.seeds)), str(c.root.n_lock)),
+                     # RE-ANCHORED 2026-08-12. The caption no longer opens with one seed count,
+                     # because the table's rows no longer share one: the three re-run arms carry
+                     # five and the three published arms carry three, so the count moved into the
+                     # sentence that says which rows are which and the row set stands alone.
+                     r"the \$n\{=\}(\d+)\$ labelled test rows.*?carry (\d+) seeds",
+                     lambda c: (str(c.root.n_lock), str(len(c.seeds))),
                      lambda c: f"cross-arm lock over {A(c,'grounded_a')}"),
                 Bind("the seed count the sd is taken over",
                      r"over the (\w+)\s*seeds",

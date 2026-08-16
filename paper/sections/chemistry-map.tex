@@ -17,7 +17,8 @@ The solvent axis is the most pronounced. Binning test pairs by solvent class and
 \centering
 \caption[The asymptotic physics penalty per solvent class]{Per-solvent-class asymptotic physics penalty
 $\Delta\mathrm{MAE}=\mathrm{MAE(physics)}-\mathrm{MAE(control)}$ on the scaffold
-split (mean $\pm$ sd over 3 seeds; positive means the closure adds cost).}
+split (mean $\pm$ sd over 5 seeds; positive means the closure adds cost). Only the physics side
+is five-seed, from the leak-free re-run; the DirectGNN control stays at its published three.}
 \label{tab:solvent-map}
 \begin{tabular}{lr}
 \toprule
@@ -42,7 +43,8 @@ The solute axis shows a compatible but weaker pattern (Table~\ref{tab:solute-map
 \centering
 \caption[The asymptotic physics penalty per solute class and novelty stratum]{Per-solute-class and novelty-stratum asymptotic physics penalty
 $\Delta\mathrm{MAE}=\mathrm{MAE(physics)}-\mathrm{MAE(control)}$ on the scaffold split
-(positive means the closure adds cost). Entries carry the 3-seed spread where it was computed:
+(positive means the closure adds cost). Only the physics side is five-seed, from the leak-free
+re-run; the DirectGNN control stays at its published three. Entries carry the 5-seed spread where it was computed:
 the two Tanimoto strata and the charged/salt class. The other four solute classes are point
 estimates.}
 \label{tab:solute-map}

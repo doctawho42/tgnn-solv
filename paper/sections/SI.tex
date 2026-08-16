@@ -791,7 +791,8 @@ and seven hundred, so the third column is read a row at a time and not scanned.
 \begin{table*}[tp]
 \centering
 \caption[The claims ledger: every load-bearing claim with its set, value and scope]{One row per load-bearing claim: what is claimed, the data set and its size, and
-the value measured with its uncertainty and its scope. Notes \emph{a}--\emph{h}, at the foot
+the value measured with its uncertainty and its scope. The grounded, ungrounded and $\sigma$-oracle
+arms come from the five-seed leak-free re-run. Notes \emph{a}--\emph{h}, at the foot
 of the last part, qualify a row or a column.}
 \label{tab:claims}
 {\footnotesize
@@ -804,9 +805,9 @@ Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{The two senses of grounding} (\S\ref{sec:paradox})}\\
 Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($5608$ of $8103$), 5 seeds & $1.93\to2.34$; the per-seed values do not overlap; the gap carries the test-time input swap with it \\
 \addlinespace[3pt]
-\ldots and still hurt when injected at training & labelled test rows\tnk{c}, seed $42$ & $1.80\to1.98$ (own baseline $1.80\to2.23$); one seed and a stream build not certified against its comparator's (\S\ref{sec:si-repro}), so a sign and not an effect size---free of the test-time swap, which the row above is not \\
+\ldots and still hurt when injected at training & labelled test rows\tnk{c}, seed $42$ & $1.89\to1.98$ (own baseline $1.89\to2.14$); one seed, so a sign and not an effect size---free of the test-time swap, which the row above is not \\
 \addlinespace[3pt]
-\ldots so part of that gap is test-time distribution shift & labelled test rows\tnk{c}, seed $42$ & share $0.59$ on one seed: a description of that seed, not a magnitude \\
+\ldots so part of that gap is test-time distribution shift & labelled test rows\tnk{c}, seed $42$ & share $0.64$ on one seed, and at five seeds not a share at all: replayed against the other four baselines two of the readings exceed one (\S\ref{sec:si-tables}). A sign on the matched seed, not a magnitude anywhere \\
 \addlinespace[3pt]
 Training-time $\sigma$ supervision has \emph{no established sign} (MAE) & labelled test rows, 5 seeds & $2.04\to1.93$ in the seed mean, but the per-seed values overlap and one of the five gains reverses: $0.149/0.122/0.175/-0.017/0.122$. They straddle the co-adapted arm's $+0.09$, so the two operations are not ordered by magnitude either. This is the contrast the pre-committed leak-free re-run was run to settle (\S\ref{sec:data}), and it settles it as unresolved \\
 \addlinespace[3pt]
@@ -865,7 +866,8 @@ A Hammett $\mathrm pK_a$ closure reverses the substitution's sign between its tw
 \ContinuedFloat
 \centering
 \caption[]{\emph{Continued.} The mechanism and accuracy blocks, and notes \emph{a}--\emph{h},
-which qualify rows and columns of all three parts.}
+which qualify rows and columns of all three parts. The grounded, ungrounded and $\sigma$-oracle
+arms come from the five-seed leak-free re-run.}
 \label{tab:claims-cont2}
 {\footnotesize
 \setlength{\tabcolsep}{4pt}
@@ -884,7 +886,7 @@ The latent departs from its reference along a shared direction & matched molecul
 That departure \emph{cancels} closure error & not measured & the one direct check is under-powered and runs against it \\
 \addlinespace[7pt]
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Accuracy} (\S\ref{sec:discussion})}\\
-Physics arm vs.\ DirectGNN accuracy ($\Delta$MAE) & labelled test rows ($5608$ of $8103$) & $+0.14$ between separately tuned pipelines, so not attributable to the thermodynamic bottleneck \\
+Physics arm vs.\ DirectGNN accuracy ($\Delta$MAE) & labelled test rows ($5608$ of $8103$) & $+0.23$ between separately tuned pipelines, so not attributable to the thermodynamic bottleneck \\
 \bottomrule
 \end{tabular}
 \tabnotes{\scriptsize%
@@ -992,8 +994,8 @@ the kernel-residual figures of the correctability test
 permutation or phase-randomised null (Table~\ref{tab:claims}; \S\ref{sec:surrogate}) is that null's
 own spread over draws, not a spread over seeds at all; and the pKa arm errors of
 \S\ref{sec:si-pka} span the $20$ within-scaffold splits. Reading the table off the rounded means mis-states differences by up to
-$0.01$: the learned-$\sigma$ and DirectGNN arms differ by $0.1435$ from their unrounded means, which
-we quote as $+0.14$, while their rounded values $1.85$ and $1.70$ differ by $0.15$. Both closure
+$0.01$: the learned-$\sigma$ and DirectGNN arms differ by $0.2253$ from their unrounded means, which
+we quote as $+0.23$, while their rounded values $1.93$ and $1.70$ differ by $0.23$. Both closure
 families---NRTL and COSMO-SAC over a learned $\sigma$-profile---trail the DirectGNN control in the
 seed mean (the physics penalty), though the arms are separately tuned and that gap is not
 attributable to the bottleneck (\S\ref{sec:discussion}). Only the COSMO-SAC family trails it at every
@@ -1007,9 +1009,11 @@ learned-$\sigma$ row and not against the oracle row.
 
 \begin{table*}[h]
 \centering
-\caption[Per-arm scaffold-split metrics, three seeds]{Per-arm scaffold-split metrics (3 seeds, the $n{=}5608$ labelled test rows), with per-seed
-MAE to three decimals. Ordered by MAE. The $\pm$ is a population standard deviation over the three
-seeds. Mean, $\pm$ and per-seed column are each rounded once from the unrounded values, the column
+\caption[Per-arm scaffold-split metrics]{Per-arm scaffold-split metrics (the $n{=}5608$ labelled test rows), with per-seed
+MAE to three decimals. Ordered by MAE. The ungrounded, grounded and $\sigma$-oracle arms come from
+the five-seed leak-free re-run and carry 5 seeds; the DirectGNN, NRTL and $+$SG rows are the
+published runs at their own three. The $\pm$ is a population standard deviation over the five
+seeds where a row has five and over the three where it has three. Mean, $\pm$ and per-seed column are each rounded once from the unrounded values, the column
 independently of the mean beside it.}
 \label{tab:si-arms}
 {\small
@@ -3507,8 +3511,8 @@ the analysis script and the artifact behind each row.}
 \toprule
 Run family & Seeds & What it produced \\
 \midrule
-$\sigma$-grounding arms, GPU, full corpus & $42,43,44$, mean$\pm$sd on the $n{=}5608$ labelled test rows &
-Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2}, Table~\ref{tab:si-arms}, the $+0.41$ and $-0.20$
+$\sigma$-grounding arms, GPU, full corpus & $42,43,44,45,46$, mean$\pm$sd on the $n{=}5608$ labelled test rows &
+Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2}, Table~\ref{tab:si-arms}, the $+0.41$ and $-0.11$
 of \S\ref{sec:paradox} \\
 Co-adaptation and channel-swap oracle controls; gated output residual & $42$ only: a sign, not an
 effect size & the $+0.18$ and $+0.27$ of \S\ref{sec:paradox}; \S\ref{sec:gateb} \\
