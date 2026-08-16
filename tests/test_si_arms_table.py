@@ -314,7 +314,15 @@ def test_the_prose_that_reads_off_the_table_carries_the_same_digits(regenerated)
     assert g[0] == ref, "the share is quoted at a seed the controls were not run at"
     assert float(g[1]) == round(inj, 3)
     assert float(g[2]) == float(g[5]) == round(c["learned_sigma_mae"], 3)
-    assert float(g[3]) == round(c["training_time_injection_gap"], 3)
+    # WITHIN THE OPERANDS' OWN ROUNDING, not equal to the rounded artifact. Printing two levels
+    # at three decimals and subtracting them cannot in general reproduce the rounded difference:
+    # here 1.9806-1.8871 is 0.093445, whose rounded form is 0.093, while the printed levels
+    # 1.981-1.887 give 0.094. Requiring both makes the sentence unsatisfiable, and of the two the
+    # reader's check is the one that must hold -- a printed subtraction that does not close on its
+    # own printed operands hands the reader a contradiction. Two three-decimal operands carry up to
+    # 1e-3 of accumulated rounding, which is the tolerance. At three seeds the two agreed and this
+    # was exact equality; the collision is a property of where these values fall, not a loosening.
+    assert float(g[3]) == pytest.approx(c["training_time_injection_gap"], abs=1e-3)
     assert float(g[4]) == round(arms["oracle"]["mae_per_seed"][ref], 3)
     assert float(g[6]) == round(c["evaluation_only_gap"], 3)
 
@@ -324,8 +332,8 @@ def test_the_prose_that_reads_off_the_table_carries_the_same_digits(regenerated)
         "the restated evaluation-only gap disagrees with the one printed two clauses earlier")
     assert float(g[8]) == float(g[3]), (
         "the restated injection gap disagrees with the one printed two clauses earlier")
-    assert float(g[9]) == round(
-        c["evaluation_only_gap"] - c["training_time_injection_gap"], 3), (
+    assert float(g[9]) == pytest.approx(
+        c["evaluation_only_gap"] - c["training_time_injection_gap"], abs=1e-3), (
         "the co-adaptation numerator is not the artifact's two gaps differenced")
     # ...and the printed arithmetic has to close on its own printed operands, which is a
     # different check: a sentence can quote three artifact-true numbers that do not subtract.
@@ -356,61 +364,81 @@ def test_the_prose_that_reads_off_the_table_carries_the_same_digits(regenerated)
     # columns (0.300) against its unrounded value (0.301).  Every one of those is a function of
     # the same artifacts, so all of them are bound here rather than the two shares alone.
     other = c["share_holding_injection_against_other_seed_baselines"]
+    # RE-POINTED 2026-08-12 at five seeds, and the sentence changed in KIND, not only in width.
+    # Two of the four recomputed shares now exceed one, which no share can, because the injected
+    # arm was measured once at seed 42 and at seeds 45 and 46 the learned baseline is worse than
+    # it, so the injection gap changes sign and the numerator overruns its denominator. The gate
+    # therefore binds all four shares, all five numerators and all five denominators, and asserts
+    # the overrun rather than tolerating it: if a future run brings every share back under one,
+    # this fails and the prose that explains the overrun has to go with it.
     others = re.search(
-        r"holding that arm at its single value " + num
-        + r" and recomputing at seeds \$(\d+)\$ and \$(\d+)\$, where the learned baseline and "
-        r"the substituted arm both move, gives " + num + r" and " + num
-        + r"\. It is that one arm's MAE that is fixed across the three readings and not the "
-        r"numerator, which is " + num + r", " + num + r" and " + num
-        + r" over denominators " + num + r", " + num + r" and " + num
-        + r" \(from the unrounded arm values, the injected arm being " + num
-        + r"; off the three-decimal columns of Table~\\ref\{tab:si-arms\} the seed-\$(\d+)\$ "
-        r"numerator reads " + num + r", and the share is " + num + r" either way\)", text)
+        r"[Hh]olding that arm at its single value " + num
+        + r" and recomputing at the other four seeds, where the learned baseline and "
+        r"the substituted arm both move, gives " + num + r", " + num + r", " + num + r" and "
+        + num
+        + r": the last two exceed one, which no share can\. They exceed it because at seeds "
+        r"\$(\d+)\$ and \$(\d+)\$ the learned baseline is worse than the once-measured injected "
+        r"arm, so the injection gap changes sign and the numerator overruns its own denominator\. "
+        r"It is that one arm's MAE that is held fixed across the readings and not the "
+        r"numerator, which is " + num + r", " + num + r", " + num + r", " + num + r" and " + num
+        + r" over denominators " + num + r", " + num + r", " + num + r", " + num + r" and " + num
+        + r" \(from the unrounded arm values, the "
+        r"injected arm being " + num + r"\)", text)
     assert others is not None, "the other-seed baseline sentence of S3 changed shape"
     o = others.groups()
     assert float(o[0]) == round(inj, 3)
-    # the two OTHER seeds, named in the order the block stores them
     rest = sorted(other)
-    assert [o[1], o[2]] == rest, (
-        f"the sentence recomputes at seeds {[o[1], o[2]]}; the block carries {rest}")
-    assert [float(o[3]), float(o[4])] == [round(other[k], 2) for k in rest], (
-        "the two other-seed shares are not the block's")
-    # the three numerators and denominators: the reference seed first, then the two others, each
-    # read from the arms rather than from the sentence beside it
+    assert [float(x) for x in o[1:5]] == [round(other[k], 2) for k in rest], (
+        "the four other-seed shares are not the block's")
+    over = [k for k in rest if other[k] > 1.0]
+    assert [o[5], o[6]] == over, (
+        f"the sentence names {[o[5], o[6]]} as the seeds whose share exceeds one; "
+        f"the block says {over}")
+    assert len(over) == 2, (
+        "the prose asserts exactly two shares above one; the artifact no longer says so")
     trio = [ref] + rest
-    assert [float(x) for x in o[5:8]] == [
+    assert [float(x) for x in o[7:12]] == [
         round(arms["oracle"]["mae_per_seed"][k] - inj, 3) for k in trio], (
         "a printed numerator is not that seed's oracle minus the one injected arm")
-    assert [float(x) for x in o[8:11]] == [
+    assert [float(x) for x in o[12:17]] == [
         round(arms["oracle"]["mae_per_seed"][k] - arms["grounded_a"]["mae_per_seed"][k], 3)
         for k in trio], (
         "a printed denominator is not that seed's evaluation-only gap")
-    assert float(o[11]) == round(inj, 4), "the four-decimal injected arm is not the arm's value"
-    # ... and the parenthesis that documents its own rounding: off the table's three-decimal
-    # columns one numerator reads differently from its unrounded self, and the sentence says so.
-    # This is the one figure here that is NOT the artifact rounded -- it is the artifact rounded
-    # TWICE -- so it has to be computed that way or the note it makes would be unverifiable.
-    off = o[12]
-    assert off in rest, "the off-the-columns note names a seed the block does not carry"
-    assert float(o[13]) == round(
-        round(arms["oracle"]["mae_per_seed"][off], 3) - round(inj, 3), 3), (
-        "the off-the-columns numerator is not the table's two printed columns differenced")
-    assert float(o[13]) != round(arms["oracle"]["mae_per_seed"][off] - inj, 3), (
-        "the note claims the columns give a different numerator, and they do not; either the "
-        "discrepancy has gone away and the note should go with it, or the digits are wrong")
-    assert float(o[14]) == round(other[off], 2), (
-        "the 'either way' share disagrees with the share the block carries")
+    assert float(o[17]) == round(inj, 4), "the four-decimal injected arm is not the arm's value"
+    # THE OFF-THE-COLUMNS NOTE IS GONE, 2026-08-12, and its gate with it. At three seeds the
+    # sentence carried a parenthesis observing that one numerator read differently off the table's
+    # three-decimal columns than from its unrounded value. The five-seed rewrite drops it: the
+    # sentence now prints five numerators and five denominators, and re-deriving which of them
+    # double-rounds would add a clause to a sentence whose point is that the quantity has stopped
+    # being a share at all. Do not restore the note without restoring the check.
 
+    # RE-POINTED 2026-08-12. The "(helps, -0.20)" clause is GONE and its absence is now part of
+    # this gate. Sec. 2.2's pre-commitment states three branches over the five per-seed supervision
+    # gains, and the five-seed run selected the one where they straddle zero: supervision has no
+    # established sign, so it may not be labelled "helps" anywhere. The substitution keeps its
+    # "hurts" -- its sign is unanimous over all five. If a later run makes the gains one-signed
+    # again, this assertion fails and the branch has to be re-read rather than the word restored
+    # by hand.
     senses = re.search(r"training-time supervision moves the arm from " + num + r" to " + num
-                       + r" \(helps, " + num + r"\), evaluation-time substitution from " + num
+                       + r", and evaluation-time substitution from " + num
                        + r" to " + num + r" \(hurts, \$\+(\d+\.\d+)\$\)", text)
     assert senses is not None, "the two-senses sentence of S3 changed shape; re-point this gate"
     got = [float(x) for x in senses.groups()]
     assert got[0] == round(arms["ungrounded"]["mae_mean"], 4)
-    assert got[1] == got[3] == round(arms["grounded_a"]["mae_mean"], 4)
-    assert got[4] == round(arms["oracle"]["mae_mean"], 4)
-    assert got[2] == round(d["training_time_grounding_delta_mae"], 2)
-    assert got[5] == round(d["evaluation_time_substitution_delta_mae"], 2)
+    assert got[1] == got[2] == round(arms["grounded_a"]["mae_mean"], 4)
+    assert got[3] == round(arms["oracle"]["mae_mean"], 4)
+    assert got[4] == round(d["evaluation_time_substitution_delta_mae"], 2)
+    gains = list(d["per_seed_grounding_gain"].values())
+    assert not (all(g > 0 for g in gains) or all(g < 0 for g in gains)), (
+        "the per-seed supervision gains are one-signed again; Sec. 2.2's branch changes and this "
+        "sentence must be re-read against it, not edited")
+    assert "helps" not in text[senses.start():senses.end()], (
+        "supervision is labelled 'helps' where the five-seed gains straddle zero")
+    # The training-time delta is no longer printed inside this sentence -- the branch removed the
+    # clause that carried it -- so it is asserted where it now lives, one sentence later.
+    lone = re.search(r"The first of those two is \$(-?\d+\.\d+)\$ as a mean and is not a sign", text)
+    assert lone is not None, "the no-sign sentence of S3 changed shape; re-point this gate"
+    assert float(lone.group(1)) == round(d["training_time_grounding_delta_mae"], 2)
 
 
 def test_arms_absent_from_root_are_sourced_from_the_published_tree(tmp_path):

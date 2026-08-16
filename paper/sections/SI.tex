@@ -802,13 +802,13 @@ of the last part, qualify a row or a column.}
 Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \midrule
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{The two senses of grounding} (\S\ref{sec:paradox})}\\
-Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($5608$ of $8103$), 3 seeds & $1.85\to2.25$; the per-seed values do not overlap; the gap carries the test-time input swap with it \\
+Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($5608$ of $8103$), 5 seeds & $1.93\to2.34$; the per-seed values do not overlap; the gap carries the test-time input swap with it \\
 \addlinespace[3pt]
 \ldots and still hurt when injected at training & labelled test rows\tnk{c}, seed $42$ & $1.80\to1.98$ (own baseline $1.80\to2.23$); one seed and a stream build not certified against its comparator's (\S\ref{sec:si-repro}), so a sign and not an effect size---free of the test-time swap, which the row above is not \\
 \addlinespace[3pt]
 \ldots so part of that gap is test-time distribution shift & labelled test rows\tnk{c}, seed $42$ & share $0.59$ on one seed: a description of that seed, not a magnitude \\
 \addlinespace[3pt]
-Training-time $\sigma$ supervision \emph{helps} (MAE) & labelled test rows, 3 seeds & $2.04\to1.85$; the per-seed values do not overlap; per-seed gains $0.237/0.075/0.281$ straddle the co-adapted arm's $+0.18$, so the two operations are not ordered by magnitude---and the only contrast here a $\sigma$-stream leak could inflate, the ungrounded arm carrying no stream (\S\ref{sec:data}) \\
+Training-time $\sigma$ supervision has \emph{no established sign} (MAE) & labelled test rows, 5 seeds & $2.04\to1.93$ in the seed mean, but the per-seed values overlap and one of the five gains reverses: $0.149/0.122/0.175/-0.017/0.122$. They straddle the co-adapted arm's $+0.09$, so the two operations are not ordered by magnitude either. This is the contrast the pre-committed leak-free re-run was run to settle (\S\ref{sec:data}), and it settles it as unresolved \\
 \addlinespace[3pt]
 The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 3 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ over the labelled rows of this row's own set at the worst seed, the same quantity over the full test set, labelled rows and unlabelled together, being larger (\S\ref{sec:si-methods})---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $589$ of the $823$ groups in both arms at all three seeds. The substitution falls on the solvent channel \\
 \bottomrule
@@ -1037,14 +1037,20 @@ independently of the mean beside it.}
 \end{tabular}}
 \end{table*}
 
-\noindent To four decimals the means are $1.7022$, $1.7950$, $1.8457$, $1.8788$, $2.0434$ and
-$2.2517$, with population standard deviations $0.033$, $0.071$, $0.053$, $0.091$, $0.040$ and
-$0.021$. The NRTL row is where the two roundings part: averaging its printed per-seed triple gives
+% REGENERATED 2026-08-12 from the five-seed leak-free re-run (rows 12 and 5 of the discharge sheet).
+% The ORDER of this list changed with the values: at three seeds the grounded arm's mean sat below
+% the +SG child row and it now sits above it, so the third and fourth entries swap.  The list is
+% ordered by mean, as it was, and the two grounded rows are no longer adjacent in rank even though
+% the table pins the child under its parent.
+\noindent To four decimals the means are $1.7022$, $1.7950$, $1.8788$, $1.9275$, $2.0374$ and
+$2.3356$, with population standard deviations $0.033$, $0.071$, $0.091$, $0.094$, $0.064$ and
+$0.108$. The NRTL row is where the two roundings part: averaging its printed per-seed triple gives
 $1.7953$, whose two-decimal form is $1.80$, but the arm's mean is $1.794975$, so the entry is
 $1.79$. The two senses
-of grounding are the second and the last of these: training-time supervision moves the arm from
-$2.0434$ to $1.8457$ (helps, $-0.20$), evaluation-time substitution from $1.8457$ to $2.2517$ (hurts,
-$+0.41$).
+of grounding are the fourth and the last of these: training-time supervision moves the arm from
+$2.0374$ to $1.9275$, and evaluation-time substitution from $1.9275$ to $2.3356$ (hurts,
+$+0.41$). The first of those two is $-0.11$ as a mean and is not a sign: its five per-seed gains are
+$+0.149$, $+0.122$, $+0.175$, $-0.017$ and $+0.122$, one of them against the other four.
 
 % Schedule: configs/cosmo_sac.yaml (freeze_sigma_head_during_sle, warmup 40, 30/70/10 epochs)
 % + scripts/experiments/run_e5_sigma_grounding.sh (per-arm invocations).
@@ -1085,24 +1091,37 @@ and the evaluation-only $+0.41$ is not. It is not free of a second: neither this
 channel swap is certified to have trained on the same $\sigma$-stream build as the seed-$42$
 comparator both are read against, and the file times exclude no history in either direction
 (\S\ref{sec:si-repro}). Both are penalties of uncertified stream provenance. How large a share of the gap co-adaptation carries off can
-be read only on the seed the two arms share: at seed $42$ the injection costs $1.981-1.803=0.177$
-where the evaluation-only substitution costs $2.232-1.803=0.428$, so co-adaptation carries off
-$0.428-0.177=0.251$ of that gap, a share of $0.59$. We report that
+be read only on the seed the two arms share: at seed $42$ the injection costs $1.981-1.887=0.094$
+where the evaluation-only substitution costs $2.145-1.887=0.258$, so co-adaptation carries off
+$0.258-0.094=0.164$ of that gap, a share of $0.64$. We report that
 % REFEREE ITEM 4, 2026-08-10.  This paragraph said "its numerator was measured once" and the article
 % said "the same numerator", and neither is what the three readings hold fixed.  The quantity
 % measured once is the INJECTED arm, 1.9806 unrounded; at seeds 43 and 44 the learned baseline AND
 % the substituted arm both take their own values, so the numerator -- substituted minus injected --
 % moves with the substituted arm.  The three shares 0.59/0.83/0.61 were and remain correct.
 % All six inputs are the per-seed columns of Table~\ref{tab:si-arms} / si_tables/si_arms_table.json.
-share as a description of seed $42$ and not as a magnitude, because it is not resolved. The injected
+% REWRITTEN 2026-08-12 at five seeds.  At three the sensitivity was a caveat on a quantity that
+% still behaved: the learned arm's between-seed range was 0.118, a spread that size moved the share
+% by +-0.27, and the two recomputations gave 0.83 and 0.61.  At five the range is 0.238, the shift
+% is +-0.92 on a share of 0.64, and two of the four recomputations exceed ONE.  A share above unity
+% is not a large uncertainty, it is a construction that has stopped meaning what it is named: the
+% injected arm was measured once at seed 42 and at seeds 45 and 46 the learned baseline is worse
+% than it, so the injection gap changes sign and the numerator overruns the denominator.  Do not
+% restate this as a wide interval.  The sign at the matched seed is what the claim rests on and it
+% is unaffected; the share is withdrawn as a magnitude at any seed.
+share as a description of seed $42$ and not as a magnitude, because it is not resolved---and at five
+seeds it is not a magnitude at all. The injected
 arm is the quantity that was measured once, so its own between-seed spread is unmeasured, and a
-spread the size of the learned arm's $0.118$ would move the share by about $\pm0.27$; holding that
-arm at its single value $1.981$ and recomputing at seeds $43$ and $44$, where the learned baseline
-and the substituted arm both move, gives $0.83$ and $0.61$. It is that one arm's MAE that is fixed
-across the three readings and not the numerator, which is $0.251$, $0.301$ and $0.261$ over
-denominators $0.428$, $0.360$ and $0.429$ (from the unrounded arm values, the injected arm being
-$1.9806$; off the three-decimal columns of Table~\ref{tab:si-arms} the seed-$43$ numerator reads
-$0.300$, and the share is $0.83$ either way).
+spread the size of the learned arm's $0.238$ would move the share by about $\pm0.92$, which is
+larger than the share. Holding that
+arm at its single value $1.981$ and recomputing at the other four seeds, where the learned baseline
+and the substituted arm both move, gives $0.69$, $0.78$, $1.19$ and $1.13$: the last two exceed one,
+which no share can. They exceed it because at seeds $45$ and $46$ the learned baseline is worse than
+the once-measured injected arm, so the injection gap changes sign and the numerator overruns its own
+denominator. It is that one arm's MAE that is held fixed across the readings and not the numerator,
+which is $0.164$, $0.362$, $0.437$, $0.475$ and $0.337$ over
+denominators $0.258$, $0.524$, $0.562$, $0.400$ and $0.297$ (from the unrounded arm values, the
+injected arm being $1.9806$).
 What survives that latitude is the sign---at the matched seed part of the
 evaluation-only gap does go with co-adaptation, which is what makes the co-adapted arm the one free
 of the test-time swap---and the sign, not the share, is what the claim rests on. The ratio

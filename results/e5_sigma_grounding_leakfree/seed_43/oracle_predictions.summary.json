@@ -1,0 +1,22 @@
+{
+  "checkpoint": "/Users/nikitapolomosnov/PycharmProjects/tgnn-solv/checkpoints/e5_leakfree/grounded_a_seed43.pt",
+  "data": "/Users/nikitapolomosnov/PycharmProjects/tgnn-solv/notebooks/data/processed/test.csv",
+  "output": "/Users/nikitapolomosnov/PycharmProjects/tgnn-solv/results/e5_sigma_grounding_leakfree/seed_43/oracle_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cpu",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 2.342360394366468,
+  "rmse": 3.0343611110588062,
+  "r2": -0.03188812065486468,
+  "bias": 0.9854356905461399,
+  "target_std": 2.9871082226758108,
+  "pred_std": 3.422145145596544,
+  "pred_std_ratio": 1.1456381525172488,
+  "sigma_oracle": {
+    "n_oracle": 5571,
+    "mae": 2.3450808511885444,
+    "rmse": 3.039867535699935,
+    "bias": 0.992936528365898
+  }
+}

@@ -891,13 +891,18 @@ def ledger_rows() -> list[DisplayRow]:
                      r"labelled test rows, (\d+) seeds",
                      lambda c: (str(len(c.seeds)),),
                      lambda c: f"seed directories under {rel(c.root.root)}"),
+                # RE-ANCHORED 2026-08-12. The supervision row was reworded when its claim lost its
+                # sign, and both of these bindings anchored on wording that went with it: the arrow
+                # was followed by "; the per-seed values" and the gains by "straddle". Neither
+                # pattern matched, so seven numerals in the rewritten row were unregistered while
+                # the two bindings reported MISSING -- a display can go dark without a mismatch.
                 Bind("ungrounded -> grounded MAE",
-                     r"\$([\d.]+)\\to([\d.]+)\$; the per-seed values",
+                     r"\$([\d.]+)\\to([\d.]+)\$ in the seed mean",
                      lambda c: (fmt(c.arm("ungrounded").mae_mean, 2),
                                 fmt(c.arm("grounded_a").mae_mean, 2)),
                      lambda c: A(c, "ungrounded", "grounded_a")),
                 Bind("the per-seed supervision gains",
-                     r"per-seed gains \$([\d./]+)\$ straddle",
+                     r"gains reverses: \$([-\d./]+)\$",
                      lambda c: ("/".join(fmt(g, 3) for g in c.per_seed_gain()),),
                      lambda c: A(c, "ungrounded", "grounded_a")),
                 Bind("the co-adapted arm's cost",
@@ -908,11 +913,18 @@ def ledger_rows() -> list[DisplayRow]:
                                "grounded_a_truetrain_predictions.csv"),
             ],
             claims=[
-                Claim("the per-seed values do not overlap",
+                # INVERTED 2026-08-12, and the quote had to change with it. At three seeds the
+                # supervision row asserted that the per-seed values do NOT overlap; at five they
+                # do -- ungrounded reaches 1.940 and grounded reaches 2.056 -- so the row now
+                # asserts the overlap instead. The quote is bound to the supervision row's own
+                # wording because the substitution row still carries the old phrase verbatim and
+                # is still right to: there grounded tops out at 2.056 against the oracle's 2.145.
+                # A literal search for the old phrase found the wrong row and passed on it.
+                Claim("the per-seed values overlap",
                       lambda c: min(c.arm("ungrounded").mae[s] for s in c.seeds)
-                      > max(c.arm("grounded_a").mae[s] for s in c.seeds),
+                      <= max(c.arm("grounded_a").mae[s] for s in c.seeds),
                       lambda c: A(c, "ungrounded", "grounded_a"),
-                      quote="the per-seed values do not overlap"),
+                      quote="the per-seed values overlap and one of the five gains reverses"),
                 Claim("the per-seed gains straddle the co-adapted arm's cost",
                       lambda c: (min(c.per_seed_gain())
                                  < (c.controls["grounded_a_truetrain"]
