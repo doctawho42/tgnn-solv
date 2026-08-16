@@ -811,7 +811,7 @@ Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($56
 \addlinespace[3pt]
 Training-time $\sigma$ supervision has \emph{no established sign} (MAE) & labelled test rows, 5 seeds & $2.04\to1.93$ in the seed mean, but the per-seed values overlap and one of the five gains reverses: $0.149/0.122/0.175/-0.017/0.122$. They straddle the co-adapted arm's $+0.09$, so the two operations are not ordered by magnitude either. This is the contrast the pre-committed leak-free re-run was run to settle (\S\ref{sec:data}), and it settles it as unresolved \\
 \addlinespace[3pt]
-The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 3 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ over the labelled rows of this row's own set at the worst seed, the same quantity over the full test set, labelled rows and unlabelled together, being larger (\S\ref{sec:si-methods})---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $589$ of the $823$ groups in both arms at all three seeds. The substitution falls on the solvent channel \\
+The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 5 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ over the labelled rows of this row's own set at the worst seed, the same quantity over the full test set, labelled rows and unlabelled together, being larger (\S\ref{sec:si-methods})---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $485$ of the $823$ groups in both arms at all five seeds. The substitution falls on the solvent channel \\
 \bottomrule
 \end{tabular}
 }
@@ -2650,7 +2650,9 @@ robustness passes for a live verdict.
 \caption[Solubility accuracy, in three blocks]{Solubility accuracy in three blocks: this work on the solute-scaffold split, external models
 re-run here on a by-solute and a random-pair split, and published figures on their own corpora and
 splits. A row carries two sample sizes where its two metric columns are not scored on the same
-rows, one where they coincide, and a dash where the value is quoted rather than computed here.}
+rows, one where they coincide, and a dash where the value is quoted rather than computed here. The
+grounded, ungrounded and $\sigma$-oracle arms of the first block come from the five-seed leak-free
+re-run.}
 \label{tab:si-baselines-full}
 {\scriptsize
 \setlength{\tabcolsep}{4pt}

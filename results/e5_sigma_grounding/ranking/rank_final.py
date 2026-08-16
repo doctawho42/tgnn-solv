@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import sys
 import time
+import os
 from pathlib import Path
 
 import numpy as np
@@ -27,15 +28,19 @@ from scipy.stats import rankdata
 
 REPO = Path("/Users/nikitapolomosnov/PycharmProjects/tgnn-solv")
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
-BASE = REPO / "results/e5_sigma_grounding"
+# BASE and SEEDS are overridable from the environment, 2026-08-12: the leak-free re-run
+# lives in a sibling tree at five seeds and this script had both hard-coded, which is the
+# friction the discharge sheet records against rows 3 and 13.  Defaults are unchanged, so
+# every published invocation reproduces bit for bit.
+BASE = REPO / os.environ.get("RANK_BASE", "results/e5_sigma_grounding")
 SIGMA_ART = REPO / "results/sigma_profile_artifact/sigma_profiles.csv"
 
 MIN_SOLVENTS = 3
 T_TOL = 1.0
 NDCG_K = 3
 KEY = ["solute_smiles", "solvent_smiles", "T6"]
-SEEDS = (42, 43, 44)
-ARMS = ["grounded_a", "oracle", "directgnn", "ungrounded", "nrtl"]
+SEEDS = tuple(int(s) for s in os.environ.get("RANK_SEEDS", "42,43,44").split(","))
+ARMS = os.environ.get("RANK_ARMS", "grounded_a,oracle,directgnn,ungrounded,nrtl").split(",")
 RNG = np.random.default_rng(20260806)
 
 
@@ -100,8 +105,22 @@ METRICS = ("spearman", "kendall", "top1", "ndcg")
 
 
 # ------------------------------------------------------------------ data loading
+# ARMS is overridable, 2026-08-12, and a missing file is a FAILURE and never a substitution.
+# The first version of this fallback read an absent arm from the published tree by mapping the
+# re-run's seeds onto the published ones -- seed 45 onto 42, seed 46 onto 43 -- and produced a
+# five-seed ranking in which DirectGNN's two extra seeds were byte-identical copies of two of its
+# three. Recycling a three-seed arm to fill five slots fabricates seeds, and nothing downstream
+# could have seen it: the per-group files were the right shape and the JSON carried five keys.
+# An arm the re-run does not train is EXCLUDED from that run, not padded, and the caller restricts
+# ARMS to what the tree holds.
 def load_arm(seed: int, arm: str) -> pd.DataFrame:
-    df = pd.read_csv(BASE / f"seed_{seed}" / f"{arm}_predictions.csv", low_memory=False)
+    path = BASE / f"seed_{seed}" / f"{arm}_predictions.csv"
+    if not path.exists():
+        raise SystemExit(
+            f"{path} does not exist. This script does not substitute another seed or another "
+            f"tree for a missing arm -- doing so would fabricate a seed. Restrict the arms with "
+            f"RANK_ARMS, or point RANK_BASE at a tree that holds every arm in ARMS.")
+    df = pd.read_csv(path, low_memory=False)
     df["T6"] = df["T"].round(6)
     sup = df["has_solubility"].astype(str).str.strip().str.lower().isin({"true", "1", "1.0"})
     df = df[sup].drop_duplicates(KEY, keep="first").copy()
@@ -351,9 +370,14 @@ def run_seed(seed: int) -> dict:
                    "n_pred_constant_groups": int(tabs[a]["pred_const"].sum()),
                    **{c: float(tabs[a][c].mean()) for c in METRICS}} for a in ARMS}
 
+    # A contrast is skipped when one of its arms is not in ARMS, rather than crashing or, worse,
+    # being filled from somewhere else. The leak-free re-run trains three arms and does not train
+    # DirectGNN, so directgnn_minus_grounded_a is simply absent from that run's JSON and the
+    # three-seed value the SI prints for it stays the published one.
     contrasts = {}
     for a, b in [("oracle", "grounded_a"), ("directgnn", "grounded_a")]:
-        contrasts[f"{a}_minus_{b}"] = {c: contrast(tabs[a], tabs[b], c) for c in METRICS}
+        if a in tabs and b in tabs:
+            contrasts[f"{a}_minus_{b}"] = {c: contrast(tabs[a], tabs[b], c) for c in METRICS}
 
     # best-solvent switching
     m = tabs["grounded_a"].merge(tabs["oracle"], on=["gi", "solute"], suffixes=("_g", "_o"))
