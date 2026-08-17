@@ -140,8 +140,12 @@ def toc_lines(root: Path | str = DEFAULT_E5_DIR,
         cert = REPO / cert
     n = len(discover_seeds(root))
     seed_word = _WORDS.get(n, str(n))
+    # LINE 1 CHANGED 2026-08-12 by the second branch of the Sec. 2.2 pre-commitment. The five-seed
+    # re-run leaves the supervision gains straddling zero -- +0.149/+0.122/+0.175/-0.017/+0.122 --
+    # so "with opposite signs" is no longer what this graphic reports: one operation has a sign and
+    # the other does not. The branch names this graphic explicitly among the displays it redraws.
     lines = [
-        "Grounding is two operations on one database, with opposite signs",
+        "Grounding is two operations on one database; only one of them has a sign",
         f"(solubility MAE on held-out scaffolds, {seed_word} seeds; magnitudes in the text).",
     ]
     certified, _why = certificate_state(cert)

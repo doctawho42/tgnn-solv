@@ -540,12 +540,12 @@ Accurate references should help. We measure that for solid--liquid
 solubility: a graph network predicts the charge-density profiles a
 database tabulates. COSMO-SAC's fixed residual term and a crystal term turn two into a solubility.
 Supervising the profile against that database
-lowers $\ln x_2$ mean absolute error from $2.043$ to $1.846$ over three seeds. That gain survives
-deletion of the scored solutes a leak reaches, and stays uncertified leak-free. Substituting the
+moves $\ln x_2$ mean absolute error from $2.037$ to $1.927$ over five leak-free seeds,
+a mean without a sign: four gain, one loses. Substituting the
 reference for the learned one raises the
-error to $2.252$ at inference, the training-time rise smaller, at one co-adapted
-seed. Grounding's two
-operations order by direction, their sizes unresolved. On infinite-dilution
+error to $2.336$ at inference at every seed, the training-time rise smaller, at one co-adapted
+seed. Only the substitution has a
+direction, and neither size can be ordered. On infinite-dilution
 activity data another database bounds a deployed thermodynamic model's error from below,
 its inputs' from above. The input bound barely moves (an
 estimator property, not chemistry) while the error does. One admissibility rule leaves
@@ -2057,7 +2057,9 @@ What remains is a scale rather than a placement: this work's control reaches $\l
 % neither bound nor declared there is a fatal UNREGISTERED finding.
 \caption{Solubility accuracy in two blocks that may not be read across: this work on the
 solute-scaffold split, external models re-run here on an easier by-solute split. Two sample sizes
-appear where a row's two metric columns are scored on different rows, one where they coincide.}
+appear where a row's two metric columns are scored on different rows, one where they coincide. The
+grounded, ungrounded and $\sigma$-oracle arms of the first block come from the five-seed leak-free
+re-run.}
 \label{tab:baselines}
 {\footnotesize
 \renewcommand{\arraystretch}{0.95}
@@ -2208,8 +2210,13 @@ appears in both documents.
 % overclaims in exactly that direction without it.
 \section{Conclusions}
 \label{sec:conclusion}
+% OPENING SENTENCE REWRITTEN 2026-08-12 by the second branch of the Sec. 2.2 pre-commitment: the
+% five-seed re-run leaves the supervision gains straddling zero, so "they carried opposite signs"
+% asserts a sign the re-run declines to give one of the two operations. The branch names this
+% sentence, the heading of Sec. 3.1, the abstract, the supervision row of Table S2 and the
+% table-of-contents graphic as the displays it rewrites.
 Grounding a learned physical intermediate in reference values is two operations rather than one, and here
-they carried opposite signs. The operation
+only one of them carried a sign. The operation
 that failed is the one a practitioner reaches for, because it is the one that runs without retraining.
 The intermediate paid for the arrangement.
 Trained through a model beyond its power to correct, and measured on runs of its own, it stopped reporting the

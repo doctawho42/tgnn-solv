@@ -1041,7 +1041,10 @@ def abstract_row() -> DisplayRow:
                             fmt(c.arm("grounded_a").mae_mean, 3)),
                  lambda c: A(c, "ungrounded", "grounded_a")),
             Bind("the abstract's OWN seed count (the sigma-grounding arms)",
-                 r"over (\w+) seeds",
+                 # RE-ANCHORED 2026-08-12: the abstract now says "over five leak-free seeds", the word
+                     # "leak-free" having moved into the phrase when the branch rewrite folded the
+                     # separate leak-free clause into it.
+                     r"over (\w+) (?:leak-free )?seeds",
                  lambda c: (word(len(c.seeds)),),
                  lambda c: f"seed directories under {rel(c.root.root)}"),
             Bind("the sigma-oracle arm mean",
