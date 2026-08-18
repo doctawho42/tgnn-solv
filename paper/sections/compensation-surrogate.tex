@@ -151,12 +151,12 @@ the low-fidelity COSMO-SAC-2002 and the warm-up $\sigma$ itself only partly phys
 model, reports accuracy consistently better than COSMO-SAC across its benchmarks. The two works score
 different operations. Its gain is a training-time gain from supervising and then fine-tuning a
 learned profile, and over five leak-free seeds that operation has no established sign here
-(\S\ref{sec:paradox}); its profile predictor, supervised externally on quantum-chemical
+(\S\ref{sec:paradox}). Its profile predictor, supervised externally on quantum-chemical
 $\sigma$-profiles for $39{,}745$ molecules, then stays frozen while only the segment-activity output
 head is fine-tuned, so the closure's gradient never reaches the intermediate. What we find negative
 is substituting a tabulated profile at inference, which TeNNet-SAC leaves unreported, on an
 intermediate trained through the closure with neither safeguard. Its segment-activity kernel is
-trainable besides, where this one is fixed at the $2002$ parameterisation: if the sign of the
+trainable besides, where this one is fixed at the $2002$ parameterisation. If the sign of the
 substitution turns on whether the kernel can move, our finding is about a fixed $2002$ kernel and not
 about routing a prediction through a physical intermediate, and \S\ref{sec:notdecided} already
 records that no grounding gap has been measured under any modern closure. Retraining the two arms
@@ -205,7 +205,7 @@ hydrogen-bond term reads.}
 % deposited nowhere else in either document.  A length pass that drops it undoes the repair.
 COSMO-SAC's hydrogen-bonding contribution acts on segments beyond $|\sigma|=\sigma_{\mathrm{hb}}$,
 and the $2002$ kernel assigns a segment to the donor side by that threshold alone, with no atom
-typing, so donor-window area is a statement about surface charge density and not a
+typing. Donor-window area is therefore a statement about surface charge density and not a
 hydrogen-bond-donor count: $264$ of the $1003$ molecules in the reference tabulation that lack an
 N--H, O--H or S--H have area there, acetonitrile's $6.71$\,\AA$^2$ standing above ethanol's $6.20$.
 What carries the argument is the molecule-matched comparison. Cyclohexane,
@@ -222,9 +222,9 @@ window is full before any training, and training emptied it slightly.
 Two causes stay entangled. This head's $\sigma$-supervision stream ran for zero steps, and
 \S\ref{sec:ident} is why that matters: solubility alone underdetermines the profile's shape, leaving
 an unsupervised profile free in exactly the bins that carry no constraint, which accounts for a
-quantity of this size. The parameterisation accounts for far less: the profile is emitted through a
+quantity of this size. The parameterisation accounts for far less. The profile is emitted through a
 softmax over the $51$ bins, strictly positive where $57\%$ of the reference table's bins are exactly
-zero, so supervision at any strength leaves the window occupied, but a softmax reaches $10^{-6}$ at a
+zero, so supervision at any strength leaves the window occupied. But a softmax reaches $10^{-6}$ at a
 logit gap of ten, four orders below what is measured. What
 the measurement establishes is that the window is occupied in a trained arm and the closure's
 hydrogen-bond term consequently live on every pair of the scored set, a defect whichever cause

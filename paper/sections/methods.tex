@@ -61,10 +61,10 @@ direction, whose consequence \S\ref{sec:surrogate} reads. The activity term is p
 \emph{differentiable closure} $g$. A graph encoder predicts a $\sigma$-profile (the distribution of
 screening charge density over a molecule, the histogram a COSMO model consumes) for each molecule,
 and COSMO-SAC \cite{lin2002}, a segment-activity reformulation of COSMO-RS, maps the pair of
-profiles to $\lng$. The segment-interaction energy inside that map---the electrostatic-misfit and
-hydrogen-bonding terms setting what two surface segments cost each other---is the closure's
-\emph{kernel}, the part the published revisions rewrite, so a closure variant is named for its
-kernel's year: the \emph{2002 kernel} this pipeline runs, and the \emph{2010 kernel} that types
+profiles to $\lng$. The segment-interaction energy inside that map is the closure's \emph{kernel}: the
+electrostatic-misfit and hydrogen-bonding terms setting what two surface segments cost each other,
+and the part the published revisions rewrite. A closure variant is therefore named for its kernel's
+year --- the \emph{2002 kernel} this pipeline runs, and the \emph{2010 kernel} that types
 segments as hydrogen-bond donors or acceptors instead of treating hydrogen bonding with one
 parameter. Write $\zstar$ for the \emph{reference} latent, a tabulated $\sigma$-profile, and
 $\hat z$ for the head's own prediction. \textbf{Two profile databases supply $\zstar$ below and they
@@ -196,9 +196,9 @@ representable encoder nor a lossless bottleneck. Beside it we report a directly 
 the \emph{grounding gap} $\Ggap:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, the oracle risk minus the best
 end-to-end risk; the paradox is $\Ggap>0$. Under a representable encoder (A1) and a lossless
 bottleneck (A2) it is sandwiched $0\le\Ggap\le\Bclos$, so $\Ggap>0$ would certify $\Bclos>0$
-(Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is unverified---the linear probe of
+(Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is unverified: the linear probe of
 \S\ref{sec:supporting} scores an untrained encoder of the same architecture within its own spread,
-so it does not bear on A1---and A2 is unverifiable and physically dubious: when it fails, $\Ggap>0$
+so it does not bear on A1. A2 is unverifiable and physically dubious, and when it fails $\Ggap>0$
 conflates closure misspecification with input insufficiency, a well-specified closure with a lossy
 latent giving $\Bclos=0$ yet $\Ggap>0$. We therefore read $\Ggap$ as corroborating evidence and rest
 the model-dominance conclusion on the decomposition.
@@ -347,8 +347,8 @@ touches in the $n{=}44$ analysis of \S\ref{sec:surrogate} are in \S\ref{sec:si-r
 % in \S\ref{sec:si-repro} and were printed twice.  This paragraph now carries the promise and not
 % the mechanics.  Every number it dropped is in that section.
 \paragraph{The leak-free re-run.} We fixed its protocol before its numbers exist
-(\S\ref{sec:si-repro}): the ungrounded and the grounded arm at five seeds ($42$ through $46$), the
-published COSMO-SAC configuration unchanged, on a $\sigma$ stream rebuilt against \emph{this}
+(\S\ref{sec:si-repro}). The ungrounded and the grounded arm run at five seeds ($42$ through $46$) on
+the published COSMO-SAC configuration unchanged, on a $\sigma$ stream rebuilt against \emph{this}
 split's files and certified inside each training run, read on the same $5608$ labelled test rows and
 reported seed by seed. We fixed the decision it settles in the same pass, stating it in three
 branches rather than in the favourable one alone (gains of one sign, gains straddling
@@ -499,7 +499,7 @@ a fixed map and not claims that the map is the best available.
 \label{sec:eval}
 In the \emph{oracle substitution} we replace the predicted $\sigma$-profile $\hat z$ with the
 reference VT-2005 profile $\zstar$ before the closure, matching by canonical SMILES. One object is
-replaced, not two: the $\sigma$-head emits a normalised $51$-bin shape and a cavity area whose
+replaced, not two. The $\sigma$-head emits a normalised $51$-bin shape and a cavity area whose
 product is the area-weighted profile the closure reads, and the tabulated pair stands in the same
 relation, so the reference area reaches the residual term's $A_2/a_{\mathrm{eff}}$ prefactor as part
 of that single replacement (\S\ref{sec:si-methods}).
@@ -540,10 +540,10 @@ is the whole of the violation.
 % the zero as "a function of the shapes alone" -- that reading generalises a degenerate case, which
 % is the same error the 102 untestable self-pairs above exist to prevent.
 Which of the readout's three numbers carries that gap decides how large the repair is, and on these
-arms it is the profile: with the two roles agreeing on the shape the residual bracket is identically
-zero whatever the areas, so on a self-pair the profile disagreement is the whole of the violation
-(\S\ref{sec:si-methods}, which also prices a mismatch on the area and on the volume, and gives how
-far the deployed arms' areas sit from the tabulated ones). The substitution overwrites both roles at
+arms it is the profile. With the two roles agreeing on the shape the residual bracket is identically
+zero whatever the areas, so on a self-pair the profile disagreement is the whole of the violation.
+\S\ref{sec:si-methods} prices a mismatch on the area and on the volume, and gives how far the
+deployed arms' areas sit from the tabulated ones. The substitution overwrites both roles at
 once and therefore closes that gap as well. That is a second thing it changes besides the profile
 values, and we leave the two unseparated; tying the roles is the repair, and it is a retraining.
 We match solute and solvent independently. The substitution replaces those two profiles and stops there,
@@ -568,9 +568,9 @@ carries the substitution contrast below.
 
 We apply it three ways
 to rule out implementation artifacts, differing in \emph{when} the replacement is made: at
-evaluation alone; injected at training so the model co-adapts; and a channel swap, injected at
-training under a coordinate-descent schedule that freezes the crystal branch during the SLE phase so
-the activity branch alone refits against it. The last two are at seed $42$. An analogous override
+evaluation alone; injected at training so the model co-adapts; and a channel swap. The last is
+injected at training under a coordinate-descent schedule that freezes the crystal branch during the
+SLE phase, so the activity branch alone refits against it. The last two are at seed $42$. An analogous override
 substitutes reference crystal targets. The activity target for the decomposition is the infinite-dilution
 $\lngi=\lim_{x_2\to0}\lng$, on two sets that differ in their reference database and their regime
 (\S\ref{sec:broad}--\S\ref{sec:vt2005}).
@@ -616,10 +616,10 @@ reference values $\zstar$ its argument can be read at, and measurements $m$ of i
 where both exist. Per chemically defined row set it returns the closure's own error $\mathrm{MSE}$,
 an upper bound on what the inputs leave unresolved, the margin between them, a cluster interval on
 that margin, and a verdict of admissible or otherwise with the test that decided it. Four analyst
-choices set the binning bound of Lemma~\ref{prop:decomp}(c) --- the bin count, where the equal-count
-bin edges fall, the within-bin variance convention, and the combinatorial convention --- and we fix
-all four here, before any margin is reported; one setting of them, with the row or the molecule pair
-as unit, is an \emph{estimator cell}. The map of \S\ref{sec:broad} is what running the procedure on
+choices set the binning bound of Lemma~\ref{prop:decomp}(c): the bin count, where the equal-count
+bin edges fall, the within-bin variance convention, and the combinatorial convention. We fix
+all four here, before any margin is reported, and one setting of them, with the row or the molecule
+pair as unit, is an \emph{estimator cell}. The map of \S\ref{sec:broad} is what running the procedure on
 this closure returns.
 
 \paragraph{The estimator cell.} Eight equal-count bins of $g(\zstar)$, the \emph{unbiased}
@@ -646,9 +646,9 @@ borrowing strength from a near-twin. Both bounds
 are valid on the one population quantity, by Lemma~\ref{prop:decomp}(d), and so is the smaller.
 
 \emph{The stratification rule.} The broad set is stratifiable where the VT-2005-matched set's $60$
-pairs resist stratification, on two axes that are pure functions of molecular structure: an ordered nine-class
-cascade of substructure tests over the solvent, hydrogen-bonding role first and dominant functional
-group second, and the solute's role as water or as an organic. Every class name is a substructure
+pairs resist stratification. Its two axes are pure functions of molecular structure: an ordered
+nine-class cascade of substructure tests over the solvent, hydrogen-bonding role first and dominant
+functional group second, and the solute's role as water or as an organic. Every class name is a substructure
 test rather than a chemical judgement: a \emph{glycol ether} here is a solvent carrying a hydroxyl group
 and two or more oxygens, and an \emph{aprotic} solvent one lacking an O--H or N--H hydrogen to donate.
 The classifier reads a SMILES string
