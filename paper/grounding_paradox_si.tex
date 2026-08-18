@@ -40,9 +40,10 @@
 % note in grounding_paradox.tex.
 \externaldocument[][nocite]{grounding_paradox}
 
-% enumitem is loaded HERE and not in preamble.tex, which the article shares: the one list that
-% needs it is the display inventory of \S\ref{sec:si-repro}, and loading a package that redefines
-% the standard list defaults into a document whose pagination is fixed buys nothing.
+% enumitem is loaded HERE and not in preamble.tex, which the article shares: a package that
+% redefines the standard list defaults goes into the documents that use it and no further.  The
+% list that needs it here is the display inventory of \S\ref{sec:si-repro}; the article loads it
+% at its own \usepackage line, for the limitations list of \S\ref{sec:discussion} (2026-08-18).
 \usepackage{enumitem}
 
 % ---------------------------------------------------------------------
