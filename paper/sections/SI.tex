@@ -234,6 +234,72 @@ so the physical decomposition survives it.
 
 % THE ARTICLE'S READING CONVENTIONS MOVED HERE IN THE SAME PASS.  Every table note in this
 % document that restates the P convention may now point at this subsection instead.
+% THE FOUR ESTIMATOR RULES MOVED HERE FROM \S\ref{sec:estimator}, 2026-08-19.  The article keeps
+% the pre-commitment and the cell; this is the construction behind them.  It sits beside the
+% reading conventions because a reader who needs one usually needs the other.
+\subsection{The estimator rules in full: cell, convention, stratification, admissibility}
+\label{sec:si-rules}
+\paragraph{The estimator cell.} Eight equal-count bins of $g(\zstar)$, the \emph{unbiased}
+(Bessel-corrected) within-bin
+variance, and the row unit, applied identically to every set and every stratum whatever its size.
+The bin count is the choice with the most leverage (it takes the broad set's aggregate margin from
+$+0.01$ to $+0.96$), so the cell never stands alone anywhere a finding rests on it: we run the
+same sweep for the strata the admissibility rule passes, and report it with them.
+Enumerating every equal-count contiguous partition, the bin-edge choice is immaterial on the broad
+IDAC set and material on the VT-2005-matched set, whose margin changes sign inside the envelope. We
+accordingly read that set's margin as consistent with zero and carry the claim on the broad set in
+stratified form.
+
+\emph{The convention rule.} The margin depends on the combinatorial convention, so one rule governs
+both sets: every margin is read in the \emph{residual-only} convention, pairing
+$\mathrm{MSE}$ and the bound computed under that same convention. Taking the residual-only convention on
+the smaller set and the full convention on the broad one would be the favourable choice on each set
+taken separately.
+One rule applied to both costs the broad set's margin about half its value. The Jensen
+constant-offset bound is convention-specific: it separates under the full convention and inverts
+under the residual-only default. What we report therefore rests on the binning
+bound, which fits nothing and so leaves every held-out row to stand on its own instead of
+borrowing strength from a near-twin. Both bounds
+are valid on the one population quantity, by Lemma~\ref{prop:decomp}(d), and so is the smaller.
+
+\emph{The stratification rule.} The broad set is stratifiable where the VT-2005-matched set's $60$
+pairs resist stratification. Its two axes are pure functions of molecular structure: an ordered
+nine-class cascade of substructure tests over the solvent, hydrogen-bonding role first and dominant
+functional group second, and the solute's role as water or as an organic. Every class name is a substructure
+test rather than a chemical judgement: a \emph{glycol ether} here is a solvent carrying a hydroxyl group
+and two or more oxygens, and an \emph{aprotic} solvent one lacking an O--H or N--H hydrogen to donate.
+The classifier reads a SMILES string
+and stops there, leaving $m$, $g$, the squared error, the source and the bootstrap unread, so every
+cell was fixed before its outcome, which is a property of the code rather than an assurance. A stratum
+is \emph{boundable} at $n\ge40$, where eight bins hold five rows. We report the smaller ones at
+that same cell, with the adaptive bin count $\max(3,\lfloor n/10\rfloor)$ in the rows $n$ it is
+applied to carried beside them in the deposited table, nothing being dropped for being small.
+
+\emph{The admissibility rule.} A stratum is \emph{admissible} only if it is \emph{(a)}~boundable at
+that fixed cell and \emph{(b)}~robust to leave-one-source-out (its margin keeps its sign when each
+source publication contributing to it is deleted in turn) in all four unit\,$\times$\,convention
+cells, since the map reports all four. That last clause is load-bearing and we keep it: drop it and
+the set taken whole passes too. A stratum drawing on one publication fails~(b) by
+non-testability, there being no deletion to perform. A deletion leaving fewer than $16$ rows leaves
+the fixed cell undefined, and fails~(b) as well. A third clause reduces the admissible \emph{cells}
+to row sets, and it is stated here with the same precision rather than left to prose, because the
+one claim this paper carries from the map and the multiplicity null that tests that claim both turn
+on it. \emph{(c)}~Admissible cells holding identical rows count once. An admissible positive row
+set $X$ is \emph{demoted} to another, $Y$, when four things hold: $Y$ is admissible and positive,
+$Y$ holds more rows than $X$, more than half of $X$'s rows are $Y$'s, and the residual $X\setminus Y$
+falls short of admissible, so that $X$'s margin stays inside $Y$. That residual decides it, not
+the overlap. A row set most of whose rows lie inside a larger one survives~(c) whenever its own
+margin stands outside that larger one, so \emph{(c)} tests margins and not containment, and
+overlap by itself demotes no cell (\S\ref{sec:si-map}).
+Clause~(c) takes the six admissible cells of \S\ref{sec:broad} to three distinct row sets.
+Positivity then removes one of the three and~(c)'s residual test the second, leaving one. It is
+rebuilt on every draw of the multiplicity null, on the permuted labels, like the rest of the rule
+(\S\ref{sec:si-null}). Everything else is \emph{reported in the map and not
+stated}, with its $n$, its sources, its margin, its interval and the reason. The rule governs the
+cells that favour us and those that count against us alike, and it tests whether a number is stable
+and not what it means. An admissible stratum whose margin sits at or below zero, and one
+that~(c) demotes, both establish nothing.
+
 \subsection{Reading conventions: what $P$ is, what each interval resamples, and at what precision}
 \label{sec:si-conventions}
 A cluster-bootstrap frequency $P$ is the frequency, over two-way (solute\,$\times$\,solvent) cluster
