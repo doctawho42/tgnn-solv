@@ -212,12 +212,35 @@ What carries the argument is the molecule-matched comparison. Cyclohexane,
 acetone, toluene and tetrahydrofuran each carry $0.000$\,\AA$^2$ of donor-window area in the
 reference tabulation, exactly zero and not merely small, against $15.75$ for water; the learned
 profile carries $44.0$, $32.4$, $24.5$ and $50.7$\,\AA$^2$ in that same window, between $23\%$ and
-$36\%$ of each molecule's total surface. We read those areas off the one trained COSMO-SAC head the
+$36\%$ of each molecule's total surface. Figure~\ref{fig:donor-window} draws that comparison over the
+sixteen solvents carrying the most scored rows; the reference is exactly zero in twelve of them. We read those areas off the one trained COSMO-SAC head the
 tree holds, the retired run of the two-MSE check above, scoring MAE $2.61$ at $R^2=-0.31$ on the
 scaffold split. A null arm in the same deposit separates architecture from training: as a fraction of
 profile mass in the same extreme bins, where the reference tabulation's median is $0.000$, an
 \emph{untrained} network of this architecture reaches $0.212$ against the trained head's $0.189$. The
 window is full before any training, and training emptied it slightly.
+
+% THE FIGURE, added 2026-08-19.  Sec. 3.3 carried the corpus's most chemistry-legible result in
+% prose alone, and "exactly zero against a third of the surface" is a claim a reader checks in one
+% glance and cannot check in a sentence.  Regenerate with
+% scripts/analysis/make_donor_window_figure.py, which reads
+% results/closure_ladder/placebo_profile_diagnosis.csv and hard-codes nothing, including which
+% solvents are non-zero on the reference side.  The caption carries the scope because the areas come
+% off the retired head, not off the arms of Fig. 2 -- do not restate them as an arm measurement.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_donor_window.pdf}
+\caption[The donor window, reference against learned]{\textbf{The window the hydrogen-bond term
+reads, in the reference tabulation and in the learned profile.} The sixteen solvents carrying the
+most scored rows, ordered by that count. Left of the axis, the reference tabulation's donor-window
+area, which is exactly $0.000$\,\AA$^2$ in twelve of them and is drawn with its value where it is
+not; right of the axis, the learned profile's area in the same window, annotated with the fraction of
+that molecule's total surface. Areas are read off the one trained COSMO-SAC head the tree
+holds---a retired run fit at $8$ segment iterations and scored at $30$, at MAE $2.61$ and
+$R^2=-0.31$ on the scaffold split. They price the quantity, not the arms of
+Fig.~\ref{fig:paradox}.}
+\label{fig:donor-window}
+\end{figure}
 
 Two causes stay entangled. This head's $\sigma$-supervision stream ran for zero steps, and
 \S\ref{sec:ident} is why that matters: solubility alone underdetermines the profile's shape, leaving

@@ -2117,29 +2117,10 @@ compounded cut and the null-partition test rather than on this curve. Per-stratu
 leave-one-source-out, and the VT-2005-matched set's own curves, are in the artifact and summarised in
 \S\ref{sec:broad}--\S\ref{sec:vt2005}.
 
-% 2026-08-02. This float used to draw the two sets' bound INVENTORIES -- one bar per set cut at the
-% headline bound, plus a mark per estimator -- i.e. the drawn form of Table~\ref{tab:bounds}. That
-% aggregate is retired (Sec. sec:broad), so the same stem now carries the stratified map and
-% Table~\ref{tab:bounds} stands on its own; the surrounding text no longer describes marks.
-% Regenerate with scripts/analysis/make_stratified_map_figure.py, which reads
-% results/b_insuff/stratified_map_table.csv and hard-codes nothing, verdicts included.
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig_decomposition.pdf}
-\caption[Where the closure binds, and where the two terms do not separate]{\textbf{Where the closure binds, and where the two terms do not separate}, by solvent class and by
-solute role, on the broad IDAC set
-($477$ rows, $185$ pairs, $78$ solutes, $36$ solvents, $15$ source publications). Bars, points and
-shares are at the row unit
-under the residual-only convention, at one estimator cell for every stratum---eight
-equal-count bins of $g(\zstar)$ with the unbiased within-bin variance. \textbf{(a)}~each stratum's
-input-insufficiency bound and its total error; \textbf{(b)}~the margin between them with its $90\%$
-two-way cluster-bootstrap interval, the other three unit\,$\times$\,convention cells as grey ticks;
-\textbf{(c)}~each stratum's share of the set's squared error, the part carried by its largest source
-publication drawn dark. Twelve cells at the granularity reported here, drawn from the $59$-stratum
-map of Tables~\ref{tab:map-full}--\ref{tab:map-xtab}. Strata on the two axes overlap, so
-panel~(c)'s shares do not sum down the column.}
-\label{fig:decomp}
-\end{figure*}
+% THE STRATIFIED-MAP FIGURE MOVED TO THE ARTICLE, 2026-08-19: \S\ref{sec:broad} ran 1856 words
+% with no figure of its own once the two map tables came here, and this is that section's
+% figure.  Regenerate with scripts/analysis/make_stratified_map_figure.py.
+
 
 % ---------------------------------------------------------------------------
 % THE MAP, IN FIVE FLOATS. Tables~\ref{tab:map-full}--\ref{tab:map-xtab} carry all 59 strata
