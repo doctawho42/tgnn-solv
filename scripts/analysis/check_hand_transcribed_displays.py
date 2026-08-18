@@ -137,6 +137,12 @@ def _parity_sidecar() -> dict:
         raise SystemExit(f"check: {_PARITY_JSON} is missing; regenerate the parity figure")
     return json.loads(_PARITY_JSON.read_text(encoding="utf-8"))
 PUBLISHED_ROOT = REPO / "results" / "e5_sigma_grounding"
+#: THE RUN OF RECORD, 2026-08-18.  The default was PUBLISHED_ROOT for as long as the paper's
+#: displays carried three-seed values, and it stayed there after they moved -- so the test suite,
+#: which calls this script with no arguments, checked a five-seed paper against a three-seed tree
+#: and reported 25 mismatches at every run.  A gate that is always red guards nothing.  Point the
+#: default at what the paper reports; --root still takes the published tree for a historical check.
+RERUN_ROOT = REPO / "results" / "e5_sigma_grounding_leakfree"
 
 #: The two artifacts behind the abstract's IDAC sentence.  The abstract, the body and the deposit
 #: have to agree about one interval, and this is the copy that decides.
@@ -533,6 +539,30 @@ def strip_comments(text: str) -> str:
     return re.sub(r"(?<!\\)%.*", "", text)
 
 
+def _expand_inputs(paper: Path, text: str, depth: int = 0) -> str:
+    r"""Splice every ``\input{...}`` in `text` with the file's own comment-stripped body.
+
+    WHY THIS EXISTS, 2026-08-18.  ``tab:baselines`` prints its rows from
+    ``si_tables/external_baselines_rows_article.tex`` and its float carries nothing but the
+    ``\input`` line, so for as long as this function did not exist the checker read that float,
+    found no numerals in it, and reported the table as covered.  Its first block then sat at the
+    published three-seed values for four days after the five-seed re-run replaced them, under a
+    caption this script had itself verified as naming the re-run -- a caption certifying a
+    provenance the cells below it did not have.  A float whose body is in another file is the
+    normal case in this repository, not an exception, so the expansion is unconditional.
+    """
+    if depth > 3:
+        raise SystemExit("check_hand_transcribed_displays: \\input nesting deeper than 3 levels")
+
+    def rep(m: re.Match) -> str:
+        target = paper / (m.group(1) + ("" if m.group(1).endswith(".tex") else ".tex"))
+        if not target.exists():
+            return ""
+        return _expand_inputs(paper, strip_comments(target.read_text()), depth + 1)
+
+    return re.sub(r"\\input\{([^}]+)\}", rep, text)
+
+
 def find_display(paper: Path, label: str) -> tuple[Path, str]:
     """The float (table*/table/figure*/figure) whose \\label is `label`, and the file it lives in."""
     for rel in _TEX_FILES:
@@ -551,7 +581,7 @@ def find_display(paper: Path, label: str) -> tuple[Path, str]:
         start = starts[-1]
         end_m = re.search(r"\\end\{(table\*?|figure\*?)\}", text[start:])
         end = start + end_m.end()
-        return path, text[start:end]
+        return path, _expand_inputs(paper, text[start:end])
     raise SystemExit(f"label {label!r} not found in any of {_TEX_FILES}")
 
 
@@ -1181,6 +1211,13 @@ class CaptionSpec:
     kind: str                        # "float" (the seven) or "map" (the two)
     binds: list[Bind] = field(default_factory=list)
     declared: list[str] = field(default_factory=list)
+    #: SPOT BINDINGS ON THE FLOAT'S BODY, and they are NOT coverage.  `binds` above run over the
+    #: caption and every numeral there must be bound or declared; these run over the whole float,
+    #: cells included, and claim only the cells they name.  They exist because a caption can be
+    #: verified true while the cells under it are stale -- which is what happened to tab:baselines
+    #: between 2026-08-12 and 2026-08-18 -- and they are counted and reported separately so that no
+    #: reader of this report can mistake four checked cells for a checked table.
+    body_binds: list[Bind] = field(default_factory=list)
 
 
 def caption_specs() -> list[CaptionSpec]:
@@ -1243,7 +1280,22 @@ def caption_specs() -> list[CaptionSpec]:
                 # exists reports MISSING forever and trains a reader to ignore the report.
             ],
         ),
-        CaptionSpec("tab:baselines", ("grounded", "oracle"), "float"),
+        CaptionSpec("tab:baselines", ("grounded", "oracle"), "float", body_binds=[
+            Bind("block 1, the grounded arm's MAE and R2 cells",
+                 r"COSMO-SAC closure, supervised \$\\hat\\sigma\$ \(physics\)[^\\\\]*?"
+                 r"\$(\d\.\d\d)\\pmsd(\d\.\d\d)\$[^\\\\]*?\$\d\.\d\d\\pmsd\d\.\d\d\$"
+                 r"[^\\\\]*?\$(\d\.\d\d)\\pmsd(\d\.\d\d)\$",
+                 lambda c: (f"{c.arm('grounded_a').mae_mean:.2f}", f"{c.arm('grounded_a').mae_sd:.2f}",
+                            f"{c.arm('grounded_a').r2_mean:.2f}", f"{c.arm('grounded_a').r2_sd:.2f}"),
+                 lambda c: A(c, "grounded_a")),
+            Bind("block 1, the sigma-oracle arm's MAE and R2 cells",
+                 r"reference \$\\sigma\^\\star\$ substituted at evaluation[^\\\\]*?"
+                 r"\$(\d\.\d\d)\\pmsd(\d\.\d\d)\$[^\\\\]*?\$\d\.\d\d\\pmsd\d\.\d\d\$"
+                 r"[^\\\\]*?\$(-?\d\.\d\d)\\pmsd(\d\.\d\d)\$",
+                 lambda c: (f"{c.arm('oracle').mae_mean:.2f}", f"{c.arm('oracle').mae_sd:.2f}",
+                            f"{c.arm('oracle').r2_mean:.2f}", f"{c.arm('oracle').r2_sd:.2f}"),
+                 lambda c: A(c, "oracle")),
+        ]),
         CaptionSpec("tab:si-baselines-full", ("grounded", "oracle"), "float"),
         CaptionSpec(
             "tab:si-arms", ("ungrounded", "grounded", "oracle"), "float",
@@ -1723,6 +1775,20 @@ def caption_checks(ctx: Ctx) -> list[Finding]:
         row = DisplayRow(key="", binds=spec.binds, declared=list(spec.declared),
                          owner=f"caption of {spec.label}")
         findings += check_row(spec.label + " (caption)", cap, row, ctx)
+        for b in spec.body_binds:
+            m = re.search(b.pattern, block)
+            if m is None:
+                findings.append(Finding(
+                    "MISSING", spec.label + " (body, spot-bound)", b.what,
+                    printed="(pattern not found)", expected="/".join(b.expect(ctx)),
+                    artifact=b.artifact(ctx),
+                    note="the cell was reworded or moved, so it is UNCHECKED"))
+                continue
+            got, exp = tuple(m.groups()), b.expect(ctx)
+            findings.append(Finding(
+                "OK" if got == exp else "MISMATCH", spec.label + " (body, spot-bound)", b.what,
+                printed=" | ".join(got), expected=" | ".join(exp), artifact=b.artifact(ctx),
+                note="spot binding: this cell is checked, the float is NOT covered"))
 
         # the form-of-words rule
         if spec.kind == "float":
@@ -1917,8 +1983,9 @@ LEDGER_DECLARED_ROWS: dict[str, list[DisplayRow]] = {
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--root", default=str(rel(PUBLISHED_ROOT)),
-                    help="results tree the re-run arms are read from (default: the published tree)")
+    ap.add_argument("--root", default=str(rel(RERUN_ROOT)),
+                    help="results tree the re-run arms are read from (default: the leak-free "
+                         "re-run, which is what the paper's displays report)")
     ap.add_argument("--published-root", default=str(rel(PUBLISHED_ROOT)),
                     help="results tree the arms that are NOT retrained are read from")
     ap.add_argument("--seeds", nargs="+", default=None,

@@ -93,7 +93,12 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-DEFAULT_E5_DIR = REPO / "results" / "e5_sigma_grounding"
+# THE RUN OF RECORD, 2026-08-18.  A bare invocation must reproduce the shipped graphic, and
+# while this pointed at the published tree it redrew line 1 as "with opposite signs", line 2
+# at three seeds and restored the leak-free caveat -- the pre-discharge figure, from the
+# script the discharge sheet names as the figure's only producer.  Pass --e5-dir for the
+# published tree.
+DEFAULT_E5_DIR = REPO / "results" / "e5_sigma_grounding_leakfree"
 
 _WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
           6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
@@ -125,6 +130,36 @@ def certificate_state(path: Path) -> tuple[bool, str]:
     return False, f"{path} does not certify: {len(problems)} problem(s)"
 
 
+def supervision_gains(root: Path) -> list[float]:
+    """Per-seed ungrounded-minus-grounded MAE, read from the tree's own comparison files.
+
+    Returns [] when the tree carries no comparison, which leaves line 1 at the sign-straddling
+    wording rather than silently asserting a sign no file supports.
+    """
+    # THE CERTIFICATE FIRST, AND comparison.json SECOND -- never comparison_both_arms.json.  That
+    # third file is a TWO-arm aggregation, so its intersection is a different row set from the
+    # paper's 5608-row lock: at seed 42 it reads 2.0816/1.8961 for a gain of +0.186 where the lock
+    # reads 2.0358/1.8871 for +0.149.  Both files are correct about what they aggregate and only
+    # one of them is the run of record.
+    cert_path = root / "provenance_certificate.json"
+    if cert_path.exists():
+        blob = json.loads(cert_path.read_text())
+        gains = blob.get("supervision_gain_per_seed")
+        if gains:
+            return [float(g) for g in gains]
+    out: list[float] = []
+    for seed in discover_seeds(root):
+        path = root / f"seed_{seed}" / "comparison.json"
+        if not path.exists():
+            continue
+        arms = json.loads(path.read_text()).get("per_arm", {})
+        try:
+            out.append(float(arms["ungrounded"]["mae"]) - float(arms["grounded_a"]["mae"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return out
+
+
 def toc_lines(root: Path | str = DEFAULT_E5_DIR,
               certificate: Path | str | None = None) -> list[str]:
     """The bottom lines of the graphic, derived from the run tree it describes.
@@ -140,12 +175,17 @@ def toc_lines(root: Path | str = DEFAULT_E5_DIR,
         cert = REPO / cert
     n = len(discover_seeds(root))
     seed_word = _WORDS.get(n, str(n))
-    # LINE 1 CHANGED 2026-08-12 by the second branch of the Sec. 2.2 pre-commitment. The five-seed
-    # re-run leaves the supervision gains straddling zero -- +0.149/+0.122/+0.175/-0.017/+0.122 --
-    # so "with opposite signs" is no longer what this graphic reports: one operation has a sign and
-    # the other does not. The branch names this graphic explicitly among the displays it redraws.
+    # LINE 1 IS DERIVED, 2026-08-18, and was a literal for six days before that. The second branch
+    # of the Sec. 2.2 pre-commitment fired and the line was rewritten by hand from "with opposite
+    # signs" to "only one of them has a sign" -- correct for the five-seed tree and wrong for any
+    # other, which is exactly what row 26 of the discharge sheet forbids and what the test guarding
+    # this function caught. The wording now follows the supervision gains: unanimous in sign, and
+    # the two operations run opposite; straddling zero, and only the substitution has a direction.
+    gains = supervision_gains(root)
+    unanimous = bool(gains) and (all(g > 0 for g in gains) or all(g < 0 for g in gains))
     lines = [
-        "Grounding is two operations on one database; only one of them has a sign",
+        "Grounding is two operations on one database, with opposite signs" if unanimous
+        else "Grounding is two operations on one database; only one of them has a sign",
         f"(solubility MAE on held-out scaffolds, {seed_word} seeds; magnitudes in the text).",
     ]
     certified, _why = certificate_state(cert)

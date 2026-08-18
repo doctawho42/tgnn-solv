@@ -40,11 +40,11 @@
 \toprule
 Model & Test set & $n$ ($\lnx$/$\log_{10}S$) & MAE $\lnx$ & RMSE $\log_{10}S$ & $R^2$ $\lnx$ \\
 \midrule
-\multicolumn{6}{@{}l@{}}{\emph{This work, solute-scaffold split; mean $\pm$ s.d. over seeds, three unless the row says otherwise}}\\
+\multicolumn{6}{@{}l@{}}{\emph{This work, solute-scaffold split; mean $\pm$ s.d. over seeds: five for the two COSMO-SAC rows, three for the others}}\\
 DirectGNN, same encoder, no closure \emph{(control)} & solute scaffold, this corpus & $5608$ / $5440$ & $1.70\pm0.03$ & $1.00\pm0.02$ & $0.42\pm0.03$ \\
 TGNN, NRTL closure (physics) & solute scaffold, this corpus & $5608$ / $5440$ & $1.79\pm0.07$ & $1.54\pm0.07$ & $0.34\pm0.03$ \\
-TGNN, COSMO-SAC closure, supervised $\hat\sigma$ (physics) & solute scaffold, this corpus & $5608$ / $5440$ & $1.85\pm0.05$ & $1.39\pm0.19$ & $0.33\pm0.05$ \\
-TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation & solute scaffold, this corpus & $5608$ / $5440$ & $2.25\pm0.02$ & $1.60\pm0.14$ & $-0.03\pm0.04$ \\
+TGNN, COSMO-SAC closure, supervised $\hat\sigma$ (physics) & solute scaffold, this corpus & $5608$ / $5440$ & $1.93\pm0.09$ & $1.44\pm0.11$ & $0.29\pm0.07$ \\
+TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation & solute scaffold, this corpus & $5608$ / $5440$ & $2.34\pm0.11$ & $1.64\pm0.09$ & $-0.07\pm0.08$ \\
 \addlinespace[2pt]
 \multicolumn{6}{@{}l@{}}{\emph{Scale reference on the same rows}}\\
 predict the test-set mean of $\lnx$ & solute scaffold, this corpus & $5608$ / $5440$ & $2.32$ & $1.33$ & $0.00$ \\

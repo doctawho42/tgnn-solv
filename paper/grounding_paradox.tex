@@ -674,9 +674,9 @@ Here a graph neural network predicts the pair of charge-density distributions CO
 place of the quantum-chemical calculation that ordinarily supplies them. The tabulated counterpart
 can enter at either of two points: as a target the network is trained toward, or as a replacement for
 what the network computed at the moment of prediction (Fig.~\ref{fig:overview}). Those two entry
-points are the two operations the word \emph{grounding} names, and here they carry opposite signs.
-Training the network toward the reference lowers error; supplying the reference at the moment of
-prediction raises it at every seed. Tabulated profiles serve a third purpose on activity-coefficient
+points are the two operations the word \emph{grounding} names, and here only one of them carries a
+sign. Training the network toward the reference moves the error four ways out of five and the fifth
+the other way; supplying the reference at the moment of prediction raises it at every seed. Tabulated profiles serve a third purpose on activity-coefficient
 data, where they divide the error of a fixed model between the model itself and the inputs handed to
 it. Solubility withholds that division, because a
 solubility measurement constrains the crystal and the mixing contributions jointly and leaves the
@@ -848,9 +848,11 @@ figure in this subsection and the next is an \lnx\ MAE over one row set, the $56
 scaffold-split test rows that carry a solubility measurement (Table~\ref{tab:notation}). The
 single-seed control arms below carry that identical set, so every comparison here stays inside one row
 set. Supervising the
-$\sigma$ head against the database \emph{during training} improves solubility MAE from
-$2.043\pm0.040$ (ungrounded) to $1.846\pm0.053$ (grounded), a gain of $0.20$ over three seeds, with the
-two arms' per-seed values disjoint.
+$\sigma$ head against the database \emph{during training} moves solubility MAE from
+$2.037\pm0.064$ (ungrounded) to $1.927\pm0.094$ (grounded) over five leak-free seeds, a mean of
+$+0.11$ that is not a sign: the per-seed gains are $+0.149$, $+0.122$, $+0.175$, $-0.017$ and
+$+0.122$, and the two arms' per-seed values interleave, the grounded arm the worse of the two at
+seed $45$.
 % ITEM 2 OF THE 2026-08-11 REFEREE ROUND.  The two arms are NOT budget-matched -- the schedule
 % gives the grounded arm a sigma warm-up of up to 40 epochs before the shared curriculum and the
 % ungrounded arm zero (configs/cosmo_sac.yaml sigma_warmup_epochs: 40; scripts/train.py runs
@@ -865,24 +867,26 @@ permuted $\sigma$ targets that would separate the two was left unrun, so what th
 intervention entire, extra pretraining and accurate targets together, rather than the accuracy of the
 reference values by itself.
 Those spreads are over initialisation and batch ordering, so they price the training run rather than
-the draw of test solutes. Pooling the three seeds and resampling
-the $147$ test solute clusters, we put the gain at $+0.198$, $95\%$ percentile interval
-$[+0.06,+0.33]$. Since the
-ungrounded arm carries no $\sigma$ stream at all, this is the one contrast in the paper that the
-uncertified stream build of \S\ref{sec:data} could inflate, and the arguments there leave it unbounded
-(\S\ref{sec:si-repro}). We deleted every solute that build can reach ($8$ of the $147$, carrying
-their own reference profile or a scaffold relative in it, on $351$ of the $5608$ rows), which leaves
-$2.036$ against $1.864$ on the remaining $139$ solute clusters, a gain of $+0.172$
-$[+0.03,+0.31]$. That bounds
-where the leak can act while leaving the build uncertified: it removes the rows a leaked profile
-scores, and leaves in place whatever a leaked profile did to the weights.
+the draw of test solutes. Pooling the five seeds and resampling the $147$ test solute clusters, we
+put the gain at $+0.110$, $95\%$ percentile interval $[+0.001,+0.222]$. The two prices hold
+different things fixed and they do not agree: over the draw of solutes the interval clears zero at
+its endpoint, and over training runs the gain has no sign at all.
+Since the ungrounded arm carries no $\sigma$ stream, this is the one contrast in the paper a
+$\sigma$-stream leak could inflate, and it is what the re-run was pre-committed to settle. Its
+stream is certified inside each training run and reaches no test molecule: $0$ by canonical SMILES
+against $5101$ held-out SMILES, and $0$ by Bemis--Murcko scaffold against $2702$ held-out scaffolds
+(\S\ref{sec:si-repro}), so on these arms there is nothing to delete. The published three-seed
+family, whose stream build is uncertified, put the same gain at $+0.198$ $[+0.06,+0.33]$, and at
+$+0.172$ $[+0.03,+0.31]$ with the eight leak-reachable solutes deleted, on $351$ of the $5608$ rows.
+That pair bounds where a leak can act in \emph{that} family and is what limitation~(xii) refers to;
+it is superseded here by a build in which a leak cannot act at all.
 Substituting the reference profile for the learned one \emph{at inference} degrades it, and that
 substitution alone is the effect this paper is named for. It erases any positive $R^2$
 (Fig.~\ref{fig:paradox}): the model predicts solubility better \emph{from its own learned
-$\sigma$-profile} than when \emph{given the external reference one}, at MAE $1.85$ against $2.25$ in \lnx\
-units, over the same three seeds and again with the two arms' per-seed values disjoint.
-Resampling the same $147$ solute clusters over the pooled three seeds, we put that penalty at $+0.406$,
-$95\%$ percentile interval $[+0.29,+0.53]$. The median per-row gap is $+0.32$ against the mean's
+$\sigma$-profile} than when \emph{given the external reference one}, at MAE $1.93$ against $2.34$ in \lnx\
+units, over the same five seeds and again with the two arms' per-seed values disjoint.
+Resampling the same $147$ solute clusters over the pooled five seeds, we put that penalty at $+0.408$,
+$95\%$ percentile interval $[+0.29,+0.54]$. The median per-row gap is $+0.30$ against the mean's
 $+0.41$, so the effect sits at the middle of the distribution and grows heavier above it.
 Of the figure's eight arms, two are non-COSMO controls, DirectGNN and a fitted NRTL closure.
 Five COSMO-SAC arms differ in how the $\sigma$ head is trained (the warm-up asymmetry above
@@ -892,29 +896,41 @@ Staverman--Guggenheim combinatorial term. \emph{Ref.\ $\sigma$ (eval)} is the gr
 re-evaluated with the reference profile substituted at test time, and \emph{ref.\ $\sigma$ (train)} the
 co-adaptation control injecting it during training instead.
 
+% THE TWO CO-ADAPTATION CONTROLS ARE PUBLISHED-FAMILY RUNS, AND THIS PARAGRAPH NOW SAYS SO, 2026-08-18.
+% Disposition K of the Sec. 2.2 inventory keeps their published values (rows 28 and 29 of the
+% discharge sheet: the channel swap's +0.27 and the injection's +0.18 with its 0.59 share), because
+% neither arm was re-run -- the five-seed co-adaptation pass is a training arm and the protocol does
+% not commit to it.  What changed at five seeds is the COMPARATOR: the re-run's own seed-42 learned
+% arm is 1.887 where the published family's is 1.803, so the same two measured arms give two
+% readings, +0.18/+0.27 within their own family and +0.09/+0.19 across families.  BOTH ARE PRINTED
+% AND NEITHER IS CALLED THE VALUE.  A single number here would either subtract across run families
+% without saying so or hide that the re-run moved the baseline it is read against.
+% THE SHARE IS WITHDRAWN AS A MAGNITUDE and may not be restored as an interval.  At three seeds it
+% was 0.586 / 0.835 / 0.609 (si_tables/si_arms_table.json, unrounded:
+% (2.231698-1.980577)/(2.231698-1.803446) and the two companions), a spread a caveat could carry.  At
+% five the learned arm's range is 0.238, and at seeds 45 and 46 the learned baseline is worse than the
+% injected arm, so the injection gap changes sign and the numerator overruns the denominator: two of
+% the four recomputations exceed one.  That is not a wide interval, it is a ratio that has stopped
+% denoting a share.  The SIGN at the matched seed is unaffected and is what the paragraph carries.
 That $+0.41$ is the evaluation-only substitution, and part of it may be unrelated to the
 closure: swapping an input distribution at test time degrades a pipeline on its own. The control that
-removes that component injects the reference profile \emph{at training}, so the model co-adapts. At
-seed $42$ it costs $+0.18$ ($1.803\to1.981$) where the evaluation-only substitution costs $+0.43$ at
-that same seed ($1.803\to2.232$), so part of the $+0.41$ goes with co-adaptation and the
-co-adapted arm is by design free of \emph{that} confound. That part is $0.251$ of the seed-$42$ gap
-of $0.428$, a share of $0.59$,
-% ITEM 4 OF THE 2026-08-10 REFEREE ROUND.  This said "the same numerator", which is not what the
-% alternative readings hold fixed: the INJECTED arm is the quantity measured once (1.9806), and both
-% the learned baseline and the substituted arm take their own values at seeds 43 and 44, so the
-% numerator moves with the substituted arm.  The three shares were and are right; only the account of
-% how they were obtained was wrong.  Arithmetic from si_tables/si_arms_table.json, unrounded:
-% (2.231698-1.980577)/(2.231698-1.803446)=0.586, (2.281292-1.980577)/(2.281292-1.921140)=0.835,
-% (2.241988-1.980577)/(2.241988-1.812583)=0.609.
-and we report it as a description of that seed rather than as a magnitude: the injected arm is what was
-measured once, and holding it at that value while the learned and substituted arms take their
-seed-$43$ and seed-$44$ values (which moves the numerator too, to $0.301$ and $0.261$) gives $0.83$
-and $0.61$ (\S\ref{sec:si-tables}). A channel-swap control costs $+0.27$, to
-$2.08$. It carries a second confound the co-adapted arm carries too: whether either trained on the
-same $\sigma$-stream build as the seed-$42$ comparator both are read against is uncertified, and the
-file times leave it open either way (\S\ref{sec:si-repro}).
-Both are worse than the learned-$\sigma$ arm, which rules out an implementation artifact. The
-three-seed arms are the ones that can be set against one another, and there the evaluation-only
+removes that component injects the reference profile \emph{at training}, so the model co-adapts. It
+was run once, at seed $42$, in the published family and not in the re-run, so it admits two readings
+and neither is a matched five-seed contrast. Against its own family's seed-$42$ learned arm
+($1.803$) it costs $+0.18$, to $1.981$, where the evaluation-only substitution costs $+0.43$ at that
+seed ($2.232$); against the re-run's seed-$42$ learned arm ($1.887$) the same injected value costs
+$+0.09$ and the evaluation-only substitution $+0.26$ ($2.145$). A channel-swap control, seed $42$ and
+of the published family as well, reaches $2.08$: $+0.27$ under the first reading and $+0.19$ under
+the second. What co-adaptation carries off is a share of the substitution gap, and we withdraw that
+share as a magnitude at any seed. The learned arm's between-seed range is $0.238$ at five seeds, the
+injected arm was measured once, and two of the four recomputations that hold it at its measured value
+while the other two arms take another seed's exceed one. A share above unity is a construction that
+has stopped meaning what it is named rather than a wide interval (\S\ref{sec:si-tables}).
+Both controls sit above the learned arm under both readings, which rules out an implementation
+artifact and is the whole of what they establish. It carries a second confound: whether either
+trained on the same $\sigma$-stream build as the comparator it is read against is uncertified, and
+the file times leave it open either way (\S\ref{sec:si-repro}).
+The five-seed arms are the ones that can be set against one another, and there the evaluation-only
 % FIVE-SEED UPDATE 2026-08-17.  This paragraph still carried the three-seed supervision gain and its
 % three per-seed values, and the hand-transcribed checker does not bind it, so the discharge left it
 % standing.  The gain is now -0.11 over five seeds and its per-seed values are +0.149/+0.122/+0.175/
@@ -961,21 +977,21 @@ slot in the right panel. Dashed in the left panel alone, the DirectGNN reference
 Figure~\ref{fig:parity-lnx2} sets the same rows out predicted against measured, for the control and
 three of the closure arms. Two things are visible there that the arm ordering hides. First, every
 arm is severely shrunk toward the corpus mean. The ordinary least-squares slope of predicted on
-measured is $0.515$ for DirectGNN, $0.416$ ungrounded, $0.528$ grounded and $0.690$ with the
+measured is $0.515$ for DirectGNN, $0.399$ ungrounded, $0.511$ grounded and $0.658$ with the
 reference profile, all of them well short of $1$. In every panel the median trace crosses the identity:
 sparingly soluble compounds are called more soluble than they are and highly soluble ones less.
 All four slopes are seed $42$'s, the figure's seed, with one run behind each. That shrinkage
 originates outside the closure: at that seed the closure-free control's slope differs from the grounded closure's by
-$0.013$, so whatever produces it lives in the encoder and the data. Second, the reference-profile arm is the
+$0.004$, so whatever produces it lives in the encoder and the data. Second, the reference-profile arm is the
 \emph{least} shrunk and the worst. Its slope is the closest of the four to $1$ and its prediction
 spread exceeds the measurement's, yet its MAE is the highest and its $R^2$ is indistinguishable
 from zero. Substituting the reference restores spread that is misaligned with the truth, and its
 worst region is the sparingly-soluble tail it appears to reach. That tail is where the closure is
-driven hardest. At seed $42$ the substituted arm returns $174$ rows with $\lng>10$ where the
-learned arm returns none, the learned arm's largest being $9.70$ against the substituted arm's $19.5$.
-And $179$ of its
+driven hardest. At seed $42$ the substituted arm returns $119$ rows with $\lng>10$ where the
+learned arm returns none, the learned arm's largest being $7.77$ against the substituted arm's $14.6$.
+And $141$ of its
 \lnx\ predictions fall below $-15$, to a minimum of $-22.3$ where the corpus itself stops at
-$-17.7$. The worst $500$ of the $5608$ rows carry $0.32$ of that seed's $+0.43$ mean gap.
+$-17.7$. The worst $500$ of the $5608$ rows carry $0.25$ of that seed's $+0.26$ mean gap.
 We score both arms at the $30$ segment iterations of \S\ref{sec:model}, with the fixed point
 left short of convergence there,
 so those rows are the ones on which the truncation is
@@ -1739,8 +1755,8 @@ finding is one-sided: one row set of the map on which grounding effort is \emph{
 % only be wrong for one of the two families.
 \paragraph{Where the accuracy stands, and the confound in it.} Table~\ref{tab:baselines} places every
 arm of this work beside the external models, in two blocks that may not be read across. The physics
-arms trail their own control in the seed mean, the COSMO-SAC arms at every seed and the NRTL arm at
-two of three (Table~\ref{tab:si-arms}). The two sides are separately tuned and we ran no
+arms trail their own control in the seed mean, the COSMO-SAC arms at each of the three seeds the two
+families share and the NRTL arm at two of them (Table~\ref{tab:si-arms}). The two sides are separately tuned and we ran no
 hyperparameter-matched control, so the $\Delta\mathrm{MAE}$ of $+0.23$ between them on the $5608$
 labelled test rows, and the chemical strata that resolve the same difference along chemical axes
 (\S\ref{sec:map}, \S\ref{sec:data-efficiency}), are silent about the thermodynamic bottleneck. We

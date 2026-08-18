@@ -1002,9 +1002,19 @@ attributable to the bottleneck (\S\ref{sec:discussion}). Only the COSMO-SAC fami
 seed: the per-seed column below puts the NRTL arm at $1.734$ against the control's $1.749$ at seed
 $42$, so the two arms' per-seed values overlap and that ordering is a property of the seed-mean
 column and not of the arms. The $\sigma$-oracle (reference VT-2005 profile) is the worst arm.
+% THE COMBINATORIAL CONTRAST STAYS INSIDE THE PUBLISHED FAMILY, 2026-08-18.  Row 27 of the discharge
+% sheet is disposition K for the reason this paragraph now states: the +SG arm was not re-run, so at
+% five seeds the two sides of the pair sit in different families.  Read across them the ordering
+% reverses (1.9275 against 1.8788), and that reversal is the BASELINE moving between families, not
+% the term doing anything -- the +SG arm's own three numbers did not change.  Do not print the
+% cross-family pair as the contrast; if the +SG arm is ever re-run at five seeds, this paragraph and
+% the table's seed column move together.
 Restoring the Staverman--Guggenheim combinatorial term makes the \emph{grounded learned-$\sigma$} arm
-slightly worse ($1.8457\to1.8788$)---the signature of a misspecified map (\S\ref{sec:measure}); no
-oracle-plus-combinatorial arm was run, so the combinatorial contrast is against the grounded
+slightly worse ($1.8457\to1.8788$)---the signature of a misspecified map (\S\ref{sec:measure}).
+Both sides of that pair are the published family at three seeds, which is what makes it a contrast:
+the $+$SG arm was not re-run, so against the re-run's grounded mean of $1.9275$ the ordering
+reverses, and that reversal is the baseline moving between families rather than the term acting. No
+oracle-plus-combinatorial arm was run either, so the combinatorial contrast is against the grounded
 learned-$\sigma$ row and not against the oracle row.
 
 \begin{table*}[h]
@@ -1082,9 +1092,9 @@ computed on the same $5608$ labelled test rows as Table~\ref{tab:si-arms}, and t
 predictions are released with the code. Only the evaluation-only substitution is a three-seed result.
 Training-time injection (MAE $1.98$) and the channel swap (MAE $2.08$) were run at seed $42$ alone,
 so their matched comparator is the seed-$42$ learned-$\sigma$ value $1.803$ on the same $n{=}5608$
-lock, not the three-seed mean $1.8457$ of Table~\ref{tab:si-arms}. Both exceed the worst of the three
-learned-$\sigma$ seeds ($1.921$), so the direction of both survives a worst-case seed
-comparison. The channel-swap margin ($+0.27$) is $2.3$ times the learned arm's full between-seed
+lock, not a seed mean. That comparator is $1.803$ in their own family and $1.887$ in the re-run,
+which is why \S\ref{sec:paradox} prints both readings; both exceed the worst learned-$\sigma$ seed
+of either family, so the direction of both survives a worst-case seed comparison. The channel-swap margin ($+0.27$) is $2.3$ times the learned arm's full between-seed
 range; the training-time margin ($+0.18$) is one and a half times it, so that control fixes a sign
 rather than an effect size. This matters for how the paradox's magnitude should be read. The
 evaluation-only substitution ($+0.41$ against the three-seed mean) mixes closure misspecification with

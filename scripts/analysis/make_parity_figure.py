@@ -152,10 +152,28 @@ def apply_style(style: str | None) -> None:
     })
 
 
-def load_locked(e5_dir: Path, seed: int) -> tuple[list, dict, dict]:
-    """(locked keys, per-arm (true,pred) arrays, per-arm metrics) for one seed."""
+#: The three arms the leak-free re-run trains and scores.  Everything else in LOCK_ARMS is a
+#: published-family arm that the re-run does not touch.
+RERUN_ARMS = ("ungrounded", "grounded_a", "oracle")
+
+
+def load_locked(e5_dir: Path, seed: int, rerun_dir: Path | None = None) -> tuple[list, dict, dict]:
+    """(locked keys, per-arm (true,pred) arrays, per-arm metrics) for one seed.
+
+    ``rerun_dir`` reads the three re-run arms from the leak-free tree and the other three from
+    ``e5_dir``.  THAT MIX IS WHAT THE CAPTION ALREADY CLAIMS: panels (b), (c) and (d) are the
+    re-run's arms and panel (a) is the published control, which the re-run does not train.  It is
+    sound only because the two families share one row set -- one split, one 5608-row lock, asserted
+    by results/e5_sigma_grounding_leakfree/provenance_certificate.json -- and the assertion is
+    repeated here rather than trusted: the cross-arm intersection is required to be the same size
+    as the published-only intersection, so a mixed load that quietly shrinks the lock fails loudly.
+    """
     d = e5_dir / f"seed_{seed}"
-    frames = {a: pd.read_csv(d / f"{a}_predictions.csv") for a in LOCK_ARMS}
+    src = {a: d for a in LOCK_ARMS}
+    if rerun_dir is not None:
+        for a in RERUN_ARMS:
+            src[a] = rerun_dir / f"seed_{seed}"
+    frames = {a: pd.read_csv(src[a] / f"{a}_predictions.csv") for a in LOCK_ARMS}
     for a, f in frames.items():
         n_sup = int(f["has_solubility"].astype(bool).sum()) if "has_solubility" in f else -1
         if n_sup < 1000:
@@ -166,6 +184,14 @@ def load_locked(e5_dir: Path, seed: int) -> tuple[list, dict, dict]:
                 "n=5608. Use a seed whose per-row deposit is complete, or restore the file."
             )
     keys = intersection_keys(frames)
+    if rerun_dir is not None:
+        published = {a: pd.read_csv(d / f"{a}_predictions.csv") for a in LOCK_ARMS}
+        if len(keys) != len(intersection_keys(published)):
+            raise SystemExit(
+                f"the mixed load locks {len(keys)} rows against the published family's "
+                f"{len(intersection_keys(published))}. The two families are certified to share one "
+                f"row set; a difference here means they do not, and the panels would be scored on "
+                f"rows the rest of the paper is not.")
     series, metrics = {}, {}
     for a, f in frames.items():
         sub = _round_key(f).drop_duplicates(_KEY, keep="first").set_index(_KEY).loc[keys]
@@ -325,6 +351,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--e5-dir", default="results/e5_sigma_grounding", type=Path)
+    ap.add_argument("--rerun-dir", type=Path, default=None,
+                    help="read ungrounded/grounded_a/oracle from this tree instead: the leak-free "
+                         "re-run, which is what the caption says panels (b)-(d) carry")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--out-dir", default="paper/figs", type=Path)
     ap.add_argument("--stem", default="fig_parity_lnx2")
@@ -333,10 +362,13 @@ def main() -> None:
     args = ap.parse_args()
 
     apply_style(args.style)
-    keys, series, metrics = load_locked(args.e5_dir, args.seed)
+    keys, series, metrics = load_locked(args.e5_dir, args.seed, args.rerun_dir)
     written, printed = make_figure(series, metrics, args.out_dir, args.stem, args.seed)
     printed["seed"] = args.seed
     printed["n_locked"] = len(keys)
+    printed["e5_dir"] = str(args.e5_dir)
+    printed["rerun_dir"] = str(args.rerun_dir) if args.rerun_dir else None
+    printed["rerun_arms"] = list(RERUN_ARMS) if args.rerun_dir else []
     print(f"n_locked = {len(keys)} (seed {args.seed})")
     for arm, rec in printed["panels"].items():
         print(f"  {arm:12s} MAE {rec['mae']:.4f} -> printed {rec['mae_printed']}   "

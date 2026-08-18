@@ -189,10 +189,14 @@ def test_hand_transcribed_displays_agree_with_their_artifacts():
 @needs_deposits
 def test_every_numeral_in_those_displays_is_accounted_for():
     """No numeral in the enrolled displays is unregistered -- bound or declared, never neither."""
+    # AGAINST THE RUN OF RECORD, 2026-08-18.  This pointed at PUBLISHED_ROOT, and once the paper's
+    # displays moved to the five-seed re-run that made it a coverage test on a tree the paper does
+    # not report: the numerals stayed registered, so the two assertions that matter still held, but
+    # the OK floor fell to 29 and the test went red for the one reason it was not written to catch.
     mod = _load(SCRIPT, "check_displays_cover")
     args = mod.argparse.Namespace(
-        root=str(mod.PUBLISHED_ROOT), published_root=str(mod.PUBLISHED_ROOT),
-        seeds=[42, 43, 44], published_seeds=None, ranking_json=None, paper="paper",
+        root=str(mod.RERUN_ROOT), published_root=str(mod.PUBLISHED_ROOT),
+        seeds=None, published_seeds=None, ranking_json=None, paper="paper",
         rerun_landed="no", json=None, verbose=False, dump_unclaimed=False)
     ctx = mod.build_context(args)
     findings = mod.run_checks(ctx)
@@ -205,14 +209,17 @@ def test_every_numeral_in_those_displays_is_accounted_for():
 
 @needs_deposits
 def test_the_caption_rule_activates_when_a_re_run_lands():
-    """Against the published tree the rule is PENDING; told a re-run landed, it is REQUIRED.
+    """Told no re-run landed the rule is PENDING; told one did, every caption is decided by it.
 
-    Today no caption carries the statement, so forcing --rerun-landed yes must fail on all nine.
-    That is the point: when the five seeds land the rule stops being advisory.
+    REWRITTEN 2026-08-18, when the thing it asserted stopped being true.  It used to require all
+    nine to MISMATCH under ``--rerun-landed yes``, which was right while no caption named the
+    re-run and became a test that the discharge had NOT happened the moment it did.  What the rule
+    is for is that no caption stays advisory once the seeds are in, so that is what is asserted:
+    nine findings, none of them PENDING, and against the run of record all nine pass.
     """
     mod = _load(SCRIPT, "check_displays_caps")
-    base = dict(root=str(mod.PUBLISHED_ROOT), published_root=str(mod.PUBLISHED_ROOT),
-                seeds=[42, 43, 44], published_seeds=None, ranking_json=None, paper="paper",
+    base = dict(root=str(mod.RERUN_ROOT), published_root=str(mod.PUBLISHED_ROOT),
+                seeds=None, published_seeds=None, ranking_json=None, paper="paper",
                 json=None, verbose=False, dump_unclaimed=False)
 
     pending = mod.caption_checks(mod.build_context(
@@ -225,7 +232,8 @@ def test_the_caption_rule_activates_when_a_re_run_lands():
         mod.argparse.Namespace(**base, rerun_landed="yes")))
     rule = [f for f in required if "rule" in f.item]
     assert len(rule) == 9
-    assert all(f.severity == "MISMATCH" for f in rule), (
-        "no caption states which of its arms came from the re-run yet, so every one of the nine "
-        "must fail once the rule is active"
+    assert not [f for f in rule if f.severity == "PENDING"], (
+        "with a re-run landed the rule is not advisory: every one of the nine must be decided"
     )
+    assert all(f.severity == "OK" for f in rule), "\n".join(
+        f"{f.display}: {f.printed}" for f in rule if f.severity != "OK")

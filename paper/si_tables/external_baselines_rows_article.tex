@@ -106,11 +106,11 @@
 Model & \shortstack[r]{$n$\\($\lnx$/$\log_{10}S$)} & \shortstack[r]{MAE\\$\lnx$} &
 \shortstack[r]{RMSE\\$\log_{10}S$} & \shortstack[r]{$R^2$\\$\lnx$} \\
 \midrule
-\multicolumn{5}{@{}l@{}}{\emph{This work, solute-scaffold split; mean $\pm$ s.d. over seeds, three unless the row says otherwise}}\\
+\multicolumn{5}{@{}l@{}}{\emph{This work, solute-scaffold split; mean $\pm$ s.d. over seeds: five for the two COSMO-SAC rows, three for the others}}\\
 DirectGNN, same encoder, no closure \emph{(control)} & $5608$ / $5440$ & $1.70\pmsd0.03$ & $1.00\pmsd0.02$ & $0.42\pmsd0.03$ \\
 TGNN, NRTL closure (physics) & $5608$ / $5440$ & $1.79\pmsd0.07$ & $1.54\pmsd0.07$ & $0.34\pmsd0.03$ \\
-TGNN, COSMO-SAC closure, supervised $\hat\sigma$ (physics) & $5608$ / $5440$ & $1.85\pmsd0.05$ & $1.39\pmsd0.19$ & $0.33\pmsd0.05$ \\
-TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation & $5608$ / $5440$ & $2.25\pmsd0.02$ & $1.60\pmsd0.14$ & $-0.03\pmsd0.04$ \\
+TGNN, COSMO-SAC closure, supervised $\hat\sigma$ (physics) & $5608$ / $5440$ & $1.93\pmsd0.09$ & $1.44\pmsd0.11$ & $0.29\pmsd0.07$ \\
+TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation & $5608$ / $5440$ & $2.34\pmsd0.11$ & $1.64\pmsd0.09$ & $-0.07\pmsd0.08$ \\
 \addlinespace[2pt]
 \multicolumn{5}{@{}l@{}}{\emph{Scale reference on the same solute-scaffold rows}}\\
 predict the test-set mean of $\lnx$ & $5608$ / $5440$ & $2.32$ & $1.33$ & $0.00$ \\
