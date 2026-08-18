@@ -160,6 +160,53 @@ def supervision_gains(root: Path) -> list[float]:
     return out
 
 
+def substitution_penalties(root: Path) -> list[float]:
+    """Per-seed oracle-minus-grounded MAE: the evaluation-time substitution's cost.
+
+    The counterpart of supervision_gains, and it exists for the same reason -- so that the arrow
+    drawn for this operation states a sign a file supports.  Returns [] when the tree carries no
+    comparison, which leaves the arrow at the sign-free wording.
+    """
+    out: list[float] = []
+    for seed in discover_seeds(root):
+        path = root / f"seed_{seed}" / "comparison.json"
+        if not path.exists():
+            continue
+        arms = json.loads(path.read_text()).get("per_arm", {})
+        try:
+            out.append(float(arms["oracle"]["mae"]) - float(arms["grounded_a"]["mae"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return out
+
+
+def toc_arrows(root: Path | str = DEFAULT_E5_DIR) -> dict[str, tuple[str, str]]:
+    """The two arrow labels and their colours, derived from the tree the graphic describes.
+
+    WHY THIS IS DERIVED, 2026-08-19.  Line 1 of the bottom block became derived on 2026-08-18 and
+    correctly read "only one of them has a sign" for the five-seed tree, while forty points above it
+    the left arrow went on reading the literal "MAE improves".  One image asserted a benefit and
+    denied it, and the caption's hedge cannot repair a flat assertion drawn in green: this is the
+    graphic ACS prints beside the article and the one element a reader takes away whole.  The
+    defect was possible because only one of the two moving parts was wired to the data.  Both are
+    now.
+
+    THE COLOUR IS PART OF THE CLAIM.  A green arrow says "this helps" whatever the words under it
+    say, so an operation whose per-seed values straddle zero is drawn in ink, not in green.  Do not
+    restore the colour without restoring the unanimity that licensed it.
+    """
+    root = Path(root)
+    if not root.is_absolute():
+        root = REPO / root
+    gains, penalties = supervision_gains(root), substitution_penalties(root)
+    return {
+        "left": (("MAE improves", HELP) if gains and all(g > 0 for g in gains)
+                 else ("no consistent sign", INK)),
+        "right": (("MAE degrades", HURT) if penalties and all(p > 0 for p in penalties)
+                  else ("no consistent sign", INK)),
+    }
+
+
 def toc_lines(root: Path | str = DEFAULT_E5_DIR,
               certificate: Path | str | None = None) -> list[str]:
     """The bottom lines of the graphic, derived from the run tree it describes.
@@ -219,8 +266,9 @@ def box(ax, x, y, w, h, text, fc, ec=INK, fs=7.0, tc=INK, lw=1.0):
             color=tc, zorder=4)
 
 
-def draw(lines: list[str], out: Path) -> None:
-    """Draw the graphic with `lines` as its bottom block."""
+def draw(lines: list[str], out: Path, arrows: dict[str, tuple[str, str]] | None = None) -> None:
+    """Draw the graphic with `lines` as its bottom block and `arrows` as its two operation labels."""
+    arrows = arrows or {"left": ("no consistent sign", INK), "right": ("no consistent sign", INK)}
     fig = plt.figure(figsize=(3.25, 1.75))
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis("off")
 
@@ -246,14 +294,16 @@ def draw(lines: list[str], out: Path) -> None:
     ax.text(0.3725, 0.305, "reference profile", ha="center", va="center", fontsize=6.4, color=INK)
 
     ax.add_patch(FancyArrowPatch((0.348, 0.545), (0.322, 0.745), arrowstyle="-|>",
-                                 color=HELP, lw=1.4, mutation_scale=9, zorder=2))
+                                 color=arrows["left"][1], lw=1.4, mutation_scale=9, zorder=2))
     ax.add_patch(FancyArrowPatch((0.408, 0.545), (0.487, 0.745), arrowstyle="-|>",
-                                 color=HURT, lw=1.4, mutation_scale=9, zorder=2))
+                                 color=arrows["right"][1], lw=1.4, mutation_scale=9, zorder=2))
 
-    ax.text(0.245, 0.665, "train on it", ha="right", va="center", fontsize=6.8, color=HELP)
-    ax.text(0.245, 0.575, "MAE improves", ha="right", va="center", fontsize=6.8, color=HELP)
-    ax.text(0.505, 0.665, "feed it in instead", ha="left", va="center", fontsize=6.8, color=HURT)
-    ax.text(0.505, 0.575, "MAE degrades", ha="left", va="center", fontsize=6.8, color=HURT)
+    (left_text, left_colour), (right_text, right_colour) = arrows["left"], arrows["right"]
+    ax.text(0.245, 0.665, "train on it", ha="right", va="center", fontsize=6.8, color=left_colour)
+    ax.text(0.245, 0.575, left_text, ha="right", va="center", fontsize=6.8, color=left_colour)
+    ax.text(0.505, 0.665, "feed it in instead", ha="left", va="center", fontsize=6.8,
+            color=right_colour)
+    ax.text(0.505, 0.575, right_text, ha="left", va="center", fontsize=6.8, color=right_colour)
 
     # The bottom block states the sign structure rather than a set-level verdict.  The pointer to
     # the text is where the magnitudes went; see the module docstring for why they may not print
@@ -286,9 +336,11 @@ def main() -> None:
     certified, why = certificate_state(cert if cert.is_absolute() else REPO / cert)
     print(f"seeds     {discover_seeds(root)} in {root}")
     print(f"certified {certified} ({why})")
+    arrows = toc_arrows(root)
+    print(f"arrows    train-on-it: {arrows['left'][0]!r}   feed-it-in: {arrows['right'][0]!r}")
     for line in lines:
         print(f"  | {line}")
-    draw(lines, Path(args.out))
+    draw(lines, Path(args.out), arrows)
 
 
 if __name__ == "__main__":

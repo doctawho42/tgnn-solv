@@ -253,3 +253,32 @@ the measurement establishes is that the window is occupied in a trained arm and 
 hydrogen-bond term consequently live on every pair of the scored set, a defect whichever cause
 carries it. A supervised arm separates the two, and a head able to emit zeros removes the
 architectural half.
+
+\paragraph{Whether the closure amplifies the substitution, or the two profiles are simply different
+objects.}
+% ADDED 2026-08-19, and it exists to answer a referee objection this manuscript had no measurement
+% for.  Wu, Xiao, Sun and Wang report the same shape of experiment in fluid dynamics seven years
+% earlier -- substituting near-exact Reynolds stresses into RANS produces large velocity error --
+% and diagnose ILL-CONDITIONING of the closure map.  If that account carried here, this paper's
+% mechanism paragraph would be redundant with a 2019 result in another field.  It does not, and
+% the reason is a quantity nothing in this corpus had measured: the SIZE of the substitution step.
+% Producer: scripts/analysis/run_closure_conditioning.py.  Its nulls are a random direction of the
+% same norm and a chemistry-blind substitution (a different molecule's reference profile).
+% THE MATCH IS CANONICAL SMILES.  Keyed on the strings as written the set is 66 rows; canonicalised
+% it is 354.  A length pass may drop the sentence but not the number.
+An account of this degradation is available from outside chemistry, and it is not the one above.
+Wu \latin{et al.}\cite{wu2019illconditioned} substitute near-exact Reynolds stresses into the RANS
+equations and recover large velocity errors, which they trace to ill-conditioning: the fixed model
+amplifies a small perturbation of its input. That account and the compensation account differ on one
+measurable quantity, the size of the substitution step, and they differ in opposite directions.
+Ill-conditioning requires the step to be small. On the $354$ test rows whose solute and solvent both
+carry a VT-2005 profile ($64$ solutes, $18$ solvents, $4.4\%$ of the split), it is not: the reference
+profile stands $1.53$ $[1.39,1.80]$ times the learned profile's own norm away from it, so the two are
+different objects rather than an estimate and its target. Neither does the closure amplify
+selectively along that direction. A random direction of the same norm produces a \emph{larger}
+relative change in $\ln\gamma^\infty$ on $71\%$ $[62,76]$ of those rows at eight segment iterations
+and on $81\%$ $[70,86]$ at thirty. The amplification ratio itself is not stable across that pair
+(median $0.60$ $[0.37,1.14]$ against $1.29$ $[0.64,2.20]$), which is the segment count behaving as
+the free hyperparameter \S\ref{sec:estimator} says it is; the step size is a property of the two
+profiles and does not move with it. Both readings are of the retired head of this section and price
+the quantity rather than the arms of Fig.~\ref{fig:paradox}.

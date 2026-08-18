@@ -1,0 +1,122 @@
+{
+  "n_rows": 354,
+  "n_rows_uncanonicalised": 66,
+  "n_rows_test_split": 8103,
+  "n_solutes": 64,
+  "n_solvents": 18,
+  "checkpoint": "checkpoints/cosmo_sac/tgnn_cosmo.pt",
+  "cells": {
+    "8": {
+      "ln_gamma_learned_median": 1.5538169145584106,
+      "ln_gamma_learned_absmedian": 1.591949224472046,
+      "substitution": {
+        "rel_input_step_median": 1.530787528075432,
+        "rel_input_step_ci90": [
+          1.3912,
+          1.7991
+        ],
+        "rel_output_change_median": 0.7938973903656006,
+        "amplification_median": 0.5959880755486999,
+        "amplification_ci90": [
+          0.3692,
+          1.1362
+        ],
+        "amplification_p90": 3.0281201483091453,
+        "abs_ln_gamma_shift_median": 1.0872209072113037
+      },
+      "random_direction": {
+        "rel_input_step_median": 1.2211591007991511,
+        "rel_input_step_ci90": [
+          1.0461,
+          1.3927
+        ],
+        "rel_output_change_median": 2.1761093139648438,
+        "amplification_median": 1.660654342304198,
+        "amplification_ci90": [
+          1.2643,
+          2.4923
+        ],
+        "amplification_p90": 9.598767315257481,
+        "abs_ln_gamma_shift_median": 2.4799935817718506
+      },
+      "chemistry_blind": {
+        "rel_input_step_median": 1.9934835918478686,
+        "rel_input_step_ci90": [
+          1.709,
+          2.3274
+        ],
+        "rel_output_change_median": 0.9977325201034546,
+        "amplification_median": 0.5492552549568177,
+        "amplification_ci90": [
+          0.4602,
+          0.5984
+        ],
+        "amplification_p90": 2.5434192771867044,
+        "abs_ln_gamma_shift_median": 1.5830366611480713
+      },
+      "substitution_amplifies_less_than_random": {
+        "fraction_of_rows": 0.7146892655367232,
+        "ci90": [
+          0.6163,
+          0.7637
+        ]
+      }
+    },
+    "30": {
+      "ln_gamma_learned_median": -0.6904419660568237,
+      "ln_gamma_learned_absmedian": 0.7681244015693665,
+      "substitution": {
+        "rel_input_step_median": 1.530787528075432,
+        "rel_input_step_ci90": [
+          1.3912,
+          1.7991
+        ],
+        "rel_output_change_median": 2.2940757274627686,
+        "amplification_median": 1.2926864480169296,
+        "amplification_ci90": [
+          0.6401,
+          2.1969
+        ],
+        "amplification_p90": 5.130964707097922,
+        "abs_ln_gamma_shift_median": 1.4589619636535645
+      },
+      "random_direction": {
+        "rel_input_step_median": 1.2211591007991511,
+        "rel_input_step_ci90": [
+          1.0693,
+          1.3919
+        ],
+        "rel_output_change_median": 7.5915751457214355,
+        "amplification_median": 6.283553712018978,
+        "amplification_ci90": [
+          4.5161,
+          8.4852
+        ],
+        "amplification_p90": 47.79433061978249,
+        "abs_ln_gamma_shift_median": 6.420034408569336
+      },
+      "chemistry_blind": {
+        "rel_input_step_median": 1.9934835918478686,
+        "rel_input_step_ci90": [
+          1.706,
+          2.3166
+        ],
+        "rel_output_change_median": 1.4204686880111694,
+        "amplification_median": 0.7348412014353047,
+        "amplification_ci90": [
+          0.6347,
+          0.8511
+        ],
+        "amplification_p90": 3.8644364445062704,
+        "abs_ln_gamma_shift_median": 1.5991014242172241
+      },
+      "substitution_amplifies_less_than_random": {
+        "fraction_of_rows": 0.807909604519774,
+        "ci90": [
+          0.7046,
+          0.8648
+        ]
+      }
+    }
+  }
+}

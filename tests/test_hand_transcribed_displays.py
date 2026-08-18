@@ -23,6 +23,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import json
+
 import pytest
 
 REPO = Path(__file__).resolve().parents[1]
@@ -98,6 +100,50 @@ def test_toc_caveat_and_seed_count_move_with_the_tree(tmp_path):
 
     (root / "provenance_certificate.json").write_text('{"certified": false, "problems": ["x"]}')
     assert len(toc.toc_lines(root)) == 3, "a failing certificate must keep the caveat"
+
+
+def test_toc_arrow_labels_are_derived_too(tmp_path):
+    """The graphic must not assert with one moving part what it denies with another.
+
+    Until 2026-08-19 line 1 of the bottom block was derived and read "only one of them has a sign",
+    while the left arrow forty points above it read the literal "MAE improves" in green.  One image
+    said both.  This pins both halves to the same file, colour included: a green arrow is itself a
+    claim, so an operation whose per-seed values straddle zero is drawn in ink.
+    """
+    toc = _load(TOC, "make_toc_figure_arrows")
+    assert hasattr(toc, "toc_arrows"), "the arrow labels are still string literals"
+    root = tmp_path / "tree"
+    for seed, gain, penalty in ((42, 0.15, 0.26), (43, 0.12, 0.52), (44, -0.02, 0.56)):
+        d = root / f"seed_{seed}"
+        d.mkdir(parents=True)
+        (d / "grounded_a_predictions.summary.json").write_text("{}")
+        (d / "comparison.json").write_text(json.dumps({"per_arm": {
+            "grounded_a": {"mae": 1.90}, "ungrounded": {"mae": 1.90 + gain},
+            "oracle": {"mae": 1.90 + penalty}}}))
+
+    arrows = toc.toc_arrows(root)
+    assert arrows["left"] == ("no consistent sign", toc.INK), "a straddling gain may not read green"
+    assert arrows["right"] == ("MAE degrades", toc.HURT)
+
+    # make every gain positive and the left arrow earns its sign back
+    for seed in (42, 43, 44):
+        c = root / f"seed_{seed}" / "comparison.json"
+        blob = json.loads(c.read_text())
+        blob["per_arm"]["ungrounded"]["mae"] = 2.10
+        c.write_text(json.dumps(blob))
+    assert toc.toc_arrows(root)["left"] == ("MAE improves", toc.HELP)
+
+
+def test_toc_arrows_agree_with_the_bottom_line_on_the_shipped_tree():
+    """The two derivations are separate functions; on the tree we ship they must not disagree."""
+    toc = _load(TOC, "make_toc_figure_arrows_shipped")
+    root = toc.DEFAULT_E5_DIR
+    if not root.exists():
+        pytest.skip(f"{root} is not in this checkout")
+    line_says_signed = "with opposite signs" in toc.toc_lines(root)[0]
+    arrow_says_signed = toc.toc_arrows(root)["left"][0] == "MAE improves"
+    assert line_says_signed == arrow_says_signed, (
+        "the bottom line and the left arrow disagree about whether the supervision gain has a sign")
 
 
 def test_a_row_no_selector_matches_is_fatal():
