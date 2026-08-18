@@ -1305,56 +1305,16 @@ across estimators.
 % Do not edit the bodies here.  If a granularity is added to the map, it lands in both places in
 % the same pass.
 % ===========================================================================================
-\begin{table*}[tp]
-\centering
-\caption[The map: every stratum the estimator can bound]{\textbf{The map: every stratum the fixed estimator can bound}: the $15$ of the $59$ with
-$n\ge40$, at the pre-declared cell (eight equal-count bins of $g(\zstar)$, unbiased within-bin
-variance, row unit, residual-only convention), applied identically to all of them. \emph{full} is
-the same cell under the full combinatorial convention. Every margin, and the $\mathrm{MSE}$ and
-bound behind it, is in squared \lngi. The last column states what the row shows or the test it
-fails. The other $44$ strata, the $24$ of them carrying no estimate at all included, are in
-\S\ref{sec:si-map} at this same cell.}
-\label{tab:map-article}
-{\scriptsize\linespread{0.96}\selectfont
-\setlength{\tabcolsep}{2pt}
-\renewcommand{\arraystretch}{0.7}
-\input{si_tables/stratified_map_rows_article}
-\tabnotes{\scriptsize%
-\tnk{a}\,Number of source publications, then the largest one and its share of that stratum's
-squared error. The keys: \input{si_tables/map_source_key}\quad
-\tnk{b}\,\input{si_tables/map_ci_note}\quad
-\tnk{c}\,In how many of the four unit\,$\times$\,convention cells the stratum is both boundable and
-sign-stable under deletion of each contributing publication; the rule of \S\ref{sec:estimator}
-requires all four, which six of the $59$ satisfy, in three distinct row sets.\quad
-\tnk{d}\,The condition the row is in, rather than a label for it. A one-source cell is untestable, and a
-deletion leaving fewer than $16$ rows leaves the cell undefined, so both read as untested rather
-than as passes. A margin is one-sided: positive puts $\Bclos>\Binsuf$ on those rows at that cell,
-while a margin at or below zero is a failure to separate and licenses nothing.\quad
-\tnk{e}\,The search behind every row, in the two nulls of the paragraph below. Under the binning
-bound of record, a chemistry-blind relabelling of the same molecules certifies at least one row set
-in $58\%$ of $2000$ draws, reaches $+2.04$ or more in $10.1\%$ of all draws and in $17\%$ of the
-draws that certify anything, and separates the six admissible strata from chance ($p=0.01$) while
-leaving the two admissible positive row sets at chance ($p=0.286$). Under the pre-declared cross-fitted estimator, on
-the $473$ rows it scores, the same relabelling reaches the observed maximum in $13.7\%$ of all draws
-and in $54\%$ of the certifying ones, against $9.4\%$ and $16\%$ for the binning bound on those same
-rows.}}
-\end{table*}
+% TIER 2, 2026-08-19: the two article map floats (tab:map-article, tab:map-article-solute -- the
+% 15 boundable strata with their margins, sources, cells and per-row verdicts, plus the shared
+% note block) moved to \S\ref{sec:si-map-cells}, which prints all 59 strata from the same
+% generator and therefore already contained every row of both.  NO CHECKER BINDING MOVED: the
+% CaptionSpecs named "tab:solvent-map" and "tab:solute-map" in
+% check_hand_transcribed_displays.py are the per-class ACCURACY maps of
+% sections/chemistry-map.tex, a different pair of tables; verified before the move.
+% WHAT STAYS IN THE ARTICLE is the sentence that reads the map, with the one row set the rule
+% leaves standing and its narrowness in the same sentence.
 
-% The solute half of the same fifteen.  Two floats and not one: stacked, the two tabulars and the
-% note block run 201pt past the page.  The notes are Table~\ref{tab:map-article}'s and are not
-% repeated, which is the arrangement the five SI map tables already use.
-\begin{table*}[tp]
-\centering
-\caption[The map, solute axis: the boundable strata]{\textbf{The map, solute axis}: the rest of the fifteen boundable strata, at the same
-estimator cell and under the same rule as Table~\ref{tab:map-article}, whose notes apply here
-unchanged. The alkane row is the second admissible positive row set, and clause~(c) demotes it to
-the glycol ethers.}
-\label{tab:map-article-solute}
-{\scriptsize\linespread{0.96}\selectfont
-\setlength{\tabcolsep}{2pt}
-\renewcommand{\arraystretch}{0.7}
-\input{si_tables/stratified_map_rows_article_solute}}
-\end{table*}
 
 % THE TWO BIASES STAY IN THIS DOCUMENT, 2026-08-10.  How the p and the 10.1% may be read is decided
 % by their DIRECTIONS, so those are printed here and not left behind a pointer: bias (1) has two
@@ -1689,7 +1649,26 @@ leave undetermined. The two sit in different regimes on largely disjoint chemist
 substitution hurts \emph{because} the map is misspecified'' remains untested (limitation~(i)). The
 finding is one-sided: one row set of the map on which grounding effort is \emph{not} the remedy.
 
-\input{sections/blackbox-probe}
+% TIER 2 OF THE LENGTH DECISION, 2026-08-19: the black-box probe block (414 words) left the article
+% for the Supporting Information, which already carried all of it -- \S\ref{sec:si-blackbox} has the
+% three studies with their full tables, and limitation~(ix) of \S\ref{sec:si-limitations} carries
+% every caveat the block made, verified line by line before the cut: the 13 held-out solutes and
+% that they cannot be enlarged, the bound-not-a-demonstration reading, that no power calculation was
+% run, the three R^2 against the null's 95th percentiles and maxima, "nothing below that ceiling is
+% excluded", the refusal to read the between-seed spread against the null's support, the corpus cap
+% at r=+0.24, and the weak-evidence reading of the scaffold partitions.
+% WHAT STAYS HERE IS THE CLAIM, not the apparatus: the control does not carry the thermodynamics
+% implicitly, and the negative is a bound.  Do not delete the second sentence to save a line -- a
+% negative printed without "falls short of an exclusion" is the failure this project treats as worse
+% than a wrong positive.
+\paragraph{The unconstrained control's representation.} If the physics arm's intermediate is a
+surrogate, the thermodynamics might still be present implicitly in the control, which is free to
+represent it. It is absent: a ridge probe of the control's pair representation recovers the model's
+own prediction at $R^{2}=0.98$ and leaves the measured ideal-solubility term unrecovered. That
+negative falls short of an exclusion, on $13$ held-out solute clusters whose reference scarcity caps
+them, with each measured $R^{2}$ at or below its own permutation null's ceiling and no power
+calculation to say how far above it the design reaches. It is limitation~(ix), and
+\S\ref{sec:si-blackbox} carries the three studies, the controls and the temperature probe.
 
 % THE SEED COUNT WAS DROPPED FROM THIS SENTENCE ON PURPOSE, 2026-08-18.  A draft of this compression
 % wrote "in the seed mean over three seeds", which is wrong in the one direction that matters: the

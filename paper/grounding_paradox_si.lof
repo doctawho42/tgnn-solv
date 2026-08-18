@@ -1,9 +1,9 @@
 \contentsline {figure}{\numberline {S1}{\ignorespaces The model, and where the oracle substitution enters}}{S-7}{figure.caption.11}%
 \contentsline {figure}{\numberline {S2}{\ignorespaces Where the closure binds, and where the two terms do not separate}}{S-30}{figure.caption.26}%
-\contentsline {figure}{\numberline {S3}{\ignorespaces Activity-coefficient parity on the sixty matched pairs}}{S-44}{figure.caption.36}%
-\contentsline {figure}{\numberline {S4}{\ignorespaces The drift solubility fine-tuning imposes on the learned profile}}{S-53}{figure.caption.43}%
-\contentsline {figure}{\numberline {S5}{\ignorespaces Explained-variance spectrum of the fine-tuning drift}}{S-55}{figure.caption.49}%
-\contentsline {figure}{\numberline {S6}{\ignorespaces The data-efficiency curve}}{S-66}{figure.caption.66}%
-\contentsline {figure}{\numberline {S7}{\ignorespaces Per-molecule cosine between the measured drift and the first-order step}}{S-69}{figure.caption.70}%
-\contentsline {figure}{\numberline {S8}{\ignorespaces pKa through a Hammett LFER on a known-ground-truth construction}}{S-75}{figure.caption.82}%
-\contentsline {figure}{\numberline {S9}{\ignorespaces The closure-fidelity sweep on synthetic teacher functions}}{S-87}{figure.caption.95}%
+\contentsline {figure}{\numberline {S3}{\ignorespaces Activity-coefficient parity on the sixty matched pairs}}{S-46}{figure.caption.36}%
+\contentsline {figure}{\numberline {S4}{\ignorespaces The drift solubility fine-tuning imposes on the learned profile}}{S-55}{figure.caption.43}%
+\contentsline {figure}{\numberline {S5}{\ignorespaces Explained-variance spectrum of the fine-tuning drift}}{S-57}{figure.caption.49}%
+\contentsline {figure}{\numberline {S6}{\ignorespaces The data-efficiency curve}}{S-68}{figure.caption.66}%
+\contentsline {figure}{\numberline {S7}{\ignorespaces Per-molecule cosine between the measured drift and the first-order step}}{S-72}{figure.caption.70}%
+\contentsline {figure}{\numberline {S8}{\ignorespaces pKa through a Hammett LFER on a known-ground-truth construction}}{S-78}{figure.caption.82}%
+\contentsline {figure}{\numberline {S9}{\ignorespaces The closure-fidelity sweep on synthetic teacher functions}}{S-90}{figure.caption.95}%

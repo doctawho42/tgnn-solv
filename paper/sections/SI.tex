@@ -2080,6 +2080,62 @@ row is the set taken whole.}
 \input{si_tables/stratified_map_rows_xtab}}
 \end{table*}
 
+% MOVED HERE FROM grounding_paradox.tex, 2026-08-19 (Tier 2 of the length decision): the two
+% article map floats, beside the section that prints all 59 strata from the same generator.
+% They are kept rather than deleted because the article's fifteen-row cut is what \S\ref{sec:broad}
+% sends a reader to, and because their note block carries the precision rule and the two
+% multiplicity nulls that the full table's note does not repeat.
+\begin{table*}[tp]
+\centering
+\caption[The map: every stratum the estimator can bound]{\textbf{The map: every stratum the fixed estimator can bound}: the $15$ of the $59$ with
+$n\ge40$, at the pre-declared cell (eight equal-count bins of $g(\zstar)$, unbiased within-bin
+variance, row unit, residual-only convention), applied identically to all of them. \emph{full} is
+the same cell under the full combinatorial convention. Every margin, and the $\mathrm{MSE}$ and
+bound behind it, is in squared \lngi. The last column states what the row shows or the test it
+fails. The other $44$ strata, the $24$ of them carrying no estimate at all included, are in
+\S\ref{sec:si-map} at this same cell.}
+\label{tab:map-article}
+{\scriptsize\linespread{0.96}\selectfont
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.7}
+\input{si_tables/stratified_map_rows_article}
+\tabnotes{\scriptsize%
+\tnk{a}\,Number of source publications, then the largest one and its share of that stratum's
+squared error. The keys: \input{si_tables/map_source_key}\quad
+\tnk{b}\,\input{si_tables/map_ci_note}\quad
+\tnk{c}\,In how many of the four unit\,$\times$\,convention cells the stratum is both boundable and
+sign-stable under deletion of each contributing publication; the rule of \S\ref{sec:estimator}
+requires all four, which six of the $59$ satisfy, in three distinct row sets.\quad
+\tnk{d}\,The condition the row is in, rather than a label for it. A one-source cell is untestable, and a
+deletion leaving fewer than $16$ rows leaves the cell undefined, so both read as untested rather
+than as passes. A margin is one-sided: positive puts $\Bclos>\Binsuf$ on those rows at that cell,
+while a margin at or below zero is a failure to separate and licenses nothing.\quad
+\tnk{e}\,The search behind every row, in the two nulls of the paragraph below. Under the binning
+bound of record, a chemistry-blind relabelling of the same molecules certifies at least one row set
+in $58\%$ of $2000$ draws, reaches $+2.04$ or more in $10.1\%$ of all draws and in $17\%$ of the
+draws that certify anything, and separates the six admissible strata from chance ($p=0.01$) while
+leaving the two admissible positive row sets at chance ($p=0.286$). Under the pre-declared cross-fitted estimator, on
+the $473$ rows it scores, the same relabelling reaches the observed maximum in $13.7\%$ of all draws
+and in $54\%$ of the certifying ones, against $9.4\%$ and $16\%$ for the binning bound on those same
+rows.}}
+\end{table*}
+
+% The solute half of the same fifteen.  Two floats and not one: stacked, the two tabulars and the
+% note block run 201pt past the page.  The notes are Table~\ref{tab:map-article}'s and are not
+% repeated, which is the arrangement the five SI map tables already use.
+\begin{table*}[tp]
+\centering
+\caption[The map, solute axis: the boundable strata]{\textbf{The map, solute axis}: the rest of the fifteen boundable strata, at the same
+estimator cell and under the same rule as Table~\ref{tab:map-article}, whose notes apply here
+unchanged. The alkane row is the second admissible positive row set, and clause~(c) demotes it to
+the glycol ethers.}
+\label{tab:map-article-solute}
+{\scriptsize\linespread{0.96}\selectfont
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.7}
+\input{si_tables/stratified_map_rows_article_solute}}
+\end{table*}
+
 \begin{table*}[tp]
 \centering
 \caption[The map's error, bound and source curve, stratum by stratum]{\textbf{The map's error, bound and source curve}, stratum by stratum, at the same headline
@@ -3364,6 +3420,105 @@ H-bond reading remains the VT-2005-matched set's, neither corroborated nor repla
 The residual's rank ordering, its failure to gain over the free $2002\to2010$ step,
 and the Staverman--Guggenheim counter-test in which the physically \emph{more} complete
 combinatorial term \emph{increases} error on size-asymmetric pairs are in \S\ref{sec:si-correctable}.
+
+% MOVED HERE FROM sections/methods.tex, 2026-08-19 (Tier 2 of the length decision).  The table
+% and its paragraph were 645 words of the article; they sit here beside the fidelity discussion
+% that reads them, and the article keeps the claim they establish with its two limits.
+\subsection{The deployed closure against a published evaluation of the same closure}
+\label{sec:si-closure-anchor}
+Reproducing a reference implementation fixes the code, and it leaves open whether the error this
+paper decomposes is the error a published COSMO-SAC has or something peculiar to this data assembly.
+Table~\ref{tab:closure-anchor} answers that. De Souza et al.\ \cite{desouza2025cosmosac} score the
+original Lin--Sandler COSMO-SAC on the infinite-dilution activity-coefficient database distributed
+with \emph{The Properties of Gases and Liquids}, at AAD $=\Ex|\ln\gamma_{\mathrm{calc}}^\infty
+-\ln\gamma_{\mathrm{exp}}^\infty|$ of $1.75$ with HF-TZVP profiles and $0.68$ with BP-TZVPD-FINE:
+one closure, two profile databases, a factor of $2.6$ between them. An evaluation of COSMO-SAC is
+in that sense an evaluation of the profiles it was handed, which is why $\Bclos$ is defined above on
+the composite of map and profile calculation and not on the kernel. We ran our own differentiable layer
+over the same records (\S\ref{sec:si-repro}), and on AAD it lands inside the
+bracket the published closure spans across profile databases, under both conventions. On $R^2$ it is
+inside in the residual-only convention and level with the bracket's lower end in the full one, the two
+printing alike at $0.88$. Our own two sets are inside on AAD alone, and in the residual-only
+convention only: their $R^2$, $0.61$ and $0.40$, is below the published range. Two limits stay open.
+The profile database is the one axis we
+cannot match, VT-2005 being what this paper deploys and the axis that publication shows dominates.
+And whether the publication's $6977$ points are the same rows as the $7889$ scored here is unproven,
+the record selection not being stated file by file. Subject to those, the closure error decomposed
+in \S\ref{sec:measure} is, in AAD, the error a published COSMO-SAC has. Which half of this paper's chemical
+localisation carries across to that set, on $130$ times the data and someone else's compilation, and
+which half does not, is in \S\ref{sec:badclosure}.
+The same publication scores a later kernel on the same records, and its rows are in the table because
+they put the deployed one in its place: COSMO-SAC-HB2, which types segments as donors or acceptors,
+reaches AAD $0.46$ to $0.48$ at $R^2$ $0.96$ to $0.97$, about half the deployed closure's $0.77$ and
+a third of the $1.75$ that anchors the profile-database bracket. We run the $2002$ kernel
+because it is the one whose differentiable re-implementation can be checked against a public
+reference here, and the results below are substitutions inside a fixed map rather than claims that
+the map is the best available. \S\ref{sec:badclosure} runs the $2002\to2010$ step on our own
+sets and finds the improvement confined to the smaller set's chemistry. Every ceiling this paper
+reports is accordingly this kernel's ceiling and not COSMO-SAC's.
+
+% ---------------------------------------------------------------------------
+% GENERATED by scripts/analysis/run_published_idac_closure_check.py; the full-convention row is
+% added here from the same summary.json (ours.all_scored_records.full). Do not retype a value.
+% This float answers half of the referees' "is your closure normal?" objection -- the data half.
+% The other half, the implementation, is the NIST reproduction in the paragraph above.
+%
+% SET AT \footnotesize ACROSS THE FULL MEASURE, 2026-08-08 (the readability pass).  It used to be a
+% one-column `table' at \scriptsize -- 8 pt, two sizes under the body -- because its widest row is
+% 227 pt of a 240 pt column and does not fit in one column at 10 pt.  A `table*' has 503 pt, so the
+% same seven rows fit at 10 pt with room to spare; the cost is about 7% of a page and the buy is two
+% type sizes.  Do NOT put it back in one column: the only way back is \scriptsize.
+% `p' IS IN THE SPECIFIER because this is now a starred float (see the float note in preamble.tex):
+% a deferred `table*' blocks every starred float after it, and `p' keeps a float page available so
+% the queue cannot back up.
+% THE NOTE KEEPS ONE CLAUSE.  The worst-cell and 298 K arithmetic that used to run on after it is a
+% per-cell reading of the middle block, not something the table cannot say without it; it is in
+% sec:si-repro beside the paragraph that scores that block, and the caption says so.
+% ---------------------------------------------------------------------------
+\begin{table*}[tp]
+\centering
+% THE SECTION REFERENCE LEFT THIS CAPTION, 2026-08-10.  It read "The middle block's per-cell and
+% per-regime values are in \S\ref{sec:si-repro}", which was the only cross-reference in any caption
+% of this document; a caption states what is shown.  Nothing is lost by the deletion: the paragraph
+% above already says "We ran our own differentiable layer over the same records (\S\ref{sec:si-repro})",
+% which is the same destination on the same block, in the sentence that makes the claim.
+\caption{The deployed closure against a published evaluation of the same closure, and this paper's
+own two sets through it. AAD is the mean absolute error in $\ln\gamma^\infty$, $n$ the number of
+scored records.}
+\label{tab:closure-anchor}
+{\footnotesize
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+COSMO-SAC-2002 on & profiles & $n$ & AAD & $R^2$ \\
+\midrule
+\multicolumn{5}{@{}l@{}}{\emph{As published \cite{desouza2025cosmosac}}}\\
+PGL 6th ed.\ IDAC set & HF-TZVP & $6977$ & $1.75$ & $0.88$ \\
+PGL 6th ed.\ IDAC set & BP-TZVPD-FINE & $6977$ & $0.68$ & $0.96$ \\
+\addlinespace[2pt]
+\multicolumn{5}{@{}l@{}}{\emph{A later kernel on the same evaluation \cite{desouza2025cosmosac}}: COSMO-SAC-HB2\tnk{b}}\\
+PGL 6th ed.\ IDAC set & HF-TZVP & $6977$ & $0.48$ & $0.96$ \\
+PGL 6th ed.\ IDAC set & BP-TZVP & $6977$ & $0.48$ & $0.97$ \\
+PGL 6th ed.\ IDAC set & BP-TZVPD-FINE & $6977$ & $0.46$ & $0.97$ \\
+\addlinespace[2pt]
+\multicolumn{5}{@{}l@{}}{\emph{The same set, through this paper's closure}}\\
+\quad full convention\tnk{a} & VT-2005 & $7889$ & $0.98$ & $0.88$ \\
+\quad residual-only & VT-2005 & $7889$ & $0.77$ & $0.92$ \\
+\quad\quad non-aqueous rows & VT-2005 & $4347$ & $0.47$ & $0.68$ \\
+\quad\quad aqueous rows & VT-2005 & $3542$ & $1.13$ & $0.83$ \\
+\addlinespace[2pt]
+\multicolumn{5}{@{}l@{}}{\emph{This paper's own sets, residual-only convention}}\\
+broad IDAC set & UD & $477$ & $1.12$ & $0.61$ \\
+VT-2005-matched set & VT-2005 & $60$ & $0.81$ & $0.40$ \\
+\bottomrule
+\end{tabular}
+\tabnotes{%
+\tnk{a}\,The like-for-like row, a published COSMO-SAC carrying its Staverman--Guggenheim term. The
+residual row is the setting this paper's $\Bclos$ is measured in.\\
+\tnk{b}\,A donor/acceptor-typed hydrogen-bonding kernel, rather than the kernel this paper deploys. Printed
+because it is on the same $6977$ records and beats the deployed closure by a factor of about two.}}
+\end{table*}
 
 One arithmetic sizes the exposure this closure's low fidelity creates, and \S\ref{sec:fidelity}
 states why that exposure is the contribution rather than a qualification of the result. Its working
