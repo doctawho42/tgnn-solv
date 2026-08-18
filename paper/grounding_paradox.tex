@@ -702,14 +702,10 @@ Tabulated substituent constants behave the same way inside a fixed Hammett relat
 equation that predicts how readily an acid gives up its proton from the constants tabulated for its
 substituents.
 
-This article is organised as follows. \S\ref{sec:methods} sets out the composed predictor, the
-identity that divides its error between the fixed model and the inputs, and the estimator for each part.
-It then gives the data, the measurement noise that floors what any predictor can reach, and the evaluation
-protocol. \S\ref{sec:results} reports the signs of the two grounding operations, the division of the
-error on activity-coefficient data and the chemical map it returns, and the drift of the learned
-distribution away from its reference. It then runs the same two measurements on a second fixed model for acid
-dissociation, places our accuracy against published models, and states the limitations of all
-of it. \S\ref{sec:conclusion} states the design rule our measurements support.
+% THE ROADMAP PARAGRAPH WENT, 2026-08-18 (109 words, no numeral, no claim).  It announced the order
+% of the sections and nothing else; every destination it named is reachable from the \S\ref{} that
+% sends the reader there at the point the reader needs it.  It is the cheapest 109 words in the
+% manuscript.  Do not restore it to "orient the reader": the section titles do that work.
 
 \begin{figure*}[t]
 \centering
@@ -1129,54 +1125,36 @@ them.
 % the estimator cell is used by \S\ref{sec:measure} alone, and \S\ref{sec:measure} restates it at
 % its own head.
 
-Which of the two channels the substitution fails through stays open here. Drug-like solutes are
+% LENGTH PASS, 2026-08-18: 363 -> 172 prose words, and NOTHING moved to the Supporting Information.
+% The third paragraph went whole because \S\ref{sec:discussion} already opens with its content --
+% different regimes, largely disjoint chemistry, "remains untested", limitation~(i) -- and six of
+% this subsection's nine assertions were already there.  The three that were not are kept here in
+% full: the ~7-solute both-channel ceiling, WHY the reading is untested (the two terms stay fused on
+% the solubility axis, which is a stronger reason than an empty test), and limitation~(x)'s named
+% run with the two things it needs.  Do not fold the rest into \S\ref{sec:discussion} as well: that
+% subsection states the conclusion and this one states the obstruction, and they are different
+% claims.
+Which of the two channels the substitution fails through stays open. Drug-like solutes are
 essentially absent from the VT-2005 set, so the substitution falls almost entirely on the
 \emph{solvent} channel, and the both-channel substitution the attribution would need covers
-${\approx}7$ solutes. Enlarging that set would mean computing new reference profiles rather than
-looking them up.
+${\approx}7$ solutes; enlarging that set means computing new reference profiles, not looking them
+up.
 
-\emph{Why} the substitution hurts stays open as well. The reading it invites is that
-handing the closure a faithful input surfaces a misspecified map rather than repairing it, so that
-the reference profile is the better input only where the map that consumes it is faithful. That
-reading is untested here, for a stronger reason than a test that came back empty: on the
-solubility axis the two terms of the split stay fused, and the
-solubility axis is where we measured the substitution of \S\ref{sec:paradox}. The quantities the
-reading is about (a fixed map's own error, and what its inputs fail to carry) therefore lie beyond
-observation on the rows \S\ref{sec:paradox}--\S\ref{sec:surrogate} report.
+\emph{Why} it hurts stays open too, and for a stronger reason than a test that came back empty. The
+reading it invites is that handing the closure a faithful input surfaces a misspecified map instead
+of repairing it, so the reference profile is the better input only where the map that consumes it is
+faithful. On the solubility axis the two terms of the split stay fused, and the solubility axis is
+where \S\ref{sec:paradox} measured the substitution, so the quantities that reading is about lie
+beyond observation on those rows. \S\ref{sec:measure} measures a second axis and does not explain
+the first.
 
-\S\ref{sec:measure} measures a second axis rather than explaining the first. It uses a
-different reference database, a different error functional, no trained model at all, and a row set
-disjoint from the rows above. The two are measured in different regimes on largely disjoint
-chemistry, and the measurements in this paper leave them unconnected. Until the connecting experiment is run,
-``the substitution hurts \emph{because} the map is misspecified'' remains untested.
-
-Two experiments would settle it, and both remain to be run. The first is the
-transfer back to the paradox's own regime (finite composition and all $\gamma$, where the
-substitution is measured, rather than infinite dilution, where the split is), which is
-limitation~(i) of \S\ref{sec:discussion} and the principal open question here.
-% SLACK TAKEN, 2026-08-10 (item 5 of the referee round: report the growth, and take slack that costs
-% no claim).  This sentence read "The second is a typed sigma-profile head trained end to end
-% through a modern kernel, which would show whether the substitution's sign survives a closure of
-% different fidelity" -- 24 words that the limitation-(x) discharge below had just restated more
-% precisely, and twice: the head appears in "Both runs need the typed head trained end to end
-% through the 2010 kernel", and the question appears as "whether the solubility paradox survives a
-% 2010/dsp closure is untested", which names the kernel where the deleted clause said "different
-% fidelity".  The requirement is kept, at its one remaining occurrence, and the indefinite article
-% restored there so it still introduces the object.  Nothing else went.
-% LIMITATION (x) PRINTS ITS CONTENT HERE, 2026-08-10 (referee item: the Supporting Information's
-% preamble names (ix), (x) and (xiii) as quantities an article sentence rests on and does not print,
-% and this is the sentence that rests on (x)).  Before this pass the article cited the numeral twice
-% and stated only the second of the limitation's three parts, so a reader could not tell that
-% \Ggap\ is unmeasured under a modern closure at all -- which is what stops the fidelity contrast of
-% \S\ref{sec:fidelity} from being read as a measurement of the paradox under a better closure.  The
-% third part, what each of the two runs needs, is what makes "has not been run" a statement about
-% work rather than about willingness.  Do not compress this back to the numeral.
-The second is limitation~(x), and one part of it sits outside the fidelity
-contrast of \S\ref{sec:fidelity}: that contrast compares \emph{oracle-input}
-activity error across kernels, so $\Ggap$ itself stands measured under no modern closure on either axis,
-and whether the \emph{solubility} paradox survives a 2010/dsp closure is untested. Both runs need a
-typed $\sigma$-profile head trained end to end through the 2010 kernel, and the solubility one
-additionally needs a UD$\,\cap\,$BigSolDB matched set, which is unavailable here.
+Two experiments would settle it and both remain to be run. The first is the transfer back to the
+paradox's own regime, limitation~(i) of \S\ref{sec:discussion} and the principal open question here.
+The second is limitation~(x): the fidelity contrast of \S\ref{sec:fidelity} compares
+\emph{oracle-input} activity error across kernels, so $\Ggap$ itself stands measured under no modern
+closure on either axis, and whether the \emph{solubility} paradox survives a 2010/dsp closure is
+untested. Both need a typed $\sigma$-profile head trained end to end through the 2010 kernel, and
+the solubility one additionally needs a UD$\,\cap\,$BigSolDB matched set, unavailable here.
 
 \subsection{A second axis: bounding a deployed COSMO-SAC against its inputs}
 \label{sec:measure}
@@ -1221,15 +1199,18 @@ part in its inputs, and its output is a map over chemical strata rather than one
 for the reason \S\ref{sec:broad} establishes. It runs on the two data sets of
 Table~\ref{tab:notation}, which we keep apart throughout.
 
-One reading rule governs every margin below. The comparison is one-sided in both directions it can
-be read: a positive margin establishes $\Bclos>\Binsuf$, while a margin at or below zero is a
-failure to separate the two terms and licenses nothing, leaving their equality open. A margin's size
-is a \emph{lower bound} on $\Bclos-\Binsuf$ and not an estimate of it (Lemma~\ref{prop:decomp}), so
-an interval quoted on a margin bounds that bound and not the difference. And $\Bclos$ throughout is
-the error of the fixed map \emph{read at a computed profile}, so a positive margin establishes a
-property of that composite and not of the kernel alone (\S\ref{sec:badclosure}). The one cell serves
-both sets, both kernels and every stratum, so every cell below was fixed before the number it
-returned was seen.
+% COMPRESSED 2026-08-18: this restated Lemma~\ref{prop:decomp}'s one-sidedness, which \S\ref{sec:framework}
+% states and limitation~(iv) restates.  Every clause of the rule survives here in half the words --
+% the positive direction, the lower-bound reading of the size AND of any interval on it, that a
+% margin at or below zero licenses nothing, and that Bclos is the composite's error.  Do not shorten
+% it further: each of those four is the licence for a different sentence of \S\ref{sec:broad}.
+One reading rule governs every margin below, and it is Lemma~\ref{prop:decomp}'s. A positive margin
+establishes $\Bclos>\Binsuf$; its size is a \emph{lower bound} on $\Bclos-\Binsuf$ and not an
+estimate, so an interval on a margin bounds that bound; a margin at or below zero is a failure to
+separate and licenses nothing, leaving their equality open. $\Bclos$ throughout is the error of the
+fixed map \emph{read at a computed profile}, so a positive margin is a property of that composite
+and not of the kernel alone (\S\ref{sec:badclosure}). The one cell serves both sets, both kernels
+and every stratum, so every cell below was fixed before the number it returned was seen.
 
 \subsubsection{The broad IDAC set ($n{=}477$)}
 \label{sec:broad}

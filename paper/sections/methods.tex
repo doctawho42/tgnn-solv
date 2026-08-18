@@ -681,18 +681,23 @@ seed count and the artifact it regenerates from.
 
 \subsection{Estimating the split: one cell, one convention, one rule}
 \label{sec:estimator}
-The instrument we fix in this section is a procedure, and it takes three inputs and nothing else: a
-fixed closure $g$, a table of reference values $\zstar$ its argument can be read at, and
-measurements $m$ of its target on rows where both exist. It returns, per chemically defined row set, the closure's own
-error $\mathrm{MSE}$, an upper bound on what the inputs leave unresolved, the margin between them, a
-cluster interval on that margin, and a verdict of admissible or otherwise with the test that decided it.
-Four analyst choices set the binning bound of Lemma~\ref{prop:decomp}(c) (the bin count, where the
-equal-count bin edges fall, the within-bin variance convention, and the combinatorial convention),
-and we fix all four here, before any margin is reported. One setting of them, together with the choice
-of the row or the molecule pair as the unit, is an \emph{estimator cell}. The four rules below are
-the procedure in full. The map of \S\ref{sec:broad} is what running it on this closure returns.
+% LENGTH PASS, 2026-08-18: the opening announced what the four rules below would do and then the
+% four rules did it, 168 words of scaffolding for 0 numerals.  What it carried that the rules do not
+% -- the three inputs, the five things returned, and that all four analyst choices are fixed BEFORE
+% any margin is reported -- is kept, because the last of those is the pre-commitment the section
+% rests on.
+The instrument is a procedure taking three inputs and no others: a fixed closure $g$, a table of
+reference values $\zstar$ its argument can be read at, and measurements $m$ of its target on rows
+where both exist. Per chemically defined row set it returns the closure's own error $\mathrm{MSE}$,
+an upper bound on what the inputs leave unresolved, the margin between them, a cluster interval on
+that margin, and a verdict of admissible or otherwise with the test that decided it. Four analyst
+choices set the binning bound of Lemma~\ref{prop:decomp}(c) --- the bin count, where the equal-count
+bin edges fall, the within-bin variance convention, and the combinatorial convention --- and we fix
+all four here, before any margin is reported; one setting of them, with the row or the molecule pair
+as unit, is an \emph{estimator cell}. The map of \S\ref{sec:broad} is what running the procedure on
+this closure returns.
 
-\emph{The estimator cell.} Eight equal-count bins of $g(\zstar)$, the \emph{unbiased}
+\paragraph{The estimator cell.} Eight equal-count bins of $g(\zstar)$, the \emph{unbiased}
 (Bessel-corrected) within-bin
 variance, and the row unit, applied identically to every set and every stratum whatever its size.
 The bin count is the choice with the most leverage (it takes the broad set's aggregate margin from
