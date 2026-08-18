@@ -601,106 +601,106 @@ closure reverses the substitution's sign in distribution, where its constants su
 % in step.
 \section{Introduction}
 \label{sec:intro}
-How much of a solid dissolves in a given liquid decides whether a drug can be formulated as a
-tablet or an injection, which solvent a crystallisation is run in, and how a product is purified.
-Each value has to be measured one solute, one solvent and one temperature at a time. Most
-industrially relevant combinations therefore remain unmeasured, and independent determinations of
-the same system disagree by enough to floor what any predictor can achieve. Dissolving a solid also
-trades the cost of breaking up a crystal against the cost of mixing the freed molecules into the
-solvent. A predictor has to be right about two unrelated kinds of chemistry at once, on molecules
-unlike any it was shown.
+% COMPACTION PASS, 2026-08-18: 1262 -> ~860 prose words, and NO claim and NO citation left.  The
+% Introduction was 98% numberless sentences, 1200 words of them, the largest such pool in the body
+% and the one section earlier passes had not touched.  Every \cite key that stood here still stands
+% here -- checked as a set, not by eye -- and every assertion survives; what went is the connective
+% tissue between them.  Do not re-expand it to "let the argument breathe": the argument is the
+% sentences, not the joins.
+How much of a solid dissolves in a given liquid decides whether a drug is formulated as a tablet or
+an injection, which solvent a crystallisation runs in, and how a product is purified. Each value is
+measured one solute, one solvent and one temperature at a time, so most industrially relevant
+combinations remain unmeasured, and independent determinations of the same system disagree by enough
+to floor what any predictor can achieve. Dissolving a solid also trades the cost of breaking a
+crystal against the cost of mixing the freed molecules into the solvent, so a predictor must be
+right about two unrelated kinds of chemistry at once, on molecules unlike any it was shown.
 
 Predictors divide by how much physical structure they impose. Direct models regress solubility from
-descriptors or from a representation learned off the molecular graph. FastSolv \cite{osanloo2024}
-does so with a deep neural network and leads on extrapolation to new solutes. Such models are the
-more accurate there, and they are opaque: the prediction arrives as a single number, silent about
-which part of the chemistry it captured. Physics-informed models instead predict the thermodynamic
-quantities the physical picture names (an activity coefficient for the solute--solvent interaction,
-a melting temperature and heat of fusion for the crystal) and combine them through a fixed
-equation. SolProp \cite{vermeire2022solprop} does that with a thermodynamic cycle of separately learned
-components. What that buys is decomposability: each part is a quantity chemists tabulate on its own,
-so it can be supervised against reference data that a direct regressor is unable to use. On accuracy the
-black box leads and the physics-informed cycle trails it. Learned surrogates for the activity
-coefficient have advanced quickly, and they split the same way. Winter et al.\ \cite{winter2022} predict
-\lngi\ from SMILES with a language model, and Sanchez-Medina et al.\ \cite{sanchezmedina2023} and
-Wang et al.\ \cite{wang2026ghgeat} embed a
-Gibbs--Helmholtz constraint in a graph network for its temperature dependence. All three make the
-activity coefficient the regression target. A second line keeps a mechanistic model and
-learns its input instead. COSMO-SAC \cite{lin2002} is a segment-activity reformulation of Klamt's COSMO-RS.
-The $\sigma$-profile it consumes (the screening-charge density over a molecule's cavity) is that
-framework's construct, tabulated from quantum chemistry \cite{mullins2006}. Predicting it from
+descriptors or from a representation learned off the molecular graph; FastSolv \cite{osanloo2024}
+does so with a deep neural network and leads on extrapolation to new solutes. They are the more
+accurate there and they are opaque, the prediction arriving as a single number, silent about which
+part of the chemistry it captured. Physics-informed models instead predict the quantities the
+physical picture names---an activity coefficient for the solute--solvent interaction, a melting
+temperature and heat of fusion for the crystal---and combine them through a fixed equation, as
+SolProp \cite{vermeire2022solprop} does with a thermodynamic cycle of separately learned components.
+That buys decomposability: each part is a quantity chemists tabulate on its own, so it can be
+supervised against reference data a direct regressor cannot use. On accuracy the black box leads and
+the physics-informed cycle trails it. Learned surrogates for the activity coefficient split the same
+way: Winter et al.\ \cite{winter2022} predict \lngi\ from SMILES with a language model, and
+Sanchez-Medina et al.\ \cite{sanchezmedina2023} and Wang et al.\ \cite{wang2026ghgeat} embed a
+Gibbs--Helmholtz constraint in a graph network for its temperature dependence, all three making the
+activity coefficient the regression target. A second line keeps a mechanistic model and learns its
+\emph{input}. COSMO-SAC \cite{lin2002} is a segment-activity reformulation of Klamt's COSMO-RS, and
+the $\sigma$-profile it consumes---the screening-charge density over a molecule's cavity---is that
+framework's construct, tabulated from quantum chemistry \cite{mullins2006}; predicting it from
 structure removes that calculation from the pipeline. TeNNet-SAC \cite{yang2025tennet} does so while
 also learning the segment-activity kernel and the cavity geometry, and reports accuracy better than
-COSMO-SAC's after end-to-end fine-tuning. That is the opposite headline from this one, on the same broad
+COSMO-SAC's after end-to-end fine-tuning---the opposite headline from this one, on the same broad
 construction, and we set the two side by side in \S\ref{sec:surrogate}.
-% HANNA MOVED HERE FROM \S\ref{sec:surrogate}, 2026-08-18, by the length pass, and NOT to
-% sections/related-work.tex, which neither document \input{}s -- a first attempt sent it there and
-% took a 2024 Chem. Sci. design and its bibliography entry out of the compiled article without any
-% gate noticing.  This is where the manuscript lays out the design space (the comment above the
-% Introduction records that paragraphs 2-4 are its related-work section), so this is where the third
-% design belongs.
-A third design removes the intermediate rather than predicting it: HANNA \cite{specht2024hanna}
-parameterises the excess Gibbs energy directly from SMILES with no quantum chemistry, hard-coding
-the pure-component limit, the Gibbs--Duhem relation and permutation symmetry in the architecture
-rather than in the loss, and reports higher accuracy than UNIFAC over $317{,}421$ mixture points.
-Between them the two published designs bracket what this work measures: admissibility can be bought
-with quantum labels or built into the functional form, and this model does neither.
+
+% HANNA MOVED HERE FROM \S\ref{sec:surrogate}, 2026-08-18, and NOT to sections/related-work.tex,
+% which neither document \input{}s -- a first attempt sent it there and took a 2024 Chem. Sci.
+% design and its bibliography entry out of the compiled article without any gate noticing.
+A third design removes the intermediate: HANNA \cite{specht2024hanna} parameterises the excess Gibbs
+energy directly from SMILES with no quantum chemistry, hard-coding the pure-component limit, the
+Gibbs--Duhem relation and permutation symmetry in the architecture rather than the loss, and reports
+higher accuracy than UNIFAC over $317{,}421$ mixture points. The two published designs bracket what
+this work measures: admissibility can be bought with quantum labels or built into the functional
+form, and this model does neither.
 
 When a fixed physical structure improves or degrades a learned model is the broader question of
-physics-informed machine learning \cite{karniadakis2021}. Its dominant forms impose structure as a
+physics-informed machine learning \cite{karniadakis2021}, whose dominant forms impose structure as a
 differentiable object: a governing equation enforced through the loss \cite{raissi2019}, gray-box
 hybrids composing learned components with fixed mechanistic maps \cite{willard2022}, and operator
-learning with a trainable correction to a misspecified equation \cite{ma2026}. The prevailing
-expectation is that more physics improves generalisation, yet the same structure has documented
-failure modes in which it makes optimisation or accuracy worse \cite{krishnapriyan2021}. In neural
-PDE solvers, a learnable term added to a fixed discretised operator absorbs truncation artifacts
-rather than physics, so the apparent interpretability is illusory \cite{mohan2024} (though that
-error source is numerical, which puts it beyond external reference). The same concern appears in
-\emph{concept-bottleneck models}: networks routed through a layer of named, human-interpretable
-concepts, so that those concepts are the whole of what the prediction is made from. That is the same
-shape as a learned intermediate feeding a fixed physical map, and there the failure is called
-\emph{concept leakage}: a learned concept silently encodes information
-beyond its nominal meaning \cite{mahinpei2021,margeloiu2021,havasi2022}. Recent work traces one
-route to it to the downstream model. A misspecified head forces the encoder to deform the concept
-into carrying a dependence beyond that head's representational reach \cite{parisini2025}, and overwriting a frozen
-head's leaked concepts with ground truth can then degrade accuracy \cite{espinosa2025leakage}. The
-gap between a fixed physical map and reality is the model-discrepancy problem of Kennedy and O'Hagan
-\cite{kennedy2001} and its calibration critique \cite{brynjarsdottir2014}. Four further
-literatures (forecast decomposition, quasi-maximum likelihood, identifiability, and the validity of
-composed pipelines) supply pieces we use below.
+learning with a trainable correction to a misspecified equation \cite{ma2026}. More physics is
+expected to improve generalisation, yet the same structure has documented failure modes in which it
+makes optimisation or accuracy worse \cite{krishnapriyan2021}. In neural PDE solvers a learnable
+term added to a fixed discretised operator absorbs truncation artifacts instead of physics, so the
+apparent interpretability is illusory \cite{mohan2024}---though that error source is numerical,
+which puts it beyond external reference. The same concern appears in \emph{concept-bottleneck
+models}, networks routed through a layer of named, human-interpretable concepts that are the whole
+of what the prediction is made from. That is the shape of a learned intermediate feeding a fixed
+physical map, and there the failure is \emph{concept leakage}: a learned concept silently encodes
+information beyond its nominal meaning \cite{mahinpei2021,margeloiu2021,havasi2022}. One route to it
+runs through the downstream model, a misspecified head forcing the encoder to deform the concept
+into carrying a dependence beyond that head's reach \cite{parisini2025}, after which overwriting a
+frozen head's leaked concepts with ground truth can degrade accuracy \cite{espinosa2025leakage}. The
+gap between a fixed physical map and reality is the model-discrepancy problem of Kennedy and
+O'Hagan \cite{kennedy2001} and its calibration critique \cite{brynjarsdottir2014}. Four further
+literatures---forecast decomposition, quasi-maximum likelihood, identifiability, and the validity of
+composed pipelines---supply pieces we use below.
 
 The design rests on an assumption rarely stated because it is taken for self-evident: a model
-supplied with physical inputs closer to their true values predicts better. For one class of
-intermediate that assumption can be tested outright, because a reference value is tabulated and can be handed
-to the model in place of the one it computed. It needs testing. When a predictor of this
-shape is inaccurate, either the fixed physical model is wrong or the learned quantities feeding it
-are uninformative, and the two call for opposite remedies. What this literature lacks is a way to
-\emph{measure}, rather than diagnose, which of the two limits a composed predictor's accuracy, and
-whether the learned intermediate has stopped reporting the quantity it is named after. In the
-concept-bottleneck case the external reference that would settle either question is missing.
-We supply one here (a reference $\sigma$-profile for solubility, tabulated substituent
-constants for a second chemical domain) and hold the mechanistic model fixed, so the tabulated
-value stays available as an external reference for the learned one.
+supplied with physical inputs closer to their true values predicts better. It needs testing, and for
+one class of intermediate it can be tested outright, because a reference value is tabulated and can
+be handed to the model in place of the one it computed. When a predictor of this shape is
+inaccurate, either the fixed physical model is wrong or the learned quantities feeding it are
+uninformative, and the two call for opposite remedies. What this literature lacks is a way to
+\emph{measure}, rather than diagnose, which of the two limits accuracy, and whether the learned
+intermediate has stopped reporting the quantity it is named after; in the concept-bottleneck case
+the external reference that would settle either question is missing. We supply one---a reference
+$\sigma$-profile for solubility, tabulated substituent constants for a second chemical domain---and
+hold the mechanistic model fixed, so the tabulated value stays available as an external reference
+for the learned one.
 
 Here a graph neural network predicts the pair of charge-density distributions COSMO-SAC consumes, in
 place of the quantum-chemical calculation that ordinarily supplies them. The tabulated counterpart
-can enter at either of two points: as a target the network is trained toward, or as a replacement for
-what the network computed at the moment of prediction (Fig.~\ref{fig:overview}). Those two entry
-points are the two operations the word \emph{grounding} names, and here only one of them carries a
-sign. Training the network toward the reference moves the error four ways out of five and the fifth
-the other way; supplying the reference at the moment of prediction raises it at every seed. Tabulated profiles serve a third purpose on activity-coefficient
-data, where they divide the error of a fixed model between the model itself and the inputs handed to
-it. Solubility withholds that division, because a
-solubility measurement constrains the crystal and the mixing contributions jointly and leaves the
-blame between them unassigned. What the division returns is a map rather than a verdict: one answer
-per stratum, a stratum being a chemically defined set of rows. Whether a
-fixed model's own error stands above what its inputs fail to carry is a property of the chemistry the
-model is asked about. Where it does stand above, a more accurate input exposes the model's bias
-instead of removing it. The learned distribution meanwhile drifts away from its tabulated counterpart
-along a direction shared across molecules, and stops reporting the quantity it is named after.
-Tabulated substituent constants behave the same way inside a fixed Hammett relation, the linear
-equation that predicts how readily an acid gives up its proton from the constants tabulated for its
-substituents.
+enters at either of two points: as a target the network is trained toward, or as a replacement for
+what the network computed at the moment of prediction (Fig.~\ref{fig:overview}). Those are the two
+operations the word \emph{grounding} names, and only one of them carries a sign. Training toward the
+reference moves the error four ways out of five and the fifth the other way; supplying it at the
+moment of prediction raises the error at every seed. Tabulated profiles serve a third purpose on
+activity-coefficient data, where they divide the error of a fixed model between the model itself and
+the inputs handed to it. Solubility withholds that division, a solubility measurement constraining
+the crystal and the mixing contributions jointly and leaving the blame between them unassigned. What
+the division returns is a map and not a verdict, one answer per stratum, a stratum being a
+chemically defined set of rows: whether a fixed model's own error stands above what its inputs fail
+to carry is a property of the chemistry the model is asked about, and where it does stand above, a
+more accurate input exposes the model's bias instead of removing it. The learned distribution
+meanwhile drifts from its tabulated counterpart along a direction shared across molecules, and stops
+reporting the quantity it is named after. Tabulated substituent constants behave the same way inside
+a fixed Hammett relation, the linear equation predicting how readily an acid gives up its proton
+from the constants tabulated for its substituents.
 
 % THE ROADMAP PARAGRAPH WENT, 2026-08-18 (109 words, no numeral, no claim).  It announced the order
 % of the sections and nothing else; every destination it named is reachable from the \S\ref{} that
