@@ -1,3 +1,110 @@
+% MOVED HERE FROM THE ARTICLE'S \S\ref{sec:pka-main}, 2026-08-19 (tier 1 of the length
+% decision): the second domain's full construction and results.  The article keeps the claim,
+% the flip with both gaps, and the two mandated protocol clauses; everything that evidences
+% them is here.  This subsection is the destination \S\ref{sec:pka-main} points at.
+\subsection{The second domain in full: construction, bounds, and the reversal}
+\label{sec:si-pka-main}
+The instrument generalises beyond COSMO-SAC, and a second domain runs it where the sign of grounding
+can be predicted before the measurement. The closure is a Hammett linear free-energy relationship
+$g(\zstar)=\mathrm pK_{a,0}-\rho\,\hammett^\star$, with $\mathrm pK_{a,0}$ and $\rho$ the tabulated
+Hansch--Leo--Taft constants of the reaction series, one literature pair per scaffold: $(4.20,1.00)$
+benzoic acid, $(9.99,2.23)$ phenol, $(4.60,2.77)$ anilinium, $(5.25,5.90)$ pyridinium. Those pairs
+are literature values, unfitted on these data, so $g$ is fixed in the sense
+Lemma~\ref{prop:decomp} requires and the same $g$ runs inside every split. It reads two things, so
+$\zstar$ is the pair $(s,\hammett^\star)$: the series $s$, which selects that literature pair, and
+the substituent constant. The constant is the one learned quantity, the intermediate
+$\hat\sigma_{\mathrm H}$ being it predicted from structure. The external reference is the
+Hansch--Leo table \cite{hansch1991survey} and the data are the OPERA compilation
+\cite{mansouri2019opera} under a uniform, closure-independent quality filter
+(\S\ref{sec:si-pka}).
+
+A rule that reads structure alone, never the residual, assigns the reference constant and thereby
+defines two poles. $\hammett^\star$ is the sum over substituted ring positions of that substituent's
+tabulated constant at that position, $\sigma_m$ meta and $\sigma_p$ para, from a fixed list of
+nineteen; an ortho position, and a substituent outside the list, enter as zero. The \emph{clean}
+pole is the $158$ records whose every substituted position is meta or para with a tabulated
+substituent. The \emph{degraded} pole is the $846$ where at least one is neither ($571$ ortho, $275$
+untabulated), and there $\hammett^\star$ is a partial sum over the positions the table can see. The
+split cuts across benzenoid and heteroaromatic alike, all four series occurring on both sides, $32$
+of the clean pole's records being pyridinium.
+
+The relation's two classic failure modes fall onto the two channels of Lemma~\ref{prop:decomp}:
+\emph{resonance saturation}, a curvature beyond a linear closure, lands in $\Bclos$, and what the
+zeroed positions carry (ortho field and steric effects, and whatever an untabulated substituent
+contributes) is information the intermediate lacks and lands in $\Binsuf$. On the clean pole, the
+chemistry the relation was built for, the closure predicts to RMSE $0.55$ and the two available
+bounds on $\Bclos$ disagree. The binning-free floor $\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ is $-0.2$
+($95\%$ CI $[-0.4,-0.0]$) and establishes nothing: the out-of-fold $\Binsuf^{\mathrm{up}}$ is
+$0.500$ against an $\mathrm{MSE}$ of $0.302$, a difference negative whatever the closure, which says
+that a flexible regressor on the closure's own argument predicts worse than the closure does. The
+Lemma~\ref{prop:decomp}(b) bound runs the other way and is informative: the per-scaffold systematic
+offsets reach $0.429$ in $\mathrm pK_a$ on phenol, and the $n$-weighted mean of their squares bounds
+$\Bclos$ below at $0.083$, $27\%$ of the pole's total. At least a quarter of the clean pole's error
+is closure error, so its specification stays in doubt. On the degraded pole the closure reaches RMSE
+$2.26$, of which the out-of-fold within-series regressor places at most $4.5$ of the $5.1$ total in
+input insufficiency and hence at least $0.6$ in the closure, both one-sided and in the same
+direction as the solubility bounds.
+
+Two properties of that estimator carry into how the poles may be read. It differs from the eight-bin
+cell of \S\ref{sec:estimator}, and the functional differs too: these are \emph{floors}
+$\mathrm{MSE}-\Binsuf^{\mathrm{up}}$ on $\Bclos$, establishing $\Bclos>0$ when positive, and not the
+separation margin $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$ of Table~\ref{tab:notation}, which would
+establish the stronger $\Bclos>\Binsuf$. And conditioning on $s$ is forced, not a conservative
+choice: pool the four series and the same estimator returns $8.3$ against the degraded pole's
+$\mathrm{MSE}$ of $5.1$, under which $g$ is unmeasurable, Lemma~\ref{prop:decomp} withholds its
+licence, and the floor it leaves is vacuous anyway. The folds are free of the leakage
+\S\ref{sec:broad} refuses a fitted estimator for on solubility: the regressor reads
+$\hammett^\star$ within a series and nothing besides, so a fold hands it only what the closure's own
+argument already carries. The quality filter is closure-independent (net formal charge $\neq0$,
+applied to both poles, blind to any residual) and drops five pre-ionized microstates, and it decides
+the clean pole's level: it moves that pole by a factor of eleven in $\mathrm{MSE}$, $3.33$ to
+$0.30$, and leaves the degraded pole where it was, so a large part of the poles' separation in level
+is the filter's. On the $163$ rows before it the same floor is $+0.55$ rather than $-0.2$, positive,
+establishing $\Bclos>0$ by the other route as well.
+
+The decisive test is the same oracle swap, measured \emph{in-distribution} across $K{=}20$
+within-scaffold splits: the learned $\hat\sigma_{\mathrm H}$ replaced by the tabulated
+$\sigma_{\mathrm H}^\star$ in the same closure, the series label read from structure in both arms so
+the swap moves one coordinate of $\zstar$. It flips. On the clean pole the reference \emph{improves}
+accuracy, MAE $0.48$ learned against $0.315$ with the reference, a gap of $-0.165$ at a $90\%$ CI of
+$[-0.28,-0.04]$, better in $19$ of $20$ splits and in three of the four series: an internal positive
+control on real data, and one on the swap's \emph{sign} and not on the closure's specification,
+since the bound above puts at least a quarter of that pole's error in the closure. On the degraded
+pole the same swap \emph{degrades} it, $0.83$ against $1.62$, worse in $20$ of $20$ splits and in
+all four series, a gap of $+0.79$ $[{+}0.57,{+}0.95]$, the freely learned constant absorbing what
+the zeroed positions carry and the tabulated one lacks. The sign of grounding reverses inside one
+closure, in the direction the poles' construction fixes in advance: which ring positions the
+Hansch--Leo table can see, complete on one pole and a partial sum on the other.
+Remark~\ref{prop:tax} supplies the vocabulary and not the prediction.
+
+That the reversal runs through the insufficiency channel, and not through the closure-error
+cancellation of \S\ref{sec:surrogate}, is unsupported on the clean side, where the bound above
+leaves at least $27\%$ of the error in the closure. On the degraded side it rests on the flip itself
+and on how the pole is built; the Jensen bound adds only compatibility, leaving at most $87\%$ of
+the error in insufficiency, and an upper bound is as consistent with none of it as with all. The
+out-of-fold regressor answers the same question on the same pole at $4.5$ of the $5.1$ and is an
+upper bound too, so the two agree while leaving the attribution to rest elsewhere. A competence
+sweep adds that the oracle side of the comparison holds fixed across the training budget while the
+learned side moves: the learned arm stays above the clean pole's threshold ($\approx0.315$) at all
+four budgets swept, and beats the degraded pole's ($1.62$) across the whole interpolation range,
+down to $12\%$ of the data, grounding reverting to helping only under scaffold \emph{extrapolation}
+where the learned constant breaks ($2.6{\pm}2.0$) back above the threshold, in the mean over six
+splits, three of which still have grounding hurting (\S\ref{sec:pka}).
+
+\textbf{The flip is an in-distribution result and the scaffold protocol does
+not certify it.} Re-running the same $K{=}20$ certification on a scaffold split rather than a
+stratified one, the reference helps on \emph{both} poles: the clean pole's gap is $-0.61$ and the
+degraded pole's $-1.10$, with a series-cluster interval of $[-1.86,+0.37]$ and $P=0.28$ there, so
+the degraded pole's ``grounding hurts'' half fails to certify, and so does the reversal.
+We measure every solubility result in this paper on a scaffold split, and this is the one place the
+protocol changes. What the scaffold run confirms is the mechanism and not the flip: the learned
+constant breaks under extrapolation and rises above the oracle threshold on both poles. The
+clustering unit is the Hammett reaction series, of which only $G{=}4$ exist, so the bootstrap
+resolves series-level sign agreement and nothing finer, read as a sign test on four units:
+$p{=}1/16$ on the degraded pole, where all four series agree that grounding hurts, and
+$p\approx0.31$ on the clean one, where three do. That test carries the degraded pole and not the
+positive control, which rests on its splits and its gap instead.
+
 \section{The pKa closure: full construction, measured sweep, and trained comparison}
 \label{sec:si-pka}
 % MERGED 2026-08-10.  A one-page \section of its own (sections/pka-domain.tex) used to stand
