@@ -1294,7 +1294,17 @@ $23$ bins giving $+2.17$ residual-only and $+2.36$ full. The pair unit, $n{=}43$
 positive in all $40$ of the cells it defines, $[+1.41,+2.83]$ residual-only and $[+1.69,+3.10]$
 full. Across the $36$ cells of the sweep where the leave-one-publication-out test can be run at
 all, the sign survives every deletion in all $36$, the worst leaving $+1.08$. Neither the sign nor
-the admissibility of that stratum is a property of the bin count. The other two admissible row sets
+the admissibility of that stratum is a property of the bin count.
+% MIGRATED FROM THE ARTICLE 2026-08-17 (SI-offload pass, plan 1 item 3).  The article kept the
+% outcome -- the sign survives all four deletions, the magnitude spans a factor of two, and the
+% shortest oligomer sets it -- and the curve itself was unique to the article, so it lands here
+% rather than being deleted.
+The same stratum under solvent deletion. Leaving one glycol out at a time the margin reads
+$+1.72$, $+1.94$, $+2.05$ and $+2.29$; taken one at a time it reads $+3.17$, $+2.44$, $+1.71$ and
+$+1.21$ on $41$, $36$, $56$ and $49$ rows, monotone in chain length. Diethylene glycol's $36$ rows
+sit below the $n\ge40$ boundability threshold, so that single-solvent cell is reported and not
+bounded. The spread across these four, and not the bootstrap interval at any one of them, is the
+honest width on the solvent axis. The other two admissible row sets
 behave differently and are reported here rather than left out: the acceptor-only aprotics are
 non-positive in every cell of the same grid, $[-0.55,-0.03]$ over the $44$ its $n{=}57$ defines,
 which licenses nothing by one-sidedness; and the alkane solutes are positive in all $56$ row-unit
@@ -1608,7 +1618,9 @@ H-bond term acts on---then dominant functional group. \emph{(1)~water} ($111$ ro
 only liquid whose entire surface is H-bond active, with $\sigma$-profile mass at both extremes and
 the smallest cavity of any of them, so the Staverman--Guggenheim term is at its most extreme and the
 two combinatorial conventions disagree most. \emph{(2)~glycol ether}, at least one O--H and at least
-two oxygens: the ethylene-glycol oligomers ($182$ / $43$), donor and acceptor on one flexible chain,
+two oxygens: the ethylene-glycol oligomers ($182$ / $43$), whose rows are $108$ alkane, $48$
+aromatic hydrocarbon, $24$ alkene and $2$ halogenated aromatic, $175$ of the $182$ measured
+chromatographically; donor and acceptor on one flexible chain,
 so intramolecular H-bonds form and the profile is conformer-dependent---the documented worst case for
 a model that scores one gas-phase conformer as a bag of independent surface segments with no memory
 of connectivity. \emph{(3)~mono-alcohol}, exactly one O--H, exactly one O, no N, no halogen ($35$ /
@@ -1930,7 +1942,8 @@ its overlap with the others. Ten of the map's $43$ row sets are row-identical un
 name. A bootstrap seeded from the name would draw an independent replicate for each of them, and
 the resulting intervals would sit side by side in these tables as though they were separate
 measurements; the seed is a function of the row set, so one draw serves all of a row set's names
-and each printed row carries the row-set identity the deposited record keys on.
+and each printed row carries the row-set identity the deposited record keys on. The $\pm0.02$ of Monte-Carlo
+spread at $3000$ draws quoted for this cell belongs to this cell and is not a property of the map.
 \input{si_tables/map_ci_body}
 The whole-set row of
 Table~\ref{tab:map-xtab} is the aggregate this work declines to state, printed with the rest.
