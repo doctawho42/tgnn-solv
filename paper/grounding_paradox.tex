@@ -633,6 +633,18 @@ structure removes that calculation from the pipeline. TeNNet-SAC \cite{yang2025t
 also learning the segment-activity kernel and the cavity geometry, and reports accuracy better than
 COSMO-SAC's after end-to-end fine-tuning. That is the opposite headline from this one, on the same broad
 construction, and we set the two side by side in \S\ref{sec:surrogate}.
+% HANNA MOVED HERE FROM \S\ref{sec:surrogate}, 2026-08-18, by the length pass, and NOT to
+% sections/related-work.tex, which neither document \input{}s -- a first attempt sent it there and
+% took a 2024 Chem. Sci. design and its bibliography entry out of the compiled article without any
+% gate noticing.  This is where the manuscript lays out the design space (the comment above the
+% Introduction records that paragraphs 2-4 are its related-work section), so this is where the third
+% design belongs.
+A third design removes the intermediate rather than predicting it: HANNA \cite{specht2024hanna}
+parameterises the excess Gibbs energy directly from SMILES with no quantum chemistry, hard-coding
+the pure-component limit, the Gibbs--Duhem relation and permutation symmetry in the architecture
+rather than in the loss, and reports higher accuracy than UNIFAC over $317{,}421$ mixture points.
+Between them the two published designs bracket what this work measures: admissibility can be bought
+with quantum labels or built into the functional form, and this model does neither.
 
 When a fixed physical structure improves or degrades a learned model is the broader question of
 physics-informed machine learning \cite{karniadakis2021}. Its dominant forms impose structure as a
