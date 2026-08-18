@@ -17,40 +17,40 @@
 %       scaffold share at the solute ceiling is close to arithmetic.  A caveat that can turn
 %       the claim over does not belong behind a cross-reference.  Do not compress either back
 %       into a pointer.
+% LENGTH PASS, 2026-08-18: 485 -> 305 prose words.  Every claim is kept and the apparatus goes to
+% \S\ref{sec:si-blackbox}, which carries the full tables, the controls, the direct within-scaffold
+% measure and the temperature probe.  WHAT MAY NOT GO, and did not: that the negative falls short of
+% an exclusion and the level below which it excludes nothing is UNCOMPUTED; that no power
+% calculation was run; that each measured value sits at or below its own null's ceiling; that the
+% between-seed spread is NOT compared with the null's support; the effective n of 13 clusters; and
+% that the scaffold-share reading is weak evidence rather than a measurement, on a split where the
+% two partitions nearly coincide by construction.
 \paragraph{The unconstrained control's representation.} If the physics arm's intermediate is a
 surrogate, the thermodynamics might still be present implicitly in the control, which is free to
-represent it. It is absent. Our ridge probe of the control's pair representation recovers the model's
-own prediction at $R^{2}=0.98$ and leaves the measured ideal-solubility term unrecovered. We score it
-on $13$ held-out
-solutes / $527$ rows at zero solute overlap, and that term is $92.2\%$ between-solute variance, so
-the effective $n$ is $13$ clusters rather than $527$ rows. The three seeds give
-$R^{2}=-0.506/{+}0.111/{+}0.027$
-at $42/43/44$, with permutation $p=0.894/0.055/0.177$ against a $1000$-draw null. Their between-seed
-range of $0.616$ (sd $0.334$) exceeds any one of the three values, so a single seed would have
+represent it. It is absent. A ridge probe of the control's pair representation recovers the model's
+own prediction at $R^{2}=0.98$ and leaves the measured ideal-solubility term unrecovered, scored on
+$13$ held-out solutes over $527$ rows at zero solute overlap; that term is $92.2\%$ between-solute
+variance, so the effective $n$ is $13$ clusters. The three seeds give
+$R^{2}=-0.506/{+}0.111/{+}0.027$, with permutation $p=0.894/0.055/0.177$ against a $1000$-draw null,
+and their between-seed range of $0.616$ exceeds any one of the three, so a single seed would have
 been unreadable and seed $43$ alone would have read as a near-miss. The negative therefore falls
-short of an exclusion, and we leave uncomputed the level below which it excludes nothing. What
-the deposit does fix is the null's shape: its $95$th percentile is $0.105/0.117/0.096$ over $1000$
-draws and its maximum $0.316/0.380/0.346$, and each of the three measured values sits at or below its
-own null's ceiling (which is what the three permutation $p$ above say in another currency). The
-design therefore excludes nothing below that ceiling, and we ran no power calculation to say how far
-above it the design reaches. We draw no comparison between the between-seed spread and the null's
-support: the null is two-sided and reaches below the lowest measured value, so its support is the
-wider of the two.
-That is limitation~(ix), and two things fix its
-size rather than the encoder's. The $13$ solutes are capped where they are by the reference scarcity
-of \S\ref{sec:data}, and the temperature probe rests on the same $13$. And the
-crystal-slope test is capped by the corpus rather than by the probe: this corpus's empirical
-$\lnx$-against-$1/T$ slope carries $-\dHfus/\Rgas$ at $r=+0.24$, so the quantity the probe is asked
-to find is itself weakly present in the labels it is scored against. What the representation is organised
-by instead is scaffold identity, whose share of the representation's variance sits at the
-solute-identity ceiling. That holds on a split where the two partitions nearly coincide by
-construction, $11$ of the $124$ test scaffolds holding more than one solute. They agree on $91\%$ of
-the data, so a share at that ceiling is weak evidence of within-scaffold indistinguishability rather
-than a measurement of it. A test
-molecule on an unseen scaffold is a point off the axis the
-representation is organised along rather than a small extrapolation. That is a description of this
-representation rather than a diagnosis
-of the encoder, which the linear probe of \S\ref{sec:supporting} leaves unsupplied.
-The full tables, the controls, the direct
-within-scaffold measure on the solutes that do share one, and the temperature probe are in
-\S\ref{sec:si-blackbox}.
+short of an exclusion, and the level below which it excludes nothing is uncomputed. What the deposit
+fixes is the null's shape: each measured value sits at or below its own null's $95$th percentile
+($0.105/0.117/0.096$), which is what the three $p$ say in another currency, so the design excludes
+nothing below that ceiling and we ran no power calculation to say how far above it the design
+reaches. We draw no comparison between the between-seed spread and the null's support, the null
+being two-sided and reaching below the lowest measured value.
+
+That is limitation~(ix), and two things fix its size rather than the encoder's: the $13$ solutes are
+capped by the reference scarcity of \S\ref{sec:data}, and the crystal-slope test is capped by the
+corpus, whose empirical $\lnx$-against-$1/T$ slope carries $-\dHfus/\Rgas$ at only $r=+0.24$, so the
+quantity the probe is asked to find is itself weakly present in the labels it is scored against.
+What the representation is organised by instead is scaffold identity, whose share of the
+representation's variance sits at the solute-identity ceiling---weak evidence of within-scaffold
+indistinguishability and not a measurement of it, since the two partitions nearly coincide by
+construction on this split, $11$ of the $124$ test scaffolds holding more than one solute and the
+two agreeing on $91\%$ of the data. A test molecule on an unseen scaffold is then a point off the
+axis the representation is organised along, which describes this representation and does not
+diagnose the encoder, a diagnosis the linear probe of \S\ref{sec:supporting} leaves unsupplied. The
+full tables, the controls, the direct within-scaffold measure on the solutes that do share one, and
+the temperature probe are in \S\ref{sec:si-blackbox}.

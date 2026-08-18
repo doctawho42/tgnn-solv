@@ -1046,12 +1046,12 @@ input swapped at evaluation; we ranked no arm that had trained on the reference 
 co-adaptation would do to an ordering stays unmeasured here.
 We group the labelled test rows by solute and temperature and rank the solvents inside each group
 ($823$ groups over $107$ solutes; Table~\ref{tab:ranking}). The mean per-solute Spearman correlation
-then falls from $0.474/0.612/0.596/0.515/0.556$ to $0.361/0.399/0.365/0.343/0.362$ across the five
-seeds, pooled $-0.185$ $[-0.27,-0.11]$, every per-seed interval excluding zero. Four of the five
-falls exceed any difference between seed replicates of a single arm on this measure, the largest of
-which is $0.132$; the fifth, at seed $42$, is $0.114$ and does not, so at that seed the fall is
-inside the spread a single arm shows between its own seeds. The deposit carries that benchmark for
-the rank correlation, so we read it against that measure and leave the two below unbenchmarked.
+then falls, pooled over the five seeds, by $-0.185$ $[-0.27,-0.11]$, every per-seed interval
+excluding zero (Table~\ref{tab:ranking} gives the arms seed by seed). Four of the five falls exceed
+any difference between seed replicates of a single arm on this measure, the largest of which is
+$0.132$; the fifth, at seed $42$, is $0.114$ and does not, so at that seed the fall sits inside the
+spread one arm shows between its own seeds. The deposit carries that benchmark for the rank
+correlation alone, so we read it against that measure and leave the two below unbenchmarked.
 Every interval here is a $95\%$ percentile bootstrap over those $107$ solute clusters, the
 effective sample rather than the $823$ groups. Two decimals is the precision the draw count
 determines, coarser than the precision the deposit records: at the $4000$ draws behind them a third
@@ -1062,8 +1062,8 @@ $[-0.11,-0.03]$, and top-1 accuracy by $-0.088$ $[-0.17,-0.01]$. We quote that
 last figure pooled, and pooled only: three of its five per-seed intervals span zero, so of the three
 ranking metrics it is the one whose sign the per-seed columns leave open. The solvent the
 model would select changes in $42$ to $53\%$ of groups, asymmetrically: the learned profile by itself
-picks the measured best solvent in $18.2/22.1/24.2/21.4/19.6\%$ of groups, the reference profile by
-itself in $13.2/10.9/12.5/14.7/10.0\%$. All of that is an ordering rather than a level. Fitting a separate affine recalibration inside every
+picks the measured best solvent in $18$ to $24\%$ of groups, the reference profile by itself in $10$
+to $15\%$. All of that is an ordering rather than a level. Fitting a separate affine recalibration inside every
 group (a slope as well as an intercept, the largest concession a miscalibration reading can ask
 for) removes $91\%$ of the MAE gap, $+0.426$ $[+0.30,+0.55]$ to
 $+0.040$ $[-0.00,+0.08]$, and what is left of it no longer stands clear of zero. That is the
@@ -1072,8 +1072,8 @@ another currency. That map is fitted on the rows it is then scored on, two free 
 median of five solvents, so it bounds what the concession can buy rather than measuring it. Refitted
 leaving out the row it scores, it returns $+0.32$ $[-0.61,+1.20]$ pooled, an interval wide enough to
 hold both the whole gap and none of it. On the
-$550$ groups that hold at least five solvents, where a refit has something to work with, it gives
-$+0.17/{+}0.14/{+}0.28/{+}0.23/{+}0.19$ by seed, three of the five intervals spanning zero
+$550$ groups that hold at least five solvents, where a refit has something to work with, it runs
+$+0.14$ to $+0.28$ by seed with three of the five intervals spanning zero
 (\S\ref{sec:supporting}). The MAE penalty is level and scale in the sense that a per-group map
 fitted on the answer absorbs most of it. Out of sample the data support no statement in either
 direction. The ranking penalty survives both fits, by invariance rather than

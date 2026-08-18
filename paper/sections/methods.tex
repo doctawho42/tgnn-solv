@@ -44,53 +44,54 @@ log-solubility to their negative sum:
          \;-\;\underbrace{\lng(x_2,T)}_{\text{activity}} ,
   \label{eq:sle}
 \end{equation}
+% "TWICE THE SUPERVISION GAIN" WENT WITH THE FIVE-SEED RE-RUN, 2026-08-18.  The comparison was to a
+% three-seed gain of 0.20; that operation now has no established sign (\S\ref{sec:paradox}), so a
+% magnitude cannot be set against it at all.  The substitution comparison stands and is kept.
 with no constant-$\Delta C_p$ correction ($\Delta C_p$ being the difference in heat capacity
 between the liquid and the solid). That term is absent from the displayed equation because it is
-absent from the deployed model, which fixes $\Delta C_p=0$, the head that would predict it being off in
-the pinned configuration. The exposure is one-signed and substantial. At the group-contribution value
-this corpus carries, $60$\,J\,mol$^{-1}$\,K$^{-1}$, the omitted term is a median $0.32$ and a mean
-$0.40$ in \lnx\ over the $1318$ labelled test rows that carry a measured $\Tm$, $31$ solutes, positive on every one
-of them. That is the size of the substitution penalty of \S\ref{sec:paradox} and twice the
-supervision gain. It enters the physics arms and leaves the closure-free control untouched, and it cancels
-exactly in the evaluation-time substitution, where $\Phicry$ is common to the two arms
-(\S\ref{sec:si-methods}). It survives into the training of the $\sigma$ head, which
-is fitted through a crystal term carrying a bias of that size and in that direction. \S\ref{sec:surrogate}
-reads the consequence. The activity term is produced by a
+absent from the deployed model, which fixes $\Delta C_p=0$, the head that would predict it being off
+in the pinned configuration. The exposure is one-signed and substantial: at the group-contribution
+value this corpus carries, $60$\,J\,mol$^{-1}$\,K$^{-1}$, the omitted term is a median $0.32$ in
+\lnx\ over the $1318$ labelled test rows carrying a measured $\Tm$, positive on every one of the
+$31$ solutes---the size of the substitution penalty of \S\ref{sec:paradox}. It enters the physics
+arms, leaves the closure-free control untouched, and cancels exactly in the evaluation-time
+substitution, where $\Phicry$ is common to the two arms (\S\ref{sec:si-methods}). It survives into
+the training of the $\sigma$ head, fitted through a crystal term carrying a bias of that size and
+direction, whose consequence \S\ref{sec:surrogate} reads. The activity term is produced by a
 \emph{differentiable closure} $g$. A graph encoder predicts a $\sigma$-profile (the distribution of
 screening charge density over a molecule, the histogram a COSMO model consumes) for each molecule,
 and COSMO-SAC \cite{lin2002}, a segment-activity reformulation of COSMO-RS, maps the pair of
-profiles to $\lng$. The segment-interaction energy inside that map (the electrostatic-misfit and
-hydrogen-bonding terms setting what two surface segments cost each other) is the closure's
-\emph{kernel}, the part the published revisions rewrite. A closure variant is therefore named for the year
-of its kernel: the \emph{2002 kernel} this pipeline runs, and the \emph{2010 kernel} that types segments as
-hydrogen-bond donors or acceptors instead of treating hydrogen bonding with one parameter. Write
-$\zstar$ for the \emph{reference} physical latent, a tabulated $\sigma$-profile, and $\hat z$ for the
-head's own prediction. \textbf{Two profile databases supply $\zstar$ below and they are never
-interchangeable}. \emph{VT-2005}, the Virginia Tech 2005 tabulation \cite{mullins2006}, is what the
-$\sigma$ head is supervised against and what is substituted for $\hat z$ at prediction time.
-\emph{UD}, the University of Delaware successor tabulation, is what the activity-coefficient rows of
-\S\ref{sec:broad} are matched to. Every set, margin and figure below names which of the two it is
-computed on, and we read no quantity across them. The one place they are deliberately set against
-each other is the database-to-database bracket of \S\ref{sec:badclosure}. Feeding $\zstar$ in place
-of $\hat z$ (a $\sigma$-oracle) isolates the closure from encoder error: if the closure were well
-specified, $g(\zstar)$ should be the best available activity estimate. Each trained configuration,
-and each closure variant evaluated, is an \emph{arm}. A \emph{DirectGNN} control arm drops the
-closure and emits $\lnx$ directly, and we tuned the two separately (\S\ref{sec:eval}).
+profiles to $\lng$. The segment-interaction energy inside that map---the electrostatic-misfit and
+hydrogen-bonding terms setting what two surface segments cost each other---is the closure's
+\emph{kernel}, the part the published revisions rewrite, so a closure variant is named for its
+kernel's year: the \emph{2002 kernel} this pipeline runs, and the \emph{2010 kernel} that types
+segments as hydrogen-bond donors or acceptors instead of treating hydrogen bonding with one
+parameter. Write $\zstar$ for the \emph{reference} latent, a tabulated $\sigma$-profile, and
+$\hat z$ for the head's own prediction. \textbf{Two profile databases supply $\zstar$ below and they
+are never interchangeable}: \emph{VT-2005}, the Virginia Tech 2005 tabulation \cite{mullins2006},
+which the $\sigma$ head is supervised against and which is substituted for $\hat z$ at prediction
+time, and \emph{UD}, the University of Delaware successor, which the activity-coefficient rows of
+\S\ref{sec:broad} are matched to. Every set, margin and figure below names which it is computed on,
+and we read no quantity across them; the one place they are deliberately set against each other is
+the database-to-database bracket of \S\ref{sec:badclosure}. Feeding $\zstar$ in place of $\hat z$ (a
+$\sigma$-oracle) isolates the closure from encoder error: were the closure well specified,
+$g(\zstar)$ would be the best available activity estimate. Each trained configuration, and each
+closure variant evaluated, is an \emph{arm}; a \emph{DirectGNN} control arm drops the closure and
+emits $\lnx$ directly, and we tuned the two separately (\S\ref{sec:eval}).
 
 We state everything below for a general \emph{composed predictor} $\hat y=g(h(x))$ in which a fixed
 closure $g$ consumes a learned physical intermediate $z=h(x)$, against a matched free predictor that
 shares the encoder and drops $g$. Solubility is one instance, and a second is the closure of \S\ref{sec:pka-main} for $\mathrm pK_a$,
 the acid dissociation constant on a negative logarithmic scale.
 
-Solubility alone underdetermines the crystal/activity split of Eq.~\eqref{eq:sle}. At
-infinite dilution with $\Delta C_p=0$, the observable is affine in $1/T$, and the activity intercept
-and slope already span that plane, so the profiled Fisher information for $\dHfus$ is exactly zero
-and the indeterminacy set is two-dimensional. At finite dilution, the composition factor $(1-x_2)^2$
-leaves an information of order $x_2^2$. The deficiency closes under a rank-completing external constraint
-and nothing weaker: a direct crystal label, or a fixed activity slope (Lemma~\ref{prop:ident},
+Solubility alone underdetermines the crystal/activity split of Eq.~\eqref{eq:sle}. At infinite
+dilution with $\Delta C_p=0$ the observable is affine in $1/T$, and the activity intercept and slope
+already span that plane, so the profiled Fisher information for $\dHfus$ is exactly zero and the
+indeterminacy set is two-dimensional; at finite dilution the composition factor $(1-x_2)^2$ leaves an
+information of order $x_2^2$. The deficiency closes under a rank-completing external constraint and
+nothing weaker: a direct crystal label, or a fixed activity slope (Lemma~\ref{prop:ident},
 \S\ref{sec:si-proofs}). That is why an under-determined factor needs external single-component data
-and why we expect compensation between the factors. It is silent by itself on whether
-grounding helps.
+and why we expect compensation between the factors, and it is silent on whether grounding helps.
 
 \subsubsection{The closure--insufficiency decomposition}
 \label{sec:decomp}
@@ -151,62 +152,56 @@ $\zstar=(s,\hammett^\star)$ and we condition on both.
 
 \noindent $\Bclos$ is the systematic discrepancy of a fixed physical map in the sense of
 Kennedy--O'Hagan \cite{kennedy2001,brynjarsdottir2014}, and its dominance over $\Binsuf$ is the
-empirical content of the claim that the ceiling is set by the closure rather than by the inputs.
+empirical content of the claim that the ceiling is set by the closure and not by the inputs.
 \textbf{What $\Bclos$ is the error of is a composite object.} The identity compares $g(\zstar)$
-against $\Ex[m\mid\zstar]$, and $\zstar$ is produced by a procedure rather than measured: for
-$\sigma$-profiles, a quantum-chemical calculation on one conformer and one protonation state per
-molecule at one level of theory. $\Bclos$ is therefore a joint property of the map and of the
-procedure that produced the reference it reads, rather than of the kernel's functional form by itself. A
-displaced reference loads onto $\Bclos$
-through the curvature of $g$ even where $g$ is exactly specified (\S\ref{sec:si-repro}). The
-deployed pipeline consumes that same composite, so it is the object a practitioner faces, and every
-attribution below is to the pair rather than to the kernel. Where model-discrepancy calibration
-\emph{fits} a correction from held-out observations, here $g$ is fixed and $\zstar$ supplied from
-outside the fit, so we \emph{attribute} the composite's error rather than correct it, and that is
-available only where an external latent oracle exists. \textbf{Exactness is contingent
-on $g$ being fixed}: for a \emph{fitted} decoder the cross term survives and a plug-in point
-split is invalid. Because $\Binsuf$ is bounded above and $\Bclos$ below, a positive \emph{separation
-margin} $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$ establishes that the closure's own error exceeds what
-input insufficiency can account for. A margin at or below zero is a failure to separate and licenses
-nothing: a reversal would need a \emph{lower} bound on $\Binsuf$, which lies beyond this
-instrument. \textbf{Its size is a lower bound and not an estimate.} Since
-$\mathrm{MSE}=\Binsuf+\Bclos$ exactly, $\Bclos-\Binsuf=\mathrm{MSE}-2\Binsuf$, and the reported
-margin under-states that difference by $2(\Binsuf^{\mathrm{up}}-\Binsuf)\ge0$, an amount beyond this
-design's reach. Every margin below therefore says the closure's error exceeds its inputs' by
-\emph{at least} the number printed, and a bootstrap interval on a margin is an interval on that
-bound, its upper endpoint limiting nothing.
+against $\Ex[m\mid\zstar]$, and $\zstar$ is produced by a procedure: for $\sigma$-profiles, a
+quantum-chemical calculation on one conformer and one protonation state per molecule at one level of
+theory. $\Bclos$ is therefore a joint property of the map and of that procedure, not of the kernel's
+functional form, and a displaced reference loads onto it through the curvature of $g$ even where $g$
+is exactly specified (\S\ref{sec:si-repro}). The deployed pipeline consumes that same composite, so
+every attribution below is to the pair. Where model-discrepancy calibration \emph{fits} a correction
+from held-out observations, here $g$ is fixed and $\zstar$ supplied from outside the fit, so we
+\emph{attribute} the composite's error instead, which is available only where an external latent
+oracle exists. \textbf{Exactness is contingent on $g$ being fixed}: for a \emph{fitted} decoder the
+cross term survives and a plug-in point split is invalid.
+
+Because $\Binsuf$ is bounded above and $\Bclos$ below, a positive \emph{separation margin}
+$\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$ establishes that the closure's own error exceeds what input
+insufficiency can account for, while a margin at or below zero fails to separate and licenses
+nothing: a reversal would need a \emph{lower} bound on $\Binsuf$, which lies beyond this instrument.
+\textbf{Its size is a lower bound and not an estimate.} Since $\mathrm{MSE}=\Binsuf+\Bclos$ exactly,
+$\Bclos-\Binsuf=\mathrm{MSE}-2\Binsuf$, so the reported margin under-states that difference by
+$2(\Binsuf^{\mathrm{up}}-\Binsuf)\ge0$, an amount beyond this design's reach. Every margin below
+therefore says the closure's error exceeds its inputs' by \emph{at least} the number printed, and a
+bootstrap interval on a margin bounds that bound, its upper endpoint limiting nothing.
 
 \paragraph{What population, and what sets the resolution.} The population is the \emph{measurement
-superpopulation}: a draw is a nominal compound pair \emph{at a temperature}, together with the
-conformer, tautomer and protonation state actually populated there, and an independent determination
-of $\lngi$ for it. The conditioning variable holds the reference profile and the temperature, leaving
-the conformational state and the replicate outside it,
-so $\Var(m\mid\zstar)$ is the spread of $\lngi$ across the conformational ensemble and
-across replicate determinations at one reference profile and temperature. That spread is strictly
-positive for physical reasons, whatever the sample size. Experimental label noise is a
-\emph{component} of it rather than a
-term added beside it, and \emph{observing} it is what the design forbids, each set holding at most one
-row at a given argument. The bounds are therefore conservative in one
-direction alone: were the superpopulation variance negligible, the finding would be the stronger
-$\Bclos=\mathrm{MSE}$. So over-estimating $\Binsuf$ can produce no artifact in what is reported, every
-entry is a bound rather than the share of the error the inputs contribute, and a low cluster-bootstrap
-frequency $P$ is loss of resolution rather than evidence for the inputs. Resolution is governed by
-$\dim(\zstar)/n$.
+superpopulation}: a draw is a nominal compound pair at a temperature, with the conformer, tautomer
+and protonation state actually populated there, and an independent determination of $\lngi$ for it.
+The conditioning variable holds the reference profile and the temperature and leaves the
+conformational state and the replicate outside, so $\Var(m\mid\zstar)$ is the spread of $\lngi$
+across the conformational ensemble and across replicate determinations at one profile and
+temperature. That spread is strictly positive for physical reasons, and experimental label noise is
+a \emph{component} of it. \emph{Observing} it is what the design forbids, each set holding at most
+one row at a given argument. The bounds are therefore conservative in one direction alone: were the
+superpopulation variance negligible, the finding would be the stronger $\Bclos=\mathrm{MSE}$. So
+over-estimating $\Binsuf$ produces no artifact in what is reported, every entry is a bound and not
+the inputs' share of the error, and a low cluster-bootstrap frequency $P$ is loss of resolution and
+not evidence for the inputs. Resolution is governed by $\dim(\zstar)/n$.
 
 \subsubsection{The decomposition and the grounding gap}
 \label{sec:gap}
-The decomposition is the measurement the conclusions rest on: assumption-light, and free of any
-need for a representable encoder or a lossless bottleneck. Alongside it we report a second, directly observable
-quantity, the \emph{grounding gap} $\Ggap:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, the oracle risk minus
-the best end-to-end risk. The paradox is $\Ggap>0$. Under a representable encoder (A1) and a
-lossless bottleneck (A2) it is sandwiched $0\le\Ggap\le\Bclos$, so $\Ggap>0$ would certify
-$\Bclos>0$ (Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is unverified (the linear probe of
-\S\ref{sec:supporting} does not bear on it, scoring an untrained encoder of the same architecture
-within its own spread), and A2 is unverifiable and
-physically dubious. When A2 fails, $\Ggap>0$ conflates
-closure misspecification with input insufficiency, a well-specified closure with a lossy latent
-giving $\Bclos=0$ yet $\Ggap>0$. We therefore read $\Ggap$ as corroborating evidence and base the
-model-dominance conclusion on the decomposition.
+The decomposition is the measurement the conclusions rest on: assumption-light, needing neither a
+representable encoder nor a lossless bottleneck. Beside it we report a directly observable quantity,
+the \emph{grounding gap} $\Ggap:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, the oracle risk minus the best
+end-to-end risk; the paradox is $\Ggap>0$. Under a representable encoder (A1) and a lossless
+bottleneck (A2) it is sandwiched $0\le\Ggap\le\Bclos$, so $\Ggap>0$ would certify $\Bclos>0$
+(Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is unverified---the linear probe of
+\S\ref{sec:supporting} scores an untrained encoder of the same architecture within its own spread,
+so it does not bear on A1---and A2 is unverifiable and physically dubious: when it fails, $\Ggap>0$
+conflates closure misspecification with input insufficiency, a well-specified closure with a lossy
+latent giving $\Bclos=0$ yet $\Ggap>0$. We therefore read $\Ggap$ as corroborating evidence and rest
+the model-dominance conclusion on the decomposition.
 
 % PROPOSITION 1 MOVED TO \S\ref{sec:si-proofs} ON 2026-08-07 (page-reduction pass), where its proof
 % and the limiting refinement already were, so the statement now sits with what proves it.
@@ -247,21 +242,19 @@ variance gap vanishes ($D(n)\to0$), there is a critical budget $n^\star$ beyond 
 $\mathcal{T}(n)>0$ for all $n>n^\star$.
 \end{remark}
 
-\noindent Both clauses are rearrangements of the definitions above, and we state this as a remark
-for that reason: given the two expansions, \emph{(i)} is an identity and \emph{(ii)} its limit.
-What it supplies is vocabulary (a name for the asymptotic part, a name for what a constrained prior
-saves, and the budget at which they change places) rather than a prediction any measurement below is
-tested against. The limiting refinement in which $\Delta_\infty=\Bclos-\Ggap$ when the
-control is asymptotically Bayes goes beyond a rearrangement and is in \S\ref{sec:si-proofs}, with the
-working of both clauses.
+\noindent Both clauses are rearrangements of the definitions above, which is why we state this as a
+remark: given the two expansions, \emph{(i)} is an identity and \emph{(ii)} its limit. It supplies
+vocabulary---a name for the asymptotic part, a name for what a constrained prior saves, and the
+budget at which they change places---and no prediction that any measurement below is tested against.
+The limiting refinement in which $\Delta_\infty=\Bclos-\Ggap$ when the control is asymptotically
+Bayes goes beyond a rearrangement, and is in \S\ref{sec:si-proofs} with the working of both clauses.
 The consequence used below is that a prior is predicted to hurt precisely in the mature-data,
-low-noise, well-covered regime. Each physics-versus-control difference reported here is a penalty at
-the budget actually trained rather than an asymptotic one. We prove no ``optimal grounding''
-theorem, and the decomposition leaves out-of-distribution accuracy where it was. Its variance term $D(n)$ is what
-carries the semiparametric phenomenon in which an estimated propensity outperforms the known-true
-one \cite{hirano2003,robins1997}. A fitted nuisance can be the more \emph{efficient} estimator even
-when its bias is as large, so a true-valued input can miss the lower total risk at finite
-$n$.
+low-noise, well-covered regime, and every physics-versus-control difference here is a penalty at the
+budget actually trained. We prove no ``optimal grounding'' theorem, and the decomposition leaves
+out-of-distribution accuracy where it was. Its variance term $D(n)$ carries the semiparametric
+phenomenon in which an estimated propensity outperforms the known-true one
+\cite{hirano2003,robins1997}: a fitted nuisance can be the more \emph{efficient} estimator even when
+its bias is as large, so a true-valued input can miss the lower total risk at finite $n$.
 
 \input{sections/notation-table}
 
