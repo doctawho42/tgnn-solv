@@ -33,6 +33,7 @@ Usage
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 
 import numpy as np
@@ -71,6 +72,41 @@ def leave_one_pair_out(g: np.ndarray, m: np.ndarray, n_bins: int, ddof: int) -> 
             "min_margin": round(float(min(vals)), 4)}
 
 
+#: The article's Fig. \ref{fig:cell} and the sentence that cites it state three numbers about the
+#: whole grid.  They are running prose and a caption, which is the position all six stale values of
+#: this manuscript were found in, so they are bound here rather than trusted.
+ARTICLE = Path("paper/grounding_paradox.tex")
+GRID_CELLS = (("g_res", 1), ("g_res", 0), ("g_full", 1), ("g_full", 0))
+
+
+def _check_article(d: pd.DataFrame, m: np.ndarray) -> None:
+    if not ARTICLE.exists():
+        print(f"\n{ARTICLE} not readable from here; skipping the article bind")
+        return
+    vals = [margin(d[col].to_numpy(float), m, b, ddof)
+            for col, ddof in GRID_CELLS for b in range(3, 13)]
+    head = margin(d[HEADLINE_COLUMN].to_numpy(float), m, HEADLINE_BINS, HEADLINE_DDOF)
+    pos = [v for v in vals if v > 0]
+    tex = ARTICLE.read_text()
+    want = [("the grid's low end", f"{min(vals):.2f}"), ("the grid's high end", f"+{max(vals):.2f}"),
+            ("cells with a positive margin", str(len(pos))),
+            ("the reported cell's rank from the bottom",
+             {1: "first", 2: "second", 3: "third"}.get(sum(v < head for v in pos) + 1, "?"))]
+    got = re.search(r"the aggregate spans \$(-[\d.]+)\$ to \$(\+[\d.]+)\$ and changes sign, and of "
+                    r"the \$(\d+)\$ cells returning a\s+positive margin the reported one is (\w+) from "
+                    r"the bottom", tex)
+    if got is None:
+        raise SystemExit(f"the grid sentence is not in {ARTICLE}; it moved or was reworded")
+    print("\narticle bind:")
+    bad = 0
+    for (what, artifact), claimed in zip(want, got.groups()):
+        bad += claimed != artifact
+        print(f"  {'ok  ' if claimed == artifact else 'FAIL'}  {what:42s} "
+              f"paper {claimed:>8s}   grid {artifact:>8s}")
+    if bad:
+        raise SystemExit(f"{bad} of the grid sentence's numerals disagree with the deposit")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -92,6 +128,8 @@ def main() -> None:
                         else "")
                 print(f"{conv:5s} {n_bins:5d} {name:>4s} {margin(g, m, n_bins, ddof):+10.4f} "
                       f"{r['n_failing']:8d} {r['min_margin']:+11.4f}{star}")
+
+    _check_article(d, m)
 
     g = d[HEADLINE_COLUMN].to_numpy(float)
     head = leave_one_pair_out(g, m, HEADLINE_BINS, HEADLINE_DDOF)

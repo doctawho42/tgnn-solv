@@ -1369,6 +1369,28 @@ where it is computed.
 % independent sample from the broad set -- which is what makes the two sets' agreement a consistency
 % check rather than corroboration.  The arithmetic is in \S\ref{sec:si-map-cells} and
 % \S\ref{sec:si-robustness}.
+% THE ESTIMATOR-CELL FIGURE, added 2026-08-19.  Sec. 2.5 fixes four analyst choices in advance and
+% this section reports the margin those choices produce; until now the reason for the rules was
+% carried by three hand-picked rows of the grid.  Drawn whole it also answers the question a referee
+% will ask and the three rows could not: whether the cell was picked to flatter the number.  It was
+% not -- 2nd from the bottom of the 34 positive cells.  Regenerate with
+% scripts/analysis/make_estimator_cell_figure.py, which recomputes every cell through the same
+% functions check_vt2005_leverage_counts.py gates with, so the figure and the gate cannot disagree.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_estimator_cell.pdf}
+\caption[The separation margin over the estimator grid]{\textbf{The same rows, the same estimator,
+and four defensible conventions.} The VT-2005 matched set ($n=60$) at every bin count from three to
+twelve, under both within-bin variance conventions (unbiased, maximum-likelihood) and both
+combinatorial ones (residual-only, full). \textbf{(a)}~the separation margin
+$\mathrm{MSE}-2B_{\mathrm{insuff}}^{\mathrm{up}}$; below zero Lemma~\ref{prop:decomp} separates
+nothing. \textbf{(b)}~how many of the $60$ single-pair deletions send that margin below zero. The
+ringed point is the cell \S\ref{sec:estimator} fixes in advance and this section reports. The
+aggregate spans $-0.53$ to $+1.12$ across cells that are each individually defensible, which is why
+the choices are fixed before the data are seen rather than justified after.}
+\label{fig:cell}
+\end{figure}
+
 This set carries the paper's other reference-matched analyses and is far weaker: all $60$ rows sit
 at $298$\,K so that $\dim(\zstar)/n\approx102/60$, methanol occupies $25$ of them, and its $17$
 solvents fall in six of the nine classes, each short of the $n{=}40$ a bound needs, so it supports
@@ -1390,7 +1412,10 @@ out-of-fold estimators and under $4$ of the $60$ single-pair deletions, the wors
 where on the broad set
 every single-pair deletion leaves the sign intact---and what a margin here would bound is a label
 systematic tracking $\zstar$, which the unbiased within-bin variance leaves \emph{open}
-(\S\ref{sec:si-robustness}). Of the $60$ pairs, $57$ also appear in the broad IDAC set at $298$\,K
+(\S\ref{sec:si-robustness}). The cell the margin is read at is not a favourable one:
+Figure~\ref{fig:cell} runs the same estimator over the whole grid of bin counts and conventions,
+where the aggregate spans $-0.53$ to $+1.12$ and changes sign, and of the $34$ cells returning a
+positive margin the reported one is second from the bottom. Of the $60$ pairs, $57$ also appear in the broad IDAC set at $298$\,K
 under UD profiles, so the two are overlapping samples rather than independent ones. This is the
 sub-design VT-2005, and therefore the paradox's own oracle, is defined on, and the agreement between
 the two sets' error orderings is a consistency check rather than corroboration.
