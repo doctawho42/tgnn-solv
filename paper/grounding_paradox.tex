@@ -677,7 +677,7 @@ be handed to the model in place of the one it computed. When a predictor of this
 inaccurate, either the fixed physical model is wrong or the learned quantities feeding it are
 uninformative, and the two call for opposite remedies. What this literature lacks is a way to
 \emph{measure}, rather than diagnose, which of the two limits accuracy, and whether the learned
-intermediate has stopped reporting the quantity it is named after; in the concept-bottleneck case
+intermediate has stopped reporting the quantity it is named after. In the concept-bottleneck case
 the external reference that would settle either question is missing. We supply one---a reference
 $\sigma$-profile for solubility, tabulated substituent constants for a second chemical domain---and
 hold the mechanistic model fixed, so the tabulated value stays available as an external reference
@@ -1001,9 +1001,8 @@ And $141$ of its
 \lnx\ predictions fall below $-15$, to a minimum of $-22.3$ where the corpus itself stops at
 $-17.7$. The worst $500$ of the $5608$ rows carry $0.25$ of that seed's $+0.26$ mean gap.
 We score both arms at the $30$ segment iterations of \S\ref{sec:model}, with the fixed point
-left short of convergence there,
-so those rows are the ones on which the truncation is
-least certified as well as the ones on which the two profiles differ most.
+left short of convergence there. Those rows are therefore the ones on which the truncation is
+least certified, as well as the ones on which the two profiles differ most.
 % ITEM 1 OF THE 2026-08-11 REFEREE ROUND.  The article said the truncation is least certified on
 % these rows and left the exposure at that; the Supporting Information said it was "unmeasured".  It is
 % unmeasured ON THESE ARMS -- the tree keeps none of their weights -- and it is not small where it
@@ -1347,8 +1346,8 @@ place out of reach, the two being confounded in them (\S\ref{sec:si-null}).
 % results/b_insuff/glycol_ether_out_of_sample.json, from run_glycol_ether_out_of_sample.py, whose
 % docstring is the pre-declaration.
 What settles a selection objection is the same measurement on rows the search never saw, so we ran
-one, on the PGL 6th-edition IDAC database---another group's compilation, sixteen times the broad
-set's rows on a different profile database---scored by the same deployed closure
+one. The PGL 6th-edition IDAC database is another group's compilation, sixteen times the broad set's
+rows on a different profile database, scored by the same deployed closure
 (Table~\ref{tab:closure-anchor}). The row set, the estimator cell, the admissibility rule and what
 would count as confirmation in each direction were fixed before any margin was computed
 (\S\ref{sec:si-oos}). \textbf{The chemistry could not be tested there}, for a reason about the data
@@ -1364,11 +1363,11 @@ the two terms merged. Every margin above the one admitted positive class sits on
 refuses: out of sample the glycol ethers sit away from where this closure errs hardest.
 
 That row set is also the whole of the separation this paper reports. ``COSMO-SAC error exceeds
-input error'' would carry it past five boundaries, each of them measured here: the map's other
-strata; both data sets taken whole; the solubility axis of \S\ref{sec:paradox}, where the two terms
-stay merged; the kernel as against the composite it is deployed in; and the chemistry-blind null the
-margin sits at the ninetieth percentile of, on the one chemistry for which out-of-sample rows are
-missing.
+input error'' would carry it past five boundaries, each of them measured here. They are the map's
+other strata; both data sets taken whole; the solubility axis of \S\ref{sec:paradox}, where the two
+terms stay merged; the kernel as against the composite it is deployed in; and the chemistry-blind
+null. The margin sits at the ninetieth percentile of that null, on the one chemistry for which
+out-of-sample rows are missing.
 
 \emph{Which chemistry does not separate.} Three of the six admissible cells are that same row set at
 three granularities. Of the other two, the alkane solutes are positive and demoted to the glycol
@@ -1483,8 +1482,8 @@ bounded rather than open, since replacing the four glycol-ether references with 
 moves the stratum's margin from $+2.04$ to $+2.27$, and every substitution reported here stays
 scoped to the VT-2005 tabulation's level of theory (\S\ref{sec:si-correctable}).
 
-That COSMO-SAC-2002 is a low-fidelity closure is the contribution rather than a qualification of the
-result: it is what a practitioner adopts by default, a closure's fidelity is \emph{unknowable in
+That COSMO-SAC-2002 is a low-fidelity closure is the contribution and not a qualification of the
+result. It is what a practitioner adopts by default, a closure's fidelity is \emph{unknowable in
 advance} on a new system, and the field routinely composes an expressive encoder with a fixed
 mechanistic map and assumes the map is good enough. Where that assumption fails the learned latent
 silently departs from the quantity it is named after (\S\ref{sec:surrogate}), and an external oracle
@@ -1523,7 +1522,7 @@ The instrument generalises beyond COSMO-SAC, and a second domain runs it where t
 can be predicted before the measurement. The closure is a Hammett linear free-energy relationship
 $g(\zstar)=\mathrm pK_{a,0}-\rho\,\hammett^\star$ in tabulated Hansch--Leo--Taft constants
 \cite{hansch1991survey}, unfitted on these data, so $g$ is fixed in the sense
-Lemma~\ref{prop:decomp} requires; the learned quantity is the substituent constant predicted from
+Lemma~\ref{prop:decomp} requires. The learned quantity is the substituent constant predicted from
 structure, and the data are the OPERA compilation \cite{mansouri2019opera}. A rule reading structure
 alone splits the records into a \emph{clean} pole, the $158$ whose every substituted position is
 meta or para with a tabulated substituent, and a \emph{degraded} pole, the $846$ where
@@ -1586,7 +1585,7 @@ the estimator's two conditions of use, the competence sweep and the $G{=}4$ sign
 % over it.  Do not restore a sign for the training-time operation without a run that gives it one.
 Two measurements, in different places. On solubility, supervising a learned physical latent on
 reference values during training moves the error without an established sign, while
-\emph{supplying} those values at inference hurts at every seed; on infinite-dilution activity data,
+\emph{supplying} those values at inference hurts at every seed. On infinite-dilution activity data,
 and there on one class of solvent, the fixed map's own error exceeds the bound on what its inputs
 leave undetermined. The two sit in different regimes on largely disjoint chemistry, so ``the
 substitution hurts \emph{because} the map is misspecified'' remains untested (limitation~(i)). The
@@ -1632,9 +1631,9 @@ sides share one trained model and one tuning (\S\ref{sec:paradox}, \S\ref{sec:de
 \S\ref{sec:surrogate}, \S\ref{sec:measure}). Three fall outside it, comparing across trainings or
 across the separately tuned control: the supervision gain, the co-adaptation control and
 \S\ref{sec:decision}'s shrinkage slopes. Grounding the crystal factor on external labels is underpowered rather
-than null. $97.76\%$ of that pool was melting points the model had already been trained on; where it
-carried something new the crystal head moved, while on the held-out solutes it is the worse of the
-two and the downstream solubility gap crosses zero once clustered by solute
+than null. $97.76\%$ of that pool was melting points the model had already been trained on, and
+where it carried something new the crystal head moved. On the held-out solutes it is the worse of
+the two, and the downstream solubility gap crosses zero once clustered by solute
 (\S\ref{sec:e2}). Temperature extrapolation is the one place the physical \emph{structure} helps,
 and it helps as a property of the hypothesis class and not of any arm trained here. Fitting
 below $T\le309.75$~K and scoring at $T\ge330$~K on the same $1751$ solute--solvent pairs withholds
@@ -1795,8 +1794,8 @@ one action is to withhold a chemistry from an allocation of grounding effort.
 grounding helps is shaped by \emph{two} axes, closure fidelity and how the latent is trained, and
 this work leaves that plane uncharacterised on real systems. The chemical strata form a pattern in
 the direction the sign rule would give, but separately tuned pipelines can produce one and a
-multiplicity control is missing, so \S\ref{sec:map} records it as the experiment a matched control
-should run and the diagnostic is \emph{proposed} rather than validated.
+multiplicity control is missing. \S\ref{sec:map} therefore records it as the experiment a matched
+control should run, and the diagnostic is \emph{proposed} and not validated.
 \item The scaffold-leak guard is a property of the released stream builder rather than a certified
 property of the runs \S\ref{sec:paradox} reports, so the $0.20$ three-seed supervision gain is the
 one reported number a leak could inflate. Deleting the eight reachable solutes leaves $+0.17$
@@ -1860,7 +1859,7 @@ price of reading a grounded latent as a measurement.
 
 The general statement is a design rule with a test attached. Wherever a predictor composes a fixed
 physical model over a learned intermediate for which an external reference exists, that reference
-measures whether the fixed model itself limits accuracy, and where it answers, the answer decides the
+measures whether the fixed model itself limits accuracy. Where it answers, the answer decides the
 remedy: a more faithful physical model, the calculation that supplies its reference values included.
 % `---or better inputs' DELETED 2026-08-09.  Two referees stopped at the colon and took away a
 % two-sided instrument, which the next clause but one then has to take back and \S\ref{sec:discussion}
@@ -1911,9 +1910,9 @@ $\sigma$-profiles, Ref.~\cite{fingerhut2017} as redistributed with Ref.~\cite{be
 for the UD profiles, ThermoML for the infinite-dilution activity coefficients, the
 PGL 6th-edition IDAC database for Table~\ref{tab:closure-anchor}, and the OPERA
 compilation \cite{mansouri2019opera} for the pKa data. Three disclosed defects sit on the deposited
-record, in \S\ref{sec:si-repro} and \S\ref{sec:si-tables}: the
-three-seed surrogate run's per-run split provenance was not logged, one $\sigma$-stream build on disk
-was written against the wrong split files, and the two
+record, in \S\ref{sec:si-repro} and \S\ref{sec:si-tables}. The
+three-seed surrogate run's per-run split provenance was not logged; one $\sigma$-stream build on
+disk was written against the wrong split files; and the two
 VT-2005-matched audit artifacts disagree on one out-of-fold estimate. Two further defects are
 repaired rather than disclosed, each described where its numbers are printed. We re-scored the two
 FastSolv retraining bundles (Tables~\ref{tab:baselines} and~\ref{tab:si-baselines-full}, with
