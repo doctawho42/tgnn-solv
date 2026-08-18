@@ -1071,27 +1071,31 @@ them.
 % run with the two things it needs.  Do not fold the rest into \S\ref{sec:discussion} as well: that
 % subsection states the conclusion and this one states the obstruction, and they are different
 % claims.
+% NEGATION PASS, 2026-08-19: 20.5 markers per 1000 against a JCIM median of 2.97.  Every claim is
+% unchanged and every open question is still called open; what changed is that the section now says
+% what IS the case and then what that leaves open, instead of leading with the negative each time.
+% The section's title keeps "does not decide", because that is what the section is for.
 Which of the two channels the substitution fails through stays open. Drug-like solutes are
 essentially absent from the VT-2005 set, so the substitution falls almost entirely on the
 \emph{solvent} channel, and the both-channel substitution the attribution would need covers
-${\approx}7$ solutes; enlarging that set means computing new reference profiles, not looking them
-up.
+${\approx}7$ solutes; enlarging that set means computing new reference profiles rather than looking
+them up.
 
 \emph{Why} it hurts stays open too, and for a stronger reason than a test that came back empty. The
 reading it invites is that handing the closure a faithful input surfaces a misspecified map instead
-of repairing it, so the reference profile is the better input only where the map that consumes it is
-faithful. On the solubility axis the two terms of the split stay fused, and the solubility axis is
-where \S\ref{sec:paradox} measured the substitution, so the quantities that reading is about lie
-beyond observation on those rows. \S\ref{sec:measure} measures a second axis and does not explain
-the first.
+of repairing it, so the reference profile is the better input where the map that consumes it is
+faithful. That reading is about a fixed map's own error and about what its inputs fail to carry, and
+on the solubility axis those two terms stay fused --- which is the axis \S\ref{sec:paradox} measured
+the substitution on, so both quantities lie beyond observation on those rows.
+\S\ref{sec:measure} measures a second axis and leaves the first unexplained.
 
 Two experiments would settle it and both remain to be run. The first is the transfer back to the
-paradox's own regime, which is limitation~(i).
-The second is limitation~(x): the fidelity contrast of \S\ref{sec:fidelity} compares
-\emph{oracle-input} activity error across kernels, so $\Ggap$ itself stands measured under no modern
-closure on either axis, and whether the \emph{solubility} paradox survives a 2010/dsp closure is
-untested. Both need a typed $\sigma$-profile head trained end to end through the 2010 kernel, and
-the solubility one additionally needs a UD$\,\cap\,$BigSolDB matched set, unavailable here.
+paradox's own regime, which is limitation~(i). The second is limitation~(x): the fidelity contrast
+of \S\ref{sec:fidelity} compares \emph{oracle-input} activity error across kernels, so $\Ggap$
+itself stands measured under no modern closure on either axis, and whether the \emph{solubility}
+paradox survives a 2010/dsp closure is untested. Both need a typed $\sigma$-profile head trained end
+to end through the 2010 kernel, and the solubility one additionally needs a
+UD$\,\cap\,$BigSolDB matched set, which this corpus lacks.
 
 \subsection{A second axis: bounding a deployed COSMO-SAC against its inputs}
 \label{sec:measure}
@@ -1143,8 +1147,8 @@ Table~\ref{tab:notation}, which we keep apart throughout.
 % it further: each of those four is the licence for a different sentence of \S\ref{sec:broad}.
 One reading rule governs every margin below, and it is Lemma~\ref{prop:decomp}'s. A positive margin
 establishes $\Bclos>\Binsuf$; its size is a \emph{lower bound} on $\Bclos-\Binsuf$ and not an
-estimate, so an interval on a margin bounds that bound; a margin at or below zero is a failure to
-separate and licenses nothing, leaving their equality open. $\Bclos$ throughout is the error of the
+estimate, so an interval on a margin bounds that bound; a margin at or below zero leaves the two terms merged and licenses nothing, their equality staying
+open. $\Bclos$ throughout is the error of the
 fixed map \emph{read at a computed profile}, so a positive margin is a property of that composite
 and not of the kernel alone (\S\ref{sec:badclosure}). The one cell serves both sets, both kernels
 and every stratum, so every cell below was fixed before the number it returned was seen.
@@ -1169,7 +1173,7 @@ arm scores $\mathrm{MSE}=1.902$ against $\Var(m)=4.85$; the binning bound gives
 $\Binsuf\lesssim0.70$, hence $\Bclos\gtrsim1.21$ and a margin of $+0.51$ for the set taken whole,
 positive in every cell of the bin-count\,$\times$\,variance\,$\times$\,convention grid, two of its
 three bootstrap clusterings extending just below zero (\S\ref{sec:si-grid},
-\S\ref{sec:si-robustness}). The output is the map below and not that aggregate, because the
+\S\ref{sec:si-robustness}). The output is the map below, because the
 aggregate is unstable under composition: dropping the two chemistries the error concentrates in, the
 glycol-ether solvents and the water-as-solute rows, takes $+0.51$ to $-0.12$ on the $258$ remaining;
 the pair unit alone gives $+0.27$, the two together $-0.38$ on $136$ pairs ($+0.95$, $+0.28$ and
@@ -1189,7 +1193,7 @@ bound is slack, not that $\Binsuf$ is negligible (\S\ref{sec:si-tables}).
 % generated by scripts/analysis/make_map_table_tex.py), or "the established stratum" as a name.
 \emph{The map, and how much of it survives the rule.} We run the instrument over $59$ strata of the
 broad IDAC set ($477$ rows, $185$ pairs, $78$ solutes, $36$ solvents, $15$ source publications).
-Fifteen have $n\ge40$ and are boundable, the only ones whose margins the rule can act on;
+Fifteen have $n\ge40$ and are boundable, which is the condition for the rule to act on a margin;
 Tables~\ref{tab:map-article} and~\ref{tab:map-article-solute} print all fifteen, and
 \S\ref{sec:si-map} the other $44$, the $24$ carrying no estimate at all included, each with the test
 it fails. Six of the fifteen are \emph{admissible}, and clause~(c) makes those six three distinct
@@ -1260,9 +1264,10 @@ limitation: it is by construction the survivor of a $59$-fold search. Our null r
 chemistry blindly---each solvent and solute keeps its rows and takes another's class labels, and the
 stratum family is rebuilt and put through the same rule. Over $2000$ such relabellings, on all $477$
 rows and at the cell the map deploys, its six admissible strata are above chance ($p=0.01$) while its
-two admissible positive row sets are not ($p=0.286$), and one row set or more is certified in $58\%$
-of draws. The size is the sharper statistic and it is not sharp enough: a certified margin of
-$+2.04$ or more arises in $10.1\%$ of all draws, $17\%$ of those that certify anything. What the
+two admissible positive row sets sit at chance ($p=0.286$), and one row set or more is certified in
+$58\%$ of draws. The size is the sharper statistic, and it leaves the finding where the counts do: a
+certified margin of $+2.04$ or more arises in $10.1\%$ of all draws, $17\%$ of those that certify
+anything. What the
 instrument licenses is the separation on the rows it was computed on; as a chemistry-specific effect
 it is unestablished against the search that found it. Each $p$ is a frequency, not a bound in either
 direction, for two biases the null measures: provenance survives the
@@ -1288,8 +1293,8 @@ one. The PGL 6th-edition IDAC database is another group's compilation, sixteen t
 rows on a different profile database, scored by the same deployed closure
 (Table~\ref{tab:closure-anchor}). The row set, the estimator cell, the admissibility rule and what
 would count as confirmation in each direction were fixed before any margin was computed
-(\S\ref{sec:si-oos}). \textbf{The chemistry could not be tested there}, for a reason about the data
-and not about the number: the cell the finding is about, a glycol-ether solvent with an
+(\S\ref{sec:si-oos}). \textbf{The chemistry stayed untestable there}, for a reason about the data
+rather than the number: the cell the finding is about, a glycol-ether solvent with an
 \emph{organic} solute, is empty there. \emph{Not testable} is the third verdict the pre-declaration
 lists and counts as non-confirmation, and it follows from the row inventory alone, so what the
 pre-registration delivers here is the absence of confirming data and not a failed replication. The
@@ -1307,9 +1312,9 @@ terms stay merged; the kernel as against the composite it is deployed in; and th
 null. The margin sits at the ninetieth percentile of that null, on the one chemistry for which
 out-of-sample rows are missing.
 
-\emph{Which chemistry does not separate.} Three of the six admissible cells are that same row set at
+\emph{Which chemistry leaves the terms merged.} Three of the six admissible cells are that same row set at
 three granularities. Of the other two, the alkane solutes are positive and demoted to the glycol
-ethers by clause~(c), and the acceptor-only aprotics pass the rule and leave the terms unseparated,
+ethers by clause~(c), and the acceptor-only aprotics pass the rule and leave the two terms merged,
 the instrument being one-sided. The uniqueness is narrower than being the sole admissible stratum or the sole one sign-stable under
 every deletion: it is one row set admissible, positive and left standing by clause~(c). Which cell
 each remaining stratum fails on is in \S\ref{sec:si-map}, none used to explain a reversal.
@@ -1319,7 +1324,7 @@ each remaining stratum fails on is in \S\ref{sec:si-map}, none used to explain a
 % asserted and not shown -- and the closing clause that the bound stays valid in each stratum, which
 % is what stops the paragraph from reading as a retraction of the instrument.
 \emph{Why the output is a map.} $\Binsuf^{\mathrm{up}}$ is nearly the same in every stratum while
-$\mathrm{MSE}$ is not: a factor of $2.0$ against $25$ over the three classes the design can bound,
+$\mathrm{MSE}$ moves: a factor of $2.0$ against $25$ over the three classes the design can bound,
 and $6.8$ against $51$ once the three that carry an estimate are added. That $6.8$ rests on a
 mono-alcohol figure the artifact flags as an invalid bound on a stratum already excluded. And
 against $2000$ random partitions of the $477$ rows into blocks of the nine observed class sizes the
@@ -1379,43 +1384,54 @@ the two sets' error orderings is a consistency check rather than corroboration.
 % contribution and not a qualification.  The profile-database exposure arithmetic went to
 % \S\ref{sec:si-fidelity} WITH its own scope clause -- it sizes the exposure and does not bound the
 % share -- and the two travel together or neither is stated.
+% NEGATION PASS, 2026-08-19.  This subsection ran at 28.7 negation markers per 1000 words against a
+% JCIM median of 2.97 and a corpus maximum of 7.31 -- the most negated passage in the manuscript, and
+% it got worse as the length passes removed prose and left the caveats standing.
+% EVERY CLAIM IS UNCHANGED.  What changed is the polarity of the sentence carrying it: "is not
+% positive, so the terms are not separated" says the same thing as "sits at or below zero, so the
+% terms stay merged", and the second is readable.  Do NOT read this as softening -- a claim that was
+% one-sided is still one-sided, a null is still called a null, and "untested" still prints where the
+% thing is untested.  What may not come back is a double negative or a claim stated only by what it
+% fails to be.
 If the ceiling is the closure, the direct remedy is a better closure. The standard $2002\to2010$
 step delivers one on the VT-2005-matched set, more than halving the error under the full convention
 ($P>0.95$), and withholds it on the broad IDAC set, where it scores $-0.99$ at $P\approx0.2$ under
-the residual-only convention and leaves both an improvement and an equality unestablished in each of
+the residual-only convention and leaves improvement and equality equally open in each of
 its three cells (Table~\ref{tab:kernels}). A block split places that reversal in the
-\emph{chemistry} and not in the profile database or the temperature range: the \emph{2010,
+\emph{chemistry} rather than the profile database or the temperature range: the \emph{2010,
 dispersion off} arm wins on the $57$ pairs shared with the smaller set ($1.78\to0.77$, $P>0.95$,
 full convention) and loses that win on the complementary $420$ and again on the $80$ of those at
 $298$\,K, the block the temperature half of the claim rests on and the weakest of the three. Those
-$57$ pairs are broad-set rows too, so they are an overlapping sample and not an independent one, and
-that split is the whole of the evidence for the reversal being chemical. We claim only that
+$57$ pairs are broad-set rows too, so they are an overlapping sample, and that split is the whole of
+the evidence for the reversal being chemical. We claim only that
 \textbf{the fidelity lever we can demonstrate is confined to the smaller set's chemistry}, and that
-null is additionally a small-molecule and glycol-heavy one, so on drug-like solids the lever is
-untested rather than absent. Under the 2010 kernel's own typed latent, $306$-dimensional and so
+null is a small-molecule and glycol-heavy one, so on drug-like solids the lever stands untested.
+Under the 2010 kernel's own typed latent, $306$-dimensional and so
 several times worse resolved, the floor checks return $+1.29$ on the broad set against $-0.77$ at
-$P\approx0.3$ on the smaller one, of which the first stands: loss of resolution rather than a
-demonstrated flip to the inputs, which would need a \emph{lower} bound on $\Binsuf$
+$P\approx0.3$ on the smaller one, of which the first stands. That is loss of resolution; a
+demonstrated flip to the inputs would need a \emph{lower} bound on $\Binsuf$
 (\S\ref{sec:si-fidelity}).
 
 Where $\Bclos$ dominates, on the one row set the rule leaves standing, the ceiling is in the map
 \emph{as it is deployed}: the fixed kernel together with the one computed conformer it reads, which
 is the composite $\Bclos$ is the error of and the object the pipeline runs on. Which of the two
-carries the error this section leaves open. Dominance leaves open too whether the composite is
-\emph{fixably} wrong: a fitted kernel residual on the $60$ matched pairs does not transfer across
-solvents under the solvent-grouped folds that are the one fold design free of leakage, and that
-result is a null and not a bound. So $\Bclos$ is an error a handful of kernel parameters can absorb
-\emph{within} a solvent, and its correctability across solvents we leave unshown. Where it fails is chemically placed. On the VT-2005-matched set $90\%$ of the squared
+carries the error stays open here, and so does whether the composite is \emph{fixably} wrong. A
+fitted kernel residual on the $60$ matched pairs transfers within a solvent and fails to transfer
+across solvents under the solvent-grouped folds that are the one fold design free of leakage, and
+that result is a null. So $\Bclos$ is an error a handful of kernel parameters can absorb
+\emph{within} a solvent, and its correctability across solvents we leave unshown.
+
+Where it fails is chemically placed. On the VT-2005-matched set $90\%$ of the squared
 error falls on strong hydrogen-bond-donor solvents and the closure is near-exact on acceptor-only
-ones, the chemistry the documented single-parameter H-bond term governs and the term the
+ones --- the chemistry the documented single-parameter H-bond term governs, and the term the
 donor/acceptor-typed 2010 closure was built to replace \cite{hsieh2010,fingerhut2017}. That the
-$2002$ kernel fails there is established and the localisation restates it; what is new is that on
+$2002$ kernel fails there is established and the localisation restates it. What is new is that on
 one such chemistry the failure is bounded against what the closure's inputs leave unresolved. Half
 of that reading carries to the published evaluation of Table~\ref{tab:closure-anchor} and half stops
-there, and on the broad set neither it nor its replacement reproduces, so we state neither. It
-places the error in a \emph{chemistry} and not in one component of the composite, those solvents'
-reference profiles being single gas-phase conformers too; of that, the conformational part is
-bounded rather than open, since replacing the four glycol-ether references with Boltzmann ensembles
+there; on the broad set both it and its replacement stay unreproduced, so we state neither. It
+places the error in a \emph{chemistry} rather than in one component of the composite, those
+solvents' reference profiles being single gas-phase conformers too. Of that, the conformational part
+is bounded: replacing the four glycol-ether references with Boltzmann ensembles
 moves the stratum's margin from $+2.04$ to $+2.27$, and every substitution reported here stays
 scoped to the VT-2005 tabulation's level of theory (\S\ref{sec:si-correctable}).
 
@@ -1424,10 +1440,10 @@ result. It is what a practitioner adopts by default, a closure's fidelity is \em
 advance} on a new system, and the field routinely composes an expressive encoder with a fixed
 mechanistic map and assumes the map is good enough. Where that assumption fails the learned latent
 silently departs from the quantity it is named after (\S\ref{sec:surrogate}), and an external oracle
-is what makes the departure visible. Outside that one row set the map reports cells it is unable to
-resolve, which is weaker than cells in which the closure is sound. How large an exposure the choice
-of profile database is, and why that arithmetic sizes it without bounding its share, is in
-\S\ref{sec:si-fidelity}.
+is what makes the departure visible. Outside that one row set the map reports cells it can only
+leave unresolved, which is a weaker statement than cells in which the closure is sound. How large an
+exposure the choice of profile database is, and why that arithmetic sizes it while leaving its share
+unbounded, is in \S\ref{sec:si-fidelity}.
 
 \subsection{The same split on a second closure: pKa through a fixed Hammett relation}
 \label{sec:pka-main}
