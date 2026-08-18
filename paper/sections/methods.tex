@@ -359,53 +359,24 @@ beyond the reach of any $\sigma$-stream build.
 
 \subsection{Model, closure, and training}
 \label{sec:model}
-Our \emph{shared} message-passing encoder embeds solute and solvent, a bipartite cross-attention block
-lets them interact, and the resulting pair representation feeds every head. We implemented two
-further backbones, and both stay outside the numbers reported here. The physics-channelled one was run
-against this encoder and trailed it, an observation we recorded with no set, seed count or
-interval attached (\S\ref{sec:si-methods}), so we claim no accuracy comparison between
-backbones. A fusion head predicts $\Tm$ and $\dHfus$, giving the
-ideal term $\Phicry(T)$ of Eq.~\eqref{eq:sle}. The activity term \lng\ comes from one of three
-differentiable closures. Two are controls: the fitted NRTL (non-random two-liquid) excess-Gibbs-energy model, and its
-symmetric one-parameter collapse. The third, parameter-free, is the closure under study: a $\sigma$-profile head emitting a
-$51$-bin screening-charge-density profile per molecule, and a COSMO-SAC layer mapping the profile
-pair to \lng. \textbf{That layer runs COSMO-SAC's residual, segment-activity part alone.} The
-Staverman--Guggenheim combinatorial term (the contribution molecular size and shape make to the
-entropy of mixing, and the second factor of $\gamma=\gamma^{\mathrm{res}}\gamma^{\mathrm{SG}}$ in
-Lin--Sandler) is off in every arm the substitution result is reported on. The $\sigma$ head
-emits a profile shape and a cavity area while leaving the cavity volume unpredicted, so its own
-output falls short of evaluating the term. That is a model-form choice rather than an analyst convention: the kernel
-constants the layer uses are the $2002$ values, regressed with the combinatorial term present, so
-the residual-only setting runs a fitted kernel outside its parameterisation. Its size on a published
-evaluation is a mean shift of $-0.74$ in $\lngi$ over $7889$ records, from $+0.03$ to $-0.71$ in
-bias. The two settings are the \emph{full} versus \emph{residual-only} pair on which
-\S\ref{sec:estimator} and \S\ref{sec:measure}
-turn. One arm of Fig.~\ref{fig:paradox} restores the term by taking a molar volume from a
-separate auxiliary head and passing it detached, so the combinatorial term is active while standing
-beyond the reach of the solubility loss. Inside the layer, the segment activities are themselves a fixed point, truncated at a count
-that is a free hyperparameter and \emph{differs} between training and scoring: the COSMO-SAC arms
-here train at $16$ segment iterations and are scored at $30$.
-% CORRECTED 2026-08-12, round four.  "on these weights" was false provenance and it is the clause
-% that makes the mismatch read as benign.  The 16 was set in ed8c4ce against a convergence
-% regression test, tests/test_cosmo_sac_iter_convergence.py, whose _profiles builds two hand-written
-% Gaussian sigma-profiles: no trained weight and no tabulated profile enters it, so the 6e-5 is a
-% property of that test's configuration and says nothing about the arms.  The rest of the sentence
-% -- that a checkpoint fitted at one count and scored at another goes through an operator it was
-% never fitted against -- is unaffected and is the point.
-We chose sixteen against a
-convergence regression test on hand-built Gaussian $\sigma$-profiles, where the $16$-against-$30$
-gap is $6\times10^{-5}$. Hand-built profiles are the whole of that test's input, so agreement
-between the two counts on these arms stands unshown, and a checkpoint fitted at a different count is scored
-through an operator it was never fitted against. The exposure that carries to the substitution
-contrast is unmeasured. A second, independent truncation sits outside it: the SLE fixed point in
-$x_2$, run to a different count in training than in scoring. That second one is the one a
-deposit can re-solve, and the NRTL arm moves by $+0.0025$ in seed-mean MAE at its training count and a further
-$+0.017$ to convergence on the outer loop. That figure prices the outer loop rather than the segment one.
-Both truncations stay beyond re-solution on the COSMO-SAC arms,
-their kernel being a $\sigma$-profile pair that the deposit and the retained checkpoints alike omit
-(\S\ref{sec:si-methods}). The saturated mole fraction solves $\lnx=-\Phicry(T)-\lng(x_2,T)$ as a damped fixed point in
-$x_2$, and a bounded, gated adaptive correction perturbs the physical parameters rather than the output,
-so the physical decomposition survives it.
+% ARCHITECTURE DETAIL MOVED TO \S\ref{sec:si-methods}, 2026-08-19, which already carried it in more
+% detail than this paragraph did: hidden width, layer counts, feature dimensions, the readout, the
+% pair representation, the parameter count and the DirectGNN sharing statement all print there.
+% WHAT STAYS HERE is what a reader of the Results needs to hold: that one encoder feeds every head,
+% which heads there are, and which of the three closures is the one under study.  The two backbones
+% that stay outside the numbers stay named here too, because the no-comparison claim is this
+% article's and not the Supporting Information's.
+A shared message-passing encoder embeds solute and solvent, a bipartite cross-attention block lets
+them interact, and the resulting pair representation feeds every head (\S\ref{sec:si-methods}). We
+implemented two further backbones and both stay outside the numbers reported here; the
+physics-channelled one was run against this encoder and trailed it, an observation recorded with no
+set, seed count or interval attached (\S\ref{sec:si-methods}), so we claim no accuracy comparison
+between backbones. A fusion head predicts $\Tm$ and $\dHfus$, giving the ideal term $\Phicry(T)$ of
+Eq.~\eqref{eq:sle}. The activity term \lng\ comes from one of three differentiable closures. Two are
+controls: the fitted NRTL (non-random two-liquid) excess-Gibbs-energy model, and its symmetric
+one-parameter collapse. The third is the closure under study and is parameter-free: a $\sigma$-profile
+head emitting a $51$-bin screening-charge-density profile per molecule, and a COSMO-SAC layer
+mapping the profile pair to \lng.
 
 External single-component data enter through \emph{grounding streams} (the training-time sense of
 grounding). Each stream is a sidecar of \emph{self-solvent} rows (no solubility label, only the target

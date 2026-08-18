@@ -772,83 +772,21 @@ Training-time supervision is omitted.}
 
 \section{Results and discussion}
 \label{sec:results}
-A cluster-bootstrap frequency $P$ is the frequency, over two-way (solute\,$\times$\,solvent) cluster
-resamples, with which the margin it is attached to stays positive. It is a resampling frequency rather
-than a $p$-value against any null. We quote such frequencies as bands (rounded to one decimal, with
-$>0.95$ and $<0.2$ closing the ends), because with $17$ solvent and $41$ solute clusters on the
-VT-2005-matched set they carry at best one decimal of resolution. The deposited artifacts hold the
-two-decimal values.
-Our resampling intervals (the ranking and recalibration intervals of
-\S\ref{sec:decision}, the margins of \S\ref{sec:measure} and the
-pKa intervals of \S\ref{sec:pka-main}) are \emph{percentile} intervals: their endpoints are order
-statistics of a resampling distribution, uncorrected for bias and unstudentised, over the unit
-named beside each. \S\ref{sec:decision} resamples the $107$ solute clusters, $4000$ draws, at the
-$95\%$ level. \S\ref{sec:measure} resamples solute and solvent clusters two-way, $3000$ draws.
-In \S\ref{sec:pka-main} the decomposition bounds resample molecules within each Hammett reaction
-series and the flip gap resamples the four series themselves, $4000$ draws. Some $\pm$ and
-bracketed spans below are of a different kind, two in particular: the kernel-transfer
-figures of \S\ref{sec:badclosure} are a standard \emph{error} over five fit seeds, and the
-leave-one-publication-out span of \S\ref{sec:broad} is the range of that curve.
+% THE READING CONVENTIONS MOVED TO \S\ref{sec:si-conventions}, 2026-08-19.  They are apparatus and
+% not a result: which unit each interval resamples and at how many draws, the percentile convention,
+% the rounding rule those draw counts support, and the two spans that are of a different kind.  The
+% Supporting Information restated the P convention in six separate table notes already.
+% WHAT STAYS HERE is the one thing a reader cannot defer: that P is a resampling frequency and not a
+% p-value, because this article prints P and p within a line of each other in \S\ref{sec:broad} and
+% the only thing distinguishing them is the case of the letter.
 Every claim below carries its set, its size and its scope in the sentence that makes it, and
 \S\ref{sec:si-ledger} collects the same nineteen side by side as one table
-(Table~\ref{tab:claims}).
+(Table~\ref{tab:claims}). Two reading conventions travel with them. A cluster-bootstrap frequency
+$P$ is the frequency, over resamples, with which the margin it is attached to stays positive --- a
+resampling frequency and \emph{not} a $p$-value against any null. And every interval below is a
+percentile interval over the unit named beside it. \S\ref{sec:si-conventions} gives those units, the
+draw counts, the rounding rule the counts support, and the two spans that are of a different kind.
 
-% THE CLAIM LEDGER LEFT THIS DOCUMENT ON 2026-08-08 for \S\ref{sec:si-ledger}, whole and with its
-% floats, its \ContinuedFloat and its notes a-h intact.  It went for readability: twenty-five
-% rows of \scriptsize across two pages of the article, which is what the author asked to be rid of.
-% THE MOVE DID NOT FIX THE TYPE SIZE, and both referees this round said so of the relocated table.
-% It is now three floats at \footnotesize with its notes at \scriptsize; the arithmetic behind the
-% three is in the comment above the first part in sections/SI.tex.  A ledger set small enough to
-% fit two floats is the defect coming back, not a saving -- do not re-tighten it here or there.
-% WHAT WAS PAID FOR THE MOVE, and what a later editor must not undo.  Between 2026-08-02 and this
-% pass the ledger was the manuscript's HEDGING APPARATUS -- the scope clauses that used to trail
-% the prose sentences had been moved into its value cells to shorten the prose.  Moving the table
-% with those scopes still inside it would have left the article ASSERTING FLATLY what it now
-% qualifies.  So the scopes went back into the prose FIRST, claim by claim, and only then did the
-% table move.  The restorations are, by ledger block:
-%   two senses  -- the 5608-of-8103 row set and its identity across the single-seed controls, said
-%                  once at the head of \S\ref{sec:paradox} and governing the block; per-seed
-%                  non-overlap on both operations; the 0.59 share with "describes that seed, not a
-%                  magnitude" and the two other-seed readings that show why.
-%   decision    -- top-1 -0.107 [-0.192,-0.020] with "pooled and only pooled, two of three per-seed
-%                  intervals span zero", in its own period, per the note above \S\ref{sec:decision}.
-%   closure     -- note b (what a P is) at the head of \S\ref{sec:results}; note g in full, plus
-%                  note d, as the reading rule at the head of \S\ref{sec:measure}, where it governs
-%                  every margin of \S\ref{sec:broad}--\S\ref{sec:badclosure} at once; P>0.95 on the
-%                  four glycol-ether cells; "no stratum but the one named below is stated as a
-%                  finding".
-%   fidelity    -- "and not a measured equality either" with the two frequencies that show it; the
-%                  57 shared pairs' non-independence restated where the claim is made.
-%   mechanism   -- in sections/compensation-surrogate.tex: the 51+-2% magnitude's instability
-%                  across analysis configurations, "one grounded checkpoint" on the top-two share,
-%                  and what the +-0.5 on the 4.1x spans.
-%
-% SECOND PASS, 2026-08-08, and the reason there had to be one.  Three referees read the moved
-% article and all three reported claims flatter than the cells they came from, which is the one
-% failure the move was run to avoid.  The first pass had swept the ledger's HEDGE clauses and not
-% its SET, n, LEVEL and RESAMPLING-UNIT columns, so what it missed is systematic rather than
-% scattered: a scope that lived in the "Set (n)" column, or in a P/interval the value cell carried
-% beside the point estimate, had nowhere in the prose to land and was silently dropped.  The seven
-% they named and the four the sweep added:
-%   named      -- the dispersion-on cell +0.06 at P~0.6 (\S\ref{sec:fidelity}: without it the
-%                 section said "not an improvement under either rule" of a step whose sign is not
-%                 established in EITHER direction); the two typed-latent floors +1.29 and -0.77
-%                 with their P bands, of which only the first stands; the kernel-residual null's
-%                 set and size (n=60, folds grouped by solvent); the 18.75-against-1.47's set and n
-%                 (in compensation-surrogate.tex); the cross-fitted +1.76's interval [+1.02,+2.49],
-%                 which the disclosed deviation from the pre-declaration turns on and which may
-%                 never again print as a bare point estimate; the clean pole's sign test p~0.31
-%                 beside the degraded pole's 1/16, and the clean pole's gap given the interval
-%                 treatment the degraded pole's already had; \S\ref{sec:decision}'s level and unit
-%                 (95%, the 107 solute clusters) plus the four parity slopes' seed.
-%   swept      -- the 57-shared-pair block's own value and P (1.78->0.77 at P>0.95: the article was
-%                 printing the P of the WEAKEST of the three blocks and none of the strongest);
-%                 "over the same three seeds" on the 1.85-vs-2.25 pair; the nine solvent classes
-%                 the 2000-partition null permutes; the 5608 rows the +0.14 dMAE is measured on.
-% THE RULE THIS LEAVES.  A ledger cell has FOUR columns' worth of scope, not one: claim, set, n,
-% and the value's own uncertainty.  Check a restoration against all four.
-% Do not shorten the prose by moving a scope back into that table.  Do not bring the table back
-% into this document.
 \subsection{Supervising the intermediate toward the reference, and substituting it at prediction time}
 \label{sec:paradox}
 The word ``grounding'' names two opposite operations on the same VT-2005 database. Every solubility
