@@ -611,8 +611,8 @@ How much of a solid dissolves in a given liquid decides whether a drug is formul
 an injection, which solvent a crystallisation runs in, and how a product is purified. Each value is
 measured one solute, one solvent and one temperature at a time, so most industrially relevant
 combinations remain unmeasured, and independent determinations of the same system disagree by enough
-to floor what any predictor can achieve. Dissolving a solid also trades the cost of breaking a
-crystal against the cost of mixing the freed molecules into the solvent, so a predictor must be
+to floor what any predictor can achieve (\S\ref{sec:data}). Dissolving a solid also trades breaking
+a crystal against mixing the freed molecules into the solvent, so a predictor must be
 right about two unrelated kinds of chemistry at once, on molecules unlike any it was shown.
 
 Predictors divide by how much physical structure they impose. Direct models regress solubility from
@@ -1086,7 +1086,7 @@ beyond observation on those rows. \S\ref{sec:measure} measures a second axis and
 the first.
 
 Two experiments would settle it and both remain to be run. The first is the transfer back to the
-paradox's own regime, limitation~(i) of \S\ref{sec:discussion} and the principal open question here.
+paradox's own regime, which is limitation~(i).
 The second is limitation~(x): the fidelity contrast of \S\ref{sec:fidelity} compares
 \emph{oracle-input} activity error across kernels, so $\Ggap$ itself stands measured under no modern
 closure on either axis, and whether the \emph{solubility} paradox survives a 2010/dsp closure is
@@ -1300,8 +1300,8 @@ description and not as a test (Table~\ref{tab:oos-map}), every class either fail
 the two terms merged. Every margin above the one admitted positive class sits on a class the rule
 refuses: out of sample the glycol ethers sit away from where this closure errs hardest.
 
-That row set is also the whole of the separation this paper reports. ``COSMO-SAC error exceeds
-input error'' would carry it past five boundaries, each of them measured here. They are the map's
+That row set is the whole of the uniqueness and the whole of the separation this paper reports, and
+``COSMO-SAC error exceeds input error'' would carry it past five boundaries, each measured here. They are the map's
 other strata; both data sets taken whole; the solubility axis of \S\ref{sec:paradox}, where the two
 terms stay merged; the kernel as against the composite it is deployed in; and the chemistry-blind
 null. The margin sits at the ninetieth percentile of that null, on the one chemistry for which
@@ -1310,10 +1310,9 @@ out-of-sample rows are missing.
 \emph{Which chemistry does not separate.} Three of the six admissible cells are that same row set at
 three granularities. Of the other two, the alkane solutes are positive and demoted to the glycol
 ethers by clause~(c), and the acceptor-only aprotics pass the rule and leave the terms unseparated,
-the instrument being one-sided. That is the whole of the uniqueness claimed here: one row set
-admissible, positive and left standing by clause~(c), narrower than being the sole admissible
-stratum or the sole one sign-stable under every deletion. Which cell each remaining stratum fails on
-is in \S\ref{sec:si-map}, none of them used to explain a reversal.
+the instrument being one-sided. The uniqueness is narrower than being the sole admissible stratum or the sole one sign-stable under
+every deletion: it is one row set admissible, positive and left standing by clause~(c). Which cell
+each remaining stratum fails on is in \S\ref{sec:si-map}, none used to explain a reversal.
 
 % WHAT MUST STAY IN THIS PARAGRAPH: the ratio statistics (they are a row of Table~\ref{tab:claims}),
 % the null they are read against, the estimator-geometry REASON -- without it "why a map" is
@@ -1669,10 +1668,10 @@ re-run.}
 % plane uncharacterised on real systems" has no home anywhere else: \S\ref{sec:notdecided} covers
 % the fidelity axis alone and neither \S\ref{sec:si-limitations} nor any other section states the
 % plane.  It now sits on the limitation it qualifies.
-\paragraph{The sign rule's own prediction.} Remark~\ref{prop:tax} places these negatives in the
-mature-data, low-noise, well-covered regime, where a prior is predicted to hurt. The synthetic sweep
-(Fig.~\ref{fig:dial}) is true by construction there, so it verifies the instrument rather than the
-hypothesis, while the pKa closure exercises the sufficiency channel on real data.
+These negatives fall where Remark~\ref{prop:tax} predicts a prior will hurt
+(\S\ref{sec:tax}); the synthetic sweep of Fig.~\ref{fig:dial} is true by construction there, so it
+verifies the instrument and not the hypothesis, while the pKa closure exercises the sufficiency
+channel on real data.
 
 % Limitation (i) enlarged-set numbers: run_b_insuff_decomposition.{match_pairs,evaluate_closure,
 % lotv_binning} (res convention, 8 equal-count bins) on notebooks/data/raw/idac_expanded{,_raw}.csv
