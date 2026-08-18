@@ -1407,9 +1407,22 @@ it is computed.
 This set carries the paper's other reference-matched analyses and is far weaker: all $60$ rows sit
 at $298$\,K so that $\dim(\zstar)/n\approx102/60$, methanol occupies $25$ of them, and its $17$
 solvents fall in six of the nine classes, each short of the $n{=}40$ a bound needs, so it supports
+% THE DELETION COUNT WAS FROM A DIFFERENT CELL THAN THE MARGIN IT QUALIFIES, fixed 2026-08-19.
+% This sentence read "under 11 of the 60 single-pair deletions" beside an aggregate margin of +0.05.
+% Both numbers are real and they are not the same estimator cell: recomputed from the deposited
+% row-level table (scripts/analysis/check_vt2005_leverage_counts.py, which prints the whole grid),
+%   8 bins, unbiased variance -- THE HEADLINE CELL of Sec. 2.5 --  margin +0.0455, 4 of 60 fail, min -0.033
+%   5 bins, unbiased variance                                     margin +0.0970, 11 of 60 fail
+%   8 bins, maximum-likelihood variance (the deposited artifact)   margin +0.2362, 0 of 60 fail, min +0.151
+% So the sentence took its margin from the headline cell and its count from the five-bin one, which
+% is the hazard Sec. 2.5 fixes four analyst choices in advance to prevent.  The count is now the
+% headline cell's, and it agrees with the Supporting Information's "56/60 (minimum -0.03)", which
+% was right all along and reproduces exactly.  The artifact's 60/60 is right about its own cell.
+% ANY NUMBER ADDED TO THIS SENTENCE MUST COME FROM THE HEADLINE CELL.  Run the script.
 no stratified bound and we state no stratum of it as a finding. Its aggregate margin of $+0.05$
 collapses---under deletion of the two leverage pairs, under dropping methanol, under blocked
-out-of-fold estimators and under $11$ of the $60$ single-pair deletions, where on the broad set
+out-of-fold estimators and under $4$ of the $60$ single-pair deletions, the worst leaving $-0.03$,
+where on the broad set
 every single-pair deletion leaves the sign intact---and what a margin here would bound is a label
 systematic tracking $\zstar$, which the unbiased within-bin variance leaves \emph{open}
 (\S\ref{sec:si-robustness}). Of the $60$ pairs, $57$ also appear in the broad IDAC set at $298$\,K
