@@ -30,11 +30,15 @@ sys.path.insert(0, str(Path(__file__).parent))
 REPO = Path("/Users/nikitapolomosnov/PycharmProjects/tgnn-solv")
 sys.path.insert(0, str(REPO / "src"))
 
-from rank_final import (METRICS, arm_table, build_groups, cluster_boot,  # noqa: E402
+from rank_final import (METRICS, SEEDS, arm_table, build_groups, cluster_boot,  # noqa: E402
                         contrast, load_arm, recal_table)
 
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
-SEEDS = (42, 43, 44)
+# SEEDS COMES FROM rank_final, 2026-08-18, and was a second hard-coded (42, 43, 44) here.  This
+# script imports load_arm from that module, so RANK_BASE already pointed it at whichever tree the
+# caller chose while its own tuple kept it reading three seeds: on the five-seed leak-free tree it
+# would have produced a three-seed out-of-sample audit of a five-seed run and said nothing about it.
+# One seed set per invocation, defined in one place.
 PAIR = ("grounded_a", "oracle")
 
 

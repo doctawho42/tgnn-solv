@@ -41,6 +41,13 @@ NDCG_K = 3
 KEY = ["solute_smiles", "solvent_smiles", "T6"]
 SEEDS = tuple(int(s) for s in os.environ.get("RANK_SEEDS", "42,43,44").split(","))
 ARMS = os.environ.get("RANK_ARMS", "grounded_a,oracle,directgnn,ungrounded,nrtl").split(",")
+# THE RECALIBRATION AND REPLICATE-NOISE BLOCKS HAD THEIR OWN HARD-CODED ARM TUPLE, and the
+# 2026-08-12 parameterisation above did not reach them: with RANK_ARMS restricted to what the
+# leak-free tree holds, both raised KeyError('directgnn') after every seed had already been
+# scored.  They now take the intersection, in the tuple's own order, so a tree without an arm
+# simply reports the contrasts that arm is not in -- which is the same rule load_arm enforces:
+# an arm the re-run does not train is EXCLUDED from that run and never substituted.
+RECAL_ARMS = tuple(a for a in ("grounded_a", "oracle", "directgnn") if a in ARMS)
 RNG = np.random.default_rng(20260806)
 
 
@@ -409,7 +416,7 @@ def run_seed(seed: int) -> dict:
     }
 
     # FIX 3 -- affine recalibration
-    rec = {a: recal_table(groups, a) for a in ("grounded_a", "oracle", "directgnn")}
+    rec = {a: recal_table(groups, a) for a in RECAL_ARMS}
     recal = {"arm_means": {a: {c: float(rec[a][c].mean()) for c in
                                ("mae", "mae_offset", "mae_affine", "mae_affine_posslope")}
                            | {"slope_median": float(np.median(rec[a]["slope"])),
@@ -514,7 +521,7 @@ def main() -> None:
 
     # --------- same-arm seed replicate noise, all three pairs
     rep = {"n_common_groups": len(common)}
-    for arm in ("grounded_a", "oracle", "directgnn"):
+    for arm in RECAL_ARMS:
         for i, sa in enumerate(SEEDS):
             for sb in SEEDS[i + 1:]:
                 ta, tb = keep[sa]["tabs"][arm], keep[sb]["tabs"][arm]

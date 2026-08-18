@@ -1014,15 +1014,36 @@ def ledger_rows() -> list[DisplayRow]:
                       lambda c: c.ranking["path"]
                                 + " :: seed_*.contrasts.oracle_minus_grounded_a.spearman.ci95",
                       quote="all three per-seed intervals excluding zero"),
-                Claim("two of three per-seed top-1 intervals span zero",
-                      lambda c: sum(lo <= 0 <= hi for _, lo, hi in c.ranking["top1_per_seed"])
-                      == 2,
+                # DERIVED, NOT TYPED, 2026-08-18.  Both halves of this claim were literals -- the
+                # count "two" in the predicate and the words "two of three" in the quote -- so when
+                # the five-seed ranking landed the predicate failed and the quote no longer matched
+                # the row.  A claim whose repair is to retype two numbers is a claim that has to be
+                # remembered; this one now reads the artifact for the count and the seed total, and
+                # the row is required to print whatever they say.
+                Claim("the per-seed top-1 intervals that span zero",
+                      lambda c: _spanning_phrase(c) in _tab_claims_ranking_row(c),
                       lambda c: c.ranking["path"]
                                 + " :: seed_*.contrasts.oracle_minus_grounded_a.top1.ci95",
-                      quote="two of three per-seed intervals spanning zero"),
+                      quote="<n> of <N> per-seed intervals spanning zero"),
             ],
         ),
     ]
+
+
+def _spanning_phrase(c: "Ctx") -> str:
+    """`three of five per-seed intervals spanning zero`, spelled from the artifact."""
+    per_seed = c.ranking["top1_per_seed"]
+    n = sum(lo <= 0 <= hi for _, lo, hi in per_seed)
+    return f"{word(n)} of {word(len(per_seed))} per-seed intervals spanning zero"
+
+
+def _tab_claims_ranking_row(c: "Ctx") -> str:
+    """The ranking row of tab:claims, whitespace-normalised, for a substring test."""
+    _, block = find_display(c.paper, "tab:claims")
+    for row in tabular_rows(block):
+        if "degrades the" in row and "choice" in row:
+            return normalise_ws(row)
+    return ""
 
 
 def accuracy_row() -> DisplayRow:

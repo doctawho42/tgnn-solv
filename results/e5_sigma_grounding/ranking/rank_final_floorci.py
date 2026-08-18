@@ -21,7 +21,7 @@ sys.path.insert(0, str(REPO / "src"))
 
 import pandas as pd  # noqa: E402
 
-from rank_final import (ARMS, METRICS, build_groups, cluster_boot, donor_index,  # noqa: E402
+from rank_final import (ARMS, METRICS, SEEDS, build_groups, cluster_boot, donor_index,  # noqa: E402
                         load_arm, metrics)
 
 
@@ -77,7 +77,12 @@ def expected_floor_per_group(groups, idx, donors, arm):
 
 def main():
     res = {}
-    for seed in (42, 43, 44):
+    # SEEDS COMES FROM rank_final, 2026-08-18.  This was a third hard-coded (42, 43, 44) -- after
+    # rank_final.py's own and rank_final_oos.py's -- and it is the quietest of the three: the script
+    # takes RANK_BASE through load_arm, so pointed at the five-seed tree it read the right arms at
+    # three of the five seeds and wrote a file whose keys are seed_42/43/44, which looks exactly like
+    # a correct three-seed run.  One seed set per invocation, defined in one place.
+    for seed in SEEDS:
         frames = {a: load_arm(seed, a) for a in ("grounded_a", "oracle")}
         groups, _ = build_groups(frames)
         d_idx, donors = donor_index(groups)

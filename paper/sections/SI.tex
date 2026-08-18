@@ -248,18 +248,20 @@ override of \S\ref{sec:eval} is not applied in any oracle arm. Not the solver.
 One coupling is worth stating rather than glossing, because ``only the profile changes'' is not
 quite exact. The bounded correction reads a compact summary of the solver's inputs which includes
 the closure's own $\tau$, so a substituted profile perturbs the correction, and through it the
-corrected crystal parameters the solver receives. The perturbation is small. Over the three seeds,
+corrected crystal parameters the solver receives. The perturbation is small, and at five seeds it is an order of magnitude smaller than it was at
+three. Over the five seeds,
 on the $8066$ of the $8103$ test rows where the substitution applied, it moves $\Tm$ by at most
-$0.025$\,K against a median of
-$450$\,K, $\dHfus$ by at most $4.6$\,J\,mol$^{-1}$ against a median of $3.5\times10^{4}$, and
-$\Phi$---the quantity that actually enters the SLE---by at most $7\times10^{-4}$ against a median
-magnitude of $4.5$. Each maximum is the largest of the three per-seed maxima---for $\Phi$ those are
-$3.7$, $7.1$ and $2.1$ in units of $10^{-4}$, the worst at seed $43$---and each median is over those
-rows with the three seeds pooled; the per-seed medians of $|\Phi|$ are $4.72$, $4.36$ and $4.53$, so
-a single-seed reading of this quantity is not the three-seed one, and \S\ref{sec:eval} prints the
-three-seed one.
+$0.007$\,K against a median of
+$450$\,K, $\dHfus$ by at most $1.3$\,J\,mol$^{-1}$ against a median of $3.5\times10^{4}$, and
+$\Phi$---the quantity that actually enters the SLE---by at most $3.2\times10^{-5}$ against a median
+magnitude of $4.4$. Each maximum is the largest of the five per-seed maxima---for $\Phi$ those are
+$3.2$, $1.2$, $1.2$, $1.1$ and $1.1$ in units of $10^{-5}$, the worst at seed $42$---and each median
+is over those rows with the five seeds pooled; the per-seed medians of $|\Phi|$ are $4.37$, $4.53$,
+$4.36$, $4.24$ and $4.53$, so
+a single-seed reading of this quantity is not the five-seed one, and \S\ref{sec:eval} prints the
+five-seed one.
 On the rows where the substitution did not apply the same quantities still move,
-by $1.2\times10^{-4}$\,K, $0.045$\,J\,mol$^{-1}$ and $6\times10^{-6}$, which is the residue of
+by $1.2\times10^{-4}$\,K, $0.018$\,J\,mol$^{-1}$ and $4\times10^{-6}$, which is the residue of
 forwarding one checkpoint twice on a GPU and sets the floor these figures should be read against. So
 $\Phi$ is not bit-identical between the two evaluations, and the fourth decimal of a per-row
 $\Phi$ comparison between them is not meaningful; nothing at the scale of the $+0.41$ turns on it.
@@ -267,12 +269,15 @@ $\Phi$ comparison between them is not meaningful; nothing at the scale of the $+
 % and \S\ref{sec:supporting} is THIS quantity on a SUBSET of these rows, not a competing value for
 % it; the sentence below says so at the point both numbers are in view, and every other place either
 % number prints now names its row set.  Source: rank_final.json integrity.phi_max_abs_diff_vs_grounded_a,
-% oracle vs grounded_a, = 2.81/4.20/1.52 x 10^{-4} at seeds 42/43/44 on the 5608-row lock.
+% oracle vs grounded_a, = 3.19/0.76/0.57/1.00/1.05 x 10^{-5} at seeds 42-46 on the 5608-row lock.
+% AT FIVE SEEDS THE TWO MAXIMA COINCIDE, 2026-08-18, and the sentence says so rather than printing
+% one number twice as though it were two: the worst row of the 8066 is now a labelled row.  If a
+% re-run ever separates them again, restore the "smaller because those rows are a subset" clause.
 Restricted to the $5608$ labelled test rows that every solubility figure in the article is scored on,
-the same worst-seed maximum is $4.2\times10^{-4}$: that is the figure \S\ref{sec:decision},
-Table~\ref{tab:claims} and \S\ref{sec:supporting} print, and it is smaller than the $7\times10^{-4}$
-above because those rows are a subset of the $8066$, not because a different quantity is being
-measured. The separately trained arms differ over the same $5608$ rows by $4.4$ to $5.9$ in $\Phi$,
+the worst-seed maximum is the same $3.2\times10^{-5}$: that is the figure \S\ref{sec:decision},
+Table~\ref{tab:claims} and \S\ref{sec:supporting} print, and it equals the figure over the $8066$
+above because at these seeds the worst row of the larger set lies inside the smaller one, not
+because a different quantity is being measured. The separately trained arms differ over the same $5608$ rows by $4.4$ to $5.9$ in $\Phi$,
 four orders of magnitude more.
 
 All three oracle applications---evaluation-only, the training-time injection, and the
@@ -811,7 +816,7 @@ Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($56
 \addlinespace[3pt]
 Training-time $\sigma$ supervision has \emph{no established sign} (MAE) & labelled test rows, 5 seeds & $2.04\to1.93$ in the seed mean, but the per-seed values overlap and one of the five gains reverses: $0.149/0.122/0.175/-0.017/0.122$. They straddle the co-adapted arm's $+0.09$, so the two operations are not ordered by magnitude either. This is the contrast the pre-committed leak-free re-run was run to settle (\S\ref{sec:data}), and it settles it as unresolved \\
 \addlinespace[3pt]
-The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 5 seeds & per-solute Spearman $-0.197$ $[-0.282,-0.117]$ pooled, all three per-seed intervals excluding zero; nDCG@3 $-0.084$ $[-0.124,-0.043]$; top-1 $-0.107$ $[-0.192,-0.020]$ pooled only, two of three per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=4.2\times10^{-4}$ over the labelled rows of this row's own set at the worst seed, the same quantity over the full test set, labelled rows and unlabelled together, being larger (\S\ref{sec:si-methods})---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $86\%$ of the \emph{MAE} gap and refitted out of sample removes none of it, and leaves this one untouched either way where the fitted map increases, as it does in $485$ of the $823$ groups in both arms at all five seeds. The substitution falls on the solvent channel \\
+The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 5 seeds & per-solute Spearman $-0.185$ $[-0.269,-0.107]$ pooled, all five per-seed intervals excluding zero; nDCG@3 $-0.071$ $[-0.114,-0.029]$; top-1 $-0.088$ $[-0.172,-0.009]$ pooled only, three of five per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=3.2\times10^{-5}$ over the labelled rows of this row's own set at the worst seed, the same quantity over the full test set, labelled rows and unlabelled together, being larger (\S\ref{sec:si-methods})---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $91\%$ of the \emph{MAE} gap and refitted out of sample returns an interval that holds both all of it and none, and leaves this one untouched either way where the fitted map increases, as it does in $485$ of the $823$ groups in both arms at all five seeds. The substitution falls on the solvent channel \\
 \bottomrule
 \end{tabular}
 }
@@ -3143,7 +3148,7 @@ row's own temperature over $273$--$403$\,K on the broad IDAC set), where $\Delta
 does not enter at all on either set: the ideal term is not evaluated in the decomposition, so no
 temperature range of it is at issue. The grounding paradox is an arm-to-arm difference (learned-$\sigma$
 vs.\ oracle-$\sigma$) whose two arms share the \emph{identical} crystal term ($\max|\Delta\Phicry|$
-of $4.2\times10^{-4}$ over the scored rows), so any $\Delta C_p$
+of $3.2\times10^{-5}$ over the scored rows), so any $\Delta C_p$
 error cancels exactly in that comparison.
 What it is not orthogonal to is the \emph{mechanism} of \S\ref{sec:surrogate}. Setting
 $\Delta C_p=0$ leaves $\Phicry$ too large by a median $0.32$ and a mean $0.40$ in \lnx\ on the $31$ solutes carrying the $1318$

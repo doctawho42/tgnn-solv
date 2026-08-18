@@ -1028,57 +1028,63 @@ The substitution also costs the decision the model is used for. The separate-tun
 confound of \S\ref{sec:discussion} leaves this comparison clear: the reference-profile arm re-runs
 the grounded checkpoint's own weights over the same rows and changes exactly one thing, the profile fed to the
 closure, so one tuning serves both sides. They differ in $\Phi$ by at most
-$4.2\times10^{-4}$ over these $5608$ rows at the worst of the three seeds.
+$3.2\times10^{-5}$ over these $5608$ rows at the worst of the five seeds.
 Co-adaptation is the confound that survives. Like the MAE gap above, this is an
 input swapped at evaluation; we ranked no arm that had trained on the reference profile, and what
 co-adaptation would do to an ordering stays unmeasured here.
 We group the labelled test rows by solute and temperature and rank the solvents inside each group
 ($823$ groups over $107$ solutes; Table~\ref{tab:ranking}). The mean per-solute Spearman correlation
-then falls from $0.592/0.546/0.598$ to $0.365/0.369/0.410$ across the three seeds, pooled $-0.197$
-$[-0.28,-0.12]$, every per-seed interval excluding zero. Each of the three falls exceeds
-any difference between seed replicates of a single arm on this measure, the largest of which is
-$0.060$. The deposit carries that benchmark for the rank correlation, so we read it against that
-measure and leave the two below unbenchmarked.
+then falls from $0.474/0.612/0.596/0.515/0.556$ to $0.361/0.399/0.365/0.343/0.362$ across the five
+seeds, pooled $-0.185$ $[-0.27,-0.11]$, every per-seed interval excluding zero. Four of the five
+falls exceed any difference between seed replicates of a single arm on this measure, the largest of
+which is $0.132$; the fifth, at seed $42$, is $0.114$ and does not, so at that seed the fall is
+inside the spread a single arm shows between its own seeds. The deposit carries that benchmark for
+the rank correlation, so we read it against that measure and leave the two below unbenchmarked.
 Every interval here is a $95\%$ percentile bootstrap over those $107$ solute clusters, the
 effective sample rather than the $823$ groups. Two decimals is the precision the draw count
 determines, coarser than the precision the deposit records: at the $4000$ draws behind them a third
 decimal is a property of the bootstrap seed, so we apply to these the coarsening rule
 \S\ref{sec:si-map} states for the map.
-Normalised discounted cumulative gain over the top three solvents (nDCG@3) falls by $-0.084$
-$[-0.12,-0.04]$, and top-1 accuracy by $-0.107$ $[-0.19,-0.02]$. We quote that
-last figure pooled, and pooled only: two of its three per-seed intervals span zero, so of the three
+Normalised discounted cumulative gain over the top three solvents (nDCG@3) falls by $-0.071$
+$[-0.11,-0.03]$, and top-1 accuracy by $-0.088$ $[-0.17,-0.01]$. We quote that
+last figure pooled, and pooled only: three of its five per-seed intervals span zero, so of the three
 ranking metrics it is the one whose sign the per-seed columns leave open. The solvent the
-model would select changes in $40$ to $53\%$ of groups, asymmetrically: the learned profile by itself
-picks the measured best solvent in $20.0/23.2/21.5\%$ of groups, the reference profile by itself in
-$6.2/14.5/12.2\%$. All of that is an ordering rather than a level. Fitting a separate affine recalibration inside every
+model would select changes in $42$ to $53\%$ of groups, asymmetrically: the learned profile by itself
+picks the measured best solvent in $18.2/22.1/24.2/21.4/19.6\%$ of groups, the reference profile by
+itself in $13.2/10.9/12.5/14.7/10.0\%$. All of that is an ordering rather than a level. Fitting a separate affine recalibration inside every
 group (a slope as well as an intercept, the largest concession a miscalibration reading can ask
-for) removes $86\%$ of the MAE gap, $+0.431$ $[+0.31,+0.55]$ to
-$+0.060$ $[+0.02,+0.10]$. That is the restored, misaligned spread of the paragraph above in
+for) removes $91\%$ of the MAE gap, $+0.426$ $[+0.30,+0.55]$ to
+$+0.040$ $[-0.00,+0.08]$, and what is left of it no longer stands clear of zero. That is the
+restored, misaligned spread of the paragraph above in
 another currency. That map is fitted on the rows it is then scored on, two free parameters against a
 median of five solvents, so it bounds what the concession can buy rather than measuring it. Refitted
-leaving out the row it scores, it leaves the whole gap in place: $+1.09$ $[+0.3,+2.2]$ pooled. On the
+leaving out the row it scores, it returns $+0.32$ $[-0.61,+1.20]$ pooled, an interval wide enough to
+hold both the whole gap and none of it. On the
 $550$ groups that hold at least five solvents, where a refit has something to work with, it gives
-$+0.28/{+}0.07/{+}0.04$ by seed, two of the three intervals spanning zero
+$+0.17/{+}0.14/{+}0.28/{+}0.23/{+}0.19$ by seed, three of the five intervals spanning zero
 (\S\ref{sec:supporting}). The MAE penalty is level and scale in the sense that a per-group map
-fitted on the answer absorbs most of it. Out of sample the data support a far weaker statement in either
+fitted on the answer absorbs most of it. Out of sample the data support no statement in either
 direction. The ranking penalty survives both fits, by invariance rather than
 by any centring argument. That invariance is to an \emph{increasing} affine map, and the
-fitted map decreases in $10$ to $12\%$ of learned-profile groups and $17$ to $19\%$ of
-reference-profile ones, where it reverses that group's order outright. Restricted to the $589$ groups
-of $823$ whose map increases in both arms at all three seeds, the ranking gap is $\rho$ $-0.148$
-$[-0.218,-0.079]$ and nDCG@3 $-0.068$ $[-0.110,-0.026]$, with top-1 then spanning zero.
+fitted map decreases in $10$ to $15\%$ of learned-profile groups and $15$ to $21\%$ of
+reference-profile ones, where it reverses that group's order outright. Restricted to the $485$ groups
+of $823$ whose map increases in both arms at all five seeds, the ranking gap is $\rho$ $-0.107$
+$[-0.179,-0.031]$, with nDCG@3 and top-1 then spanning zero. Only the rank correlation survives
+that restriction, and the subset it survives on is $59\%$ of the groups.
 
 What stands in its place is indistinguishable here from a solute-blind ordering. Two references are
 blind to the solute: the same arm's own predictions for a randomly drawn other solute over the
 same solvents, and a ranking of those solvents by their leave-one-solute-out mean measured
 solubility. Set against both, the learned-profile arm is above them on Spearman, Kendall, top-1 and
-nDCG@3 at all three seeds, twenty-four intervals of twenty-four excluding zero. The reference-profile arm's own
-twenty-four margins are small and all but one positive, and their intervals carry the
-reading: twenty-four of the twenty-four include zero, or twenty-three, one cell sitting on the
-boundary at $[-0.0008,+0.0762]$ and changing side with the bootstrap draw
+nDCG@3 at every seed: all forty of its margins are positive, and $27$ of the forty intervals exclude
+zero. The thirteen that do not are concentrated rather than scattered, seven of them at seed $42$ and
+four at seed $45$, so the separation is a property of three of the five runs and not of every one.
+The reference-profile arm's own forty margins are smaller, $36$ of them positive, and their intervals
+carry the reading: $36$ of the forty include zero, and the four that do not are all one seed's and
+one reference's, the donor floor at seeds $43$ and $44$
 (Table~\ref{tab:ranking}). That measures a failure to
-separate the reference-profile arm from solute-blind orderings, and it stops short of demonstrating
-that the two are inseparable. Both arms are above chance, the within-group permutation floor being
+separate the reference-profile arm from solute-blind orderings on most of the design, and it stops
+short of demonstrating that the two are inseparable. Both arms are above chance, the within-group permutation floor being
 $\rho=0.00\pm0.02$ for each. Supplying the true physical intermediate costs an ordering rather than a
 calibration: the arm's ordering of solutes becomes indistinguishable from one drawn blind to
 them.
