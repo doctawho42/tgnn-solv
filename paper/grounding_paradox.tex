@@ -1295,7 +1295,7 @@ with the largest leverage here (\S\ref{sec:si-map-cells}, Table~\ref{tab:grid-gl
 
 That sweep varies the binning bound's own settings and not the family of estimator. A pre-declared
 cross-fitted regressor, tested after this analysis was fixed, returns a uniformly \emph{looser}
-bound---$+1.76$ on this stratum, and the chemistry-blind null moved the \emph{wrong} way
+bound---$+1.76$ $[+1.02,+2.49]$ on this stratum, and the chemistry-blind null moved the \emph{wrong} way
 (\S\ref{sec:si-crossfit}; note~\emph{e} of Table~\ref{tab:map-article})---while under the
 declaration's conservative source-grouped folds it fails outright, at $R^2=-0.60$ out of fold and a
 bound exceeding the stratum's own total error, which $\Binsuf$ cannot do: there no admissible
@@ -1450,7 +1450,7 @@ used to explain a reversal.
 $\mathrm{MSE}$ is not---a factor of $2.0$ against $25$ over the three classes the design can bound,
 $6.8$ against $51$ once the three that carry an estimate are added, that $6.8$ resting on a
 mono-alcohol figure the artifact flags as an invalid bound on a stratum already excluded---and
-against $2000$ random partitions of the $477$ rows into blocks of the observed class sizes the
+against $2000$ random partitions of the $477$ rows into blocks of the nine observed class sizes the
 chemical partition's range in $\mathrm{MSE}$ exceeds every draw while its range in the bound is
 unremarkable ($p=0.26$), their ratio giving $p=0.02$ (\S\ref{sec:si-map}). That is the estimator
 showing through: each stratum is summarised by eight quantile bins of one scalar, so the bound
@@ -1517,7 +1517,8 @@ Where $\Bclos$ dominates, on the one row set the rule leaves standing, the ceili
 \emph{as it is deployed}: the fixed kernel together with the one computed conformer it reads, which
 is the composite $\Bclos$ is the error of and the object the pipeline runs on. Which of the two
 carries the error this section leaves open, and dominance leaves open too whether the composite is
-\emph{fixably} wrong---a fitted kernel residual does not transfer across solvents on the one fold
+\emph{fixably} wrong---a fitted kernel residual on the $60$ matched pairs does not transfer across
+solvents under the solvent-grouped folds that are the one fold
 design free of leakage, and that result is a null and not a bound, so $\Bclos$ is an error a handful
 of kernel parameters can absorb \emph{within} a solvent and whose correctability across solvents we
 leave unshown. Where it fails is chemically placed: on the VT-2005-matched set $90\%$ of the squared
