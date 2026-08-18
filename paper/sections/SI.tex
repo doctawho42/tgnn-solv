@@ -245,6 +245,33 @@ reads the solute-only pre-interaction embedding, which the substitution does not
 $\Tm$ and $\dHfus$ are the same in both evaluations of a given checkpoint, and the separate crystal
 override of \S\ref{sec:eval} is not applied in any oracle arm. Not the solver.
 
+% MOVED OUT OF \S\ref{sec:eval}, 2026-08-18, in the compression pass.  The article kept the FINDING
+% -- that the two role adapters let one molecule carry two profiles, and that the model therefore
+% violates the self-pair identity -- and this is the mechanism behind it: which of the readout's
+% three numbers carries the violation, what a mismatch on each is worth, and what the repair costs.
+% None of it was anywhere but the article before this pass, so it is deposited rather than dropped.
+\paragraph{Which channel of the role gap carries the identity violation.} The role-adapted readout
+feeds three numbers, and on the arms this paper reports one of the three carries the violation. The
+residual term is the bracket $\ln\Gamma_{S,\mathrm{mix}}-\ln\Gamma_{S,2}^{\mathrm{pure}}$ scaled by
+$A_2/a_{\mathrm{eff}}$, and when the two roles agree on the shape that bracket is identically zero
+whatever the areas: giving them a $20\%$ mismatch on the cavity area, or on the molar volume, moves
+$\lng$ by exactly zero. The area stays live in general, multiplying the residual term through that
+prefactor, and on a self-pair it multiplies zero, so the profile disagreement is the whole of the
+identity violation there. On the one arm that restores the combinatorial term the same split also
+reaches $\lng$ through the auxiliary head's volume, and a mismatch on the volume alone gives a
+median $|\lng|$ of $0.152$ with the two profiles in perfect agreement. Tying the two roles is the
+change this calls for; where the size term is live it has to reach the auxiliary head as well, and
+either way it is a retraining.
+
+The departure \S\ref{sec:surrogate} reports between the learned profile and its reference,
+$36\pm1\%$ and $51\pm2\%$, is a relative $L_2$ distance between \emph{shapes} with both sides
+normalised, so it prices the shape and leaves the area out. How far the deployed arms' areas sit
+from the tabulated ones lies beyond the retained artifacts, which keep none of their weights. On the
+one trained COSMO-SAC head the tree does keep, the learned cavity area is a median $1.01$ times the
+tabulated one over the solutes it scores and $1.58$ times it over the solvents; that head departs
+from the substitution penalty of \S\ref{sec:paradox} in both size and direction, so those two ratios
+price the quantity and not the arms.
+
 One coupling is worth stating rather than glossing, because ``only the profile changes'' is not
 quite exact. The bounded correction reads a compact summary of the solver's inputs which includes
 the closure's own $\tau$, so a substituted profile perturbs the correction, and through it the

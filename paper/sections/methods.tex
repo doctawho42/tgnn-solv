@@ -580,11 +580,11 @@ because it is on the same $6977$ records and beats the deployed closure by a fac
 \subsection{Evaluation protocol, and the DirectGNN control}
 \label{sec:eval}
 In the \emph{oracle substitution} we replace the predicted $\sigma$-profile $\hat z$ with the
-reference VT-2005 profile $\zstar$ before the closure, matching by canonical SMILES. What is replaced is one object rather than two. The $\sigma$-head emits a normalised $51$-bin shape
-and a cavity area whose product is the area-weighted profile the closure reads, and for a matched
-molecule that pair is replaced by the tabulated pair, which stands in the same relation. The
-reference area therefore reaches the residual term's $A_2/a_{\mathrm{eff}}$ prefactor as part of
-replacing that one object rather than as a separate choice.
+reference VT-2005 profile $\zstar$ before the closure, matching by canonical SMILES. One object is
+replaced, not two: the $\sigma$-head emits a normalised $51$-bin shape and a cavity area whose
+product is the area-weighted profile the closure reads, and the tabulated pair stands in the same
+relation, so the reference area reaches the residual term's $A_2/a_{\mathrm{eff}}$ prefactor as part
+of that single replacement (\S\ref{sec:si-methods}).
 
 % ADDED 2026-08-11.  A referee of the first round named this and it was not disclosed.  Verified
 % here directly rather than taken from a report: the checkpoint's two role adapters are separate
@@ -621,37 +621,13 @@ is the whole of the violation.
 % which is the prefactor, exactly as this section and the SI already say elsewhere.  Do not restate
 % the zero as "a function of the shapes alone" -- that reading generalises a degenerate case, which
 % is the same error the 102 untestable self-pairs above exist to prevent.
-Which channel of that gap carries it decides how large the repair is. The role-adapted readout
-feeds three numbers, and on the arms this paper reports one of the three carries the violation. The
-residual term is the bracket $\ln\Gamma_{S,\mathrm{mix}}-\ln\Gamma_{S,2}^{\mathrm{pure}}$ scaled by
-$A_2/a_{\mathrm{eff}}$, and when the two roles agree on the shape that bracket is identically zero
-whatever the areas. Giving the two roles a $20\%$ mismatch on the cavity area, or on the molar
-volume, therefore moves $\ln\gamma_2$ by exactly zero. The area stays live in general, multiplying the
-residual term through that prefactor, and on a self-pair it multiplies zero, so the profile
-disagreement is the whole of the identity violation. On the
-one arm that restores the combinatorial term, the same split also reaches $\ln\gamma_2$ through the
-auxiliary head's volume, and there a mismatch on the volume alone gives a median $|\ln\gamma_2|$ of
-$0.152$ with the two profiles in perfect agreement. The substitution overwrites both roles at once
-and therefore closes that gap as well, which is a second thing it changes besides the profile values,
-and we leave the two unseparated. Tying the two roles is the change this calls for. Where the size
-term is live it has to reach the auxiliary head as well, and either way it is a retraining.
-% ITEM 5 OF THE 2026-08-11 REFEREE ROUND.  The substitution swaps a shape and a SIZE at once, and
-% A_2/a_eff is a multiplicative prefactor on the residual term, so a reader is owed which of the
-% two objects the fidelity metric of \S\ref{sec:surrogate} is taken on and how far the learned area
-% sits from the tabulated one.  The metric is on the NORMALISED shape (both sides normalised to sum
-% to 1 in run_compensation_surrogate.py's load_true_shapes/predict_sigma_hat), so it carries no
-% information about the area at all.  The area ratio on these arms is unrecoverable -- the tree
-% keeps no COSMO-SAC weights -- and on the head where it can be read it is 1.008 solute / 1.579
-% solvent (results/softmax_floor/profile_geometry.json).  Do not state the departure without saying
-% which object it is on.
-The departure this paper reports between the two,
-$36\pm1\%$ and $51\pm2\%$ in \S\ref{sec:surrogate}, is a relative $L_2$ distance between
-\emph{shapes}, both sides normalised, and it prices the shape and leaves the area out. How far the deployed arms'
-areas sit from the tabulated ones lies beyond the retained artifacts, which keep none of their
-weights. On the one trained COSMO-SAC head that the tree keeps, the learned cavity area is a median
-$1.01$ times the tabulated one over the solutes it scores and $1.58$ times it over the solvents. That
-head departs from the substitution penalty reported here in both size and direction, so
-those two ratios price the quantity rather than the arms.
+Which of the readout's three numbers carries that gap decides how large the repair is, and on these
+arms it is the profile: with the two roles agreeing on the shape the residual bracket is identically
+zero whatever the areas, so on a self-pair the profile disagreement is the whole of the violation
+(\S\ref{sec:si-methods}, which also prices a mismatch on the area and on the volume, and gives how
+far the deployed arms' areas sit from the tabulated ones). The substitution overwrites both roles at
+once and therefore closes that gap as well. That is a second thing it changes besides the profile
+values, and we leave the two unseparated; tying the roles is the repair, and it is a retraining.
 We match solute and solvent independently. The substitution replaces those two profiles and stops there,
 the crystal head reading a solute-only embedding it leaves untouched. The bounded
 correction does read the closure's own parameters, so the crystal values the solver finally receives
@@ -666,42 +642,36 @@ correction does read the closure's own parameters, so the crystal values the sol
 % (seed 43) is over the 8066 substituted rows of all 8103 test rows, 4.2e-4 (seed 43) over the 5608
 % labelled rows the results are scored on, which are a subset -- so the smaller figure is not a
 % competing value.  Both sets are now named wherever either number prints.
-shift by a little: pooled over the five seeds and over the $8066$ of the $8103$ test rows where the
-substitution applied, at most $3.2\times10^{-5}$ in $\Phi$, against a median $|\Phi|$ of $4.5$ on that
-same pooled set. Restricted to the $5608$ labelled rows every solubility figure below is scored on,
-the maximum is the same $3.2\times10^{-5}$: at five seeds the worst row of the larger set is a
-labelled one, where at three the two sets had different worst rows and different maxima.
-\S\ref{sec:si-methods} lists every replaced and unreplaced quantity, and
-gives what the match rule reaches: the reference table covers $99.3\%$ of the labelled test rows on
-the solvent side and $5.3\%$ on the solute side, so the solvent profile carries the substitution
-contrast below.
+shift by a little: pooled over the five seeds, at most $3.2\times10^{-5}$ in $\Phi$ against a median
+$|\Phi|$ of $4.5$, on the $8066$ of the $8103$ test rows where the substitution applied and on the
+$5608$ labelled rows alike (\S\ref{sec:si-methods}). The reference table covers $99.3\%$ of the
+labelled test rows on the solvent side and $5.3\%$ on the solute side, so the solvent profile
+carries the substitution contrast below.
 
 We apply it three ways
-to rule out implementation artifacts. The first is at evaluation alone, and the second is injected at
-training time so the model co-adapts. The third is a channel-swap control, injected at training under a
-coordinate-descent schedule that freezes the crystal branch during the SLE phase, so that the
-activity branch alone refits against it. The three differ in when the replacement is made rather than in what is replaced, and
-the last two are at seed $42$. An analogous override substitutes reference crystal
-targets. The activity target for the decomposition is the infinite-dilution
+to rule out implementation artifacts, differing in \emph{when} the replacement is made: at
+evaluation alone; injected at training so the model co-adapts; and a channel swap, injected at
+training under a coordinate-descent schedule that freezes the crystal branch during the SLE phase so
+the activity branch alone refits against it. The last two are at seed $42$. An analogous override
+substitutes reference crystal targets. The activity target for the decomposition is the infinite-dilution
 $\lngi=\lim_{x_2\to0}\lng$, on two sets that differ in their reference database and their regime
 (\S\ref{sec:broad}--\S\ref{sec:vt2005}).
 
 DirectGNN shares the encoder, interaction, readout and pair representation, adds a thermometer
 (cumulative-threshold) temperature encoding, and maps directly to \lnx\ with no heads, closure or
-solver. The two arms therefore share their representation while differing in their inputs and their tuning.
-The control receives an explicit temperature encoding, where the physics arm sees $T$
-through $\Phi(T)$ and the closure. We tuned the optimisation settings per arm, so they differ by up
-to an order of magnitude. The TGNNSolv$-$DirectGNN gap is accordingly a comparison of two separately
-tuned pipelines that differ in the thermodynamic bottleneck rather than an isolation of the bottleneck, and
-every physics-penalty comparison below carries that caveat (\S\ref{sec:discussion}).
+solver, so it sees $T$ explicitly where the physics arm sees it through $\Phi(T)$ and the closure.
+We tuned the optimisation settings per arm, and they differ by up
+to an order of magnitude. The TGNNSolv$-$DirectGNN gap is therefore a comparison of two separately
+tuned pipelines that differ in the thermodynamic bottleneck, and not an isolation of it; every
+physics-penalty comparison below carries that caveat (\S\ref{sec:discussion}).
 
-We run the controlled comparisons of \S\ref{sec:paradox} at three seeds and report them as
-mean$\pm$sd on a fixed row set. That lock is the $5608$ test rows carrying a solubility measurement, $5608$
+We report the controlled comparisons of \S\ref{sec:paradox} as mean$\pm$sd on a fixed row set, at
+five seeds for the arms the leak-free re-run trains and three for the rest. That lock is the $5608$
+test rows carrying a solubility measurement, $5608$
 of the $8103$ (\S\ref{sec:data}), so all arms score identical rows. The $2495$ rows outside it
-carry a melting point alone and are unscorable in every arm alike, the control included, and every
-one of them is dropped for its label rather than for anything an arm predicted. Which
-rows carry a label fixes the set, and which rows an arm handled leaves it untouched: the lock's
-finite-prediction clause is
+carry a melting point alone and are unscorable in every arm alike, the control included, each
+dropped for its label and not for anything an arm predicted. Which
+rows carry a label fixes the set: the lock's finite-prediction clause is
 inert, removing no row from any arm at any seed, and \S\ref{sec:si-lock} gives the decomposition. The
 runs behind every number reported here fall into twelve families, a family being a set of runs
 sharing a script, a corpus and a seed policy, and Table~\ref{tab:runs} gives each number its family, its
