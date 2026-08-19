@@ -788,25 +788,17 @@ models. Section~\ref{sec:conclusion} states the result and its scope.
 % a name from a panel, this caption must buy it back in words, budget or no budget.
 % (2026-08-10: "UD" became "Delaware (UD)" IN THE PANEL, so the caption still owes nothing here.
 % The initials alone printed on page 4 and were expanded on page 7.)
+% CAPTION TRIMMED TO WHAT IS DRAWN, 2026-08-19 review.  Two results and one scope clause left it:
+% the chemistry-blind null frequency with its "search's survivor" reading, and the composite-kernel
+% caveat.  Both print in the body -- nine mentions and three, checked before the cut, not assumed.
+% THE ONE-SIDED-BOUND CLAUSE STAYS.  Without it the blocks read as intervals, which is a misreading
+% of the drawing and not a finding stated in it.
 \caption{\textbf{Overview.} \textbf{(a)}~A learned encoder predicts a charge-density profile
 $\hat\sigma$ that a fixed thermodynamic model turns into a solubility, and the arrow marks the
-substitution of the reference $\sigma^\star$ for it. \textbf{(b)}~The counterpart error on
-infinite-dilution activity data: the strip is every
-stratum searched, the bars the three solvent classes with a bound. The starred class alone stands,
-each mark carrying its own reason, and each block is a one-sided
-bound rather than an interval. A chemistry-blind relabelling of the same molecules reaches the
-standing class's margin in a tenth of draws, so the star marks a search's survivor and not an
-established effect.
-% THE NULL BELONGS ON THE DISPLAY THAT SHOWS THE SEARCH, added 2026-08-19.  A strip of 59 with one
-% starred is a picture of a multiple-comparisons problem, and a reader who takes the star at face
-% value is reading the panel the way it invites; the frequency lived in Sec. 3.2.1's prose and in
-% the abstract but nowhere on Figure 1.  It was tried INSIDE panel (b) first and does not go there:
-% the panel's own layout guard passes it at every offset that fits the border, and at those offsets
-% it prints over the axis tick labels, which the guard does not check.  Two lines of caption is the
-% honest cost.  If it is ever moved back into the panel, look at the rendered PNG -- the assertion
-% is not sufficient. The right-hand block is the error of the map as deployed, the fixed
-kernel read at a computed profile, and the profile calculation's share of it stays unbounded here.
-Training-time supervision is omitted.}
+substitution of the reference $\sigma^\star$ for it. Training-time supervision is omitted.
+\textbf{(b)}~The counterpart error on infinite-dilution activity data: the strip is every stratum
+searched, the bars the three solvent classes with a bound, and the star the one class the
+admissibility rule leaves standing. Each block is a one-sided bound, not an interval.}
 \label{fig:overview}
 \end{figure*}
 
@@ -1865,7 +1857,10 @@ method-stratified or source-clustered re-estimate lies beyond it. \emph{This set
 inverts under a broader ThermoML pull where the broad set holds steady. It is a different object
 from the glycol-ether stratum of limitation~(vi), which lives on the broad set and whose own
 ThermoML test reproduces. Both sets sit outside the deployment regime
-(\S\ref{sec:si-repro}).
+(\S\ref{sec:si-repro}). No set carries both quantities, and none is waiting to be assembled:
+across the labelled corpus's $12{,}129$ solute--solvent pairs and the $3{,}145$ of the largest
+infinite-dilution pull we hold, not one pair carries a solubility and a $\gamma^\infty$ alike, and
+the $22$ solvents and $9$ solutes the two sides share still meet in no common pair.
 \item What the convention rule costs the aggregate (\S\ref{sec:estimator}).
 \item That other cells of the map keep their sign as well (\S\ref{sec:broad}).
 \item $\Binsuf$ is upper-bounded rather than point-identified, the design holding no replicates at
@@ -1973,68 +1968,24 @@ against the same database during training moved the error the other way at four 
 operation that failed is the one a practitioner reaches for, because it is the one that runs without
 retraining. That asymmetry is what this work establishes.
 
-The rest of what it reports is weaker, in ways it states rather than absorbs. No aggregate margin
-stands on either activity set. The one row set the admissibility rule leaves standing is the
-survivor of a fifty-nine-fold search, and a chemistry-blind relabelling reaches its margin in a
-tenth of draws. The pre-declared out-of-sample test of it on the PGL set returned \emph{not
-testable}. A second, on independent ThermoML rows, reproduces the sign at about half the size, on a
-set too narrowly sourced to be admissible. The physics arm and its control are separately tuned, so
-their difference is not attributable to the bottleneck and we claim no accuracy result from it. The
-$\mathrm pK_a$ reversal is an in-distribution result the scaffold protocol does not certify.
-\S\ref{sec:discussion} states each of these where its measurement is, and none of them is repaired here.
+% TWO PARAGRAPHS, per the 2026-08-19 supervisory review: the result, and what it generalises to.
+% WHAT LEFT AND WHERE IT IS.  The caveat paragraph went in full -- every clause of it is stated in
+% Sec. 3.7 beside its own measurement, which is where the review puts limitations, and "not
+% testable", the separate tuning and the pKa protocol each print there.  The regime-bridge counts
+% (12,129 and 3,145) appeared ONCE in the whole article, here, so they moved into limitation (i)
+% rather than out of the manuscript.  The kernel-mobility concession stays: it is the article's own
+% statement of what its negative result is not about.
+A prediction generalises from this, rather than a design rule. Wherever a predictor composes a
+fixed physical model over a learned intermediate for which an external reference exists, that
+reference measures whether the fixed model itself limits accuracy. Where it answers, the answer
+decides the remedy: a more faithful physical model, the calculation that supplies its reference
+values included. The answer comes chemistry by chemistry rather than once for a field, and it comes
+one-sided, returning the chemistry on which better inputs are not the remedy. Our fixed model is
+COSMO-SAC at its $2002$ parameterisation, whose kernel cannot move, so a sign that turned on kernel
+mobility would lie outside what these measurements reach \cite{yang2025tennet}. The experiment this
+work leaves is to \emph{measure} $\gamma^\infty$ on pairs that already carry a solubility, because
+the two literatures share no pair and no wider pull will supply one.
 
-% "a design rule with a test attached" WAS TOO STRONG, 2026-08-19, and limitation (i) said so on
-% the same page: transfer of the mechanism to the regime the phenomenon is measured in "is a
-% conjecture and the principal open question here".  A rule and a conjecture cannot both be what
-% this offers.  The scope now matches the limitation, and the closing sentence names the experiment
-% that would change it rather than leaving "testable" as an adjective.
-What generalises is a prediction, not a design rule. Wherever a predictor composes a fixed
-physical model over a learned intermediate for which an external reference exists, that reference
-measures whether the fixed model itself limits accuracy. Where it answers, the answer decides the
-remedy: a more faithful physical model, the calculation that supplies its reference values included.
-% `---or better inputs' DELETED 2026-08-09.  Two referees stopped at the colon and took away a
-% two-sided instrument, which the next clause but one then has to take back and \S\ref{sec:discussion}
-% flatly denies: with \Binsuf\ bounded only from above, no cell can ever return "better inputs would
-% help here".  The remedy this rule names is the only one it can name.  Do not restore the phrase to
-% balance the sentence; the sentence is not balanced because the instrument is not.
-% AND THE PREMISE FOLLOWED IT, 2026-08-09.  Deleting the second item left "which of the two limits
-% accuracy" standing in front of a colon that now opens a one-item list -- the sentence still asked
-% the two-sided question and then answered only half of it, which is the reading the deletion was
-% made to prevent.  The question is now scoped to the side the bound can answer.  THE FIX IS THE
-% PREMISE, NOT THE LIST: do not re-broaden this clause to make the colon look balanced.
-% WHAT IS DELIBERATELY STILL MISSING, so a later reader does not repair it by accident.  The pKa
-% oracle swap of \S\ref{sec:pka-main} IS two-sided and measured -- it returns "the reference input
-% helps here" on the clean pole and "it hurts here" on the degraded -- and this section names the
-% second closure nowhere, so this general statement is narrower than the paper's own result.  That
-% is a gap in what the Conclusions cover, not an error in this sentence, and closing it means adding
-% the swap, NOT widening the bound's claim.  The two are different instruments: the swap compares
-% two measured accuracies, the bound compares an error against a one-sided bound on another.
-% "What this work establishes" APPEARED TWICE, 2026-08-19: once at the end of the first paragraph,
-% naming the asymmetry, and once here, naming the map.  A conclusion may name one thing as its
-% result.  The map is what the instrument delivers, which is a different sentence.
-The answer comes chemistry by chemistry rather than once for a field, and it comes one-sided: what
-the measurement returns is the chemistry on which better inputs are not the remedy. The instrument
-itself delivers the map: which cells it can answer in, and at what size. We have not tested whether
-a latent trained through a misspecified closure becomes, in general, a surrogate for that closure's
-error. Nor is the kernel's mobility settled. Ours is fixed at the $2002$ parameterisation, and if
-the substitution's sign turns on whether the kernel can move, this is a result about a fixed kernel
-and not about routing a prediction through a physical intermediate \cite{yang2025tennet}. The mechanism is
-measured on infinite-dilution activity coefficients and the phenomenon on solubility at finite
-composition, and no set in this work carries both.
-% CORRECTED 2026-08-19.  This said "the set that would carry both is named in limitation (x), and
-% building it is the experiment this work leaves", which implied an intersection waiting to be
-% taken.  There is none.  Across the whole labelled corpus (12,129 pairs) and every infinite-
-% dilution pull this project holds (up to 3,145 pairs) the number of shared PAIRS is zero -- and
-% not by canonicalisation: 22 solvents and 9 solutes ARE shared, and on exactly those molecules the
-% two sides carry 17 and 12 pairs that still do not meet.  First-block InChIKey leaves it at zero.
-% Producer scripts/analysis/check_regime_bridge_exists.py, deposit results/regime_bridge.json.
-% The experiment is a measurement programme, not a wider pull; say so.
-Nor is one waiting to be assembled. Across the labelled corpus's $12{,}129$
-solute--solvent pairs and the $3{,}145$ of the largest infinite-dilution pull we hold, not one pair
-carries both quantities. The $22$ solvents and $9$ solutes the two sides do share still meet in
-no common pair. The experiment this work leaves is therefore to \emph{measure} $\gamma^\infty$ on
-pairs that already carry a solubility, rather than to intersect two literatures that avoid each
-other.
 
 \section*{Author contributions}
 \noindent
