@@ -1273,16 +1273,20 @@ chemistry-blind relabelling of the same molecules reaches in $10.1\%$ of draws (
 are few and its chemistry narrow, and both belong in the sentence that states it. It is $182$ rows
 over $43$ pairs carrying $45\%$ of the set's squared error, over $4$ glycol solvents of one
 homologous series and $19$ solutes, every one a hydrocarbon or a halobenzene, with two of three
-publications carrying $177$ of the rows. On them the closure's own error exceeds what input insufficiency can
+publications carrying $177$ of the rows. % BOTH BOUNDS, WHEREVER THE HEADLINE MARGIN PRINTS, 2026-08-19.  The abstract carried the
+% pre-declared estimator's +1.76 beside the binning bound's +2.04 and the body did not, so a reader
+% of Sec. 3.2.1 alone met one number where two are valid.  The answer to the deviation below IS
+% that the sign holds under both where both are valid; printing only one forfeits it.
+On them the closure's own error exceeds what input insufficiency can
 account for by at least $+2.04$, $90\%$ interval $[+1.25,+2.87]$ at the residual-only convention and
-$+2.94$ at the pair unit under the full one, positive in all four unit\,$\times$\,convention cells
+$+2.94$ at the pair unit under the full one, and by $+1.76$ $[+1.02,+2.49]$ under the pre-declared
+cross-fitted bound where that estimator is valid, positive in all four unit\,$\times$\,convention cells
 at $P>0.95$ and under every single-publication deletion, the worst leaving $+1.60$.
 % ONE SENTENCE, TWO CURVES, corrected 2026-08-19.  It read "Deleting each glycol in turn ... the
 % magnitude runs over a factor of two, set by the shortest oligomer", and those are two different
 % operations: the DELETION curve is +1.72/+1.94/+2.05/+2.29, a factor of 1.33, and the factor of
 % two with the shortest oligomer on top belongs to the SINGLETON curve, +3.17/+2.44/+1.71/+1.21
-% (\S
-ef{sec:si-grid} prints both, in one sentence, which is how they were crossed).  This is the
+% (\S\ref{sec:si-grid} prints both, in one sentence, which is how they were crossed).  This is
 % same defect the 11-of-60 note above records -- an operation from one cell and a magnitude from
 % another -- and it is the second instance, so BOTH curves now print here with their own numbers.
 Deleting each glycol in turn is the sharper test, three publications mapping onto four molecules,
@@ -1310,24 +1314,53 @@ this section's rule turns on cannot be applied to it and the reading is descript
 admissible; what it settles is the sign, and it suggests the in-sample magnitude is the upper end of
 what this chemistry supports rather than its size.
 
-That sweep varies the binning bound's own settings and not the family of estimator. A pre-declared
-cross-fitted regressor, tested after this analysis was fixed, returns a uniformly \emph{looser}
-bound---$+1.76$ $[+1.02,+2.49]$ here, with the chemistry-blind null moving the \emph{wrong} way
-(\S\ref{sec:si-crossfit}; note~\emph{e} of Table~\ref{tab:map-article})---and under the
-declaration's conservative source-grouped folds it fails outright, at $R^2=-0.60$ out of fold and a
-bound exceeding the stratum's own total error, which $\Binsuf$ cannot do: there no admissible
-positive row set survives, and those margins are uninformative rather than reversals. \textbf{The
-declaration required that estimator to be adopted \textsc{unconditionally} if it passed a validity
-gate that reads no margin. It passed, and every margin printed in this paper is nevertheless the
-binning bound's.} That deviation runs in this paper's favour and was chosen after the two bounds
-were compared, which is what a declaration exists to prevent. The rule was written against one
-hazard, taking the smaller bound cell by cell once the cells are seen. It left unanticipated that
-one valid bound would be uniformly \emph{looser} than the other, where obeying it prints a bound
-valid and strictly less informative: every claim weakens and none becomes more correct. What limits
-the deviation is that it followed one global comparison of two bounds on one row set and not a
-per-cell selection, and that the poorer cross-fitted map prints cell by cell in
-\S\ref{par:crossfit-deviation}, where the declared rule can be held against it. The sweep therefore
-establishes robustness within the binning bound, not across estimators.
+That sweep varies the binning bound's own settings and not the family of estimator.
+
+% RESTRUCTURED 2026-08-19.  The block opened on the concession and reached its technical ground
+% mid-sentence, which handed a referee the weapon handle-first.  The ground is strong and now leads:
+% Lemma 1(a) puts B_insuff in [0, MSE], and on the declaration's own conservative folds the
+% cross-fitted estimator returns 1.6 to 2.9 times MSE with a forest and 10^27 times with ridge.
+% That is a range violation, not evidence about chemistry, and the criterion has no free parameter.
+% WHAT MAY NOT BE SOFTENED BY THE REORDERING, and is now IN THE ARTICLE rather than only the SI:
+% where the cross-fit PASSES the declared gate it puts this finding AT CHANCE -- 54% of certifying
+% draws against 16%.  The deviation is load-bearing for the finding and the paragraph says so.
+% A subheading, because a referee should find this where they look for it.
+\paragraph{Deviation from the declaration.}
+A pre-declared cross-fitted regressor was to replace the binning bound if it passed a validity gate,
+and on the declaration's own conservative source-grouped folds it does not return a bound at all.
+% THE R^2 WAS MISATTRIBUTED, corrected 2026-08-19 while restructuring.  It read "-0.60 out of fold
+% on the matched set", and -0.602111 belongs to the cells with n=182, 19 solutes and 4 solvents --
+% the GLYCOL-ETHER STRATUM itself.  Which is the stronger fact and the one the paragraph needs: the
+% range violation is not on some other row set, it is on the row set the finding rests on.  Same
+% defect class as the 11-of-60 and the two crossed glycol curves: a number from one cell restated
+% against another.  Verified in results/b_insuff/crossfit_map.json.
+Lemma~\ref{prop:decomp}(a) puts $\Binsuf$ in $[0,\mathrm{MSE}]$, and on the glycol-ether stratum
+itself the estimator returns $\Binsuf=4.92$ against that stratum's own $\mathrm{MSE}$ of $2.25$,
+twice what the decomposition allows, at $R^2=-0.60$ out of fold. Across the source-folded cells the
+same violation runs from $1.6$ to $2.9$ times $\mathrm{MSE}$ with a random forest and some
+twenty-seven orders of magnitude more with ridge. An upper bound outside the range its estimand can
+occupy is not a bound on it, so the $-7.58$ it prints here, and the loss of every admissible
+positive row set, are uninformative rather than reversals. That criterion has no free
+parameter and no direction: it fires whenever the output leaves the interval the decomposition
+allows. \textbf{The declared gate did not test it.} The gate read an out-of-fold $R^2$ and a
+pair-conditional variance threshold, and the permissive pair-grouped configuration passed both.
+\textbf{The declaration required unconditional adoption on that pass, and every margin printed in
+this paper is nevertheless the binning bound's.}
+
+Where the cross-fit does pass, it is uniformly \emph{looser} and it does not favour us. On the
+glycol ethers it returns $+1.76$ $[+1.02,+2.49]$, so the sign holds; but the chemistry-blind null
+moves from $0.094$ to $0.137$, and conditioned on drawing a map that certifies anything at all a
+relabelling reaches the observed maximum in $54\%$ of draws against $16\%$ under the binning bound
+(\S\ref{sec:si-crossfit}; note~\emph{e} of Table~\ref{tab:map-article}). Under the estimator the
+declaration named, this finding sits at chance. The deviation therefore runs in this paper's favour
+and was chosen after the two bounds were compared, which is what a declaration exists to prevent.
+The rule was written against one hazard, taking the smaller bound cell by cell once the cells are
+seen; it left unanticipated that one valid bound would be uniformly looser than the other, where
+obeying it prints a bound valid and strictly less informative. What limits the deviation is that it
+followed one global comparison of two bounds on one row set and not a per-cell selection, and that
+the poorer cross-fitted map prints cell by cell in \S\ref{par:crossfit-deviation}, where the
+declared rule can be held against it. The sweep therefore establishes robustness within the binning
+bound, not across estimators.
 
 % ===========================================================================================
 % THE MAP, PROMOTED INTO THE ARTICLE 2026-08-11 (referee round 6, all three referees).  The
@@ -1865,8 +1898,9 @@ latent-departure result on infinite-dilution activity data alone ($n{=}477$ acro
 the $298$\,K, low-$\gamma$, VT-2005-matched $n{=}60$ and $n{=}44$ sets). Transfer back to the
 paradox's own regime is a conjecture and the principal open question here. The $n{=}60$ set is all
 gas chromatography and all from three publications, $33$ pairs from one, so a method-stratified or
-source-clustered re-estimate lies beyond it, and its margin inverts under a broader ThermoML pull
-where the broad set holds steady. Both sets sit outside the deployment regime
+source-clustered re-estimate lies beyond it, and \emph{this set's} aggregate margin inverts under a
+broader ThermoML pull where the broad set holds steady---a different object from the glycol-ether
+stratum of limitation~(vi), which lives on the broad set and whose own ThermoML test reproduces. Both sets sit outside the deployment regime
 (\S\ref{sec:si-repro}).
 \item What the convention rule costs the aggregate (\S\ref{sec:estimator}).
 \item That other cells of the map keep their sign as well (\S\ref{sec:broad}).
