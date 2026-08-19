@@ -1,0 +1,32 @@
+{
+  "what": "pre-declared out-of-sample margin, glycol-ether stratum, ThermoML net-new rows",
+  "declarations": {
+    "PRE_DECLARATION.md": "8744f9e1b7311cfc82dcc247b4406b9e4c4c339187cd90342dd519750a580fba",
+    "PRE_DECLARATION_AMENDMENT_1.md": "5e9ac5ee873ab741002aa4b22f65822ea0bd06eef6156c6d5250192ac4af5dc5"
+  },
+  "n_rows": 95,
+  "n_pairs": 32,
+  "n_solutes": 21,
+  "n_solvents": 2,
+  "n_source_dois": 1,
+  "cell": {
+    "bins": 8,
+    "ddof": 1,
+    "unit": "row",
+    "convention": "residual-only",
+    "profiles": "UD, exact InChIKey",
+    "temperature": "each row's own"
+  },
+  "mse": 1.2535,
+  "b_insuff_up": 0.0991,
+  "margin": 1.0554,
+  "ci90": [
+    0.7442,
+    1.2912
+  ],
+  "verdict": "HOLDS",
+  "draws": 4000,
+  "boot_seed": 0,
+  "admissible": false,
+  "why_not_admissible": "one source DOI; the map's leave-one-source-out clause cannot be applied to a single-source set"
+}
