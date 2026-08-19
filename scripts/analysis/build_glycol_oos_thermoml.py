@@ -215,13 +215,13 @@ def main() -> None:
     d["net_new"] = [p not in seen for p in d["pair"]]
     n_pairs = d["pair"].nunique()
     new = d[d["net_new"]].copy()
-    print(f"\n== overlap with the broad set")
+    print("\n== overlap with the broad set")
     print(f"   {n_pairs} distinct pairs here; {new['pair'].nunique()} of them net-new")
     print(f"   {len(new)} of {len(d)} rows sit on a net-new pair "
           f"({100 * len(new) / len(d):.1f}%)")
 
     # --- guard 3: admissibility, reported not enforced -----------------------------------
-    print(f"\n== geometry of the net-new set")
+    print("\n== geometry of the net-new set")
     if new.empty:
         print("   EMPTY. Every pair these sources carry is already in the broad set: the "
               "candidates duplicate the in-sample stratum and deliver no out-of-sample test.")
