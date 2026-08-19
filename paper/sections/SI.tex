@@ -1528,7 +1528,7 @@ bin, where the occupancy rule that fixed the cell on the $n{=}60$ set would ask 
 fixed cell is \emph{coarser} than the rule that chose it and therefore conditions on less, which
 weakens the bound and lowers the margin.
 
-The glycol-ether margin is positive in all $56$ cells of that grid at $P\geq0.99$ throughout, the
+The glycol-ether margin is positive in all $56$ cells of that grid at $P>0.95$ throughout, the
 residual-only unbiased column running from $+1.06$ at three bins to $+2.19$ at forty-eight, with the
 fixed cell's $+2.04$ sitting below the midpoint of that column and the occupancy rule's own
 $23$ bins giving $+2.17$ residual-only and $+2.36$ full. The pair unit, $n{=}43$, supports ten of the fourteen bin counts and is
@@ -1541,7 +1541,12 @@ the admissibility of that stratum is a property of the bin count.
 % shortest oligomer sets it -- and the curve itself was unique to the article, so it lands here
 % rather than being deleted.
 The same stratum under solvent deletion. Leaving one glycol out at a time the margin reads
-$+1.72$, $+1.94$, $+2.05$ and $+2.29$; taken one at a time it reads $+3.17$, $+2.44$, $+1.71$ and
+% $+2.44$ CORRECTED TO $+2.43$, 2026-08-19.  At the headline cell -- eight equal-count bins,
+% unbiased within-bin variance, row unit, residual-only -- the deployed lotv() returns 2.4349 on
+% diethylene glycol's 36 rows, which rounds to 2.43.  2.44 is the SEVEN-bin value (2.4352); the
+% other three singletons reproduce at 8 bins to the digit, so this was one cell's slip and not a
+% different convention for the row.  Recomputed from si_tables/broad_idac_set_477.csv.
+$+1.72$, $+1.94$, $+2.05$ and $+2.29$; taken one at a time it reads $+3.17$, $+2.43$, $+1.71$ and
 $+1.21$ on $41$, $36$, $56$ and $49$ rows, monotone in chain length. Diethylene glycol's $36$ rows
 sit below the $n\ge40$ boundability threshold, so that single-solvent cell is reported and not
 bounded. The spread across these four, and not the bootstrap interval at any one of them, is the
@@ -1657,7 +1662,15 @@ carries one entry per column.\quad
 $k$NN-in-$\zstar$, and the binning-free $\Ex[\Var(m\mid\text{pair})]$. Not a paper-wide inventory:
 the bin grids behind the binning-bound selection are Tables~\ref{tab:grid} and~\ref{tab:grid-rep}, and the
 $\lngi$-stratified bounds, computed on VT-2005-matched subsets, are Table~\ref{tab:regime}.\quad
-\tnk{k}\,A \emph{component} of $\Binsuf$, not a term beside it (\S\ref{sec:decomp}).}}
+\tnk{k}\,A \emph{component} of $\Binsuf$, not a term beside it (\S\ref{sec:decomp}).\quad
+% ADDED 2026-08-19.  This is the display that sets the two sets in ADJACENT COLUMNS, and its notes
+% covered profile database, conventions, LOTV, Jensen, clustering and label noise but never the
+% overlap.  The article body says it in three places and the SI in four; the table a reader reads
+% without the body said it nowhere, which is the whole of how side-by-side columns come to be read
+% as two-set corroboration.
+\tnk{l}\,The two sets are not independent samples: $57$ of the VT-2005-matched set's $60$ pairs
+also appear in the broad set at $298$\,K. Agreement between the columns is a consistency check and
+not corroboration, and the two are never combined.}}
 \end{table*}
 
 % Relocated from prose (move 12 of the 2026-07-28 relocation plan): nine multi-value comparisons
