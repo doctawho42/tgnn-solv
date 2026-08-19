@@ -9,6 +9,15 @@
     "8": {
       "ln_gamma_learned_median": 1.5538169145584106,
       "ln_gamma_learned_absmedian": 1.591949224472046,
+      "relative_condition_number": {
+        "median": 32.24896198912271,
+        "ci90": [
+          14.5862,
+          51.6425
+        ],
+        "p90": 181.2315335621621,
+        "what": "||J|| ||sigma|| / |ln gamma| at the learned profile: worst-case, first-order amplification of a RELATIVE input perturbation"
+      },
       "substitution": {
         "rel_input_step_median": 1.530787528075432,
         "rel_input_step_ci90": [
@@ -65,6 +74,15 @@
     "30": {
       "ln_gamma_learned_median": -0.6904419660568237,
       "ln_gamma_learned_absmedian": 0.7681244015693665,
+      "relative_condition_number": {
+        "median": 72.00925199980448,
+        "ci90": [
+          55.0788,
+          124.2204
+        ],
+        "p90": 241.0042960131579,
+        "what": "||J|| ||sigma|| / |ln gamma| at the learned profile: worst-case, first-order amplification of a RELATIVE input perturbation"
+      },
       "substitution": {
         "rel_input_step_median": 1.530787528075432,
         "rel_input_step_ci90": [

@@ -144,6 +144,43 @@ def ln_gamma(layer: CosmoSacLayer, P2: torch.Tensor, P1: torch.Tensor, T: torch.
     return layer.ln_gamma_inf(P2, P1, A2, A1, None, None, T)
 
 
+def relative_condition_number(P2: np.ndarray, P1: np.ndarray, T: np.ndarray,
+                              n_iter: int) -> np.ndarray:
+    """kappa = ||J|| * ||sigma|| / |ln gamma|, the LOCAL RELATIVE CONDITION NUMBER of the closure.
+
+    THIS IS WU ET AL.'S OWN METRIC, and it is reported so that their diagnosis and this one can be
+    read on the same axis rather than argued about.  They evaluate a local condition number of the
+    RANS operator and conclude the map amplifies input error; kappa here is the same quantity for
+    sigma -> ln gamma^inf: the factor by which a relative perturbation of the input is multiplied,
+    in the worst direction, to first order.
+
+    WHAT IT DOES AND DOES NOT SETTLE.  kappa is a WORST-CASE, INFINITESIMAL number: it bounds the
+    amplification over all directions and it is a first-order statement.  The substitution is
+    neither -- it moves 1.5 times the profile's own norm, which is not infinitesimal, and it moves
+    in one particular direction.  So a large kappa does not by itself explain the degradation, and
+    that is exactly the gap the directional measurement above fills.  Reported together, they say:
+    the map CAN amplify by kappa, and along the direction the substitution actually takes it does
+    not.
+
+    The gradient is taken with respect to both profiles jointly (the 102-vector the substitution
+    moves), which is the object the amplification above is also computed on.
+    """
+    layer = CosmoSacLayer(None)
+    layer.n_iter_eval = n_iter
+    layer.eval()
+    out = np.empty(len(P2))
+    for i in range(len(P2)):
+        p2 = torch.tensor(P2[i], dtype=torch.float32, requires_grad=True)
+        p1 = torch.tensor(P1[i], dtype=torch.float32, requires_grad=True)
+        lng = layer.ln_gamma_inf(p2[None], p1[None], p2.sum()[None], p1.sum()[None],
+                                 None, None, torch.tensor([T[i]], dtype=torch.float32))[0]
+        g2, g1 = torch.autograd.grad(lng, (p2, p1))
+        jac = float(torch.linalg.vector_norm(torch.cat([g2, g1])))
+        sig = float(np.linalg.norm(np.concatenate([P2[i], P1[i]])))
+        out[i] = jac * sig / max(abs(float(lng.detach())), 1e-6)
+    return out
+
+
 def _relative(delta: np.ndarray, base: np.ndarray) -> np.ndarray:
     return np.linalg.norm(delta, axis=-1) / np.maximum(np.linalg.norm(base, axis=-1), 1e-12)
 
@@ -179,7 +216,14 @@ def check_article(result: dict, section: Path) -> int:
     tex = section.read_text()
     c8, c30 = result["cells"]["8"], result["cells"]["30"]
     sub8, sub30 = c8["substitution"], c30["substitution"]
+    c8k, c30k = c8["relative_condition_number"], c30["relative_condition_number"]
     want = [
+        ("kappa, n=8", f"{c8k['median']:.0f}"),
+        ("its interval, low", f"{c8k['ci90'][0]:.0f}"),
+        ("its interval, high", f"{c8k['ci90'][1]:.0f}"),
+        ("kappa, n=30", f"{c30k['median']:.0f}"),
+        ("its interval, low", f"{c30k['ci90'][0]:.0f}"),
+        ("its interval, high", f"{c30k['ci90'][1]:.0f}"),
         ("matched rows", str(result["n_rows"])),
         ("solutes", str(result["n_solutes"])),
         ("solvents", str(result["n_solvents"])),
@@ -206,7 +250,10 @@ def check_article(result: dict, section: Path) -> int:
         ("its interval, low", f"{sub30['amplification_ci90'][0]:.2f}"),
         ("its interval, high", f"{sub30['amplification_ci90'][1]:.2f}"),
     ]
-    pattern = (r"On the \$(\d+)\$ test rows whose solute and solvent both\s+"
+    pattern = (r"condition number [^$]*\$[^$]*\$ at the\s+learned profile is \$(\d+)\$ "
+               r"\$\[(\d+),(\d+)\]\$ at eight segment iterations and \$(\d+)\$ "
+               r"\$\[(\d+),(\d+)\]\$\s+at thirty.*?"
+               r"On the \$(\d+)\$ test rows whose solute and solvent both\s+"
                r"carry a VT-2005 profile \(\$(\d+)\$ solutes, \$(\d+)\$ solvents, \$([\d.]+)\\%\$ of the "
                r"split\), it is not: the reference\s+profile stands \$([\d.]+)\$ \$\[([\d.]+),([\d.]+)\]\$ "
                r"times.*?on \$(\d+)\\%\$ \$\[(\d+),(\d+)\]\$ of those rows at eight segment iterations\s+"
@@ -316,6 +363,18 @@ def main() -> None:
         cell = {"ln_gamma_learned_median": float(np.median(base)),
                 "ln_gamma_learned_absmedian": float(np.median(np.abs(base)))}
         per_arm_amp: dict[str, np.ndarray] = {}
+        kappa = relative_condition_number(H2, H1, T, n_iter)
+        # ITS OWN GENERATOR.  Drawing kappa's interval from `rng` shifts the stream the arm
+        # bootstraps below then read, so adding this diagnostic silently moved three published
+        # interval endpoints -- caught by --check-article on the first run.  A diagnostic must not
+        # be able to change the numbers it is a diagnostic of.
+        cell["relative_condition_number"] = {
+            "median": float(np.median(kappa)),
+            "ci90": _boot_ci(kappa, clusters, np.random.default_rng(a.seed + 1000)),
+            "p90": float(np.percentile(kappa, 90)),
+            "what": "||J|| ||sigma|| / |ln gamma| at the learned profile: worst-case, "
+                    "first-order amplification of a RELATIVE input perturbation",
+        }
         for name, (Q2, Q1) in arms.items():
             got = ln_gamma(layer, t(Q2), t(Q1), t(T), n_iter).numpy()
             d_in = np.concatenate([Q2 - H2, Q1 - H1], axis=-1)
@@ -345,8 +404,12 @@ def main() -> None:
         }
         result["cells"][str(n_iter)] = cell
 
+        k = cell["relative_condition_number"]
         print(f"\n--- segment iterations n={n_iter} "
               f"(|ln gamma| median {cell['ln_gamma_learned_absmedian']:.3f}) ---")
+        print(f"local relative condition number kappa = {k['median']:.2f} "
+              f"[{k['ci90'][0]:.2f}, {k['ci90'][1]:.2f}], p90 {k['p90']:.2f}  "
+              f"(worst-case, first-order)")
         print(f"{'arm':18s} {'rel. input':>11s} {'rel. output':>12s} {'amplification':>14s} "
               f"{'|d ln gamma|':>13s}")
         for name in arms:

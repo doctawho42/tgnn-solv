@@ -269,8 +269,18 @@ objects.}
 An account of this degradation is available from outside chemistry, and it is not the one above.
 Wu \latin{et al.}\cite{wu2019illconditioned} substitute near-exact Reynolds stresses into the RANS
 equations and recover large velocity errors, which they trace to ill-conditioning: the fixed model
-amplifies a small perturbation of its input. That account and the compensation account differ on one
-measurable quantity, the size of the substitution step, and they differ in opposite directions.
+amplifies a small perturbation of its input.
+% KAPPA IS REPORTED BECAUSE IT IS THEIR METRIC, and because it comes out LARGE.  Writing only the
+% directional result would leave a reader to assume the map is well conditioned, which it is not --
+% and the finding is stronger with the concession than without it: the map can amplify by 32, and
+% along the direction the substitution actually takes it does not.  Do not drop kappa to shorten
+% this paragraph; it is the sentence that makes the next one a measurement rather than an assertion.
+% kappa is worst-case and first-order.  Both words are load-bearing and neither may be cut.
+By that metric this closure is ill-conditioned: the local relative
+condition number $\lVert J\rVert\,\lVert\sigma\rVert/\lvert\ln\gamma^\infty\rvert$ at the
+learned profile is $32$ $[15,52]$ at eight segment iterations and $72$ $[55,124]$ at thirty. It is
+nonetheless not the account of what follows, because $\kappa$ is a worst-case, first-order number
+and the substitution is neither infinitesimal nor worst-case.
 Ill-conditioning requires the step to be small. On the $354$ test rows whose solute and solvent both
 carry a VT-2005 profile ($64$ solutes, $18$ solvents, $4.4\%$ of the split), it is not: the reference
 profile stands $1.53$ $[1.39,1.80]$ times the learned profile's own norm away from it, so the two are
