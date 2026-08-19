@@ -1456,10 +1456,9 @@ out-of-sample rows are missing.
 \emph{What the other fifty-eight strata are.} They are the rule refusing to answer, which is the
 rule working. An instrument that returned a verdict on every stratum of a $477$-row set would be
 reporting resolution it does not have, and the admissibility clauses exist to withhold exactly
-that. Of the six admissible cells, three are the glycol ethers at three granularities; of the other
-two, the alkane solutes are positive and demoted to the glycol ethers by clause~(c), and the
-acceptor-only aprotics pass the rule and leave the two terms merged, the instrument being
-one-sided. The uniqueness is therefore narrower than being the sole admissible stratum, or the sole
+that. Of the six admissible cells, three are the glycol ethers at three granularities. Of the other two,
+the alkane solutes are positive and demoted to the glycol ethers by clause~(c); the acceptor-only
+aprotics pass the rule and leave the two terms merged, the instrument being one-sided. The uniqueness is therefore narrower than being the sole admissible stratum, or the sole
 stratum sign-stable under every deletion: it is one row set admissible, positive and left standing
 by clause~(c). \S\ref{sec:si-map} records which cell each remaining stratum fails on, none of them
 used to explain a reversal.
@@ -1827,10 +1826,10 @@ re-run.}
 % plane uncharacterised on real systems" has no home anywhere else: \S\ref{sec:notdecided} covers
 % the fidelity axis alone and neither \S\ref{sec:si-limitations} nor any other section states the
 % plane.  It now sits on the limitation it qualifies.
-These negatives fall where Remark~\ref{prop:tax} predicts a prior will hurt
-(\S\ref{sec:tax}); the synthetic sweep of Fig.~\ref{fig:dial} is true by construction there, so it
-verifies the instrument and not the hypothesis, while the pKa closure exercises the sufficiency
-channel on real data.
+These negatives fall where Remark~\ref{prop:tax} predicts a prior will hurt (\S\ref{sec:tax}).
+The synthetic sweep of Fig.~\ref{fig:dial} is true by construction there, so it verifies the
+instrument and not the hypothesis; the pKa closure exercises the sufficiency channel on real
+data.
 
 % Limitation (i) enlarged-set numbers: run_b_insuff_decomposition.{match_pairs,evaluate_closure,
 % lotv_binning} (res convention, 8 equal-count bins) on notebooks/data/raw/idac_expanded{,_raw}.csv
@@ -2050,19 +2049,18 @@ A.~V. Rudik: Writing -- review \& editing.
 \section*{Data and Software Availability}
 The analysis code, and those intermediate artifacts small enough to version, are available at
 \url{https://github.com/doctawho42/tgnn-solv} (commit
-\pending[hash to be supplied at submission]) under the MIT licence, that commit being the one
-the reported numbers were produced from; the model checkpoints, the processed split, the full
-per-arm prediction files and the larger analysis artifacts will be deposited in a Zenodo archive,
-\pending[whose DOI is registered at submission]. The data sources are public: BigSolDB~2.0
-\cite{krasnov2025bigsoldb} for solubility, the VT-2005 database for the reference
-$\sigma$-profiles, Ref.~\cite{fingerhut2017} as redistributed with Ref.~\cite{bell2020cosmosac}
-for the UD profiles, ThermoML for the infinite-dilution activity coefficients, the
-PGL 6th-edition IDAC database for Table~\ref{tab:closure-anchor}, and the OPERA
-compilation \cite{mansouri2019opera} for the pKa data. Four disclosed defects sit on the deposited
-record, in \S\ref{sec:si-repro} and \S\ref{sec:si-tables}. The
-three-seed surrogate run's per-run split provenance was not logged; one $\sigma$-stream build on
-disk was written against the wrong split files; the two
-VT-2005-matched audit artifacts disagree on one out-of-fold estimate;
+\pending[hash to be supplied at submission]) under the MIT licence, that commit being the one the
+reported numbers were produced from. The model checkpoints, the processed split, the full per-arm
+prediction files and the larger analysis artifacts will be deposited in a Zenodo archive,
+\pending[whose DOI is registered at submission]. The data sources are public. Solubility is
+BigSolDB~2.0 \cite{krasnov2025bigsoldb}; the reference $\sigma$-profiles are the VT-2005 database,
+and the UD profiles Ref.~\cite{fingerhut2017} as redistributed with
+Ref.~\cite{bell2020cosmosac}; the infinite-dilution activity coefficients are ThermoML, with the
+PGL 6th-edition IDAC database behind Table~\ref{tab:closure-anchor}; the pKa data are the OPERA
+compilation \cite{mansouri2019opera}. Four disclosed defects sit on the deposited
+record, in \S\ref{sec:si-repro} and \S\ref{sec:si-tables}. The three-seed surrogate run's per-run
+split provenance was not logged; one $\sigma$-stream build on disk was written against the wrong
+split files; the two VT-2005-matched audit artifacts disagree on one out-of-fold estimate.
 % THE FOURTH, disclosed 2026-08-19, and found by a digest assertion while packing a GPU run rather
 % than by an audit.  The certified re-run records its stream by sha256 in every checkpoint
 % manifest, and neither file is retained: the directory those paths name holds a DIFFERENT build
@@ -2073,8 +2071,8 @@ VT-2005-matched audit artifacts disagree on one out-of-fold estimate;
 % WHAT IT COSTS: sigma_val early-stops the warm-up, so a new arm trained on the rebuild is not on
 % the identical schedule.  It does NOT touch any number already reported -- those arms' weights,
 % per-row predictions and manifests are all deposited -- it bounds what can be ADDED to them.
-and the $\sigma$-stream those runs consumed is recorded by digest in every checkpoint manifest but
-was not itself retained. Rebuilding it from the recorded parameters reproduces the pool exactly,
+The fourth is that the $\sigma$-stream those runs consumed is recorded by digest in every
+checkpoint manifest and was not itself retained. Rebuilding it from the recorded parameters reproduces the pool exactly,
 the same $1319$ molecules with bit-equal profiles, and the train/validation split sizes exactly,
 but no retained file settles the assignment between them. Every number reported here was measured
 on arms whose weights, predictions and manifests are deposited; what the loss bounds is what can be
