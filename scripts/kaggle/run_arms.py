@@ -43,8 +43,13 @@ from pathlib import Path
 #: predictions file with fewer has not finished -- it is deleted rather than trusted.
 EXPECTED_ROWS_MIN = 8000
 #: How long one arm takes before any has been timed in this run, and the margin applied to the
-#: median once three have. Both are wall-clock hours on a Kaggle T4 x2 session.
-ARM_HOURS_ASSUMED = 2.0
+#: median once three have. Wall-clock hours on a Kaggle T4 x2 session.
+#: THE ASSUMED VALUE IS MEASURED, NOT GUESSED, and the guess it replaces was 2.0. The 2026-08-19
+#: session logged Phase 2 at 1745 batches an epoch and 2.25 it/s -- 12.9 min an epoch against the
+#: 30+70+10 epochs configs/cosmo_sac.yaml asks for -- and its checkpoint came back at phase 2,
+#: epoch 39. Twelve hours bought 63% of one arm. At a larger batch this falls and the number here
+#: should be re-measured rather than argued down.
+ARM_HOURS_ASSUMED = 19.0
 ARM_TIME_MARGIN = 1.25
 
 
@@ -78,6 +83,21 @@ def main() -> None:
     ap.add_argument("--sigma-dir", type=Path,
                     default=Path("notebooks/data/processed_sigma_aux_stream_rebuilt"))
     ap.add_argument("--num-workers", default="2")
+    # THROUGHPUT, and the reason this flag exists rather than a constant.
+    # The 2026-08-19 session ran twelve GPU-hours and finished no arm. Its log gives the cost
+    # exactly: Phase 2 is 1745 batches an epoch at 2.25 it/s, so 12.9 min an epoch, and
+    # configs/cosmo_sac.yaml asks for 30+70+10 epochs -- about nineteen hours for ONE arm, against
+    # the two this wrapper assumed. 1745 x 64 = the 112k corpus, so it was running at the config
+    # default batch size.
+    # scripts/cloud/kaggle_run.py has known since it was written that this default starves the
+    # GPU, and splices --batch-size 256 into every child for that reason; this runner never
+    # carried that over. The lever is exposed here rather than hard-coded, because raising the
+    # batch changes the optimisation schedule: the fifteen arms stay comparable WITH EACH OTHER at
+    # any single value, but they stop being schedule-matched to the published three-seed family,
+    # and that is a decision about what the run is for, not a throughput setting.
+    ap.add_argument("--batch-size", type=int, default=None,
+                    help="override the config batch size for every arm. Unset keeps the config's "
+                         "value, which is what the published family trained at.")
     ap.add_argument("--smoke", action="store_true",
                     help="1-epoch phases and a 1-epoch warm-up: checks the WIRING on a "
                          "laptop. The metrics it produces are meaningless and must never "
@@ -131,12 +151,23 @@ def main() -> None:
         "DATA_DIR": str(a.data_dir), "SIGMA_DIR": str(a.sigma_dir),
         "OUT_DIR": str(a.out_dir), "CKPT_DIR": str(a.ckpt_dir),
         "NUM_WORKERS": a.num_workers, "KMP_DUPLICATE_LIB_OK": "TRUE",
+        # A KAGGLE LOG KEEPS ONLY ITS TAIL, and progress bars fill it. The 2026-08-19 session
+        # returned 6.2 MB of "Phase 2 train: 60%|...", which pushed every structural line this
+        # runner prints -- the per-arm banners, the timings, the completion records -- out of the
+        # retained window, so the log could not answer how far the run got. tqdm reads this.
+        "TQDM_DISABLE": "1",
         "PYTHONPATH": f"{repo / 'src'}:{env.get('PYTHONPATH', '')}",
     })
     if a.allow_cpu:
         env["TGNN_ALLOW_CPU_FALLBACK"] = "1"
         print("[gpu] --allow-cpu: preflight skipped and TGNN_ALLOW_CPU_FALLBACK=1 exported to "
               "every child. Expect ~25x slower.", flush=True)
+    if a.batch_size:
+        extra = env.get("EXTRA_TRAIN_ARGS", "")
+        env["EXTRA_TRAIN_ARGS"] = f"{extra} --set batch_size={a.batch_size}".strip()
+        print(f"!! batch_size={a.batch_size} for every arm, overriding the config. These arms are "
+              f"comparable with each other and NOT schedule-matched to the published family.",
+              flush=True)
     if a.smoke:
         env.update({"WARMUP_EPOCHS": "1", "SIGMA_STEPS": "2", "DIRECT_EPOCHS": "1",
                     "EXTRA_TRAIN_ARGS": "--epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1"})
