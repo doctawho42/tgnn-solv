@@ -1,0 +1,34 @@
+{
+  "what": "how close the rebuilt sigma stream is to the one the published runs consumed",
+  "published": {
+    "sigma_train": {
+      "sha256": "955a1862ba2f5d31d8b3b5765d80fb40f91174efe204cf164d44055b60efbe87",
+      "n_rows": 1187,
+      "n_solutes": 1185
+    },
+    "sigma_val": {
+      "sha256": "daf72c20cdf1f770906cdb0d791e724c3cba9cbccacee0d02252be465a1047b4",
+      "n_rows": 132,
+      "n_solutes": 132
+    }
+  },
+  "rebuilt": {
+    "sigma_train": {
+      "sha256": "7721b6614d2eb9c764b380fb53cf2ca0d74bc0e778d18e806831e9ec89e21872",
+      "n_rows": 1187
+    },
+    "sigma_val": {
+      "sha256": "cbccee68dd5e978c913010a0dcefe7b3c9a7129003587c578c4e0e6cd73a7b0d",
+      "n_rows": 132
+    }
+  },
+  "pool_identical": true,
+  "n_pool_rebuilt": 1319,
+  "n_pool_on_disk": 1319,
+  "columns_identical": true,
+  "profiles_max_abs_diff_on_shared_molecules": 0.0,
+  "n_shared_molecules": 1317,
+  "split_sizes_match_published": true,
+  "bytes_match_published": false,
+  "WHAT_THIS_DOES_NOT_ESTABLISH": "that the train/val ASSIGNMENT is the published one. The published files were not retained. sigma_val drives early stopping of the sigma warm-up, so a different assignment moves where the warm-up stops. Any arm trained on this stream and compared with the published five must carry that sentence."
+}

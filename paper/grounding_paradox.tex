@@ -2008,11 +2008,27 @@ per-arm prediction files and the larger analysis artifacts will be deposited in 
 $\sigma$-profiles, Ref.~\cite{fingerhut2017} as redistributed with Ref.~\cite{bell2020cosmosac}
 for the UD profiles, ThermoML for the infinite-dilution activity coefficients, the
 PGL 6th-edition IDAC database for Table~\ref{tab:closure-anchor}, and the OPERA
-compilation \cite{mansouri2019opera} for the pKa data. Three disclosed defects sit on the deposited
+compilation \cite{mansouri2019opera} for the pKa data. Four disclosed defects sit on the deposited
 record, in \S\ref{sec:si-repro} and \S\ref{sec:si-tables}. The
 three-seed surrogate run's per-run split provenance was not logged; one $\sigma$-stream build on
-disk was written against the wrong split files; and the two
-VT-2005-matched audit artifacts disagree on one out-of-fold estimate. Two further defects are
+disk was written against the wrong split files; the two
+VT-2005-matched audit artifacts disagree on one out-of-fold estimate;
+% THE FOURTH, disclosed 2026-08-19, and found by a digest assertion while packing a GPU run rather
+% than by an audit.  The certified re-run records its stream by sha256 in every checkpoint
+% manifest, and neither file is retained: the directory those paths name holds a DIFFERENT build
+% (no validation split at all) and sigma_val.csv is absent.  Rebuilding with the recorded
+% parameters reproduces the pool exactly -- the same 1319 molecules, profiles bit-equal -- and the
+% split sizes exactly, but not the train/val ASSIGNMENT, which no retained file can settle.
+% The evidence is results/stream_equivalence.json via scripts/kaggle/check_stream_equivalence.py.
+% WHAT IT COSTS: sigma_val early-stops the warm-up, so a new arm trained on the rebuild is not on
+% the identical schedule.  It does NOT touch any number already reported -- those arms' weights,
+% per-row predictions and manifests are all deposited -- it bounds what can be ADDED to them.
+and the $\sigma$-stream those runs consumed is recorded by digest in every checkpoint manifest but
+was not itself retained. Rebuilding it from the recorded parameters reproduces the pool exactly,
+the same $1319$ molecules with bit-equal profiles, and the train/validation split sizes exactly,
+but no retained file settles the assignment between them. Every number reported here was measured
+on arms whose weights, predictions and manifests are deposited; what the loss bounds is what can be
+added to them, since the validation half early-stops the $\sigma$ warm-up. Two further defects are
 repaired rather than disclosed, each described where its numbers are printed. We re-scored the two
 FastSolv retraining bundles (Tables~\ref{tab:baselines} and~\ref{tab:si-baselines-full}, with
 the diagnosis, the withdrawn
