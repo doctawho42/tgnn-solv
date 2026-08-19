@@ -1,0 +1,31 @@
+# T0-H2 co-design  d=24 ker_dim=6 seeds=4 epochs=600 clip=5.0  (median +/- IQR)
+
+## Panel A: full recovery vs eps (k=ker_dim anchored). cap=0 anchor-only; cap=0.5 firewall
+  eps |       anchor-only med[IQR] |          firewall med[IQR]
+----------------------------------------------------------------
+ 0.00 |    1.283 [1.23,1.32]      |    1.199 [1.17,1.22]
+ 0.05 |    1.256 [1.22,1.30]      |    1.181 [1.15,1.21]
+ 0.10 |    1.258 [1.23,1.29]      |    1.186 [1.16,1.20]
+ 0.20 |    1.214 [1.17,1.26]      |    1.179 [1.14,1.19]
+ 0.40 |    1.174 [1.15,1.19]      |    1.147 [1.10,1.17]
+
+  Delta vs eps=0 baseline at eps=0.4:  anchor-only +-0.109   firewall +-0.052
+
+## Panel B: full recovery vs correction cap at eps=0.2 (U-shape = co-design)
+   cap |       full recovery med[IQR]
+----------------------------------------
+  0.00 |    1.214 [1.17,1.26] (anchor-only)
+  0.10 |    1.237 [1.20,1.24]
+  0.25 |    1.172 [1.12,1.20]
+  0.50 |    1.179 [1.14,1.19]
+  1.00 |    1.141 [1.12,1.16]
+  2.00 |    1.182 [1.15,1.20]
+  4.00 |    1.183 [1.15,1.20]
+
+  best cap = 1.0  (min recovery error 1.141)
+
+## Pre-registered verdicts
+H2a firewall degrades << anchor-only as eps grows (Delta_fw < 0.6x Delta_ao): +-0.052 vs +-0.109 -> FAIL
+H2b co-design U-shape: interior optimum beats cap=0 and max cap (<0.8x each): best=1.0(1.141) vs anchor-only(1.214) vs maxcap(1.183) -> FAIL
+
+H2: NOT cleanly demonstrated -- H2 stays a risk, not a headline

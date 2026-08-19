@@ -26,11 +26,11 @@ closure). Spearman ρ between a priori severity rank and the damage effect is pr
 ## 2. Apparatus
 
 * Checkpoint `checkpoints/cosmo_sac/tgnn_cosmo.pt` (seed 42, `activity_model=cosmo_sac`,
-  MPNN h64 L3, phases 30/70/10, CPU, 2026-06-21, commit `5cfd8dd`). Its manifest names
+  MPNN h64 L3, phases 30/70/10, CPU, 2026-06-21, commit `7e11376`). Its manifest names
   train/val/test with sha256 `419b3b2e…`/`974ea451…`/`7871e8a9…`, which are **bit-identical
   to the current `notebooks/data/processed/*.csv`** — the checkpoint is on the current
-  `solute_scaffold` split, post the +273 K `T_m` repair (`1380d94` is an ancestor of
-  `5cfd8dd`).
+  `solute_scaffold` split, post the +273 K `T_m` repair (`eb314d8` is an ancestor of
+  `7e11376`).
 * **Why this checkpoint and not `results/e5_sigma_grounding/`'s.** The e5 σ-grounding
   checkpoints (`checkpoints/e5/grounded_a_seed{42,43,44}.pt`) **do not exist on this box**
   (`checkpoints/e5/` is absent; a filesystem-wide search finds no `grounded_a_seed*.pt`),

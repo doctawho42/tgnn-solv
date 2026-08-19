@@ -13,7 +13,7 @@ did not exist on the VM — failed all six manifests of seeds 42–44:
 - the ungrounded arms do not **assert** the absence of a σ stream, and §2.2 requires absence to be
   asserted rather than inferred.
 
-The cause is one fact with three faces: the VM's tree stood at `bed7ba9`, the last pushed commit, and
+The cause is one fact with three faces: the VM's tree stood at `d88e071`, the last pushed commit, and
 the certification block was written after it. The gate driver that runs the check was not there
 either, which is why the relaunch called the training driver directly and skipped it. Seeds 45/46,
 restarted on the current code at 03:07, did get the block — but at phase-2 epoch 34 of 70, so
@@ -87,7 +87,7 @@ The three ± above were first recorded as 0.0540 / 0.0063 / 0.0603. Those are **
 deviations; every ± that spans seeds in this paper is a **population** one, stated at
 `sections/SI.tex` and again in Table S3's caption, and a sample figure is larger by exactly
 √(3/2) = 1.2247. The means, the signs and the per-seed non-overlap are unaffected. The wrong figures
-also stand in the commit message of `4d52fc4`, which is not rewritten; this note is the correction of
+also stand in the commit message of `36fc546`, which is not rewritten; this note is the correction of
 record. They are the numbers an executor would have typed into five displays, and the discharge
 sheet's own final check would not have caught them — it greps *retired* values, not new ones.
 

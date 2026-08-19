@@ -1,6 +1,6 @@
 # Discharge sheet for the §2.2 / `sec:si-repro` leak-free re-run pre-commitment
 
-**Built 2026-08-10 at HEAD `1df7ccd`, with seeds 42/43/44 landed and 45/46 in training.**
+**Built 2026-08-10 at HEAD `de4ebdb`, with seeds 42/43/44 landed and 45/46 in training.**
 This sheet is *derived from* the display inventory that lives at `paper/sections/SI.tex`
 `\label{sec:si-repro}` — resolve it through the .aux; the number it prints at has already moved once, on 2026-08-10. **That inventory is settled and this sheet does
 not amend it.** Where this sheet records something the inventory does not, it says so in the
@@ -743,7 +743,7 @@ parts (all six block headings are `p`-cells of the tabular's width; a longer cap
 them). If a five-seed cell is wider than a three-seed one — and `2.1241 ± 0.0540` is wider than
 `2.04 ± 0.04` — **re-measure before believing a clean build.**
 
-**C5 — page counts.** Article **33 pp** and SI **S-84** at HEAD `1df7ccd`. Read the new counts off the
+**C5 — page counts.** Article **33 pp** and SI **S-84** at HEAD `de4ebdb`. Read the new counts off the
 build and record them; a five-seed table with a per-seed column of five values will grow, and the
 ledger's three parts are already sized to their pages.
 

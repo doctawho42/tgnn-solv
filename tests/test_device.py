@@ -1,9 +1,9 @@
 """Tests for the shared device resolver.
 
-The behaviour under test is the one `cbfadee` introduced in `scripts/train.py` and this
+The behaviour under test is the one `a569307` introduced in `scripts/train.py` and this
 module now holds for all twelve scripts that carried a copy: an accelerator requested by
 name and not available is a hard error, not a WARNING line followed by a ten-hour CPU
-run. `cbfadee` itself changed only `scripts/train.py`; the other eleven copies stayed
+run. `a569307` itself changed only `scripts/train.py`; the other eleven copies stayed
 lenient until this consolidation, so nothing below is a regression it caused.
 
 The other half is `default_device`, and it is what keeps the strict rule from breaking
@@ -565,7 +565,7 @@ def test_a_cpu_default_shouts_on_a_box_that_owns_an_nvidia_card(
 ) -> None:
     """The gate-box case: the signal that was there on 2026-08-08 and then was not.
 
-    `cbfadee` and the consolidation together took the old WARNING line away from the
+    `a569307` and the consolidation together took the old WARNING line away from the
     no-flag path -- `default_device` picked CPU silently, the drivers forwarded
     `--device cpu`, and `resolve_device("cpu")` is a legitimate request -- so this path
     had less signal than on the day the failure happened.
@@ -783,7 +783,7 @@ def test_the_resolver_is_defined_in_exactly_one_place() -> None:
     """Guard against the copy coming back, anywhere in the tree.
 
     One lenient copy cost the gate box ten hours on 2026-08-08, and the reason fixing
-    that one in `cbfadee` was not enough is that eleven others existed to be found by
+    that one in `a569307` was not enough is that eleven others existed to be found by
     hand. This is the assertion that no longer has to know their names.
     """
     assert _SCAN.defines == (DEVICE_MODULE_PATH,), (

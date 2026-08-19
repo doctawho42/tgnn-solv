@@ -1,7 +1,7 @@
 """One home for turning a requested device string into a `torch.device`.
 
 Twelve scripts each carried a copy of this function, and they gave three different
-answers to "you named an accelerator this box does not have". `cbfadee` changed exactly
+answers to "you named an accelerator this box does not have". `a569307` changed exactly
 one of them -- it touched two files, `scripts/train.py` and
 `scripts/experiments/run_e5_sigma_grounding.sh` -- so that an accelerator asked for by
 name and not delivered is an error rather than a warning. Of the eleven it left:
@@ -43,7 +43,7 @@ when argparse did, and eleven of the thirteen entry points that now call it hard
 bare `default="cuda"` (or `"mps"`) that argparse hands over with no flag typed. Making
 the raise universal is what would kill the DirectGNN control arm on a MacBook and the
 DirectGNN error diagnostics on every box that is not a Mac. Neither died after
-`cbfadee`: at `cbfadee` `train_directgnn.py` still had its own lenient copy, and the
+`a569307`: at `a569307` `train_directgnn.py` still had its own lenient copy, and the
 diagnostics imported the equally lenient one from `run_full_budget_experiment`.
 
 Those eleven now read the machine here, alongside `scripts/train.py` and

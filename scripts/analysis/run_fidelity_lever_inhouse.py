@@ -4,7 +4,7 @@ UD typed profiles, PAIRED per pair. Replaces the cross-database n=57 with an in-
 same-engine (our validated differentiable layers), same-database (UD) contrast.
 
 Prediction pre-registered in reports/PREDICTION_fidelity_lever_2010_2026-07-18.md (commit
-91944ce) BEFORE this ran: MSE(ref->2010) < MSE(ref->2002) on the clean ln-gamma slice.
+7b99a67) BEFORE this ran: MSE(ref->2010) < MSE(ref->2002) on the clean ln-gamma slice.
 
 Slice A (clean, PRIMARY): ln gamma_inf on IDAC-cap-UD activity pairs (no crystal term).
 2010 dispersion OFF is primary (validated 1.4e-4); dsp is a flagged secondary.

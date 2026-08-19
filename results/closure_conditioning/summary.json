@@ -15,7 +15,7 @@
           14.5862,
           51.6425
         ],
-        "p90": 181.2315335621621,
+        "p90": 181.2315438320899,
         "what": "||J|| ||sigma|| / |ln gamma| at the learned profile: worst-case, first-order amplification of a RELATIVE input perturbation"
       },
       "substitution": {
@@ -75,12 +75,12 @@
       "ln_gamma_learned_median": -0.6904419660568237,
       "ln_gamma_learned_absmedian": 0.7681244015693665,
       "relative_condition_number": {
-        "median": 72.00925199980448,
+        "median": 72.00925192998187,
         "ci90": [
           55.0788,
           124.2204
         ],
-        "p90": 241.0042960131579,
+        "p90": 241.0043023021186,
         "what": "||J|| ||sigma|| / |ln gamma| at the learned profile: worst-case, first-order amplification of a RELATIVE input perturbation"
       },
       "substitution": {

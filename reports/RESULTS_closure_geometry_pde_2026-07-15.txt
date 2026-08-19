@@ -1,0 +1,45 @@
+# De-risk: "closure geometry governs learned-latent trustworthiness" (ideation top-pick observable_design)
+# script: scripts/analysis/run_closure_geometry_pde.py  (1-D diffusion, K-sensor rank knob)
+
+## Panel 1 -- rank of closure Jacobian vs K (participation ratio)
+K:   1    2    4    8   16   24
+er:  1.0 1.66 1.85 1.94 1.95 1.93   -> participation ratio SATURATES ~1.9 (sloppy spectrum, sv decay ~0.65-0.9)
+
+## Identifiable dimension = #singular values above a noise floor, vs K
+noise 1% :  K=2->2   4->4   8->8   16->15.7  24->22.5  31->28.6   (TRACKS K -- non-degenerate)
+noise 5% :  K=2->2   4->4   8->7.6 16->12.7  24->15.3  31->16.2   (grows then saturates)
+noise 10%:  K=2->2   4->4   8->6.8 16->8.6   24->7.5   31->7.4    (hard diminishing returns)
+
+READ: unlike COSMO-SAC (eff.rank ~1 even with 96 channels), the PDE closure is NON-DEGENERATE at low
+noise: identifiable dim ~= K. So the framework GENERALIZES past COSMO's rank-1. BUT the object
+("identifiable dim = #Jacobian singular values above noise") is numerical-rank / sloppy-models --
+classical. Novelty must therefore live in the causal channel-design layer, not the spectrum.
+
+## Panel 3 -- causal channel-design intervention (the non-tautological novel core)
+base 6 sensors: recovery[v_null] = -0.62 (unrecovered), recovery[v_top] = +0.95   (correct baseline)
++A (sensor picked FROM CLOSURE to span v_null; align 0.451): recovery[v_null] = +0.09
++B (cost-matched control, spans already-observed v_top; align_to_null 0.000): recovery[v_null] = +0.20
+
+VERDICT: the predicted differential (A >> B) is ABSENT and slightly REVERSED. The closure-targeted
+sensor does NOT preferentially de-surrogate its target direction vs an orthogonal control. The one move
+that would escape the sloppy-models / OED scoop did not demonstrate on first test.
+
+## Bottom line
+Generalization gate PASSED (non-degenerate closure exists; identifiable dim tracks K at low noise).
+Novel-core gate did NOT clear (causal per-direction intervention showed no differential vs control).
+=> Program is in the synthesis's downside case: "active subspaces + a strong negative diagnostic,
+strong-domain not top-ML". Same failure locus as the grounding-budget program: the constructive/novel
+claim, when tested, collapses toward known identifiability theory (sloppy models, active subspaces, OED).
+
+## Generative-side ideation (w2gqp77cy) -- outcome
+The "design-freedom sign-flip" (null-space = design manifold / physics-derived disentanglement) DID NOT
+survive: 4 of 6 candidates put the null space at the load-bearing center -> all collapse to Constantine
+active subspaces + trivial many-to-one, scooped by Physics-Constrained Flow Matching + COSMO-CAMD. The 2
+that escape rank escape into other crowded rooms (physics-teacher distillation; Bayesian symbolic regression).
+SURVIVOR (both critics of candidate 5 converged): the SELF-SOLVATION / single-component corroboration GATE
+as a law-vs-compensation adjudicator. A matched-capacity black-box residual compensator is structurally BLIND
+on self-solvation (never fit there, no signal there), so requiring a constructed closed-form term to predict
+the right single-component sign/magnitude separates "learned the law" from "soaked residuals into the null
+space" -- clears rank + scooping + triviality at once; cheap (repo self-solvent aux-stream). Honest ceiling:
+strong-domain; realistically an ADJUDICATION INSTRUMENT + an honest negative (rank-1 predicts no cheap missing
+term). Full: reports/RESULTS_ideation_generative_2026-07-15.json.

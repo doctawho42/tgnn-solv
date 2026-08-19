@@ -4,7 +4,7 @@ Multi-agent literature sweep (6 sub-literatures + synthesis) to test whether thr
 claims are already known. Verdict below; full agent findings in the workflow journal
 (`subagents/workflows/wf_4bdb7137-20b/journal.jsonl`).
 
-> **CORRECTION (post-review, committed 99efceb).** The CLAIM 1 "math fix" below ("drift-rank <=
+> **CORRECTION (post-review, committed 251fdcf).** The CLAIM 1 "math fix" below ("drift-rank <=
 > n-rank(J), drift in ker(J)") is only half right. The drift has TWO orthogonal components: the FREE
 > one in ker(J) (dim ~ n-rank(J), = Lemma 1 non-identifiability, what Schwab/EHN/Hansen cover) and the
 > COMPENSATION in row(J) = ker(J)^perp (dim <= rank(J), low-rank because J is sloppy, = the S6.3

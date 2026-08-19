@@ -67,7 +67,7 @@ JCTC).
   Havasi 2022, BINN-2026, σ-profile-ML "lack physical significance").
 - uncertified P≈0.78 keystone as headline → demoted to "the instrument's reading on the 2002 anchor."
 - "general instrument for any composed predictor" → gone.
-- "proved account / reusable diagnostic" over-claims → already downgraded (commit c631893).
+- "proved account / reusable diagnostic" over-claims → already downgraded (commit 45bd2fa).
 
 ## Assets already in hand (nothing to re-run for A′)
 - 2010/dsp control: `results/b_insuff/closure_variant_control.json` (done).

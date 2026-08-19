@@ -1,0 +1,18 @@
+# Self-solvation discriminator -- planted-term positive control
+# script: scripts/analysis/run_selfsolvation_discriminator_control.py  (real VT-2005, N=1432)
+
+POSITIVE control (planted symmetric-bilinear term), self-solvation DIAGONAL (held out):
+  closed-form (A)     diag corr 0.999  nRMSE 0.058
+  black-box  (B)      diag corr 0.920  nRMSE 0.423
+  sym-black-box (B2)  diag corr 0.897  nRMSE 0.487
+NEGATIVE control (planted=0): closed-form diag |pred| 0.011 -> no hallucinated term (specificity OK).
+FAR-PAIRS (train only on very dissimilar molecules d>2.0, so the diagonal is truly OOD):
+  closed-form diag corr 0.998 nRMSE 0.073 ; black-box 0.907/0.453 ; sym-black-box 0.877/0.515
+
+VERDICT: the STRONG claim -- "a black-box residual compensator is structurally BLIND on self-solvation"
+-- is FALSIFIED. The black-box recovers the self-solvation ORDERING (corr ~0.90) even trained only on
+very dissimilar cross-pairs, because the planted term is a smooth function of features and smoothness
+extrapolates the rank to the diagonal. The ONLY residual signal is a magnitude/calibration gap (closed-
+form ~6x better nRMSE) -- which is the generic "structured priors extrapolate/calibrate better than MLPs"
+(known, scooped), not the sharp un-cheatable-axis discriminator. Pre-registered stop rule -> STOP before
+real data. The surviving generative-ideation seed does not hold.

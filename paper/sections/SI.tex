@@ -211,7 +211,7 @@ beyond the reach of the solubility loss. Inside the layer, the segment activitie
 that is a free hyperparameter and \emph{differs} between training and scoring: the COSMO-SAC arms
 here train at $16$ segment iterations and are scored at $30$.
 % CORRECTED 2026-08-12, round four.  "on these weights" was false provenance and it is the clause
-% that makes the mismatch read as benign.  The 16 was set in ed8c4ce against a convergence
+% that makes the mismatch read as benign.  The 16 was set in 3a6c3da against a convergence
 % regression test, tests/test_cosmo_sac_iter_convergence.py, whose _profiles builds two hand-written
 % Gaussian sigma-profiles: no trained weight and no tabulated profile enters it, so the 6e-5 is a
 % property of that test's configuration and says nothing about the arms.  The rest of the sentence
@@ -4419,8 +4419,8 @@ stream build beside the split hash, which was not done for these runs.
 %     the sentence stating what it now is was not, so a five-seed table would have printed beside a
 %     paragraph asserting it is three-seed.
 %   THE FOURTH CERTIFICATION PASSAGE: the opening sentence of the CONCLUSIONS carries "on a contrast
-%     this work does not certify leak-free".  It was added on 2026-08-07 (dab4994, rewritten at
-%     cbf3b39) -- the same day as, and AFTER, the pass at 4cacadd -- and the same-pass rule was not
+%     this work does not certify leak-free".  It was added on 2026-08-07 (21d0e40, rewritten at
+%     a2e516d) -- the same day as, and AFTER, the pass at 5771d53 -- and the same-pass rule was not
 %     run for it.  Disposition D said "three passages" and there are four.  Branch 2 of the decision
 %     rule already rewrites this sentence, but only branch 2; the in-run certification answers the
 %     caveat in ALL THREE branches, which is what disposition D is for, so under branches 1 and 3 the
