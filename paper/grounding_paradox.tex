@@ -1127,9 +1127,17 @@ Two experiments would settle it and both remain to be run. The first is the tran
 paradox's own regime, which is limitation~(i). The second is limitation~(x): the fidelity contrast
 of \S\ref{sec:fidelity} compares \emph{oracle-input} activity error across kernels, so $\Ggap$
 itself stands measured under no modern closure on either axis, and whether the \emph{solubility}
-paradox survives a 2010/dsp closure is untested. Both need a typed $\sigma$-profile head trained end
+paradox survives a 2010/dsp closure is untested. % "WHICH THIS CORPUS LACKS" WAS FALSE, corrected 2026-08-19.  The claim is checkable in about a
+% second -- InChIKey the split against the UD compound list -- and it comes back 437 labelled test
+% rows carrying a UD profile on both sides, over 11 solutes and 57 pairs.  What is true is that the
+% set is THIN IN SOLUTES, which is the constraint that matters and is now what the sentence says.
+% An absolute claim a referee can refute with one script is worse than the narrower true one.
+% Producer for the counts: scripts/analysis/check_ud_bigsoldb_intersection.py.
+Both need a typed $\sigma$-profile head trained end
 to end through the 2010 kernel, and the solubility one additionally needs a
-UD$\,\cap\,$BigSolDB matched set, which this corpus lacks.
+UD$\,\cap\,$BigSolDB matched set. That set exists but is thin: $437$ of the $5608$ labelled test
+rows carry a UD profile on both sides, over $11$ solutes and $57$ pairs, so it prices a handful of
+solutes rather than the corpus.
 
 \subsection{A second axis: bounding a deployed COSMO-SAC against its inputs}
 \label{sec:measure}
