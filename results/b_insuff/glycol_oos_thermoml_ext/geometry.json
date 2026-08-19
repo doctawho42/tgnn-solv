@@ -1,0 +1,19 @@
+{
+  "what": "GEOMETRY ONLY -- no outcome quantity is computed here, by design",
+  "dois": [
+    "10.1016/j.jct.2013.05.011",
+    "10.1021/je0102107"
+  ],
+  "n_rows_extracted": 187,
+  "n_after_convention": 147,
+  "n_glycol_rows": 147,
+  "n_pairs": 49,
+  "n_net_new_rows": 95,
+  "n_net_new_pairs": 32,
+  "n_solutes": 21,
+  "n_solvents": 2,
+  "rows_per_source": {
+    "10.1016/j.jct.2013.05.011": 95
+  },
+  "admissible": false
+}
