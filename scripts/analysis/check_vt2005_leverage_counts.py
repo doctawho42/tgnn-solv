@@ -75,7 +75,12 @@ def leave_one_pair_out(g: np.ndarray, m: np.ndarray, n_bins: int, ddof: int) -> 
 #: The article's Fig. \ref{fig:cell} and the sentence that cites it state three numbers about the
 #: whole grid.  They are running prose and a caption, which is the position all six stale values of
 #: this manuscript were found in, so they are bound here rather than trusted.
-ARTICLE = Path("paper/grounding_paradox.tex")
+# The grid sentence and Figure fig:cell moved into the Supporting Information's estimator-grid
+# section on 2026-08-19 (the float-relocation pass). The gate follows the prose; the four numerals
+# it binds -- the -0.53/+1.12 span, the 34 positive cells and the reported cell's rank -- and the
+# deposit behind them are unchanged. The article now carries the claim without the numerals, which
+# is why this is the only place they are bound.
+ARTICLE = Path("paper/sections/SI.tex")
 GRID_CELLS = (("g_res", 1), ("g_res", 0), ("g_full", 1), ("g_full", 0))
 
 
@@ -87,7 +92,11 @@ def _check_article(d: pd.DataFrame, m: np.ndarray) -> None:
             for col, ddof in GRID_CELLS for b in range(3, 13)]
     head = margin(d[HEADLINE_COLUMN].to_numpy(float), m, HEADLINE_BINS, HEADLINE_DDOF)
     pos = [v for v in vals if v > 0]
-    tex = ARTICLE.read_text()
+    # WHITESPACE-NORMALISED BEFORE MATCHING.  The pattern below used to pin the column each of its
+    # two sentences wrapped at; the relocation reflowed them and the gate reported "reworded" with
+    # no bound value having changed.  Third gate in this manuscript to have that defect and the
+    # third to be repaired the same way: values are bound, line breaks are not.
+    tex = re.sub(r"\s+", " ", ARTICLE.read_text())
     want = [("the grid's low end", f"{min(vals):.2f}"), ("the grid's high end", f"+{max(vals):.2f}"),
             ("cells with a positive margin", str(len(pos))),
             ("the reported cell's rank from the bottom",

@@ -1474,6 +1474,39 @@ $20$ & $+1.23$ (1.0) & $+0.94$ (.99) & $+0.55$ (.99) & $+0.08$ (.97) \\
 cluster-bootstrap frequency that the margin is positive.}
 \end{table}
 
+% THE ESTIMATOR-CELL FIGURE AND ITS READING MOVED HERE FROM THE ARTICLE'S \S\ref{sec:vt2005},
+% 2026-08-19.  The figure is this section's subject drawn whole, and the sentence below is the only
+% place in either document that states the RANK of the reported cell among the positive ones --
+% Table~\ref{tab:grid} sweeps bins 3-20 and reports "positive in 66 of the 72 cells", which is a
+% count and not a rank.  scripts/analysis/check_vt2005_leverage_counts.py binds that sentence and
+% was re-anchored to this file in the same commit.
+% THE ESTIMATOR-CELL FIGURE, added 2026-08-19.  Sec. 2.5 fixes four analyst choices in advance and
+% this section reports the margin those choices produce; until now the reason for the rules was
+% carried by three hand-picked rows of the grid.  Drawn whole it also answers the question a referee
+% will ask and the three rows could not: whether the cell was picked to flatter the number.  It was
+% not -- 2nd from the bottom of the 34 positive cells.  Regenerate with
+% scripts/analysis/make_estimator_cell_figure.py, which recomputes every cell through the same
+% functions check_vt2005_leverage_counts.py gates with, so the figure and the gate cannot disagree.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_estimator_cell.pdf}
+\caption[The separation margin over the estimator grid]{\textbf{The same rows, the same estimator,
+and four defensible conventions.} The VT-2005 matched set ($n=60$) at every bin count from three to
+twelve, under both within-bin variance conventions (unbiased, maximum-likelihood) and both
+combinatorial ones (residual-only, full). \textbf{(a)}~the separation margin
+$\mathrm{MSE}-2B_{\mathrm{insuff}}^{\mathrm{up}}$; below zero Lemma~\ref{prop:decomp} separates
+nothing. \textbf{(b)}~how many of the $60$ single-pair deletions send that margin below zero. The
+ringed point is the cell \S\ref{sec:estimator} fixes in advance and this section reports. The
+aggregate spans $-0.53$ to $+1.12$ across cells that are each individually defensible, which is why
+the choices are fixed before the data are seen rather than justified after.}
+\label{fig:cell}
+\end{figure}
+
+\noindent The reported cell is not a favourable one. Figure~\ref{fig:cell} runs the same estimator
+over the whole grid of bin counts and conventions, where the aggregate spans $-0.53$ to $+1.12$ and
+changes sign. Of the $34$ cells returning a positive margin, the reported one is second from the
+bottom.
+
 \noindent The same grid on the broad IDAC set is Table~\ref{tab:grid-rep}, now with its own
 per-cell bootstrap frequency rather than a bare range of point margins. None of its $56$ cells is
 negative. Within
@@ -2130,12 +2163,41 @@ compounded cut and the null-partition test rather than on this curve. Per-stratu
 leave-one-source-out, and the VT-2005-matched set's own curves, are in the artifact and summarised in
 \S\ref{sec:broad}--\S\ref{sec:vt2005}.
 
-% THE STRATIFIED-MAP FIGURE MOVED TO THE ARTICLE, 2026-08-19: \S\ref{sec:broad} ran 1856 words
-% with no figure of its own once the two map tables came here, and this is that section's
-% figure.  Regenerate with scripts/analysis/make_stratified_map_figure.py.
+% THE STRATIFIED-MAP FIGURE CAME BACK, 2026-08-19 (second pass, same day).  It went to the
+% article because \S\ref{sec:broad} ran 1856 words with no figure of its own; the class-C cull
+% shortens that section and, more to the point, the article never cited this float -- grep for
+% \ref{fig:decomp} over both documents returned one hit and it was inside a comment.  A figure no
+% live sentence points at is a defect wherever it sits, so it returns to the map it draws and the
+% paragraph below now cites it.  Regenerate with scripts/analysis/make_stratified_map_figure.py.
+% 2026-08-02. This float used to draw the two sets' bound INVENTORIES -- one bar per set cut at the
+% headline bound, plus a mark per estimator -- i.e. the drawn form of Table~\ref{tab:bounds}. That
+% aggregate is retired (Sec. sec:broad), so the same stem now carries the stratified map and
+% Table~\ref{tab:bounds} stands on its own; the surrounding text no longer describes marks.
+% Regenerate with scripts/analysis/make_stratified_map_figure.py, which reads
+% results/b_insuff/stratified_map_table.csv and hard-codes nothing, verdicts included.
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig_decomposition.pdf}
+\caption[Where the closure binds, and where the two terms do not separate]{\textbf{Where the closure binds, and where the two terms do not separate}, by solvent class and by
+solute role, on the broad IDAC set
+($477$ rows, $185$ pairs, $78$ solutes, $36$ solvents, $15$ source publications). Bars, points and
+shares are at the row unit
+under the residual-only convention, at one estimator cell for every stratum---eight
+equal-count bins of $g(\zstar)$ with the unbiased within-bin variance. \textbf{(a)}~each stratum's
+input-insufficiency bound and its total error; \textbf{(b)}~the margin between them with its $90\%$
+two-way cluster-bootstrap interval, the other three unit\,$\times$\,convention cells as grey ticks;
+\textbf{(c)}~each stratum's share of the set's squared error, the part carried by its largest source
+publication drawn dark. Twelve cells at the granularity reported here, drawn from the $59$-stratum
+map of Tables~\ref{tab:map-full}--\ref{tab:map-xtab}. Strata on the two axes overlap, so
+panel~(c)'s shares do not sum down the column.}
+\label{fig:decomp}
+\end{figure*}
 
 
 % ---------------------------------------------------------------------------
+\noindent Figure~\ref{fig:decomp} draws twelve of those strata at the granularity the article
+reports, each with its bound, its total error, its margin and its share of the set's squared error.
+
 % THE MAP, IN FIVE FLOATS. Tables~\ref{tab:map-full}--\ref{tab:map-xtab} carry all 59 strata
 % with their sources, margins, intervals and robustness; Table~\ref{tab:map-detail} carries the
 % columns those two do not -- error, bound, bootstrap band, error share and the leave-one-source-out
@@ -3292,9 +3354,10 @@ of $0.25$ to $0.83$ as the correlation length grows from one bin to eight, spann
 value without any between-molecule alignment at all. The \emph{phase-randomised} null of
 \S\ref{sec:surrogate} preserves each deviation's amplitude spectrum exactly---and so its
 smoothness---and destroys only the alignment across molecules that a shared compensating direction
-asserts; the observed $0.399$ against its $0.221\pm0.011$ is therefore a statement about alignment
-and not about smoothness. The wrong-molecule null ($0.772\pm0.023$), which the observed share does
-\emph{not} clear, is a difference between two points on the reference manifold and inherits that
+asserts; the observed $0.399$ against its $0.221\pm0.011$ ($p<0.001$) is therefore a statement
+about alignment and not about smoothness. The wrong-molecule null ($0.772\pm0.023$, $p=1.00$),
+which the observed share does \emph{not} clear, is a difference between two points on the
+reference manifold and inherits that
 manifold's own concentration, so it demands more alignment than a shared direction implies. That is
 the argument for preferring the phase-randomised one, and \S\ref{sec:surrogate} states that if it is
 not accepted the spectrum is uninformative rather than supporting. In each case the $\pm$ is the
@@ -3331,7 +3394,11 @@ have identically zero drift between them.
 
 \paragraph{The grounded warm-up checkpoint's $0.73$, and the power of the two-MSE check.} The
 direct cancellation check of \S\ref{sec:surrogate} has almost no power in the direction that
-matters. On the VT-2005-matched set, $18.75$ against $\Var(m)=2.47$ is $7.6\times$ worse than predicting the
+matters. Holding the cavity area at its reference value, the sole retained end-to-end SLE-trained
+COSMO-SAC checkpoint scores $18.75$ against the reference input's $1.47$ on the $n{=}60$
+VT-2005-matched pairs: on the activity axis the drifted profile is an order of magnitude
+\emph{worse} through the same closure, which is the check the article reads and the direction it
+runs. On the same set, $18.75$ against $\Var(m)=2.47$ is $7.6\times$ worse than predicting the
 mean, the signature of a broken profile rather than of a partly compensating one, so the comparison
 separates ``no cancellation'' from ``large cancellation'' and not from ``some cancellation''. The same comparison run on
 a grounded warm-up checkpoint, whose profile sits $28\%$ from the reference, scores $0.73$ where the

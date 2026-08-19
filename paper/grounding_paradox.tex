@@ -1442,29 +1442,6 @@ terms stay merged; the kernel as against the composite it is deployed in; and th
 null. The margin sits at the ninetieth percentile of that null, on the one chemistry for which
 out-of-sample rows are missing.
 
-% 2026-08-02. This float used to draw the two sets' bound INVENTORIES -- one bar per set cut at the
-% headline bound, plus a mark per estimator -- i.e. the drawn form of Table~\ref{tab:bounds}. That
-% aggregate is retired (Sec. sec:broad), so the same stem now carries the stratified map and
-% Table~\ref{tab:bounds} stands on its own; the surrounding text no longer describes marks.
-% Regenerate with scripts/analysis/make_stratified_map_figure.py, which reads
-% results/b_insuff/stratified_map_table.csv and hard-codes nothing, verdicts included.
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig_decomposition.pdf}
-\caption[Where the closure binds, and where the two terms do not separate]{\textbf{Where the closure binds, and where the two terms do not separate}, by solvent class and by
-solute role, on the broad IDAC set
-($477$ rows, $185$ pairs, $78$ solutes, $36$ solvents, $15$ source publications). Bars, points and
-shares are at the row unit
-under the residual-only convention, at one estimator cell for every stratum---eight
-equal-count bins of $g(\zstar)$ with the unbiased within-bin variance. \textbf{(a)}~each stratum's
-input-insufficiency bound and its total error; \textbf{(b)}~the margin between them with its $90\%$
-two-way cluster-bootstrap interval, the other three unit\,$\times$\,convention cells as grey ticks;
-\textbf{(c)}~each stratum's share of the set's squared error, the part carried by its largest source
-publication drawn dark. Twelve cells at the granularity reported here, drawn from the $59$-stratum
-map of Tables~\ref{tab:map-full}--\ref{tab:map-xtab}. Strata on the two axes overlap, so
-panel~(c)'s shares do not sum down the column.}
-\label{fig:decomp}
-\end{figure*}
 
 \emph{Which chemistry leaves the terms merged.} Three of the six admissible cells are that same row set at
 three granularities. Of the other two, the alkane solutes are positive and demoted to the glycol
@@ -1499,27 +1476,6 @@ it is computed.
 % independent sample from the broad set -- which is what makes the two sets' agreement a consistency
 % check rather than corroboration.  The arithmetic is in \S\ref{sec:si-map-cells} and
 % \S\ref{sec:si-robustness}.
-% THE ESTIMATOR-CELL FIGURE, added 2026-08-19.  Sec. 2.5 fixes four analyst choices in advance and
-% this section reports the margin those choices produce; until now the reason for the rules was
-% carried by three hand-picked rows of the grid.  Drawn whole it also answers the question a referee
-% will ask and the three rows could not: whether the cell was picked to flatter the number.  It was
-% not -- 2nd from the bottom of the 34 positive cells.  Regenerate with
-% scripts/analysis/make_estimator_cell_figure.py, which recomputes every cell through the same
-% functions check_vt2005_leverage_counts.py gates with, so the figure and the gate cannot disagree.
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig_estimator_cell.pdf}
-\caption[The separation margin over the estimator grid]{\textbf{The same rows, the same estimator,
-and four defensible conventions.} The VT-2005 matched set ($n=60$) at every bin count from three to
-twelve, under both within-bin variance conventions (unbiased, maximum-likelihood) and both
-combinatorial ones (residual-only, full). \textbf{(a)}~the separation margin
-$\mathrm{MSE}-2B_{\mathrm{insuff}}^{\mathrm{up}}$; below zero Lemma~\ref{prop:decomp} separates
-nothing. \textbf{(b)}~how many of the $60$ single-pair deletions send that margin below zero. The
-ringed point is the cell \S\ref{sec:estimator} fixes in advance and this section reports. The
-aggregate spans $-0.53$ to $+1.12$ across cells that are each individually defensible, which is why
-the choices are fixed before the data are seen rather than justified after.}
-\label{fig:cell}
-\end{figure}
 
 This set carries the paper's other reference-matched analyses and is far weaker. All $60$ rows sit
 at $298$\,K, so that $\dim(\zstar)/n\approx102/60$, and methanol occupies $25$ of them. Its $17$
@@ -1542,9 +1498,9 @@ blocked out-of-fold estimators, and under $4$ of the $60$ single-pair deletions.
 deletions leaves $-0.03$, where on the broad set every single-pair deletion leaves the sign intact.
 A margin here would in any case bound a label systematic tracking $\zstar$, which the unbiased
 within-bin variance leaves \emph{open} (\S\ref{sec:si-robustness}). The reported cell is not a
-favourable one. Figure~\ref{fig:cell} runs the same estimator over the whole grid of bin counts and
-conventions, where the aggregate spans $-0.53$ to $+1.12$ and changes sign. Of the $34$ cells
-returning a positive margin, the reported one is second from the bottom. Of the $60$ pairs, $57$
+favourable one: drawn over the whole grid of bin counts and conventions the aggregate changes sign,
+and of the cells returning a positive margin the reported one is near the bottom
+(Fig.~\ref{fig:cell}, \S\ref{sec:si-grid}). Of the $60$ pairs, $57$
 also appear in the broad IDAC set at $298$\,K under UD profiles, so the two are overlapping samples
 rather than independent ones. VT-2005, and therefore the paradox's own oracle, is defined on this
 sub-design, so the agreement between the two sets' error orderings is a consistency check rather

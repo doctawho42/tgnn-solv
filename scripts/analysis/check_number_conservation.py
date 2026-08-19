@@ -1460,10 +1460,66 @@ def render(base_build: BuildResult, now_build: BuildResult,
     allowed = [f for f in lost if f.key in allow]
     lost = [f for f in lost if f.key not in allow]
 
-    a_gone = [f for f in lost if f.tier == "A" and f.now_count == 0]
-    a_less = [f for f in lost if f.tier == "A" and f.now_count > 0]
-    b_gone = [f for f in lost if f.tier == "B" and f.now_count == 0]
-    b_less = [f for f in lost if f.tier == "B" and f.now_count > 0]
+    # GONE MEANS GONE FROM THE PAGE, NOT GONE FROM THE COUNTED POOL.  now_count is a count over
+    # tokens that survived the exclusion rules, so a value that merely CHANGES BUCKET reads as
+    # lost.  Observed 2026-08-19: relocating two floats shortened the article by a page, the
+    # bibliography detector's boundary moved with it, and four reference-list numerals -- an arXiv
+    # id and a volume/pages triple -- were reported GONE FROM THE DOCUMENT ENTIRELY while printing
+    # in both PDFs.  That is this gate's most serious verdict and it was wrong, which is worse than
+    # a missing warning: the next real one would be read as another false alarm.  So the verdict
+    # now has to survive a look at the raw page text.
+    raw_now = ""
+    for _d in now_build.docs:
+        try:
+            _r = subprocess.run([PDFTOTEXT, str(_d.pdf), "-"], capture_output=True, text=True)
+            raw_now += _r.stdout
+        except Exception:      # noqa: BLE001 -- no extractor is a reason to report, not to crash
+            raw_now = ""
+            break
+
+    _flat_now = re.sub(r"\s+", " ", raw_now)
+
+    def _on_the_page(f: Finding) -> bool:
+        """Does this value still print in the target -- as itself, or in its own sentence?
+
+        A BARE "254" WILL MATCH SOMETHING IN A 130-PAGE SUBMISSION BY ACCIDENT, so a short form
+        is not evidence on its own and this test would fail open on exactly the small integers
+        it is cheapest to lose.  Two ways to pass: a distinctive form (five characters, or a
+        decimal point) that appears; or a run of the baseline sentence that printed it appearing
+        verbatim, which identifies the statement rather than the digits.
+        """
+        if not _flat_now:
+            return False
+        for p in f.printed_forms:
+            if not p:
+                continue
+            if (len(p) >= 5 or "." in p) and p in _flat_now:
+                return True
+            # A SHORT FORM NEEDS ITS NEIGHBOURHOOD, and the neighbourhood must CONTAIN it.
+            # Testing the sentence alone fails open in the one way that matters: a negative
+            # control that changed 5101 to 5102 left the sentence standing, so a sentence test
+            # passed while the value was gone from the submission. The window carries the value.
+            for e in f.entries:
+                ctx = re.sub(r"\s+", " ", e.occ.context or "")
+                i = ctx.find(p)
+                if i < 0:
+                    continue
+                frag = ctx[max(0, i - 25):i + len(p) + 25].strip()
+                if len(frag) >= len(p) + 10 and frag in _flat_now:
+                    return True
+        return False
+
+    reclassified = [f for f in lost if f.now_count == 0 and _on_the_page(f)]
+    a_gone = [f for f in lost if f.tier == "A" and f.now_count == 0 and not _on_the_page(f)]
+    a_less = [f for f in lost if f.tier == "A" and (f.now_count > 0 or _on_the_page(f))]
+    b_gone = [f for f in lost if f.tier == "B" and f.now_count == 0 and not _on_the_page(f)]
+    b_less = [f for f in lost if f.tier == "B" and (f.now_count > 0 or _on_the_page(f))]
+    if reclassified:
+        out.append(f"  {len(reclassified)} value(s) left the counted pool but still print in the "
+                   f"target PDF (an exclusion rule claimed them, typically the bibliography "
+                   f"detector after a page shift). They are reported below as statements that "
+                   f"stopped printing them, not as losses.")
+        out.append("")
     f_any = [f for f in lost if f.tier == "F"]
 
     _render_group("1. TIER A -- GONE FROM THE DOCUMENT ENTIRELY "
