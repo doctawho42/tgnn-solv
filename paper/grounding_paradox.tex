@@ -723,9 +723,9 @@ activity-coefficient data, where they divide the error of a fixed model between 
 the inputs handed to it. Solubility withholds that division, a solubility measurement constraining
 the crystal and the mixing contributions jointly and leaving the blame between them unassigned. What
 the division returns is a map and not a verdict: one answer per stratum, a stratum being a
-chemically defined set of rows. Whether a fixed model's own error stands above what its inputs fail
-to carry is a property of the chemistry the model is asked about, and where it does stand above, a
-more accurate input exposes the model's bias instead of removing it. The learned distribution
+chemically defined set of rows. The chemistry the model is asked about decides whether a fixed model's own error stands above
+what its inputs fail to carry. Where it does stand above, a more accurate input exposes the model's
+bias instead of removing it. The learned distribution
 meanwhile drifts from its tabulated counterpart along a direction shared across molecules, and stops
 reporting the quantity it is named after. Tabulated substituent constants behave the same way inside
 a fixed Hammett relation, the linear equation predicting how readily an acid gives up its proton
@@ -847,10 +847,10 @@ seed $45$.
 % made.  Do not restate this gain as a measurement of supervision toward accurate values.
 The two arms differ in training budget: the grounded arm precedes the shared curriculum with a
 $\sigma$ warm-up on the grounding pool of up to $40$ epochs, early-stopped on a held-out tenth,
-while the ungrounded arm sets that budget to zero (\S\ref{sec:si-lock}). The warm-up against
-permuted $\sigma$ targets that would separate the two was left unrun, so what the gain prices is the
-intervention entire, extra pretraining and accurate targets together, rather than the accuracy of the
-reference values by itself.
+while the ungrounded arm sets that budget to zero (\S\ref{sec:si-lock}). We left unrun the warm-up against permuted
+$\sigma$ targets that would separate the two, so the gain prices the intervention entire, extra
+pretraining and accurate targets together, rather than the accuracy of the reference values by
+itself.
 Those spreads are over initialisation and batch ordering, so they price the training run rather than
 the draw of test solutes. Pooling the five seeds and resampling the $147$ test solute clusters, we
 put the gain at $+0.110$, $95\%$ percentile interval $[+0.001,+0.222]$. The two prices hold
@@ -1037,8 +1037,8 @@ decimal is a property of the bootstrap seed, so we apply to these the coarsening
 Normalised discounted cumulative gain over the top three solvents (nDCG@3) falls by $-0.071$
 $[-0.11,-0.03]$, and top-1 accuracy by $-0.088$ $[-0.17,-0.01]$. We quote that
 last figure pooled, and pooled only: three of its five per-seed intervals span zero, so of the three
-ranking metrics it is the one whose sign the per-seed columns leave open. The solvent the
-model would select changes in $42$ to $53\%$ of groups, asymmetrically: the learned profile by itself
+ranking metrics it is the one whose sign the per-seed columns leave open. In $42$ to $53\%$ of groups the model
+selects a different solvent, and asymmetrically: the learned profile by itself
 picks the measured best solvent in $18$ to $24\%$ of groups, the reference profile by itself in $10$
 to $15\%$. All of that is an ordering rather than a level. Fitting a separate affine recalibration inside every
 group (a slope as well as an intercept, the largest concession a miscalibration reading can ask
@@ -1119,7 +1119,7 @@ them.
 % unchanged and every open question is still called open; what changed is that the section now says
 % what IS the case and then what that leaves open, instead of leading with the negative each time.
 % The section's title keeps "does not decide", because that is what the section is for.
-Which of the two channels the substitution fails through stays open. Drug-like solutes are
+We do not resolve which of the two channels the substitution fails through. Drug-like solutes are
 essentially absent from the VT-2005 set, so the substitution falls almost entirely on the
 \emph{solvent} channel, and the both-channel substitution the attribution would need covers
 ${\approx}7$ solutes; enlarging that set means computing new reference profiles rather than looking
@@ -1402,8 +1402,8 @@ panel~(c)'s shares do not sum down the column.}
 three granularities. Of the other two, the alkane solutes are positive and demoted to the glycol
 ethers by clause~(c), and the acceptor-only aprotics pass the rule and leave the two terms merged,
 the instrument being one-sided. The uniqueness is narrower than being the sole admissible stratum or the sole one sign-stable under
-every deletion: it is one row set admissible, positive and left standing by clause~(c). Which cell
-each remaining stratum fails on is in \S\ref{sec:si-map}, none used to explain a reversal.
+every deletion: it is one row set admissible, positive and left standing by clause~(c). \S\ref{sec:si-map} records which cell
+each remaining stratum fails on, none of them used to explain a reversal.
 
 % WHAT MUST STAY IN THIS PARAGRAPH: the ratio statistics (they are a row of Table~\ref{tab:claims}),
 % the null they are read against, the estimator-geometry REASON -- without it "why a map" is
@@ -1474,7 +1474,7 @@ out-of-fold estimators and under $4$ of the $60$ single-pair deletions, the wors
 where on the broad set
 every single-pair deletion leaves the sign intact---and what a margin here would bound is a label
 systematic tracking $\zstar$, which the unbiased within-bin variance leaves \emph{open}
-(\S\ref{sec:si-robustness}). The cell the margin is read at is not a favourable one:
+(\S\ref{sec:si-robustness}). The reported cell is not a favourable one:
 Figure~\ref{fig:cell} runs the same estimator over the whole grid of bin counts and conventions,
 where the aggregate spans $-0.53$ to $+1.12$ and changes sign, and of the $34$ cells returning a
 positive margin the reported one is second from the bottom. Of the $60$ pairs, $57$ also appear in the broad IDAC set at $298$\,K
@@ -1601,9 +1601,9 @@ in-distribution result and the scaffold protocol does not certify it.} Re-run on
 the reference helps on both poles, so the degraded pole's ``grounding hurts'' half fails to certify
 and so does the reversal; what the scaffold run confirms is the mechanism and not the flip. We
 measure every solubility result in this paper on a scaffold split, and this is the one place the
-protocol changes. The assignment rule, the bounds on both poles and what the quality filter decides,
-the estimator's two conditions of use, the competence sweep and the $G{=}4$ sign test are in
-\S\ref{sec:si-pka-main}.
+protocol changes. \S\ref{sec:si-pka-main} carries the assignment rule, the bounds on both poles, what the quality
+filter decides, the estimator's two conditions of use, the competence sweep and the $G{=}4$ sign
+test.
 
 \subsection{Scope, accuracy, and limitations}
 \label{sec:discussion}
@@ -1977,10 +1977,10 @@ remedy: a more faithful physical model, the calculation that supplies its refere
 % result.  The map is what the instrument delivers, which is a different sentence.
 The answer comes chemistry by chemistry rather than once for a field, and it comes one-sided: what
 the measurement returns is the chemistry on which better inputs are not the remedy. What the
-instrument itself delivers is the map -- which cells it can answer in, and at what size. Whether a latent trained through a misspecified closure becomes,
-in general, a surrogate for that closure's error is untested here: the mechanism is measured on
-infinite-dilution activity coefficients and the phenomenon on solubility at finite composition, and
-no set in this work carries both. The set that would carry both is named in limitation~(x), and
+instrument itself delivers is the map -- which cells it can answer in, and at what size. We have not tested whether a latent trained through a
+misspecified closure becomes, in general, a surrogate for that closure's error. The mechanism is
+measured on infinite-dilution activity coefficients and the phenomenon on solubility at finite
+composition, and no set in this work carries both. The set that would carry both is named in limitation~(x), and
 building it is the experiment this work leaves.
 
 \section*{Author contributions}
