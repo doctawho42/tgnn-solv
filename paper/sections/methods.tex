@@ -599,6 +599,22 @@ bin edges fall, the within-bin variance convention, and the combinatorial conven
 all four here, before any margin is reported, and one setting of them, with the row or the molecule
 pair as unit, is an \emph{estimator cell}. The map of \S\ref{sec:broad} is what running the procedure on
 this closure returns.
+% RESTORED 2026-08-19.  The SI says twice that this section declares which of the two bounds every
+% margin is read from -- "\S\ref{sec:estimator} promises these here" and "which is what
+% \S\ref{sec:estimator} says" -- and this section had stopped saying it, almost certainly in the
+% length pass that halved it.  A selection rule that lives only in the section it is cited FROM is
+% a post-hoc choice however well grounded, which is the objection this sentence exists to answer.
+% THE GROUND IS DOMINATION, NOT THE INVERSION.  Do not restore this as "we use the binning bound
+% because the constant-offset one inverts under our convention": that reads as choosing the bound
+% that gives the answer.  It is dominated -- 0.182 against 1.205 residual-only and 0.715 against
+% 1.429 full on the broad set -- so it adds nothing to the ordering under EITHER convention, and
+% that is true before any margin is looked at.  Nor is Lemma 1(d) the ground; (d) covers the
+% convention-independence of $\Binsuf$ itself, not the choice between two bounds on $\Bclos$.
+Lemma~\ref{prop:decomp} supplies two bounds and we declare here which one every margin is read
+from. The constant-offset bound of part~(b) is strictly slacker than
+$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$, which part~(c) already gives, under both
+combinatorial conventions and on both sets, so it adds nothing to the ordering and is reported for
+completeness alone (\S\ref{sec:si-rules}). Every margin in this paper is the binning bound's.
 
 % THE FOUR RULES MOVED TO \S\ref{sec:si-rules}, 2026-08-19: what stays is the PRE-COMMITMENT and the
 % CELL, what goes is the construction.

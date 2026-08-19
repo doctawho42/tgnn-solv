@@ -114,6 +114,11 @@ TGNN, COSMO-SAC, reference $\sigma^\star$ substituted at evaluation & $5608$ / $
 \addlinespace[2pt]
 \multicolumn{5}{@{}l@{}}{\emph{Scale reference on the same solute-scaffold rows}}\\
 predict the test-set mean of $\lnx$ & $5608$ / $5440$ & $2.32$ & $1.33$ & $0.00$ \\
+% A RULE, NOT A LINE OF SPACE, 2026-08-19.  The caption forbids reading across these blocks and the
+% block head says so again, and both are words; what a skimmer sees is one column of MAE values in
+% one tabular, four of which are on a different split.  The rule is the only part of the warning
+% that is visible at a glance.  Do not reduce it back to \addlinespace to save a line.
+\midrule
 \addlinespace[2pt]
 \multicolumn{5}{@{}l@{}}{\emph{External models re-run on this corpus on a by-solute split, one run each---not a ranking against the block above}}\\
 FastSolv, retrained on this corpus, re-scored & $10287$ & $1.44$ & $0.84$ & $0.55$ \\
