@@ -591,9 +591,10 @@ seed count and the artifact it regenerates from.
 % rests on.
 The instrument is a procedure taking three inputs and no others: a fixed closure $g$, a table of
 reference values $\zstar$ its argument can be read at, and measurements $m$ of its target on rows
-where both exist. Per chemically defined row set it returns the closure's own error $\mathrm{MSE}$,
-an upper bound on what the inputs leave unresolved, the margin between them, a cluster interval on
-that margin, and a verdict of admissible or otherwise with the test that decided it. Four analyst
+where both exist. Per chemically defined row set it returns five things: the closure's own error $\mathrm{MSE}$, an
+upper bound on what the inputs leave unresolved, the margin between them, a cluster interval on
+that margin, and a verdict of admissible or otherwise. The verdict carries the test that decided
+it. Four analyst
 choices set the binning bound of Lemma~\ref{prop:decomp}(c): the bin count, where the equal-count
 bin edges fall, the within-bin variance convention, and the combinatorial convention. We fix
 all four here, before any margin is reported, and one setting of them, with the row or the molecule
@@ -629,19 +630,19 @@ completeness alone (\S\ref{sec:si-rules}). Every margin in this paper is the bin
 % what had to be true for it to survive.
 \paragraph{The cell, and what was fixed before any margin was seen.} The cell is eight equal-count
 bins of $g(\zstar)$, the \emph{unbiased} (Bessel-corrected) within-bin variance, the row unit and
-the \emph{residual-only} combinatorial convention, applied identically to every set and every
-stratum whatever its size, and every margin in this paper is read at it. The bin count is the choice
-with the most leverage --- it takes the broad set's aggregate margin from $+0.01$ to $+0.96$ --- so
-the cell never stands alone where a finding rests on it, and we run the same sweep for the strata
-the rule passes and report it with them. One convention governs both sets rather than the
+the \emph{residual-only} combinatorial convention. It is applied identically to every set and every
+stratum whatever its size, and every margin in this paper is read at it. The bin count is the
+choice with the most leverage: it takes the broad set's aggregate margin from $+0.01$ to $+0.96$.
+The cell therefore never stands alone where a finding rests on it, and we run the same sweep for
+the strata the rule passes and report it with them. One convention governs both sets rather than the
 favourable one on each, which costs the broad set's margin about half its value.
 
-Admissibility then asks two things of a stratum and a third of the cells: that it be
-\emph{boundable} at that cell ($n\ge40$, eight bins holding five rows); that its margin keep its
-sign when each contributing source publication is deleted in turn \emph{in all four
-unit\,$\times$\,convention cells}, a clause that is load-bearing, since dropping it lets the set
-taken whole pass; and, by clause~(c), that admissible cells holding identical rows count once, a row
-set being demoted to a larger one only when the residual between them falls short of admissible.
+Admissibility then asks two things of a stratum and a third of the cells. \emph{(a)} The stratum
+must be \emph{boundable} at that cell: $n\ge40$, eight bins holding five rows. \emph{(b)} Its
+margin must keep its sign when each contributing source publication is deleted in turn, \emph{in
+all four unit\,$\times$\,convention cells}. That clause is load-bearing: dropping it lets the set
+taken whole pass. \emph{(c)} Admissible cells holding identical rows count once, a row set being
+demoted to a larger one only when the residual between them falls short of admissible.
 Clause~(c) is rebuilt on every draw of the multiplicity null, on the permuted labels, like the rest
 of the rule. The stratification reads a SMILES string and stops there, leaving $m$, $g$, the squared
 error, the source and the bootstrap unread, so every cell was fixed before its outcome --- a

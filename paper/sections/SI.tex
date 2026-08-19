@@ -4246,6 +4246,11 @@ separate run whose per-run split provenance was not logged; its matched set is t
 molecules, derivable from the committed split independently of the model, so it is consistent with the
 reported split. We record the split hash in the runner so future runs are auditable directly.}
 Melting-point tables are auto-detected as $^\circ$C or K to avoid a $+273$\,K double-conversion.
+One limit of that apparatus is worth stating beside what it catches: value-conservation checks do
+not detect loss of \emph{role}, because a numeral goes on printing elsewhere in the submission
+while the statement that gave it meaning is deleted. Three such losses in the editing of this
+manuscript---two null $p$-values and the comparator of a two-MSE check---were found by a
+clause-level audit and not by the numeric gate, and are restored in \S\ref{sec:si-mech}.
 % Artifact: notebooks/data/processed_sigma_aux_stream/summary.json (exclude_scaffolds_from points at
 % a debug split; n_excluded_scaffolds 48 vs 2702 in the crystal stream's summary.json); guard in
 % scripts/data/build_sigma_profile_aux_stream.py.  The solute-unit figures are the intersection of
