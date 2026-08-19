@@ -128,6 +128,8 @@ def main() -> None:
     ap.add_argument("--draws", type=int, default=4000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", type=Path, default=SET / "margin.json")
+    ap.add_argument("--check-article", action="store_true",
+                    help="bind Sec. 3.2.1's out-of-sample numerals to this run and fail on drift")
     ap.add_argument("--validate", action="store_true",
                     help="first reproduce the PUBLISHED in-sample margin with this script's own g "
                          "construction. A number from an unvalidated estimator is not a result.")
@@ -211,6 +213,27 @@ def main() -> None:
                               "applied to a single-source set",
     }, indent=2) + "\n")
     print(f"\nwrote {a.out}")
+
+    if a.check_article:
+        import re
+        tex = (ROOT / "paper/grounding_paradox.tex").read_text()
+        pat = (r"supplies \$(\d+)\$ rows over \$(\d+)\$ pairs the broad set does not carry,\s+"
+               r"\$(\d+)\$ solutes in diethylene and triethylene glycol at three temperatures, and "
+               r"there the margin is\s+\$\+([\d.]+)\$ \$\[\+([\d.]+),\+([\d.]+)\]\$")
+        mm = re.search(pat, tex)
+        if mm is None:
+            raise SystemExit("the out-of-sample sentence is not in the article in the form this "
+                             "gate reads; it was reworded or removed")
+        want = (str(len(d)), str(len(keys)), str(d.solute_can.nunique()),
+                f"{point:.2f}", f"{lo:.2f}", f"{hi:.2f}")
+        bad = sum(g != w for g, w in zip(mm.groups(), want))
+        print("\narticle bind:")
+        for label, got, w in zip(("rows", "pairs", "solutes", "margin", "ci lo", "ci hi"),
+                                 mm.groups(), want):
+            print(f"  {'ok  ' if got == w else 'FAIL'}  {label:8s} paper {got:>7s}   "
+                  f"deposit {w:>7s}")
+        if bad:
+            raise SystemExit(f"{bad} numerals disagree with the deposit")
 
 
 if __name__ == "__main__":

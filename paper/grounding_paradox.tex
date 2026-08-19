@@ -1274,6 +1274,23 @@ the margin spans a factor of two and a half and is set by the shortest oligomer
 axis, the bootstrap resampling the same four molecules the deletions delete. The margin survives
 the loss of the alkane solutes ($74$ rows, $+1.40$) and every cell of the bin-count sweep, the
 analyst choice with the largest leverage here (\S\ref{sec:si-map-cells}, Table~\ref{tab:grid-glycol}).
+% THE OUT-OF-SAMPLE READING, added 2026-08-19.  Pre-declared and hashed before the number existed
+% (results/b_insuff/glycol_oos_thermoml/PRE_DECLARATION.md, sha256 8744f9e1..., with amendment 1
+% correcting the prediction side from VT-2005 to UD, 5e9ac5ee...); producer
+% run_glycol_oos_margin.py, which reproduces the published in-sample +2.04 before it reads the new
+% rows and exits nonzero if it stops doing so.  THE HALF-SIZE IS NOT OPTIONAL BESIDE THE SIGN: a
+% sign that reproduces while the magnitude halves is what a search selecting on magnitude leaves
+% behind, and the sentence must not be shortened to "it reproduces".
+% IT IS SINGLE-SOURCE and therefore NOT admissible under this section's own rule.  Say so wherever
+% the number is restated.
+On rows the search never saw the separation reproduces at about half its size. An
+independent ThermoML publication supplies $95$ rows over $32$ pairs the broad set does not carry,
+$21$ solutes in diethylene and triethylene glycol at three temperatures, and there the margin is
+$+1.06$ $[+0.74,+1.29]$ against the in-sample $+2.04$ $[+1.25,+2.87]$, the two intervals overlapping
+only in a narrow band. That set carries one source publication, so the leave-one-source-out clause
+this section's rule turns on cannot be applied to it and the reading is descriptive rather than
+admissible; what it settles is the sign, and it suggests the in-sample magnitude is the upper end of
+what this chemistry supports rather than its size.
 
 That sweep varies the binning bound's own settings and not the family of estimator. A pre-declared
 cross-fitted regressor, tested after this analysis was fixed, returns a uniformly \emph{looser}
@@ -1847,7 +1864,10 @@ per-cell bootstrap frequencies carry no multiplicity control, so one cell's $P$ 
 alone, and the admissibility rule is a stability filter rather than a correction for the search.
 Neither test of the search establishes a chemical effect: under the chemistry-blind relabelling null
 the shape of the finding actually claimed sits at chance (\S\ref{sec:broad}), and the pre-declared
-out-of-sample test returned \emph{not testable}. We therefore state the finding at the level the
+out-of-sample test on the PGL set returned \emph{not testable}. A second pre-declared test, on $95$
+ThermoML rows the search never saw, does return a positive margin at about half the in-sample size
+(\S\ref{sec:broad}); it rests on one source publication, so it settles the sign without meeting
+this rule's own stability clause. We therefore state the finding at the level the
 instrument licenses on its own rows and \emph{not} as a multiplicity-controlled chemical effect, and
 the same holds a fortiori for every cell the map reports and leaves unstated. With $\Binsuf$ bounded
 from above alone, every cell is also silent on whether better inputs would help there, so the map's
@@ -1940,8 +1960,9 @@ retraining. That asymmetry is what this work establishes.
 The rest of what it reports is weaker, in ways it states rather than absorbs. No aggregate margin
 stands on either activity set, and the one row set the admissibility rule leaves standing is the
 survivor of a fifty-nine-fold search whose chemistry-blind relabelling reaches its margin in a tenth
-of draws; the pre-declared out-of-sample test of it returned \emph{not testable}, which is neither a
-confirmation nor a failed replication. The physics arm and its control are separately tuned, so
+of draws; the pre-declared out-of-sample test of it on the PGL set returned \emph{not testable}, and a
+second, on independent ThermoML rows, reproduces the sign at about half the size on a set too
+narrowly sourced to be admissible. The physics arm and its control are separately tuned, so
 their difference is not attributable to the bottleneck and we claim no accuracy result from it. The
 $\mathrm pK_a$ reversal is an in-distribution result the scaffold protocol does not certify.
 \S\ref{sec:discussion} states each of these where its measurement is, and none of them is repaired here.
