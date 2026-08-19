@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import statistics
 import subprocess
 import sys
 import time
@@ -41,6 +42,10 @@ from pathlib import Path
 #: An export that died mid-write leaves a short file.  The test split has this many rows, and a
 #: predictions file with fewer has not finished -- it is deleted rather than trusted.
 EXPECTED_ROWS_MIN = 8000
+#: How long one arm takes before any has been timed in this run, and the margin applied to the
+#: median once three have. Both are wall-clock hours on a Kaggle T4 x2 session.
+ARM_HOURS_ASSUMED = 2.0
+ARM_TIME_MARGIN = 1.25
 
 
 def rows(path: Path) -> int:
@@ -144,10 +149,27 @@ def main() -> None:
             if pred.exists() and rows(pred) >= EXPECTED_ROWS_MIN:
                 print(f"== seed {seed} arm {arm}: already done ({rows(pred)} rows)")
                 continue
-            left = deadline - time.time()
-            if left <= 0:
-                print(f"\n== deadline reached; stopping before seed {seed} arm {arm}.")
-                print("   Save /kaggle/working/out as a dataset and run the same command again.")
+            # THE DEADLINE MUST RESERVE ROOM FOR AN ARM, NOT MERELY REFUSE WHEN IT IS SPENT.
+            # The first version asked `left <= 0`, so an arm starting six minutes before the
+            # cut-off ran until Kaggle killed the session at twelve hours -- exit 137, and the
+            # in-flight arm lost. Every FINISHED arm survived that (its predictions and the
+            # progress file are written as each one lands), so the damage was bounded, but a hard
+            # kill is worse than a clean stop: it wastes the tail of the session and, on a bad
+            # day, the notebook's saved output with it.
+            # The budget comes from this run's own history rather than a guess. Arms differ in
+            # cost -- channel_swap has no sigma warm-up -- so the estimate is the median of the
+            # arms already timed, times a margin, and falls back to a conservative constant until
+            # three have been timed.
+            timed = [e["hours"] for e in log if e.get("ok") and e.get("hours")]
+            need = (statistics.median(timed) * ARM_TIME_MARGIN if len(timed) >= 3
+                    else ARM_HOURS_ASSUMED)
+            left = (deadline - time.time()) / 3600
+            if left < need:
+                print(f"\n== stopping before seed {seed} arm {arm}: {left:.2f} h left and an arm "
+                      f"needs about {need:.2f} h "
+                      f"({'median of ' + str(len(timed)) + ' timed' if len(timed) >= 3 else 'assumed'}).")
+                print("   Save /kaggle/working/out as a dataset and run the same command again;")
+                print("   finished arms are skipped, so the next session resumes here.")
                 break
             print(f"\n{'=' * 70}\n== seed {seed} arm {arm}  ({left / 3600:.2f} h left)\n{'=' * 70}",
                   flush=True)
