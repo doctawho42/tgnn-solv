@@ -287,8 +287,18 @@ infinite-dilution activity coefficients, model misspecification, representation 
 %     abstract, including both whose headline finding is a deflation, which is this paper's genre.
 %     The letter's target is the PILE OF QUALIFICATIONS, and that is what this block spends (below).
 %     WHAT PRINTS, and nothing else may be added without taking words from connective tissue:
-%       the three arm means of \S\ref{sec:paradox}, $2.043$ -> $1.846$ -> $2.252$ in \lnx\ MAE, so
-%         that both operations are stated in one unit and the reader can take either difference;
+%       the three arm means of \S\ref{sec:paradox}, $2.04$ -> $1.93$ -> $2.34$ in \lnx\ MAE, so
+%         that both operations are stated in one unit and the reader can take either difference.  CORRECTED 2026-08-19: this rule named the THREE-seed
+%         family's means ($2.043$/$1.846$/$2.252$) while the block below carried the
+%         five-seed re-run's, so the rule and the text it governs had disagreed since
+%         the discharge.  Two decimals now, because the between-seed sd is $0.06$-$0.09$
+%         and the third digit is noise; the body keeps three where a spread earns it;
+%       THE RANKING RESULT, added 2026-08-19.  A per-solute Spearman that falls at every
+%         seed is what a practitioner choosing a solvent loses, it is not removable by
+%         the per-group affine recalibration that removes most of the MAE gap, and it
+%         was absent from this block while the MAE it qualifies was in it twice.  It was
+%         paid for with the drift sentence of \S\ref{sec:surrogate}, whose magnitudes
+%         \S\ref{sec:scope} itself calls unstable across analysis configurations;
 %       the standing margin with the scope a one-sided bound needs -- $2.04$, $n{=}182$ WITH ITS
 %         CLUSTER COUNT $43$ pairs, the $90\%$ interval $[+1.25,+2.87]$ -- and the $59$-fold
 %         search it is the survivor of.  THE PAIR COUNT IS NOT OPTIONAL BESIDE THE ROW COUNT.
@@ -540,30 +550,24 @@ infinite-dilution activity coefficients, model misspecification, representation 
 % without them the three arm means on page 1 are unverified.  Deleting either one is a fatal
 % finding, not a silent loss of coverage.
 \begin{abstract}
-Physics-informed models route predictions through physical quantities.
-Accurate references should help. We measure that for solid--liquid
-solubility: a graph network predicts the charge-density profiles a
-database tabulates. COSMO-SAC's fixed residual term and a crystal term turn two into a solubility.
-Supervising the profile against that database
-moves $\ln x_2$ mean absolute error from $2.037$ to $1.927$ over five leak-free seeds,
-a mean without a sign: four gain, one loses. Substituting the
-reference for the learned one raises the
-error to $2.336$ at inference at every seed, the training-time rise smaller, at one co-adapted
-seed. Only the substitution has a
-direction, and neither size can be ordered. On infinite-dilution
-activity data another database bounds a deployed thermodynamic model's error from below,
-its inputs' from above. The input bound barely moves (an
-estimator property, not chemistry) while the error does. One admissibility rule leaves
-glycol-ether solvents standing, $182$ rows over $4$ solvents and $19$ hydrocarbon and halobenzene solutes, its
-error exceeding its
-inputs' by $2.04$ ($90\%$ interval $[+1.25,+2.87]$), and $1.76$ under the
-pre-declared estimator. Both are lower
-bounds. Every other subset falls, the set whole with them, and solubility resists the split. That set is a
-$59$-fold search's survivor rather than an established effect: chemistry-blind relabelling reaches its
-margin in a tenth of draws under the first bound, a seventh under the other. The
-profile departs from its
-reference along a shared direction, on separate three-seed runs. A Hammett $\mathrm pK_a$
-closure reverses the substitution's sign in distribution, where its constants suffice.
+Physics-informed models route predictions through a tabulable quantity, so an accurate table
+should help. We measure that for solid--liquid solubility: a graph network predicts the
+charge-density profiles a database tabulates and a fixed COSMO-SAC layer reads. Substituting the
+reference profile for the learned one at inference raises $\ln x_2$ mean absolute error from
+$1.93$ to $2.34$ at all five leak-free seeds, without overlap, and degrades the ranking of
+solvents for a solute (Spearman $-0.18$, every per-seed interval excluding zero). Supervising the
+same head against the same database during training moves it from $2.04$ to $1.93$, a mean without
+a sign: four seeds gain, one loses; neither size orders against the other. On infinite-dilution
+activity data we bound a deployed thermodynamic model's error from below and its inputs'
+contribution from above. The input bound barely moves (an estimator property, not chemistry); the
+error does. One admissibility rule leaves the glycol-ether solvents standing, $182$ rows over $43$
+pairs and $4$ solvents. Their error exceeds their inputs' by $2.04$ under the binning bound
+($90\%$ interval $[+1.25,+2.87]$) and $1.76$ under the pre-declared one, both lower bounds. It is
+a $59$-fold search's survivor, not an established effect: chemistry-blind relabelling reaches
+those margins in a tenth of draws and a seventh. Every other subset falls, the whole set with
+them, and solubility does not split. A Hammett $\mathrm pK_a$ closure reverses the substitution's
+sign in distribution, where its constants suffice. The operation that fails is the one a
+practitioner reaches for, because it runs without retraining.
 \end{abstract}
 %</abstract-numerals>
 
@@ -980,7 +984,12 @@ co-adaptation would do to an ordering stays unmeasured here.
 We group the labelled test rows by solute and temperature and rank the solvents inside each group
 ($823$ groups over $107$ solutes; Table~\ref{tab:ranking}). The mean per-solute Spearman correlation
 then falls, pooled over the five seeds, by $-0.185$ $[-0.27,-0.11]$, every per-seed interval
-excluding zero (Table~\ref{tab:ranking} gives the arms seed by seed). Four of the five falls exceed
+% THE 819 IS NOT THE 823, and the article printed only the larger, 2026-08-19.  A rank correlation
+% is undefined where a group's ranks are constant, and rank_final.py's `contrast` keeps a group only
+% where BOTH arms are finite, so four groups leave the Spearman and the Kendall while the top-1 and
+% the nDCG keep all 823.  The exclusion is symmetric and correct; not printing it was the defect,
+% because a reader takes the correlation to be over the set the sentence before it names.
+excluding zero, over the $819$ of those groups in which a rank correlation is defined for both arms (Table~\ref{tab:ranking} gives the arms seed by seed). Four of the five falls exceed
 any difference between seed replicates of a single arm on this measure, the largest of which is
 $0.132$; the fifth, at seed $42$, is $0.114$ and does not, so at that seed the fall sits inside the
 spread one arm shows between its own seeds. The deposit carries that benchmark for the rank

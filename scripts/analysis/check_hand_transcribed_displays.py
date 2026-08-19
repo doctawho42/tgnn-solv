@@ -1086,22 +1086,35 @@ def abstract_row() -> DisplayRow:
     return DisplayRow(
         key="",
         binds=[
+            # RE-ANCHORED 2026-08-19.  The abstract was rewritten to lead with the substitution
+            # and to carry the ranking result, and its arm means moved to TWO decimals: the
+            # between-seed sd is 0.06-0.09, so the third digit was noise the block was spending a
+            # word on.  The oracle mean is now in the same sentence as the grounded one, so the
+            # substitution reads as one contrast; the supervision pair is a sentence later.
+            Bind("the substitution arm means (grounded -> oracle)",
+                 r"error from\s+\$([\d.]+)\$ to \$([\d.]+)\$ at all",
+                 lambda c: (fmt(c.arm("grounded_a").mae_mean, 2),
+                            fmt(c.arm("oracle").mae_mean, 2)),
+                 lambda c: A(c, "grounded_a", "oracle")),
             Bind("the supervision arm means (ungrounded -> grounded)",
-                 r"from \$([\d.]+)\$ to \$([\d.]+)\$ over",
-                 lambda c: (fmt(c.arm("ungrounded").mae_mean, 3),
-                            fmt(c.arm("grounded_a").mae_mean, 3)),
+                 r"moves it from \$([\d.]+)\$ to\s+\$([\d.]+)\$, a mean without",
+                 lambda c: (fmt(c.arm("ungrounded").mae_mean, 2),
+                            fmt(c.arm("grounded_a").mae_mean, 2)),
                  lambda c: A(c, "ungrounded", "grounded_a")),
+            Bind("the per-seed split of the supervision gain, in words",
+                 r"a sign: (\w+) seeds gain, (\w+) loses",
+                 lambda c: (word(sum(g > 0 for g in c.per_seed_gain())),
+                            word(sum(g <= 0 for g in c.per_seed_gain()))),
+                 lambda c: f"per-seed ungrounded-minus-grounded over {rel(c.root.root)}"),
             Bind("the abstract's OWN seed count (the sigma-grounding arms)",
                  # RE-ANCHORED 2026-08-12: the abstract now says "over five leak-free seeds", the word
                      # "leak-free" having moved into the phrase when the branch rewrite folded the
                      # separate leak-free clause into it.
-                     r"over (\w+) (?:leak-free )?seeds",
+                     # RE-ANCHORED AGAIN 2026-08-19: "at all five leak-free seeds".
+                     r"at all (\w+) leak-free seeds",
                  lambda c: (word(len(c.seeds)),),
                  lambda c: f"seed directories under {rel(c.root.root)}"),
-            Bind("the sigma-oracle arm mean",
-                 r"error to \$([\d.]+)\$ at inference",
-                 lambda c: (fmt(c.arm("oracle").mae_mean, 3),),
-                 lambda c: A(c, "oracle")),
+
             # RE-ANCHORED 2026-08-11.  The abstract's parenthetical used to carry rows and PAIRS;
             # it now carries rows and the two CLUSTER counts, and it prints both estimators'
             # margins.  Every numeral in the sentence is bound, the two cluster counts included.
@@ -1115,13 +1128,17 @@ def abstract_row() -> DisplayRow:
                  # The body one page later already says "a hydrocarbon or a halobenzene".  This
                  # gate FAILS on the change rather than skipping, which is what it is for;
                  # re-point it here rather than loosening the class out of the pattern.
-                 r"standing, \$(\d+)\$ rows over \$(\d+)\$ solvents and \$(\d+)\$ hydrocarbon and "
-                 r"halobenzene "
-                 r"solutes, its error exceeding its inputs' by \$([\d.]+)\$ \(\$(\d+)\\%\$ interval "
-                 r"\$\[([-+][\d.]+),([-+][\d.]+)\]\$\), and \$([\d.]+)\$ under",
+                 # RE-ANCHORED 2026-08-19 with the rewrite.  The 46-word sentence this bound is
+                 # now two sentences, and the solute count and class name went with the words the
+                 # ranking result was paid for with -- both are still in Sec. 3.2.1, which the
+                 # cluster-count rule above is satisfied by (rows AND pairs AND solvents print).
+                 r"standing,\s+\$(\d+)\$ rows over \$(\d+)\$\s+pairs and \$(\d+)\$ solvents\. "
+                 r"Their error exceeds their inputs' by \$([\d.]+)\$ under the\s+"
+                 r"binning bound \(\$(\d+)\\%\$ interval \$\[([-+][\d.]+),([-+][\d.]+)\]\$\) "
+                 r"and \$([\d.]+)\$ under",
                  # Rounded HERE, half-up, from the deposit's own endpoints -- not read out of its
                  # ``printed_as`` field, so the deposit cannot pre-round its way past this check.
-                 lambda c: (str(rows["n"]), str(rows["n_solvents"]), str(rows["n_solutes"]),
+                 lambda c: (str(rows["n"]), str(rows["n_pairs"]), str(rows["n_solvents"]),
                             fmt(margin, 2), "90",
                             fmt(conv["ci90_lo"], 2, sign=True),
                             fmt(conv["ci90_hi"], 2, sign=True),
@@ -1133,11 +1150,14 @@ def abstract_row() -> DisplayRow:
                  lambda c: (str(map_stratum_count()),),
                  lambda c: f"{rel(ADMISSIBILITY)}, broad_477 / row unit / residual-only "
                            "convention, distinct (axis, stratum)"),
-            Bind("the SURROGATE family's seed count -- DECLARED, not this tree's",
-                 r"on separate (\w+)-seed runs",
-                 lambda c: ("three",),
-                 lambda c: "the n=44 compensation-surrogate family at seeds 0, 1, 2, which the "
-                           "sigma-grounding re-run does not touch"),
+            # THE SURROGATE SEED-COUNT BIND IS GONE, 2026-08-19, because its sentence is.  The
+            # drift result left the abstract to pay for the ranking result: Sec. 3.7 calls its
+            # magnitudes unstable across analysis configurations, and an abstract at its ceiling
+            # cannot carry a finding and that caveat.  It is unchanged in Sec. 3.3.
+            Bind("the ranking loss the substitution causes",
+                 r"\(Spearman \$(-[\d.]+)\$, every per-seed interval excluding zero\)",
+                 lambda c: (fmt(c.ranking["spearman"][0], 2, sign=True),),
+                 lambda c: c.ranking["path"] + " :: pooled_over_seeds.spearman"),
         ],
         claims=[
             # The abstract prints that interval to two decimals.  Whether it MAY is a property of
