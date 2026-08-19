@@ -61,6 +61,12 @@ def main() -> None:
     ap.add_argument("--hours", type=float, default=11.0,
                     help="stop starting new arms after this many hours")
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--allow-cpu", action="store_true",
+                    help="permit the CPU fallback: skips the preflight below AND exports "
+                         "TGNN_ALLOW_CPU_FALLBACK=1 to every child, which is what the flag "
+                         "has to do -- skipping only this script's probe leaves the children "
+                         "raising in resolve_device() and the flag guarantees the crash it "
+                         "exists to prevent.")
     ap.add_argument("--out-dir", type=Path, required=True)
     ap.add_argument("--ckpt-dir", type=Path, required=True)
     ap.add_argument("--data-dir", type=Path, default=Path("notebooks/data/processed"))
@@ -89,6 +95,31 @@ def main() -> None:
                       f"truncated by a killed session. Deleting so it re-exports.")
                 pred.unlink()
 
+    # FAIL FAST ON A GPU THAT IS PRESENT BUT UNUSABLE.  resolve_device() asks
+    # torch.cuda.is_available() and no more; this launches a kernel, which is what catches a
+    # visible-but-too-old card.  The literal "cuda" default above is deliberate and this block
+    # is what answers for it: 15 arms at ~25x slower is not a slow run, it is a wasted session,
+    # and this project has already lost one to a silent CPU fallback.  Same probe and same
+    # remedy text as scripts/cloud/kaggle_run.py.
+    if a.device.startswith("cuda") and not a.allow_cpu:
+        name = err = None
+        try:
+            import torch
+            if torch.cuda.is_available():
+                name = torch.cuda.get_device_name(0)
+                (torch.zeros(1, device="cuda") + 1).cpu()      # actually launch a kernel
+            else:
+                err = "no GPU visible"
+        except Exception as e:      # noqa: BLE001
+            err = f"{type(e).__name__}: {str(e)[:140]}"
+        if err is not None:
+            sys.exit(f"FATAL: GPU unusable ({err}; device={name}). CPU would be ~25x slower and "
+                     "would burn the session. If this is a Tesla P100 (compute 6.0 / sm_60) the "
+                     "kernel-launch error means it is too old for the installed PyTorch (needs "
+                     "sm_70+): set Kaggle Settings -> Accelerator -> GPU T4 x2 (sm_75) and "
+                     "re-Add Data. Use --allow-cpu only to force CPU.")
+        print(f"[gpu] CUDA OK: {name}", flush=True)
+
     env = dict(os.environ)
     env.update({
         "PY": sys.executable, "DEVICE": a.device,
@@ -97,6 +128,10 @@ def main() -> None:
         "NUM_WORKERS": a.num_workers, "KMP_DUPLICATE_LIB_OK": "TRUE",
         "PYTHONPATH": f"{repo / 'src'}:{env.get('PYTHONPATH', '')}",
     })
+    if a.allow_cpu:
+        env["TGNN_ALLOW_CPU_FALLBACK"] = "1"
+        print("[gpu] --allow-cpu: preflight skipped and TGNN_ALLOW_CPU_FALLBACK=1 exported to "
+              "every child. Expect ~25x slower.", flush=True)
     if a.smoke:
         env.update({"WARMUP_EPOCHS": "1", "SIGMA_STEPS": "2", "DIRECT_EPOCHS": "1",
                     "EXTRA_TRAIN_ARGS": "--epochs-phase1 1 --epochs-phase2 1 --epochs-phase3 1"})

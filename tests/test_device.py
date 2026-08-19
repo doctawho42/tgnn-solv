@@ -128,6 +128,13 @@ LITERAL_ACCELERATOR_DEFAULT_EXEMPTIONS = {
         "visible-but-unusable card, and --allow-cpu, which exports the escape into "
         "every child it spawns."
     ),
+    "scripts/kaggle/run_arms.py": (
+        "Same argument as kaggle_run.py and the same probe: 15 training arms at ~25x slower "
+        "is a burned 12-hour session, not a slow one, and this project has already lost one "
+        "to a silent CPU fallback. The script answers for the literal with a kernel-launch "
+        "preflight -- not torch.cuda.is_available() alone, which passes on a card too old to "
+        "run a kernel -- and with --allow-cpu, which it exports into every child."
+    ),
     "scripts/experiments/run_pka_trained_comparison.py": (
         "Never reaches resolve_device, and says so in a comment at its own device line: "
         "the arm trains small per-molecule MLPs in seconds, so a CPU fallback costs a "
