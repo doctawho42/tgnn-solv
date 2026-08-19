@@ -1,0 +1,237 @@
+{
+  "root": "/Users/nikitapolomosnov/PycharmProjects/tgnn-solv/results/e5_sigma_grounding_leakfree",
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "draws": 4000,
+  "curve": [
+    {
+      "floor": 3,
+      "n_cells": 4115,
+      "n_solutes": 107,
+      "none": {
+        "diff": 0.4256,
+        "ci95": [
+          0.3049,
+          0.5532
+        ],
+        "width": 0.2483,
+        "excludes_zero": true
+      },
+      "offset": {
+        "diff": 0.4809,
+        "ci95": [
+          0.3331,
+          0.6394
+        ],
+        "width": 0.3063,
+        "excludes_zero": true
+      },
+      "affine": {
+        "diff": 0.321,
+        "ci95": [
+          -0.5596,
+          1.2394
+        ],
+        "width": 1.7989,
+        "excludes_zero": false
+      }
+    },
+    {
+      "floor": 4,
+      "n_cells": 3600,
+      "n_solutes": 94,
+      "none": {
+        "diff": 0.3924,
+        "ci95": [
+          0.2611,
+          0.5279
+        ],
+        "width": 0.2668,
+        "excludes_zero": true
+      },
+      "offset": {
+        "diff": 0.3948,
+        "ci95": [
+          0.2517,
+          0.5425
+        ],
+        "width": 0.2908,
+        "excludes_zero": true
+      },
+      "affine": {
+        "diff": 0.404,
+        "ci95": [
+          0.1274,
+          0.7795
+        ],
+        "width": 0.6521,
+        "excludes_zero": true
+      }
+    },
+    {
+      "floor": 5,
+      "n_cells": 2750,
+      "n_solutes": 73,
+      "none": {
+        "diff": 0.3371,
+        "ci95": [
+          0.1877,
+          0.4866
+        ],
+        "width": 0.2989,
+        "excludes_zero": true
+      },
+      "offset": {
+        "diff": 0.3622,
+        "ci95": [
+          0.209,
+          0.5233
+        ],
+        "width": 0.3143,
+        "excludes_zero": true
+      },
+      "affine": {
+        "diff": 0.2008,
+        "ci95": [
+          0.0416,
+          0.3702
+        ],
+        "width": 0.3287,
+        "excludes_zero": true
+      }
+    },
+    {
+      "floor": 6,
+      "n_cells": 2035,
+      "n_solutes": 56,
+      "none": {
+        "diff": 0.2846,
+        "ci95": [
+          0.1179,
+          0.4495
+        ],
+        "width": 0.3316,
+        "excludes_zero": true
+      },
+      "offset": {
+        "diff": 0.312,
+        "ci95": [
+          0.1728,
+          0.4534
+        ],
+        "width": 0.2807,
+        "excludes_zero": true
+      },
+      "affine": {
+        "diff": 0.1673,
+        "ci95": [
+          0.0046,
+          0.3514
+        ],
+        "width": 0.3467,
+        "excludes_zero": true
+      }
+    },
+    {
+      "floor": 8,
+      "n_cells": 940,
+      "n_solutes": 28,
+      "none": {
+        "diff": 0.1021,
+        "ci95": [
+          -0.1306,
+          0.3433
+        ],
+        "width": 0.4739,
+        "excludes_zero": false
+      },
+      "offset": {
+        "diff": 0.196,
+        "ci95": [
+          0.004,
+          0.3648
+        ],
+        "width": 0.3609,
+        "excludes_zero": true
+      },
+      "affine": {
+        "diff": 0.1415,
+        "ci95": [
+          -0.0062,
+          0.3155
+        ],
+        "width": 0.3217,
+        "excludes_zero": false
+      }
+    },
+    {
+      "floor": 10,
+      "n_cells": 495,
+      "n_solutes": 18,
+      "none": {
+        "diff": 0.075,
+        "ci95": [
+          -0.1689,
+          0.3769
+        ],
+        "width": 0.5458,
+        "excludes_zero": false
+      },
+      "offset": {
+        "diff": 0.1818,
+        "ci95": [
+          -0.0113,
+          0.378
+        ],
+        "width": 0.3893,
+        "excludes_zero": false
+      },
+      "affine": {
+        "diff": 0.075,
+        "ci95": [
+          -0.0485,
+          0.2221
+        ],
+        "width": 0.2707,
+        "excludes_zero": false
+      }
+    },
+    {
+      "floor": 12,
+      "n_cells": 110,
+      "n_solutes": 6,
+      "none": {
+        "diff": -0.119,
+        "ci95": [
+          -0.4666,
+          0.2691
+        ],
+        "width": 0.7358,
+        "excludes_zero": false
+      },
+      "offset": {
+        "diff": -0.1312,
+        "ci95": [
+          -0.3407,
+          0.0944
+        ],
+        "width": 0.4351,
+        "excludes_zero": false
+      },
+      "affine": {
+        "diff": 0.0251,
+        "ci95": [
+          -0.2031,
+          0.3701
+        ],
+        "width": 0.5732,
+        "excludes_zero": false
+      }
+    }
+  ]
+}

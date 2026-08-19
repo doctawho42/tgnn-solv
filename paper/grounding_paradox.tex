@@ -1052,8 +1052,26 @@ hold both the whole gap and none of it. On the
 $550$ groups that hold at least five solvents, where a refit has something to work with, it runs
 $+0.14$ to $+0.28$ by seed with three of the five intervals spanning zero
 (\S\ref{sec:supporting}). The MAE penalty is level and scale in the sense that a per-group map
-fitted on the answer absorbs most of it. Out of sample the data support no statement in either
-direction. The ranking penalty survives both fits, by invariance rather than
+fitted on the answer absorbs most of it.
+% THE POWER CURVE, added 2026-08-19.  "Out of sample the data support no statement in either
+% direction" was the honest reading of ONE number, and that number is uninformative for a reason
+% that is a design property and not a subtlety of the answer: a two-parameter map fitted on the
+% other two rows of a three-row group is exactly determined, interpolates its fitting rows with
+% zero residual, and extrapolates to the held-out row with nothing constraining it.  Producer
+% run_recalibration_power.py sweeps a floor on group size and prints the WHOLE curve, including
+% the floors where the interval stays open and the floors where too few clusters remain.
+% THE COMPOSITION CAVEAT IS NOT OPTIONAL: the raw gap also falls with the floor (+0.43, +0.39,
+% +0.34, +0.29), so the floors are not nested samples of one population and part of the decline is
+% chemistry rather than recalibration.  Any restatement carries that clause.
+That interval is wide for a reason the design fixes rather
+than the answer: a two-parameter map fitted on the other two rows of a three-row group is exactly
+determined. Excluding only those groups, $87\%$ of the cells remain and the out-of-sample gap is
+$+0.40$ $[+0.13,+0.78]$; at floors of five and six solvents it is $+0.20$ $[+0.04,+0.37]$ and $+0.17$
+$[+0.01,+0.35]$, excluding zero at each. The recalibration that absorbs $91\%$ in sample therefore
+absorbs at most about half of the gap out of it, and what remains is positive wherever the design
+can resolve anything at all. The raw gap falls along the same sweep, from $+0.43$ to $+0.29$, so
+these floors are not nested samples of one population and part of that decline is chemistry rather
+than recalibration. The ranking penalty survives both fits, by invariance rather than
 by any centring argument. That invariance is to an \emph{increasing} affine map, and the
 fitted map decreases in $10$ to $15\%$ of learned-profile groups and $15$ to $21\%$ of
 reference-profile ones, where it reverses that group's order outright. Restricted to the $485$ groups
