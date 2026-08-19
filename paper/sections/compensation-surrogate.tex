@@ -68,129 +68,37 @@ unestablished of the checkpoints whose paradox it is offered to explain. Under $
 the head reproduces the reference to within $36\pm1\%$, so the intermediate \emph{can} carry the
 physical shape --- as an in-sample fit, all $44$ probe molecules lying inside the $\sigma$-grounding
 pool. Fine-tuning drives it a further $41\pm3\%$ away, a total departure of $51\pm2\%$ whose
-magnitude is unstable across analysis configurations. These runs therefore fix the sign and the
-shared direction below, not the size. On the reference ladder (\S\ref{sec:si-mech}) it sits at
-$0.507$, past the $0.493$ of one corpus-mean profile reused for every molecule: the drift consumes
-essentially all the specificity grounding supplied.
+magnitude is unstable across analysis configurations. These runs therefore fix the sign and a
+direction shared across molecules, not the size. On the reference ladder (\S\ref{sec:si-mech}) it
+sits at $0.507$, past the $0.493$ of one corpus-mean profile reused for every molecule: the drift
+consumes essentially all the specificity grounding supplied.
 
-\paragraph{What the departure is, and what it is not.} The drift is structured, and beyond a constant
-offset. The first two principal components of the mean-centred deviation carry $72\pm1\%$ of the
-variance. The top-two share of the learned-versus-reference deviation, $0.399$, clears a
-phase-randomised null ($0.221\pm0.01$, the $\pm$ being the null's own spread over draws; $p<0.001$)
-on one grounded checkpoint and not over the three seeds. Two nulls it fails to clear travel with it.
-The mean-centred share has no matched null of its own, and a wrong-molecule null built from real
-reference profiles does \emph{not} clear ($0.772$, $p=1.00$). A reader who declines the case for
-preferring the phase-randomised null should read the spectrum as uninformative. One distortion
-operator fitted on half the $44$ molecules predicts the drift on the other half $4.1\pm0.5\times$
-better than the zero-drift null. The zero-drift null is weak and uncontrolled here, a constant offset
-alone reaching $2.1\times$ where the control exists, so the ratio stands against the identity null
-alone. Its $\pm$ spans the three seeds at one partition of the $44$ and not the partitions, and the
-held-out half is homologue-saturated besides (\S\ref{sec:si-mech}). Structure \emph{beyond} an offset
-therefore rests on the mean-centred spectrum, which itself leaves open a shrinkage of every profile
-toward the corpus-mean shape. The dominant mode (Fig.~\ref{fig:surrogate}) moves area out of the
-nonpolar bins into the polar wings: fine-tuning makes the network represent molecules as more polar
-than its \emph{own grounded profile} does.
+% WHAT THIS PARAGRAPH REPLACES, 2026-08-19.  Three paragraphs stood here -- the drift spectrum and
+% its nulls, the direct cancellation check, and the Fisher geometry with the freeze arm -- and the
+% claim ledger (Table~\ref{tab:claims}) calls all three not established: "a wrong-molecule null is
+% not cleared", "no constant-offset control ... largely within-cluster interpolation", "not
+% measured ... the one direct check is under-powered and runs against it".  Every numeral in them
+% was checked against \S\ref{sec:si-mech} before deletion and every one is there, so this is
+% de-duplication and not a deletion from the record.  What may NOT be softened here: that the
+% consequent is unmeasured and that the one check runs the wrong way.
+\paragraph{What the working shows, and where it is.} Whether the drift is structured beyond a
+constant offset rests on the mean-centred spectrum and the three nulls it is read against, of which
+it clears one; those, the distortion operator and the ratio at which it transfers, and the closure's
+Fisher geometry --- effectively rank one at infinite dilution, which is what leaves $\sigma$ free to
+move at little cost to the fit --- are in \S\ref{sec:si-mech}, with the arm that freezes the head
+at its supervised warm-up state. Whether the departure \emph{cancels} closure error remains unshown.
+The one direct check is under-powered and runs against it, and it and the closure's own-axis sweep
+both sit on the infinite-dilution axis, which is where cancellation could have been measured, so the
+reading stays inferred from the paradox itself. What is established is weaker and still
+consequential: the intermediate departs from the molecule's charge distribution, the risk
+misspecification poses to physics-grounded latents \cite{brynjarsdottir2014,takeishi2021} and the
+collapse an adapted representation can suffer \cite{interno2026}. Its low-rank \emph{structure}
+excludes a random collapse. \S\ref{sec:si-positioning} sets the result beside TeNNet-SAC, the
+nearest published construction and one that reports the opposite sign, and beside the
+ill-conditioning account of Wu \latin{et al.}\cite{wu2019illconditioned}, which the size of the
+substitution step refutes;
+\S\ref{sec:gateb} is the gated output correction that fails to recover the accuracy.
 
-% TWO POINTERS BECAME CLAIMS, 2026-08-10.  A structural audit of the compiled SI found both of the
-% cross-document references below carrying an article sentence that was not complete without them:
-% "A second, independent check ... points the same way" asserted a direction with no claim, no set,
-% no value and no uncertainty, and "one or two hydrogen-bonding directions" was a participation
-% ratio the article never printed -- and which the SI, in two places, cited the ARTICLE for.  Both
-% now print here what a reader needs to judge them, and both point at the paragraph that measures
-% them rather than at the five-page section that contains it.  Values: \S\ref{par:own-axis} and
-% \S\ref{par:fisher-geometry}.  Do not take the numbers back out and leave the pointer.
-% OVERRIDDEN ON THE par:own-axis HALF BY THE 2026-08-18 LENGTH PASS, knowingly and once: the
-% coefficient sweep's nine MSEs and its class arithmetic now print only in \S\ref{par:own-axis}.
-% The sentence that remains here makes NO directional claim off the sweep -- it names only the axis
-% the two checks share -- so the defect this guard was written against (a bare "points the same
-% way") is not recreated.  The par:fisher-geometry half is untouched.  If the sweep is restored to
-% this section, restore its NUMBERS, never a verdict.
-\paragraph{Whether the departure cancels closure error.} It remains unshown, and the one direct check
-runs against it. Holding the cavity area at its reference value, the sole retained end-to-end
-SLE-trained COSMO-SAC checkpoint scores $18.75$ against $1.47$ on the $n{=}60$ VT-2005-matched
-pairs. On the activity axis its drifted profile is an order of magnitude \emph{worse} through the
-same closure. Four limits sit on it, and \S\ref{sec:si-mech} carries them. The checkpoint is the
-uncontrolled one, at $82\%$ departure against the three-seed $51\pm2\%$. It is a retired run
-besides, trained at $8$ segment iterations and scored at $30$, scoring MAE $2.61$ at $R^2=-0.31$ on
-the scaffold split. The drift is produced at finite composition and scored at infinite dilution. And the
-check has almost no power in the direction that matters: it separates ``no cancellation'' from
-``large cancellation'' and leaves ``some cancellation'' open. It and the closure's own-axis coefficient
-sweep beside it (\S\ref{par:own-axis}) both sit on the infinite-dilution axis, which is where
-cancellation could have been measured, so the reading stays inferred from the paradox itself. A
-second reading is live. The deployed ideal term sets $\Delta C_p$ to zero, one-signed and worth a
-median $0.32$ in \lnx\ where a melting point is measured (\S\ref{sec:framework}), and the externally
-supervised crystal head cannot absorb it. A polar drift is therefore also what compensating an
-over-large $\Phicry$ would look like. The established part is weaker and still consequential: the
-intermediate
-departs from the molecule's charge distribution, the risk misspecification poses to physics-grounded
-latents \cite{brynjarsdottir2014,takeishi2021} and the collapse an adapted representation can suffer
-\cite{interno2026}. Its low-rank \emph{structure} excludes a random collapse.
-
-\paragraph{What leaves $\sigma$ under-determined, and what freezing it buys.} The closure's geometry is what
-makes such a cancellation possible. At infinite dilution the activity map's Fisher spectrum is
-effectively rank one, participation ratio $1.0$ in aggregate and ${\approx}1.4$ of $51$ per
-molecule, the resolved direction lying on the hydrogen-bonding wings
-(\S\ref{par:fisher-geometry}). The head can therefore move $\sigma$ along the remaining,
-low-sensitivity coordinates at little cost to the fit, which is the $\sigma$-profile form of
-Lemma~\ref{prop:ident}. Freezing it at its supervised warm-up state instead cuts the reference-input
-penalty by $65\%$ ($\Delta\mathrm{MAE}$ $+0.40$ to $+0.14$, $n{=}5571$ matched test rows). The two
-arms are a separate matched pair: a single base resumed twice with the freeze off and on, so a
-difference between two runs and not a mean over any, and distinct from the $+0.41$ arms of
-\S\ref{sec:paradox}. Supervision
-by itself stops short of a \emph{flip} in the sign: the penalty stays positive, the closure is still
-the low-fidelity COSMO-SAC-2002 and the warm-up $\sigma$ itself only partly physical.
-
-% THE "+0.20" IN THIS PARAGRAPH WAS WRONG AND IS FIXED, 2026-08-18.  The training-time supervision
-% gain was a three-seed value; the five-seed leak-free re-run puts it at -0.11 with per-seed gains
-% +0.149/+0.122/+0.175/-0.017/+0.122, i.e. NO SIGN (\S\ref{sec:paradox}).
-% The reconciliation is UNAFFECTED and now rests on a stronger footing: TeNNet-SAC scores the
-% training-time operation, which here has no sign, and leaves the inference-time substitution --
-% the operation this work finds negative -- unreported.  Do not restore a positive value here.
-% HANNA moved to sections/related-work.tex in the same pass, where the third published design
-% belongs by that section's own criterion; it is not deleted.
-\paragraph{The nearest published construction, which reports the opposite sign.} TeNNet-SAC
-\cite{yang2025tennet}, a $\sigma$-profile predictor feeding a COSMO-SAC-shaped segment-activity
-model, reports accuracy consistently better than COSMO-SAC across its benchmarks. The two works score
-different operations. Its gain is a training-time gain from supervising and then fine-tuning a
-learned profile, and over five leak-free seeds that operation has no established sign here
-(\S\ref{sec:paradox}). Its profile predictor, supervised externally on quantum-chemical
-$\sigma$-profiles for $39{,}745$ molecules, then stays frozen while only the segment-activity output
-head is fine-tuned, so the closure's gradient never reaches the intermediate. Our negative result is
-about substituting a tabulated profile at inference, which TeNNet-SAC leaves unreported, on an
-intermediate trained through the closure with neither safeguard. Its segment-activity kernel is
-trainable besides, where this one is fixed at the $2002$ parameterisation. If the sign of the
-substitution turns on whether the kernel can move, our finding is about a fixed $2002$ kernel and
-not about routing a prediction through a physical intermediate. \S\ref{sec:notdecided} already
-records that no grounding gap has been measured under any modern closure. Retraining the two arms
-against the $2010$/dispersion kernel end to end is limitation~(x)'s named run and remains to be made.
-
-% GATE B, 2026-08-07.  This was a subsection of its own (\S3.4 under the incumbent numbering); the
-% phenomenon-first restructure folds it in here as this section's closing paragraph, because it
-% asks whether the departure measured above can be repaired downstream and the answer belongs beside
-% the measurement.  The label is kept, so every \S\ref{sec:gateb} in both documents still resolves
-% -- now to this section.
-% KEPT IN THE ARTICLE BY THE 2026-08-18 LENGTH PASS, deliberately: none of its four numbers is
-% deposited anywhere, so moving it would mean writing new SI prose rather than relocating text.
-% Artifacts: results/e5_sigma_grounding/seed_42/grounded_a_truetrain_residual{,_v2}_predictions.summary.json (Gate B v1 gated-shut / v2 forced-open); model.py correction_force_open_gate.
-\paragraph{Whether a downstream correction repairs it.}
-\label{sec:gateb}
-If the closure binding were merely an inaccurate point estimate, a learned output-space correction on
-top of the physics prediction should recover accuracy. It fails to. An additive bounded residual with a learned confidence gate leaves the gate effectively
-shut. Forcing it open removes the systematic \emph{bias} ($+0.45\to+0.06$) while recovering little
-\emph{accuracy} ($R^2$ $0.236\to0.274$ on the same rows), as expected if the closure and not the
-estimate is the binding constraint. Both arms run at seed $42$ alone, and the statement is about the one correction tested: a
-gated additive bounded residual on the output, on this closure and this corpus.
-
-% ADDED 2026-08-11.  Deposit: results/closure_ladder/placebo_profile_diagnosis.csv (the learned
-% side, from row_meta_profiles over the substituted rows) and the reference side recomputed here
-% from results/sigma_profile_artifact/sigma_profiles.csv at the layer's own sigma_hb = 0.0084.
-% THE CHECK THAT MAKES THIS READABLE is that the reference is exactly zero, not small: cyclohexane,
-% acetone, toluene and THF all return 0.0000 A^2 in the donor window while ethanol returns 6.20 and
-% water 15.75.  So the comparison is against a table that does encode the chemistry.
-% Scope: measured on the one trained COSMO-SAC head in the tree, a retired checkpoint scored at its
-% own segment count.  Do not restate it as an arm measurement.
-% NOTHING IN THIS PARAGRAPH OR THE NEXT IS DEPOSITED IN THE SI.  Both exist in one place in the
-% corpus.  A deletion here is a deletion from the record, not a relocation.
 \paragraph{The learned profile is chemically inadmissible in the window the closure's
 hydrogen-bond term reads.}
 % CORRECTED 2026-08-12, round four.  The sentence claimed that a molecule with no hydrogen-bond
@@ -215,7 +123,8 @@ exactly zero and not merely small, against $15.75$ for water. The learned profil
 $32.4$, $24.5$ and $50.7$\,\AA$^2$ in that same window, between $23\%$ and $36\%$ of each
 molecule's total surface. Figure~\ref{fig:donor-window} draws that comparison over the
 sixteen solvents carrying the most scored rows; the reference is exactly zero in twelve of them. We read those areas off the one trained COSMO-SAC head the
-tree holds, the retired run of the two-MSE check above, scoring MAE $2.61$ at $R^2=-0.31$ on the
+tree holds, the retired run of \S\ref{sec:si-mech}'s two-MSE check, scoring MAE $2.61$ at
+$R^2=-0.31$ on the
 scaffold split. A null arm in the same deposit separates architecture from training. As a fraction of profile mass
 in the same extreme bins, where the reference tabulation's median is $0.000$, an \emph{untrained}
 network of this architecture reaches $0.212$ against the trained head's $0.189$. The
@@ -253,42 +162,3 @@ logit gap of ten, four orders below what is measured. The measurement establishe
 occupied in a trained arm, and that the closure's hydrogen-bond term is consequently live on every
 pair of the scored set, a defect whichever cause carries it. A supervised arm separates the two, and a head able to emit zeros removes the
 architectural half.
-
-\paragraph{Whether the closure amplifies the substitution, or the two profiles are simply different
-objects.}
-% ADDED 2026-08-19, and it exists to answer a referee objection this manuscript had no measurement
-% for.  Wu, Xiao, Sun and Wang report the same shape of experiment in fluid dynamics seven years
-% earlier -- substituting near-exact Reynolds stresses into RANS produces large velocity error --
-% and diagnose ILL-CONDITIONING of the closure map.  If that account carried here, this paper's
-% mechanism paragraph would be redundant with a 2019 result in another field.  It does not, and
-% the reason is a quantity nothing in this corpus had measured: the SIZE of the substitution step.
-% Producer: scripts/analysis/run_closure_conditioning.py.  Its nulls are a random direction of the
-% same norm and a chemistry-blind substitution (a different molecule's reference profile).
-% THE MATCH IS CANONICAL SMILES.  Keyed on the strings as written the set is 66 rows; canonicalised
-% it is 354.  A length pass may drop the sentence but not the number.
-An account of this degradation is available from outside chemistry, and it is not the one above.
-Wu \latin{et al.}\cite{wu2019illconditioned} substitute near-exact Reynolds stresses into the RANS
-equations and recover large velocity errors, which they trace to ill-conditioning: the fixed model
-amplifies a small perturbation of its input.
-% KAPPA IS REPORTED BECAUSE IT IS THEIR METRIC, and because it comes out LARGE.  Writing only the
-% directional result would leave a reader to assume the map is well conditioned, which it is not --
-% and the finding is stronger with the concession than without it: the map can amplify by 32, and
-% along the direction the substitution actually takes it does not.  Do not drop kappa to shorten
-% this paragraph; it is the sentence that makes the next one a measurement rather than an assertion.
-% kappa is worst-case and first-order.  Both words are load-bearing and neither may be cut.
-By that metric this closure is ill-conditioned: the local relative
-condition number $\lVert J\rVert\,\lVert\sigma\rVert/\lvert\ln\gamma^\infty\rvert$ at the
-learned profile is $32$ $[15,52]$ at eight segment iterations and $72$ $[55,124]$ at thirty. It is
-nonetheless not the account of what follows, because $\kappa$ is a worst-case, first-order number
-and the substitution is neither infinitesimal nor worst-case.
-Ill-conditioning requires the step to be small. On the $354$ test rows whose solute and solvent both
-carry a VT-2005 profile ($64$ solutes, $18$ solvents, $4.4\%$ of the split), it is not. The
-reference profile stands $1.53$ $[1.39,1.80]$ times the learned profile's own norm away from it, so
-the two are different objects rather than an estimate and its target. Neither does the closure amplify
-selectively along that direction. A random direction of the same norm produces a \emph{larger}
-relative change in $\ln\gamma^\infty$ on $71\%$ $[62,76]$ of those rows at eight segment iterations
-and on $81\%$ $[70,86]$ at thirty. The amplification ratio itself is not stable across that pair
-(median $0.60$ $[0.37,1.14]$ against $1.29$ $[0.64,2.20]$), which is the segment count behaving as
-the free hyperparameter \S\ref{sec:estimator} says it is. The step size is a property of the two
-profiles and does not move with it. Both readings are of the retired head of this section and price
-the quantity rather than the arms of Fig.~\ref{fig:paradox}.

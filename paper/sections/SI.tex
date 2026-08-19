@@ -3375,6 +3375,26 @@ of a derivative and not a magnitude. It is independent of the two-MSE check abov
 ---the closure's own parameter rather than the profile handed to it---and dependent on it in the set
 it varies them over. What it is not is a second check against cancellation, and \S\ref{sec:surrogate}
 does not read it as one.
+
+% GATE B, MOVED FROM THE ARTICLE 2026-08-19 (length pass, class-C cull).  It is NOT a duplicate of
+% anything in this document: none of its four numbers was deposited anywhere before this paragraph,
+% which is why the 2026-08-18 pass declined to move it.  It is here now because it answers a
+% question rather than reporting a failed measurement, and a question belongs where the reader who
+% has it will look.  The label travels with it, so every \S\ref{sec:gateb} in both documents still
+% resolves.
+% Artifacts: results/e5_sigma_grounding/seed_42/grounded_a_truetrain_residual{,_v2}_predictions.summary.json
+% (Gate B v1 gated-shut / v2 forced-open); model.py correction_force_open_gate.
+\paragraph{Whether a downstream correction repairs it.}
+\label{sec:gateb}
+If the closure binding of \S\ref{sec:surrogate} were merely an inaccurate point estimate, a learned
+output-space correction on top of the physics prediction should recover accuracy. It fails to. An
+additive bounded residual with a learned confidence gate leaves the gate effectively shut. Forcing
+it open removes the systematic \emph{bias} ($+0.45\to+0.06$) while recovering little
+\emph{accuracy} ($R^2$ $0.236\to0.274$ on the same rows), as expected if the closure and not the
+estimate is the binding constraint. Both arms run at seed $42$ alone, and the statement is about the
+one correction tested: a gated additive bounded residual on the output, on this closure and this
+corpus.
+
 \paragraph{The reference ladder.} A relative deviation carries no absolute scale, which is what the
 ladder supplies. Its rungs are built from the reference profiles the grounded arm was supervised on,
 so it calibrates that deviation rather than competing with it. The rungs calibrating the $51\%$ departure of
@@ -4982,6 +5002,75 @@ pipelines (\S\ref{sec:discussion}). Finally, that a constrained prior lowers var
 bias confined to the directions the data leave undetermined is the null-space reading of
 regularisation \cite{engl1996,hansen1998} and of null-space priors in inverse problems
 \cite{schwab2019}, which is the frame in which Remark~\ref{prop:tax} is stated.
+
+
+% MOVED FROM THE ARTICLE'S SECT. 3.3, 2026-08-19 (length pass).  NEITHER BLOCK IS A DUPLICATE:
+% before this edit \cite{yang2025tennet} and \cite{wu2019illconditioned} occurred exactly once in
+% the corpus, in the article, and nowhere in this document -- checked key by key and numeral by
+% numeral.  They are here rather than deleted because neither is a failed measurement.  Each
+% answers a question a referee asks first: the nearest published construction reports the OPPOSITE
+% sign, and a 2019 result in fluid dynamics offers a competing account of the same shape of
+% experiment.  This section already exists for "positioning against literatures the instrument
+% borrows from but does not otherwise use, whose citation keys occur nowhere else", which is
+% exactly what these two are.  A length pass may compress them; it may not drop a citation key.
+
+\subsection{The nearest published construction, and the account from fluid dynamics}
+\label{sec:si-adjacent-constructions}
+
+\paragraph{The nearest published construction, which reports the opposite sign.} TeNNet-SAC
+\cite{yang2025tennet}, a $\sigma$-profile predictor feeding a COSMO-SAC-shaped segment-activity
+model, reports accuracy consistently better than COSMO-SAC across its benchmarks. The two works score
+different operations. Its gain is a training-time gain from supervising and then fine-tuning a
+learned profile, and over five leak-free seeds that operation has no established sign here
+(\S\ref{sec:paradox}). Its profile predictor, supervised externally on quantum-chemical
+$\sigma$-profiles for $39{,}745$ molecules, then stays frozen while only the segment-activity output
+head is fine-tuned, so the closure's gradient never reaches the intermediate. Our negative result is
+about substituting a tabulated profile at inference, which TeNNet-SAC leaves unreported, on an
+intermediate trained through the closure with neither safeguard. Its segment-activity kernel is
+trainable besides, where this one is fixed at the $2002$ parameterisation. If the sign of the
+substitution turns on whether the kernel can move, our finding is about a fixed $2002$ kernel and
+not about routing a prediction through a physical intermediate. \S\ref{sec:notdecided} already
+records that no grounding gap has been measured under any modern closure. Retraining the two arms
+against the $2010$/dispersion kernel end to end is limitation~(x)'s named run and remains to be made.
+
+\paragraph{Whether the closure amplifies the substitution, or the two profiles are simply different
+objects.}
+% ADDED 2026-08-19, and it exists to answer a referee objection this manuscript had no measurement
+% for.  Wu, Xiao, Sun and Wang report the same shape of experiment in fluid dynamics seven years
+% earlier -- substituting near-exact Reynolds stresses into RANS produces large velocity error --
+% and diagnose ILL-CONDITIONING of the closure map.  If that account carried here, this paper's
+% mechanism paragraph would be redundant with a 2019 result in another field.  It does not, and
+% the reason is a quantity nothing in this corpus had measured: the SIZE of the substitution step.
+% Producer: scripts/analysis/run_closure_conditioning.py.  Its nulls are a random direction of the
+% same norm and a chemistry-blind substitution (a different molecule's reference profile).
+% THE MATCH IS CANONICAL SMILES.  Keyed on the strings as written the set is 66 rows; canonicalised
+% it is 354.  A length pass may drop the sentence but not the number.
+An account of this degradation is available from outside chemistry, and it is not the one above.
+Wu \latin{et al.}\cite{wu2019illconditioned} substitute near-exact Reynolds stresses into the RANS
+equations and recover large velocity errors, which they trace to ill-conditioning: the fixed model
+amplifies a small perturbation of its input.
+% KAPPA IS REPORTED BECAUSE IT IS THEIR METRIC, and because it comes out LARGE.  Writing only the
+% directional result would leave a reader to assume the map is well conditioned, which it is not --
+% and the finding is stronger with the concession than without it: the map can amplify by 32, and
+% along the direction the substitution actually takes it does not.  Do not drop kappa to shorten
+% this paragraph; it is the sentence that makes the next one a measurement rather than an assertion.
+% kappa is worst-case and first-order.  Both words are load-bearing and neither may be cut.
+By that metric this closure is ill-conditioned: the local relative
+condition number $\lVert J\rVert\,\lVert\sigma\rVert/\lvert\ln\gamma^\infty\rvert$ at the
+learned profile is $32$ $[15,52]$ at eight segment iterations and $72$ $[55,124]$ at thirty. It is
+nonetheless not the account of what follows, because $\kappa$ is a worst-case, first-order number
+and the substitution is neither infinitesimal nor worst-case.
+Ill-conditioning requires the step to be small. On the $354$ test rows whose solute and solvent both
+carry a VT-2005 profile ($64$ solutes, $18$ solvents, $4.4\%$ of the split), it is not. The
+reference profile stands $1.53$ $[1.39,1.80]$ times the learned profile's own norm away from it, so
+the two are different objects rather than an estimate and its target. Neither does the closure amplify
+selectively along that direction. A random direction of the same norm produces a \emph{larger}
+relative change in $\ln\gamma^\infty$ on $71\%$ $[62,76]$ of those rows at eight segment iterations
+and on $81\%$ $[70,86]$ at thirty. The amplification ratio itself is not stable across that pair
+(median $0.60$ $[0.37,1.14]$ against $1.29$ $[0.64,2.20]$), which is the segment count behaving as
+the free hyperparameter \S\ref{sec:estimator} says it is. The step size is a property of the two
+profiles and does not move with it. Both readings are of the retired head of this section and price
+the quantity rather than the arms of Fig.~\ref{fig:paradox}.
 
 % Last flush before \bibliography. Without it the deferred float queue (Fig.~\ref{fig:dial} is
 % the last entry) empties into the middle of the reference list. This used to sit at the end of

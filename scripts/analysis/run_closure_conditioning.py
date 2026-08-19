@@ -208,7 +208,10 @@ def _boot_ci(values: np.ndarray, clusters: np.ndarray, rng: np.random.Generator,
 #: Sec. 3.3's conditioning paragraph states eleven numbers from this measurement, in running prose,
 #: which is the position all six stale values of this manuscript were found in.  They are bound
 #: here rather than trusted.  --check-article fails if any has drifted from the deposit.
-SECTION = ROOT / "paper/sections/compensation-surrogate.tex"
+# The conditioning paragraph moved to the Supporting Information's positioning section on
+# 2026-08-19 (the article's Sec. 3.3 length pass). The gate follows the prose; the 25 numerals it
+# binds and the deposit behind them are unchanged.
+SECTION = ROOT / "paper/sections/SI.tex"
 
 
 def check_article(result: dict, section: Path) -> int:
