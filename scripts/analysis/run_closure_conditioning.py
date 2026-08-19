@@ -279,6 +279,26 @@ def check_article(result: dict, section: Path) -> int:
         bad += not ok
         print(f"  {'ok  ' if ok else 'FAIL'}  {what:32s} paper {claimed:>8s}   deposit {artifact:>8s}")
     print(f"{len(want)} numerals bound, {bad} mismatched")
+
+    # THE ARTICLE PRINTS THE STEP SIZE TOO, from 2026-08-19: the two-sentence rebuttal returned to
+    # Sec. 3.4, where a referee meets the ill-conditioning objection before writing it down, while
+    # the working stayed in the Supporting Information. Two numerals in running prose with no
+    # producer between them and the deposit is the position all of this manuscript's stale values
+    # were found in, so they are bound here rather than trusted.
+    art = re.sub(r"\s+", " ", (ROOT / "paper/grounding_paradox.tex").read_text())
+    am = re.search(r"The reference profile stands \$([\d.]+)\$ \$\[([\d.]+),([\d.]+)\]\$ times the "
+                   r"learned profile's own norm away from it", art)
+    if am is None:
+        print("FAIL: the article's step-size sentence is not in Sec. 3.4 in the form this gate "
+              "reads; it was reworded or removed")
+        return bad + 1
+    step = [(f"{sub8['rel_input_step_median']:.2f}", "step size, article"),
+            (f"{sub8['rel_input_step_ci90'][0]:.2f}", "its interval low, article"),
+            (f"{sub8['rel_input_step_ci90'][1]:.2f}", "its interval high, article")]
+    for (artifact, what), claimed in zip(step, am.groups()):
+        ok = claimed == artifact
+        bad += not ok
+        print(f"  {'ok  ' if ok else 'FAIL'}  {what:32s} paper {claimed:>8s}   deposit {artifact:>8s}")
     return bad
 
 

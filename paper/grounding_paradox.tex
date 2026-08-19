@@ -656,8 +656,12 @@ moves with the quantum chemistry and solvation treatment behind it is its own qu
 phase-equilibrium data, the pre-neural form of the effective profile this work measures.
 TeNNet-SAC \cite{yang2025tennet} does so while also learning the segment-activity kernel and the
 cavity geometry, and reports accuracy better than COSMO-SAC's after end-to-end fine-tuning. Its
-headline is the opposite of this one's, on the same broad construction, and we set the two side by
-side in \S\ref{sec:surrogate}.
+headline is the opposite of this one's, and the two score different operations. Its gain is a
+training-time gain, which over five leak-free seeds has no established sign here. Its externally
+supervised profile predictor then stays frozen while only the output head is fine-tuned, so the
+closure's gradient never reaches the intermediate. This work's negative result is about the
+inference-time substitution, which TeNNet-SAC leaves unreported, on an intermediate trained
+through the closure with neither safeguard (\S\ref{sec:si-adjacent-constructions}).
 
 % HANNA MOVED HERE FROM \S\ref{sec:surrogate}, 2026-08-18, and NOT to sections/related-work.tex,
 % which neither document \input{}s -- a first attempt sent it there and took a 2024 Chem. Sci.
@@ -1147,7 +1151,13 @@ them up.
 \emph{Why} it hurts stays open too, and for a stronger reason than a test that came back empty. The
 reading it invites is that handing the closure a faithful input surfaces a misspecified map instead
 of repairing it, so the reference profile is the better input where the map that consumes it is
-faithful. The reading is about a fixed map's own error and about what its inputs fail to carry, and on the
+faithful. An account from outside chemistry would reach the same place without any of that. Wu
+\latin{et al.}\cite{wu2019illconditioned} substitute near-exact Reynolds stresses into the RANS
+equations, recover large velocity errors, and trace them to ill-conditioning of the fixed model. It
+does not carry here, and the reason is the size of the step. The reference profile stands $1.53$
+$[1.39,1.80]$ times the learned profile's own norm away from it, and a random direction of that same
+norm amplifies \emph{more} often than the substitution does
+(\S\ref{sec:si-adjacent-constructions}). The reading is about a fixed map's own error and about what its inputs fail to carry, and on the
 solubility axis those two terms stay fused. The solubility axis is where \S\ref{sec:paradox}
 measured the substitution, so both quantities lie beyond observation on those rows.
 \S\ref{sec:measure} measures a second axis and leaves the first unexplained.
@@ -1443,12 +1453,16 @@ null. The margin sits at the ninetieth percentile of that null, on the one chemi
 out-of-sample rows are missing.
 
 
-\emph{Which chemistry leaves the terms merged.} Three of the six admissible cells are that same row set at
-three granularities. Of the other two, the alkane solutes are positive and demoted to the glycol
-ethers by clause~(c), and the acceptor-only aprotics pass the rule and leave the two terms merged,
-the instrument being one-sided. The uniqueness is narrower than being the sole admissible stratum, or the sole stratum sign-stable
-under every deletion: it is one row set admissible, positive and left standing by clause~(c). \S\ref{sec:si-map} records which cell
-each remaining stratum fails on, none of them used to explain a reversal.
+\emph{What the other fifty-eight strata are.} They are the rule refusing to answer, which is the
+rule working. An instrument that returned a verdict on every stratum of a $477$-row set would be
+reporting resolution it does not have, and the admissibility clauses exist to withhold exactly
+that. Of the six admissible cells, three are the glycol ethers at three granularities; of the other
+two, the alkane solutes are positive and demoted to the glycol ethers by clause~(c), and the
+acceptor-only aprotics pass the rule and leave the two terms merged, the instrument being
+one-sided. The uniqueness is therefore narrower than being the sole admissible stratum, or the sole
+stratum sign-stable under every deletion: it is one row set admissible, positive and left standing
+by clause~(c). \S\ref{sec:si-map} records which cell each remaining stratum fails on, none of them
+used to explain a reversal.
 
 % WHAT MUST STAY IN THIS PARAGRAPH: the ratio statistics (they are a row of Table~\ref{tab:claims}),
 % the null they are read against, the estimator-geometry REASON -- without it "why a map" is
@@ -1998,8 +2012,10 @@ remedy: a more faithful physical model, the calculation that supplies its refere
 The answer comes chemistry by chemistry rather than once for a field, and it comes one-sided: what
 the measurement returns is the chemistry on which better inputs are not the remedy. The instrument
 itself delivers the map: which cells it can answer in, and at what size. We have not tested whether
-a latent trained through a
-misspecified closure becomes, in general, a surrogate for that closure's error. The mechanism is
+a latent trained through a misspecified closure becomes, in general, a surrogate for that closure's
+error. Nor is the kernel's mobility settled. Ours is fixed at the $2002$ parameterisation, and if
+the substitution's sign turns on whether the kernel can move, this is a result about a fixed kernel
+and not about routing a prediction through a physical intermediate \cite{yang2025tennet}. The mechanism is
 measured on infinite-dilution activity coefficients and the phenomenon on solubility at finite
 composition, and no set in this work carries both.
 % CORRECTED 2026-08-19.  This said "the set that would carry both is named in limitation (x), and
