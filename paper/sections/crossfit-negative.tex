@@ -11,12 +11,17 @@
 \subsection{A pre-declared attempt to tighten the insufficiency bound, and its failure}
 \label{sec:si-crossfit}
 
-\emph{What was declared, and when.} In the solubility domain $\Binsuf^{\mathrm{up}}$ is the
+\emph{What was declared, and when.} The cross-fitting below is the sample-splitting
+construction of double/debiased machine learning \cite{chernozhukov2018dml}. In the solubility domain $\Binsuf^{\mathrm{up}}$ is the
 binning bound throughout: the within-bin variance of $m$ over eight equal-count bins of the scalar
 $g(\zstar)$, whose slack is the information the binning destroys and is not estimable from these
 data (\S\ref{sec:estimator}). The other domain does not coarsen---in the $\mathrm pK_a$ closure the same
 quantity is the out-of-fold residual mean square of a cross-fitted forest of $m$ on $\zstar$
 (\S\ref{sec:si-pka})---and because every margin in the map is
+% THIS SECTION CITED NOTHING AT ALL until 2026-08-19, while building a cross-fitted estimator.
+% The construction is double/debiased machine learning's, and naming it is what lets a reader
+% recognise the failure mode as that estimator's rather than as an idiosyncrasy of this one.
+
 $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$, a regressor that predicts $m$ from $\zstar$ better than an
 eight-bin histogram of a scalar summary of $\zstar$ does would raise all of them at once. The
 experiment that asks whether it does was pre-declared, in the header of the estimator itself

@@ -293,10 +293,17 @@ infinite-dilution activity coefficients, model misspecification, representation 
 %         five-seed re-run's, so the rule and the text it governs had disagreed since
 %         the discharge.  Two decimals now, because the between-seed sd is $0.06$-$0.09$
 %         and the third digit is noise; the body keeps three where a spread earns it;
-%       THE RANKING RESULT, added 2026-08-19.  A per-solute Spearman that falls at every
-%         seed is what a practitioner choosing a solvent loses, it is not removable by
-%         the per-group affine recalibration that removes most of the MAE gap, and it
-%         was absent from this block while the MAE it qualifies was in it twice.  It was
+%       THE RANKING RESULT, added 2026-08-19.  A Spearman that falls at every seed is what a
+%         practitioner choosing a solvent loses, and it was absent from this block while the
+%         MAE it qualifies was in it twice.  DO NOT ADD "and unlike the MAE it survives
+%         recalibration": that was the reason first written here and it is FALSE.  The map
+%         that removes 91% of the MAE gap is not monotone -- its fitted slope is negative in
+%         10-21% of groups by arm and seed -- so the rank-invariance argument does not cover
+%         it, and applying it removes about a third of the Spearman gap.  What survives the
+%         restriction to the 485 of 823 groups where both arms' maps increase is rho -0.107,
+%         not -0.185, with nDCG@3 and top-1 then spanning zero (the restriction is stated where it is measured).
+%         The block prints the unrestricted fall, which is a plain measurement, and makes no
+%         invariance claim.  It was
 %         paid for with the drift sentence of \S\ref{sec:surrogate}, whose magnitudes
 %         \S\ref{sec:discussion} itself calls unstable across analysis configurations;
 %       the standing margin with the scope a one-sided bound needs -- $2.04$, $n{=}182$ WITH ITS
@@ -637,7 +644,17 @@ activity coefficient the regression target. A second line keeps a mechanistic mo
 \emph{input}. COSMO-SAC \cite{lin2002} is a segment-activity reformulation of Klamt's COSMO-RS, and
 the $\sigma$-profile it consumes---the screening-charge density over a molecule's cavity---is that
 framework's construct, tabulated from quantum chemistry \cite{mullins2006}; predicting it from
-structure removes that calculation from the pipeline. TeNNet-SAC \cite{yang2025tennet} does so while
+% THE LINE HAD ONE EXAMPLE, 2026-08-19.  "Predicting it from structure" describes a literature
+% that starts with group contribution in 2007 and runs through four neural models before the 2025
+% one this sentence named; a reader could not tell the manuscript knew it.  Every entry added here
+% was checked against Crossref before it was written (see the block comment in references_verified).
+structure removes that calculation from the pipeline. Group-contribution
+\cite{mu2007gc,mu2009gc} and then learned predictors \cite{kang2022surrogate,chen2021transformer,
+zhang2022mpnn} have supplied it in place of the calculation, and how far the tabulated reference
+itself moves with the quantum chemistry and solvation treatment behind it is its own question
+\cite{salih2025sigma}; \citet{islam2015apparent} instead regress an \emph{apparent} profile from
+phase-equilibrium data, which is the pre-neural form of the effective profile this work measures.
+TeNNet-SAC \cite{yang2025tennet} does so while
 also learning the segment-activity kernel and the cavity geometry, and reports accuracy better than
 COSMO-SAC's after end-to-end fine-tuning---the opposite headline from this one, on the same broad
 construction, and we set the two side by side in \S\ref{sec:surrogate}.
@@ -662,13 +679,21 @@ makes optimisation or accuracy worse \cite{krishnapriyan2021}. In neural PDE sol
 term added to a fixed discretised operator absorbs truncation artifacts instead of physics, so the
 apparent interpretability is illusory \cite{mohan2024}---though that error source is numerical,
 which puts it beyond external reference. The same concern appears in \emph{concept-bottleneck
-models}, networks routed through a layer of named, human-interpretable concepts that are the whole
-of what the prediction is made from. That is the shape of a learned intermediate feeding a fixed
+models} \cite{koh2020cbm}, networks routed through a layer of named, human-interpretable concepts
+that are the whole of what the prediction is made from. That is the shape of a learned intermediate feeding a fixed
 physical map, and there the failure is \emph{concept leakage}: a learned concept silently encodes
 information beyond its nominal meaning \cite{mahinpei2021,margeloiu2021,havasi2022}. One route to it
 runs through the downstream model, a misspecified head forcing the encoder to deform the concept
 into carrying a dependence beyond that head's reach \cite{parisini2025}, after which overwriting a
-frozen head's leaked concepts with ground truth can degrade accuracy \cite{espinosa2025leakage}. The
+frozen head's leaked concepts with ground truth can degrade accuracy \cite{espinosa2025leakage}.
+% THE PRIORITY WAS FIVE YEARS WRONG, corrected 2026-08-19.  The sentence above credited the
+% substitution penalty to a 2025 paper; Koh et al. report it in the ablations of the paper that
+% introduced the architecture.  Their scope is narrower than "joint bottlenecks" and the clause
+% below says so in their own terms -- it is one model at a deliberately extreme hyperparameter,
+% and their ordinary joint bottleneck BENEFITS from intervention.  Do not widen it.
+The penalty is older than that literature: \citet{koh2020cbm} already report that in a joint
+bottleneck trained to prioritise label accuracy over concept accuracy, replacing the predicted
+concepts with the true ones at test time slightly increases test error. The
 gap between a fixed physical map and reality is the model-discrepancy problem of Kennedy and
 O'Hagan \cite{kennedy2001} and its calibration critique \cite{brynjarsdottir2014}. Four further
 literatures---forecast decomposition, quasi-maximum likelihood, identifiability, and the validity of

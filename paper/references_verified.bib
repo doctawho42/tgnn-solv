@@ -653,3 +653,144 @@
   pages   = {553--586},
   doi     = {10.1017/jfm.2019.205}
 }
+
+% ---------------------------------------------------------------------------------------------
+% ADDED 2026-08-19 after an overnight referee report named nine absences.  Every entry below was
+% checked against Crossref or the publisher before being written here -- venue, volume, first page
+% and DOI -- because a fabricated citation in a manuscript about honest reporting is fatal, and
+% three of this file's own entries exist because earlier ones were fabricated.  One item the report
+% asked for (Qiu et al., Front. Chem. Sci. Eng. 20(1), 2026) is NOT here: it could not be confirmed.
+% Two it asked for are deliberately absent: fastsolv is already reference 1 (key osanloo2024), and
+% ref 32 (interno2026) is cited for adapted-representation collapse, which is what that paper
+% reports -- the report's objection to it does not survive reading the sentence it supports.
+% ---------------------------------------------------------------------------------------------
+
+% The paper that introduced concept-bottleneck models, and the earliest report of this
+% manuscript's own phenomenon: Sec. 6.1's control model, a joint bottleneck that heavily
+% prioritises label accuracy over concept accuracy, has "replacing c-hat with the true c at test
+% time slightly increased test error".  The article defined CBMs without citing it and credited
+% the substitution penalty to a 2025 paper: a five-year priority error.
+@inproceedings{koh2020cbm,
+  author    = {Koh, Pang Wei and Nguyen, Thao and Tang, Yew Siang and Mussmann, Stephen and
+               Pierson, Emma and Kim, Been and Liang, Percy},
+  title     = {Concept Bottleneck Models},
+  booktitle = {Proceedings of the 37th International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {119},
+  pages     = {5338--5348},
+  year      = {2020}
+}
+
+% Regressing "apparent" sigma-profiles from phase-equilibrium data rather than from quantum
+% chemistry: the pre-ML precedent for an effective profile that beats the reference downstream.
+@article{islam2015apparent,
+  author  = {Islam, Md Rashedul and Chen, Chau-Chyun},
+  title   = {{COSMO-SAC} Sigma Profile Generation with Conceptual Segment Concept},
+  journal = {Industrial \& Engineering Chemistry Research},
+  volume  = {54}, number = {16}, pages = {4441--4454}, year = {2015},
+  doi     = {10.1021/ie503829b}
+}
+
+% A learned sigma-profile from SMILES feeding COSMO-SAC -- the direct methodological predecessor,
+% and it already reports that an activity-coefficient loss on top of a profile loss improves the
+% downstream gamma, which is the supervision half of this manuscript's contrast.
+@article{kang2022surrogate,
+  author  = {Kang, Jia-Lin and Chiu, Chen-Tse and Huang, Jau Shiue and Wong, David Shan-Hill},
+  title   = {A surrogate model of sigma profile and {COSMOSAC} activity coefficient predictions
+             using transformer with {SMILES} input},
+  journal = {Digital Chemical Engineering},
+  volume  = {2}, pages = {100016}, year = {2022},
+  doi     = {10.1016/j.dche.2022.100016}
+}
+
+% Group-contribution prediction of the profile: the pre-neural version of removing the quantum
+% calculation from the pipeline.  The 2009 entry is a three-page note, not a full paper.
+@article{mu2007gc,
+  author  = {Mu, Tiancheng and Rarey, J{\"u}rgen and Gmehling, J{\"u}rgen},
+  title   = {Group contribution prediction of surface charge density profiles for {COSMO-RS(Ol)}},
+  journal = {AIChE Journal},
+  volume  = {53}, number = {12}, pages = {3231--3240}, year = {2007},
+  doi     = {10.1002/aic.11338}
+}
+@article{mu2009gc,
+  author  = {Mu, Tiancheng and Rarey, J{\"u}rgen and Gmehling, J{\"u}rgen},
+  title   = {Group contribution prediction of surface charge density distribution of molecules
+             for {COSMO-SAC}},
+  journal = {AIChE Journal},
+  volume  = {55}, number = {12}, pages = {3298--3300}, year = {2009},
+  doi     = {10.1002/aic.11933}
+}
+
+% How much COSMO-RS accuracy moves with the PROVENANCE of the profile -- the published version of
+% this manuscript's own division of error between the closure and its input.
+@article{mu2007provenance,
+  author  = {Mu, Tiancheng and Rarey, J{\"u}rgen and Gmehling, J{\"u}rgen},
+  title   = {Performance of {COSMO-RS} with Sigma Profiles from Different Model Chemistries},
+  journal = {Industrial \& Engineering Chemistry Research},
+  volume  = {46}, number = {20}, pages = {6612--6629}, year = {2007},
+  doi     = {10.1021/ie0702126}
+}
+
+% The published critical evaluation of the COSMO-SAC variants this manuscript scores against.
+@article{chen2016critical,
+  author  = {Chen, Wei-Lin and Hsieh, Chieh-Ming and Yang, Li and Hsu, Chan-Chia and Lin, Shiang-Tai},
+  title   = {A Critical Evaluation on the Performance of {COSMO-SAC} Models for Vapor--Liquid and
+             Liquid--Liquid Equilibrium Predictions},
+  journal = {Industrial \& Engineering Chemistry Research},
+  volume  = {55}, number = {34}, pages = {9312--9322}, year = {2016},
+  doi     = {10.1021/acs.iecr.6b02345}
+}
+
+% How much the REFERENCE profile itself moves with the quantum-chemistry and solvation choices
+% behind it -- i.e. how imperfect the reference channel of this manuscript is.  Target venue.
+@article{salih2025sigma,
+  author  = {Salih, Fathya Y. M. and Abranches, Dinis O. and Maginn, Edward J. and Col{\'o}n, Yamil J.},
+  title   = {Open-source generation of sigma profiles: impact of quantum chemistry and solvation
+             treatment on machine learning performance},
+  journal = {Digital Discovery},
+  volume  = {4}, number = {10}, pages = {2711--2723}, year = {2025},
+  doi     = {10.1039/d5dd00087d}
+}
+
+% Two more learned-sigma-profile networks; the second is a message-passing network emitting the
+% profile and the cavity volume, the same architecture class and the same two outputs as the
+% SigmaProfileHead here.
+@article{chen2021transformer,
+  author  = {Chen, Guzhong and Song, Zhen and Qi, Zhiwen},
+  title   = {Transformer-convolutional neural network for surface charge density profile
+             prediction: Enabling high-throughput solvent screening},
+  journal = {Chemical Engineering Science},
+  volume  = {246}, pages = {117002}, year = {2021},
+  doi     = {10.1016/j.ces.2021.117002}
+}
+@article{zhang2022mpnn,
+  author  = {Zhang, Jun and Wang, Qin and Shen, Weifeng},
+  title   = {Message-passing neural network based multi-task deep-learning framework for
+             {COSMO-SAC} based sigma-profile and {VCOSMO} prediction},
+  journal = {Chemical Engineering Science},
+  volume  = {254}, pages = {117624}, year = {2022},
+  doi     = {10.1016/j.ces.2022.117624}
+}
+
+% The estimator this manuscript's pre-declared cross-fitted bound is an instance of; that section
+% currently cites nothing at all.  Closes the Hirano-Imbens-Ridder / Robins-Ritov pair already here.
+@article{chernozhukov2018dml,
+  author  = {Chernozhukov, Victor and Chetverikov, Denis and Demirer, Mert and Duflo, Esther and
+             Hansen, Christian and Newey, Whitney and Robins, James},
+  title   = {Double/debiased machine learning for treatment and structural parameters},
+  journal = {The Econometrics Journal},
+  volume  = {21}, number = {1}, pages = {C1--C68}, year = {2018},
+  doi     = {10.1111/ectj.12097}
+}
+
+% Built on the same corpus this manuscript uses (BigSolDB), shares two authors with the BigSolDB
+% paper already cited, and recalibrates the aleatoric floor to 0.106 log S -- arguing the 0.6-0.8
+% inter-laboratory figure this manuscript quotes is worst-case rather than expected disagreement.
+@misc{sc3benchmark,
+  author       = {Ramani, Vansh and Arora, Har Ashish and Kuchhal, Dhairya and Tatarin, Sergei and
+                  Krasnov, Lev and Ranu, Sayan and Karmakar, Tarak},
+  title        = {{SC3}: The Multi-Solvent Solubility Challenge and Benchmark},
+  year         = {2026},
+  eprint       = {2606.07656},
+  archivePrefix = {arXiv}
+}

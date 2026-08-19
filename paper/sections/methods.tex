@@ -321,6 +321,14 @@ under either reading. This floor is a mean absolute deviation in \lnx. The aleat
 published for this task, an inter-laboratory RMSE of $0.75$ in $\log_{10}S$ on $34$ duplicate
 solutions \cite{osanloo2024}, is a different functional on a different base, and we keep the two
 apart below, pooling and converting neither into the other.
+% ADDED 2026-08-19.  The SC3 benchmark is built on the same corpus this work uses and shares two
+% authors with the BigSolDB paper already cited, and it argues the figure quoted above is
+% worst-case rather than expected disagreement -- which moves the floor an order of magnitude and
+% therefore moves what "a factor of five above the noise floor" means.  It is a claim about the
+% floor and not a measurement of ours, so it prints as one.
+A benchmark on this corpus argues that the inter-laboratory figure describes worst-case rather than
+expected disagreement and puts the floor near $0.106$ in $\log_{10}S$ \cite{sc3benchmark}; on that
+reading the ratio above is the conservative one.
 
 \paragraph{Disclosure: the scaffold guarantee is not certified for these runs.}
 The released stream builder excludes any pool molecule whose scaffold appears in validation or test.
