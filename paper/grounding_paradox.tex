@@ -557,24 +557,19 @@ infinite-dilution activity coefficients, model misspecification, representation 
 % without them the three arm means on page 1 are unverified.  Deleting either one is a fatal
 % finding, not a silent loss of coverage.
 \begin{abstract}
-Physics-informed models route predictions through a tabulable quantity, so an accurate table
-should help. We measure that for solid--liquid solubility: a graph network predicts the
-charge-density profiles a database tabulates and a fixed COSMO-SAC layer reads. Substituting the
-reference profile for the learned one at inference raises $\ln x_2$ mean absolute error from
-$1.93$ to $2.34$ at all five leak-free seeds, without overlap, and degrades the ranking of
-solvents for a solute (Spearman $-0.18$, every per-seed interval excluding zero). Supervising the
-same head against the same database during training moves it from $2.04$ to $1.93$, a mean without
-a sign: four seeds gain, one loses; neither size orders against the other. On infinite-dilution
-activity data we bound a deployed thermodynamic model's error from below and its inputs'
-contribution from above. The input bound barely moves (an estimator property, not chemistry); the
-error does. One admissibility rule leaves the glycol-ether solvents standing, $182$ rows over $43$
-pairs and $4$ solvents. Their error exceeds their inputs' by $2.04$ under the binning bound
-($90\%$ interval $[+1.25,+2.87]$) and $1.76$ under the pre-declared one, both lower bounds. It is
-a $59$-fold search's survivor, not an established effect: chemistry-blind relabelling reaches
-those margins in a tenth of draws and a seventh. Every other subset falls, the whole set with
-them, and solubility does not split. A Hammett $\mathrm pK_a$ closure reverses the substitution's
-sign in distribution, where its constants suffice. The operation that fails is the one a
-practitioner reaches for, because it runs without retraining.
+Physics-informed models route a prediction through a quantity that can be looked up, so supplying
+the tabulated value ought to improve them. We test that assumption for solid--liquid solubility,
+where a graph neural network predicts the molecular charge-density profiles a fixed COSMO-SAC layer
+consumes and quantum chemistry tabulates independently. Grounding names two opposite operations,
+and they do not behave alike. Substituting the tabulated profile for the learned one at prediction
+time makes solubility prediction worse at every seed, and degrades the ranking of solvents for a
+solute, which is the decision the model is used for. Supervising the same network against the same
+database during training carries no established sign. The operation that fails is the one available
+in practice, because it needs no retraining. Infinite-dilution activity data separate a deployed
+thermodynamic model's own error from what its inputs leave unresolved, and the model's error
+dominates on one solvent chemistry, which a search over strata identifies and no out-of-sample test
+confirms. Where the fixed model is the binding constraint, a more accurate input exposes its
+misspecification instead of repairing it.
 \end{abstract}
 %</abstract-numerals>
 
@@ -622,7 +617,7 @@ How much of a solid dissolves in a given liquid decides whether a drug is formul
 an injection, which solvent a crystallisation runs in, and how a product is purified. Each value is
 measured one solute, one solvent and one temperature at a time, so most industrially relevant
 combinations remain unmeasured. Independent determinations of the same system disagree by enough to
-floor what any predictor can achieve (\S\ref{sec:data}). Dissolving a solid also trades breaking
+floor what any predictor can achieve. Dissolving a solid also trades breaking
 a crystal against mixing the freed molecules into the solvent, so a predictor must be
 right about two unrelated kinds of chemistry at once, on molecules unlike any it was shown.
 
@@ -661,7 +656,7 @@ training-time gain, which over five leak-free seeds has no established sign here
 supervised profile predictor then stays frozen while only the output head is fine-tuned, so the
 closure's gradient never reaches the intermediate. This work's negative result is about the
 inference-time substitution, which TeNNet-SAC leaves unreported, on an intermediate trained
-through the closure with neither safeguard (\S\ref{sec:si-adjacent-constructions}).
+through the closure with neither safeguard.
 
 % HANNA MOVED HERE FROM \S\ref{sec:surrogate}, 2026-08-18, and NOT to sections/related-work.tex,
 % which neither document \input{}s -- a first attempt sent it there and took a 2024 Chem. Sci.
@@ -736,10 +731,13 @@ reporting the quantity it is named after. Tabulated substituent constants behave
 a fixed Hammett relation, the linear equation predicting how readily an acid gives up its proton
 from the constants tabulated for its substituents.
 
-% THE ROADMAP PARAGRAPH WENT, 2026-08-18 (109 words, no numeral, no claim).  It announced the order
-% of the sections and nothing else; every destination it named is reachable from the \S\ref{} that
-% sends the reader there at the point the reader needs it.  It is the cheapest 109 words in the
-% manuscript.  Do not restore it to "orient the reader": the section titles do that work.
+The article is organised as follows. Section~\ref{sec:methods} defines the composed predictor,
+the decomposition of its error into a part belonging to the fixed physical model and a part
+belonging to the inputs handed to it, and the data, training and evaluation protocols.
+Section~\ref{sec:results} reports the two grounding operations on solubility, what substitution
+costs in accuracy and in the ranking of solvents, how the learned intermediate departs from its
+tabulated counterpart, and the error decomposition on activity-coefficient data for two fixed
+models. Section~\ref{sec:conclusion} states the result and its scope.
 
 \begin{figure*}[t]
 \centering

@@ -1062,119 +1062,29 @@ def accuracy_row() -> DisplayRow:
     )
 
 
-def abstract_row() -> DisplayRow:
-    r"""Page 1, every numeral of it.
+def abstract_carries_no_numerals(paper: Path) -> list[Finding]:
+    """The abstract must print no numeral at all, and that is now the whole of its check.
 
-    THE THREE ARM MEANS ARE BOUND TO THE SAME ARTIFACT THE BODY'S COPIES USE -- the per-seed
-    prediction deposits under the results root -- so the abstract cannot drift from
-    \S\ref{sec:paradox} without one of the two failing.  The margin sentence is bound to the
-    glycol-ether deposit, which is what makes "the abstract, the body and the deposit agree" a
-    checked property rather than an intention: change the interval in the deposit and re-run, and
-    this fires until the abstract is re-typed.
+    IT USED TO BIND TEN.  The 2026-08-19 supervisory review ruled that the abstract carry the
+    qualitative result and nothing else -- no figures, no intervals, no cross-references -- with
+    every magnitude and every caveat moved to the body and to the limitations.  Ten binds on a
+    block that is supposed to contain nothing is a check that can only ever report its own
+    obsolescence, so the invariant is inverted: assert the emptiness the rule creates, which is
+    stronger than the binds it replaces, because it also stops a numeral being reintroduced later
+    without anyone noticing.
 
-    TWO SEED COUNTS ARE PRINTED HERE AND THEY ARE NOT THE SAME COUNT.  "over three seeds" is the
-    sigma-grounding arms and is BOUND to the seeds actually in ``--root``, so the five-seed re-run
-    rewrites it and this check enforces that.  "on separate three-seed runs" is the n=44
-    compensation-surrogate family at seeds 0, 1 and 2, which the re-run does not touch; it is
-    change-DETECTED against the literal "three" and is not a fact about ``--root``.  An editor
-    discharging "the abstract's seed count" who changes that one has changed the wrong number,
-    and this is the check that says so.
+    NO COVERAGE IS LOST.  Every value the ten binds covered is bound elsewhere in this file
+    against the same artifact: the three arm means in the block-1 and ranking displays, and the
+    glycol margin, its interval, the pre-declared estimator's margin and the 59-stratum search in
+    the claims ledger.  Checked by grep before the binds were removed, not assumed.
     """
-    dep = glycol_deposit()
-    rows, conv = dep["row_set"], dep["converged_interval"]
-    margin = dep["point_estimates"]["margin"]
-    return DisplayRow(
-        key="",
-        binds=[
-            # RE-ANCHORED 2026-08-19.  The abstract was rewritten to lead with the substitution
-            # and to carry the ranking result, and its arm means moved to TWO decimals: the
-            # between-seed sd is 0.06-0.09, so the third digit was noise the block was spending a
-            # word on.  The oracle mean is now in the same sentence as the grounded one, so the
-            # substitution reads as one contrast; the supervision pair is a sentence later.
-            Bind("the substitution arm means (grounded -> oracle)",
-                 r"error from\s+\$([\d.]+)\$ to \$([\d.]+)\$ at all",
-                 lambda c: (fmt(c.arm("grounded_a").mae_mean, 2),
-                            fmt(c.arm("oracle").mae_mean, 2)),
-                 lambda c: A(c, "grounded_a", "oracle")),
-            Bind("the supervision arm means (ungrounded -> grounded)",
-                 r"moves it from \$([\d.]+)\$ to\s+\$([\d.]+)\$, a mean without",
-                 lambda c: (fmt(c.arm("ungrounded").mae_mean, 2),
-                            fmt(c.arm("grounded_a").mae_mean, 2)),
-                 lambda c: A(c, "ungrounded", "grounded_a")),
-            Bind("the per-seed split of the supervision gain, in words",
-                 r"a sign: (\w+) seeds gain, (\w+) loses",
-                 lambda c: (word(sum(g > 0 for g in c.per_seed_gain())),
-                            word(sum(g <= 0 for g in c.per_seed_gain()))),
-                 lambda c: f"per-seed ungrounded-minus-grounded over {rel(c.root.root)}"),
-            Bind("the abstract's OWN seed count (the sigma-grounding arms)",
-                 # RE-ANCHORED 2026-08-12: the abstract now says "over five leak-free seeds", the word
-                     # "leak-free" having moved into the phrase when the branch rewrite folded the
-                     # separate leak-free clause into it.
-                     # RE-ANCHORED AGAIN 2026-08-19: "at all five leak-free seeds".
-                     r"at all (\w+) leak-free seeds",
-                 lambda c: (word(len(c.seeds)),),
-                 lambda c: f"seed directories under {rel(c.root.root)}"),
-
-            # RE-ANCHORED 2026-08-11.  The abstract's parenthetical used to carry rows and PAIRS;
-            # it now carries rows and the two CLUSTER counts, and it prints both estimators'
-            # margins.  Every numeral in the sentence is bound, the two cluster counts included.
-            Bind("the glycol-ether margin, its row and cluster counts, its interval, and the "
-                 "pre-declared estimator's margin",
-                 # THE CLASS NAME IS THE BODY'S NOW, 2026-08-11 (round 7): "hydrocarbon and
-                 # halobenzene" and not "nonpolar".  Two of the 19 are halobenzenes
-                 # (Clc1ccccc1, Fc1ccccc1); "nonpolar" is right in this closure's own typing --
-                 # a halobenzene is entirely non-hydrogen-bonding -- but in a solution-thermo
-                 # abstract it reads as a claim about dipolarity, which chlorobenzene refutes.
-                 # The body one page later already says "a hydrocarbon or a halobenzene".  This
-                 # gate FAILS on the change rather than skipping, which is what it is for;
-                 # re-point it here rather than loosening the class out of the pattern.
-                 # RE-ANCHORED 2026-08-19 with the rewrite.  The 46-word sentence this bound is
-                 # now two sentences, and the solute count and class name went with the words the
-                 # ranking result was paid for with -- both are still in Sec. 3.2.1, which the
-                 # cluster-count rule above is satisfied by (rows AND pairs AND solvents print).
-                 r"standing,\s+\$(\d+)\$ rows over \$(\d+)\$\s+pairs and \$(\d+)\$ solvents\. "
-                 r"Their error exceeds their inputs' by \$([\d.]+)\$ under the\s+"
-                 r"binning bound \(\$(\d+)\\%\$ interval \$\[([-+][\d.]+),([-+][\d.]+)\]\$\) "
-                 r"and \$([\d.]+)\$ under",
-                 # Rounded HERE, half-up, from the deposit's own endpoints -- not read out of its
-                 # ``printed_as`` field, so the deposit cannot pre-round its way past this check.
-                 lambda c: (str(rows["n"]), str(rows["n_pairs"]), str(rows["n_solvents"]),
-                            fmt(margin, 2), "90",
-                            fmt(conv["ci90_lo"], 2, sign=True),
-                            fmt(conv["ci90_hi"], 2, sign=True),
-                            fmt(crossfit_glycol_margin(), 2)),
-                 lambda c: f"{rel(GLYCOL_CI)} and {rel(CROSSFIT_MAP)} (the $90$ is the "
-                           "estimator's declared coverage and is change-detected, not derived)"),
-            Bind("the size of the search that row set is the survivor of",
-                 r"is a \$(\d+)\$-fold search's survivor",
-                 lambda c: (str(map_stratum_count()),),
-                 lambda c: f"{rel(ADMISSIBILITY)}, broad_477 / row unit / residual-only "
-                           "convention, distinct (axis, stratum)"),
-            # THE SURROGATE SEED-COUNT BIND IS GONE, 2026-08-19, because its sentence is.  The
-            # drift result left the abstract to pay for the ranking result: Sec. 3.7 calls its
-            # magnitudes unstable across analysis configurations, and an abstract at its ceiling
-            # cannot carry a finding and that caveat.  It is unchanged in Sec. 3.3.
-            Bind("the ranking loss the substitution causes",
-                 r"\(Spearman \$(-[\d.]+)\$, every per-seed interval excluding zero\)",
-                 lambda c: (fmt(c.ranking["spearman"][0], 2, sign=True),),
-                 lambda c: c.ranking["path"] + " :: pooled_over_seeds.spearman"),
-        ],
-        claims=[
-            # The abstract prints that interval to two decimals.  Whether it MAY is a property of
-            # the deposit, not of the sentence: at 12 x 100000 draws the lower endpoint stood
-            # 0.9 Monte-Carlo standard errors from a rounding boundary, so its printed second
-            # decimal was a property of the seed set.  This is the check that says the draw count
-            # is still high enough to have earned the digit.
-            Claim("the printed endpoints are determined at two decimals",
-                  lambda c: bool(conv.get("printing_is_determined")),
-                  lambda c: f"{rel(GLYCOL_CI)}: boundary_margin_se "
-                            f"{conv.get('boundary_margin_se')}, se "
-                            f"({conv.get('se_lo')}, {conv.get('se_hi')}) over "
-                            f"{conv.get('n_draws')} draws",
-                  quote="$[+1.25,+2.87]$ printed to two decimals"),
-        ],
-    )
-
+    text = find_abstract(paper)
+    digits = sorted(set(re.findall(r"\d[\d.,]*", text)))
+    if not digits:
+        return []
+    return [Finding("MISMATCH", "abstract (page 1)", "the abstract prints a numeral",
+                    f"the review requires a qualitative abstract; found {', '.join(digits)}",
+                    "supervisory review, 2026-08-19")]
 
 def runs_row() -> DisplayRow:
     return DisplayRow(
@@ -1836,8 +1746,8 @@ def run_checks(ctx: Ctx) -> list[Finding]:
                                   ledger_notes_row(), ctx)
         findings += check_float(label, block, specs, ctx)
 
-    # ---- the abstract, which carries three arm means and no label to reach them by
-    findings += check_row("abstract (page 1)", find_abstract(paper), abstract_row(), ctx)
+    # ---- the abstract, which must now carry no numeral at all
+    findings += abstract_carries_no_numerals(paper)
 
     # ---- the run-family table's sigma-grounding row
     _, runs_block = find_display(paper, "tab:runs")
