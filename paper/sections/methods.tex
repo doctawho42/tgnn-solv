@@ -278,7 +278,8 @@ $438$\,K. We partition by Bemis--Murcko
 scaffold (a molecule's ring systems together with the linkers joining them, side chains
 removed) into $111{,}724$ training, $8{,}103$ validation and $8{,}103$ test rows, so that every test
 solute is unseen at training. A melting-point-independent miscibility/structure filter sets row
-membership, and we merge on crystal $\Tm$, $\dHfus$, Hansen parameters and infinite-dilution activity
+membership, and we merge on crystal $\Tm$, $\dHfus$, Hansen solubility parameters and
+infinite-dilution activity
 coefficients \lngi\ as per-solute labels where available. The rows of a split carry
 different labels: of the $8{,}103$ test rows, $5608$ carry a solubility measurement while the
 other $2495$ carry a melting point alone, so every accuracy number below is on $5608$
@@ -322,7 +323,8 @@ re-tabulated across compilations, which would otherwise deflate the floor) leave
 $0.16$ over $4261$ groups. The scaffold-split MAE reported here ($1.70$ to $1.85$) is above the
 larger functional by a factor of five, so the accuracy ceiling stands clear of label noise
 under either reading. This floor is a mean absolute deviation in \lnx. The aleatoric estimate
-published for this task, an inter-laboratory RMSE of $0.75$ in $\log_{10}S$ on $34$ duplicate
+published for this task, an inter-laboratory root-mean-square error (RMSE) of $0.75$ in
+$\log_{10}S$ on $34$ duplicate
 solutions \cite{osanloo2024}, is a different functional on a different base, and we keep the two
 apart below, pooling and converting neither into the other.
 % ADDED 2026-08-19.  The SC3 benchmark is built on the same corpus this work uses and shares two
@@ -472,7 +474,7 @@ of the same closure \cite{desouza2025cosmosac}, our differentiable layer lands i
 that evaluation spans across profile databases, under both conventions. Two limits stay open: the
 profile database is the one axis we cannot match, and whether its $6977$ points are the rows of our
 $7889$ is unproven. Subject to them, the closure error decomposed in \S\ref{sec:measure} is,
-in AAD, the error a published COSMO-SAC has. That evaluation also scores a donor/acceptor-typed
+in average absolute deviation (AAD), the error a published COSMO-SAC has. That evaluation also scores a donor/acceptor-typed
 later kernel on those records at about half the deployed closure's AAD. Every ceiling this paper
 reports is therefore this kernel's ceiling and not COSMO-SAC's, and the results below are
 substitutions inside a fixed map and not claims that the map is the best available.

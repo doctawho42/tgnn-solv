@@ -632,11 +632,13 @@ temperature and heat of fusion for the crystal---and combine them through a fixe
 fixed equation buys decomposability: each part is a quantity chemists tabulate on its own, so it can
 be supervised against reference data a direct regressor cannot use. On accuracy the black box leads and
 the physics-informed cycle trails it. Learned surrogates for the activity coefficient split the same way. Winter et al.\
-\cite{winter2022} predict \lngi\ from SMILES with a language model; Sanchez-Medina et al.\
+\cite{winter2022} predict \lngi\ from SMILES strings, the line notation for molecular structure,
+with a language model; Sanchez-Medina et al.\
 \cite{sanchezmedina2023} and Wang et al.\ \cite{wang2026ghgeat} embed a Gibbs--Helmholtz constraint
 in a graph network for its temperature dependence. All three make the activity coefficient the
 regression target. A second line keeps a mechanistic model and learns its
-\emph{input}. COSMO-SAC \cite{lin2002} is a segment-activity reformulation of Klamt's COSMO-RS, and
+\emph{input}. COSMO-SAC \cite{lin2002} is a segment-activity reformulation of Klamt's
+conductor-like screening model for real solvents (COSMO-RS), and
 the $\sigma$-profile it consumes---the screening-charge density over a molecule's cavity---is that
 framework's construct, tabulated from quantum chemistry \cite{mullins2006}. Predicting it from
 % THE LINE HAD ONE EXAMPLE, 2026-08-19.  "Predicting it from structure" describes a literature
@@ -664,7 +666,8 @@ through the closure with neither safeguard.
 A third design removes the intermediate. HANNA \cite{specht2024hanna} parameterises the excess
 Gibbs energy directly from SMILES with no quantum chemistry, hard-coding the pure-component limit,
 the Gibbs--Duhem relation and permutation symmetry in the architecture rather than the loss. It
-reports higher accuracy than UNIFAC over $317{,}421$ mixture points. The two published designs bracket what
+reports higher accuracy than UNIFAC, the group-contribution activity-coefficient method standard
+in process design, over $317{,}421$ mixture points. The two published designs bracket what
 this work measures: admissibility can be bought with quantum labels or built into the functional
 form, and this model does neither.
 
@@ -674,7 +677,8 @@ differentiable object: a governing equation enforced through the loss \cite{rais
 hybrids composing learned components with fixed mechanistic maps \cite{willard2022}, and operator
 learning with a trainable correction to a misspecified equation \cite{ma2026}. More physics is
 expected to improve generalisation, yet the same structure has documented failure modes in which it
-makes optimisation or accuracy worse \cite{krishnapriyan2021}. In neural PDE solvers a learnable
+makes optimisation or accuracy worse \cite{krishnapriyan2021}. In neural solvers for partial
+differential equations a learnable
 term added to a fixed discretised operator absorbs truncation artifacts instead of physics, so the
 apparent interpretability is illusory \cite{mohan2024}. The error source there is numerical, which
 puts it beyond external reference. The same concern appears in \emph{concept-bottleneck
@@ -1142,7 +1146,8 @@ them up.
 reading it invites is that handing the closure a faithful input surfaces a misspecified map instead
 of repairing it, so the reference profile is the better input where the map that consumes it is
 faithful. An account from outside chemistry would reach the same place without any of that. Wu
-\latin{et al.}\cite{wu2019illconditioned} substitute near-exact Reynolds stresses into the RANS
+\latin{et al.}\cite{wu2019illconditioned} substitute near-exact Reynolds stresses into the
+Reynolds-averaged Navier--Stokes
 equations, recover large velocity errors, and trace them to ill-conditioning of the fixed model. It
 does not carry here, and the reason is the size of the step. The reference profile stands $1.53$
 $[1.39,1.80]$ times the learned profile's own norm away from it, and a random direction of that same
@@ -1233,7 +1238,8 @@ database, UD throughout. Its chemistry is small. Every solute has $12$ heavy ato
 of $14$ and a maximum of $122$ for our own drug-like solids, and $0.46\%$ of corpus rows carry a
 solute from it. The word \emph{broad} therefore names the reach of the $\gamma^\infty$ corpus the
 kernel is calibrated on: it covers the solvent side of deployment and leaves the solute side open.
-Matching to UD is by InChIKey with a first-block fallback, looser than the VT-2005 rule. A
+Matching to UD is by InChIKey, the hashed structure identifier, with a first-block fallback,
+looser than the VT-2005 rule. A
 displaced $\zstar$ inflates $\Bclos$ and the binned $\Binsuf^{\mathrm{up}}$ together, so its
 direction on the margin is unsigned. The re-estimate carries the point: the margin holds on the
 $465$ exactly matched rows (\S\ref{sec:si-repro}).
@@ -1616,7 +1622,7 @@ $\hammett^\star$ is a partial sum over the positions the table can see.
 
 The sign reverses between them, in the direction that construction fixes in advance. Across $K{=}20$
 within-scaffold splits the reference \emph{improves} accuracy on the clean pole (MAE $0.48$ learned
-against $0.315$, a gap of $-0.165$ at a $90\%$ CI of $[-0.28,-0.04]$) and \emph{degrades} it on the
+against $0.315$, a gap of $-0.165$ at a $90\%$ confidence interval of $[-0.28,-0.04]$) and \emph{degrades} it on the
 degraded pole ($0.83$ against $1.62$, $+0.79$ $[{+}0.57,{+}0.95]$). The freely learned constant
 absorbs what the zeroed positions carry and the tabulated one lacks. \textbf{The flip is an
 in-distribution result and the scaffold protocol does not certify it.} Re-run on a scaffold split
