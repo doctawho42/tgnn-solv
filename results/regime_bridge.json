@@ -1,0 +1,55 @@
+{
+  "solubility": {
+    "n_rows": 108287,
+    "n_pairs": 12129,
+    "n_solutes": 1525,
+    "n_solvents": 212
+  },
+  "activity": {
+    "broad_idac_477": {
+      "n_rows": 477,
+      "n_pairs": 185,
+      "shared_pairs": 0,
+      "shared_pairs_first_block": 0,
+      "shared_solutes": 7,
+      "shared_solvents": 21,
+      "pairs_on_shared_molecules_activity": 15,
+      "pairs_on_shared_molecules_solubility": 10,
+      "their_overlap": 0
+    },
+    "idac_curated": {
+      "n_rows": 404,
+      "n_pairs": 138,
+      "shared_pairs": 0,
+      "shared_pairs_first_block": 0,
+      "shared_solutes": 7,
+      "shared_solvents": 8,
+      "pairs_on_shared_molecules_activity": 4,
+      "pairs_on_shared_molecules_solubility": 0,
+      "their_overlap": 0
+    },
+    "idac_expanded": {
+      "n_rows": 14900,
+      "n_pairs": 3145,
+      "shared_pairs": 0,
+      "shared_pairs_first_block": 0,
+      "shared_solutes": 9,
+      "shared_solvents": 22,
+      "pairs_on_shared_molecules_activity": 17,
+      "pairs_on_shared_molecules_solubility": 12,
+      "their_overlap": 0
+    },
+    "idac_nist_2015_2019": {
+      "n_rows": 14526,
+      "n_pairs": 3034,
+      "shared_pairs": 0,
+      "shared_pairs_first_block": 0,
+      "shared_solutes": 7,
+      "shared_solvents": 18,
+      "pairs_on_shared_molecules_activity": 15,
+      "pairs_on_shared_molecules_solubility": 7,
+      "their_overlap": 0
+    }
+  },
+  "bridge_exists": false
+}
