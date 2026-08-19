@@ -81,22 +81,55 @@ assert torch.cuda.is_available(), (
 """
 
 INSTALL = """
-# torch is preinstalled with the right CUDA build.  torch-geometric does NOT list torch in its
-# install_requires, so a plain install will not replace it -- and --no-deps is avoided because it
-# would also skip torch_geometric's own runtime deps.  tgnn_solv uses only Data/Batch containers
-# (no torch-scatter / torch-sparse), so the pure-python wheel is enough.
+# INSTALL ONLY WHAT IS MISSING, then probe the SUBPROCESS.
+#
+# Two things went wrong in the first version of this cell and both are worth the comment.
+# (1) It checked for a replaced torch with importlib.reload(torch).  Reloading torch re-executes
+#     its module body, which registers the C++ TORCH_LIBRARY namespace "triton" a second time --
+#     torch forbids that, so the check crashed every time regardless of what pip had done.  A
+#     loaded C extension cannot be re-executed; nothing can be learned by trying.
+# (2) It checked the wrong process.  Training runs in a CHILD process, which imports whatever is
+#     on disk at that moment.  This kernel's already-loaded torch says nothing about what the
+#     child will get, and a child that silently falls back to CPU costs the whole session.
+#
+# So: install only the missing packages, then ask a subprocess what IT sees.
+import importlib.util, subprocess
+
 _torch_before = torch.__version__
-%pip install -q torch-geometric rdkit
-import importlib, torch as _t
-importlib.reload(_t)
-assert _t.__version__ == _torch_before, (
-    f"pip replaced torch ({_torch_before} -> {_t.__version__}); the CUDA build is gone. "
-    f"Reinstall the Kaggle torch before continuing.")
-import torch_geometric, rdkit
-print("torch_geometric", torch_geometric.__version__, "| rdkit", rdkit.__version__)
+_pkgs = " ".join(pkg for mod, pkg in (("torch_geometric", "torch-geometric"), ("rdkit", "rdkit"))
+                 if importlib.util.find_spec(mod) is None)
+if _pkgs:
+    print("installing:", _pkgs)
+    %pip install -q $_pkgs
+else:
+    print("torch_geometric and rdkit are already present; nothing installed")
+
+_probe = subprocess.run(
+    [sys.executable, "-c",
+     "import json, torch, torch_geometric, rdkit;"
+     "print(json.dumps({'torch': torch.__version__, 'cuda': torch.cuda.is_available(),"
+     " 'device': torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,"
+     " 'pyg': torch_geometric.__version__}))"],
+    capture_output=True, text=True)
+print(_probe.stdout.strip() or _probe.stderr.strip()[-2000:])
+assert _probe.returncode == 0, "a fresh python cannot import the stack the training runs on"
+_info = json.loads(_probe.stdout.strip().splitlines()[-1])
+assert _info["cuda"], (
+    f"A CHILD PROCESS SEES NO GPU (this kernel: cuda={torch.cuda.is_available()}). Training runs "
+    f"in a child, so it would spend hours on CPU and look fine -- this project has lost runs to "
+    f"exactly that. If this kernel DOES see a GPU, pip replaced torch with a build that has no "
+    f"CUDA: factory-reset the session and re-run. If it does not, the Accelerator is not set.")
+assert _info["torch"] == _torch_before, (
+    f"pip changed torch on disk ({_torch_before} -> {_info['torch']}). Restart the session before "
+    f"training: this kernel and its children now disagree about which torch they use.")
+print("the training subprocess sees", _info["torch"], "on", _info["device"])
 """
 
 STAGE = """
+# Each cell imports what it uses, so a cell can be re-run on its own after a restart.
+import os, sys, shutil
+from pathlib import Path
+
 # Locate the input dataset by its manifest rather than by a hard-coded slug.
 BUNDLE = next((p.parent for p in Path("/kaggle/input").rglob("MANIFEST.json")
                if (p.parent / "code").is_dir()), None)
@@ -121,12 +154,13 @@ print("repo:", REPO, "| files:", sum(1 for _ in REPO.rglob("*") if _.is_file()))
 """
 
 VERIFY = """
+import hashlib, json
+from pathlib import Path
+
 # THE ONE CHECK THAT MATTERS.  A run whose split files differ from the ones the published family
 # trained on is not training against the same corpus, and its seeds may not be pooled with the
 # five already reported.  This project has already lost a run family to a stream built against the
 # wrong split files; the assertion is cheaper than the audit that finds it afterwards.
-import hashlib
-
 man = json.loads((BUNDLE / "MANIFEST.json").read_text())
 bad = []
 for rel, entry in man["data"].items():
@@ -158,6 +192,9 @@ print("the sigma stream is the REBUILT one -- same pool, same split sizes, unver
 """
 
 RESTORE = """
+import shutil
+from pathlib import Path
+
 # Carry a previous session's work forward, if its output dataset is attached.
 OUT = Path("/kaggle/working/out")
 OUT.mkdir(parents=True, exist_ok=True)
@@ -172,18 +209,30 @@ for d in done:
 """
 
 RUN = """
-# Stops starting new arms with time left to write.  Kaggle's GPU sessions are 12 h; 11.0 leaves an
-# hour, which is enough for one export and the dataset save.
-!python scripts/kaggle/run_arms.py \\
-    --arms {arms} \\
-    --seeds {seeds} \\
-    --hours 11.0 --device cuda --num-workers 2 \\
-    --out-dir /kaggle/working/out/results \\
-    --ckpt-dir /kaggle/working/out/checkpoints
+import subprocess, sys
+
+# NOT A SHELL MAGIC.  This was written as `!python ... \\` with backslash continuations, which
+# IPython does not reliably join: the first line runs as a shell command and the rest are handed to
+# the Python parser.  subprocess is unambiguous, and it hands back an exit code the cell can check.
+# -u so the runner's progress streams into the notebook instead of arriving at the end of eleven
+# hours, or not at all if the session is killed first.
+_cmd = [sys.executable, "-u", "scripts/kaggle/run_arms.py",
+        "--arms", {arms},
+        "--seeds", {seeds},
+        "--hours", "11.0", "--device", "cuda", "--num-workers", "2",
+        "--out-dir", "/kaggle/working/out/results",
+        "--ckpt-dir", "/kaggle/working/out/checkpoints"]
+print(" ".join(_cmd), flush=True)
+_rc = subprocess.run(_cmd).returncode
+print("\\nrunner exit code:", _rc)
+assert _rc == 0, "the runner failed; read the traceback above before saving a dataset version"
 """
 
 SUMMARY = """
 # What came out, and what still has to be queued.
+import json
+from pathlib import Path
+
 import pandas as pd
 
 prog = Path("/kaggle/working/out/results/kaggle_progress.json")
@@ -217,7 +266,8 @@ def main() -> None:
         md("## 5 — carry forward a previous session"), code(RESTORE),
         md(f"## 6 — run\n\n`{' '.join(a.arms)}` × seeds `{a.seeds}` "
            f"= **{len(a.arms) * len(a.seeds)} arms**, roughly 2 h each on a T4."),
-        code(RUN.format(arms=" ".join(a.arms), seeds=" ".join(str(s) for s in a.seeds))),
+        code(RUN.format(arms=", ".join(repr(x) for x in a.arms),
+                        seeds=", ".join(repr(str(s)) for s in a.seeds))),
         md("## 7 — what came out"), code(SUMMARY),
     ]
     nb = {"cells": cells, "metadata": {
