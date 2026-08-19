@@ -1727,6 +1727,95 @@ def cross_root_lock_check(ctx: Ctx) -> list[Finding]:
                              f"{rel(ctx.published.root)}")]
 
 
+# ---------------------------------------------------------------------------------------------
+# PROSE SPOT-BINDS.  Added 2026-08-19, after the SEVENTH stale value of this manuscript was found
+# in running prose.
+#
+# WHY THIS EXISTS, and why it is not the same thing as everything above.  Every other check in this
+# file reads a FLOAT or the abstract: it locates a display by its label, tokenises it, and demands
+# that each numeral be bound or declared.  That is the right shape for a table and it is blind by
+# construction to the body of the article, where a number is a word in a sentence and there is no
+# label to reach it by.  All seven stale values this manuscript has shipped were in that blind
+# spot: Sec. 3.1's opening, Table 5's cells restated in prose, Fig. 3's panels restated in prose,
+# Sec. 3.3's TeNNet +0.20, the dCp "twice the supervision gain", the 11-of-60 that came from a
+# different estimator cell than the margin it qualified, and the log10 S range below, which was
+# still the three-seed family's on a page whose table had printed the five-seed re-run's since the
+# discharge.
+#
+# WHAT THIS IS NOT.  It is not coverage.  A float check asserts that NOTHING in the display is
+# unbound; these assert only what they name, and the report prints them under their own heading so
+# that nobody reads "prose 6/6" as "the prose is checked".  Adding a spot-bind is cheap; the way to
+# use this list is to add one every time a number is written into a sentence from an artifact.
+PROSE_BINDS: list[tuple[str, str, str]] = [
+    # (what it is, regex with ONE group per bound numeral, how to get the truth -- see _prose_truth)
+    ("the physics arms' log10 S RMSE range, against the external comparison",
+     r"physics arms \$([\d.]+)\$ to \$([\d.]+)\$",
+     "logS_range"),
+    ("the control's log10 S RMSE in the same sentence",
+     r"\$\\log_\{10\}S\$ RMSE \$([\d.]+)\$ on held-out scaffolds",
+     "logS_directgnn"),
+]
+
+
+#: The two deposits Table 2's log10 S column is assembled from.  The re-run supplies the three arms
+#: it trains; the published tree supplies the other two, exactly as Table 2 does, which is why a
+#: single-source read of this range is what went stale in the first place.
+# NAMED _PROSE_* ON PURPOSE.  The first draft called these _EXTERNAL and _BLOCK1; _EXTERNAL is
+# already a display-name string 250 lines below, so the later binding won and every prose bind
+# reported "artifact unreadable" instead of a value.  A gate that fails open on a name collision is
+# worse than no gate, which is why prose_checks reports an unreadable artifact as MISSING (fatal)
+# rather than skipping it -- that is what surfaced this.
+_PROSE_EXTERNAL = REPO / "results/external_baseline_comparison/summary.json"
+_PROSE_BLOCK1 = REPO / "results/e5_sigma_grounding_leakfree/block1_cells.json"
+
+
+def _logS_means() -> dict[str, float]:
+    """Mean log10 S RMSE per arm, from the same two deposits Table 2 reads."""
+    out: dict[str, float] = {}
+    ext = json.loads(_PROSE_EXTERNAL.read_text())["tier1_this_work_scaffold_split"]
+    for arm in ("nrtl", "directgnn"):
+        out[arm] = float(ext[arm]["logS_mol_per_L"]["rmse"]["mean"])
+    blk = json.loads(_PROSE_BLOCK1.read_text())["cells"]
+    for arm in ("grounded_a", "oracle", "ungrounded"):
+        out[arm] = float(blk[arm]["rmse_logS"]["mean"])
+    return out
+
+
+def _prose_truth(key: str, ctx: Ctx) -> tuple[str, ...]:
+    """The artifact side of a prose spot-bind, by key."""
+    m = _logS_means()
+    if key == "logS_range":
+        # THE THREE PHYSICS ARMS OF TABLE 2, and not every arm in the deposits: the sentence says
+        # "its physics arms", and DirectGNN is the control it is compared against.
+        arms = [m["nrtl"], m["grounded_a"], m["oracle"]]
+        return (fmt(min(arms), 2), fmt(max(arms), 2))
+    if key == "logS_directgnn":
+        return (fmt(m["directgnn"], 2),)
+    raise KeyError(key)
+
+
+def prose_checks(ctx: Ctx) -> list[Finding]:
+    # ctx.paper is the paper DIRECTORY, as find_abstract's own resolution shows.
+    body = (ctx.paper / "grounding_paradox.tex").read_text()
+    out: list[Finding] = []
+    for what, pattern, key in PROSE_BINDS:
+        m = re.search(pattern, body)
+        if m is None:
+            out.append(Finding("MISSING", "running prose", what,
+                               "the sentence this binds is not in the article in the form the "
+                               "gate reads; it was reworded or removed", ""))
+            continue
+        try:
+            truth = _prose_truth(key, ctx)
+        except (KeyError, AttributeError) as exc:
+            out.append(Finding("MISSING", "running prose", what, f"artifact unreadable: {exc}", ""))
+            continue
+        got = tuple(m.groups())
+        kind = "OK" if got == truth else "MISMATCH"
+        out.append(Finding(kind, "running prose", what, " / ".join(got), " / ".join(truth)))
+    return out
+
+
 def run_checks(ctx: Ctx) -> list[Finding]:
     findings: list[Finding] = cross_root_lock_check(ctx)
     paper = ctx.paper
@@ -1762,6 +1851,9 @@ def run_checks(ctx: Ctx) -> list[Finding]:
 
     # ---- the table-of-contents graphic
     findings += toc_check(ctx, ctx.root.root)
+
+    # ---- prose spot-binds: NOT coverage, see the block comment on PROSE_BINDS
+    findings += prose_checks(ctx)
     return findings
 
 
