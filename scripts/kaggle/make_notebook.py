@@ -16,13 +16,26 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def _lines(src: str) -> list[str]:
+    """nbformat source lines: EVERY element but the last must end in a newline.
+
+    A plain .split("\\n") drops them, and the result still round-trips through json.load --
+    which is why the defect survived a structural check.  What it does NOT survive is being
+    executed: Jupyter joins the elements verbatim, so a cell written that way arrives as one
+    mashed line and the notebook is broken on the first run.  Caught by dry-running the cells
+    against a faked /kaggle tree, not by reading the file.
+    """
+    body = src.strip("\n")
+    return [line + "\n" for line in body.split("\n")[:-1]] + [body.split("\n")[-1]]
+
+
 def md(src: str) -> dict:
-    return {"cell_type": "markdown", "metadata": {}, "source": src.strip().split("\n")}
+    return {"cell_type": "markdown", "metadata": {}, "source": _lines(src)}
 
 
 def code(src: str) -> dict:
     return {"cell_type": "code", "execution_count": None, "metadata": {},
-            "outputs": [], "source": src.strip("\n").split("\n")}
+            "outputs": [], "source": _lines(src)}
 
 
 INTRO = """
@@ -124,7 +137,13 @@ for rel, entry in man["data"].items():
     mark = "ok " if ok else "BAD"
     note = ""
     if pub:
-        note = "  == published" if pub == got else "  != published (rebuilt stream)"
+        # The label must name the RIGHT reason.  Everything whose digest differs was reading
+        # "rebuilt stream", including a split file corrupted in transit -- which is the one case
+        # where the reader must not be told the difference is expected.
+        expected = "sigma_aux_stream_rebuilt" in rel
+        note = ("  == published" if pub == got
+                else "  != published (rebuilt stream, expected)" if expected
+                else "  != published (NOT EXPECTED for this file)")
     print(f"{mark} {got[:16]}  {rel}{note}")
     if not ok:
         bad.append(rel)
