@@ -145,17 +145,14 @@ def fig_paradox(e5_dir: Path, seeds, out_dir: Path) -> list[str]:
     r2_sd = [np.std(r2[a], ddof=0) for a in arms]
     n_seeded = len(arms)  # arms appended below are single-seed and get no error bar at all
 
-    # The two co-adaptation controls are DRAWN, not only described in the caption.
-    # Both are seed 42 only, so they are plotted hatched and against the seed-42 learned-sigma
-    # comparator (1.803), not against the three-seed mean; their R2 is not in comparison.json,
-    # so the right panel leaves them blank rather than inventing a value.
-    ctrl = _seed42_controls(e5_dir)
-    labels += ["ref. $\\sigma$ (train)", "channel swap"]
-    mae_mean += [ctrl["truetrain"], ctrl["channel_swap"]]
-    r2_mean += [np.nan, np.nan]
+    # THE TWO CO-ADAPTATION CONTROLS ARE NO LONGER DRAWN, 2026-08-20 (supervisory ruling).
+    # Each was one seed against a comparator that gives two readings, which is an illustration and
+    # not a result; drawn beside six five-seed arms they read as the same kind of evidence, which
+    # is the reading the ruling removes. They keep their numbers in the Supporting Information's
+    # arms table, marked as single-seed. _seed42_controls() stays: that table is built from it.
     # oracle (true-input) salmon; learned-representation arms teal; NRTL baseline gray
-    colors = [GRAY, TEAL, BLUE, TEAL, TEAL, SALMON, SALMON, SALMON]
-    hatch = [None] * 6 + ["///", "///"]
+    colors = [GRAY, TEAL, BLUE, TEAL, TEAL, SALMON]
+    hatch = [None] * len(labels)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.4, 2.95))
     x = np.arange(len(labels))

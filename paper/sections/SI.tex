@@ -1037,10 +1037,6 @@ Claim & Set ($n$)\tnk{a} & Value, with its uncertainty and scope\tnk{b} \\
 \multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{The two senses of grounding} (\S\ref{sec:paradox})}\\
 Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($5608$ of $8103$), 5 seeds & $1.93\to2.34$; the per-seed values do not overlap; the gap carries the test-time input swap with it \\
 \addlinespace[3pt]
-\ldots and still hurt when injected at training & labelled test rows\tnk{c}, seed $42$ & $1.89\to1.98$ (own baseline $1.89\to2.14$); one seed, so a sign and not an effect size---free of the test-time swap, which the row above is not \\
-\addlinespace[3pt]
-\ldots so part of that gap is test-time distribution shift & labelled test rows\tnk{c}, seed $42$ & share $0.64$ on one seed, and at five seeds not a share at all: replayed against the other four baselines two of the readings exceed one (\S\ref{sec:si-tables}). A sign on the matched seed, not a magnitude anywhere \\
-\addlinespace[3pt]
 Training-time $\sigma$ supervision has \emph{no established sign} (MAE) & labelled test rows, 5 seeds & $2.04\to1.93$ in the seed mean, but the per-seed values overlap and one of the five gains reverses: $0.149/0.122/0.175/-0.017/0.122$. They straddle the co-adapted arm's $+0.09$, so the two operations are not ordered by magnitude either. This is the contrast the pre-committed leak-free re-run was run to settle (\S\ref{sec:data}), and it settles it as unresolved \\
 \addlinespace[3pt]
 The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 5 seeds & per-solute Spearman $-0.185$ $[-0.269,-0.107]$ pooled, all five per-seed intervals excluding zero; nDCG@3 $-0.071$ $[-0.114,-0.029]$; top-1 $-0.088$ $[-0.172,-0.009]$ pooled only, three of five per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=3.2\times10^{-5}$ over the labelled rows of this row's own set at the worst seed, the same quantity over the full test set, labelled rows and unlabelled together, being larger (\S\ref{sec:si-methods})---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $91\%$ of the \emph{MAE} gap and refitted out of sample returns an interval that holds both all of it and none, and leaves this one untouched either way where the fitted map increases, as it does in $485$ of the $823$ groups in both arms at all five seeds. The substitution falls on the solvent channel \\
@@ -1116,9 +1112,6 @@ The latent departs from its reference along a shared direction & matched molecul
 \ldots and that direction \emph{transfers} to molecules outside the fit & matched molecules ($44$), 3 seeds & $4.1\pm0.5\times$ a zero-drift null, with no constant-offset control on these seeds; the $\pm$ spans seeds at one partition; and the held-out half is homologue-saturated, so ``outside the fit'' is largely within-cluster interpolation \\
 \addlinespace[3pt]
 That departure \emph{cancels} closure error & not measured & the one direct check is under-powered and runs against it \\
-\addlinespace[7pt]
-\multicolumn{3}{@{}L{\dimexpr0.95\linewidth+4\tabcolsep\relax}@{}}{\emph{Accuracy} (\S\ref{sec:discussion})}\\
-Physics arm vs.\ DirectGNN accuracy ($\Delta$MAE) & labelled test rows ($5608$ of $8103$) & $+0.23$ between separately tuned pipelines, so not attributable to the thermodynamic bottleneck \\
 \bottomrule
 \end{tabular}
 \tabnotes{\scriptsize%
@@ -1318,10 +1311,15 @@ carrying no seed replicate and no interval --- and not these arms.
 
 % Artifacts: results/e5_sigma_grounding/seed_42/{grounded_a_truetrain,channel_swap}_predictions.csv
 % (seed 42 only; no seed_43/seed_44 counterpart), scored on the same n=5608 labelled test rows.
-\paragraph{Oracle-application controls: two of the three are single-seed.} All three oracle
-applications (evaluation-only, training-time injection, channel-swap; \S\ref{sec:methods}) are
-computed on the same $5608$ labelled test rows as Table~\ref{tab:si-arms}, and their per-arm
-predictions are released with the code. Only the evaluation-only substitution is a three-seed result.
+\paragraph{Oracle-application controls: two of the three are single-seed, and are reported as an
+illustration rather than as a result.} All three oracle applications (evaluation-only, training-time
+injection, channel-swap; \S\ref{sec:methods}) are computed on the same $5608$ labelled test rows as
+Table~\ref{tab:si-arms}, and their per-arm predictions are released with the code. Only the
+evaluation-only substitution is a result. \textbf{The training-time injection and the channel swap
+are stated here and nowhere else in the submission}: each was run at one seed, against a comparator
+that its own two run families give two values for, and neither is a matched contrast. They are not
+claimed in the article, they carry no row in Table~\ref{tab:claims}, and no quantity reported
+anywhere rests on them. What follows prices the illustration, not the paradox.
 Training-time injection (MAE $1.98$) and the channel swap (MAE $2.08$) were run at seed $42$ alone,
 so their matched comparator is the seed-$42$ learned-$\sigma$ value $1.803$ on the same $n{=}5608$
 lock, not a seed mean. That comparator is $1.803$ in their own family and $1.887$ in the re-run,

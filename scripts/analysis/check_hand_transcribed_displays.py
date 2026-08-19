@@ -881,39 +881,11 @@ def ledger_rows() -> list[DisplayRow]:
                       quote="the per-seed values do not overlap"),
             ],
         ),
-        DisplayRow(
-            key="still hurt when injected at training",
-            binds=[
-                Bind("the control seed",
-                     r"seed \$(\d+)\$",
-                     lambda c: ("42",),
-                     lambda c: f"{rel(PUBLISHED_ROOT)}/seed_42/ "
-                               "(the co-adaptation control is a seed-42 arm)"),
-                Bind("co-adapted injection against its own baseline",
-                     r"\$([\d.]+)\\to([\d.]+)\$ \(own baseline \$([\d.]+)\\to([\d.]+)\$\)",
-                     lambda c: (fmt(c.arm("grounded_a").mae[42], 2),
-                                fmt(c.controls["grounded_a_truetrain"], 2),
-                                fmt(c.arm("grounded_a").mae[42], 2),
-                                fmt(c.arm("oracle").mae[42], 2)),
-                     lambda c: f"{rel(PUBLISHED_ROOT)}/seed_42/"
-                               "grounded_a_truetrain_predictions.csv against "
-                               + A(c, "grounded_a", "oracle")),
-            ],
-        ),
-        DisplayRow(
-            key="so part of that gap is test-time distribution shift",
-            binds=[
-                Bind("the control seed",
-                     r"seed \$(\d+)\$",
-                     lambda c: ("42",),
-                     lambda c: f"{rel(PUBLISHED_ROOT)}/seed_42/"),
-                Bind("the share carried by the training-time injection",
-                     r"share \$([\d.]+)\$ on one seed",
-                     lambda c: (fmt(c.share, 2),),
-                     lambda c: "1 - (truetrain-grounded)/(oracle-grounded) at seed 42, over "
-                               + A(c, "grounded_a", "oracle")),
-            ],
-        ),
+        # THE TWO CO-ADAPTATION LEDGER ROWS WENT WITH THEIR CLAIM, 2026-08-20. Training-time
+        # injection and the channel swap were one seed each, against a comparator that gives two
+        # readings; that is an illustration, not a result. They are stated as such in the
+        # Supporting Information and no longer claimed in Table S2 or Sec. 3.1. A bind on a row
+        # that is not there fails the selector, so the binds leave in the same commit as the rows.
         DisplayRow(
             key=r"Training-time $\sigma$ supervision",
             binds=[
@@ -1046,22 +1018,6 @@ def _tab_claims_ranking_row(c: "Ctx") -> str:
     return ""
 
 
-def accuracy_row() -> DisplayRow:
-    return DisplayRow(
-        key="Physics arm vs",
-        binds=[
-            Bind("the labelled row set",
-                 r"labelled test rows \(\$(\d+)\$ of \$(\d+)\$\)",
-                 lambda c: (str(c.root.n_lock), str(c.root.n_total_rows)),
-                 lambda c: f"cross-arm lock over {A(c,'grounded_a')}"),
-            Bind("physics minus DirectGNN MAE",
-                 r"\$([-+][\d.]+)\$ between separately tuned",
-                 lambda c: (fmt(c.physics_penalty, 2, sign=True),),
-                 lambda c: A(c, "grounded_a", "directgnn")),
-        ],
-    )
-
-
 def abstract_carries_no_numerals(paper: Path) -> list[Finding]:
     """The abstract must print no numeral at all, and that is now the whole of its check.
 
@@ -1180,14 +1136,13 @@ def caption_specs() -> list[CaptionSpec]:
                      r"on the \$(\d+)\$ labelled test rows",
                      lambda c: (str(c.root.n_lock),),
                      lambda c: f"cross-arm lock over {A(c,'grounded_a')}"),
-                Bind("the seed count the solid bars carry",
-                     r"Solid bars: (\w+)\s*seeds",
+                # RE-ANCHORED AND HALVED, 2026-08-20. The two hatched co-adaptation arms left the
+                # figure with their claim, so the caption no longer distinguishes solid from
+                # hatched and there is no second seed count to bind.
+                Bind("the seed count the bars carry",
+                     r"Bars are\s+(\w+)\s*seeds",
                      lambda c: (word(len(c.seeds)),),
                      lambda c: f"seed directories under {rel(c.root.root)}"),
-                Bind("the seed of the hatched controls",
-                     r"co-adaptation controls, seed \$(\d+)\$ only",
-                     lambda c: ("42",),
-                     lambda c: f"{rel(PUBLISHED_ROOT)}/seed_42/"),
             ],
         ),
         CaptionSpec(
@@ -1741,7 +1696,9 @@ def run_checks(ctx: Ctx) -> list[Finding]:
         _, block = find_display(paper, label)
         specs = list(LEDGER_DECLARED_ROWS.get(label, []))
         if label == "tab:claims-cont2":
-            specs.append(accuracy_row())
+            # THE DELTA-MAE ROW WENT WITH ITS CLAIM, 2026-08-20. +0.23 between separately tuned
+            # pipelines is not attributable to the bottleneck, which the article said itself while
+            # printing the number; the review's ruling is to delete rather than qualify it.
             findings += check_row(label + " (notes a-h)", tabnotes_of(block),
                                   ledger_notes_row(), ctx)
         findings += check_float(label, block, specs, ctx)
@@ -1893,7 +1850,7 @@ def dump_unclaimed(ctx: Ctx) -> str:
     """
     out: list[str] = []
     bound_keys = ({r.key for r in ledger_rows()}
-                  | {accuracy_row().key, runs_row().key, controls_row().key})
+                  | {runs_row().key, controls_row().key})
     for label in ("tab:claims", "tab:claims-cont", "tab:claims-cont2", "tab:runs"):
         _, block = find_display(ctx.paper, label)
         out.append(f'    "{label}": [')
@@ -1994,8 +1951,7 @@ LEDGER_DECLARED_ROWS: dict[str, list[DisplayRow]] = {
                    declared=['44', '3', '4.1', '0.5'], owner=_SURROGATE),
         DisplayRow(key="That departure \\emph{cancels} closure error & not measured & the one direct check is under-powered and runs ag",
                    declared=[], owner=_SURROGATE),
-        DisplayRow(key="\\multicolumn{3}{@{}L{\\dimexpr0.95\\linewidth+4\\tabcolsep\\relax}@{}}{\\emph{Accuracy} (\\S\\ref{sec:discussion})}",
-                   declared=[], owner=_BLOCK),
+        # The Accuracy block went with the delta-MAE row it existed to hold, 2026-08-20.
     ],
     "tab:runs": [
         DisplayRow(key="Run family & Seeds & What it produced", declared=[], owner=_HEADER),
