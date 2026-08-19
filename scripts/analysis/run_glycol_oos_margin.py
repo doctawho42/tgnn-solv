@@ -217,9 +217,12 @@ def main() -> None:
     if a.check_article:
         import re
         tex = (ROOT / "paper/grounding_paradox.tex").read_text()
+        # The sentence was split in the 2026-08-19 readability pass ("..., and there the margin
+        # is" -> ". There the margin is"), and this gate reported it as reworded, which is what it
+        # is for.  The numerals and their order are unchanged.
         pat = (r"supplies \$(\d+)\$ rows over \$(\d+)\$ pairs the broad set does not carry,\s+"
-               r"\$(\d+)\$ solutes in diethylene and triethylene glycol at three temperatures, and "
-               r"there the margin is\s+\$\+([\d.]+)\$ \$\[\+([\d.]+),\+([\d.]+)\]\$")
+               r"\$(\d+)\$ solutes in diethylene and triethylene glycol at three temperatures\.\s+"
+               r"There the margin is\s+\$\+([\d.]+)\$ \$\[\+([\d.]+),\+([\d.]+)\]\$")
         mm = re.search(pat, tex)
         if mm is None:
             raise SystemExit("the out-of-sample sentence is not in the article in the form this "

@@ -213,7 +213,11 @@ SECTION = ROOT / "paper/sections/compensation-surrogate.tex"
 
 def check_article(result: dict, section: Path) -> int:
     import re
-    tex = section.read_text()
+    # WHITESPACE-NORMALISED BEFORE MATCHING.  This pattern spans four sentences and used to pin
+    # the column each of them wrapped at; the 2026-08-19 readability pass moved a line break and
+    # the gate reported the paragraph "reworded" with no bound value having changed.  Values are
+    # bound, line breaks are not.  Same repair as check_donor_window_caption.py.
+    tex = re.sub(r"\s+", " ", section.read_text())
     c8, c30 = result["cells"]["8"], result["cells"]["30"]
     sub8, sub30 = c8["substitution"], c30["substitution"]
     c8k, c30k = c8["relative_condition_number"], c30["relative_condition_number"]
@@ -255,7 +259,7 @@ def check_article(result: dict, section: Path) -> int:
                r"\$\[(\d+),(\d+)\]\$\s+at thirty.*?"
                r"On the \$(\d+)\$ test rows whose solute and solvent both\s+"
                r"carry a VT-2005 profile \(\$(\d+)\$ solutes, \$(\d+)\$ solvents, \$([\d.]+)\\%\$ of the "
-               r"split\), it is not: the reference\s+profile stands \$([\d.]+)\$ \$\[([\d.]+),([\d.]+)\]\$ "
+               r"split\), it is not\. The reference\s+profile stands \$([\d.]+)\$ \$\[([\d.]+),([\d.]+)\]\$ "
                r"times.*?on \$(\d+)\\%\$ \$\[(\d+),(\d+)\]\$ of those rows at eight segment iterations\s+"
                r"and on \$(\d+)\\%\$ \$\[(\d+),(\d+)\]\$ at thirty.*?"
                r"\(median \$([\d.]+)\$ \$\[([\d.]+),([\d.]+)\]\$ against \$([\d.]+)\$ "

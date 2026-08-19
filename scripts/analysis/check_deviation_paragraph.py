@@ -122,8 +122,10 @@ def main() -> None:
     bad += floor != 27
 
     # and the two null frequencies the article now carries
-    n = re.search(r"moves from \$([\d.]+)\$ to \$([\d.]+)\$, and conditioned on drawing a map that "
-                  r"certifies anything at all a\s+relabelling reaches the observed maximum in "
+    # Split into two periods by the 2026-08-19 readability pass; the gate reported it reworded,
+    # which is what it is for.  The four numerals and their order are unchanged.
+    n = re.search(r"moves from \$([\d.]+)\$ to \$([\d.]+)\$\. Conditioned on drawing a map that "
+                  r"certifies anything at all, a\s+relabelling reaches the observed maximum in "
                   r"\$(\d+)\\%\$ of draws against \$(\d+)\\%\$", tex)
     si = (ROOT / "paper/sections/crossfit-negative.tex").read_text()
     s = re.search(r"moves the wrong way, \$([\d.]+)\\to([\d.]+)\$;.*?in \$(\d+)\\%\$ of draws\s+"

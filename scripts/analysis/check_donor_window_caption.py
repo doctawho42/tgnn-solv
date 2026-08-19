@@ -59,11 +59,17 @@ def main() -> None:
 
     d = pd.read_csv(a.deposit).set_index("solvent_smiles")
     drawn = d.sort_values("n_rows", ascending=False).head(TOP)
-    tex = a.section.read_text()
+    # WHITESPACE-NORMALISED BEFORE MATCHING.  Three of this gate's patterns carried a literal "\n"
+    # at whatever column the source happened to wrap at, so the 2026-08-19 readability pass broke
+    # them one after another without a single bound value having changed. A gate that fails on a
+    # reflow teaches its reader to ignore it.  Values are bound; line breaks are not.
+    tex = re.sub(r"\s+", " ", a.section.read_text())
 
     checks: list[tuple[str, str, str]] = []   # what, claimed, artifact
 
-    got = _find(tex, r"profile carries \$([\d.]+)\$, \$([\d.]+)\$, \$([\d.]+)\$ and \$([\d.]+)\$",
+    # \s+ rather than a literal space: the readability pass reflowed the line, and a gate that
+    # breaks on a line break rather than on a changed value is a gate that cries wolf.
+    got = _find(tex, r"profile carries \$([\d.]+)\$,\s+\$([\d.]+)\$,\s+\$([\d.]+)\$ and \$([\d.]+)\$",
                 "the four molecule-matched learned areas")
     for (name, smi), claimed in zip(NAMED.items(), got):
         checks.append((f"learned donor-window area, {name}", claimed,
@@ -71,7 +77,7 @@ def main() -> None:
         checks.append((f"reference donor-window area, {name}", "0.000",
                        f"{d.loc[smi, 'reference_donor_window_area']:.3f}"))
 
-    lo, hi = _find(tex, r"between \$(\d+)\\%\$ and\n\$(\d+)\\%\$ of each molecule's total surface",
+    lo, hi = _find(tex, r"between \$(\d+)\\%\$ and\s+\$(\d+)\\%\$ of each molecule's total surface",
                    "the fraction range over the four named molecules")
     frac = [d.loc[s, "learned_donor_fraction"] for s in NAMED.values()]
     checks.append(("fraction range, low", lo, f"{100 * min(frac):.0f}"))
@@ -82,7 +88,7 @@ def main() -> None:
     checks.append(("reference area, acetonitrile", acn,
                    f"{d.loc['CC#N', 'reference_donor_window_area']:.2f}"))
 
-    (n_drawn,) = _find(tex, r"Figure~\\ref\{fig:donor-window\} draws that comparison over the\n"
+    (n_drawn,) = _find(tex, r"Figure~\\ref\{fig:donor-window\} draws that comparison over the\s+"
                             r"(\w+) solvents carrying the most scored rows",
                        "the number of solvents the figure draws")
     (n_zero,) = _find(tex, r"the reference is exactly zero in (\w+) of them", "the empty count")

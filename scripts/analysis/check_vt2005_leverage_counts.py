@@ -92,9 +92,11 @@ def _check_article(d: pd.DataFrame, m: np.ndarray) -> None:
             ("cells with a positive margin", str(len(pos))),
             ("the reported cell's rank from the bottom",
              {1: "first", 2: "second", 3: "third"}.get(sum(v < head for v in pos) + 1, "?"))]
-    got = re.search(r"the aggregate spans \$(-[\d.]+)\$ to \$(\+[\d.]+)\$ and changes sign, and of "
-                    r"the \$(\d+)\$ cells returning a\s+positive margin the reported one is (\w+) from "
-                    r"the bottom", tex)
+    # Split into two periods by the 2026-08-19 readability pass; the gate reported the sentence
+    # reworded, which is what it is for.  The four numerals and their order are unchanged.
+    got = re.search(r"the aggregate spans \$(-[\d.]+)\$ to \$(\+[\d.]+)\$ and changes sign\.\s+Of "
+                    r"the \$(\d+)\$ cells\s+returning a positive margin, the reported one is (\w+) "
+                    r"from the bottom", tex)
     if got is None:
         raise SystemExit(f"the grid sentence is not in {ARTICLE}; it moved or was reworded")
     print("\narticle bind:")

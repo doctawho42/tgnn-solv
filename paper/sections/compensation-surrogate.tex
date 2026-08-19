@@ -39,7 +39,7 @@ A candidate \emph{mechanism} for the low-fidelity, end-to-end regime: a $\sigma$
 \emph{end-to-end} through a fixed, misspecified closure, with no $\sigma$ supervision in that phase,
 is under pressure to \emph{cancel} the closure's error instead of being physically faithful. This
 section establishes the first of its two parts. The antecedent, that the latent leaves the reference
-along a direction shared across molecules, is measured; the consequent, that the departure cancels
+along a direction shared across molecules, is measured. The consequent, that the departure cancels
 part of $\Bclos$, stays unmeasured, and the one direct check argues against it. We compare the
 predicted profile $\hat\sigma$ against the reference VT-2005 profile molecule by molecule ($n{=}44$):
 anatomy of the object the two operations of \S\ref{sec:paradox} act on, and not evidence for the sign
@@ -62,14 +62,14 @@ of either.
 \paragraph{What is measured, and on what.} We compare within a single grounded model, checkpointed
 before and after solubility fine-tuning, over the $n{=}44$ matched molecules, at three seeds. Those
 runs are a \emph{separate} set from the arms that produce the paradox: their $\sigma$ head stays
-unfrozen through fine-tuning, where the arms of \S\ref{sec:paradox} freeze it from P2 onward, whose
-own drift the deposit cannot recover. What follows is therefore measured on runs of its own and stays
+unfrozen through fine-tuning, where the arms of \S\ref{sec:paradox} freeze it from P2 onward. The
+deposit cannot recover those arms' own drift. What follows is therefore measured on runs of its own and stays
 unestablished of the checkpoints whose paradox it is offered to explain. Under $\sigma$ supervision
 the head reproduces the reference to within $36\pm1\%$, so the intermediate \emph{can} carry the
 physical shape --- as an in-sample fit, all $44$ probe molecules lying inside the $\sigma$-grounding
 pool. Fine-tuning drives it a further $41\pm3\%$ away, a total departure of $51\pm2\%$ whose
-magnitude is unstable across analysis configurations, so what these runs fix is the sign and the
-shared direction below and not the size. On the reference ladder (\S\ref{sec:si-mech}) it sits at
+magnitude is unstable across analysis configurations. These runs therefore fix the sign and the
+shared direction below, not the size. On the reference ladder (\S\ref{sec:si-mech}) it sits at
 $0.507$, past the $0.493$ of one corpus-mean profile reused for every molecule: the drift consumes
 essentially all the specificity grounding supplied.
 
@@ -77,15 +77,15 @@ essentially all the specificity grounding supplied.
 offset. The first two principal components of the mean-centred deviation carry $72\pm1\%$ of the
 variance. The top-two share of the learned-versus-reference deviation, $0.399$, clears a
 phase-randomised null ($0.221\pm0.01$, the $\pm$ being the null's own spread over draws; $p<0.001$)
-on one grounded checkpoint and not over the three seeds. Two nulls it fails to clear travel with it:
-the mean-centred share has no matched null of its own, and a wrong-molecule null built from real
-reference profiles does \emph{not} clear ($0.772$, $p=1.00$), so a reader who declines the case for
+on one grounded checkpoint and not over the three seeds. Two nulls it fails to clear travel with it.
+The mean-centred share has no matched null of its own, and a wrong-molecule null built from real
+reference profiles does \emph{not} clear ($0.772$, $p=1.00$). A reader who declines the case for
 preferring the phase-randomised null should read the spectrum as uninformative. One distortion
 operator fitted on half the $44$ molecules predicts the drift on the other half $4.1\pm0.5\times$
-better than the zero-drift null --- a weak null, uncontrolled here, a constant offset alone reaching
-$2.1\times$ where that control exists --- so the ratio stands against the identity null alone, its
-$\pm$ spans the three seeds at one partition of the $44$ and not the partitions, and the held-out
-half is homologue-saturated besides (\S\ref{sec:si-mech}). Structure \emph{beyond} an offset
+better than the zero-drift null. The zero-drift null is weak and uncontrolled here, a constant offset
+alone reaching $2.1\times$ where the control exists, so the ratio stands against the identity null
+alone. Its $\pm$ spans the three seeds at one partition of the $44$ and not the partitions, and the
+held-out half is homologue-saturated besides (\S\ref{sec:si-mech}). Structure \emph{beyond} an offset
 therefore rests on the mean-centred spectrum, which itself leaves open a shrinkage of every profile
 toward the corpus-mean shape. The dominant mode (Fig.~\ref{fig:surrogate}) moves area out of the
 nonpolar bins into the polar wings: fine-tuning makes the network represent molecules as more polar
@@ -107,34 +107,36 @@ than its \emph{own grounded profile} does.
 % this section, restore its NUMBERS, never a verdict.
 \paragraph{Whether the departure cancels closure error.} It remains unshown, and the one direct check
 runs against it. Holding the cavity area at its reference value, the sole retained end-to-end
-SLE-trained COSMO-SAC checkpoint scores $18.75$ against $1.47$ on the $n{=}60$ VT-2005-matched pairs:
-on the activity axis its drifted profile is an order of magnitude \emph{worse} through the same
-closure. Four limits sit on it, and \S\ref{sec:si-mech} carries them. The checkpoint is the
-uncontrolled one, at $82\%$ departure against the three-seed $51\pm2\%$, and a retired run at that,
-trained at $8$ segment iterations and scored at $30$, scoring MAE $2.61$ at $R^2=-0.31$ on the
-scaffold split. The drift is produced at finite composition and scored at infinite dilution. And the
+SLE-trained COSMO-SAC checkpoint scores $18.75$ against $1.47$ on the $n{=}60$ VT-2005-matched
+pairs. On the activity axis its drifted profile is an order of magnitude \emph{worse} through the
+same closure. Four limits sit on it, and \S\ref{sec:si-mech} carries them. The checkpoint is the
+uncontrolled one, at $82\%$ departure against the three-seed $51\pm2\%$. It is a retired run
+besides, trained at $8$ segment iterations and scored at $30$, scoring MAE $2.61$ at $R^2=-0.31$ on
+the scaffold split. The drift is produced at finite composition and scored at infinite dilution. And the
 check has almost no power in the direction that matters: it separates ``no cancellation'' from
 ``large cancellation'' and leaves ``some cancellation'' open. It and the closure's own-axis coefficient
 sweep beside it (\S\ref{par:own-axis}) both sit on the infinite-dilution axis, which is where
 cancellation could have been measured, so the reading stays inferred from the paradox itself. A
-second reading is live: the deployed ideal term sets $\Delta C_p$ to zero, one-signed and worth a
+second reading is live. The deployed ideal term sets $\Delta C_p$ to zero, one-signed and worth a
 median $0.32$ in \lnx\ where a melting point is measured (\S\ref{sec:framework}), and the externally
-supervised crystal head cannot absorb it, so a polar drift is also what compensating an over-large
-$\Phicry$ would look like. What is established is weaker and still consequential: the intermediate
+supervised crystal head cannot absorb it. A polar drift is therefore also what compensating an
+over-large $\Phicry$ would look like. The established part is weaker and still consequential: the
+intermediate
 departs from the molecule's charge distribution, the risk misspecification poses to physics-grounded
 latents \cite{brynjarsdottir2014,takeishi2021} and the collapse an adapted representation can suffer
 \cite{interno2026}. Its low-rank \emph{structure} excludes a random collapse.
 
-\paragraph{What leaves $\sigma$ under-determined, and what freezing it buys.} The freedom that makes
-such a cancellation possible is the closure's geometry: at infinite dilution the activity map's
-Fisher spectrum is effectively rank one, participation ratio $1.0$ in aggregate and ${\approx}1.4$ of
-$51$ per molecule, the resolved direction lying on the hydrogen-bonding wings
+\paragraph{What leaves $\sigma$ under-determined, and what freezing it buys.} The closure's geometry is what
+makes such a cancellation possible. At infinite dilution the activity map's Fisher spectrum is
+effectively rank one, participation ratio $1.0$ in aggregate and ${\approx}1.4$ of $51$ per
+molecule, the resolved direction lying on the hydrogen-bonding wings
 (\S\ref{par:fisher-geometry}). The head can therefore move $\sigma$ along the remaining,
 low-sensitivity coordinates at little cost to the fit, which is the $\sigma$-profile form of
 Lemma~\ref{prop:ident}. Freezing it at its supervised warm-up state instead cuts the reference-input
-penalty by $65\%$ ($\Delta\mathrm{MAE}$ $+0.40$ to $+0.14$, $n{=}5571$ matched test rows) --- a
-separate matched pair, one base resumed twice with the freeze off and on, so a difference between two
-runs and not a mean over any, and distinct from the $+0.41$ arms of \S\ref{sec:paradox}. Supervision
+penalty by $65\%$ ($\Delta\mathrm{MAE}$ $+0.40$ to $+0.14$, $n{=}5571$ matched test rows). The two
+arms are a separate matched pair: a single base resumed twice with the freeze off and on, so a
+difference between two runs and not a mean over any, and distinct from the $+0.41$ arms of
+\S\ref{sec:paradox}. Supervision
 by itself stops short of a \emph{flip} in the sign: the penalty stays positive, the closure is still
 the low-fidelity COSMO-SAC-2002 and the warm-up $\sigma$ itself only partly physical.
 
@@ -153,12 +155,12 @@ different operations. Its gain is a training-time gain from supervising and then
 learned profile, and over five leak-free seeds that operation has no established sign here
 (\S\ref{sec:paradox}). Its profile predictor, supervised externally on quantum-chemical
 $\sigma$-profiles for $39{,}745$ molecules, then stays frozen while only the segment-activity output
-head is fine-tuned, so the closure's gradient never reaches the intermediate. What we find negative
-is substituting a tabulated profile at inference, which TeNNet-SAC leaves unreported, on an
+head is fine-tuned, so the closure's gradient never reaches the intermediate. Our negative result is
+about substituting a tabulated profile at inference, which TeNNet-SAC leaves unreported, on an
 intermediate trained through the closure with neither safeguard. Its segment-activity kernel is
 trainable besides, where this one is fixed at the $2002$ parameterisation. If the sign of the
-substitution turns on whether the kernel can move, our finding is about a fixed $2002$ kernel and not
-about routing a prediction through a physical intermediate, and \S\ref{sec:notdecided} already
+substitution turns on whether the kernel can move, our finding is about a fixed $2002$ kernel and
+not about routing a prediction through a physical intermediate. \S\ref{sec:notdecided} already
 records that no grounding gap has been measured under any modern closure. Retraining the two arms
 against the $2010$/dispersion kernel end to end is limitation~(x)'s named run and remains to be made.
 
@@ -173,11 +175,10 @@ against the $2010$/dispersion kernel end to end is limitation~(x)'s named run an
 \paragraph{Whether a downstream correction repairs it.}
 \label{sec:gateb}
 If the closure binding were merely an inaccurate point estimate, a learned output-space correction on
-top of the physics prediction should recover accuracy. It fails to. An additive bounded residual with
-a learned confidence gate leaves the gate effectively shut, and forcing it open removes the
-systematic \emph{bias} ($+0.45\to+0.06$) while recovering little \emph{accuracy} ($R^2$
-$0.236\to0.274$ on the same rows), as expected if the closure and not the estimate is the binding
-constraint. Both arms run at seed $42$ alone, and the statement is about the one correction tested: a
+top of the physics prediction should recover accuracy. It fails to. An additive bounded residual with a learned confidence gate leaves the gate effectively
+shut. Forcing it open removes the systematic \emph{bias} ($+0.45\to+0.06$) while recovering little
+\emph{accuracy} ($R^2$ $0.236\to0.274$ on the same rows), as expected if the closure and not the
+estimate is the binding constraint. Both arms run at seed $42$ alone, and the statement is about the one correction tested: a
 gated additive bounded residual on the output, on this closure and this corpus.
 
 % ADDED 2026-08-11.  Deposit: results/closure_ladder/placebo_profile_diagnosis.csv (the learned
@@ -206,18 +207,18 @@ hydrogen-bond term reads.}
 COSMO-SAC's hydrogen-bonding contribution acts on segments beyond $|\sigma|=\sigma_{\mathrm{hb}}$,
 and the $2002$ kernel assigns a segment to the donor side by that threshold alone, with no atom
 typing. Donor-window area is therefore a statement about surface charge density and not a
-hydrogen-bond-donor count: $264$ of the $1003$ molecules in the reference tabulation that lack an
-N--H, O--H or S--H have area there, acetonitrile's $6.71$\,\AA$^2$ standing above ethanol's $6.20$.
-What carries the argument is the molecule-matched comparison. Cyclohexane,
-acetone, toluene and tetrahydrofuran each carry $0.000$\,\AA$^2$ of donor-window area in the
-reference tabulation, exactly zero and not merely small, against $15.75$ for water; the learned
-profile carries $44.0$, $32.4$, $24.5$ and $50.7$\,\AA$^2$ in that same window, between $23\%$ and
-$36\%$ of each molecule's total surface. Figure~\ref{fig:donor-window} draws that comparison over the
+hydrogen-bond-donor count. Of the $1003$ molecules in the reference tabulation that lack an N--H,
+O--H or S--H, $264$ have area there, and acetonitrile's $6.71$\,\AA$^2$ stands above ethanol's
+$6.20$. The molecule-matched comparison carries the argument. Cyclohexane, acetone, toluene and
+tetrahydrofuran each carry $0.000$\,\AA$^2$ of donor-window area in the reference tabulation,
+exactly zero and not merely small, against $15.75$ for water. The learned profile carries $44.0$,
+$32.4$, $24.5$ and $50.7$\,\AA$^2$ in that same window, between $23\%$ and $36\%$ of each
+molecule's total surface. Figure~\ref{fig:donor-window} draws that comparison over the
 sixteen solvents carrying the most scored rows; the reference is exactly zero in twelve of them. We read those areas off the one trained COSMO-SAC head the
 tree holds, the retired run of the two-MSE check above, scoring MAE $2.61$ at $R^2=-0.31$ on the
-scaffold split. A null arm in the same deposit separates architecture from training: as a fraction of
-profile mass in the same extreme bins, where the reference tabulation's median is $0.000$, an
-\emph{untrained} network of this architecture reaches $0.212$ against the trained head's $0.189$. The
+scaffold split. A null arm in the same deposit separates architecture from training. As a fraction of profile mass
+in the same extreme bins, where the reference tabulation's median is $0.000$, an \emph{untrained}
+network of this architecture reaches $0.212$ against the trained head's $0.189$. The
 window is full before any training, and training emptied it slightly.
 
 % THE FIGURE, added 2026-08-19.  Sec. 3.3 carried the corpus's most chemistry-legible result in
@@ -243,15 +244,14 @@ Fig.~\ref{fig:paradox}.}
 \end{figure}
 
 Two causes stay entangled. This head's $\sigma$-supervision stream ran for zero steps, and
-\S\ref{sec:ident} is why that matters: solubility alone underdetermines the profile's shape, leaving
+\S\ref{sec:ident} is why that matters. Solubility alone underdetermines the profile's shape, leaving
 an unsupervised profile free in exactly the bins that carry no constraint, which accounts for a
 quantity of this size. The parameterisation accounts for far less. The profile is emitted through a
 softmax over the $51$ bins, strictly positive where $57\%$ of the reference table's bins are exactly
 zero, so supervision at any strength leaves the window occupied. But a softmax reaches $10^{-6}$ at a
-logit gap of ten, four orders below what is measured. What
-the measurement establishes is that the window is occupied in a trained arm and the closure's
-hydrogen-bond term consequently live on every pair of the scored set, a defect whichever cause
-carries it. A supervised arm separates the two, and a head able to emit zeros removes the
+logit gap of ten, four orders below what is measured. The measurement establishes that the window is
+occupied in a trained arm, and that the closure's hydrogen-bond term is consequently live on every
+pair of the scored set, a defect whichever cause carries it. A supervised arm separates the two, and a head able to emit zeros removes the
 architectural half.
 
 \paragraph{Whether the closure amplifies the substitution, or the two profiles are simply different
@@ -282,13 +282,13 @@ learned profile is $32$ $[15,52]$ at eight segment iterations and $72$ $[55,124]
 nonetheless not the account of what follows, because $\kappa$ is a worst-case, first-order number
 and the substitution is neither infinitesimal nor worst-case.
 Ill-conditioning requires the step to be small. On the $354$ test rows whose solute and solvent both
-carry a VT-2005 profile ($64$ solutes, $18$ solvents, $4.4\%$ of the split), it is not: the reference
-profile stands $1.53$ $[1.39,1.80]$ times the learned profile's own norm away from it, so the two are
-different objects rather than an estimate and its target. Neither does the closure amplify
+carry a VT-2005 profile ($64$ solutes, $18$ solvents, $4.4\%$ of the split), it is not. The
+reference profile stands $1.53$ $[1.39,1.80]$ times the learned profile's own norm away from it, so
+the two are different objects rather than an estimate and its target. Neither does the closure amplify
 selectively along that direction. A random direction of the same norm produces a \emph{larger}
 relative change in $\ln\gamma^\infty$ on $71\%$ $[62,76]$ of those rows at eight segment iterations
 and on $81\%$ $[70,86]$ at thirty. The amplification ratio itself is not stable across that pair
 (median $0.60$ $[0.37,1.14]$ against $1.29$ $[0.64,2.20]$), which is the segment count behaving as
-the free hyperparameter \S\ref{sec:estimator} says it is; the step size is a property of the two
+the free hyperparameter \S\ref{sec:estimator} says it is. The step size is a property of the two
 profiles and does not move with it. Both readings are of the retired head of this section and price
 the quantity rather than the arms of Fig.~\ref{fig:paradox}.
