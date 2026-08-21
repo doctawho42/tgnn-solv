@@ -4242,9 +4242,14 @@ solvent, the rule the deployed $\sigma$-oracle itself uses; matching by InChIKey
 pairs over $46$ solutes and $19$ solvents at $298$\,K in place of $60/41/17$ (both counts are recorded
 in the deposited decomposition artifact). We keep the stricter rule so that the $\zstar$ charged against each
 label is the profile the deployed pipeline would supply, rather than one imported across a tautomer or
-protonation variant---the same mismatch that makes the reference imperfect above. The decomposition
-was not re-estimated on the InChIKey-matched set; whether the verdict moves on those $25$ extra pairs
-is untested. The broad IDAC set uses the looser InChIKey rule, so the two sets are matched under
+protonation variant---the same mismatch that makes the reference imperfect above. We have re-estimated the decomposition under the looser rule. At the cell of
+\S\ref{sec:estimator} the $85$ pairs give $\mathrm{MSE}=1.243$ against $\Binsuf\lesssim0.620$, a
+margin of $+0.004$ where the reported $60$ give $+0.045$, and $+0.52$ against $+0.58$ under the full
+convention; the recomputation reproduces the reported set's own margin exactly before it is pointed
+at the larger one. The sign survives under both conventions and the residual-only margin does not:
+it goes to zero. That is the same verdict this set already carries --- its aggregate does not stand,
+and no stratum of it is stated as a finding --- reached on $42\%$ more pairs, and nothing in the
+paper rests on it either way. The broad IDAC set uses the looser InChIKey rule, so the two sets are matched under
 different standards; that asymmetry is quantified above (four molecules, $12$ rows, verdict unchanged
 on the exactly matched subset) rather than left implicit. Second-domain pKa: the OPERA experimental compilation
 \cite{mansouri2019opera} ($7904$ QSAR-ready records, public-domain US EPA;
