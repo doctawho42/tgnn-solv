@@ -6,35 +6,32 @@
 \label{sec:data-efficiency}
 % Artifact: results/data_efficiency/summary.json via run_data_efficiency_summary.py
 % over the Modal run (volume tgnn-e5, seed 42); ΔMAE = physics − DirectGNN.
+% COMPRESSED 2026-08-20, from about 380 prose words to 190.  Nothing here is attributable -- the
+% arms differ in capacity and in optimisation settings, the sweep is single-seed and non-monotone,
+% and its endpoint does not reproduce the main comparison -- and the section said so at length.  A
+% confound inventory longer than the result it disqualifies invites the question of why the result
+% is in the submission at all.  What is kept is the observation that runs AGAINST this paper's own
+% reading, and the reason nothing follows from it.  Table~\ref{tab:data-eff} and
+% Fig.~\ref{fig:data-eff} are unchanged and carry the rest.
 The strongest a-priori case for a physics prior is data scarcity: with few training molecules, an
-inductive bias toward the correct factorisation should outperform a data-hungry black box. We test it
-directly, subsampling the training set \emph{by solute} at fractions $0.05$--$1.0$ and training both
-the physics-grounded model and DirectGNN on the identical subsample, evaluated on the fixed scaffold
-test (Table~\ref{tab:data-eff}, seed 42). The physics arm is \emph{worse at every fraction}, and
-against the hypothesis the gap is \emph{smallest} at the least data ($\Delta\mathrm{MAE}=+0.08$ at
-$5\%$); its $R^2$ is negative throughout. We do not read the growth of the gap with data
-($+1.0$ at full) as a data-scale effect, because the sweep's endpoint does not reproduce the
-main comparison. Its physics arm carries the NRTL closure, and at fraction $1.0$ it gives
-$2.98$ against $1.97$ (control) on the same scaffold test where the three-seed runs of
-Table~\ref{tab:si-arms} give $1.7950$ against $1.7022$: $\Delta\mathrm{MAE}$ an order of magnitude
-apart ($+1.01$ here, $+0.09$ there---$0.0928$ before rounding, and that table's rounded column gives
-the same $+0.09$). Both arms are worse here than their three-seed
+inductive bias toward the correct factorisation should outperform a data-hungry black box. We test
+it by subsampling the training set \emph{by solute} at fractions $0.05$--$1.0$ and training both
+arms on the identical subsample (Table~\ref{tab:data-eff}, Fig.~\ref{fig:data-eff}, seed $42$). The
+physics arm is worse at every fraction, and against the hypothesis the gap is \emph{smallest} at the
+least data ($\Delta\mathrm{MAE}=+0.08$ at $5\%$) --- the one direction in this sweep that favours
+the prior rather than this paper's reading of it.
+
+Nothing in the sweep is attributable to the thermodynamic bottleneck, and no accuracy claim is made
+from it. The two arms differ in capacity and in the per-arm optimisation settings of
+\S\ref{sec:eval}, both are wider than the three-seed arms (hidden width $256$ and $128$ here, $64$
+there), the sweep is single-seed with non-monotone physics-arm MAEs, and its endpoint does not
+reproduce the main comparison: at fraction $1.0$ it gives $2.98$ against $1.97$ where the three-seed
+runs of Table~\ref{tab:si-arms} give $1.7950$ against $1.7022$, a $\Delta\mathrm{MAE}$ an order of
+magnitude apart ($+1.01$ here, $+0.09$ there). Both arms are worse than their three-seed
 counterparts and the physics arm much the more so ($+1.18$ against $+0.27$ MAE), so the trend
-measures how the light per-fraction budget interacts with training-set size at least as much as how
-the physics prior does. The sweep is also
-single-seed, its physics-arm MAEs are non-monotone, and its two arms differ from each other in
-capacity and in the per-arm optimisation settings of \S\ref{sec:eval}, and both are wider
-than the three-seed arms (hidden width $256$ and $128$ here, $64$ there). Nothing in the sweep is
-therefore attributable to the thermodynamic bottleneck, and this paper makes no accuracy claim in
-either direction from it. What survives is the level and
-not the trend (Table~\ref{tab:data-eff}, plotted in Fig.~\ref{fig:data-eff})---the physics arm is
-worse at every fraction under a matched light budget---which is \emph{consistent
-with} the sign rule (Remark~\ref{prop:tax}) rather than a sharp confirmation of it. The one inverting metric is
-top-1 solvent ranking ($0.42$ vs $0.23$ at $5\%$; the ranking-versus-accuracy split of
-\S\ref{sec:supporting}), which does not translate into lower error. This is the last regime in which a
-physics prior should plausibly help; that it does not is consistent with the broad accuracy null and
-with the structural account---a non-identifiable split through a misspecified closure---as the
-operative explanation.
+measures how a light per-fraction budget interacts with training-set size at least as much as how a
+physics prior does. The one inverting metric is top-1 solvent ranking ($0.42$ against $0.23$ at
+$5\%$), which does not translate into lower error.
 
 \begin{table}[t]
 \centering

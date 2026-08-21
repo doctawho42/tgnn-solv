@@ -1910,6 +1910,16 @@ build. The superseded three-seed gain of $0.20$ was the one that did, and deleti
 reachable solutes left it at $+0.17$ $[+0.03,+0.31]$. The deletion bounds where a leak could have
 acted, as do the arguments that bound the other contrasts (\S\ref{sec:data}).
 \item What the deposit leaves uncheckable (the data-availability statement).
+\item One trained COSMO-SAC head survives in the deposit, and it is a poor model: a retired run at
+MAE $2.61$ and $R^2=-0.31$ on the scaffold split, worse than predicting the corpus mean. Four
+quantities are read off it, each stated with that scope where it prints: the donor-window areas of
+Fig.~\ref{fig:donor-window}, the cavity-area ratios beside them, the substitution penalty's movement
+with the segment count, and the size of the substitution step against a random direction of the same
+norm. Each is a property of a $\sigma$-profile and its closure rather than of an arm's accuracy, and
+none of them enters a reported margin; the donor-window occupancy is additionally reproduced by an
+\emph{untrained} network of the same architecture, so it prices the parameterisation and not the
+training. What a better checkpoint would change is unmeasured, and the arms of
+Fig.~\ref{fig:paradox} retain no weights to supply one.
 \item Two terms the thermodynamics asks for are set to zero in the deployed model, and both are
 absorbed at training time by the same learned $\sigma$ head. The first is $\Delta C_p$ in the ideal
 term, one-signed and worth a median $0.32$ in \lnx\ where a melting point is measured
