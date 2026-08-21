@@ -66,7 +66,22 @@ python scripts/kaggle/make_notebook.py --out /tmp/kaggle_tgnn_solv/tgnn-solv-e5.
 
 Then, on Kaggle:
 
-1. **Datasets → New Dataset**, upload `/tmp/kaggle_tgnn_solv`, name it `tgnn-solv-e5`.
+1. **Upload the dataset with the CLI, not the browser.** The bundle is 484 files in 35 directories
+   nested up to thirteen deep, and Kaggle's web uploader fails on it with `Failed to execute 'json'
+   on 'Response': Unexpected end of JSON input` -- a client-side failure on file count, not on the
+   28 MB. The CLI sends one archive per directory and Kaggle extracts it server-side, so the paths
+   the notebook expects survive:
+
+   ```
+   cat > <bundle>/dataset-metadata.json <<'EOF'
+   {"title": "tgnn-solv-e5", "id": "<user>/tgnn-solv-e5", "licenses": [{"name": "CC0-1.0"}]}
+   EOF
+   kaggle datasets create -p <bundle> -r zip --dir-mode zip
+   ```
+
+   Check it landed by size rather than by the file listing, which is paginated and will show only
+   `code/` on its first page: `totalBytes` from the dataset view should match the bundle's own.
+   Keep the notebook OUT of the bundle directory -- it is imported into Code, not the dataset.
 2. **Code → New Notebook**, import `tgnn-solv-e5.ipynb`, attach the dataset.
 3. Settings: **Accelerator = GPU**, **Internet = ON** (pip needs it), Persistence = Variables and Files.
 4. Run. It stops starting new arms at 11 h, leaving an hour to write.
