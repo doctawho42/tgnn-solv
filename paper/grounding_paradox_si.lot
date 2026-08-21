@@ -16,18 +16,19 @@
 \contentsline {table}{\numberline {S16}{\ignorespaces The map: every stratum the estimator can bound}}{S-39}{table.16}%
 \contentsline {table}{\numberline {S17}{\ignorespaces The map, solute axis: the boundable strata}}{S-40}{table.17}%
 \contentsline {table}{\numberline {S18}{\ignorespaces The map's error, bound and source curve, stratum by stratum}}{S-41}{table.18}%
-\contentsline {table}{\numberline {S19}{\ignorespaces The closure/insufficiency verdict across activity-coefficient strata}}{S-49}{table.19}%
+\contentsline {table}{\numberline {S19}{\ignorespaces The closure/insufficiency verdict across activity-coefficient strata}}{S-50}{table.19}%
 \contentsline {table}{\numberline {S20}{\ignorespaces Solubility accuracy, in three blocks}}{S-55}{table.20}%
-\contentsline {table}{\numberline {S21}{\ignorespaces Same-pair high-temperature extrapolation}}{S-63}{table.21}%
+\contentsline {table}{\numberline {S21}{\ignorespaces Same-pair high-temperature extrapolation}}{S-64}{table.21}%
 \contentsline {table}{\numberline {S22}{\ignorespaces Solvent ranking under the two profiles}}{S-66}{table.22}%
 \contentsline {table}{\numberline {S23}{\ignorespaces Fisher audit of the SLE design}}{S-68}{table.23}%
-\contentsline {table}{\numberline {S24}{\ignorespaces The asymptotic physics penalty per solvent class}}{S-70}{table.24}%
+\contentsline {table}{\numberline {S24}{\ignorespaces The asymptotic physics penalty per solvent class}}{S-71}{table.24}%
 \contentsline {table}{\numberline {S25}{\ignorespaces The asymptotic physics penalty per solute class and novelty stratum}}{S-71}{table.25}%
 \contentsline {table}{\numberline {S26}{\ignorespaces The data-efficiency sweep}}{S-72}{table.26}%
 \contentsline {table}{\numberline {S27}{\ignorespaces The deployed closure against a published evaluation of the same closure, and this paper's own two sets through it. AAD is the mean absolute error in $\ln \gamma ^\infty $, $n$ the number of scored records.}}{S-75}{table.27}%
 \contentsline {table}{\numberline {S28}{\ignorespaces The fixed substituent list behind the Hammett constant}}{S-81}{table.28}%
 \contentsline {table}{\numberline {S29}{\ignorespaces Run families: which runs produced which numbers, and at how many seeds}}{S-84}{table.29}%
-\contentsline {table}{\numberline {S30}{\ignorespaces Data Set S2 in full: the VT-2005-matched set, row by row}}{S-93}{table.30}%
-\contentsline {table}{\numberline {S31}{\ignorespaces Crystal-term decodability per seed, with its nulls}}{S-95}{table.31}%
-\contentsline {table}{\numberline {S32}{\ignorespaces The model's temperature response against the empirical slope}}{S-95}{table.32}%
-\contentsline {table}{\numberline {S33}{\ignorespaces Share of representation variance per organising factor}}{S-95}{table.33}%
+\contentsline {table}{\numberline {S30}{\ignorespaces Solubility accuracy in two blocks that may not be read across: this work on the solute-scaffold split, external models re-run here on an easier by-solute split. Two sample sizes appear where a row's two metric columns are scored on different rows, one where they coincide. The grounded, ungrounded and $\sigma $-oracle arms of the first block come from the five-seed leak-free re-run.}}{S-87}{table.30}%
+\contentsline {table}{\numberline {S31}{\ignorespaces Data Set S2 in full: the VT-2005-matched set, row by row}}{S-94}{table.31}%
+\contentsline {table}{\numberline {S32}{\ignorespaces Crystal-term decodability per seed, with its nulls}}{S-96}{table.32}%
+\contentsline {table}{\numberline {S33}{\ignorespaces The model's temperature response against the empirical slope}}{S-96}{table.33}%
+\contentsline {table}{\numberline {S34}{\ignorespaces Share of representation variance per organising factor}}{S-96}{table.34}%

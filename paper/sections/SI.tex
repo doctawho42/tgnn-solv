@@ -4185,6 +4185,38 @@ cut compounded with the pair collapse does not.
 % mechanics behind Table~\ref{tab:closure-anchor}'s "same set, through this paper's closure" block.
 % The article keeps the published two-database bracket, the fact that the deployed closure lands
 % inside it, and both open limits.
+% TABLE 1 ARRIVED FROM THE ARTICLE, 2026-08-20. It is the accuracy summary; it sits here because
+% in the article it read as a leaderboard with its own disclaimer three pages away, and because ten
+% of its twelve cross-references were already in this document.
+% arithmetic, the printed gutters and how to re-measure them are in the rows file's header; the
+% five-column tabular measures 498.75 pt against a 504.47 pt \textwidth, and the LINE it is
+% centred in measures 502.08 pt because the newline after \end{tabular} leaves an interword space
+% behind it, so a widened cell has 2.4 pt and not 5.7 pt before the line overflows -- and an
+% over-wide tabular in a centred float does NOT reliably raise an Overfull \hbox.
+% ---------------------------------------------------------------------------
+\begin{table*}[tp]
+\centering
+% THE POINTER AT A SUPPORTING-INFORMATION TABLE LEFT THIS CAPTION, 2026-08-10 -- "The published
+% figures, the random-pair rows, and the conversion and saturation clip behind the log10 S column
+% are in Table \ref{tab:si-baselines-full}."  A caption states what is shown.  All three
+% destinations are in the body of \S\ref{sec:discussion} on the same page: the published figures
+% now print there in full with their models, corpora and citations, and the sentence that closes
+% that paragraph names the sweep, the random-pair rows and the conversion.  Do not restore a
+% cross-reference here; if a destination is ever needed again it goes in the body sentence.
+% NO NUMERAL MAY ENTER THIS CAPTION.  It is one of the nine displays
+% scripts/analysis/check_hand_transcribed_displays.py binds to artifacts, and a numeral that is
+% neither bound nor declared there is a fatal UNREGISTERED finding.
+\caption{Solubility accuracy in two blocks that may not be read across: this work on the
+solute-scaffold split, external models re-run here on an easier by-solute split. Two sample sizes
+appear where a row's two metric columns are scored on different rows, one where they coincide. The
+grounded, ungrounded and $\sigma$-oracle arms of the first block come from the five-seed leak-free
+re-run.}
+\label{tab:baselines}
+{\footnotesize
+\renewcommand{\arraystretch}{0.95}
+\input{si_tables/external_baselines_rows_article}}
+\end{table*}
+
 \paragraph{Scoring the deployed closure against the published evaluation.} Our differentiable
 COSMO-SAC layer, with its own constants and damped fixed point, was run over the same three record
 files De Souza et al.\ \cite{desouza2025cosmosac} score. Components were resolved through the

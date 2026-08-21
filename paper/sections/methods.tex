@@ -372,6 +372,13 @@ beyond the reach of any $\sigma$-stream build.
 
 \subsection{Model, closure, and training}
 \label{sec:model}
+% ONE SENTENCE CHANGES THE READING REGIME OF THE WHOLE SUBSECTION, 2026-08-20. What follows is an
+% architecture, three closures, a curriculum and a loss, which is the shape of a methods paper's
+% contribution section; none of it is offered as one. Saying so once, first, costs a line.
+What follows specifies the instrument rather than proposing a method. None of the architecture, the
+closures or the training schedule is offered as a contribution, and no result in this paper turns on
+a choice among them; they are described in the detail they are because a measurement of a fixed
+closure's error is only as reproducible as the pipeline it was taken in.
 % ARCHITECTURE DETAIL MOVED TO \S\ref{sec:si-methods}, 2026-08-19, which already carried it in more
 % detail than this paragraph did: hidden width, layer counts, feature dimensions, the readout, the
 % pair representation, the parameter count and the DirectGNN sharing statement all print there.
@@ -611,7 +618,9 @@ that margin, and a verdict of admissible or otherwise. The verdict carries the t
 it. Four analyst
 choices set the binning bound of Lemma~\ref{prop:decomp}(c): the bin count, where the equal-count
 bin edges fall, the within-bin variance convention, and the combinatorial convention. We fix
-all four here, before any margin is reported, and one setting of them, with the row or the molecule
+all four here, before any margin is reported --- a data-set contract in the sense
+\citet{nael2026dataset} argue for, declaring the processing rules, the end point and the split
+before the claim rather than after it --- and one setting of them, with the row or the molecule
 pair as unit, is an \emph{estimator cell}. The map of \S\ref{sec:broad} is what running the procedure on
 this closure returns.
 % RESTORED 2026-08-19.  The SI says twice that this section declares which of the two bounds every
