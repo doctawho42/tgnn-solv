@@ -219,7 +219,7 @@ import subprocess, sys
 _cmd = [sys.executable, "-u", "scripts/kaggle/run_arms.py",
         "--arms", {arms},
         "--seeds", {seeds},
-        "--hours", "11.0", "--device", "cuda", "--num-workers", "2",
+        "--hours", "{hours}", "--device", "cuda", "--num-workers", "2",
         "--out-dir", "/kaggle/working/out/results",
         "--ckpt-dir", "/kaggle/working/out/checkpoints"]
 print(" ".join(_cmd), flush=True)
@@ -255,6 +255,10 @@ def main() -> None:
     ap.add_argument("--arms", nargs="+",
                     default=["grounded_a", "grounded_a_truetrain", "channel_swap"])
     ap.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44, 45, 46])
+    ap.add_argument("--hours", type=float, default=11.0,
+                    help="wall-clock budget for STARTING arms. Kaggle kills at twelve; the runner "
+                         "now refuses to start an arm that will not fit, so this is the budget it "
+                         "measures against. Set it to the quota actually left, not to twelve.")
     a = ap.parse_args()
 
     cells = [
@@ -266,7 +270,7 @@ def main() -> None:
         md("## 5 — carry forward a previous session"), code(RESTORE),
         md(f"## 6 — run\n\n`{' '.join(a.arms)}` × seeds `{a.seeds}` "
            f"= **{len(a.arms) * len(a.seeds)} arms**, roughly 2 h each on a T4."),
-        code(RUN.format(arms=", ".join(repr(x) for x in a.arms),
+        code(RUN.format(hours=a.hours, arms=", ".join(repr(x) for x in a.arms),
                         seeds=", ".join(repr(str(s)) for s in a.seeds))),
         md("## 7 — what came out"), code(SUMMARY),
     ]
