@@ -1039,7 +1039,7 @@ Reference profiles hurt solubility at evaluation (MAE) & labelled test rows ($56
 \addlinespace[3pt]
 Training-time $\sigma$ supervision has \emph{no established sign} (MAE) & labelled test rows, 5 seeds & $2.04\to1.93$ in the seed mean, but the per-seed values overlap and one of the five gains reverses: $0.149/0.122/0.175/-0.017/0.122$. They straddle the co-adapted arm's $+0.09$, so the two operations are not ordered by magnitude either. This is the contrast the pre-committed leak-free re-run was run to settle (\S\ref{sec:data}), and it settles it as unresolved \\
 \addlinespace[3pt]
-The evaluation substitution degrades the \emph{choice} of solvent, not only the level & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 5 seeds & per-solute Spearman $-0.185$ $[-0.269,-0.107]$ pooled, all five per-seed intervals excluding zero; nDCG@3 $-0.071$ $[-0.114,-0.029]$; top-1 $-0.088$ $[-0.172,-0.009]$ pooled only, three of five per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=3.2\times10^{-5}$ over the labelled rows of this row's own set at the worst seed, the same quantity over the full test set, labelled rows and unlabelled together, being larger (\S\ref{sec:si-methods})---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $91\%$ of the \emph{MAE} gap and refitted out of sample returns an interval that holds both all of it and none, and leaves this one untouched either way where the fitted map increases, as it does in $485$ of the $823$ groups in both arms at all five seeds. The substitution falls on the solvent channel \\
+The evaluation substitution degrades the \emph{choice} of solvent, not its level alone & labelled test rows grouped by solute and $T$ ($823$ groups, $107$ solutes), 5 seeds & per-solute Spearman $-0.185$ $[-0.269,-0.107]$ pooled, all five per-seed intervals excluding zero; nDCG@3 $-0.071$ $[-0.114,-0.029]$; top-1 $-0.088$ $[-0.172,-0.009]$ pooled only, three of five per-seed intervals spanning zero. Within-checkpoint---one set of weights, $\max|\Delta\Phi|=3.2\times10^{-5}$ over the labelled rows of this row's own set at the worst seed, the same quantity over the full test set, labelled rows and unlabelled together, being larger (\S\ref{sec:si-methods})---so free of the separate-tuning confound of \S\ref{sec:discussion}, though not of the evaluation-time swap the first row of this block carries; a per-group affine recalibration fitted in sample removes $91\%$ of the \emph{MAE} gap and refitted out of sample returns an interval that holds both all of it and none, and leaves this one untouched either way where the fitted map increases, as it does in $485$ of the $823$ groups in both arms at all five seeds. The substitution falls on the solvent channel \\
 \bottomrule
 \end{tabular}
 }
@@ -4014,7 +4014,8 @@ $\sigma$-grounding arms, GPU, full corpus & $42,43,44,45,46$, mean$\pm$sd on the
 Figs.~\ref{fig:paradox} and~\ref{fig:parity-lnx2}, Table~\ref{tab:si-arms}, the $+0.41$ and $-0.11$
 of \S\ref{sec:paradox} \\
 Co-adaptation and channel-swap oracle controls; gated output residual & $42$ only: a sign, not an
-effect size & the $+0.18$ and $+0.27$ of \S\ref{sec:paradox}; \S\ref{sec:gateb} \\
+effect size & the $+0.18$ and $+0.27$ of \S\ref{sec:si-tables}, which the article does not
+claim; \S\ref{sec:gateb} \\
 Decomposition, VT-2005-matched & none: the closure has no
 learnable parameters & \S\ref{sec:vt2005}; the estimator grids \\
 Decomposition, broad IDAC, with its design and provenance audit & none &
@@ -4301,7 +4302,7 @@ modification times on local copies: the runs read an uploaded data bundle, the o
 on disk was assembled on $2026$-$07$-$13$, after all of these runs, and a local write does not date
 a read. The ordering therefore licenses no build provenance for any arm, and in particular does not
 establish that the two single-seed controls differ in build from their seed-$42$ comparator. The
-$+0.18$ and $+0.27$ of \S\ref{sec:paradox} are accordingly single-seed penalties of uncertified
+$+0.18$ and $+0.27$ of \S\ref{sec:si-tables} are accordingly single-seed penalties of uncertified
 stream provenance, and ``confound-free'' names the test-time input swap they remove and nothing
 about the stream.
 
@@ -4749,7 +4750,8 @@ caption saying so. The reason is the same in each case: the re-run supplies one 
 comparison and not the other. They are the
 Staverman--Guggenheim contrast $1.8457\to1.8788$, whose combinatorial arm is not retrained; the
 channel swap's $+0.27$, a seed-$42$ checkpoint that is not retrained either; and the co-adaptation
-control's $+0.18$ together with the $0.59$ share of \S\ref{sec:paradox}, which move only if the
+control's $+0.18$ together with the $0.59$ share, both of \S\ref{sec:si-tables} and neither
+claimed in the article, which move only if the
 separate five-seed pass above is run. Four passages carry no arm value but state that the $0.20$ is
 uncertified: the disclosure of \S\ref{sec:data}, limitation~(xii) of \S\ref{sec:discussion}, the
 grounding-stream provenance paragraph above, and the Conclusions' \emph{second} sentence

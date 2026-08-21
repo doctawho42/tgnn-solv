@@ -40,6 +40,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PAPER = ROOT / "paper"
 MAIN = "grounding_paradox.tex"
+#: --root points the same instrument at the Supporting Information, which is a separate document
+#: with its own section numbering and had never been measured.
+ROOTS = {"article": "grounding_paradox.tex", "si": "grounding_paradox_si.tex"}
 
 #: environments whose contents are not running prose
 DROP_ENVS = ("equation", "equation*", "align", "align*", "gather", "gather*", "eqnarray",
@@ -184,6 +187,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--rev", default=None, help="measure the file as of a git revision")
+    ap.add_argument("--root", choices=sorted(ROOTS), default="article",
+                    help="which of the two documents to measure")
     ap.add_argument("--long", type=int, default=40)
     ap.add_argument("--min-words", type=int, default=4,
                     help="below this a 'sentence' is a fragment left by a stripped environment")
@@ -192,6 +197,8 @@ def main() -> None:
     ap.add_argument("--only", default=None, help="restrict to section numbers with this prefix")
     a = ap.parse_args()
 
+    global MAIN
+    MAIN = ROOTS[a.root]
     sections = collect(a.rev)
     if a.only:
         sections = [s for s in sections
