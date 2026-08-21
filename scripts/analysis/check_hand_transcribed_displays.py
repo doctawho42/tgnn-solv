@@ -1894,7 +1894,7 @@ LEDGER_DECLARED_ROWS: dict[str, list[DisplayRow]] = {
                    declared=[], owner=_HEADER),
         DisplayRow(key="\\multicolumn{3}{@{}L{\\dimexpr0.95\\linewidth+4\\tabcolsep\\relax}@{}}{\\emph{Closure against inputs on the activit",
                    declared=[], owner=_BLOCK),
-        DisplayRow(key="$\\Bclos>\\Binsuf$ on \\emph{glycol-ether} solvents\\tnk{d,g} & broad IDAC, $182$, $3$ sources & the margin, a low",
+        DisplayRow(key="$\\Bclos>\\Binsuf$ on \\emph{glycol-ether} solvents: the instrument's output, not a claim of this",
                    # +1.25, not +1.26: the deposited interval was under-converged.  At the map's own 3000
                    # draws the endpoint has a Monte-Carlo sd of 0.0195 and ranges [1.209, 1.295]
                    # over forty seeds, so its second decimal was noise.  Converged at 1.2e8 draws

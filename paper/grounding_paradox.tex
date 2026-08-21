@@ -567,8 +567,9 @@ solute, which is the decision the model is used for. Supervising the same networ
 database during training carries no established sign. The operation that fails is the one available
 in practice, because it needs no retraining. Infinite-dilution activity data separate a deployed
 thermodynamic model's own error from what its inputs leave unresolved, and the model's error
-dominates on one solvent chemistry, which a search over strata identifies and no out-of-sample test
-confirms. Where the fixed model is the binding constraint, a more accurate input exposes its
+dominates on one solvent chemistry. A search over strata identifies that cell and no
+out-of-sample test confirms it, so we report it as the instrument's output and not as an
+established effect. Where the fixed model is the binding constraint, a more accurate input exposes its
 misspecification instead of repairing it.
 \end{abstract}
 %</abstract-numerals>
@@ -1266,10 +1267,12 @@ Fifteen have $n\ge40$ and are boundable, which is the condition for the rule to 
 Tables~\ref{tab:map-article} and~\ref{tab:map-article-solute} print all fifteen, and
 \S\ref{sec:si-map} the other $44$, the $24$ carrying no estimate at all included, each with the test
 it fails. Six of the fifteen are \emph{admissible}, and clause~(c) makes those six three distinct
-row sets, of which one is both positive and left in place by its residual test. \textbf{The glycol-ether
-solvents are the one row set the admissibility rule leaves standing}, at a margin a chemistry-blind
-relabelling of the same molecules reaches in $10.1\%$ of draws (below). Its clusters are few and its
-chemistry narrow, and both belong in the sentence that states it. It is $182$ rows over $43$ pairs,
+row sets, of which one is both positive and left in place by its residual test. \textbf{The
+glycol-ether solvents are the one row set the rule leaves standing, and we report that as the
+instrument's output rather than as a finding of this work.} A chemistry-blind relabelling of the
+same molecules reaches its margin in $10.1\%$ of draws (below), which is the frequency at which the
+search would produce it on chemistry that carries no signal. Its clusters are few and its chemistry
+narrow, and both belong in the sentence that states it. It is $182$ rows over $43$ pairs,
 carrying $45\%$ of the set's squared error. The solvents are $4$ glycols of one homologous series,
 the solutes $19$, every one a hydrocarbon or a halobenzene, and two of three publications carry
 $177$ of the rows. % BOTH BOUNDS, WHEREVER THE HEADLINE MARGIN PRINTS, 2026-08-19.  The abstract carried the
@@ -1432,13 +1435,15 @@ description and not as a test (Table~\ref{tab:oos-map}), every class either fail
 the two terms merged. Every margin above the one admitted positive class sits on a class the rule
 refuses: out of sample the glycol ethers sit away from where this closure errs hardest.
 
-The glycol-ether row set is the whole of the uniqueness and the whole of the separation this paper
-reports. Reading it as ``COSMO-SAC error exceeds input error'' would carry it past five boundaries,
-each measured here. They are the map's
-other strata; both data sets taken whole; the solubility axis of \S\ref{sec:paradox}, where the two
-terms stay merged; the kernel as against the composite it is deployed in; and the chemistry-blind
-null. The margin sits at the ninetieth percentile of that null, on the one chemistry for which
-out-of-sample rows are missing.
+The glycol-ether row set is the whole of what the instrument returned, and this work does not
+advance it as an established chemical effect. Reading it as ``COSMO-SAC error exceeds input error''
+would carry it past five boundaries, each measured here. They are the map's other strata; both data
+sets taken whole; the solubility axis of \S\ref{sec:paradox}, where the two terms stay merged; the
+kernel as against the composite it is deployed in; and the chemistry-blind null. The margin sits at
+the ninetieth percentile of that null, on the one chemistry for which out-of-sample rows are
+missing. What the second axis establishes is therefore the instrument and its map, and not this
+cell: a procedure that refuses fifty-eight strata of fifty-nine, and returns for the fifty-ninth a
+number it cannot separate from its own search.
 
 
 \emph{What the other fifty-eight strata are.} They are the rule refusing to answer, and the
@@ -1874,8 +1879,8 @@ the shape of the finding actually claimed sits at chance (\S\ref{sec:broad}), an
 out-of-sample test on the PGL set returned \emph{not testable}. A second pre-declared test, on $95$
 ThermoML rows the search never saw, does return a positive margin at about half the in-sample size
 (\S\ref{sec:broad}). It rests on one source publication, so it settles the sign without meeting
-this rule's own stability clause. We therefore state the finding at the level the
-instrument licenses on its own rows and \emph{not} as a multiplicity-controlled chemical effect, and
+this rule's own stability clause. We therefore do not advance that cell as a chemical result at all. It is reported as what the
+instrument returned on its own rows, and
 the same holds a fortiori for every cell the map reports and leaves unstated. With $\Binsuf$ bounded
 from above alone, every cell is also silent on whether better inputs would help there, so the map's
 one action is to withhold a chemistry from an allocation of grounding effort.
