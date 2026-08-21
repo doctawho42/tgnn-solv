@@ -1,0 +1,89 @@
+{
+  "what": "segment-iteration count swept through the estimator on TABULATED UD profiles",
+  "counts": [
+    8,
+    16,
+    30,
+    300
+  ],
+  "n_rows": 477,
+  "n_glycol": 182,
+  "cell": {
+    "bins": 8,
+    "ddof": 1,
+    "unit": "row",
+    "convention": "residual-only"
+  },
+  "by_count": [
+    {
+      "n_iter": 8,
+      "set": {
+        "n": 477,
+        "mse": 2.0145,
+        "b_insuff_up": 0.6865,
+        "margin": 0.6415
+      },
+      "glycol": {
+        "n": 182,
+        "mse": 2.5411,
+        "b_insuff_up": 0.107,
+        "margin": 2.3271
+      }
+    },
+    {
+      "n_iter": 16,
+      "set": {
+        "n": 477,
+        "mse": 1.949,
+        "b_insuff_up": 0.6898,
+        "margin": 0.5693
+      },
+      "glycol": {
+        "n": 182,
+        "mse": 2.3474,
+        "b_insuff_up": 0.1063,
+        "margin": 2.1348
+      }
+    },
+    {
+      "n_iter": 30,
+      "set": {
+        "n": 477,
+        "mse": 1.9132,
+        "b_insuff_up": 0.6962,
+        "margin": 0.5209
+      },
+      "glycol": {
+        "n": 182,
+        "mse": 2.2658,
+        "b_insuff_up": 0.1072,
+        "margin": 2.0513
+      }
+    },
+    {
+      "n_iter": 300,
+      "set": {
+        "n": 477,
+        "mse": 1.9018,
+        "b_insuff_up": 0.6966,
+        "margin": 0.5086
+      },
+      "glycol": {
+        "n": 182,
+        "mse": 2.2518,
+        "b_insuff_up": 0.1077,
+        "margin": 2.0364
+      }
+    }
+  ],
+  "margin_span": {
+    "set": [
+      0.5086,
+      0.6415
+    ],
+    "glycol": [
+      2.0364,
+      2.3271
+    ]
+  }
+}

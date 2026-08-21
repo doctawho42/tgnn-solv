@@ -220,10 +220,26 @@ here train at $16$ segment iterations and are scored at $30$.
 % never fitted against -- is unaffected and is the point.
 We chose sixteen against a
 convergence regression test on hand-built Gaussian $\sigma$-profiles, where the $16$-against-$30$
-gap is $6\times10^{-5}$. Hand-built profiles are the whole of that test's input, so agreement
-between the two counts on these arms stands unshown, and a checkpoint fitted at a different count is scored
-through an operator it was never fitted against. The exposure that carries to the substitution
-contrast is unmeasured. A second, independent truncation sits outside it: the SLE fixed point in
+gap is $6\times10^{-5}$. Hand-built profiles are the whole of that test's input, so agreement between the two counts on
+these arms stands unshown, and a checkpoint fitted at a different count is scored through an
+operator it was never fitted against.
+
+On tabulated profiles that exposure is measurable without a checkpoint, and we measure it. Sweeping
+the count through the estimator itself on the broad IDAC set's UD profiles, at the cell of
+\S\ref{sec:estimator}, moves the set's margin from $+0.64$ at eight iterations to $+0.57$ at
+sixteen, $+0.52$ at thirty and $+0.51$ at three hundred, and the glycol-ether stratum's from
+$+2.33$ to $+2.13$, $+2.05$ and $+2.04$. The sign never changes and the widest excursion over the
+whole range is $0.29$. Two things follow. The decomposition carries no exposure at all, because it
+is computed at three hundred iterations, which the sweep reproduces to the deposited value. And at
+the count the arms are \emph{scored} at, thirty, the tabulated closure sits $0.0024$ from converged
+in median $\lvert\Delta\lng\rvert$ and $0.039$ at its worst row, where eight sits at $0.051$ and
+$0.80$ -- so the retired head's movement with the count is a property of eight, not of thirty.
+
+What stays unmeasured is the learned side. The $\sigma$-oracle arm's closure input is the
+tabulation and is covered above; the learned arm's profiles are a softmax against a table whose
+bins are $57\%$ exactly zero, and no retained checkpoint carries them. The substitution contrast on
+the solubility axis therefore keeps one unbounded component, and every margin this paper reports on
+that axis is conditional on the evaluation count it is read at. A second, independent truncation sits outside it: the SLE fixed point in
 $x_2$, run to a different count in training than in scoring. That second one is the one a
 deposit can re-solve, and the NRTL arm moves by $+0.0025$ in seed-mean MAE at its training count and a further
 $+0.017$ to convergence on the outer loop. That figure prices the outer loop rather than the segment one.
