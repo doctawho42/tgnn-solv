@@ -527,9 +527,17 @@ The size of the repair depends on which of the readout's three numbers carries t
 these arms it is the profile. With the two roles agreeing on the shape the residual bracket is identically
 zero whatever the areas, so on a self-pair the profile disagreement is the whole of the violation.
 \S\ref{sec:si-methods} prices a mismatch on the area and on the volume, and gives how far the
-deployed arms' areas sit from the tabulated ones. The substitution overwrites both roles at
-once and therefore closes that gap as well. That is a second thing it changes besides the profile
-values, and we leave the two unseparated; tying the roles is the repair, and it is a retraining.
+deployed arms' areas sit from the tabulated ones. The substitution overwrites both roles at once and therefore closes that gap as well, which would
+be a second thing it changes besides the profile values. On the rows we score it changes nothing,
+and the reason is structural rather than empirical. The residual term takes the solute's
+pure-component reference from the solute-role profile itself, so on a pair of distinct molecules
+each is read in exactly one role and no role discrepancy enters the bracket; only a self-pair puts
+one molecule in both positions. No scored row is one. Counted on canonical SMILES, the labelled and
+unlabelled test rows, the validation split and both activity sets contain no self-pair at all, and
+the single instance anywhere in the corpus is a water-in-water row of an auxiliary stream, which
+carries no solubility label and is never scored. The substitution therefore changes the profile
+values alone on every row this paper reports, and tying the roles remains the repair for the
+identity itself, which is a retraining.
 We match solute and solvent independently. The substitution replaces those two profiles and stops there,
 the crystal head reading a solute-only embedding it leaves untouched. The bounded
 correction does read the closure's own parameters, so the crystal values the solver finally receives
