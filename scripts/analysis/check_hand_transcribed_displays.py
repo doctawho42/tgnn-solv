@@ -1619,6 +1619,14 @@ PROSE_BINDS: list[tuple[str, str, str]] = [
     ("the control's log10 S RMSE in the same sentence",
      r"\$\\log_\{10\}S\$ RMSE \$([\d.]+)\$ on held-out scaffolds",
      "logS_directgnn"),
+    # THE STANDING STRATUM'S DECOMPOSITION, added 2026-08-20 when its MSE and bound moved into the
+    # article beside the margin they produce. Three numerals in running prose, which is the position
+    # every stale value in this manuscript was found in, and the arithmetic between them is
+    # checkable: margin = MSE - 2*Binsuff, and Bclos_lb = MSE - Binsuff.
+    ("the glycol-ether stratum's own error and input bound, beside its margin",
+     r"the closure scores \$\\mathrm\{MSE\}=([\d.]+)\$ against an input-insufficiency bound of\s+"
+     r"\$\\Binsuf\\lesssim([\d.]+)\$, hence \$\\Bclos\\gtrsim([\d.]+)\$",
+     "glycol_decomposition"),
 ]
 
 
@@ -1654,6 +1662,21 @@ def _prose_truth(key: str, ctx: Ctx) -> tuple[str, ...]:
         # "its physics arms", and DirectGNN is the control it is compared against.
         arms = [m["nrtl"], m["grounded_a"], m["oracle"]]
         return (fmt(min(arms), 2), fmt(max(arms), 2))
+    if key == "glycol_decomposition":
+        import csv as _csv
+        rows = list(_csv.DictReader(
+            (REPO / "results/b_insuff/stratified_map_table.csv").open()))
+        # NAMED, NOT GUESSED: the solvent-class axis at the headline cell, which is the row the
+        # article's sentence is about. Three axes carry this stratum with identical numbers; the
+        # selector takes the one the sentence names rather than the first that matches on n.
+        hit = [r for r in rows if r["set"] == "broad_477" and r["axis"] == "solvent_class"
+               and r["stratum"] == "glycol_ether" and r["unit"] == "row"
+               and r["convention"] == "res"]
+        if len(hit) != 1:
+            raise KeyError(f"expected exactly one glycol_ether solvent_class row, got {len(hit)}")
+        r = hit[0]
+        return (fmt(float(r["mse"]), 2), fmt(float(r["b_insuff_up"]), 2),
+                fmt(float(r["b_closure_lb"]), 2))
     if key == "logS_directgnn":
         return (fmt(m["directgnn"], 2),)
     raise KeyError(key)
