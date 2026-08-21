@@ -49,8 +49,20 @@ EXPECTED_ROWS_MIN = 8000
 #: 30+70+10 epochs configs/cosmo_sac.yaml asks for -- and its checkpoint came back at phase 2,
 #: epoch 39. Twelve hours bought 63% of one arm. At a larger batch this falls and the number here
 #: should be re-measured rather than argued down.
-ARM_HOURS_ASSUMED = 19.0
+#: WHAT AN ARM COSTS BEFORE THIS RUN HAS TIMED ONE. Sourced from the ten checkpoint manifests of
+#: the deposited leak-free family (checkpoints/e5_leakfree/*.manifest.json, created_at deltas on a
+#: GCP GPU): ungrounded arms land ~0.4 h apart and grounded ones 1.2-6.2 h, the larger gaps
+#: including idle. Six hours is the top of that range, and a T4 is slower than the card those ran
+#: on, so it is a ceiling and not an estimate.
+#: THIS CONSTANT WAS 19.0 AND THAT NUMBER WAS NEVER MEASURED. It came from a lost Kaggle session
+#: and survived the day the manifests refuted it, because the retraction was written down and the
+#: constant was not. At 19.0 the guard refused to start any arm at all inside a 12 h session --
+#: a check meant to prevent a hard kill instead prevented the work.
+ARM_HOURS_ASSUMED = 6.0
+#: Applied to the median of arms this run has already timed. Wider while that median rests on one
+#: or two observations, because a single arm is not a distribution.
 ARM_TIME_MARGIN = 1.25
+ARM_TIME_MARGIN_SMALL = 1.5
 
 
 def rows(path: Path) -> int:
@@ -191,18 +203,26 @@ def main() -> None:
             # cost -- channel_swap has no sigma warm-up -- so the estimate is the median of the
             # arms already timed, times a margin, and falls back to a conservative constant until
             # three have been timed.
+            # USE EVIDENCE AS SOON AS THERE IS ANY. Waiting for three timed arms means the
+            # blunt fallback governs the whole of a short session, which is how a 12 h session
+            # can finish with nothing started. One timed arm is worth more than the ceiling.
             timed = [e["hours"] for e in log if e.get("ok") and e.get("hours")]
-            need = (statistics.median(timed) * ARM_TIME_MARGIN if len(timed) >= 3
-                    else ARM_HOURS_ASSUMED)
+            if timed:
+                margin = ARM_TIME_MARGIN if len(timed) >= 3 else ARM_TIME_MARGIN_SMALL
+                need = statistics.median(timed) * margin
+            else:
+                need = ARM_HOURS_ASSUMED
             left = (deadline - time.time()) / 3600
             if left < need:
                 print(f"\n== stopping before seed {seed} arm {arm}: {left:.2f} h left and an arm "
                       f"needs about {need:.2f} h "
-                      f"({'median of ' + str(len(timed)) + ' timed' if len(timed) >= 3 else 'assumed'}).")
+                      f"({'median of ' + str(len(timed)) + ' timed' if timed else 'assumed'}).")
                 print("   Save /kaggle/working/out as a dataset and run the same command again;")
                 print("   finished arms are skipped, so the next session resumes here.")
                 break
-            print(f"\n{'=' * 70}\n== seed {seed} arm {arm}  ({left / 3600:.2f} h left)\n{'=' * 70}",
+            # `left` is in HOURS since the fit-check rewrite; this line still divided it by 3600
+            # and printed "0.00 h left" beside every arm it started.
+            print(f"\n{'=' * 70}\n== seed {seed} arm {arm}  ({left:.2f} h left)\n{'=' * 70}",
                   flush=True)
             t0 = time.time()
             r = subprocess.run(["bash", "scripts/experiments/run_e5_sigma_grounding.sh"],
