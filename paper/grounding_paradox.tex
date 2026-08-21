@@ -2023,9 +2023,10 @@ split files; the two VT-2005-matched audit artifacts disagree on one out-of-fold
 % the identical schedule.  It does NOT touch any number already reported -- those arms' weights,
 % per-row predictions and manifests are all deposited -- it bounds what can be ADDED to them.
 The fourth is that the $\sigma$-stream those runs consumed is recorded by digest in every
-checkpoint manifest and was not itself retained. Rebuilding it from the recorded parameters reproduces the pool exactly,
-the same $1319$ molecules with bit-equal profiles, and the train/validation split sizes exactly,
-but no retained file settles the assignment between them. Every number reported here was measured
+checkpoint manifest and was not itself retained. Rebuilding it from the recorded parameters reproduces the pool exactly, the same $1319$ molecules
+with bit-equal profiles, and the train/validation split sizes exactly, but no retained file settles
+the assignment between them. That comparison is itself deposited, digest by digest, and
+regenerates from the released code. Every number reported here was measured
 on arms whose weights, predictions and manifests are deposited; what the loss bounds is what can be
 added to them, since the validation half early-stops the $\sigma$ warm-up. Two further defects are
 repaired rather than disclosed, each described where its numbers are printed. We re-scored the two
