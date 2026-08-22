@@ -411,3 +411,19 @@
         1525 / 212. The sentence paired one population's row count with another's solute and solvent
         counts under a third's attribution, and now gives BigSolDB's own 108,287 / 1525 / 212 and
         then the modelled corpus's 127,930 / 20,766 / 228.
+
+1279    The fusion-supervision count was measured on the split rebuilt out from under it on
+        2026-06-19: that tree's train half carried 111,035 rows against this one's 111,724, so
+        "1279 training rows across 31 solutes" described a row set the paper is not measured on.
+        Recounted on the split of record (2026-08-23, SI Sec. S5): 1261 rows across 30 solutes,
+        none at all in validation, 18 rows on one solute in test. The claim the sentence makes --
+        that direct dH_fus supervision is too sparse to pin the crystal term -- is unchanged; only
+        its arithmetic now belongs to the split it is quoted on.
+
+4e-6    The lower end of the frozen-intermediate interval in SI Sec. S5, and it excluded one of the
+        five quantities the same sentence enumerates. On the 3343 test rows the deposit
+        (results/temperature_extrapolation_failure_diagnostics/tgnn_internal_summary.json) gives
+        tau_12 4.83e-5, alpha 4.27e-6, ln gamma_2 2.87e-4, the gate 5.38e-4 and the correction
+        magnitude 1.03e-6 -- so the true floor is the correction magnitude's, not alpha's. The
+        interval now reads 1e-6 to 6e-4, which strengthens the paragraph's point rather than
+        softening it: the outputs are more frozen than the sentence claimed.

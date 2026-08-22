@@ -3546,8 +3546,13 @@ of \S\ref{sec:surrogate} therefore has a live crystal-side explanation alongside
 activity-kernel one, and nothing here separates them. Settling it means retraining the grounded and
 $\sigma$-oracle arms at nonzero $\Delta C_p$; the configuration field exists and the run was not
 made.
+% RECOUNTED 2026-08-23 on the split of record.  What stood here -- 1279 rows across 31 solutes --
+% was measured on the split rebuilt out from under it on 2026-06-19 (that tree's train half carried
+% 111035 rows against this one's 111724), so the counts described a row set the paper is not
+% measured on.  Recount, do not carry, if the split is regenerated again.
 \paragraph{Fusion-supervision scarcity.} Direct $\dHfus$ labels are extremely sparse:
-$1279$ training rows across $31$ solutes, and essentially none in validation or test.
+$1261$ training rows across $30$ solutes, none at all in validation, and $18$ rows on a
+single solute in test.
 This is the quantitative basis of the identifiability argument---there is almost no
 signal with which to pin the crystal term from data.
 \paragraph{The NRTL branch trains (a trainability check).} The asymptotic physics penalty is not an
@@ -3582,7 +3587,7 @@ predicts, statistically, a constant: prediction standard deviation $0.58$ agains
 measured $2.56$, and an MAE of $1.95$ against $2.00$ for the best global constant and
 $1.46$ for the per-pair constant already in Table~\ref{tab:si-temp}. Its activity and
 correction outputs never left initialisation---$\lng$, $\tau_{12}$, $\alpha$, the gate
-and the correction magnitude have standard deviations between $4\times10^{-6}$ and
+and the correction magnitude have standard deviations between $1\times10^{-6}$ and
 $6\times10^{-4}$ over the test rows---and it was trained at a one-epoch first phase, on
 the pre-repair crystal labels of the corrupted-twin paragraph above. What it measures is the trainability of the
 bottleneck at that budget, not the temperature behaviour of a trained physics path, so no

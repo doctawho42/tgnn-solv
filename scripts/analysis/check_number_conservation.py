@@ -1115,25 +1115,54 @@ def load_allowlist(path: Path | None) -> dict[tuple[str, bool], str]:
     if not path.exists():
         raise SystemExit(f"allowlist not found: {path}")
     entries: dict[tuple[str, bool], str] = {}
+    # INDENTED LINES CONTINUE THE PREVIOUS REASON, added 2026-08-23. The file has been written that
+    # way since it was started -- an entry is "<number><space><reason>" at column 0, and the reason
+    # wraps onto indented lines -- but the parser read every non-blank line as a fresh entry. It
+    # survived only by luck: most continuation lines happen to open with a digit ("80 compounds",
+    # "200 iterations") and so parsed as retirements of 80 and 200, silently retiring numbers nobody
+    # retired. The first one that opened with a word ("single departure 1.7e-3") made the whole file
+    # unloadable, so every run passing --allowlist exited 2 and no deliberate retirement could be
+    # recorded at all. Reasons are prose; prose wraps.
+    last_key: tuple[str, bool] | None = None
+    in_block = False          # the previous meaningful line was an entry or its continuation
     for lineno, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         line = raw.strip()
         if not line or line.startswith("#"):
+            in_block = False
+            continue
+        if raw[:1].isspace():
+            if last_key is None:
+                raise SystemExit(f"{path}:{lineno}: indented continuation before any entry")
+            entries[last_key] = f"{entries[last_key]} {line}"
+            in_block = True
             continue
         parts = line.split(None, 1)
         token = parts[0]
         reason = parts[1].strip() if len(parts) > 1 else ""
         if not reason:
-            raise SystemExit(
-                f"{path}:{lineno}: entry '{token}' has no reason. Every retired "
-                f"number needs a one-line reason on the same line.")
+            # A RUN OF NUMBERS SHARING ONE REASON typed across their rows -- six of the ranking
+            # intervals are retired that way, and the last of them carries no text of its own
+            # because the sentence ended on the row above. Inherit only inside an unbroken block:
+            # a lone number with nothing above it is still the error the docstring promises.
+            if not (in_block and last_key is not None):
+                raise SystemExit(
+                    f"{path}:{lineno}: entry '{token}' has no reason. Every retired "
+                    f"number needs a reason, on its own line or in the block it joins.")
+            reason = entries[last_key]
         percent = token.endswith("%")
         body = token[:-1] if percent else token
         body = body.replace("−", "-")
+        # THOUSANDS SEPARATORS, which the docstring already invites by saying to write the number
+        # "the same way the manuscript printed it": the manuscript prints 15,665 and 108{,}287.
+        # Decimal rejects both, so a correctly-written entry was an unparseable file.
+        body = body.replace("{,}", "").replace(",", "").replace(" ", "")
         try:
             dec = Decimal(body)
         except InvalidOperation:
             raise SystemExit(f"{path}:{lineno}: '{token}' is not a number")
-        entries[(_canon(dec), percent)] = reason
+        last_key = (_canon(dec), percent)
+        entries[last_key] = reason
+        in_block = True
     return entries
 
 

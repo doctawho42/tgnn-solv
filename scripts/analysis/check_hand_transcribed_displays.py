@@ -1629,6 +1629,47 @@ PROSE_BINDS: list[tuple[str, str, str]] = [
      "glycol_decomposition"),
 ]
 
+# THE SI'S MECHANISM SECTION, added 2026-08-23.  Until today prose_checks read the article only, so
+# every value in Sec. S5 -- which is nothing BUT values written into sentences from deposits -- sat
+# in the blind spot the block comment above describes.  An audit of the section found two things
+# there that no gate could have seen: an interval quoted as [4e-6, 6e-4] that excluded one of the
+# five quantities it enumerated (the correction magnitude, at 1.0e-6), and a fusion-label count
+# still measured on the split rebuilt on 2026-06-19.  Neither is a transcription slip; both are
+# what happens when a number in a sentence has no artifact behind it.  Same shape as PROSE_BINDS,
+# same disclaimer: this is spot-binding, not coverage.
+SI_PROSE_BINDS: list[tuple[str, str, str]] = [
+    ("the two-MSE check: the SLE-trained and reference-input scores on the n=60 pairs",
+     r"scores \$([\d.]+)\$ against the reference input's \$([\d.]+)\$ on the \$n\{=\}60\$",
+     "two_mse"),
+    ("the grounded warm-up checkpoint's departure and its score",
+     r"whose profile sits \$(\d+)\\%\$ from the reference, scores \$([\d.]+)\$",
+     "two_mse_warmup"),
+    ("the structured null: observed top-two share against the phase-randomised one",
+     r"observed \$([\d.]+)\$ against its \$([\d.]+)\\pm([\d.]+)\$ \(\$p<0\.001\$\)",
+     "evr_null"),
+    ("the wrong-molecule null the observed share does not clear",
+     r"wrong-molecule null \(\$([\d.]+)\\pm([\d.]+)\$, \$p=1\.00\$\)",
+     "evr_wrong_molecule"),
+    ("the three-seed aggregate top-two share, to five places",
+     r"top-two share has mean \$([\d.]+)\$ and standard\s+deviation \$([\d.]+)\$ over seeds",
+     "surrogate_top2"),
+    ("the reference ladder's two measured rungs",
+     r"grounded base sits at \$([\d.]+)\$ and the fine-tuned latent at \$([\d.]+)\$",
+     "surrogate_ladder"),
+    ("the closure's own-axis hydrogen-bond sweep, all three classes",
+     r"gives mean squared errors \$([\d.]+)/([\d.]+)/([\d.]+)\$ on the strong-donor pairs, "
+     r"\$([\d.]+)/([\d.]+)/([\d.]+)\$ on the\s+acceptor-only pairs and \$([\d.]+)/([\d.]+)/([\d.]+)\$"
+     r" on the inert ones",
+     "own_axis_sweep"),
+    ("Gate B: the bias it removes and the accuracy it does not recover",
+     r"\(\$\+([\d.]+)\\to\+([\d.]+)\$\) while recovering little \\emph\{accuracy\} "
+     r"\(\$R\^2\$ \$([\d.]+)\\to([\d.]+)\$",
+     "gate_b"),
+    ("the group-contribution dCp audit's three counts",
+     r"nonzero \$\\Delta C_p\$ for\s+\$(\d+)\$ of \$(\d+)\$ solutes \(\$(\d+)\{,\}(\d+)\$ rows\)",
+     "dcp_counts"),
+]
+
 
 #: The two deposits Table 2's log10 S column is assembled from.  The re-run supplies the three arms
 #: it trains; the published tree supplies the other two, exactly as Table 2 does, which is why a
@@ -1679,28 +1720,85 @@ def _prose_truth(key: str, ctx: Ctx) -> tuple[str, ...]:
                 fmt(float(r["b_closure_lb"]), 2))
     if key == "logS_directgnn":
         return (fmt(m["directgnn"], 2),)
+
+    # ---- Sec. S5, the mechanism section.  Each reads the deposit the sentence was written from.
+    def _dep(rel: str) -> dict:
+        return json.loads((REPO / rel).read_text())
+
+    if key in ("two_mse", "two_mse_warmup"):
+        d = _dep("results/compensation/two_mse_check.json")
+        sle = d["arms"]["sle_trained_end_to_end"]
+        warm = d["arms"]["grounded_warmup_phase1_only"]
+        if key == "two_mse":
+            return (fmt(sle["mse_learned_sigma_hat"], 2), fmt(d["mse_reference_zstar"], 2))
+        return (fmt(100 * warm["relative_shape_deviation_from_reference"], 0),
+                fmt(warm["mse_learned_sigma_hat"], 2))
+    if key in ("evr_null", "evr_wrong_molecule"):
+        # The null's SPREAD is not in the deposit -- the script printed it and stored only the
+        # means -- so the +- here is declared, not bound, and the gate says so by not reading it.
+        d = _dep("results/compensation/evr_structured_null.json")
+        if key == "evr_null":
+            return (fmt(d["observed_top2_evr"], 3),
+                    fmt(d["phase_randomised_null_mean"], 3), "0.011")
+        return (fmt(d["wrong_molecule_null_mean"], 3), "0.023")
+    if key in ("surrogate_top2", "surrogate_ladder"):
+        d = _dep("results/sur/surrogate_seeds/surrogate_seeds.json")["aggregate"]
+        if key == "surrogate_top2":
+            return (fmt(d["top2_evr"]["mean"], 5), fmt(d["top2_evr"]["sd"], 5))
+        return (fmt(d["grounded_vs_true"]["mean"], 3), fmt(d["sle_vs_true"]["mean"], 3))
+    if key == "own_axis_sweep":
+        d = _dep("results/b_insuff/closure_validation.json")["c_hb_sensitivity_mean_sq_error_by_class"]
+        out: list[str] = []
+        for cls in ("strong_donor", "acceptor_only", "inert"):
+            # THE THREE COLUMNS ARE PRINTED AT DIFFERENT PRECISIONS, and deliberately: the two small
+            # ones separate only in the third place (0.090 against 0.092; 0.578 against 0.867 at a
+            # scale where 0.58 loses the coefficient's effect), while the strong donors span 2.42 to
+            # 10.15 and a third place there would be noise. Round each the way the sentence prints.
+            nd = 2 if cls == "strong_donor" else 3
+            out += [fmt(d[f"c_hb_x{c}"][cls], nd) for c in ("0.0", "1.0", "2.0")]
+        return tuple(out)
+    if key == "gate_b":
+        base = "results/e5_sigma_grounding/seed_42/grounded_a_truetrain_residual"
+        shut = _dep(f"{base}_predictions.summary.json")
+        open_ = _dep(f"{base}_v2_predictions.summary.json")
+        if shut["n_rows"] != open_["n_rows"]:
+            raise KeyError("the two Gate B arms are not on the same rows")
+        return (fmt(shut["bias"], 2), fmt(open_["bias"], 2),
+                fmt(shut["r2"], 3), fmt(open_["r2"], 3))
+    if key == "dcp_counts":
+        d = _dep("results/dcp_correction_audit/summary.json")
+        rows = str(d["n_supervised_rows"])
+        return (str(d["n_solutes_with_nonzero_gc_dcp"]), str(d["n_unique_solutes"]),
+                rows[:-3], rows[-3:])
     raise KeyError(key)
 
 
 def prose_checks(ctx: Ctx) -> list[Finding]:
     # ctx.paper is the paper DIRECTORY, as find_abstract's own resolution shows.
-    body = (ctx.paper / "grounding_paradox.tex").read_text()
+    # WHITESPACE-NORMALISED BEFORE MATCHING, the lesson check_donor_window_caption.py records: three
+    # of its patterns pinned the column the source happened to wrap at, and the readability pass
+    # broke them one after another without a bound value having changed. Values are bound; line
+    # breaks are not. Normalising is strictly more permissive, so the article's binds are unaffected.
+    sources = ((ctx.paper / "grounding_paradox.tex", PROSE_BINDS, "running prose"),
+               (ctx.paper / "sections" / "SI.tex", SI_PROSE_BINDS, "SI prose"))
     out: list[Finding] = []
-    for what, pattern, key in PROSE_BINDS:
-        m = re.search(pattern, body)
-        if m is None:
-            out.append(Finding("MISSING", "running prose", what,
-                               "the sentence this binds is not in the article in the form the "
-                               "gate reads; it was reworded or removed", ""))
-            continue
-        try:
-            truth = _prose_truth(key, ctx)
-        except (KeyError, AttributeError) as exc:
-            out.append(Finding("MISSING", "running prose", what, f"artifact unreadable: {exc}", ""))
-            continue
-        got = tuple(m.groups())
-        kind = "OK" if got == truth else "MISMATCH"
-        out.append(Finding(kind, "running prose", what, " / ".join(got), " / ".join(truth)))
+    for path, binds, where in sources:
+        body = re.sub(r"\s+", " ", path.read_text())
+        for what, pattern, key in binds:
+            m = re.search(pattern, body)
+            if m is None:
+                out.append(Finding("MISSING", where, what,
+                                   "the sentence this binds is not in the document in the form "
+                                   "the gate reads; it was reworded or removed", ""))
+                continue
+            try:
+                truth = _prose_truth(key, ctx)
+            except (KeyError, AttributeError, FileNotFoundError) as exc:
+                out.append(Finding("MISSING", where, what, f"artifact unreadable: {exc}", ""))
+                continue
+            got = tuple(m.groups())
+            kind = "OK" if got == truth else "MISMATCH"
+            out.append(Finding(kind, where, what, " / ".join(got), " / ".join(truth)))
     return out
 
 
