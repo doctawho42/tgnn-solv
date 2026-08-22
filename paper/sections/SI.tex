@@ -1168,8 +1168,8 @@ demoted by its residual test---the glycol ethers, the one row set the rule leave
 \subsection{The scored row set, why it is not arm-dependent, and the per-arm table}
 \label{sec:si-lock}
 Every accuracy number of \S\ref{sec:paradox} is on $5608$ rows, and the scaffold partition gives
-$8103$ test rows. The $2495$-row difference decomposes with no remainder, identically at all three
-seeds: $0$ rows are lost to duplicate (solute, solvent, $T$) keys---there are none---and $2495$
+$8103$ test rows. The $2495$-row difference decomposes with no remainder, identically at every seed of both
+families: $0$ rows are lost to duplicate (solute, solvent, $T$) keys---there are none---and $2495$
 carry no solubility flag, a melting point and no solubility measurement, with the
 \lnx\ field a placeholder zero. All $2495$ carry a melting point; none is a self-solvation row; they
 are unscorable for solubility in every arm, the control included.
@@ -1177,13 +1177,14 @@ are unscorable for solubility in every arm, the control included.
 The clause that could have made this arm-dependent removes nothing. The code that builds the set
 intersects, over arms, the rows that
 are both labelled and finite in that arm's \lnx\ prediction, and the second half of that conjunction
-is outcome-dependent by construction. Audited over all twenty-two per-row prediction files in the
-deposit---the five intersecting arms and the $\sigma$-oracle at each of the three seeds, plus the two
-co-adaptation controls and the two output-residual arms at seed $42$---the count of non-finite \lnx\
+is outcome-dependent by construction. Audited over all thirty-seven per-row prediction files in the deposit---twenty-two of the
+published family, being the five intersecting arms and the $\sigma$-oracle at each of its three
+seeds plus the two co-adaptation controls and the two output-residual arms at seed $42$, and fifteen
+of the leak-free re-run, being its three arms at each of five---the count of non-finite \lnx\
 predictions is $0$ in every file, over every row that file carries and not merely the labelled ones.
-All twenty-two are full length, covering all $8103$ test rows and each carrying exactly
-$5608$ labelled ones. (Twenty-one were full length as first deposited; the seed-$44$
-$\sigma$-oracle file was repaired, and the repair is audited below.) The five intersecting arms'
+All thirty-seven are full length, covering all $8103$ test rows and each carrying exactly $5608$
+labelled ones. (Twenty-one of the published family's twenty-two were full length as first deposited;
+the seed-$44$ $\sigma$-oracle file was repaired, and the repair is audited below.) The five intersecting arms'
 labelled row sets are moreover identical as sets, not merely equal
 in size. Dropping the finiteness clause outright
 therefore returns the same $5608$ rows, so no arm's failures are removed from any arm's score and
@@ -1339,9 +1340,11 @@ claimed in the article, they carry no row in Table~\ref{tab:claims}, and no quan
 anywhere rests on them. What follows prices the illustration, not the paradox.
 Training-time injection (MAE $1.98$) and the channel swap (MAE $2.08$) were run at seed $42$ alone,
 so their matched comparator is the seed-$42$ learned-$\sigma$ value $1.803$ on the same $n{=}5608$
-lock, not a seed mean. That comparator is $1.803$ in their own family and $1.887$ in the re-run,
-which is why \S\ref{sec:paradox} prints both readings; both exceed the worst learned-$\sigma$ seed
-of either family, so the direction of both survives a worst-case seed comparison. The channel-swap margin ($+0.27$) is $2.3$ times the learned arm's full between-seed
+lock, not a seed mean. That comparator is $1.803$ in their own family and $1.887$ in the re-run, so the same two measured
+arms admit two readings and neither is a matched five-seed contrast. Both readings are stated here
+and nowhere else, \S\ref{sec:paradox} having stopped reporting these arms. Both exceed the worst
+learned-$\sigma$ seed of either family, so the direction of both survives a worst-case seed
+comparison. The channel-swap margin ($+0.27$) is $2.3$ times the learned arm's full between-seed
 range; the training-time margin ($+0.18$) is one and a half times it, so that control fixes a sign
 rather than an effect size. This matters for how the paradox's magnitude should be read. The
 evaluation-only substitution ($+0.41$ against the three-seed mean) mixes closure misspecification with
@@ -4621,9 +4624,9 @@ rows as every other number in this paper, under the same cross-arm intersection 
 a standard deviation alone. Two further readings are taken on those same checkpoints: the
 evaluation-only substitution of \S\ref{sec:paradox}, which is within-checkpoint and therefore a
 consistency check rather than a test, and the $n{=}44$ profile comparison of \S\ref{sec:surrogate}
-with the one molecule the leak touches removed. Quoting the magnitude of the co-adaptation control
-of \S\ref{sec:paradox} as something other than one seed would need a separate pass at the same five
-seeds, which this protocol does not commit to running.
+with the one molecule the leak touches removed. Quoting the magnitude of the co-adaptation control as something other than one seed would need a
+separate pass at the same five seeds, which this protocol does not commit to running; the article
+reports no magnitude for it at all.
 
 The decision the re-run settles is stated in advance and in one direction only, since it is the
 supervision contrast alone that hangs on it. If the five per-seed gains are of one sign, the two
@@ -4923,7 +4926,8 @@ Data Set~S1.}}
 \end{table*}
 
 \paragraph{Compute ledger.} The headline $\sigma$-grounding comparison
-(Fig.~\ref{fig:paradox}, Table~\ref{tab:si-arms}) is a full-corpus GPU run (three seeds);
+(Fig.~\ref{fig:paradox}, Table~\ref{tab:si-arms}) is a full-corpus GPU run, at five seeds for the
+arms the leak-free re-run trains and three for the rest;
 the closure/insufficiency decomposition (\S\ref{sec:measure}), the
 Fisher audit (\S\ref{sec:ident}), the noise floor, the encoder probe, and the
 temperature and mechanism diagnostics of \S\ref{sec:si-mech} are CPU-reproducible from
@@ -4952,8 +4956,8 @@ Those files are regenerated by the released code rather than deposited, which is
 exposure limitation~(xiii) records; the two deposited tables are the part of this material that is
 checkable without running anything.
 \paragraph{Seeds and determinism.} The controlled comparisons of \S\ref{sec:paradox} use seeds
-$\{42,43,44\}$ and
-are reported on the labelled test rows ($5608$ of $8103$; \S\ref{sec:si-lock}); the
+$\{42,43,44,45,46\}$, the leak-free re-run's, and are reported on the labelled test rows ($5608$ of
+$8103$; \S\ref{sec:si-lock}); the
 surrogate isolation (\S\ref{sec:surrogate}) uses seeds $\{0,1,2\}$; the training-time and
 channel-swap oracle controls, the output-residual arms (\S\ref{sec:gateb}), the data-efficiency
 curve (\S\ref{sec:data-efficiency}) and the loss-simplification ablation
@@ -4977,7 +4981,7 @@ $5\times10^{-6}$, the two being the same checkpoint forwarded twice. Those check
 be taken on trust: a deposited verification pass runs all
 of them over the deposit in one CPU pass---row count, labelled count, whether the last record is
 complete, non-finite predictions, cross-arm row order, and each file against its own
-summary---and exits non-zero if any file fails. All twenty-two pass.
+summary---and exits non-zero if any file fails. All thirty-seven pass.
 
 Nothing computed at run time moves: Fig.~\ref{fig:paradox}, Table~\ref{tab:si-arms} and the $+0.41$
 were aggregated from the in-memory predictions before any file was written, and they are unchanged.
