@@ -72,6 +72,19 @@ ENV = """
 import os, sys, json, shutil, subprocess, time
 from pathlib import Path
 
+# STAMP WHEN THE SESSION STARTED, because --hours is a budget against Kaggle's cap and the cap
+# starts HERE, not at cell 6. Cells 2-5 install torch, stage the repo and hash the inputs; that is
+# real session time the runner used to be blind to, so its deadline was optimistic by exactly the
+# setup cost and an overrunning arm then walked into the hard kill. Written once and never
+# overwritten: a session resumed from a saved output must keep the ORIGINAL stamp only if it is
+# the same session, so the file lives in /kaggle/working (fresh per session) and not in the
+# mounted output dataset.
+_t0 = Path("/kaggle/working/.session_t0")
+if not _t0.exists():
+    _t0.write_text(str(time.time()))
+print("session stamp:", _t0.read_text().strip(),
+      "| age at this cell: %.2f min" % ((time.time() - float(_t0.read_text())) / 60))
+
 import torch
 print("torch", torch.__version__, "| cuda", torch.cuda.is_available(),
       "|", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")

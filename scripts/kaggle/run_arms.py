@@ -11,8 +11,16 @@ GPU session at its limit and takes the container with it; an arm interrupted mid
 predictions.csv that the next session will treat as finished.  This project has already shipped one
 truncated per-row file and had to recover it.
 
-So this wrapper adds exactly two things and duplicates nothing: a deadline checked between arms,
-and a completeness check on each predictions file before it is allowed to count as done.
+So this wrapper adds three things and duplicates nothing: a deadline anchored to the SESSION's
+start rather than this script's, a hard stop on an arm that overruns it, and a completeness check
+on each predictions file before it is allowed to count as done.
+
+THE DEADLINE AND THE OVERRUN ARE SEPARATE GUARDS, and the 2026-08-23 kill needed both. The
+pre-arm check refuses to start an arm that cannot be expected to finish; it was measuring from
+its own start, so it never charged the budget for the twenty-odd minutes of pip install and data
+staging that precede it, and nothing at all stopped an arm that beat the check and then missed
+its estimate. Exit 137 followed, which is worse than a clean stop: Kaggle's kill lands before the
+platform writes the notebook's output, so the session can lose arms it had already exported.
 
 USAGE ON KAGGLE
 ---------------
@@ -33,6 +41,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import statistics
 import subprocess
 import sys
@@ -58,11 +67,87 @@ EXPECTED_ROWS_MIN = 8000
 #: and survived the day the manifests refuted it, because the retraction was written down and the
 #: constant was not. At 19.0 the guard refused to start any arm at all inside a 12 h session --
 #: a check meant to prevent a hard kill instead prevented the work.
-ARM_HOURS_ASSUMED = 6.0
+#: AND THEN 6.0 WAS WRONG IN THE OTHER DIRECTION, for the same reason in reverse: it is a ceiling
+#: measured on a GCP GPU, quoted for a script whose docstring says "USAGE ON KAGGLE", and a T4 is
+#: the slower card. Two Kaggle sessions have now measured this one directly -- 2026-08-19 reached
+#: phase 2 epoch 39 of 70 and 2026-08-21 epoch 34, both against 30+70+10 epochs, so ~58% of an arm
+#: per twelve GPU-hours. The number below is that: about 20 h an arm at the config batch size.
+#: It is safe to carry the true figure now only because the pre-arm check no longer refuses work
+#: on it (see the block at the arm loop); when it did, an honest 20 here would have refused
+#: everything. A constant that can veto must be a ceiling; one that only informs must be the truth.
+#: --batch-size 256 is the lever that moves it, at a cost stated on that flag.
+ARM_HOURS_ASSUMED = 20.0
 #: Applied to the median of arms this run has already timed. Wider while that median rests on one
 #: or two observations, because a single arm is not a distribution.
 ARM_TIME_MARGIN = 1.25
 ARM_TIME_MARGIN_SMALL = 1.5
+#: Where the notebook's first cell stamps the session's start. See _session_start.
+SESSION_T0_FILE = Path("/kaggle/working/.session_t0")
+#: Held back at the end of the budget so the platform can write the notebook's output. A session
+#: killed at the cap dies before that write, which is how a run loses arms it had already exported.
+SAVE_RESERVE_HOURS = 0.25
+#: The least usable budget in which starting or resuming an arm buys anything. Below it the slice
+#: cannot reach the next checkpoint, so the session would spend the time and save no progress.
+#: Deliberately small: this is the only thing standing between the runner and a useful partial
+#: session, and demanding a WHOLE arm here is what made two twelve-hour sessions return nothing.
+MIN_USEFUL_SLICE_HOURS = 0.75
+
+
+def _session_start(path: Path) -> tuple[float, str]:
+    """When the SESSION started, which is not when this runner did.
+
+    ``--hours`` is a budget against Kaggle's session cap, and that cap starts when the notebook
+    starts. Everything before this script -- pip install, staging the repo, copying and hashing
+    the data -- spends the budget invisibly, so a deadline taken from ``time.time()`` here is
+    optimistic by exactly the setup time. The notebook's first cell stamps its own start; this
+    reads it, and says so loudly when it is missing rather than quietly reverting to the
+    optimistic clock.
+    """
+    try:
+        t0 = float(path.read_text().strip())
+    except (OSError, ValueError) as exc:
+        print(f"!! no usable session stamp at {path} ({type(exc).__name__}): the deadline runs "
+              f"from NOW and does not include this session's setup time. On Kaggle that means it "
+              f"is optimistic by however long cells 1-5 took.", flush=True)
+        return time.time(), "runner start (no stamp)"
+    age = (time.time() - t0) / 3600
+    if not -0.01 < age < 24:
+        print(f"!! session stamp at {path} reads {age:.2f} h old, which is not a live session's "
+              f"age; ignoring it and running the deadline from now.", flush=True)
+        return time.time(), f"runner start (stamp {age:.2f} h rejected)"
+    print(f"[clock] session started {age * 60:.1f} min ago; the budget runs from there.",
+          flush=True)
+    return t0, "session start"
+
+
+def _run_arm(repo: Path, env: dict, timeout_s: float) -> tuple[int, bool]:
+    """Run one arm, killing its whole process group if it outlives ``timeout_s``.
+
+    ``start_new_session`` and ``killpg`` rather than ``subprocess.run(timeout=...)``: the child is
+    a shell that spawns python, and terminating the shell alone orphans the trainer, which then
+    keeps the GPU and runs on to the platform's kill anyway. The group gets SIGTERM first so the
+    trainer can close its checkpoint, and SIGKILL only if it is still there two minutes later.
+    """
+    # A FLOOR, so that arithmetic which lands at or below zero cannot ask for an instant kill: the
+    # pre-arm check is what refuses a hopeless arm, and this is only the backstop behind it.
+    slice_s = max(timeout_s, 60.0)
+    p = subprocess.Popen(["bash", "scripts/experiments/run_e5_sigma_grounding.sh"],
+                         cwd=repo, env=env, start_new_session=True)
+    try:
+        return p.wait(timeout=slice_s), False
+    except subprocess.TimeoutExpired:
+        print(f"\n!! arm exceeded its {slice_s / 3600:.2f} h slice; stopping it.", flush=True)
+        for sig, grace in ((signal.SIGTERM, 120), (signal.SIGKILL, 60)):
+            try:
+                os.killpg(os.getpgid(p.pid), sig)
+            except (ProcessLookupError, PermissionError):
+                break
+            try:
+                p.wait(timeout=grace)
+                break
+            except subprocess.TimeoutExpired:
+                continue
+        return (p.returncode if p.returncode is not None else -1), True
 
 
 def rows(path: Path) -> int:
@@ -81,7 +166,13 @@ def main() -> None:
     ap.add_argument("--arms", nargs="+", required=True)
     ap.add_argument("--seeds", type=int, nargs="+", required=True)
     ap.add_argument("--hours", type=float, default=11.0,
-                    help="stop starting new arms after this many hours")
+                    help="the session budget, measured from the SESSION's start (see "
+                         "--session-t0-file), not from this script's. No arm is started that "
+                         "cannot be expected to finish inside it, and one that overruns anyway "
+                         "is killed rather than left for the platform to kill.")
+    ap.add_argument("--session-t0-file", type=Path, default=SESSION_T0_FILE,
+                    help="file holding the session's start as a unix timestamp; the generated "
+                         "notebook writes it in its first cell")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--allow-cpu", action="store_true",
                     help="permit the CPU fallback: skips the preflight below AND exports "
@@ -117,7 +208,10 @@ def main() -> None:
     a = ap.parse_args()
 
     repo = a.repo.resolve()
-    deadline = time.time() + a.hours * 3600
+    t0, t0_source = _session_start(a.session_t0_file)
+    deadline = t0 + a.hours * 3600
+    print(f"[clock] budget {a.hours:.2f} h from {t0_source}; "
+          f"{(deadline - time.time()) / 3600:.2f} h left as this runner starts.", flush=True)
     a.out_dir.mkdir(parents=True, exist_ok=True)
     a.ckpt_dir.mkdir(parents=True, exist_ok=True)
     progress = a.out_dir / "kaggle_progress.json"
@@ -192,47 +286,72 @@ def main() -> None:
             if pred.exists() and rows(pred) >= EXPECTED_ROWS_MIN:
                 print(f"== seed {seed} arm {arm}: already done ({rows(pred)} rows)")
                 continue
-            # THE DEADLINE MUST RESERVE ROOM FOR AN ARM, NOT MERELY REFUSE WHEN IT IS SPENT.
-            # The first version asked `left <= 0`, so an arm starting six minutes before the
-            # cut-off ran until Kaggle killed the session at twelve hours -- exit 137, and the
-            # in-flight arm lost. Every FINISHED arm survived that (its predictions and the
-            # progress file are written as each one lands), so the damage was bounded, but a hard
-            # kill is worse than a clean stop: it wastes the tail of the session and, on a bad
-            # day, the notebook's saved output with it.
-            # The budget comes from this run's own history rather than a guess. Arms differ in
-            # cost -- channel_swap has no sigma warm-up -- so the estimate is the median of the
-            # arms already timed, times a margin, and falls back to a conservative constant until
-            # three have been timed.
-            # USE EVIDENCE AS SOON AS THERE IS ANY. Waiting for three timed arms means the
-            # blunt fallback governs the whole of a short session, which is how a 12 h session
-            # can finish with nothing started. One timed arm is worth more than the ceiling.
+            # THE CHECK ASKS WHETHER THE SLICE IS USEFUL, NOT WHETHER THE ARM FITS.
+            #
+            # It used to demand room for a WHOLE arm, and that premise is wrong for work which
+            # checkpoints. Its purpose was never completion -- it was to avoid Kaggle's hard kill,
+            # which lands before the platform writes the notebook's output and so can lose arms
+            # already exported. _run_arm now stops the arm itself, SAVE_RESERVE_HOURS before the
+            # cap, so a session always ends cleanly and always saves. With that in hand, an arm
+            # too big for one session is not a hazard: it advances, checkpoints, and resumes.
+            #
+            # Demanding completion was actively harmful here, because on this hardware an arm does
+            # NOT fit. Two Kaggle sessions measured it: 2026-08-19 reached phase 2 epoch 39 of 70
+            # and 2026-08-21 reached epoch 34, both against the 30+70+10 epochs cosmo_sac.yaml
+            # asks for -- roughly 58% of one arm per twelve GPU-hours, so about 20 h an arm at the
+            # config batch size, against the 6.0 h ceiling ARM_HOURS_ASSUMED carries from GCP-GPU
+            # manifests. A completion check fed that number can only choose between refusing every
+            # arm and starting one it cannot finish; neither produces a result, and both of those
+            # sessions produced none. What produces a result is two sessions per arm.
+            #
+            # So the estimate stays, as INFORMATION -- it is what tells the reader how many more
+            # sessions to expect -- and the decision to start is the smaller question of whether
+            # there is time to reach the next checkpoint.
             timed = [e["hours"] for e in log if e.get("ok") and e.get("hours")]
             if timed:
                 margin = ARM_TIME_MARGIN if len(timed) >= 3 else ARM_TIME_MARGIN_SMALL
-                need = statistics.median(timed) * margin
+                need, need_src = statistics.median(timed) * margin, f"median of {len(timed)} timed"
             else:
-                need = ARM_HOURS_ASSUMED
-            left = (deadline - time.time()) / 3600
-            if left < need:
-                print(f"\n== stopping before seed {seed} arm {arm}: {left:.2f} h left and an arm "
-                      f"needs about {need:.2f} h "
-                      f"({'median of ' + str(len(timed)) + ' timed' if timed else 'assumed'}).")
+                need, need_src = ARM_HOURS_ASSUMED, "assumed, unmeasured on this hardware"
+            left = (deadline - time.time()) / 3600 - SAVE_RESERVE_HOURS
+            if left < MIN_USEFUL_SLICE_HOURS:
+                print(f"\n== stopping before seed {seed} arm {arm}: {left:.2f} h of usable budget "
+                      f"left, below the {MIN_USEFUL_SLICE_HOURS:.2f} h it takes to reach a "
+                      f"checkpoint worth saving.")
                 print("   Save /kaggle/working/out as a dataset and run the same command again;")
-                print("   finished arms are skipped, so the next session resumes here.")
+                print("   finished arms are skipped, partial ones resume from their checkpoint.")
                 break
+            if left < need:
+                print(f"\n!! seed {seed} arm {arm} will NOT finish this session: {left:.2f} h "
+                      f"usable against about {need:.2f} h for an arm ({need_src}). Starting it "
+                      f"anyway -- it checkpoints, and the next session resumes it.", flush=True)
             # `left` is in HOURS since the fit-check rewrite; this line still divided it by 3600
             # and printed "0.00 h left" beside every arm it started.
             print(f"\n{'=' * 70}\n== seed {seed} arm {arm}  ({left:.2f} h left)\n{'=' * 70}",
                   flush=True)
-            t0 = time.time()
-            r = subprocess.run(["bash", "scripts/experiments/run_e5_sigma_grounding.sh"],
-                               cwd=repo, env={**env, "SEEDS": str(seed), "ARMS": arm})
-            entry = {"seed": seed, "arm": arm, "returncode": r.returncode,
-                     "hours": round((time.time() - t0) / 3600, 3),
-                     "rows": rows(pred), "ok": r.returncode == 0 and rows(pred) >= EXPECTED_ROWS_MIN}
+            arm_t0 = time.time()
+            # THE PRE-ARM CHECK RESERVES ROOM FOR AN ESTIMATE, AND AN ESTIMATE CAN BE WRONG.
+            # Until 2026-08-23 nothing stopped an arm once it had started, so an arm that missed
+            # its estimate ran until Kaggle killed the container -- exit 137, which is worse than
+            # it looks: the kill lands before the platform writes the notebook's output, so a run
+            # can lose arms it had already finished and exported. Killing the child ourselves
+            # ends the session cleanly with the output intact, and --checkpoint-every means the
+            # interrupted arm resumes next session rather than restarting.
+            cap = deadline - time.time() - SAVE_RESERVE_HOURS * 3600
+            rc, timed_out = _run_arm(repo, {**env, "SEEDS": str(seed), "ARMS": arm}, cap)
+            entry = {"seed": seed, "arm": arm, "returncode": rc,
+                     "hours": round((time.time() - arm_t0) / 3600, 3),
+                     "rows": rows(pred), "timed_out": timed_out,
+                     "ok": rc == 0 and rows(pred) >= EXPECTED_ROWS_MIN}
             log.append(entry)
             progress.write_text(json.dumps(log, indent=2) + "\n")
             print(f"-- {entry}")
+            if timed_out:
+                print(f"!! seed {seed} arm {arm} outran the session budget and was stopped at "
+                      f"{entry['hours']:.2f} h, {SAVE_RESERVE_HOURS:.2f} h before the cap, so "
+                      f"this notebook's output still gets written. Save /kaggle/working/out and "
+                      f"re-run: this arm resumes from its checkpoint.")
+                break
             if not entry["ok"]:
                 print("!! this arm did not finish cleanly; it will be retried next session")
         else:
