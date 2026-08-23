@@ -1,5 +1,38 @@
 # Running the outstanding GPU arms on Kaggle
 
+## STATUS 2026-08-23: NOT QUEUED. The submission goes without them.
+
+Read this before spending quota on anything below. The decision is not that the runs are
+worthless; it is that they cost more than they can buy before this submission.
+
+**The claims they would support are already out of the article.** M3's answer was to delete the
+single-seed injection (MAE 1.98) and channel-swap (2.08) claims rather than to support them, which
+is a valid answer to "your contrast rests on one seed". They survive only in SI Sec. S6, explicitly
+stated as an illustration that nothing rests on, with no row in the claims table. So these runs
+would *restore* deleted claims, not repair live ones.
+
+**The minimum useful unit is a PAIR, not an arm.** The published `grounded_a` trained on a σ-stream
+that no longer exists (see the next section); a new `grounded_a_truetrain` necessarily trains on
+the rebuilt one. New-truetrain against old-grounded_a therefore confounds the injection with the
+stream rebuild — the SI already says so in as many words. A matched contrast needs both arms on the
+rebuilt stream, at the same seed.
+
+**And one pair still cannot be banked.** This project's rule is a seed replicate on both arms
+before a negative or a positive is recorded. One pair is a single-seed matched result: the same
+class of thing that was just deleted. The smallest bankable scope is two pairs, four arms.
+
+**What four arms cost.** Measured, not estimated: at the config batch an arm is about 20 h on a
+Kaggle T4 (two sessions each reached ~58% of one arm in twelve GPU-hours). `--batch-size 256`
+buys that back at the price of schedule-matching to the published family, but its speedup is
+unmeasured on this hardware, so four arms is 20–60 h against a 30 h weekly quota. That is two
+quota weeks for a result the submission does not need.
+
+**The rule of thumb, if this is ever picked up again:** arm-hours ≈ 1.8 × minutes-per-epoch (110
+epochs = 30+70+10). Read one epoch time in the first twenty minutes of a session and you know
+whether to continue, instead of finding out at the twelve-hour kill.
+
+Everything below is the working apparatus, kept and correct, for whoever runs this later.
+
 ## What is outstanding, and why
 
 Two training arms of §3.1 stand at **one seed** against five-seed comparators:
@@ -10,8 +43,13 @@ Two training arms of §3.1 stand at **one seed** against five-seed comparators:
 | `channel_swap` | the same injection under coordinate descent, which freezes Φ in phase 2 so only the activity branch is refit | isolates whether the σ→γ map is the ceiling independently of the crystal branch |
 
 The referee report's **M3** is that a single-seed contrast of +0.18 is not an effect size when the
-five-seed arms carry a between-seed s.d. of 0.06–0.11 and a per-seed range of 0.238. It is right,
-and these runs are cheap. This directory queues them.
+five-seed arms carry a between-seed s.d. of 0.06–0.11 and a per-seed range of 0.238. It is right.
+
+"And these runs are cheap" was wrong, and the sentence stays here with its correction because the
+error is the instructive part: the estimate came from checkpoint manifests written on a GCP GPU
+and was never re-measured on the hardware the runs would actually use. Two Kaggle sessions have now
+measured it — about 20 h an arm, roughly ten times the two hours this directory was built assuming.
+See the status note at the top.
 
 ## The complication, found while packing
 
