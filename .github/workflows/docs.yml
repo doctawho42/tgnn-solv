@@ -1,19 +1,22 @@
-name: Deploy Documentation
+name: Deploy page
+
+# WHAT THIS REPLACED, AND WHY IT MATTERS.  Until 2026-08-23 this workflow ran `mkdocs build` over a
+# docs/ tree. That tree was deleted with the documentation site, so the workflow began failing on
+# every push -- and a failed Pages deploy does not take the site down, it leaves the last SUCCESSFUL
+# build serving. The site therefore went on publishing an April snapshot while the repository moved
+# 439 commits past it, and nothing said so. Pushing the new page to the gh-pages branch by hand did
+# not help either: this repository's Pages source is `build_type: workflow`, so the branch is not
+# what gets served. This file is what gets served.
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
+      - 'web/**'
+      - 'paper/grounding_paradox.pdf'
+      - 'paper/grounding_paradox_si.pdf'
       - '.github/workflows/docs.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,38 +30,40 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
 
-      - name: Install dependencies
+      # The page copies the manuscript's abstract as prose, and prose does not recompile.
+      # Blocking here rather than after deployment is the whole point.
+      - name: The page's abstract must match the manuscript
+        run: python scripts/analysis/check_site_abstract.py
+
+      # The page links both PDFs by name. A 404 behind a link is worse than no link, so assemble
+      # explicitly and fail if either is absent rather than shipping a page with dead references.
+      - name: Assemble the site
         run: |
-          pip install --upgrade pip
-          pip install mkdocs mkdocs-material pymdown-extensions
+          set -euo pipefail
+          mkdir -p _site
+          cp web/index.html _site/index.html
+          cp paper/grounding_paradox.pdf _site/grounding_paradox.pdf
+          cp paper/grounding_paradox_si.pdf _site/grounding_paradox_si.pdf
+          touch _site/.nojekyll
+          ls -la _site
 
-      - name: Build documentation
-        run: mkdocs build
-
-      - name: Upload GitHub Pages artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: _site
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

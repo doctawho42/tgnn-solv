@@ -14,14 +14,25 @@ A single page costs one read to check. That is the whole design.
 
 ## Deploying
 
-```bash
-scripts/publish_site.sh          # shows what would change
-scripts/publish_site.sh --push   # publishes
-```
+Automatically, by `.github/workflows/docs.yml`, on any push to `main` that touches `web/`, either
+compiled PDF, or the workflow itself. Nothing to run by hand.
 
-The script copies `web/index.html` and the two compiled PDFs onto the `gh-pages` branch. Build the
-PDFs first (`./verify.sh` does, among other things) — the script refuses to publish a page whose
-PDF links would 404.
+**This repository's Pages source is `build_type: workflow`.** Pushing to the `gh-pages` branch does
+not publish anything — the workflow artifact is what gets served, and the branch is ignored. A
+hand-rolled publisher that pushed to `gh-pages` was written first and was silently a no-op, which
+is worth knowing before writing another one.
+
+The workflow blocks on two things before it deploys: `scripts/analysis/check_site_abstract.py` must
+find the manuscript's abstract on the page, and both PDFs must be present, since the page links
+them by name and a 404 behind a link is worse than no link.
+
+## How the old site failed, since it is the same trap twice
+
+The previous workflow ran `mkdocs build` over a `docs/` tree. When that tree was deleted the
+workflow started failing on every push — and **a failed Pages deploy does not take the site down.**
+It leaves the last successful build serving. So the site went on publishing an April snapshot for
+months while the repository moved past it, and the only symptom was a red tick nobody was looking
+at.
 
 ## What to update, and when
 

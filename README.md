@@ -110,9 +110,10 @@ deposited separately (see `DEPOSITS.md`).
 
 ## The public page
 
-One hand-written file, `web/index.html`, deployed by `scripts/publish_site.sh`. It refuses to
-publish if its abstract has drifted from the manuscript's. See `web/README.md` for why it is not
-generated.
+One hand-written file, `web/index.html`, deployed by `.github/workflows/docs.yml` on any push to
+`main` that touches it. The deploy blocks if the page's abstract has drifted from the manuscript's.
+See `web/README.md` for why it is not generated, and for the trap that kept the previous site alive
+and stale for five months.
 
 ## Licence
 
