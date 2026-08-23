@@ -101,8 +101,15 @@ def _prepare_forward_kwargs(
     solute_smiles: str,
     solvent_smiles: str,
     device: torch.device,
+    temperature: float,
 ) -> dict[str, Any]:
-    """Build optional forward kwargs required by the current model config."""
+    """Build optional forward kwargs required by the current model config.
+
+    ``temperature`` is required rather than defaulted: the UNIFAC prior below is temperature
+    dependent, and until 2026-08-23 this function read a name ``T`` that was never in its scope --
+    an F821 that raised NameError for anyone running with ``use_unifac_gamma_prior: true``, which
+    two committed configs set. A default would have hidden the same bug behind a wrong number.
+    """
     if isinstance(model, DirectGNN):
         kwargs: dict[str, Any] = {}
         if model.cfg.use_morgan_features:
@@ -195,7 +202,7 @@ def _prepare_forward_kwargs(
         ).unsqueeze(0)
 
     if getattr(model.cfg, "use_unifac_gamma_prior", False):
-        lng = modified_unifac_lngamma_inf(solute_smiles, solvent_smiles, float(T))
+        lng = modified_unifac_lngamma_inf(solute_smiles, solvent_smiles, float(temperature))
         has_unifac = lng is not None
         kwargs["unifac_ln_gamma_inf"] = torch.tensor(
             [float(lng) if has_unifac else 0.0],
@@ -311,6 +318,7 @@ class MCDropoutPredictor:
             solute_smiles,
             solvent_smiles,
             self.device,
+            T,
         )
 
         # Set model to eval, then re-enable dropout
@@ -446,6 +454,7 @@ class EnsemblePredictor:
                 solute_smiles,
                 solvent_smiles,
                 self.device,
+                T,
             )
             out = model(sol_b, slv_b, T_t, **forward_kwargs)
             sample = _sample_outputs(model, out)

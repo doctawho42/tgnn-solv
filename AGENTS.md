@@ -56,7 +56,7 @@ For this repository, an "incident" includes:
 - artifact contract change
 
 Memory updates should be factual, dated, concise, and point to concrete files
-under `results/`, `logs/`, `docs/`, or source code.
+under `results/`, `logs/`, or source code.
 
 ## Installation
 
@@ -279,7 +279,6 @@ This exports:
 - TGNN metrics
 - DirectGNN metrics
 - oracle-evaluated TGNN metrics
-- `tgnn_intermediates.csv`
 - detailed diagnostics JSON
 
 The training CLIs now support resumable checkpoints via
@@ -703,7 +702,7 @@ historical `35/8` node/edge layout, while TIMP runs can opt into:
 
 Application-layer modules build on top of the same inference surfaces and now
 live under `src/tgnn_solv/applications/` rather than the old flat
-`src/tgnn_solv/applications.py`.
+`src/tgnn_solv/applications/`.
 
 ## Configuration
 
@@ -788,31 +787,19 @@ Maintained config files:
 
 ## Documentation Map
 
-- `docs/index.md`
-- `docs/getting_started/installation.md`
-- `docs/getting_started/quick_start.md`
-- `docs/architecture.md`
-- `docs/config_cookbook.md`
-- `docs/data_preparation.md`
-- `docs/training.md`
-- `docs/evaluation.md`
-- `docs/experiments.md`
-- `docs/results.md`
-- `docs/model_zoo.md`
-- `docs/notebooks.md`
-- `docs/applications.md`
-- `docs/experiment_lab.md`
-- `docs/baselines.md`
-- `docs/reproducing_paper.md`
-- `docs/script_reference.md`
-- `docs/faq.md`
-- `docs/troubleshooting.md`
-- `docs/repository_audit.md`
-- `docs/free_gpu_training.md`
-- `docs/presentation.md`
-- `BENCHMARKING_GUIDE.md`
-- `scripts/README.md`
-- `src/tgnn_solv/README.md`
+The documentation site was deleted on 2026-08-23: it had last deployed in April, five months and
+one split rebuild earlier, so it described a project that no longer existed. A generated site is
+only as good as the discipline that regenerates it, and that discipline was not there. What
+replaced it is four hand-maintained documents, each with one job, and a check that keeps the paths
+in them real (`scripts/analysis/check_doc_paths.py`, run by `verify.sh`).
+
+- `README.md` — the entry point: what this is, how to verify it, how to reproduce it.
+- `DEPOSITS.md` — every printed number, the artifact behind it, the script that regenerates it.
+- `PROJECT_DESCRIPTION.md` — the conceptual and thermodynamic map.
+- `CLAUDE.md` — the traps that cost time, and the rules that keep results comparable.
+- `PROJECT_MEMORY.md` — the dated operational log; read in slices, never whole.
+- `ZENODO_DEPOSIT.md` — what goes into the archive and why.
+- `BENCHMARKING_GUIDE.md`, `scripts/README.md`, `src/tgnn_solv/README.md` — local surfaces.
 
 ## Current Caveats
 

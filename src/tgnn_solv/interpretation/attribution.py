@@ -137,7 +137,7 @@ def build_single_system_inputs(
             targets["solute_group_prior_features"] = torch.tensor(sol_group, device=dev, dtype=torch.float32).unsqueeze(0)
             targets["solvent_group_prior_features"] = torch.tensor(slv_group, device=dev, dtype=torch.float32).unsqueeze(0)
         if getattr(cfg, "use_unifac_gamma_prior", False):
-            lng = modified_unifac_lngamma_inf(solute_smiles, solvent_smiles, float(T))
+            lng = modified_unifac_lngamma_inf(solute_smiles, solvent_smiles, float(temperature))
             has_unifac = lng is not None
             targets["unifac_ln_gamma_inf"] = torch.tensor(
                 [float(lng) if has_unifac else 0.0],

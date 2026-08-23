@@ -893,9 +893,9 @@ def test_the_accelerator_exemptions_are_exactly_the_files_that_need_them() -> No
 
 
 def test_no_script_that_resolves_in_process_is_exempt() -> None:
-    """The exemptions may not overlap RULE 2, which is what the docs promise operators.
+    """The exemptions may not overlap RULE 2, which is the promise this rule makes.
 
-    docs/troubleshooting.md tells the operator whose CUDA box just broke that invoking
+    The rule tells the operator whose CUDA box just broke that invoking
     any of the resolving scripts directly, with no flag, cannot produce the error. That
     holds exactly while no resolving script's own default names an accelerator -- so the
     two files allowed to name one must be files that never reach the raise. They are:
@@ -906,7 +906,7 @@ def test_no_script_that_resolves_in_process_is_exempt() -> None:
     assert not both, (
         f"{sorted(both)} call resolve_device and are exempted from the "
         "accelerator-default rule, so a bare invocation raises on a box without the "
-        "accelerator -- the one failure docs/troubleshooting.md promises cannot happen."
+        "accelerator -- the one failure this rule exists to make impossible."
     )
 
 

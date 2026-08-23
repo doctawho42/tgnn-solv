@@ -94,9 +94,9 @@ HOT_PATH_EXEMPTIONS = {
         "the direction this rule exists for. _normalize_native_device (run_solprop.py) "
         "rewrites a named `--device cuda` to `cpu` with no message, so the SolProp native "
         "arm trains to completion on the CPU saying nothing -- the ten-hour failure, in "
-        "the training step rather than the scoring step. It is named on "
-        "docs/troubleshooting.md among the five that are worse than unchecked; this entry "
-        "is here so the claim is asserted somewhere that fails when it stops being true."
+        "the training step rather than the scoring step. It is one of the five silent "
+        "rewrites that are worse than unchecked; this entry is here so the claim is "
+        "asserted somewhere that fails when it stops being true."
     ),
 }
 

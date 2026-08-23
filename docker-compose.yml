@@ -18,23 +18,6 @@ services:
       - --server.port
       - "8501"
 
-  docs:
-    build:
-      context: .
-      args:
-        TGNN_EXTRAS: gui,dev
-    ports:
-      - "8000:8000"
-    working_dir: /app
-    volumes:
-      - .:/app
-    command:
-      - -m
-      - mkdocs
-      - serve
-      - -a
-      - 0.0.0.0:8000
-
   train:
     build:
       context: .
