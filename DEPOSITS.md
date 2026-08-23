@@ -112,8 +112,8 @@ the current ones lives beside them in `COMMIT_HASHES_AFTER_HISTORY_REWRITE.md`.
 
 Several analyses here were governed by a prediction written and committed *before* the number it
 concerns was computed — `PREREG_blackbox`, `PREDICTION_fidelity_lever`, `PREDICTION_loss_ablation`,
-`PREDICTION_paradox_2x2_channel`, `CONCEPT_grounding_budget` and others. They lived in `reports/`,
-which was deleted on 2026-08-23 along with the rest of the dated working notes.
+`PREDICTION_paradox_2x2_channel`, `CONCEPT_grounding_budget` and others. They lived in a reports
+directory that was deleted on 2026-08-23 along with the rest of the dated working notes.
 
 **They are not lost, and the ordering they establish is still checkable**: each is in git history at
 its original commit, which is what dates it, and the scripts they govern still name them in their

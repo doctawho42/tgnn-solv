@@ -45,7 +45,22 @@ stage "imports" "$PY" -c "import tgnn_solv, tgnn_solv.model, tgnn_solv.layers, t
 # style, not a redefinition bug, and the only hit in this tree is exactly that.
 stage "lint: undefined names (F821/F811)" \
       ruff check src tests scripts --select F821,F811 --exclude "*.ipynb"
-stage "lint: syntax" bash -c 'for f in $(git ls-files "*.py"); do python -m py_compile "$f" || exit 1; done'
+# ONE INTERPRETER, NOT ONE PER FILE.  The first version spawned python once per tracked module and
+# took over two minutes, which is long enough that the check gets skipped, which is the same as not
+# having it.
+stage "lint: syntax" "$PY" -c '
+import subprocess, sys, py_compile, tempfile
+files = subprocess.run(["git","ls-files","*.py"], capture_output=True, text=True).stdout.split()
+bad = []
+with tempfile.TemporaryDirectory() as d:
+    for f in files:
+        try:
+            py_compile.compile(f, cfile=d+"/x.pyc", doraise=True)
+        except py_compile.PyCompileError as e:
+            bad.append(str(e))
+print(f"{len(files)} modules compiled")
+if bad:
+    print("\n".join(bad[:10])); sys.exit(1)'
 [ "$MODE" = fast ] || stage "test suite" "$PY" -m pytest tests/ -q --no-header
 
 echo "== manuscript gates"
