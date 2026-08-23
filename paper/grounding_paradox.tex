@@ -116,8 +116,24 @@
 % defined". `nocite' stops the import: each document numbers its citations only from
 % its own bibliography.
 \externaldocument[][nocite]{grounding_paradox_si}
-% TITLE, 2026-08-11 (fourth revision).  ONE clause, twelve words.  Keep it identical to the \title
-% in grounding_paradox_si.tex.
+% TITLE, 2026-08-24 (fifth revision).  A four-word phrase, a colon, and the fourth revision's clause
+% with two words trimmed.  Keep it identical to the \title in grounding_paradox_si.tex.
+%
+% THE PHRASE IS A PUN ON THIS PAPER'S OWN TWO TERMS, and that is the whole reason it is affordable.
+% "Ground truth" is the field's name for the tabulated quantity; "grounding" is what this paper is
+% about.  The phrase therefore asks the reader for no outside knowledge, and it states the finding
+% rather than dressing it: the reference profile IS the ground truth, and supplying it does not
+% ground the model.  Two candidates that read better were rejected for the same fault, and the
+% fault is worth recording because it is subtle.  "Truth In, Error Out" and any other play on
+% truth-versus-garbage collapses the paper's central distinction -- substitution at prediction time
+% degrades, supervision during training carries NO ESTABLISHED SIGN -- into one moral, "truth does
+% not help", which is a claim this paper explicitly declines to make (\S\ref{sec:discussion}).  A
+% title may compress a finding; it may not merge a finding with a null.
+%
+% WHAT THE COLON COST.  Fourteen words against JCIM's preferred twelve.  Paid for by dropping "for
+% Learned Ones" from the clause, which the phrase now implies: if the reference profile does not
+% ground, it is being substituted for something that did.  "Solvent" stays -- see below, it is the
+% one word in the clause that a referee round put there.
 %
 % "SOLVENT" ENTERED 2026-08-11 (referee round 6).  The substitution the paper is named for reaches
 % 99.3% of the labelled test rows on the solvent side and 5.3% on the solute side (\S\ref{sec:eval}),
@@ -209,8 +225,8 @@
 %   There is no "at Inference".  The two operations differ by when the reference enters, and the
 %       title names only the one it is about; adding the timing costs a word and buys a distinction
 %       that has no counterpart in the title to be told apart from.  The abstract draws it.
-\title{Substituting Reference Solvent $\sigma$-Profiles for Learned Ones Degrades COSMO-SAC
-Solubility Prediction}
+\title{Ground Truth That Does Not Ground: Substituting Reference Solvent
+$\sigma$-Profiles Degrades COSMO-SAC Solubility Prediction}
 
 % NOTE: achemso re-typesets the arguments of \affiliation and \email, so anything outstanding here is
 % written as a plain comment rather than through \pending.

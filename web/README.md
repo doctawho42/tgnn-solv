@@ -23,7 +23,8 @@ hand-rolled publisher that pushed to `gh-pages` was written first and was silent
 is worth knowing before writing another one.
 
 The workflow blocks on two things before it deploys: `scripts/analysis/check_site_abstract.py` must
-find the manuscript's abstract on the page, and both PDFs must be present, since the page links
+find both the manuscript's title and its abstract on the page, and must find the article and the SI
+carrying the same title, and both PDFs must be present, since the page links
 them by name and a 404 behind a link is worse than no link.
 
 ## How the old site failed, since it is the same trap twice

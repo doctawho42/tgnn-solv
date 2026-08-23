@@ -74,7 +74,7 @@ stage "check_number_conservation" "$PY" scripts/analysis/check_number_conservati
 
 echo "== documentation"
 stage "check_doc_paths" "$PY" scripts/analysis/check_doc_paths.py
-stage "check_site_abstract" "$PY" scripts/analysis/check_site_abstract.py
+stage "check_site_abstract (title + abstract)" "$PY" scripts/analysis/check_site_abstract.py
 
 if [ "$MODE" != fast ]; then
   echo "== manuscript builds"

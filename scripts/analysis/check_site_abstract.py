@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-"""The public page's abstract must still be the manuscript's.
+"""The manuscript's title and abstract, wherever they are copied, must still agree.
+
+Three copies of the title exist -- the article, the SI, and the public page -- and until 2026-08-24
+the rule that they match was carried by a comment in the SI reading "keep the two \\title arguments
+identical". A rule enforced by a comment is a rule that drifts, and this one governs the name the
+work is deposited and cited under.
 
 The page copies the abstract as prose. Prose does not recompile when the source changes, so the one
 drift worth blocking a deployment on is this one: a page that states an older version of the claim
@@ -12,6 +17,7 @@ typographic quote does not trip it, and only a change in wording does.
 """
 from __future__ import annotations
 
+import html
 import re
 import sys
 import unicodedata
@@ -19,6 +25,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 TEX = REPO / "paper" / "grounding_paradox.tex"
+SI = REPO / "paper" / "grounding_paradox_si.tex"
 PAGE = REPO / "web" / "index.html"
 #: How much of each end of the abstract must appear verbatim. Long enough that a real edit is
 #: caught, short enough that the page may keep its own paragraph breaks.
@@ -26,11 +33,33 @@ WINDOW = 180
 
 
 def _norm(s: str) -> str:
-    s = unicodedata.normalize("NFKD", s)
+    # HTML ENTITIES FIRST.  The page writes the profile symbol as &sigma; and the manuscript as
+    # $\sigma$; without unescaping, one normalises to "sigmaprofiles" and the other to "profiles",
+    # and the check reports a drift that is an encoding difference.
+    s = unicodedata.normalize("NFKD", html.unescape(s))
     return re.sub(r"[^a-z0-9 ]", "", re.sub(r"\s+", " ", s.lower())).strip()
 
 
+def _title(path: Path) -> str:
+    m = re.search(r"^\\title\{(.*?)\}", path.read_text(encoding="utf8"), re.S | re.M)
+    if m is None:
+        raise SystemExit(f"no \\title in {path.relative_to(REPO)}")
+    return _norm(re.sub(r"\\[a-zA-Z]+|[${}]", " ", m.group(1)))
+
+
 def main() -> int:
+    art, si = _title(TEX), _title(SI)
+    if art != si:
+        print("FAIL: the article and the SI carry different titles.")
+        print(f"  article: {art}\n  SI:      {si}")
+        return 1
+    page_all = _norm(re.sub(r"<[^>]+>", " ", PAGE.read_text(encoding="utf8")))
+    if art not in page_all:
+        print("FAIL: the public page does not carry the manuscript's title.")
+        print(f"  expected: {art}")
+        return 1
+    print(f"ok: one title across the article, the SI and the page ({len(art.split())} words)")
+
     m = re.search(r"\\begin\{abstract\}(.*?)\\end\{abstract\}", TEX.read_text(encoding="utf8"),
                   re.S)
     if m is None:

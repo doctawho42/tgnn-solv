@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TGNN-Solv — grounding a physics-informed solubility model</title>
+<title>Ground Truth That Does Not Ground — TGNN-Solv</title>
 <meta name="description" content="When a physics-informed model is given the tabulated quantity it was routed through, it gets worse. The paper, the code, and the deposits behind every number.">
 <style>
   :root {
@@ -40,6 +40,7 @@
   a:hover { border-bottom-color: currentColor; }
   p { margin: 0 0 1rem; }
   .lede { font-size: 1.06rem; }
+  .cite { color: var(--muted); font-size: .97rem; margin: -1.4rem 0 2rem; }
   .box {
     background: var(--card); border: 1px solid var(--rule); border-radius: 7px;
     padding: 1.1rem 1.25rem; margin: 1.2rem 0;
@@ -80,6 +81,9 @@
 
 <h1>Grounding a physics-informed model can make it worse</h1>
 <p class="sub">A controlled study on solid–liquid solubility, and the apparatus that produced it.</p>
+
+<p class="cite"><em>Ground Truth That Does Not Ground: Substituting Reference Solvent
+&sigma;-Profiles Degrades COSMO-SAC Solubility Prediction.</em> N.&nbsp;L. Polomoshnov.</p>
 
 <p class="lede">Physics-informed models route a prediction through a quantity that can be looked
 up, so supplying the tabulated value ought to improve them. It does not. Substituting the
