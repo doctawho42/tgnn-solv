@@ -43,13 +43,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--presentation-dir",
-        default="presentation/figures/generated",
+        default="figures",
         help="Optional directory that receives copies of generated figures.",
     )
     parser.add_argument(
         "--no-presentation-copy",
         action="store_true",
-        help="Do not copy generated figures into presentation/figures/generated.",
+        help="Do not copy generated figures into figures.",
     )
     return parser.parse_args()
 

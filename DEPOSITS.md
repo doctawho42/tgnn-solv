@@ -108,6 +108,25 @@ those files.
 breaks the gate that gives the pre-declaration its force. The mapping from the pre-rewrite hashes to
 the current ones lives beside them in `COMMIT_HASHES_AFTER_HISTORY_REWRITE.md`.
 
+## Pre-registrations written before their outcomes
+
+Several analyses here were governed by a prediction written and committed *before* the number it
+concerns was computed — `PREREG_blackbox`, `PREDICTION_fidelity_lever`, `PREDICTION_loss_ablation`,
+`PREDICTION_paradox_2x2_channel`, `CONCEPT_grounding_budget` and others. They lived in `reports/`,
+which was deleted on 2026-08-23 along with the rest of the dated working notes.
+
+**They are not lost, and the ordering they establish is still checkable**: each is in git history at
+its original commit, which is what dates it, and the scripts they govern still name them in their
+headers. Recover one with
+
+```bash
+git log --oneline --all --diff-filter=A -- 'reports/PREREG_*'
+git show <commit>:reports/<file>
+```
+
+The one pre-declaration that a script *gates* on rather than merely cites is the glycol
+out-of-sample declaration above, and it lives under `results/`, untouched.
+
 ## Retired numbers
 
 `paper/retired_numbers.txt` records every value deliberately removed from the manuscript, with the

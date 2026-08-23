@@ -356,7 +356,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--output", type=Path, default=Path("results/gradient_flow"))
-    parser.add_argument("--plot", type=Path, default=Path("presentation/figures/generated/gradient_flow.pdf"))
+    parser.add_argument("--plot", type=Path, default=Path("figures/gradient_flow.pdf"))
     parser.add_argument(
         "--override",
         action="append",
