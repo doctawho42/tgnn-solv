@@ -234,7 +234,7 @@ _cmd = [sys.executable, "-u", "scripts/kaggle/run_arms.py",
         "--seeds", {seeds},
         "--hours", "{hours}", "--device", "cuda", "--num-workers", "2",
         "--out-dir", "/kaggle/working/out/results",
-        "--ckpt-dir", "/kaggle/working/out/checkpoints"]
+        "--ckpt-dir", "/kaggle/working/out/checkpoints"] + {batch}
 print(" ".join(_cmd), flush=True)
 _rc = subprocess.run(_cmd).returncode
 print("\\nrunner exit code:", _rc)
@@ -269,9 +269,18 @@ def main() -> None:
                     default=["grounded_a", "grounded_a_truetrain", "channel_swap"])
     ap.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44, 45, 46])
     ap.add_argument("--hours", type=float, default=11.0,
-                    help="wall-clock budget for STARTING arms. Kaggle kills at twelve; the runner "
-                         "now refuses to start an arm that will not fit, so this is the budget it "
-                         "measures against. Set it to the quota actually left, not to twelve.")
+                    help="the session budget, measured from the SESSION's start -- cell 1 stamps "
+                         "it and the runner anchors to that, so setup time is charged against "
+                         "this number rather than given away. Kaggle kills at twelve; the runner "
+                         "stops itself before that and resumes next session. Set it to the quota "
+                         "actually left, not to twelve.")
+    ap.add_argument("--batch-size", type=int, default=None,
+                    help="override the config batch size for every arm. UNSET IS NOT NEUTRAL "
+                         "HERE: at the config's 64 an arm costs about 20 h on a T4 (measured -- "
+                         "two sessions each reached ~58%% of one arm in twelve), so a run left at "
+                         "the default needs two sessions per arm. Setting it makes the arms "
+                         "comparable with each other and NOT schedule-matched to the published "
+                         "five-seed family; that is a claim about what the run is for.")
     a = ap.parse_args()
 
     cells = [
@@ -282,9 +291,17 @@ def main() -> None:
         md("## 4 — verify the inputs against the published digests"), code(VERIFY),
         md("## 5 — carry forward a previous session"), code(RESTORE),
         md(f"## 6 — run\n\n`{' '.join(a.arms)}` × seeds `{a.seeds}` "
-           f"= **{len(a.arms) * len(a.seeds)} arms**, roughly 2 h each on a T4."),
+           f"= **{len(a.arms) * len(a.seeds)} arms**.\n\n"
+           + (f"Batch size **{a.batch_size}**, overriding the config's. These arms are comparable "
+              f"with each other and are **not** schedule-matched to the published five-seed "
+              f"family; anything read across the two families is reading across schedules."
+              if a.batch_size else
+              "Batch size from the config. **About 20 h an arm on a T4** — measured, not "
+              "estimated: the 2026-08-19 and 2026-08-21 sessions each reached roughly 58% of one "
+              "arm in twelve GPU-hours. Expect two sessions per arm.")),
         code(RUN.format(hours=a.hours, arms=", ".join(repr(x) for x in a.arms),
-                        seeds=", ".join(repr(str(s)) for s in a.seeds))),
+                        seeds=", ".join(repr(str(s)) for s in a.seeds),
+                        batch=(f'["--batch-size", "{a.batch_size}"]' if a.batch_size else "[]"))),
         md("## 7 — what came out"), code(SUMMARY),
     ]
     nb = {"cells": cells, "metadata": {

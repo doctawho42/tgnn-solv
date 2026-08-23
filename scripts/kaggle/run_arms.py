@@ -150,6 +150,18 @@ def _run_arm(repo: Path, env: dict, timeout_s: float) -> tuple[int, bool]:
         return (p.returncode if p.returncode is not None else -1), True
 
 
+def _checkpoint_batch(path: Path) -> int | None:
+    """The batch size a checkpoint was trained at, or None if it does not say."""
+    try:
+        import torch
+        cfg = torch.load(path, map_location="cpu", weights_only=False).get("config") or {}
+    except Exception:      # noqa: BLE001 -- a checkpoint we cannot read is not a mismatch
+        return None
+    cfg = vars(cfg) if hasattr(cfg, "__dict__") else cfg
+    v = cfg.get("batch_size") if isinstance(cfg, dict) else None
+    return int(v) if isinstance(v, (int, float)) else None
+
+
 def rows(path: Path) -> int:
     try:
         with path.open("rb") as fh:
@@ -216,6 +228,13 @@ def main() -> None:
     a.ckpt_dir.mkdir(parents=True, exist_ok=True)
     progress = a.out_dir / "kaggle_progress.json"
     log: list[dict] = json.loads(progress.read_text()) if progress.exists() else []
+    # THE SCHEDULE TRAVELS WITH THE NUMBERS. --batch-size changes the optimisation schedule, so
+    # arms trained under it are comparable with each other and not with the published family, and
+    # that fact has to be readable from the deposit rather than from a warning that scrolled past
+    # in a notebook log nobody kept. Recorded per arm, because a resumed run can be given a
+    # different value than the session that started it -- which would be a defect, and one this
+    # field makes visible instead of silent.
+    batch_note = a.batch_size or "config"
 
     # A truncated export from a killed session must not read as a finished arm.
     for seed in a.seeds:
@@ -225,6 +244,28 @@ def main() -> None:
                 print(f"!! {pred} has {rows(pred)} rows, below {EXPECTED_ROWS_MIN}: "
                       f"truncated by a killed session. Deleting so it re-exports.")
                 pred.unlink()
+
+    # AND A CHECKPOINT FROM A DIFFERENT SCHEDULE MUST NOT BE RESUMED INTO THIS ONE.
+    # Resuming is what makes a multi-session run possible, and it is exactly what makes a changed
+    # --batch-size dangerous: the optimiser state in the file belongs to the old batch, so an arm
+    # resumed across the change is ONE arm trained under TWO schedules, which is neither of them
+    # and is invisible in the result. The recovered 2026-08-21 checkpoint is the live case -- it
+    # carries batch_size 64 and half of phase 2. Refuse rather than delete: 85 MB of GPU time is
+    # not this script's to throw away, and the choice between restarting the arm and reverting
+    # the flag belongs to whoever is running it.
+    want = a.batch_size if a.batch_size else None
+    for seed in a.seeds:
+        for arm in a.arms:
+            ck = a.ckpt_dir / f"{arm}_seed{seed}.pt"
+            if not ck.exists():
+                continue
+            had = _checkpoint_batch(ck)
+            if had is not None and want is not None and had != want:
+                sys.exit(
+                    f"FATAL: {ck} was trained at batch_size {had} and this run asks for {want}. "
+                    f"Resuming it would train one arm under two optimisation schedules. Either "
+                    f"drop --batch-size {want} to continue that arm as it was trained, or move "
+                    f"the checkpoint aside to restart this arm at {want}.")
 
     # FAIL FAST ON A GPU THAT IS PRESENT BUT UNUSABLE.  resolve_device() asks
     # torch.cuda.is_available() and no more; this launches a kernel, which is what catches a
@@ -307,7 +348,12 @@ def main() -> None:
             # So the estimate stays, as INFORMATION -- it is what tells the reader how many more
             # sessions to expect -- and the decision to start is the smaller question of whether
             # there is time to reach the next checkpoint.
-            timed = [e["hours"] for e in log if e.get("ok") and e.get("hours")]
+            # ONLY ARMS TRAINED AT THIS BATCH SIZE. The whole point of the flag is that it changes
+            # what an arm costs, so a median pooled across values estimates neither. Entries
+            # written before this field existed carry no batch_size and are excluded rather than
+            # assumed to match: an unlabelled timing is not evidence about a labelled run.
+            timed = [e["hours"] for e in log
+                     if e.get("ok") and e.get("hours") and e.get("batch_size") == batch_note]
             if timed:
                 margin = ARM_TIME_MARGIN if len(timed) >= 3 else ARM_TIME_MARGIN_SMALL
                 need, need_src = statistics.median(timed) * margin, f"median of {len(timed)} timed"
@@ -341,7 +387,8 @@ def main() -> None:
             rc, timed_out = _run_arm(repo, {**env, "SEEDS": str(seed), "ARMS": arm}, cap)
             entry = {"seed": seed, "arm": arm, "returncode": rc,
                      "hours": round((time.time() - arm_t0) / 3600, 3),
-                     "rows": rows(pred), "timed_out": timed_out,
+                     "rows": rows(pred), "timed_out": timed_out, "batch_size": batch_note,
+                     "schedule_matched_to_published_family": a.batch_size is None,
                      "ok": rc == 0 and rows(pred) >= EXPECTED_ROWS_MIN}
             log.append(entry)
             progress.write_text(json.dumps(log, indent=2) + "\n")
