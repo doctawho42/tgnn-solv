@@ -7,17 +7,18 @@ what the project is, why the architecture exists, what mathematical assumptions
 it uses, how the code is organized conceptually, and what is currently known
 empirically.
 
-Operational memory still lives in `PROJECT_MEMORY.md`. If this file, `main.tex`,
-presentation assets, and fresh result bundles disagree, use the following order:
+Operational memory still lives in `PROJECT_MEMORY.md`. If this file, the manuscript, and fresh
+result bundles disagree, use the following order:
 
 1. Reproducible artifacts under `results/`, `logs/`, and generated summaries.
 2. Maintained source code and configs.
 3. `PROJECT_MEMORY.md`.
 4. This file.
-5. Older narrative files such as `main.tex` and presentation text.
 
-This file was assembled from `main.tex`, `presentation/seminar_talk.tex`,
-`presentation/talk_text*.md`, and current project memory.
+This file was assembled from a long Russian technical report (main.tex), the seminar talk and
+project memory. All three narrative sources were deleted on 2026-08-23 once the manuscript
+superseded them; they remain in git history, and nothing here depends on them. The manuscript,
+`paper/grounding_paradox.tex`, is now the narrative of record.
 
 ## 1. Project In One Paragraph
 
@@ -880,9 +881,6 @@ Key files and directories:
 
 - `PROJECT_MEMORY.md`: canonical operational memory.
 - `AGENTS.md`: instructions for coding agents.
-- `main.tex`: long Russian technical report; rich theory, partly stale results.
-- `presentation/seminar_talk.tex`: current seminar slides.
-- `presentation/talk_text*.md`: spoken narrative and slide notes.
 - `src/tgnn_solv/model.py`: TGNN-Solv and DirectGNN architecture surface.
 - `src/tgnn_solv/trainer.py`: three-phase curriculum and resume logic.
 - `src/tgnn_solv/loss.py`: multi-component TGNN loss.
@@ -910,8 +908,8 @@ When modifying the code or planning experiments:
 4. Treat RF hybrid as a strong practical baseline.
 5. Treat temperature extrapolation as the most physics-sensitive test.
 6. Keep IDAC as an auxiliary activity stream, not as SLE rows.
-7. Be careful with source drift: `main.tex` has valuable derivations but some
-   old empirical numbers are stale.
+7. Be careful with source drift: the deleted Russian report has valuable derivations in git
+   history, but its empirical numbers predate the 2026-06-19 split rebuild and are stale.
 8. After significant experimental or protocol changes, update `PROJECT_MEMORY.md`.
 
 ## 22. Short Current Narrative

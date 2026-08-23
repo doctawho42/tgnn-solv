@@ -20,11 +20,17 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-DOCS = ["README.md", "DEPOSITS.md", "CLAUDE.md", "AGENTS.md", "ZENODO_DEPOSIT.md"]
+DOCS = ["README.md", "DEPOSITS.md", "CLAUDE.md", "AGENTS.md", "ZENODO_DEPOSIT.md",
+        "PROJECT_DESCRIPTION.md"]
 
-#: A backticked token that looks like a path into this repository.
+#: The directories a documented path may start with. NAMED, NOT INFERRED: the first version matched
+#: any `word/word`, which made `beta/T` -- a ratio in the thermodynamics section -- a missing path.
+#: Prose is full of slashes that are not paths.
+TOP = "paper|src|scripts|configs|results|tests|notebooks|checkpoints|figures|data|web|logs"
+#: A backticked token that looks like a path into this repository: either it carries a file
+#: extension we recognise, or it starts at one of the directories above.
 PATH_RE = re.compile(r"`([A-Za-z0-9_][A-Za-z0-9_./*-]*\.(?:py|sh|md|tex|pdf|json|csv|ya?ml|txt)"
-                     r"|[a-z_]+/[A-Za-z0-9_./*-]*)`")
+                     rf"|(?:{TOP})/[A-Za-z0-9_./*-]*)`")
 #: Named on purpose without existing yet, or standing for a family rather than a file.
 EXEMPT = {
     "paper/grounding_paradox.pdf", "paper/grounding_paradox_si.pdf",   # build products

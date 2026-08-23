@@ -39,7 +39,7 @@ All coding agents must treat it as a maintained operational source of truth.
 Required workflow:
 
 - before substantial work, read `PROJECT_MEMORY.md`
-- when old narrative assets (`main.tex`, presentation text, older docs) disagree
+- when the deleted narrative assets recovered from git history disagree
   with fresh result bundles, prefer current reproducible artifacts and
   `PROJECT_MEMORY.md`
 - after any significant incident, update `PROJECT_MEMORY.md` in the same turn

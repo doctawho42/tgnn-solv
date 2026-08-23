@@ -10,13 +10,13 @@ repository.
 Use it to keep the current project state stable across separate chats, IDE
 restarts, and agent handoffs.
 
-When `main.tex`, presentation assets, docs, and fresh result bundles disagree,
+When the manuscript and fresh result bundles disagree,
 prefer:
 
 1. current reproducible artifacts under `results/`
 2. current maintained configs and scripts
 3. this file
-4. older narrative documents (`main.tex`, presentation scripts, older docs)
+4. older narrative documents, recoverable from git history
 
 ## Project Identity
 
@@ -70,7 +70,7 @@ Interpretation:
 - `DirectGNN` currently beats the best maintained RF baseline.
 - The current direct-vs-physics gap is small:
   - physics path costs about `+0.09 MAE` relative to DirectGNN.
-- Older text in `main.tex` and older narrative pages may still reflect a
+- Older narrative text in git history may still reflect a
   pre-fix regime where RF was stronger. Treat those sections as stale unless
   they are explicitly revalidated by current artifacts.
 
