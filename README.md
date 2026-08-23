@@ -14,7 +14,7 @@ and none is offered as one.**
 
 | If you want to | Read |
 |---|---|
-| the result | `paper/grounding_paradox.pdf` (article) and `paper/grounding_paradox_si.pdf` (supporting information) |
+| the result | `paper/grounding_paradox.pdf` (article) and `paper/grounding_paradox_si.pdf` (supporting information), or the [project page](https://doctawho42.github.io/tgnn-solv/) |
 | to check a number the paper prints | [`DEPOSITS.md`](DEPOSITS.md) — every printed value, the artifact it came from, and the script that regenerates it |
 | to re-run the checks | `./verify.sh` |
 | to reproduce the pipeline | [Reproduction](#reproduction) below |
@@ -107,6 +107,12 @@ Solubility is BigSolDB 2.0, partitioned by Bemis–Murcko scaffold. Crystal `T_m
 an open melting-point pool plus a group-contribution prior. Reference σ-profiles are the VT-2005
 tabulation. Sources are public; the per-row prediction files and the larger analysis artifacts are
 deposited separately (see `DEPOSITS.md`).
+
+## The public page
+
+One hand-written file, `web/index.html`, deployed by `scripts/publish_site.sh`. It refuses to
+publish if its abstract has drifted from the manuscript's. See `web/README.md` for why it is not
+generated.
 
 ## Licence
 

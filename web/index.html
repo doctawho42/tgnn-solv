@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TGNN-Solv — grounding a physics-informed solubility model</title>
+<meta name="description" content="When a physics-informed model is given the tabulated quantity it was routed through, it gets worse. The paper, the code, and the deposits behind every number.">
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #5b5b5b; --rule: #e2e2e2;
+    --link: #1a4f8a; --accent: #8a3324; --card: #fafafa; --code: #f3f3f3;
+  }
+  :root:not([data-theme="light"]) { }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16181c; --fg: #e6e6e6; --muted: #a0a0a0; --rule: #2e3238;
+      --link: #82b4ee; --accent: #e08a72; --card: #1d2025; --code: #22262c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16181c; --fg: #e6e6e6; --muted: #a0a0a0; --rule: #2e3238;
+    --link: #82b4ee; --accent: #e08a72; --card: #1d2025; --code: #22262c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 17px/1.65 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.25rem 5rem; }
+  h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 .4rem; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 2.2rem; font-size: 1.05rem; }
+  h2 {
+    font-size: .82rem; text-transform: uppercase; letter-spacing: .09em;
+    color: var(--muted); font-weight: 700; margin: 2.6rem 0 .8rem;
+    padding-bottom: .35rem; border-bottom: 1px solid var(--rule);
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  a { color: var(--link); text-decoration: none; border-bottom: 1px solid transparent; }
+  a:hover { border-bottom-color: currentColor; }
+  p { margin: 0 0 1rem; }
+  .lede { font-size: 1.06rem; }
+  .box {
+    background: var(--card); border: 1px solid var(--rule); border-radius: 7px;
+    padding: 1.1rem 1.25rem; margin: 1.2rem 0;
+  }
+  .box p:last-child { margin-bottom: 0; }
+  .links { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.4rem 0 0; }
+  .links a {
+    display: inline-block; padding: .5rem .95rem; border: 1px solid var(--rule);
+    border-radius: 6px; background: var(--card); font-size: .95rem;
+    font-family: system-ui, -apple-system, sans-serif; border-bottom: 1px solid var(--rule);
+  }
+  .links a:hover { border-color: var(--link); }
+  code, pre {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .87em;
+  }
+  code { background: var(--code); padding: .1rem .34rem; border-radius: 4px; }
+  pre {
+    background: var(--code); padding: .9rem 1rem; border-radius: 6px;
+    overflow-x: auto; line-height: 1.5; border: 1px solid var(--rule);
+  }
+  pre code { background: none; padding: 0; }
+  .tbl-scroll { overflow-x: auto; margin: 1rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+  th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--rule); }
+  th { font-family: system-ui, -apple-system, sans-serif; font-size: .8rem;
+       text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  td:first-child { white-space: nowrap; }
+  .caveat { border-left: 3px solid var(--accent); padding-left: 1rem; margin: 1.3rem 0; }
+  footer {
+    margin-top: 3.5rem; padding-top: 1.2rem; border-top: 1px solid var(--rule);
+    color: var(--muted); font-size: .9rem;
+  }
+  @media (max-width: 480px) { .wrap { padding-top: 2.2rem; } h1 { font-size: 1.55rem; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Grounding a physics-informed model can make it worse</h1>
+<p class="sub">A controlled study on solid–liquid solubility, and the apparatus that produced it.</p>
+
+<p class="lede">Physics-informed models route a prediction through a quantity that can be looked
+up, so supplying the tabulated value ought to improve them. It does not. Substituting the
+tabulated charge-density profile for the learned one at prediction time makes solubility
+prediction worse at every seed, and degrades the ranking of solvents for a solute — which is the
+decision the model is actually used for.</p>
+
+<div class="links">
+  <a href="grounding_paradox.pdf">Article (PDF)</a>
+  <a href="grounding_paradox_si.pdf">Supporting information (PDF)</a>
+  <a href="https://github.com/doctawho42/tgnn-solv">Code</a>
+</div>
+
+<h2>Abstract</h2>
+<p>Physics-informed models route a prediction through a quantity that can be looked up, so
+supplying the tabulated value ought to improve them. We test that assumption for solid–liquid
+solubility, where a graph neural network predicts the molecular charge-density profiles a fixed
+COSMO-SAC layer consumes and quantum chemistry tabulates independently. Grounding names two
+opposite operations, and they do not behave alike. Substituting the tabulated profile for the
+learned one at prediction time makes solubility prediction worse at every seed, and degrades the
+ranking of solvents for a solute, which is the decision the model is used for. Supervising the
+same network against the same database during training carries no established sign. The operation
+that fails is the one available in practice, because it needs no retraining. Infinite-dilution
+activity data separate a deployed thermodynamic model's own error from what its inputs leave
+unresolved, and the model's error dominates on one solvent chemistry. A search over strata
+identifies that cell, and an independent set reproduces it at half its size without meeting this
+paper's own stability rule, so we report it as the instrument's output and not as an established
+effect. Where the fixed model is the binding constraint, a more accurate input exposes its
+misspecification instead of repairing it.</p>
+
+<h2>What this is not</h2>
+<div class="caveat">
+<p>No arm in this work is competitive with current solubility models, and none is offered as one.
+The comparison table in the supporting information fixes the scale the work operates on; it does
+not rank anything. The substitution result is a contrast <em>within one checkpoint</em> and does
+not depend on that scale.</p>
+<p>The two arms are separately tuned, with no hyperparameter-matched control, so the difference
+between the physics path and its closure-free control is not attributable to the thermodynamic
+bottleneck alone. The paper says so wherever it quotes that gap.</p>
+</div>
+
+<h2>Checking a number</h2>
+<p>Every value the manuscript prints has an artifact behind it, a script that regenerates that
+artifact, and a gate that fails the build if the two stop agreeing. The map is
+<a href="https://github.com/doctawho42/tgnn-solv/blob/main/DEPOSITS.md"><code>DEPOSITS.md</code></a>.</p>
+
+<div class="tbl-scroll">
+<table>
+  <thead><tr><th>Claim</th><th>Deposit</th></tr></thead>
+  <tbody>
+    <tr><td>the decomposition</td><td><code>results/b_insuff/decomposition.json</code>, <code>matched_pairs.csv</code></td></tr>
+    <tr><td>the arms</td><td><code>results/e5_sigma_grounding_leakfree/</code> (five seeds)</td></tr>
+    <tr><td>the mechanism</td><td><code>results/compensation/</code>, <code>results/sur/surrogate_seeds/</code></td></tr>
+    <tr><td>external comparison</td><td><code>results/external_baseline_comparison/</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>One command re-runs the package checks, the test suite, all eight manuscript gates and both
+LaTeX builds:</p>
+<pre><code>git clone https://github.com/doctawho42/tgnn-solv
+cd tgnn-solv &amp;&amp; pip install -e .
+./verify.sh</code></pre>
+
+<h2>Reproducing the pipeline</h2>
+<p>Data preparation rebuilds the processed splits from cached public sources. One warning is worth
+repeating here, because it invalidates comparisons silently: <strong>a regenerated split is a new
+split.</strong> The seeded scaffold partition is not stable across pipeline versions — a rebuild
+has been observed to turn over about three quarters of which scaffolds land in test — so every
+metric computed on the previous split is orphaned by it.</p>
+<p>Local runs are smoke configs and produce meaningless numbers; real results need a GPU run on
+the full corpus.</p>
+
+<h2>Data</h2>
+<p>Solubility is BigSolDB 2.0, partitioned by Bemis–Murcko scaffold. Crystal melting points and
+enthalpies of fusion come from an open melting-point pool plus a group-contribution prior.
+Reference σ-profiles are the VT-2005 tabulation. All sources are public. Per-row prediction files
+and the larger analysis artifacts are archived separately; the DOI is registered at submission.</p>
+
+<footer>
+<p>MIT licence. Built from the repository, not from a generator — the previous site was
+auto-deployed and then sat five months out of date, which is the failure this page is shaped to
+avoid.</p>
+</footer>
+
+</div>
+</body>
+</html>
