@@ -181,7 +181,7 @@ TEAL_W = "#35705E"    # the teal-side legend word
 SALMON_D = "#A2543A"  # the salmon-side legend word: 5.17:1
 
 FIG_W_IN = 502.58 / 72.0   # \linewidth of the two-column float, exactly (see SCALE DISCIPLINE)
-FIG_H_IN = 2.515
+FIG_H_IN = 2.515 - 22.0 / 72.0   # 2026-08-24: the strip's height, given back to the page
 
 # ---- SCALE DISCIPLINE.  A coded point must be a printed point. -------------------------------
 # The comment that stood here until 2026-08-09 said "8.0 in prints at 0.88, so nothing here falls
@@ -524,46 +524,27 @@ axa.text(bxa(SIG_R + 6.0), bya(S_MID), "substituted at\nprediction time", ha="le
 # note above is what stops the two halves being read as one table.
 say(L, 23.5, "$59$ strata, Delaware (UD) profiles ($n{=}477$), $(\\ln\\gamma)^2$", fs=FS_NAME)
 
-# ---- the whole search, one tick per stratum ---------------------------------------------------
-# results/b_insuff/stratified_map_table.csv, set=broad_477, unit=row, convention=res: 59 strata
-# over seven axes (whole set, solute family, solvent family, solvent class, coarse class, solute
-# role, class x role), of which boundable_at_headline_cell holds on 15.  Six of those are
-# admissible in every unit x convention cell; clause (c) of Sec. 4.2 collapses the six to three
-# distinct ROW SETS, and one of the three is also positive and undemoted -- the glycol ethers.
-# Those are the counts Table 3's note (h) prints, and the two must move together.
-# The ticks are SORTED by status, not by name: the strata carry no natural order, and sorting is
-# what lets the eye read 44-against-15 off the strip.  BOUNDABILITY IS ONE ATTRIBUTE, fill against
-# outline -- the fifteen are identical to each other, so "fifteen filled" counts to fifteen -- and
-# the strip stops short of the bars' axis so that two horizontal objects with different grammars
-# cannot be read as one coordinate system.
-N_STRATA, N_BOUNDABLE = 59, 15
-STRIP_TOP, STRIP_H = 30.5, 10.0
-STRIP_W = IW - 14.0
-_tw = 2.2
-_pitch = (STRIP_W - _tw) / (N_STRATA - 1)
-for i in range(N_STRATA):
-    boundable = i >= N_STRATA - N_BOUNDABLE
-    x0 = L + i * _pitch
-    axb.add_patch(Rectangle((bx(x0), by(STRIP_TOP + STRIP_H)),
-                            bx(x0 + _tw) - bx(x0), by(STRIP_TOP) - by(STRIP_TOP + STRIP_H),
-                            fc=INK if boundable else "none",
-                            ec="none" if boundable else STRIPO,
-                            lw=0.0 if boundable else 0.5, zorder=3))
-_last_c = L + (N_STRATA - 1) * _pitch + _tw / 2      # centre of the standing stratum's tick
-# 2026-08-10: "$15$ BOUNDABLE" BECOMES "$15$ WITH A BOUND".  The word printed here on page 4 and
-# was defined on page 7; its plain-English form is already on this same line, four inches to the
-# left, in "44 with no bound".  Saying it the same way twice makes the pair one contrast instead
-# of a term and its negation, and costs two characters.  The COUNTS are untouched.
-say(L, 47.0, "$44$ with no bound")
-_stands = say(_last_c, 47.0, "$\\ast$", color=INK, ha="center")
-say(_last_c - 4.5, 47.0, "$15$ with a bound, $1$ stands", color=INK, ha="right")
+# ---- the whole search: REMOVED FROM THE PANEL 2026-08-24, MOVED INTO THE CAPTION ------------
+# A strip of fifty-nine ticks used to run above the bars, outlined where no bound exists and
+# filled where one does, so that three bars could not be read as the whole search.  The reason
+# was right and the object was wrong: the reader this panel is for reported it as the thing that
+# made the panel unreadable, and a second horizontal object with its own grammar, its own two
+# labels and no scale is a lot to charge for one guard.  The guard now runs in the caption, in
+# words -- 'three of the fifteen strata, of fifty-nine searched, that carry a bound' -- which
+# costs the reader one clause and the panel nothing.  Do not restore the strip without first
+# checking that the caption has stopped saying it.
+N_STRATA, N_BOUNDABLE = 59, 15          # kept: the caption's counts are asserted against these
 
 # ---- legend, set as a header over the zone each colour occupies rather than as a lookup -------
 # The teal entry sits at the left margin, where every teal block starts; the salmon entry is
 # right-aligned, where the salmon runs.  Position assigns the colour and the swatch is the backup.
 # The teal swatch carries the bound rule on its right edge, which is how the rule in each row is
 # taught without a third legend entry.
-LEG_Y, SW_W, SW_H = 60.0, 11.0, 5.6
+# 2026-08-24: LEG_Y was 60.0 and ROW0 73.5, both set below a strip that no longer
+# exists.  STRIP_RECLAIM is the height it and its label line occupied; subtracting it
+# in one place keeps every offset below in its original relative position.
+STRIP_RECLAIM = 22.0
+LEG_Y, SW_W, SW_H = 60.0 - STRIP_RECLAIM, 11.0, 5.6
 
 
 def swatch(dx, dy, fc, ec):
@@ -602,7 +583,7 @@ swatch(R - wpt(_rl) - 4.0 - SW_W, LEG_Y, SALMON, SALMON_D)
 # to separate, not a certified reversal, and no reversed or negative block is drawn.
 SCALE = 2.30                     # (ln gamma)^2 across IW
 PPU = IW / SCALE
-BAR_H, ROW0, ROW_PITCH, NAME_TO_BAR = 6.4, 73.5, 18.0, 4.8
+BAR_H, ROW0, ROW_PITCH, NAME_TO_BAR = 6.4, 73.5 - STRIP_RECLAIM, 18.0, 4.8
 # THE ONE DISTANCE THE WHOLE PANEL TURNS ON.  If a future width or scale edit shrinks it, the
 # third row silently goes back to being a 2 mm striped dot with its quantity hidden inside it.
 _over = (CLASSES[2]["b"] - CLASSES[2]["mse"]) * PPU
@@ -633,9 +614,12 @@ for k, c in enumerate(CLASSES):
     if c["gloss"]:
         _gl = say(_x, ny, c["gloss"])
         _x += wpt(_gl) + 2.0
-    mk = say(_x, ny, f"${c['mark']}$", fs=FS_NAME, color=INK)
-    _rx = _x + wpt(mk) + 4.4
-    _rs = say(_rx, ny, REASONS[c["mark"]])
+    # THE SYMBOLS ARE GONE, THE VERDICTS ARE NOT.  Each row used to carry *, dagger or ddagger
+    # next to its name and the reason beside it -- a footnote apparatus for three rows, on a panel
+    # whose reader has to look somewhere else to decode it.  The mark is dropped and the reason it
+    # pointed at is simply set where it stood, so the verdict is read rather than resolved.
+    _rx = _x + 1.0
+    _rs = say(_rx, ny, "\u2014 " + REASONS[c["mark"]], color=INK)
     # the name line now carries a gloss on one row, which makes it the panel's tightest line
     assert _rx + wpt(_rs) <= R, f"{c['name']!r}: its name line runs past the margin"
     b, mse = c["b"], c["mse"]

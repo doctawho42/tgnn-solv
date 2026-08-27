@@ -647,7 +647,16 @@ physical picture names---an activity coefficient for the solute--solvent interac
 temperature and heat of fusion for the crystal---and combine them through a fixed equation. SolProp
 \cite{vermeire2022solprop} does so with a thermodynamic cycle of separately learned components. The
 fixed equation buys decomposability: each part is a quantity chemists tabulate on its own, so it can
-be supervised against reference data a direct regressor cannot use. On accuracy the black box leads and
+be supervised against reference data a direct regressor cannot use.
+% ADDED 2026-08-24 on review. The premise the title puns on was stated in the abstract and assumed
+% everywhere else, so a reader met the paradox before meeting the expectation it violates. Two
+% sentences, and deliberately the plainest in the section.
+The structure is also a prior, which is much of why the design is popular: it asserts for free what
+a purely statistical model must otherwise learn from data, and it promises to hold where the data
+thin out. And because each intermediate is a quantity someone has already tabulated, a better value
+for it can be looked up and handed to the model without retraining anything---so the natural
+expectation, and the one this paper tests, is that a more accurate input gives a more accurate
+prediction. On accuracy the black box leads and
 the physics-informed cycle trails it. Learned surrogates for the activity coefficient split the same way. Winter et al.\
 \cite{winter2022} predict \lngi\ from SMILES strings, the line notation for molecular structure,
 with a language model; Sanchez-Medina et al.\
@@ -822,9 +831,14 @@ between networks.
 \caption{\textbf{Overview.} \textbf{(a)}~A learned encoder predicts a charge-density profile
 $\hat\sigma$ that a fixed thermodynamic model turns into a solubility, and the arrow marks the
 substitution of the reference $\sigma^\star$ for it. Training-time supervision is omitted.
-\textbf{(b)}~The counterpart error on infinite-dilution activity data: the strip is every stratum
-searched, the bars the three solvent classes with a bound, and the star the one class the
-admissibility rule leaves standing. Each block is a one-sided bound, not an interval.}
+% CAPTION REWRITTEN 2026-08-24 with the panel. It used to describe a strip and a star that the
+% panel no longer draws. The strip's job was to stop three bars being read as the whole search;
+% that guard is now the clause "of the fifteen ... that carry a bound, out of fifty-nine searched",
+% and it is the reason this caption may not be shortened past it.
+\textbf{(b)}~The counterpart error on infinite-dilution activity data, for three of the fifteen
+strata that carry a bound, out of fifty-nine searched: most of the map supports no statement at
+all. Each block is a one-sided bound, not an interval, and of the three drawn only the glycol
+ethers survive the admissibility rule.}
 \label{fig:overview}
 \end{figure*}
 
