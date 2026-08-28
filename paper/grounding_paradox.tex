@@ -645,11 +645,10 @@ an experiment and trusting a prediction.
 Two kinds of predictor compete for that trust. One learns the answer directly from data. The other
 routes the prediction through the physical picture: it predicts the quantities thermodynamics names
 --- how hard the crystal is to break, how well the freed molecules mix with the solvent --- and
-combines them through a fixed equation. The second kind has become the more attractive of the two,
-and for reasons that have little to do with accuracy, on which it usually trails. Its intermediate
-quantities are things chemistry already knows how to measure and tabulate, so a prediction can be
-inspected part by part, corrected where one part is wrong, and supervised against reference data
-that a direct regressor has no way to use. The fixed equation is also a prior: it asserts for free
+combines them through a fixed equation. The second kind usually trails on accuracy and has become the more attractive of the two anyway.
+Its intermediate quantities are things chemistry already knows how to measure and tabulate, so a
+prediction made through them can be taken apart and audited, and each part can be supervised against
+reference data a direct regressor has no way to use. The fixed equation is also a prior: it asserts for free
 what a purely statistical model would have to learn from data it does not have, which is the
 situation whenever the question concerns a molecule unlike any in the training set.
 
@@ -1693,11 +1692,11 @@ What generalises is a diagnostic rather than a design rule. Wherever a predictor
 physical model over a learned intermediate for which an external reference exists, that reference
 measures whether the fixed model itself limits accuracy; where it does, the remedy is a more
 faithful physical model and not a better input. The answer comes chemistry by chemistry rather than
-once for a field. Two things follow for anyone building on this: measure the fixed model's own
-target and the downstream property on the same pairs, which is a laboratory programme rather than a
-data-assembly task; and if a learned intermediate must feed a fixed physical model, freeze it
-against its reference and fine-tune only downstream, since the one published construction that does
-so reports the opposite sign to ours \cite{yang2025tennet}.
+once for a field. For anyone building on this, the fixed model's own target and the downstream property want
+measuring on the same pairs, which is a laboratory programme and not a data-assembly task. And a
+learned intermediate that must feed a fixed physical model is better frozen against its reference
+and fine-tuned only downstream: the one published construction that does so reports the opposite
+sign to ours \cite{yang2025tennet}.
 
 
 \section*{Author contributions}
