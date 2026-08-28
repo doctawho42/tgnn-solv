@@ -50,14 +50,10 @@ log-solubility to their negative sum:
 with no constant-$\Delta C_p$ correction ($\Delta C_p$ being the difference in heat capacity
 between the liquid and the solid). That term is absent from the displayed equation because it is
 absent from the deployed model, which fixes $\Delta C_p=0$, the head that would predict it being off
-in the pinned configuration. The exposure is one-signed and substantial: at the group-contribution
-value this corpus carries, $60$\,J\,mol$^{-1}$\,K$^{-1}$, the omitted term is a median $0.32$ in
-\lnx\ over the $1318$ labelled test rows carrying a measured $\Tm$, positive on every one of the
-$31$ solutes---the size of the substitution penalty of \S\ref{sec:paradox}. It enters the physics
-arms, leaves the closure-free control untouched, and cancels exactly in the evaluation-time
-substitution, where $\Phicry$ is common to the two arms (\S\ref{sec:si-methods}). It survives into
-the training of the $\sigma$ head, fitted through a crystal term carrying a bias of that size and
-direction, whose consequence \S\ref{sec:surrogate} reads. The activity term is produced by a
+in the pinned configuration. The exposure is one-signed and substantial. At the group-contribution value this corpus carries,
+$60$\,J\,mol$^{-1}$\,K$^{-1}$, the omitted term is a median $0.32$ in \lnx\ over the $1318$
+labelled test rows carrying a measured $\Tm$, and positive on every one of their $31$ solutes.
+That is the size of the substitution penalty of \S\ref{sec:paradox}. It cancels exactly in the evaluation-time substitution, where $\Phicry$ is common to the two arms, and \S\ref{sec:si-methods} gives where else it acts. The activity term is produced by a
 \emph{differentiable closure} $g$. A graph encoder predicts a $\sigma$-profile (the distribution of
 screening charge density over a molecule, the histogram a COSMO model consumes) for each molecule,
 and COSMO-SAC \cite{lin2002}, a segment-activity reformulation of COSMO-RS, maps the pair of
@@ -67,11 +63,11 @@ and the part the published revisions rewrite. A closure variant is therefore nam
 year --- the \emph{2002 kernel} this pipeline runs, and the \emph{2010 kernel} that types
 segments as hydrogen-bond donors or acceptors instead of treating hydrogen bonding with one
 parameter. Write $\zstar$ for the \emph{reference} latent, a tabulated $\sigma$-profile, and
-$\hat z$ for the head's own prediction. \textbf{Two profile databases supply $\zstar$ below and they
-are never interchangeable}: \emph{VT-2005}, the Virginia Tech 2005 tabulation \cite{mullins2006},
-which the $\sigma$ head is supervised against and which is substituted for $\hat z$ at prediction
-time, and \emph{UD}, the University of Delaware successor, which the activity-coefficient rows of
-\S\ref{sec:broad} are matched to. Every set, margin and figure below names which it is computed on,
+$\hat z$ for the head's own prediction. \textbf{Two profile databases supply $\zstar$ below and they are never interchangeable.}
+\emph{VT-2005} is the Virginia Tech 2005 tabulation \cite{mullins2006}: the $\sigma$ head is
+supervised against it, and it is what replaces $\hat z$ at prediction time. \emph{UD} is the
+University of Delaware successor, and the activity-coefficient rows of \S\ref{sec:broad} are
+matched to it. Every set, margin and figure below names which it is computed on,
 and we read no quantity across them; the one place they are deliberately set against each other is
 the database-to-database bracket of \S\ref{sec:badclosure}. Feeding $\zstar$ in place of $\hat z$ (a
 $\sigma$-oracle) isolates the closure from encoder error: were the closure well specified,
@@ -84,13 +80,7 @@ closure $g$ consumes a learned physical intermediate $z=h(x)$, against a matched
 shares the encoder and drops $g$. Solubility is one instance, and a second is the closure of \S\ref{sec:pka-main} for $\mathrm pK_a$,
 the acid dissociation constant on a negative logarithmic scale.
 
-Solubility alone underdetermines the crystal/activity split of Eq.~\eqref{eq:sle}. At infinite
-dilution with $\Delta C_p=0$ the observable is affine in $1/T$, and the activity intercept and slope
-already span that plane, so the profiled Fisher information for $\dHfus$ is exactly zero and the
-indeterminacy set is two-dimensional. At finite dilution the composition factor $(1-x_2)^2$ leaves an
-information of order $x_2^2$. The deficiency closes under a rank-completing external constraint and
-nothing weaker: a direct crystal label, or a fixed activity slope (Lemma~\ref{prop:ident},
-\S\ref{sec:si-proofs}). That is why an under-determined factor needs external single-component data
+Solubility alone underdetermines the crystal/activity split of Eq.~\eqref{eq:sle}. The deficiency closes under a rank-completing external constraint and nothing weaker --- a direct crystal label, or a fixed activity slope (Lemma~\ref{prop:ident}, \S\ref{sec:si-proofs}). That is why an under-determined factor needs external single-component data
 and why we expect compensation between the factors, and it is silent on whether grounding helps.
 
 \subsubsection{The closure--insufficiency decomposition}
