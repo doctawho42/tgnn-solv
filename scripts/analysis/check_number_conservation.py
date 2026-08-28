@@ -1579,7 +1579,16 @@ def render(base_build: BuildResult, now_build: BuildResult,
         out.append(f"  {f.shown}  x{f.base_count} -> x{f.now_count}   "
                    f"reason: {allow[f.key]}")
 
-    gating = list(a_gone) + list(a_less)
+    # --relocation, added 2026-08-28.  A structural pass that moves prose between the two documents
+    # makes group 2 large by construction: the 2026-08-28 review compressed one subsection by 1500
+    # words and 45 tier-A values stopped printing in the sentences that used to carry them, none of
+    # them leaving the document.  Listing 45 allowlist entries would say "deliberately retired" of
+    # values that were not retired, which empties that word of meaning.
+    # WHAT THIS FLAG DOES NOT DO: group 1, tier-A values GONE FROM THE DOCUMENT ENTIRELY, stays
+    # fatal under it, and so does every gained-value and figure-text check.  It downgrades exactly
+    # the group whose own heading says the value survives elsewhere, and it prints every member of
+    # that group regardless, because the instruction those entries carry is "read them".
+    gating = list(a_gone) + ([] if args.relocation else list(a_less))
     if args.gate_integers:
         gating += b_gone + b_less
     out.append("")
@@ -1633,6 +1642,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                    help="clip a context sentence to N characters (default: 260)")
     p.add_argument("--gate-integers", action="store_true",
                    help="let tier-B (bare integer) losses affect the exit status")
+    p.add_argument("--relocation", action="store_true",
+                   help="a declared pass that moved prose between documents: tier-A values that "
+                        "stopped printing in one statement but survive elsewhere are reported and "
+                        "not fatal. Values gone from the document entirely stay fatal.")
     p.add_argument("--report", default=None, metavar="FILE",
                    help="also write the report to FILE")
     p.add_argument("--quiet", action="store_true",

@@ -99,14 +99,29 @@ def main() -> None:
     }
 
     tex = a.article.read_text()
-    m = re.search(
-        r"the estimator returns \$\\Binsuf=([\d.]+)\$ against that stratum's own \$\\mathrm\{MSE\}\$ "
-        r"of \$([\d.]+)\$,\s+twice what the decomposition allows, at \$R\^2=(-[\d.]+)\$ out of fold\. "
-        r"Across the source-folded cells the\s+same violation runs from \$([\d.]+)\$ to \$([\d.]+)\$ "
-        r"times \$\\mathrm\{MSE\}\$.*?so the \$(-[\d.]+)\$ it prints here", tex, re.S)
-    if m is None:
-        raise SystemExit("the deviation paragraph is not in the article in the form this gate "
-                         "reads; it was reworded or removed")
+    # WHERE THESE SIX NUMERALS LIVE, AND WHY THIS GATE MOVED, 2026-08-28.  They were in the
+    # article's deviation paragraph.  The supervisory review's rule is that the body carries the
+    # conclusion and the SI the evidence, so the paragraph was cut to its conclusion and the
+    # arithmetic now prints only in the SI, which had been carrying it in parallel all along --
+    # deliberately, per the note above \label{par:crossfit-deviation}.  The gate follows the
+    # numbers.  It reads the SI's sentences rather than one regex over a paragraph, because the two
+    # statements sit in different sentences there and a single pattern over both would break on any
+    # reflow between them.
+    si = (ROOT / "paper/sections/crossfit-negative.tex").read_text()
+    pats = [
+        r"its cross-fitted bound is \$([\d.]+)\$ against an\s+\$\\mathrm\{MSE\}\$ of \$([\d.]+)\$",
+        r"scores \$R\^2=(-[\d.]+)\$ out of fold",
+        r"runs from \$([\d.]+)\$ to \$([\d.]+)\$\s+times \$\\mathrm\{MSE\}\$",
+        r"so its margin is \$(-[\d.]+)\$",
+    ]
+    groups = []
+    for pat in pats:
+        mm = re.search(pat, si, re.S)
+        if mm is None:
+            raise SystemExit(f"the deviation arithmetic is not in the SI in the form this gate "
+                             f"reads; it was reworded or removed:\n  {pat}")
+        groups.extend(mm.groups())
+    m = type("M", (), {"groups": lambda self=None: tuple(groups)})()
 
     bad = 0
     print("deviation paragraph, bound to results/b_insuff/crossfit_map.json:")
@@ -121,27 +136,40 @@ def main() -> None:
           f"paper twenty-seven   deposit {floor}")
     bad += floor != 27
 
-    # and the two null frequencies the article now carries
-    # Split into two periods by the 2026-08-19 readability pass; the gate reported it reworded,
-    # which is what it is for.  The four numerals and their order are unchanged.
-    n = re.search(r"moves from \$([\d.]+)\$ to \$([\d.]+)\$\. Conditioned on drawing a map that "
-                  r"certifies anything at all, a\s+relabelling reaches the observed maximum in "
-                  r"\$(\d+)\\%\$ of draws against \$(\d+)\\%\$", tex)
-    si = (ROOT / "paper/sections/crossfit-negative.tex").read_text()
-    s = re.search(r"moves the wrong way, \$([\d.]+)\\to([\d.]+)\$;.*?in \$(\d+)\\%\$ of draws\s+"
-                  r"against \$(\d+)\\%\$", si, re.S)
-    if n and s:
-        for label, got, truth in zip(("null p, binning", "null p, cross-fit",
-                                      "certifying draws, cross-fit", "certifying draws, binning"),
-                                     n.groups(), s.groups()):
-            ok = got == truth
-            bad += not ok
-            print(f"  {'ok  ' if ok else 'FAIL'}  {label:32s} paper {got:>8s}   SI {truth:>8s}")
-    else:
-        print("  FAIL  the null sentence does not match between the article and the SI")
+    # THE ARTICLE PRINTS A SUBSET OF THESE NOW, 2026-08-28.  It used to state all four null
+    # frequencies; after the supervisory review it states the conclusion and the two frequencies
+    # that carry it, the other two having moved to the SI with the rest of the arithmetic.  So the
+    # rule this enforces changed shape: not "the article prints all four" but "every numeral the
+    # article DOES print for this agrees with the SI".  A body free to shorten and a gate that
+    # still binds what survives is the point; requiring the long form would make the gate an
+    # argument against editing.
+    si_txt = (ROOT / "paper/sections/crossfit-negative.tex").read_text()
+    s_all = re.search(r"moves the wrong way, \$([\d.]+)\\to([\d.]+)\$;.*?in \$(\d+)\\%\$ of draws\s+"
+                      r"against \$(\d+)\\%\$", si_txt, re.S)
+    if s_all is None:
+        print("  FAIL  the SI's null sentence is not in the form this gate reads")
         bad += 1
+    else:
+        si_vals = dict(zip(("null p, binning", "null p, cross-fit",
+                            "certifying draws, cross-fit", "certifying draws, binning"),
+                           s_all.groups()))
+        # \s+ AND NOT A SPACE: the sentence wraps between the two numerals in the source, and a
+        # literal space here would report a drift on a reflow. The donor-window gate records the
+        # same lesson -- values are bound, line breaks are not.
+        art = re.search(r"relabelling reaches the observed maximum in \$(\d+)\\%\$ of draws\s+against"
+                        r"\s+\$(\d+)\\%\$", tex)
+        if art is None:
+            print("  FAIL  the article no longer states either cross-fit null frequency")
+            bad += 1
+        else:
+            for label, got in zip(("certifying draws, cross-fit", "certifying draws, binning"),
+                                  art.groups()):
+                ok = got == si_vals[label]
+                bad += not ok
+                print(f"  {'ok  ' if ok else 'FAIL'}  {label:32s} paper {got:>8s}   "
+                      f"SI {si_vals[label]:>8s}")
 
-    print(f"\n{len(want) + 5} numerals bound, {bad} mismatched")
+    print(f"\n{len(want) + 3} numerals bound, {bad} mismatched")
     if bad:
         raise SystemExit("the deviation paragraph and its deposits disagree")
 

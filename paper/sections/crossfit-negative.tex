@@ -89,6 +89,12 @@ pair bound is refused for above. Its bound
 exceeds the stratum's own total error, which $\Binsuf$ itself cannot do, an upper bound on it being free to be arbitrarily loose, and its regressor
 scores $R^2=-0.60$ out of fold on these rows: at this fold count the estimator failed, and $-7.58$
 is uninformative about this closure rather than a reversal of it.
+% MOVED HERE FROM THE ARTICLE 2026-08-28, supervisory review: the body keeps the conclusion, the SI
+% keeps the arithmetic. check_deviation_paragraph.py binds this sentence and the three around it.
+Across the source-folded cells the
+same violation runs from $1.6$ to $2.9$
+times $\mathrm{MSE}$ with a random forest, and some twenty-seven orders of magnitude more with
+ridge, so the failure is a property of the fold design and not of one regressor.
 The count of \emph{boundable} strata does not move, $15$ of $59$ under both estimators,
 because boundability is the $n\ge40$ test and the declaration froze it. The retired whole-set
 aggregate does not return: its margin falls from $+0.944$ to $+0.211$ (full) and from $+0.506$ to
