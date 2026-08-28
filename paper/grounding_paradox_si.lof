@@ -1,10 +1,12 @@
-\contentsline {figure}{\numberline {S1}{\ignorespaces The model, and where the oracle substitution enters}}{S-11}{figure.caption.12}%
-\contentsline {figure}{\numberline {S2}{\ignorespaces The separation margin over the estimator grid}}{S-24}{figure.caption.24}%
-\contentsline {figure}{\numberline {S3}{\ignorespaces Where the closure binds, and where the two terms do not separate}}{S-34}{figure.caption.28}%
-\contentsline {figure}{\numberline {S4}{\ignorespaces Activity-coefficient parity on the sixty matched pairs}}{S-50}{figure.caption.38}%
-\contentsline {figure}{\numberline {S5}{\ignorespaces The drift solubility fine-tuning imposes on the learned profile}}{S-59}{figure.caption.46}%
-\contentsline {figure}{\numberline {S6}{\ignorespaces Explained-variance spectrum of the fine-tuning drift}}{S-61}{figure.caption.52}%
-\contentsline {figure}{\numberline {S7}{\ignorespaces The data-efficiency curve}}{S-72}{figure.caption.70}%
-\contentsline {figure}{\numberline {S8}{\ignorespaces Per-molecule cosine between the measured drift and the first-order step}}{S-76}{figure.caption.74}%
-\contentsline {figure}{\numberline {S9}{\ignorespaces pKa through a Hammett LFER on a known-ground-truth construction}}{S-84}{figure.caption.86}%
-\contentsline {figure}{\numberline {S10}{\ignorespaces The closure-fidelity sweep on synthetic teacher functions}}{S-97}{figure.caption.99}%
+\contentsline {figure}{\numberline {S1}{\ignorespaces The model, and where the oracle substitution enters}}{S-12}{figure.caption.12}%
+\contentsline {figure}{\numberline {S2}{\ignorespaces The separation margin over the estimator grid}}{S-25}{figure.caption.24}%
+\contentsline {figure}{\numberline {S3}{\ignorespaces Where the closure binds, and where the two terms do not separate}}{S-35}{figure.caption.28}%
+\contentsline {figure}{\numberline {S4}{\ignorespaces Activity-coefficient parity on the sixty matched pairs}}{S-51}{figure.caption.38}%
+\contentsline {figure}{\numberline {S5}{\ignorespaces The drift solubility fine-tuning imposes on the learned profile}}{S-60}{figure.caption.46}%
+\contentsline {figure}{\numberline {S6}{\ignorespaces Explained-variance spectrum of the fine-tuning drift}}{S-62}{figure.caption.52}%
+\contentsline {figure}{\numberline {S7}{\ignorespaces The data-efficiency curve}}{S-73}{figure.caption.70}%
+\contentsline {figure}{\numberline {S8}{\ignorespaces Solubility parity for four arms of the controlled comparison: predicted against measured $\ensuremath {\ln x_2}$ on the $5608$ labelled test rows of the scaffold split, which are $763$ solute--solvent pairs over $147$ solutes and $70$ solvents measured between $248$ and $368$\,K. (a) DirectGNN, the closure-free control; (b) COSMO-SAC over an unsupervised $\sigma $-profile; (c) the same closure with $\sigma $-profile supervision during training; (d) the arm of (c) with the reference VT-2005 profile substituted at evaluation. Dashed, the identity. Solid, the median prediction in twelve equal-count bins of the measurement. Each panel header carries that panel's own MAE and $R^2$. Both axes span the measured range with a margin around it, and the markers along the foot of (d) are its $21$ predictions that fall below the frame, each at its own measured value. Panels (b), (c) and (d) come from the five-seed leak-free re-run: the ungrounded, grounded and $\sigma $-oracle arms respectively.}}{S-78}{figure.caption.75}%
+\contentsline {figure}{\numberline {S9}{\ignorespaces The donor window, reference against learned}}{S-79}{figure.caption.79}%
+\contentsline {figure}{\numberline {S10}{\ignorespaces Per-molecule cosine between the measured drift and the first-order step}}{S-82}{figure.caption.82}%
+\contentsline {figure}{\numberline {S11}{\ignorespaces pKa through a Hammett LFER on a known-ground-truth construction}}{S-90}{figure.caption.94}%
+\contentsline {figure}{\numberline {S12}{\ignorespaces The closure-fidelity sweep on synthetic teacher functions}}{S-103}{figure.caption.107}%

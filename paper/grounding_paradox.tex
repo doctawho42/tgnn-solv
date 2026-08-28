@@ -1030,24 +1030,7 @@ learned arm returns none, the learned arm's largest being $7.77$ against the sub
 And $141$ of its
 \lnx\ predictions fall below $-15$, to a minimum of $-22.3$ where the corpus itself stops at
 $-17.7$. The worst $500$ of the $5608$ rows carry $0.25$ of that seed's $+0.26$ mean gap.
-We score both arms at the $30$ segment iterations of \S\ref{sec:model}, with the fixed point
-left short of convergence there. Those rows are therefore the ones on which the truncation is
-least certified, as well as the ones on which the two profiles differ most.
-% ITEM 1 OF THE 2026-08-11 REFEREE ROUND.  The article said the truncation is least certified on
-% these rows and left the exposure at that; the Supporting Information said it was "unmeasured".  It is
-% unmeasured ON THESE ARMS -- the tree keeps none of their weights -- and it is not small where it
-% CAN be measured.  Artifact: results/softmax_floor/{gate,ladder_table}.  The scoping clause is
-% load-bearing and this project's own rule requires it: that head does not reproduce the phenomenon,
-% so what the two counts price is the lever and not this paper's number.  Do not drop it.
-The retained artifacts keep none of these arms' weights, so what the count is worth on them
-cannot be measured here. The tree does keep one trained COSMO-SAC head (a retired run whose weights
-were fit at $8$ iterations, and which scores $2.61$ at $30$ against $1.92$ at $8$ on these same
-labelled rows). On it the substitution penalty moves with the count as well. Substituting the reference profile
-costs $+4.32$ $[+3.61,+5.25]$ at $8$ against $+6.43$ $[+5.39,+7.68]$ at $30$, over $5571$ rows in
-$64$ solvent clusters whose solvent carries a reference profile. That head's penalty departs from
-the one reported here in both size and direction: fifteen times larger at the count the $+0.41$ is
-measured at, and moving its predictions the other way. Those two figures price the lever, not this
-paper's $+0.41$. The restored, misaligned spread is the misspecified map made visible on the
+Both arms are scored at the $30$ segment iterations of \S\ref{sec:model}, and the rows the closure is driven hardest on are also the ones the truncated fixed point is least certified on. The count is a lever: on the one trained head the deposit retains, the substitution penalty moves fifteen-fold with it and in the other direction, which prices the lever and not this paper's $+0.41$ (\S\ref{sec:si-limitations}). The restored, misaligned spread is the misspecified map made visible on the
 solubility axis.
 
 % RANKING (2026-08-06).  Added here and not in the SI because it says what the paradox IS about:
@@ -1101,59 +1084,7 @@ $+0.040$ $[-0.00,+0.08]$. The map carries a slope as well as an intercept, the l
 miscalibration reading can ask for. What is left of the gap no longer stands clear of zero. A
 per-group map that absorbs it is the restored, misaligned spread of the paragraph above in another
 currency. The map is fitted on the rows it is then scored on, two free parameters against a median
-of five solvents, so it bounds what the concession can buy rather than measuring it. Refitted
-leaving out the row it scores, it returns $+0.32$ $[-0.61,+1.20]$ pooled, an interval wide enough to
-hold both the whole gap and none of it. On the
-$550$ groups that hold at least five solvents, where a refit has something to work with, it runs
-$+0.14$ to $+0.28$ by seed with three of the five intervals spanning zero
-(\S\ref{sec:supporting}). The MAE penalty is level and scale in the sense that a per-group map
-fitted on the answer absorbs most of it.
-% THE POWER CURVE, added 2026-08-19.  "Out of sample the data support no statement in either
-% direction" was the honest reading of ONE number, and that number is uninformative for a reason
-% that is a design property and not a subtlety of the answer: a two-parameter map fitted on the
-% other two rows of a three-row group is exactly determined, interpolates its fitting rows with
-% zero residual, and extrapolates to the held-out row with nothing constraining it.  Producer
-% run_recalibration_power.py sweeps a floor on group size and prints the WHOLE curve, including
-% the floors where the interval stays open and the floors where too few clusters remain.
-% THE COMPOSITION CAVEAT IS NOT OPTIONAL: the raw gap also falls with the floor (+0.43, +0.39,
-% +0.34, +0.29), so the floors are not nested samples of one population and part of the decline is
-% chemistry rather than recalibration.  Any restatement carries that clause.
-The interval is wide for a reason the design fixes rather than the answer: a two-parameter map
-fitted on the other two rows of a three-row group is exactly determined. Excluding only those groups, $87\%$ of the cells remain and the out-of-sample gap is
-$+0.40$ $[+0.13,+0.78]$; at floors of five and six solvents it is $+0.20$ $[+0.04,+0.37]$ and $+0.17$
-$[+0.01,+0.35]$, excluding zero at each. The recalibration that absorbs $91\%$ in sample therefore
-absorbs at most about half of the gap out of it, and what remains is positive wherever the design
-can resolve anything at all. The raw gap falls along the same sweep, from $+0.43$ to $+0.29$, so
-these floors are not nested samples of one population and part of that decline is chemistry rather
-than recalibration. The ranking penalty survives both fits, by invariance rather than
-by any centring argument. The invariance is to an \emph{increasing} affine map. The fitted map
-decreases in $10$ to $15\%$ of learned-profile groups and $15$ to $21\%$ of reference-profile ones,
-and there it reverses that group's order outright. Restricted to the $485$ groups
-of $823$ whose map increases in both arms at all five seeds, the ranking gap is $\rho$ $-0.107$
-$[-0.179,-0.031]$, with nDCG@3 and top-1 then spanning zero. Only the rank correlation survives
-that restriction, and the subset it survives on is $59\%$ of the groups.
-
-The ordering that stands in its place is indistinguishable here from a solute-blind one. Two references are
-blind to the solute: the same arm's own predictions for a randomly drawn other solute over the
-same solvents, and a ranking of those solvents by their leave-one-solute-out mean measured
-solubility. Set against both, the learned-profile arm is above them on Spearman, Kendall, top-1 and
-nDCG@3 at every seed: all forty of its margins are positive, and $27$ of the forty intervals exclude
-zero. The thirteen that do not are concentrated rather than scattered, seven of them at seed $42$ and
-four at seed $45$. The separation is therefore a property of three of the five runs, not of every
-one.
-The reference-profile arm's own forty margins are smaller, $36$ of them positive. Their intervals
-carry the reading: $36$ of the forty include zero, and the four that do not are all one reference's,
-the donor floor at seeds $43$ and $44$
-(Table~\ref{tab:ranking}). The intervals measure a failure to separate the reference-profile arm
-from solute-blind orderings on most of the design, and they stop short of demonstrating that the two
-are inseparable. Both arms are above chance, the within-group permutation floor being
-$\rho=0.00\pm0.02$ for each. Supplying the true physical intermediate costs an ordering rather than
-a calibration: the arm's ordering of solvents becomes indistinguishable from one drawn blind to the
-solute.
-
-\input{sections/fig-parity-lnx2}
-
-\input{sections/compensation-surrogate}
+of five solvents, so it bounds what the concession can buy rather than measuring it. Refitted out of sample it returns an interval wide enough to hold both the whole gap and none of it, and the width is fixed by the design rather than by the answer: a two-parameter map fitted on the other two rows of a three-row group is exactly determined (\S\ref{sec:supporting}).
 
 \subsection{What the substitution does not decide, and what would settle it}
 \label{sec:notdecided}
@@ -1710,20 +1641,8 @@ data.
 \paragraph{Limitations.} All sixteen, keeping the numerals used throughout;
 \S\ref{sec:si-limitations} carries the qualifying detail for the nine it holds.
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=1.5pt,topsep=3pt,parsep=0pt]
-\item The phenomenon and its causal attribution lie in \emph{different regimes}. The paradox is
-where the model operates (finite composition, all $\gamma$, $n{=}5608$). The attribution and the
-latent-departure result rest on infinite-dilution activity data alone ($n{=}477$ across
-temperatures, and the $298$\,K, low-$\gamma$, VT-2005-matched $n{=}60$ and $n{=}44$ sets). Transfer
-back to the paradox's own regime is a conjecture and the principal open question here. The $n{=}60$
-set is all gas chromatography and all from three publications, $33$ pairs from one, so a
-method-stratified or source-clustered re-estimate lies beyond it. \emph{This set's} aggregate margin
-inverts under a broader ThermoML pull where the broad set holds steady. It is a different object
-from the glycol-ether stratum of limitation~(vi), which lives on the broad set and whose own
-ThermoML test reproduces. Both sets sit outside the deployment regime
-(\S\ref{sec:si-repro}). No set carries both quantities, and none is waiting to be assembled:
-across the labelled corpus's $12{,}129$ solute--solvent pairs and the $3{,}145$ of the largest
-infinite-dilution pull we hold, not one pair carries a solubility and a $\gamma^\infty$ alike, and
-the $22$ solvents and $9$ solutes the two sides share still meet in no common pair.
+\item The phenomenon and its causal attribution lie in \emph{different regimes}: the paradox is where the model operates, the attribution rests on infinite-dilution activity data alone, and transfer between them is a conjecture and the principal open question here (\S\ref{sec:si-limitations}).
+
 \item What the convention rule costs the aggregate (\S\ref{sec:estimator}).
 \item That other cells of the map keep their sign as well (\S\ref{sec:broad}).
 \item $\Binsuf$ is upper-bounded rather than point-identified, the design holding no replicates at
@@ -1731,66 +1650,24 @@ fixed $\zstar$. $\Bclos$ is the error of a composite, the fixed map together wit
 that produced $\zstar$, and the measurements here leave it undivided between the two and its share
 unbounded (\S\ref{sec:badclosure}).
 \item The constant-offset bound's convention-specificity (\S\ref{sec:estimator}).
-\item The stratification reads structure alone, so every cell was fixed before its outcome was seen.
-Cells from different axes share rows and are therefore dependent evidence, counted once; granularity
-is an analyst choice, which is why we report three solvent levels and two solute levels. The
-per-cell bootstrap frequencies carry no multiplicity control, so one cell's $P$ describes that cell
-alone, and the admissibility rule is a stability filter rather than a correction for the search.
-Neither test of the search establishes a chemical effect: under the chemistry-blind relabelling null
-the shape of the finding actually claimed sits at chance (\S\ref{sec:broad}), and the pre-declared
-out-of-sample test on the PGL set returned \emph{not testable}. A second pre-declared test, on $95$
-ThermoML rows the search never saw, does return a positive margin at about half the in-sample size
-(\S\ref{sec:broad}). It rests on one source publication, so it settles the sign without meeting
-this rule's own stability clause. We therefore do not advance that cell as a chemical result at all. It is reported as what the
-instrument returned on its own rows, and
-the same holds a fortiori for every cell the map reports and leaves unstated. With $\Binsuf$ bounded
-from above alone, every cell is also silent on whether better inputs would help there, so the map's
-one action is to withhold a chemistry from an allocation of grounding effort.
+\item The stratification reads structure alone, so every cell was fixed before its outcome was seen; cells from different axes share rows and are counted once, and the per-cell bootstrap frequencies carry no multiplicity control (\S\ref{sec:si-limitations}).
+
 \item The accuracy ceiling standing a factor of five above the label-noise floor (\S\ref{sec:data}).
 \item What the three-seed latent-departure result establishes and where it stops
 (\S\ref{sec:surrogate}).
 \item What bounds the black-box probe (the probe paragraph above).
 \item What the closure-fidelity contrast leaves unmeasured, and what would settle it
 (\S\ref{sec:notdecided}).
-\item No accuracy difference between the arms is attributable to the bottleneck (above). Two axes
-shape whether grounding helps, closure fidelity and how the latent is trained, and this work leaves
-that plane uncharacterised on real systems. The chemical strata form a pattern in
-the direction the sign rule would give, but separately tuned pipelines can produce one and a
-multiplicity control is missing. \S\ref{sec:map} therefore records it as the experiment a matched
-control should run, and the diagnostic is \emph{proposed} and not validated.
-% REORDERED 2026-08-19.  The item opened on the THREE-SEED $0.20$ and reached the certified
-% five-seed result in its last clause, so a reader skimming the limitations met the superseded
-% number first and the measurement of record last.  Nothing is deleted: the three-seed pair is what
-% bounds where a leak could have acted and the item cannot make its point without it.  Order only.
-\item The scaffold-leak guard is a property of the released stream builder rather than a certified
-property of the runs \S\ref{sec:paradox} reports. The re-run that \emph{is} certified leak-free
-returns the supervision gain without a sign, so no reported number now rests on the uncertified
-build. The superseded three-seed gain of $0.20$ was the one that did, and deleting the eight
-reachable solutes left it at $+0.17$ $[+0.03,+0.31]$. The deletion bounds where a leak could have
-acted, as do the arguments that bound the other contrasts (\S\ref{sec:data}).
+\item No accuracy difference between the arms is attributable to the bottleneck, the two sides being separately tuned with no hyperparameter-matched control (\S\ref{sec:si-limitations}).
+
+\item The scaffold-leak guard is a property of the released stream builder rather than a certified property of the runs \S\ref{sec:paradox} reports; the certified leak-free re-run returns the supervision gain without a sign, so no reported number rests on the uncertified build (\S\ref{sec:si-limitations}).
+
 \item What the deposit leaves uncheckable (the data-availability statement).
-\item One trained COSMO-SAC head survives in the deposit, and it is a poor model: a retired run at
-MAE $2.61$ and $R^2=-0.31$ on the scaffold split, worse than predicting the corpus mean. Four
-quantities are read off it, each stated with that scope where it prints: the donor-window areas of
-Fig.~\ref{fig:donor-window}, the cavity-area ratios beside them, the substitution penalty's movement
-with the segment count, and the size of the substitution step against a random direction of the same
-norm. Each is a property of a $\sigma$-profile and its closure rather than of an arm's accuracy, and
-none of them enters a reported margin; the donor-window occupancy is additionally reproduced by an
-\emph{untrained} network of the same architecture, so it prices the parameterisation and not the
-training. What a better checkpoint would change is unmeasured, and the arms of
-Fig.~\ref{fig:paradox} retain no weights to supply one.
-\item Two terms the thermodynamics asks for are set to zero in the deployed model, and both are
-absorbed at training time by the same learned $\sigma$ head. The first is $\Delta C_p$ in the ideal
-term, one-signed and worth a median $0.32$ in \lnx\ where a melting point is measured
-(\S\ref{sec:framework}). The second is the Staverman--Guggenheim combinatorial term, off in every
-arm the paradox is reported on. Both cancel in the evaluation-time substitution and both survive the
-training that produced the drift of \S\ref{sec:surrogate}, so the mechanism there reaches beyond the
-activity kernel.
-\item The fixed model is COSMO-SAC at its $2002$ parameterisation, whose kernel cannot move.
-A sign that turned on kernel mobility therefore lies outside what these measurements reach; the one
-published construction that lets the kernel move reports the opposite sign \cite{yang2025tennet}.
-This limitation left the Conclusions on 2026-08-28 and is stated here instead, which is where the
-review puts limitations.
+\item One trained COSMO-SAC head survives in the deposit and it is a poor model, so the four quantities read off it are properties of a parameterisation rather than of a trained network, each stated with that scope where it prints (\S\ref{sec:si-limitations}).
+
+\item Two terms the thermodynamics asks for are set to zero in the deployed model, $\Delta C_p$ in the ideal term and the Staverman--Guggenheim combinatorial term, and both are absorbed at training time by the same learned $\sigma$ head (\S\ref{sec:si-limitations}).
+
+\item The fixed model is COSMO-SAC at its $2002$ parameterisation, whose kernel cannot move, so a sign that turned on kernel mobility lies outside what these measurements reach (\S\ref{sec:si-limitations}).
 \end{enumerate}
 
 % CONCLUSIONS.  Two paragraphs, no numbers, no section references, and NOT a restatement of the
@@ -1914,30 +1791,7 @@ per-row file has been recovered complete and now stands in the deposit
 % not what a reader can therefore check is the half of the disclosure that flatters.  What stays in
 % \S\ref{sec:si-limitations} is the numeral and the same words; what a reader needs is here, where
 % the deposit is described.  Do not delete this on the ground that the SI carries (xiii).
-\emph{The audit in one place.} Twelve defects and limits are disclosed in this submission, each
-described where its numbers print, and they are of five kinds. Four are properties of the deposit and are
-disclosed rather than repaired: an unlogged split provenance, a stream build written against the
-wrong split files, two audit artifacts disagreeing on one out-of-fold estimate, and the
-$\sigma$-stream that was not retained. Two were errors in this work's own numbers and are repaired,
-with the withdrawn values kept beside the corrected ones: the twice-scaled temperature in the
-FastSolv retraining bundles, and the truncated seed-$44$ per-row file, now recovered complete.
-Three are cases where a check this work built refuted or weakened something this work had claimed:
-the departure from the estimator declaration (\S\ref{sec:broad}), the linear probe whose verdict an
-untrained encoder of the same architecture also earns, and the donor-window occupancy that an
-untrained network reaches as fully as the trained one (\S\ref{sec:surrogate}). Two are properties
-of the model rather than of a number, disclosed and then bounded: the activity head violates the
-identity on a self-pair, which no scored row is (\S\ref{sec:eval}), and a deposited out-of-fold
-forest bound is invalid on row-level folds, which the artifact says in its own file. One is a limit
-of the checking apparatus itself, disclosed beside what it catches: value-conservation checks do not
-detect loss of \emph{role} (\S\ref{sec:si-repro}). None of the twelve is reported by anyone but
-us, and each is stated where it bites rather than collected into a caveat.
-
-What that deposit does and does not make checkable is limitation~(xiii). Several of the numbers
-the verdict rests on are checkable by re-running the released code and by that route alone, and its
-input artifacts are larger than the repository carries. We therefore deposit the two decomposition
-sets as row-level
-tables (Data Sets~S1 and~S2), so those sets and their margins can be recomputed with no code at all.
-That leaves the provenance of the closure evaluations inside them, and of the trained arms, undelivered.
+\emph{The audit in one place.} Twelve defects and limits are disclosed in this submission, each described where its numbers print. \S\ref{sec:si-repro} lists all twelve in one place, of five kinds: four properties of the deposit, disclosed rather than repaired; two errors in this work's own numbers, repaired with the withdrawn values kept beside the corrected ones; three cases where a check this work built refuted or weakened something this work had claimed; two properties of the model, disclosed and then bounded; and one limit of the checking apparatus itself. None of the twelve is reported by anyone but us.
 
 \begin{acknowledgement}
 This research received no external funding.

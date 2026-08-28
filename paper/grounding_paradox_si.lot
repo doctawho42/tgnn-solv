@@ -1,34 +1,34 @@
 \contentsline {table}{\numberline {S1}{\ignorespaces Terminology and notation. Each term is defined in the text where it is first used; this table collects those definitions in one place.}}{S-5}{table.1}%
-\contentsline {table}{\numberline {S2}{\ignorespaces Loss registry: the thirteen terms with a non-zero default weight}}{S-14}{table.2}%
+\contentsline {table}{\numberline {S2}{\ignorespaces Loss registry: the thirteen terms with a non-zero default weight}}{S-15}{table.2}%
 \contentsline {table}{\numberline {S3}{\ignorespaces The claims ledger: every load-bearing claim with its set, value and scope}}{S-18}{table.3}%
-\contentsline {table}{\numberline {S4}{\ignorespaces Per-arm scaffold-split metrics}}{S-22}{table.4}%
-\contentsline {table}{\numberline {S5}{\ignorespaces Separation margin over the estimator grid: the VT-2005-matched set}}{S-24}{table.5}%
-\contentsline {table}{\numberline {S6}{\ignorespaces Separation margin over the estimator grid: the broad IDAC set}}{S-25}{table.6}%
-\contentsline {table}{\numberline {S7}{\ignorespaces Separation margin over the estimator grid: the glycol-ether stratum}}{S-25}{table.7}%
-\contentsline {table}{\numberline {S8}{\ignorespaces The closure--insufficiency decomposition on both sets}}{S-27}{table.8}%
-\contentsline {table}{\numberline {S9}{\ignorespaces The three COSMO-SAC arms, and the block split of the kernel contrast}}{S-28}{table.9}%
-\contentsline {table}{\numberline {S10}{\ignorespaces Upper bounds on the input-insufficiency term, both sets taken whole}}{S-29}{table.10}%
-\contentsline {table}{\numberline {S11}{\ignorespaces The out-of-sample set, class by class}}{S-33}{table.11}%
-\contentsline {table}{\numberline {S12}{\ignorespaces The map, solvent axis, in full}}{S-35}{table.12}%
-\contentsline {table}{\numberline {S13}{\ignorespaces The map, solvent axis at the fine granularity}}{S-36}{table.13}%
-\contentsline {table}{\numberline {S14}{\ignorespaces The map, solute axis}}{S-37}{table.14}%
-\contentsline {table}{\numberline {S15}{\ignorespaces The map, the solvent-by-solute cross-tab and the set as a whole}}{S-38}{table.15}%
-\contentsline {table}{\numberline {S16}{\ignorespaces The map: every stratum the estimator can bound}}{S-39}{table.16}%
-\contentsline {table}{\numberline {S17}{\ignorespaces The map, solute axis: the boundable strata}}{S-40}{table.17}%
-\contentsline {table}{\numberline {S18}{\ignorespaces The map's error, bound and source curve, stratum by stratum}}{S-41}{table.18}%
+\contentsline {table}{\numberline {S4}{\ignorespaces Per-arm scaffold-split metrics}}{S-23}{table.4}%
+\contentsline {table}{\numberline {S5}{\ignorespaces Separation margin over the estimator grid: the VT-2005-matched set}}{S-25}{table.5}%
+\contentsline {table}{\numberline {S6}{\ignorespaces Separation margin over the estimator grid: the broad IDAC set}}{S-26}{table.6}%
+\contentsline {table}{\numberline {S7}{\ignorespaces Separation margin over the estimator grid: the glycol-ether stratum}}{S-26}{table.7}%
+\contentsline {table}{\numberline {S8}{\ignorespaces The closure--insufficiency decomposition on both sets}}{S-28}{table.8}%
+\contentsline {table}{\numberline {S9}{\ignorespaces The three COSMO-SAC arms, and the block split of the kernel contrast}}{S-29}{table.9}%
+\contentsline {table}{\numberline {S10}{\ignorespaces Upper bounds on the input-insufficiency term, both sets taken whole}}{S-30}{table.10}%
+\contentsline {table}{\numberline {S11}{\ignorespaces The out-of-sample set, class by class}}{S-34}{table.11}%
+\contentsline {table}{\numberline {S12}{\ignorespaces The map, solvent axis, in full}}{S-36}{table.12}%
+\contentsline {table}{\numberline {S13}{\ignorespaces The map, solvent axis at the fine granularity}}{S-37}{table.13}%
+\contentsline {table}{\numberline {S14}{\ignorespaces The map, solute axis}}{S-38}{table.14}%
+\contentsline {table}{\numberline {S15}{\ignorespaces The map, the solvent-by-solute cross-tab and the set as a whole}}{S-39}{table.15}%
+\contentsline {table}{\numberline {S16}{\ignorespaces The map: every stratum the estimator can bound}}{S-40}{table.16}%
+\contentsline {table}{\numberline {S17}{\ignorespaces The map, solute axis: the boundable strata}}{S-41}{table.17}%
+\contentsline {table}{\numberline {S18}{\ignorespaces The map's error, bound and source curve, stratum by stratum}}{S-42}{table.18}%
 \contentsline {table}{\numberline {S19}{\ignorespaces The closure/insufficiency verdict across activity-coefficient strata}}{S-50}{table.19}%
-\contentsline {table}{\numberline {S20}{\ignorespaces Solubility accuracy, in three blocks}}{S-55}{table.20}%
-\contentsline {table}{\numberline {S21}{\ignorespaces Same-pair high-temperature extrapolation}}{S-64}{table.21}%
-\contentsline {table}{\numberline {S22}{\ignorespaces Solvent ranking under the two profiles}}{S-66}{table.22}%
+\contentsline {table}{\numberline {S20}{\ignorespaces Solubility accuracy, in three blocks}}{S-56}{table.20}%
+\contentsline {table}{\numberline {S21}{\ignorespaces Same-pair high-temperature extrapolation}}{S-65}{table.21}%
+\contentsline {table}{\numberline {S22}{\ignorespaces Solvent ranking under the two profiles}}{S-67}{table.22}%
 \contentsline {table}{\numberline {S23}{\ignorespaces Fisher audit of the SLE design}}{S-69}{table.23}%
-\contentsline {table}{\numberline {S24}{\ignorespaces The asymptotic physics penalty per solvent class}}{S-71}{table.24}%
-\contentsline {table}{\numberline {S25}{\ignorespaces The asymptotic physics penalty per solute class and novelty stratum}}{S-71}{table.25}%
-\contentsline {table}{\numberline {S26}{\ignorespaces The data-efficiency sweep}}{S-72}{table.26}%
-\contentsline {table}{\numberline {S27}{\ignorespaces The deployed closure against a published evaluation of the same closure, and this paper's own two sets through it. AAD is the mean absolute error in $\ln \gamma ^\infty $, $n$ the number of scored records.}}{S-75}{table.27}%
-\contentsline {table}{\numberline {S28}{\ignorespaces The fixed substituent list behind the Hammett constant}}{S-82}{table.28}%
-\contentsline {table}{\numberline {S29}{\ignorespaces Run families: which runs produced which numbers, and at how many seeds}}{S-85}{table.29}%
-\contentsline {table}{\numberline {S30}{\ignorespaces Solubility accuracy in two blocks that may not be read across: this work on the solute-scaffold split, external models re-run here on an easier by-solute split. Two sample sizes appear where a row's two metric columns are scored on different rows, one where they coincide. The grounded, ungrounded and $\sigma $-oracle arms of the first block come from the five-seed leak-free re-run.}}{S-88}{table.30}%
-\contentsline {table}{\numberline {S31}{\ignorespaces Data Set S2 in full: the VT-2005-matched set, row by row}}{S-94}{table.31}%
-\contentsline {table}{\numberline {S32}{\ignorespaces Crystal-term decodability per seed, with its nulls}}{S-96}{table.32}%
-\contentsline {table}{\numberline {S33}{\ignorespaces The model's temperature response against the empirical slope}}{S-96}{table.33}%
-\contentsline {table}{\numberline {S34}{\ignorespaces Share of representation variance per organising factor}}{S-96}{table.34}%
+\contentsline {table}{\numberline {S24}{\ignorespaces The asymptotic physics penalty per solvent class}}{S-72}{table.24}%
+\contentsline {table}{\numberline {S25}{\ignorespaces The asymptotic physics penalty per solute class and novelty stratum}}{S-72}{table.25}%
+\contentsline {table}{\numberline {S26}{\ignorespaces The data-efficiency sweep}}{S-73}{table.26}%
+\contentsline {table}{\numberline {S27}{\ignorespaces The deployed closure against a published evaluation of the same closure, and this paper's own two sets through it. AAD is the mean absolute error in $\ln \gamma ^\infty $, $n$ the number of scored records.}}{S-76}{table.27}%
+\contentsline {table}{\numberline {S28}{\ignorespaces The fixed substituent list behind the Hammett constant}}{S-87}{table.28}%
+\contentsline {table}{\numberline {S29}{\ignorespaces Run families: which runs produced which numbers, and at how many seeds}}{S-90}{table.29}%
+\contentsline {table}{\numberline {S30}{\ignorespaces Solubility accuracy in two blocks that may not be read across: this work on the solute-scaffold split, external models re-run here on an easier by-solute split. Two sample sizes appear where a row's two metric columns are scored on different rows, one where they coincide. The grounded, ungrounded and $\sigma $-oracle arms of the first block come from the five-seed leak-free re-run.}}{S-93}{table.30}%
+\contentsline {table}{\numberline {S31}{\ignorespaces Data Set S2 in full: the VT-2005-matched set, row by row}}{S-100}{table.31}%
+\contentsline {table}{\numberline {S32}{\ignorespaces Crystal-term decodability per seed, with its nulls}}{S-102}{table.32}%
+\contentsline {table}{\numberline {S33}{\ignorespaces The model's temperature response against the empirical slope}}{S-102}{table.33}%
+\contentsline {table}{\numberline {S34}{\ignorespaces Share of representation variance per organising factor}}{S-102}{table.34}%
