@@ -181,7 +181,10 @@ TEAL_W = "#35705E"    # the teal-side legend word
 SALMON_D = "#A2543A"  # the salmon-side legend word: 5.17:1
 
 FIG_W_IN = 502.58 / 72.0   # \linewidth of the two-column float, exactly (see SCALE DISCIPLINE)
-FIG_H_IN = 2.515 - 22.0 / 72.0   # 2026-08-24: the strip's height, given back to the page
+# 2026-08-24, twice: the strip's height (22 pt) and then the sentence under the axis with the
+# aside lines it sat below (20 pt). Both were given back to the page rather than left as white
+# space inside the panel, which is why (b) is shorter and not emptier.
+FIG_H_IN = 2.515 - 42.0 / 72.0
 
 # ---- SCALE DISCIPLINE.  A coded point must be a printed point. -------------------------------
 # The comment that stood here until 2026-08-09 said "8.0 in prints at 0.88, so nothing here falls
@@ -609,19 +612,15 @@ def bar_x(v):
 for k, c in enumerate(CLASSES):
     ny = ROW0 + k * ROW_PITCH
     yt, yb = ny + NAME_TO_BAR, ny + NAME_TO_BAR + BAR_H
+    # THE NAME, AND NOTHING ELSE ON THIS LINE.  2026-08-24, second reader report: the panel was
+    # still overloaded after the strip came out, because removing the footnote apparatus had not
+    # removed what it pointed AT. Each row carried a name, sometimes a gloss, a verdict, and for
+    # two rows a second aside beside the bar -- nine text objects for three bars, on a panel 198 pt
+    # wide. The panel was doing two jobs: the MAGNITUDES, which only it can show, and the VERDICTS,
+    # which are categorical and which Table 3 already prints in full. It now does the first. The
+    # caption names which class stands; Table 3 says why for all three.
     nm = say(L, ny, c["name"], fs=FS_NAME, color=INK)
-    _x = L + wpt(nm) + 2.0
-    if c["gloss"]:
-        _gl = say(_x, ny, c["gloss"])
-        _x += wpt(_gl) + 2.0
-    # THE SYMBOLS ARE GONE, THE VERDICTS ARE NOT.  Each row used to carry *, dagger or ddagger
-    # next to its name and the reason beside it -- a footnote apparatus for three rows, on a panel
-    # whose reader has to look somewhere else to decode it.  The mark is dropped and the reason it
-    # pointed at is simply set where it stood, so the verdict is read rather than resolved.
-    _rx = _x + 1.0
-    _rs = say(_rx, ny, "\u2014 " + REASONS[c["mark"]], color=INK)
-    # the name line now carries a gloss on one row, which makes it the panel's tightest line
-    assert _rx + wpt(_rs) <= R, f"{c['name']!r}: its name line runs past the margin"
+    assert L + wpt(nm) <= R, f"{c['name']!r}: its name runs past the margin"
     b, mse = c["b"], c["mse"]
     axb.add_patch(Rectangle((bx(L), by(yb)), bx(bar_x(min(b, mse))) - bx(L), by(yt) - by(yb),
                             fc=TEAL_D, ec="none", lw=0, zorder=3))
@@ -634,8 +633,6 @@ for k, c in enumerate(CLASSES):
                                 zorder=3))
     axb.plot([bx(bar_x(b))] * 2, [by(yb + 1.6), by(yt - 1.6)], lw=1.2, color=INK, zorder=5,
              solid_capstyle="butt")
-    if c["mark"] in ASIDES:
-        say(max(bar_x(mse), bar_x(b)) + 8.0, yt + BAR_H / 2, ASIDES[c["mark"]])
 
 # ---- the rule the bars stand on ---------------------------------------------------------------
 # 2026-08-09 REVERSES one half of the 2026-08-02 note that stood here: "no threshold line, no
@@ -653,14 +650,10 @@ for v, lab in ((0.0, "0"), (0.5, "0.5"), (1.0, "1.0"), (1.5, "1.5"), (2.0, "2.0"
     say(bar_x(v), AXIS_Y + 7.6, lab, color=INK, ha="center")   # "0", not "0.0": centred on the
     #  axis origin, which is the text margin, a three-glyph numeral would sit outside the panel
 
-# THE CONTRAST IS THE PANEL, and this is the line that says what it is.  It used to read "The
-# input bound hardly moves; the error moves 25-fold", 26 pt below a drawing in which water's bound
-# is exactly TWICE the glycol ethers' -- the sentence was contradicted by its own panel, and read
-# off the bar ends the 25 came out as 16 because the third bar's length was the bound and not the
-# error.  Both numbers are now true of exactly the three classes drawn, and both are checkable
-# against the rule above: 0.2150/0.1077 = 2.00 and 2.2518/0.0891 = 25.3.
-SAY_Y = AXIS_Y + 18.5
-say(L, SAY_Y, "The input bound moves 2-fold; the error, 25-fold.", fs=FS_SAY, color=HURT)
+# THE CONTRAST MOVED TO THE CAPTION, 2026-08-24. A sentence set inside the axes -- "The input
+# bound moves 2-fold; the error, 25-fold" -- was the last of the prose the 2026-07-28 declutter
+# moved out and this line survived. Both ratios are still recoverable from the numbered rule with
+# a ruler, which is what the rule is for, and the caption states them.
 
 fig.suptitle("When do reference physical inputs help a learned solubility model?",
              fontsize=_a(12.5), color=INK, y=0.985)
