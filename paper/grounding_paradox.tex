@@ -630,10 +630,35 @@ misspecification instead of repairing it.
 % here -- checked as a set, not by eye -- and every assertion survives; what went is the connective
 % tissue between them.  Do not re-expand it to "let the argument breathe": the argument is the
 % sentences, not the joins.
+% THE ON-RAMP, ADDED 2026-08-28 on review. The section opened straight onto the measurement
+% problem and then onto a literature review; a reader who does not already work on activity
+% coefficients had no paragraph to stand on. These three say what the field does, what it assumes,
+% and what this paper does to the assumption -- in that order, before any citation. They are the
+% plainest prose in the article and are meant to stay that way: no numbers, no cross-references,
+% no hedges. The compaction note below applies to what follows them, not to these.
 How much of a solid dissolves in a given liquid decides whether a drug is formulated as a tablet or
 an injection, which solvent a crystallisation runs in, and how a product is purified. Each value is
 measured one solute, one solvent and one temperature at a time, so most industrially relevant
-combinations remain unmeasured. Independent determinations of the same system disagree by enough to
+combinations remain unmeasured, and a laboratory that needs one is usually choosing between running
+an experiment and trusting a prediction.
+
+Two kinds of predictor compete for that trust. One learns the answer directly from data. The other
+routes the prediction through the physical picture: it predicts the quantities thermodynamics names
+--- how hard the crystal is to break, how well the freed molecules mix with the solvent --- and
+combines them through a fixed equation. The second kind has become the more attractive of the two,
+and for reasons that have little to do with accuracy, on which it usually trails. Its intermediate
+quantities are things chemistry already knows how to measure and tabulate, so a prediction can be
+inspected part by part, corrected where one part is wrong, and supervised against reference data
+that a direct regressor has no way to use. The fixed equation is also a prior: it asserts for free
+what a purely statistical model would have to learn from data it does not have, which is the
+situation whenever the question concerns a molecule unlike any in the training set.
+
+That design carries an assumption so natural it is rarely written down. If the model's intermediate
+is a quantity someone has already tabulated, then a better value for it can simply be looked up and
+handed to the model, with no retraining --- and the prediction should improve. The assumption is
+what makes the intermediate worth having: it is the difference between a physical model and an
+elaborate parameterisation. This paper tests it, on one such model and one such intermediate, and
+finds that it fails. Independent determinations of the same system disagree by enough to
 floor what any predictor can achieve. Dissolving a solid also trades breaking
 a crystal against mixing the freed molecules into the solvent, so a predictor must be
 right about two unrelated kinds of chemistry at once, on molecules unlike any it was shown.
@@ -648,15 +673,11 @@ temperature and heat of fusion for the crystal---and combine them through a fixe
 \cite{vermeire2022solprop} does so with a thermodynamic cycle of separately learned components. The
 fixed equation buys decomposability: each part is a quantity chemists tabulate on its own, so it can
 be supervised against reference data a direct regressor cannot use.
-% ADDED 2026-08-24 on review. The premise the title puns on was stated in the abstract and assumed
-% everywhere else, so a reader met the paradox before meeting the expectation it violates. Two
-% sentences, and deliberately the plainest in the section.
-The structure is also a prior, which is much of why the design is popular: it asserts for free what
-a purely statistical model must otherwise learn from data, and it promises to hold where the data
-thin out. And because each intermediate is a quantity someone has already tabulated, a better value
-for it can be looked up and handed to the model without retraining anything---so the natural
-expectation, and the one this paper tests, is that a more accurate input gives a more accurate
-prediction. On accuracy the black box leads and
+% The 2026-08-24 insertion that stood here said the same two things as the third opening paragraph
+% above, which the 2026-08-28 on-ramp added four hundred words earlier and in plainer words. Saying
+% the premise twice in one section makes the second telling read as a summary of an argument the
+% reader has not been given yet.
+On accuracy the black box leads and
 the physics-informed cycle trails it. Learned surrogates for the activity coefficient split the same way. Winter et al.\
 \cite{winter2022} predict \lngi\ from SMILES strings, the line notation for molecular structure,
 with a language model; Sanchez-Medina et al.\
@@ -1063,10 +1084,12 @@ between seed replicates of a single arm on this measure, the largest of which is
 at seed $42$, is $0.114$ and does not: at that seed the fall sits inside the spread one arm shows
 between its own seeds. The deposit carries that benchmark for the rank
 correlation alone, so we read it against that measure and leave the two below unbenchmarked.
+% THE DRAW COUNT LEFT THE BODY 2026-08-28 on review: a reader needs to know these are cluster
+% bootstraps on 107 effective clusters and why they print to two decimals, not how many draws bought
+% that precision. The count, and the coarsening rule it implies, are in the SI section already cited.
 Every interval here is a $95\%$ percentile bootstrap over those $107$ solute clusters, the
-effective sample rather than the $823$ groups. Two decimals is the precision the draw count determines, coarser than the precision the deposit
-records. At the $4000$ draws behind them a third decimal is a property of the bootstrap seed, so we
-apply to these the coarsening rule \S\ref{sec:si-map} states for the map.
+effective sample rather than the $823$ groups, and is printed to two decimals because a third would
+be a property of the bootstrap seed (\S\ref{sec:si-map}).
 Normalised discounted cumulative gain over the top three solvents (nDCG@3) falls by $-0.071$
 $[-0.11,-0.03]$, and top-1 accuracy by $-0.088$ $[-0.17,-0.01]$. We quote that
 last figure pooled, and pooled only: three of its five per-seed intervals span zero, so of the three
@@ -1868,7 +1891,7 @@ data.
 % which of the probe's tests).  IF A LIMITATION MOVES BETWEEN THE TWO DOCUMENTS, its line moves with
 % it and \S\ref{sec:si-limitations}'s preamble is edited in the same pass -- that preamble names
 % which numerals sit where, and a list that disagrees with it sends the reader astray.
-\paragraph{Limitations.} All fourteen, keeping the numerals used throughout;
+\paragraph{Limitations.} All sixteen, keeping the numerals used throughout;
 \S\ref{sec:si-limitations} carries the qualifying detail for the nine it holds.
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=1.5pt,topsep=3pt,parsep=0pt]
 \item The phenomenon and its causal attribution lie in \emph{different regimes}. The paradox is
@@ -1947,6 +1970,11 @@ term, one-signed and worth a median $0.32$ in \lnx\ where a melting point is mea
 arm the paradox is reported on. Both cancel in the evaluation-time substitution and both survive the
 training that produced the drift of \S\ref{sec:surrogate}, so the mechanism there reaches beyond the
 activity kernel.
+\item The fixed model is COSMO-SAC at its $2002$ parameterisation, whose kernel cannot move.
+A sign that turned on kernel mobility therefore lies outside what these measurements reach; the one
+published construction that lets the kernel move reports the opposite sign \cite{yang2025tennet}.
+This limitation left the Conclusions on 2026-08-28 and is stated here instead, which is where the
+review puts limitations.
 \end{enumerate}
 
 % CONCLUSIONS.  Two paragraphs, no numbers, no section references, and NOT a restatement of the
@@ -1994,42 +2022,22 @@ activity kernel.
 % DO NOT print the +0.41 / +0.11 pair.  Sec. 2.2 withholds the ordering of the two operations'
 % magnitudes and the graphic for the table of contents is forbidden the same pair; a conclusion is
 % not where the withholding lapses.  The signs are what carry, and they print.
-Grounding a learned physical intermediate in reference values is two operations rather than one, and
-here only one of them carried a sign. Substituting the reference profile for the learned one at
-prediction time raised solubility error at every one of five leak-free seeds, and moved the ranking
-of solvents for a solute against the practitioner at every one of them. Supervising the same head
-against the same database during training moved the error the other way at four seeds of five. The
-operation that failed is the one a practitioner reaches for, because it is the one that runs without
-retraining. That asymmetry is what this work establishes.
+Grounding a learned physical intermediate in reference values is two operations rather than one,
+and only one of them carried a sign. Substituting the reference profile for the learned one at
+prediction time raised solubility error at every one of five seeds, and moved the ranking of
+solvents for a solute against the practitioner at every one of them. Supervising the same head
+against the same database during training carried no established sign. The operation that failed is
+the one a practitioner reaches for, because it is the one that runs without retraining.
 
-% TWO PARAGRAPHS, per the 2026-08-19 supervisory review: the result, and what it generalises to.
-% WHAT LEFT AND WHERE IT IS.  The caveat paragraph went in full -- every clause of it is stated in
-% Sec. 3.7 beside its own measurement, which is where the review puts limitations, and "not
-% testable", the separate tuning and the pKa protocol each print there.  The regime-bridge counts
-% (12,129 and 3,145) appeared ONCE in the whole article, here, so they moved into limitation (i)
-% rather than out of the manuscript.  The kernel-mobility concession stays: it is the article's own
-% statement of what its negative result is not about.
-A prediction generalises from this, rather than a design rule. Wherever a predictor composes a
-fixed physical model over a learned intermediate for which an external reference exists, that
-reference measures whether the fixed model itself limits accuracy. Where it answers, the answer
-decides the remedy: a more faithful physical model, the calculation that supplies its reference
-values included. The answer comes chemistry by chemistry rather than once for a field, and it comes
-one-sided, returning the chemistry on which better inputs are not the remedy. Our fixed model is
-COSMO-SAC at its $2002$ parameterisation, whose kernel cannot move, so a sign that turned on kernel
-mobility would lie outside what these measurements reach \cite{yang2025tennet}. The experiment this
-work leaves is to \emph{measure} $\gamma^\infty$ on pairs that already carry a solubility, because
-the two literatures share no pair and no wider pull will supply one.
-
-Three things follow for anyone building on this. Measure the two quantities on the same pairs: the
-bridge between the regimes is a laboratory programme rather than a data-assembly task, and it is
-what would turn the mechanism here into an explanation. Declare the estimator cell before the
-margin, and where two valid bounds are available fix the rule for choosing between them in the same
-document rather than after seeing both --- this work's own departure from that is recorded in
-\S\ref{sec:broad} and is the sharpest thing a reader can hold against it. And if a learned
-intermediate must feed a fixed physical model, freeze it against its reference and fine-tune only
-downstream: the one published construction that does so reports the opposite sign to ours
-\cite{yang2025tennet}, and that difference in training design is the most actionable contrast
-here.
+What generalises is a diagnostic rather than a design rule. Wherever a predictor composes a fixed
+physical model over a learned intermediate for which an external reference exists, that reference
+measures whether the fixed model itself limits accuracy; where it does, the remedy is a more
+faithful physical model and not a better input. The answer comes chemistry by chemistry rather than
+once for a field. Two things follow for anyone building on this: measure the fixed model's own
+target and the downstream property on the same pairs, which is a laboratory programme rather than a
+data-assembly task; and if a learned intermediate must feed a fixed physical model, freeze it
+against its reference and fine-tune only downstream, since the one published construction that does
+so reports the opposite sign to ours \cite{yang2025tennet}.
 
 
 \section*{Author contributions}

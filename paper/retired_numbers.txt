@@ -427,3 +427,16 @@
         magnitude 1.03e-6 -- so the true floor is the correction magnitude's, not alpha's. The
         interval now reads 1e-6 to 6e-4, which strengthens the paragraph's point rather than
         softening it: the outputs are more frozen than the sentence claimed.
+
+3.5     section-number churn, 2026-08-28 review pass. The Conclusions lost 278 words, Sec. 2.5 lost
+        184 and Sec. 2.1.1 lost 196, so cross-reference numerals moved pages and the conservation
+        pass counts a numeral per page it prints on. Every one of these is a \ref and every one
+        still prints: 3.5 on eight pages, 2.1 on eight, 2.5 on eight, 1.1 and 3.8 unchanged in
+        count. Verified as a class rather than one at a time, by confirming the tier-A "gone from
+        the document entirely" group is empty and that the citation set lost nothing (47 keys
+        before, 48 after, the addition being bemis1996 for the scaffold definition the review asked
+        be cited rather than glossed).
+2.1     same churn, same pass; see 3.5 above.
+2.5     same churn, same pass; see 3.5 above.
+1.1     same churn, same pass; see 3.5 above.
+3.8     same churn, same pass; see 3.5 above.

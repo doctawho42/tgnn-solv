@@ -162,32 +162,21 @@ is exactly specified (\S\ref{sec:si-repro}). The deployed pipeline consumes that
 every attribution below is to the pair. Where model-discrepancy calibration \emph{fits} a correction
 from held-out observations, here $g$ is fixed and $\zstar$ supplied from outside the fit, so we
 \emph{attribute} the composite's error instead, which is available only where an external latent
-oracle exists. \textbf{Exactness is contingent on $g$ being fixed}: for a \emph{fitted} decoder the
-cross term survives and a plug-in point split is invalid.
+oracle exists. % COMPRESSED 2026-08-28 on review. What stood here ran to ~370 words of derivation: the
+% exactness-contingency clause, the algebra behind the margin's one-sidedness, and a full paragraph
+% defining the measurement superpopulation and what sets the resolution. All of it is HOW. What a
+% reader needs in the body is what a positive margin licenses and that its size is a floor rather
+% than an estimate; both survive, in three sentences, and \S\ref{sec:si-proofs} carries the rest.
+\S\ref{sec:si-proofs} gives the conditions this exactness depends on and what fails without them.
 
 Because $\Binsuf$ is bounded above and $\Bclos$ below, a positive \emph{separation margin}
 $\mathrm{MSE}-2\Binsuf^{\mathrm{up}}$ establishes that the closure's own error exceeds what input
-insufficiency can account for. A margin at or below zero fails to separate and licenses
-nothing: a reversal would need a \emph{lower} bound on $\Binsuf$, which lies beyond this instrument.
-\textbf{Its size is a lower bound and not an estimate.} Since $\mathrm{MSE}=\Binsuf+\Bclos$ exactly,
-$\Bclos-\Binsuf=\mathrm{MSE}-2\Binsuf$, so the reported margin under-states that difference by
-$2(\Binsuf^{\mathrm{up}}-\Binsuf)\ge0$, an amount beyond this design's reach. Every margin below
-therefore says the closure's error exceeds its inputs' by \emph{at least} the number printed, and a
-bootstrap interval on a margin bounds that bound, its upper endpoint limiting nothing.
-
-\paragraph{What population, and what sets the resolution.} The population is the \emph{measurement
-superpopulation}: a draw is a nominal compound pair at a temperature, with the conformer, tautomer
-and protonation state actually populated there, and an independent determination of $\lngi$ for it.
-The conditioning variable holds the reference profile and the temperature and leaves the
-conformational state and the replicate outside, so $\Var(m\mid\zstar)$ is the spread of $\lngi$
-across the conformational ensemble and across replicate determinations at one profile and
-temperature. That spread is strictly positive for physical reasons, and experimental label noise is
-a \emph{component} of it. \emph{Observing} it is what the design forbids, each set holding at most
-one row at a given argument. The bounds are therefore conservative in one direction alone: were the
-superpopulation variance negligible, the finding would be the stronger $\Bclos=\mathrm{MSE}$. So
-over-estimating $\Binsuf$ produces no artifact in what is reported, every entry is a bound and not
-the inputs' share of the error, and a low cluster-bootstrap frequency $P$ is loss of resolution and
-not evidence for the inputs. Resolution is governed by $\dim(\zstar)/n$.
+insufficiency can account for. A margin at or below zero fails to separate and licenses nothing.
+\textbf{Its size is a lower bound and not an estimate}: every margin below says the closure's error
+exceeds its inputs' by \emph{at least} the number printed, and the design cannot say by how much
+more. Over-estimating $\Binsuf$ therefore produces no artifact in what is reported, and a low
+cluster-bootstrap frequency is loss of resolution rather than evidence for the inputs
+(\S\ref{sec:si-proofs}).
 
 \subsubsection{The decomposition and the grounding gap}
 \label{sec:gap}
@@ -275,8 +264,7 @@ Solubility measurements come from BigSolDB~2.0 \cite{krasnov2025bigsoldb}: $108{
 $1525$ solutes and $212$ solvents. Melting points merged in as single-component crystal labels bring
 the modelled corpus to $127{,}930$ rows over $20{,}766$ solutes and $228$ solvents between $243$ and
 $438$\,K. We partition by Bemis--Murcko
-scaffold (a molecule's ring systems together with the linkers joining them, side chains
-removed) into $111{,}724$ training, $8{,}103$ validation and $8{,}103$ test rows, so that every test
+scaffold \cite{bemis1996} into $111{,}724$ training, $8{,}103$ validation and $8{,}103$ test rows, so that every test
 solute is unseen at training. A melting-point-independent miscibility/structure filter sets row
 membership, and we merge on crystal $\Tm$, $\dHfus$, Hansen solubility parameters and
 infinite-dilution activity
@@ -610,64 +598,36 @@ seed count and the artifact it regenerates from.
 % -- the three inputs, the five things returned, and that all four analyst choices are fixed BEFORE
 % any margin is reported -- is kept, because the last of those is the pre-commitment the section
 % rests on.
+% COMPRESSED 2026-08-28 on review: 527 -> ~250 words. The section was the article's densest
+% methods passage and most of it was HOW. What stays is what a reader needs to judge a margin: what
+% the instrument returns, the cell it is read at, that the cell was fixed first, how much the
+% cell can move an answer, and the three clauses that decide which findings may be stated -- those
+% three are cited by numeral from SECT 3.5.1 and from the SI and cannot move without moving their
+% citations. What went to \S\ref{sec:si-rules}: the slacker constant-offset bound and why it is
+% never used, the class cascade, the demotion test, the multiplicity null's rebuild, and the
+% property of the stratification code that makes the pre-declaration checkable.
 The instrument is a procedure taking three inputs and no others: a fixed closure $g$, a table of
 reference values $\zstar$ its argument can be read at, and measurements $m$ of its target on rows
-where both exist. Per chemically defined row set it returns five things: the closure's own error $\mathrm{MSE}$, an
-upper bound on what the inputs leave unresolved, the margin between them, a cluster interval on
-that margin, and a verdict of admissible or otherwise. The verdict carries the test that decided
-it. Four analyst
-choices set the binning bound of Lemma~\ref{prop:decomp}(c): the bin count, where the equal-count
-bin edges fall, the within-bin variance convention, and the combinatorial convention. We fix
-all four here, before any margin is reported --- a data-set contract in the sense
-\citet{nael2026dataset} argue for, declaring the processing rules, the end point and the split
-before the claim rather than after it --- and one setting of them, with the row or the molecule
-pair as unit, is an \emph{estimator cell}. The map of \S\ref{sec:broad} is what running the procedure on
-this closure returns.
-% RESTORED 2026-08-19.  The SI says twice that this section declares which of the two bounds every
-% margin is read from -- "\S\ref{sec:estimator} promises these here" and "which is what
-% \S\ref{sec:estimator} says" -- and this section had stopped saying it, almost certainly in the
-% length pass that halved it.  A selection rule that lives only in the section it is cited FROM is
-% a post-hoc choice however well grounded, which is the objection this sentence exists to answer.
-% THE GROUND IS DOMINATION, NOT THE INVERSION.  Do not restore this as "we use the binning bound
-% because the constant-offset one inverts under our convention": that reads as choosing the bound
-% that gives the answer.  It is dominated -- 0.182 against 1.205 residual-only and 0.715 against
-% 1.429 full on the broad set -- so it adds nothing to the ordering under EITHER convention, and
-% that is true before any margin is looked at.  Nor is Lemma 1(d) the ground; (d) covers the
-% convention-independence of $\Binsuf$ itself, not the choice between two bounds on $\Bclos$.
-Lemma~\ref{prop:decomp} supplies two bounds and we declare here which one every margin is read
-from. The constant-offset bound of part~(b) is strictly slacker than
-$\Bclos\ge\mathrm{MSE}-\Binsuf^{\mathrm{up}}$, which part~(c) already gives, under both
-combinatorial conventions and on both sets, so it adds nothing to the ordering and is reported for
-completeness alone (\S\ref{sec:si-rules}). Every margin in this paper is the binning bound's.
+where both exist. Per chemically defined row set it returns the closure's own error $\mathrm{MSE}$,
+an upper bound $\Binsuf$ on what the inputs leave unresolved, the margin between them, a cluster
+interval on that margin, and a verdict of admissible or otherwise. Every margin in this paper is
+the binning bound of Lemma~\ref{prop:decomp}(c); the alternative bound of part~(b) is strictly
+slacker on both sets and is never used (\S\ref{sec:si-rules}).
 
-% THE FOUR RULES MOVED TO \S\ref{sec:si-rules}, 2026-08-19: what stays is the PRE-COMMITMENT and the
-% CELL, what goes is the construction.
-% WHAT MAY NOT FOLLOW THEM, and did not: that all four choices were fixed BEFORE any margin was
-% reported (a claim about how the analysis was run, not apparatus); the cell itself in full, because
-% \S\ref{sec:broad}'s numbers are read at it and this manuscript has already printed one count from
-% a five-bin cell beside a margin from the eight-bin one; that the bin count is the choice with the
-% most leverage and is therefore swept wherever a finding rests on it; that admissibility requires
-% sign-stability under leave-one-source-out in ALL FOUR unit x convention cells, since dropping that
-% clause lets the set taken whole pass; and that clause (c) exists and is rebuilt on every draw of
-% the multiplicity null.  A reader who meets the one surviving row set must be able to see, here,
-% what had to be true for it to survive.
-\paragraph{The cell, and what was fixed before any margin was seen.} The cell is eight equal-count
-bins of $g(\zstar)$, the \emph{unbiased} (Bessel-corrected) within-bin variance, the row unit and
-the \emph{residual-only} combinatorial convention. It is applied identically to every set and every
-stratum whatever its size, and every margin in this paper is read at it. The bin count is the
-choice with the most leverage: it takes the broad set's aggregate margin from $+0.01$ to $+0.96$.
-The cell therefore never stands alone where a finding rests on it, and we run the same sweep for
-the strata the rule passes and report it with them. One convention governs both sets rather than the
+Four analyst choices set that bound --- the bin count, where the equal-count bin edges fall, the
+within-bin variance convention and the combinatorial convention --- and one setting of them, with
+the row or the molecule pair as unit, is an \emph{estimator cell}. All four were fixed before any
+margin was seen, a data-set contract in the sense \citet{nael2026dataset} argue for. The cell is
+eight equal-count bins of $g(\zstar)$, the unbiased within-bin variance, the row unit and the
+residual-only convention, applied identically to every set and stratum whatever its size. The bin
+count has the most leverage of the four: it takes the broad set's aggregate margin from $+0.01$ to
+$+0.96$. No finding therefore rests on the cell alone --- the same sweep is run for every stratum
+the rule passes and reported with it --- and one convention governs both sets rather than the
 favourable one on each, which costs the broad set's margin about half its value.
 
-Admissibility then asks two things of a stratum and a third of the cells. \emph{(a)} The stratum
-must be \emph{boundable} at that cell: $n\ge40$, eight bins holding five rows. \emph{(b)} Its
-margin must keep its sign when each contributing source publication is deleted in turn, \emph{in
-all four unit\,$\times$\,convention cells}. That clause is load-bearing: dropping it lets the set
-taken whole pass. \emph{(c)} Admissible cells holding identical rows count once, a row set being
-demoted to a larger one only when the residual between them falls short of admissible.
-Clause~(c) is rebuilt on every draw of the multiplicity null, on the permuted labels, like the rest
-of the rule. The stratification reads a SMILES string and stops there, leaving $m$, $g$, the squared
-error, the source and the bootstrap unread, so every cell was fixed before its outcome --- a
-property of the code and not an assurance. \S\ref{sec:si-rules} states all four rules in full, with
+Admissibility asks three things. \emph{(a)} The stratum must be \emph{boundable} at that cell:
+$n\ge40$, eight bins holding five rows. \emph{(b)} Its margin must keep its sign when each
+contributing source publication is deleted in turn, in all four unit\,$\times$\,convention cells;
+that clause is load-bearing, since dropping it lets the set taken whole pass. \emph{(c)} Admissible
+cells holding identical rows count once. \S\ref{sec:si-rules} states all four rules in full, with
 the class cascade, the demotion test and what each of them costs.
