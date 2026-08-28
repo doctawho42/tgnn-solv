@@ -906,9 +906,9 @@ two.
 % without it, while \S\ref{sec:si-tables} carried the asymmetry.  The null-target arm that would
 % separate the reference values' ACCURACY from the extra pretraining is a training run and was not
 % made.  Do not restate this gain as a measurement of supervision toward accurate values.
-The two arms differ in training budget. The grounded arm precedes the shared curriculum with a
-$\sigma$ warm-up on the grounding pool of up to $40$ epochs, early-stopped on a held-out tenth;
-the ungrounded arm sets that budget to zero (\S\ref{sec:si-lock}). We left unrun the warm-up against permuted
+The two arms differ in training budget. The grounded arm precedes the shared curriculum with an
+early-stopped $\sigma$ warm-up on the grounding pool; the ungrounded arm sets that budget to zero
+(\S\ref{sec:si-lock}). We left unrun the warm-up against permuted
 $\sigma$ targets that would separate the two, so the gain prices the intervention entire, extra
 pretraining and accurate targets together, rather than the accuracy of the reference values by
 itself.
@@ -922,10 +922,7 @@ $\sigma$-stream leak could inflate, and it is what the re-run was pre-committed 
 stream is certified inside each training run and reaches no test molecule: $0$ by canonical SMILES
 against $5101$ held-out SMILES, and $0$ by Bemis--Murcko scaffold against $2702$ held-out scaffolds
 (\S\ref{sec:si-repro}). On these arms there is nothing to delete. The published three-seed
-family, whose stream build is uncertified, put the same gain at $+0.198$ $[+0.06,+0.33]$, and at
-$+0.172$ $[+0.03,+0.31]$ with the eight leak-reachable solutes deleted, on $351$ of the $5608$ rows.
-The published family's two values bound where a leak can act \emph{there}, and are what
-limitation~(xii) refers to. The leak-free build supersedes them: in it a leak cannot act at all.
+family, whose stThe published three-seed family, whose stream build is uncertified, bounds where a leak can act \emph{there}, and is what limitation~(xii) refers to (\S\ref{sec:si-limitations}). t a leak cannot act at all.
 Substituting the reference profile for the learned one \emph{at inference} degrades it, and that
 substitution alone is the effect this paper is named for. It erases any positive $R^2$
 (Fig.~\ref{fig:paradox}): the model predicts solubility better \emph{from its own learned
