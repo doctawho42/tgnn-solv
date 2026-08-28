@@ -476,48 +476,17 @@ as part of that single replacement (\S\ref{sec:si-methods}).
 % SCOPE, and keep it: the sizes are from the one trained COSMO-SAC head the tree holds, a retired
 % checkpoint.  What is architectural is that the two roles are untied at all.
 A property of our head bears on what that substitution does, and it is a defect rather than a
-choice. The encoder carries a separate learned adapter for the solute and the solvent role, and the
-$\sigma$-head reads whichever the molecule occupies, so one molecule has \emph{two} predicted
-profiles. A $\sigma$-profile is a property of a molecule alone, and the closure reads the pair, so
-the model can and does violate an identity no activity model may violate. On a self-pair, $\ln\gamma_2$ must be exactly zero. We fed every one of the $2634$ distinct test solutes to both
-roles at its own temperature. Of those, $102$ are untestable, the solver sitting at $x_2=1$ there, where the
-residual term vanishes identically, so $\ln\gamma_2$ is zero by composition rather than by profile
-agreement. On the $2532$ that are testable, the median $|\ln\gamma_2|$ is $0.154$, the mean
-$0.286$ and the largest $5.78$, with $95\%$ above $0.01$. With
-one profile on both sides, the same computation returns zero to machine precision, so the role gap
-is the whole of the violation.
-% ADDED 2026-08-12.  The prescription at the end of this paragraph was unqualified and is wrong on
-% one arm.  The role-adapted readout feeds THREE numbers, not one -- profile shape, cavity area,
-% molar volume -- and the third never touches the sigma-profile: it reaches ln gamma only through
-% the Staverman-Guggenheim term, off on the arms the paradox is reported on and restored on one
-% arm, which takes its volume from the auxiliary head applied to the SAME two role-adapted
-% readouts.  So on that arm tying the sigma-head alone leaves the identity broken.  Measured, not
-% argued: run_self_pair_channels.py, n=256 reference molecules, one channel given a 20% role
-% mismatch and the other two held exactly equal.  20% is the order the measured adapter divergence
-% implies.  Area and volume return EXACTLY 0.0000 with the combinatorial term off, but that is the
-% SELF-PAIR DEGENERACY and not a shape-only functional form, and the first version of this
-% paragraph stated it as the latter.  With both roles on one shape s, p_mix = s = p2_pure, the
-% bracket ln Gamma_mix - ln Gamma_2pure is identically zero, and the A_2/a_eff prefactor multiplies
-% zero.  Away from a self-pair the area is live: holding the shape and scaling A_2 by 20% scales the
-% residual term by 1.1994 at x2 = 1e-3 over 256 reference molecules against a distinct partner,
-% which is the prefactor, exactly as this section and the SI already say elsewhere.  Do not restate
-% the zero as "a function of the shapes alone" -- that reading generalises a degenerate case, which
-% is the same error the 102 untestable self-pairs above exist to prevent.
-The size of the repair depends on which of the readout's three numbers carries that gap, and on
-these arms it is the profile. With the two roles agreeing on the shape the residual bracket is identically
-zero whatever the areas, so on a self-pair the profile disagreement is the whole of the violation.
-\S\ref{sec:si-methods} prices a mismatch on the area and on the volume, and gives how far the
-deployed arms' areas sit from the tabulated ones. The substitution overwrites both roles at once and therefore closes that gap as well, which would
-be a second thing it changes besides the profile values. On the rows we score it changes nothing,
-and the reason is structural rather than empirical. The residual term takes the solute's
-pure-component reference from the solute-role profile itself, so on a pair of distinct molecules
-each is read in exactly one role and no role discrepancy enters the bracket; only a self-pair puts
-one molecule in both positions. No scored row is one. Counted on canonical SMILES, the labelled and
-unlabelled test rows, the validation split and both activity sets contain no self-pair at all, and
-the single instance anywhere in the corpus is a water-in-water row of an auxiliary stream, which
-carries no solubility label and is never scored. The substitution therefore changes the profile
-values alone on every row this paper reports, and tying the roles remains the repair for the
-identity itself, which is a retraining.
+choice. The encoder carries a separate learned adapter for the solute and the solvent role, so one
+molecule has \emph{two} predicted profiles --- and a $\sigma$-profile is a property of a molecule
+alone. The model therefore violates an identity no activity model may violate: on a self-pair
+$\ln\gamma_2$ must be exactly zero, and over the $2532$ testable test solutes its median
+$|\ln\gamma_2|$ is $0.154$. \textbf{No scored row is a self-pair.} On a pair of distinct molecules
+each profile is read in exactly one role, so no role discrepancy enters the residual bracket; the
+labelled and unlabelled test rows, the validation split and both activity sets contain no self-pair
+at all. The substitution therefore changes the profile values alone on every row this paper reports.
+Tying the roles remains the repair for the identity itself, which is a retraining
+(\S\ref{sec:si-methods}).
+
 We match solute and solvent independently. The substitution replaces those two profiles and stops there,
 the crystal head reading a solute-only embedding it leaves untouched. The bounded
 correction does read the closure's own parameters, so the crystal values the solver finally receives

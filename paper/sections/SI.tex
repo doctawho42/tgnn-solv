@@ -3885,6 +3885,95 @@ closure: limitations (ii), (iii), (v), (vii)--(xi) and (xiii)}
 % statement says where things are; the register of what is wrong with them is an audit, and an audit
 % belongs where a reader who wants it will read all of it rather than in the way of one who does not.
 % The body keeps the count, the five kinds and the pointer here.
+% MOVED FROM SECT 3.6 ON 2026-08-28. Two findings were being recapitulated inside a scope
+% paragraph -- the crystal-grounding pool and the withheld-temperature split -- each already
+% reported in its own section, and the probe's scope detail with them. The body keeps each
+% conclusion in one sentence.
+% MOVED FROM SECT 2.4 ON 2026-08-28. The body keeps the defect, the identity it breaks, the one
+% statistic that sizes it and the fact that bounds it at zero on every scored row. The rest -- the
+% untestable count, the other moments, the machine-precision control and which of the readout's
+% three numbers carries the gap -- is the pricing, and prices belong here.
+\paragraph{The self-pair identity violation, priced.}
+The encoder carries a separate learned adapter for the solute and the solvent role, and the
+$\sigma$-head reads whichever the molecule occupies, so one molecule has \emph{two} predicted
+profiles. A $\sigma$-profile is a property of a molecule alone, and the closure reads the pair, so
+the model can and does violate an identity no activity model may violate. On a self-pair, $\ln\gamma_2$ must be exactly zero. We fed every one of the $2634$ distinct test solutes to both
+roles at its own temperature. Of those, $102$ are untestable, the solver sitting at $x_2=1$ there, where the
+residual term vanishes identically, so $\ln\gamma_2$ is zero by composition rather than by profile
+agreement. On the $2532$ that are testable, the median $|\ln\gamma_2|$ is $0.154$, the mean
+$0.286$ and the largest $5.78$, with $95\%$ above $0.01$. With
+one profile on both sides, the same computation returns zero to machine precision, so the role gap
+is the whole of the violation.
+% ADDED 2026-08-12.  The prescription at the end of this paragraph was unqualified and is wrong on
+% one arm.  The role-adapted readout feeds THREE numbers, not one -- profile shape, cavity area,
+% molar volume -- and the third never touches the sigma-profile: it reaches ln gamma only through
+% the Staverman-Guggenheim term, off on the arms the paradox is reported on and restored on one
+% arm, which takes its volume from the auxiliary head applied to the SAME two role-adapted
+% readouts.  So on that arm tying the sigma-head alone leaves the identity broken.  Measured, not
+% argued: run_self_pair_channels.py, n=256 reference molecules, one channel given a 20% role
+% mismatch and the other two held exactly equal.  20% is the order the measured adapter divergence
+% implies.  Area and volume return EXACTLY 0.0000 with the combinatorial term off, but that is the
+% SELF-PAIR DEGENERACY and not a shape-only functional form, and the first version of this
+% paragraph stated it as the latter.  With both roles on one shape s, p_mix = s = p2_pure, the
+% bracket ln Gamma_mix - ln Gamma_2pure is identically zero, and the A_2/a_eff prefactor multiplies
+% zero.  Away from a self-pair the area is live: holding the shape and scaling A_2 by 20% scales the
+% residual term by 1.1994 at x2 = 1e-3 over 256 reference molecules against a distinct partner,
+% which is the prefactor, exactly as this section and the SI already say elsewhere.  Do not restate
+% the zero as "a function of the shapes alone" -- that reading generalises a degenerate case, which
+% is the same error the 102 untestable self-pairs above exist to prevent.
+The size of the repair depends on which of the readout's three numbers carries that gap, and on
+these arms it is the profile. With the two roles agreeing on the shape the residual bracket is identically
+zero whatever the areas, so on a self-pair the profile disagreement is the whole of the violation.
+\S\ref{sec:si-methods} prices a mismatch on the area and on the volume, and gives how far the
+deployed arms' areas sit from the tabulated ones. The substitution overwrites both roles at once and therefore closes that gap as well, which would
+be a second thing it changes besides the profile values. On the rows we score it changes nothing,
+and the reason is structural rather than empirical. The residual term takes the solute's
+pure-component reference from the solute-role profile itself, so on a pair of distinct molecules
+each is read in exactly one role and no role discrepancy enters the bracket; only a self-pair puts
+one molecule in both positions. No scored row is one. Counted on canonical SMILES, the labelled and
+unlabelled test rows, the validation split and both activity sets contain no self-pair at all, and
+the single instance anywhere in the corpus is a water-in-water row of an auxiliary stream, which
+carries no solubility label and is never scored. The substitution therefore changes the profile
+values alone on every row this paper reports, and tying the roles remains the repair for the
+identity itself, which is a retraining.
+
+\paragraph{The probe's scope, the crystal pool, and the withheld-temperature split.}
+If the physics arm's intermediate is a
+surrogate, the thermodynamics might still be present implicitly in the control, which is free to
+represent it. It is absent: a ridge probe of the control's pair representation recovers the model's
+own prediction at $R^{2}=0.98$ and leaves the measured ideal-solubility term unrecovered. The
+negative falls short of an exclusion. It rests on $13$ held-out solute clusters whose reference
+scarcity caps them, each measured $R^{2}$ sits at or below its own permutation null's ceiling, and
+no power calculation says how far above that ceiling the design reaches. It is limitation~(ix), and
+\S\ref{sec:si-blackbox} carries the three studies, the controls and the temperature probe.
+
+% THE SEED COUNT WAS DROPPED FROM THIS SENTENCE ON PURPOSE, 2026-08-18.  A draft of this compression
+% wrote "in the seed mean over three seeds", which is wrong in the one direction that matters: the
+% control and the NRTL arm carry three seeds and the COSMO-SAC arms five, the caption below says
+% "the five-seed leak-free re-run", and the +0.23 is a five-seed mean set against a three-seed mean.
+% The counts are in Table~\ref{tab:si-arms}, where they can be read per arm; a single count here can
+% only be wrong for one of the two families.
+
+Grounding the crystal factor on external labels is underpowered rather
+than null. $97.76\%$ of that pool was melting points the model had already been trained on, and
+where it carried something new the crystal head moved. On the held-out solutes it is the worse of
+the two, and the downstream solubility gap crosses zero once clustered by solute
+(\S\ref{sec:e2}). Temperature extrapolation is the one place the physical \emph{structure} helps,
+and it helps as a property of the hypothesis class and not of any arm trained here. Fitting
+below $T\le309.75$~K and scoring at $T\ge330$~K on the same $1751$ solute--solvent pairs withholds
+temperature and keeps structure. On that split a structured van't Hoff class reaches an \lnx\ MAE
+of $0.37$ against $1.29$ for a random forest over Morgan fingerprints and temperature, each one fit
+on one temperature cut with no replicate behind it (\S\ref{sec:supporting}).
+
+% THE ATTRIBUTION IS SPLIT BETWEEN TWO WORKS AND BOTH CORPORA ARE NAMED, 2026-08-18.  A draft of
+% this compression bundled \cite{osanloo2024,vermeire2022solprop} under "as published by Attia et
+% al." -- the evaluation and the model it scores are different works -- and dropped
+% \cite{boobier2020} from the article entirely, which leaves the two corpora unidentifiable from
+% here.  osanloo2024 is the historical key for the Attia et al. evaluation, which is where all six
+% figures are published; vermeire2022solprop is the SolProp cycle it scores.  "None of the six
+% carries a published uncertainty" is what keeps a range from being read as a spread, and the unit
+% is stated because the published column is not the one this work's arms are argued in elsewhere.
+
 \paragraph{The audit register in full: twelve disclosed defects and limits.}
 Twelve defects and limits are disclosed in this submission, each
 described where its numbers print, and they are of five kinds. Four are properties of the deposit and are

@@ -1506,21 +1506,8 @@ finding is one-sided: one row set of the map on which grounding effort is \emph{
 % implicitly, and the negative is a bound.  Do not delete the second sentence to save a line -- a
 % negative printed without "falls short of an exclusion" is the failure this project treats as worse
 % than a wrong positive.
-\paragraph{The unconstrained control's representation.} If the physics arm's intermediate is a
-surrogate, the thermodynamics might still be present implicitly in the control, which is free to
-represent it. It is absent: a ridge probe of the control's pair representation recovers the model's
-own prediction at $R^{2}=0.98$ and leaves the measured ideal-solubility term unrecovered. The
-negative falls short of an exclusion. It rests on $13$ held-out solute clusters whose reference
-scarcity caps them, each measured $R^{2}$ sits at or below its own permutation null's ceiling, and
-no power calculation says how far above that ceiling the design reaches. It is limitation~(ix), and
-\S\ref{sec:si-blackbox} carries the three studies, the controls and the temperature probe.
+\paragraph{The unconstrained control's representation.} If the physics arm's intermediate is a surrogate, the thermodynamics might still be present implicitly in the control, which is free to represent it. It is absent: a ridge probe recovers the control's own prediction at $R^{2}=0.98$ and leaves the measured ideal-solubility term unrecovered. The negative falls short of an exclusion, on $13$ held-out solute clusters with no power calculation behind them; it is limitation~(ix), and \S\ref{sec:si-blackbox} carries the three studies and their controls.
 
-% THE SEED COUNT WAS DROPPED FROM THIS SENTENCE ON PURPOSE, 2026-08-18.  A draft of this compression
-% wrote "in the seed mean over three seeds", which is wrong in the one direction that matters: the
-% control and the NRTL arm carry three seeds and the COSMO-SAC arms five, the caption below says
-% "the five-seed leak-free re-run", and the +0.23 is a five-seed mean set against a three-seed mean.
-% The counts are in Table~\ref{tab:si-arms}, where they can be read per arm; a single count here can
-% only be wrong for one of the two families.
 \paragraph{Where the accuracy stands, and the confound in it.} None of this work's arms is
 competitive with current solubility models, and none is offered as one; the comparison in
 Table~\ref{tab:baselines} fixes the scale this work operates on and does not rank anything. The
@@ -1532,25 +1519,8 @@ and none of the chemical strata that resolve the same difference (\S\ref{sec:map
 result in either direction, and the matched control that would repair this is unrun. Untouched by that confound is every \emph{within-checkpoint} contrast, where the two
 sides share one trained model and one tuning (\S\ref{sec:paradox}, \S\ref{sec:decision},
 \S\ref{sec:surrogate}, \S\ref{sec:measure}). Two fall outside it, comparing across trainings or across the separately tuned control: the
-supervision gain and \S\ref{sec:decision}'s shrinkage slopes. Grounding the crystal factor on external labels is underpowered rather
-than null. $97.76\%$ of that pool was melting points the model had already been trained on, and
-where it carried something new the crystal head moved. On the held-out solutes it is the worse of
-the two, and the downstream solubility gap crosses zero once clustered by solute
-(\S\ref{sec:e2}). Temperature extrapolation is the one place the physical \emph{structure} helps,
-and it helps as a property of the hypothesis class and not of any arm trained here. Fitting
-below $T\le309.75$~K and scoring at $T\ge330$~K on the same $1751$ solute--solvent pairs withholds
-temperature and keeps structure. On that split a structured van't Hoff class reaches an \lnx\ MAE
-of $0.37$ against $1.29$ for a random forest over Morgan fingerprints and temperature, each one fit
-on one temperature cut with no replicate behind it (\S\ref{sec:supporting}).
+supervision gain and \S\ref{sec:decision}'s shrinkage slopes. Grounding the crystal factor on external labels is underpowered rather than null: $97.76\%$ of that pool was melting points the model had already been trained on, and the downstream solubility gap crosses zero once clustered by solute (\S\ref{sec:e2}). Temperature extrapolation is the one place the physical \emph{structure} helps, and it helps as a property of the hypothesis class rather than of any arm trained here (\S\ref{sec:supporting}).
 
-% THE ATTRIBUTION IS SPLIT BETWEEN TWO WORKS AND BOTH CORPORA ARE NAMED, 2026-08-18.  A draft of
-% this compression bundled \cite{osanloo2024,vermeire2022solprop} under "as published by Attia et
-% al." -- the evaluation and the model it scores are different works -- and dropped
-% \cite{boobier2020} from the article entirely, which leaves the two corpora unidentifiable from
-% here.  osanloo2024 is the historical key for the Attia et al. evaluation, which is where all six
-% figures are published; vermeire2022solprop is the SolProp cycle it scores.  "None of the six
-% carries a published uncertainty" is what keeps a range from being read as a spread, and the unit
-% is stated because the published column is not the one this work's arms are argued in elsewhere.
 The external block is on an easier by-solute split, and the harness for a like-for-like comparison
 is deposited and unrun. The difference that remains is a scale rather than a placement. This
 work's control reaches
