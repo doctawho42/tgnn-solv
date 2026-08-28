@@ -300,29 +300,14 @@ in \S\ref{sec:si-repro}.
 
 \paragraph{The label-noise floor, and the two functionals it is read with.}
 Independent determinations of the same system disagree, and that disagreement floors what any
-predictor can achieve. On the raw BigSolDB rows, we group by (solute, solvent, temperature to $1$\,K)
-and keep the groups reporting at least two distinct sources. Within a group, the disagreement
-statistic is the mean absolute deviation of \lnx\ from the group mean. Aggregating that per-group
-statistic over groups requires a choice of functional, and the two standard ones differ by a factor
-of five, so we report both. The mean over groups is $0.15$ \lnx\ units for the $3948$ groups
-backed by two sources and $0.31$ for the $349$ backed by three. The median over the
-same groups is $0.03$ and $0.09$. Collapsing exact-duplicate values first (the same measurement
-re-tabulated across compilations, which would otherwise deflate the floor) leaves the mean at
-$0.16$ over $4261$ groups. The scaffold-split MAE reported here ($1.70$ to $1.85$) is above the
-larger functional by a factor of five, so the accuracy ceiling stands clear of label noise
-under either reading. This floor is a mean absolute deviation in \lnx. The aleatoric estimate
-published for this task, an inter-laboratory root-mean-square error (RMSE) of $0.75$ in
-$\log_{10}S$ on $34$ duplicate
-solutions \cite{osanloo2024}, is a different functional on a different base, and we keep the two
-apart below, pooling and converting neither into the other.
-% ADDED 2026-08-19.  The SC3 benchmark is built on the same corpus this work uses and shares two
-% authors with the BigSolDB paper already cited, and it argues the figure quoted above is
-% worst-case rather than expected disagreement -- which moves the floor an order of magnitude and
-% therefore moves what "a factor of five above the noise floor" means.  It is a claim about the
-% floor and not a measurement of ours, so it prints as one.
-A benchmark on this corpus argues that the inter-laboratory figure describes worst-case rather than
-expected disagreement and puts the floor near $0.106$ in $\log_{10}S$ \cite{sc3benchmark}; on that
-reading the ratio above is the conservative one.
+predictor can achieve. Grouping the raw BigSolDB rows by (solute, solvent, temperature to $1$\,K)
+and keeping those with at least two distinct sources, the mean absolute disagreement is $0.15$ \lnx\
+units over the $3948$ two-source groups and $0.31$ over the $349$ three-source ones. The
+scaffold-split MAE reported here ($1.70$ to $1.85$) exceeds the larger of those by a factor of five,
+so model error dominates label noise. The published aleatoric estimate for this task is a different
+functional on a different base \cite{osanloo2024} and we keep the two apart, pooling and converting
+neither into the other; \S\ref{sec:si-baselines} gives the other functionals of this floor and the
+comparison.
 
 \paragraph{Disclosure: the scaffold guarantee is not certified for these runs.}
 The released stream builder excludes any pool molecule whose scaffold appears in validation or test.
