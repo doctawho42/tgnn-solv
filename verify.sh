@@ -76,6 +76,12 @@ echo "== documentation"
 stage "check_doc_paths" "$PY" scripts/analysis/check_doc_paths.py
 stage "check_site_abstract (title + abstract)" "$PY" scripts/analysis/check_site_abstract.py
 
+echo "== figures"
+# The journal's graphics specification, read off the produced PDFs. Not off the scripts:
+# savefig(bbox="tight") is how a script that sets a width emits a different one, and that is
+# exactly what six of these figures were doing.
+stage "check_figure_spec" "$PY" scripts/analysis/check_figure_spec.py
+
 if [ "$MODE" != fast ]; then
   echo "== manuscript builds"
   # TWICE EACH, AND SI FIRST.  The two documents cite each other through xr-hyper, which reads the

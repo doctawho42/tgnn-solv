@@ -9,6 +9,13 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+# THE JOURNAL'S GRAPHICS SPECIFICATION, applied before any figure is created. Without it matplotlib
+# emits DejaVu Sans in Type 3, and both are violations; see acs_figure_style for what and why.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from acs_figure_style import apply as _acs_apply  # noqa: E402
+_acs_apply()
+
 REPO = Path(__file__).resolve().parents[2]
 SALMON, TEAL, INK = "#E8A98C", "#7FB5A6", "#4D4D4D"
 _STYLE = Path.home() / ".claude/skills/repo-to-paper/assets/softpastel.mplstyle"
@@ -18,6 +25,9 @@ def main() -> None:
     d = json.load(open(REPO / "results/data_efficiency/summary.json"))["curve"]
     try:
         plt.style.use(str(_STYLE))
+        # AFTER style.use, NOT BEFORE: the shared style file resets rcParams wholesale, so a
+        # typeface set earlier is silently discarded. The specification has to be applied last.
+        _acs_apply()
     except Exception:
         plt.rcParams.update({
             "figure.facecolor": "white", "savefig.facecolor": "white", "savefig.dpi": 300,
@@ -27,7 +37,7 @@ def main() -> None:
 
     # Canvas = \columnwidth (240.7 pt = 3.34 in), the width the section sets it at, so the
     # PDF prints at 1:1 instead of the 0.50x reduction that put its ticks at 5.0 pt.
-    fig, ax = plt.subplots(figsize=(3.72, 2.72))
+    fig, ax = plt.subplots(figsize=(3.52, 2.57))
     for model, color, label, marker in (
         ("physics", SALMON, "physics-grounded", "o"),
         ("direct", TEAL, "DirectGNN (black box)", "s"),

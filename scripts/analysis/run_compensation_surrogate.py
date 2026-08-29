@@ -220,9 +220,16 @@ def main() -> None:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        # the journal's graphics specification; see scripts/analysis/acs_figure_style.py
+        import sys as _s; _s.path.insert(0, str(Path(__file__).resolve().parent))
+        from acs_figure_style import apply as _acs
         _style = Path.home() / ".claude/skills/repo-to-paper/assets/softpastel.mplstyle"
         if _style.exists():
             plt.style.use(str(_style))
+        # AFTER style.use, NOT BEFORE: the shared style file resets rcParams wholesale, so a
+        # typeface set earlier is silently discarded. The specification has to be applied last,
+        # and outside the `if` so it applies whether or not that optional style file is present.
+        _acs()
         SALMON, BLUE, PURPLE = "#E8A98C", "#8FB3DA", "#B7A5DC"   # shared soft-pastel palette
         fig, ax = plt.subplots(1, 2, figsize=(9.5, 4.0))
         ax[0].plot(SIGMA_GRID, r.mean(0), color=SALMON, lw=2.2, label="mean deviation")

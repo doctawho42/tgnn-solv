@@ -61,6 +61,13 @@ from pathlib import Path
 
 import matplotlib
 
+# THE JOURNAL'S GRAPHICS SPECIFICATION, applied before any figure is created. Without it matplotlib
+# emits DejaVu Sans in Type 3, and both are violations; see acs_figure_style for what and why.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from acs_figure_style import apply as _acs_apply  # noqa: E402
+_acs_apply()
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
@@ -117,11 +124,14 @@ def apply_style(style: str | None) -> None:
     path = Path(style) if style else _DEFAULT_STYLE
     if path.exists():
         plt.style.use(str(path))
+        # AFTER style.use, NOT BEFORE: the shared style file resets rcParams wholesale, so a
+        # typeface set earlier is silently discarded. The specification has to be applied last.
+        _acs_apply()
         return
     plt.rcParams.update({
         "figure.facecolor": "white", "savefig.facecolor": "white",
         "savefig.dpi": 300, "savefig.bbox": "tight", "savefig.pad_inches": 0.05,
-        "figure.dpi": 200, "font.family": "sans-serif", "font.size": 11,
+        "figure.dpi": 200, "font.size": 11,
         "axes.edgecolor": INK, "axes.linewidth": 0.8,
         "axes.spines.top": False, "axes.spines.right": False,
         "legend.frameon": False, "patch.linewidth": 0.0,
@@ -249,7 +259,7 @@ def draw(rows: list[dict], out_dir: Path, stem: str) -> list[str]:
     # the key does not creep into the plotting area when the number of strata changes.
     below, above = 0.94, 0.30
     H = 0.205 * (n_slot + head_h) + below + above
-    fig = plt.figure(figsize=(7.1, H))
+    fig = plt.figure(figsize=(6.95, H))
     gs = fig.add_gridspec(1, 3, width_ratios=[2.05, 2.05, 1.00], wspace=0.10,
                           left=0.185, right=0.985,
                           top=1 - above / H, bottom=below / H)

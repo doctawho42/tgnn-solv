@@ -21,6 +21,13 @@ import json
 from pathlib import Path
 
 import matplotlib
+
+# THE JOURNAL'S GRAPHICS SPECIFICATION, applied before any figure is created. Without it matplotlib
+# emits DejaVu Sans in Type 3, and both are violations; see acs_figure_style for what and why.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from acs_figure_style import apply as _acs_apply  # noqa: E402
+_acs_apply()
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
@@ -59,7 +66,7 @@ def main() -> int:
     # at 5.71 pt on the page -- under the 6 pt floor every other figure clears.  9 x 0.7 x 1.02
     # is 6.4 pt.  Raise the other sizes with it whenever this one moves, or the label outgrows
     # the tick labels it sits beside.
-    plt.rcParams.update({"font.family": "serif", "savefig.dpi": 300,
+    plt.rcParams.update({"savefig.dpi": 300,
                          "savefig.bbox": "tight", "figure.facecolor": "white",
                          "font.size": 8.5, "axes.labelsize": 9, "axes.titlesize": 9,
                          "xtick.labelsize": 7.5, "ytick.labelsize": 7.5, "legend.fontsize": 7.5})

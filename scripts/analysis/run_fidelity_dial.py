@@ -267,6 +267,10 @@ def make_figures(dial: list[DialRecord], conf: list[ConflationRecord], fig_dir: 
     _st = _Path.home() / ".claude/skills/repo-to-paper/assets/softpastel.mplstyle"
     if _st.exists():
         plt.style.use(str(_st))
+        # AFTER style.use, NOT BEFORE: the shared style file resets rcParams wholesale, so a
+        # typeface set earlier is silently discarded. The specification has to be applied last.
+        import sys as _s; _s.path.insert(0, str(Path(__file__).resolve().parent))
+        from acs_figure_style import apply as _acs_apply; _acs_apply()
 
     fig_dir.mkdir(parents=True, exist_ok=True)
     written: list[str] = []

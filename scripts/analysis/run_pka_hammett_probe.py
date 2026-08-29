@@ -196,6 +196,9 @@ def rdkit_oracle_demo():
 
 def make_figure(records, fig_dir):
     import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
+    # the journal's graphics specification; see scripts/analysis/acs_figure_style.py
+    import sys as _s; _s.path.insert(0, str(Path(__file__).resolve().parent))
+    from acs_figure_style import apply as _acs; _acs()
     # soft-pastel base palette (shared with make_paradox_figures.py / fig_overview)
     SALMON, TEAL, BLUE = "#E8A98C", "#7FB5A6", "#8FB3DA"
     fig_dir.mkdir(parents=True, exist_ok=True)

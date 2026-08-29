@@ -94,6 +94,13 @@ from pathlib import Path
 
 import matplotlib
 
+# THE JOURNAL'S GRAPHICS SPECIFICATION, applied before any figure is created. Without it matplotlib
+# emits DejaVu Sans in Type 3, and both are violations; see acs_figure_style for what and why.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from acs_figure_style import apply as _acs_apply  # noqa: E402
+_acs_apply()
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
@@ -138,11 +145,17 @@ def apply_style(style: str | None) -> None:
     path = Path(style) if style else _DEFAULT_STYLE
     if path.exists():
         plt.style.use(str(path))
+        # AFTER style.use, NOT BEFORE: the shared style file resets rcParams wholesale, so a
+        # typeface set earlier is silently discarded. The specification has to be applied last.
+        _acs_apply()
         return
     plt.rcParams.update({
         "figure.facecolor": "white", "savefig.facecolor": "white",
         "savefig.dpi": 300, "savefig.bbox": "tight", "figure.dpi": 200,
-        "font.family": "sans-serif", "font.size": 11,
+    # "font.family" REMOVED 2026-08-29: the figures were set in serif to match the body
+    # type, and the journal asks for Helvetica or Arial in artwork. acs_figure_style now
+    # owns the typeface; setting it here silently overrode that.
+"font.size": 11,
         "axes.edgecolor": INK, "axes.linewidth": 0.8,
         "axes.spines.top": False, "axes.spines.right": False,
         "axes.grid": True, "axes.axisbelow": True, "grid.color": "#D9D9D9",
@@ -351,9 +364,16 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--e5-dir", default="results/e5_sigma_grounding", type=Path)
-    ap.add_argument("--rerun-dir", type=Path, default=None,
-                    help="read ungrounded/grounded_a/oracle from this tree instead: the leak-free "
-                         "re-run, which is what the caption says panels (b)-(d) carry")
+    # DEFAULTS TO THE LEAK-FREE TREE AS OF 2026-08-29, and the reason is a defect this caused.
+    # It defaulted to None, so `python make_parity_figure.py` with no arguments drew panels (b)-(d)
+    # from the published three-seed family while the caption said they were the leak-free re-run --
+    # the deposited figure could not be reproduced by running its own script. A regeneration during
+    # the graphics-specification pass did exactly that and swapped four numbers in the figure; the
+    # value-conservation gate caught it because +0.292 stopped printing anywhere. Pass
+    # --rerun-dir "" to draw the published family deliberately.
+    ap.add_argument("--rerun-dir", type=Path, default=Path("results/e5_sigma_grounding_leakfree"),
+                    help="read ungrounded/grounded_a/oracle from this tree: the leak-free re-run, "
+                         "which is what the caption says panels (b)-(d) carry")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--out-dir", default="paper/figs", type=Path)
     ap.add_argument("--stem", default="fig_parity_lnx2")

@@ -1643,9 +1643,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--gate-integers", action="store_true",
                    help="let tier-B (bare integer) losses affect the exit status")
     p.add_argument("--relocation", action="store_true",
-                   help="a declared pass that moved prose between documents: tier-A values that "
-                        "stopped printing in one statement but survive elsewhere are reported and "
-                        "not fatal. Values gone from the document entirely stay fatal.")
+                   help="a declared pass in which text moved or re-rendered -- prose "
+                        "relocated between documents, or figures regenerated so that "
+                        "their extracted layout changed. Tier-A values that stopped "
+                        "printing in one statement but survive elsewhere are reported "
+                        "and not fatal. Values gone from the document entirely stay "
+                        "fatal, which is the group the flag never touches.")
     p.add_argument("--report", default=None, metavar="FILE",
                    help="also write the report to FILE")
     p.add_argument("--quiet", action="store_true",

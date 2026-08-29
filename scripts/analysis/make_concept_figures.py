@@ -33,6 +33,13 @@ from pathlib import Path
 
 import matplotlib
 
+# THE JOURNAL'S GRAPHICS SPECIFICATION, applied before any figure is created. Without it matplotlib
+# emits DejaVu Sans in Type 3, and both are violations; see acs_figure_style for what and why.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from acs_figure_style import apply as _acs_apply  # noqa: E402
+_acs_apply()
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
@@ -53,10 +60,16 @@ _DEFAULT_STYLE = Path.home() / ".claude/skills/repo-to-paper/assets/softpastel.m
 def apply_style() -> None:
     if _DEFAULT_STYLE.exists():
         plt.style.use(str(_DEFAULT_STYLE))
+        # AFTER style.use, NOT BEFORE: the shared style file resets rcParams wholesale, so a
+        # typeface set earlier is silently discarded. The specification has to be applied last.
+        _acs_apply()
     plt.rcParams.update({
         "figure.facecolor": "white", "savefig.facecolor": "white",
         "savefig.dpi": 300, "savefig.bbox": "tight", "figure.dpi": 150,
-        "font.family": "sans-serif", "font.size": 10.5,
+    # "font.family" REMOVED 2026-08-29: the figures were set in serif to match the body
+    # type, and the journal asks for Helvetica or Arial in artwork. acs_figure_style now
+    # owns the typeface; setting it here silently overrode that.
+"font.size": 10.5,
         "axes.edgecolor": INK, "patch.linewidth": 0.0,
     })
 
@@ -83,7 +96,7 @@ def _save(fig, out_dir: Path, name: str) -> None:
 
 # --------------------------------------------------------------------------- #
 def fig_composed(out_dir: Path) -> None:
-    fig = plt.figure(figsize=(9.2, 5.2))
+    fig = plt.figure(figsize=(8.2, 4.64))
     gs = fig.add_gridspec(2, 1, height_ratios=[2.15, 1.0], hspace=0.28)
     ax = fig.add_subplot(gs[0]); ax.set_xlim(0, 10); ax.set_ylim(0, 5); ax.axis("off")
 
@@ -283,7 +296,7 @@ def fig_arch(out_dir: Path) -> None:
     # and nothing else.  Check the boxes, not only the type sizes, if either moves.  The
     # cheapest way to buy printed type size is to stop some label overhanging the right edge:
     # the content extent is in the denominator above, and the boxes end at x = 12.15.
-    fig, ax = plt.subplots(figsize=(9.9, 4.86))
+    fig, ax = plt.subplots(figsize=(8.85, 4.35))
     ax.set_xlim(0, 12.4); ax.set_ylim(0, 6.2); ax.axis("off")
 
     # 9.8 pt is the smallest base at which a mathtext sub/superscript (0.7x) clears 6 pt on

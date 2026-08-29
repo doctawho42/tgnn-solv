@@ -37,6 +37,13 @@ from pathlib import Path
 
 import matplotlib
 
+# THE JOURNAL'S GRAPHICS SPECIFICATION, applied before any figure is created. Without it matplotlib
+# emits DejaVu Sans in Type 3, and both are violations; see acs_figure_style for what and why.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from acs_figure_style import apply as _acs_apply  # noqa: E402
+_acs_apply()
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
@@ -85,6 +92,9 @@ def compute(deposit: Path) -> pd.DataFrame:
 def draw(t: pd.DataFrame, out_dir: Path, stem: str) -> list[str]:
     if _STYLE.exists():
         plt.style.use(str(_STYLE))
+        # AFTER style.use, NOT BEFORE: the shared style file resets rcParams wholesale, so a
+        # typeface set earlier is silently discarded. The specification has to be applied last.
+        _acs_apply()
     fig, (ax, bx) = plt.subplots(2, 1, figsize=(6.6, 4.6), sharex=True,
                                  gridspec_kw={"height_ratios": [1.35, 1.0]})
 

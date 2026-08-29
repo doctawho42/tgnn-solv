@@ -148,6 +148,13 @@ from pathlib import Path
 
 import matplotlib
 
+# THE JOURNAL'S GRAPHICS SPECIFICATION, applied before any figure is created. Without it matplotlib
+# emits DejaVu Sans in Type 3, and both are violations; see acs_figure_style for what and why.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from acs_figure_style import apply as _acs_apply  # noqa: E402
+_acs_apply()
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle  # noqa: E402
@@ -197,7 +204,10 @@ FIG_H_IN = 2.515 - 42.0 / 72.0
 # If you change FIG_W_IN, you break that identity; if you change savefig.bbox back to "tight", you
 # break it silently.  _check_media_box() re-derives it from the emitted PDF at the end of the run.
 plt.rcParams.update({
-    "font.family": "serif", "text.usetex": False, "svg.fonttype": "none",
+    # "font.family" REMOVED 2026-08-29: the figures were set in serif to match the body
+    # type, and the journal asks for Helvetica or Arial in artwork. acs_figure_style now
+    # owns the typeface; setting it here silently overrode that.
+"text.usetex": False, "svg.fonttype": "none",
     "figure.facecolor": "white", "savefig.facecolor": "white",
     "savefig.dpi": 300, "savefig.bbox": None, "figure.dpi": 150,
 })

@@ -64,6 +64,13 @@ from pathlib import Path
 
 import matplotlib
 
+# THE JOURNAL'S GRAPHICS SPECIFICATION, applied before any figure is created. Without it matplotlib
+# emits DejaVu Sans in Type 3, and both are violations; see acs_figure_style for what and why.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from acs_figure_style import apply as _acs_apply  # noqa: E402
+_acs_apply()
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
@@ -86,12 +93,18 @@ def apply_style(style: str | None) -> None:
     path = Path(style) if style else _DEFAULT_STYLE
     if path.exists():
         plt.style.use(str(path))
+        # AFTER style.use, NOT BEFORE: the shared style file resets rcParams wholesale, so a
+        # typeface set earlier is silently discarded. The specification has to be applied last.
+        _acs_apply()
         return
     # clean pastel fallback if the asset is unavailable
     plt.rcParams.update({
         "figure.facecolor": "white", "savefig.facecolor": "white",
         "savefig.dpi": 300, "savefig.bbox": "tight", "figure.dpi": 200,
-        "font.family": "sans-serif", "font.size": 11, "axes.titlesize": 13,
+    # "font.family" REMOVED 2026-08-29: the figures were set in serif to match the body
+    # type, and the journal asks for Helvetica or Arial in artwork. acs_figure_style now
+    # owns the typeface; setting it here silently overrode that.
+"font.size": 11, "axes.titlesize": 13,
         "axes.labelsize": 12, "axes.edgecolor": INK, "axes.linewidth": 0.8,
         "axes.spines.top": False, "axes.spines.right": False,
         "axes.grid": True, "axes.axisbelow": True, "grid.color": "#D9D9D9",
@@ -154,7 +167,7 @@ def fig_paradox(e5_dir: Path, seeds, out_dir: Path) -> list[str]:
     colors = [GRAY, TEAL, BLUE, TEAL, TEAL, SALMON]
     hatch = [None] * len(labels)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.4, 2.95))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.15, 2.85))
     x = np.arange(len(labels))
     # Error bars are drawn as a SEPARATE artist over the seeded arms only.  Passing yerr=0 for the
     # single-seed arms (as this figure once did) draws a zero-length bar whose caps are visible at

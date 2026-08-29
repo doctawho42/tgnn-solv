@@ -88,6 +88,13 @@ from pathlib import Path
 
 import matplotlib
 
+# THE JOURNAL'S GRAPHICS SPECIFICATION, applied before any figure is created. Without it matplotlib
+# emits DejaVu Sans in Type 3, and both are violations; see acs_figure_style for what and why.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from acs_figure_style import apply as _acs_apply  # noqa: E402
+_acs_apply()
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch  # noqa: E402
@@ -252,7 +259,10 @@ OUT = Path(__file__).resolve().parents[2] / "paper" / "figs" / "fig_toc"
 # size set below prints 5.4% smaller than it reads here.  0.02 in keeps the margin without
 # the reduction: at pad 0.1 the 6.0 pt sentence printed at 5.67 pt.
 plt.rcParams.update({
-    "font.family": "serif", "text.usetex": False,
+    # "font.family" REMOVED 2026-08-29: the figures were set in serif to match the body
+    # type, and the journal asks for Helvetica or Arial in artwork. acs_figure_style now
+    # owns the typeface; setting it here silently overrode that.
+"text.usetex": False,
     "figure.facecolor": "white", "savefig.facecolor": "white",
     "savefig.dpi": 600, "savefig.bbox": "tight", "savefig.pad_inches": 0.02,
     "figure.dpi": 150,
