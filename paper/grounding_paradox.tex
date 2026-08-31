@@ -642,25 +642,29 @@ measured one solute, one solvent and one temperature at a time, so most industri
 combinations remain unmeasured, and a laboratory that needs one is usually choosing between running
 an experiment and trusting a prediction.
 
-Two kinds of predictor compete for that trust. One learns the answer directly from data. The other
-routes the prediction through the physical picture: it predicts the quantities thermodynamics names
---- how hard the crystal is to break, how well the freed molecules mix with the solvent --- and
-combines them through a fixed equation. The second kind usually trails on accuracy and has become the more attractive of the two anyway.
-Its intermediate quantities are things chemistry already knows how to measure and tabulate, so a
-prediction made through them can be taken apart and audited, and each part can be supervised against
-reference data a direct regressor has no way to use. The fixed equation is also a prior: it asserts for free
-what a purely statistical model would have to learn from data it does not have, which is the
-situation whenever the question concerns a molecule unlike any in the training set.
+% THE TAXONOMY IS STATED ONCE, 2026-08-30 on review. The on-ramp opened by dividing predictors
+% into two kinds and the paragraph below divides them again, with the citations; two divisions of
+% one field read as two different arguments. The division belongs where the references are, so the
+% on-ramp now carries only what that paragraph does not: why the physics-informed design is
+% attractive despite trailing on accuracy, and the assumption this paper tests.
+Physics-informed predictors are attractive for reasons that have little to do with accuracy, on
+which they usually trail. Their intermediate quantities are things chemistry already knows how to
+measure and tabulate, so a prediction made through them can be taken apart and audited, and each
+part can be supervised against reference data a direct regressor has no way to use. The fixed
+equation is also a prior: it asserts for free what a purely statistical model would have to learn
+from data it does not have, which is the situation whenever the question concerns a molecule unlike
+any in the training set.
 
 That design carries an assumption so natural it is rarely written down. If the model's intermediate
 is a quantity someone has already tabulated, then a better value for it can simply be looked up and
 handed to the model, with no retraining --- and the prediction should improve. The assumption is
 what makes the intermediate worth having: it is the difference between a physical model and an
 elaborate parameterisation. This paper tests it, on one such model and one such intermediate, and
-finds that it fails. Independent determinations of the same system disagree by enough to
-floor what any predictor can achieve. Dissolving a solid also trades breaking
-a crystal against mixing the freed molecules into the solvent, so a predictor must be
-right about two unrelated kinds of chemistry at once, on molecules unlike any it was shown.
+finds that it fails. Two further things make solubility a hard case for it. Independent
+determinations of the same system disagree by enough to floor what any predictor can achieve, and
+dissolving a solid trades breaking a crystal against mixing the freed molecules into the solvent,
+so a predictor must be right about two unrelated kinds of chemistry at once, on molecules unlike
+any it was shown.
 
 Predictors divide by how much physical structure they impose. Direct models regress solubility from
 descriptors or from a representation learned off the molecular graph; FastSolv \cite{osanloo2024}
@@ -722,8 +726,9 @@ physics-informed machine learning \cite{karniadakis2021}. Its dominant forms imp
 differentiable object: a governing equation enforced through the loss \cite{raissi2019}, gray-box
 hybrids composing learned components with fixed mechanistic maps \cite{willard2022}, and operator
 learning with a trainable correction to a misspecified equation \cite{ma2026}. More physics is
-expected to improve generalisation, yet the same structure has documented failure modes in which it
-makes optimisation or accuracy worse \cite{krishnapriyan2021}. In neural solvers for partial
+expected to improve generalisation, and the published evidence is inconsistent in direction: the
+same structure has documented failure modes in which it makes optimisation or accuracy worse
+\cite{krishnapriyan2021}. In neural solvers for partial
 differential equations a learnable
 term added to a fixed discretised operator absorbs truncation artifacts instead of physics, so the
 apparent interpretability is illusory \cite{mohan2024}. The error source there is numerical, which
@@ -765,8 +770,9 @@ for the learned one.
 Here a graph neural network predicts the pair of charge-density distributions COSMO-SAC consumes, in
 place of the quantum-chemical calculation that ordinarily supplies them. The tabulated counterpart
 enters at either of two points: as a target the network is trained toward, or as a replacement for
-what the network computed at the moment of prediction (Fig.~\ref{fig:overview}). Those are the two
-operations the word \emph{grounding} names, and only one of them carries a sign. Training toward the
+what the network computed at the moment of prediction (Fig.~\ref{fig:overview}). We use \emph{grounding} for those two operations on tabulated physical values inside a hybrid
+model, and not in the sense the word carries in computer vision or language processing. Of
+the two, only one carries a sign. Training toward the
 reference moves the error four ways out of five and the fifth the other way; supplying it at the
 moment of prediction raises the error at every seed. Tabulated profiles serve a third purpose on
 activity-coefficient data, where they divide the error of a fixed model between the model itself and
@@ -779,7 +785,10 @@ accurate input exposes the model's bias instead of removing it. The learned dist
 meanwhile drifts from its tabulated counterpart along a direction shared across molecules, and stops
 reporting the quantity it is named after. Tabulated substituent constants behave the same way inside
 a fixed Hammett relation, the linear equation predicting how readily an acid gives up its proton
-from the constants tabulated for its substituents.
+from the constants tabulated for its substituents. We use the VT-2005 profiles not as ground
+truth for solubility prediction as such, but as an external physical reference against which
+to diagnose whether the learned intermediate keeps its physical meaning or has drifted to
+compensate for the closure's errors.
 
 The article is organised as follows. Section~\ref{sec:methods} defines the composed predictor,
 the decomposition of its error into a part belonging to the fixed physical model and a part
@@ -921,7 +930,9 @@ $\sigma$-stream leak could inflate, and it is what the re-run was pre-committed 
 stream is certified inside each training run and reaches no test molecule: $0$ by canonical SMILES
 against $5101$ held-out SMILES, and $0$ by Bemis--Murcko scaffold against $2702$ held-out scaffolds
 (\S\ref{sec:si-repro}). On these arms there is nothing to delete. The published three-seed
-family, whose stThe published three-seed family, whose stream build is uncertified, bounds where a leak can act \emph{there}, and is what limitation~(xii) refers to (\S\ref{sec:si-limitations}). t a leak cannot act at all.
+family, whose stream build is uncertified, bounds where a leak can act \emph{there},
+and is what limitation~(xii) refers to (\S\ref{sec:si-limitations}). The leak-free build
+supersedes it: in that build a leak cannot act at all.
 Substituting the reference profile for the learned one \emph{at inference} degrades it, and that
 substitution alone is the effect this paper is named for. It erases any positive $R^2$
 (Fig.~\ref{fig:paradox}): the model predicts solubility better \emph{from its own learned
@@ -1606,34 +1617,47 @@ data.
 % which numerals sit where, and a list that disagrees with it sends the reader astray.
 \paragraph{Limitations.} All sixteen, keeping the numerals used throughout;
 \S\ref{sec:si-limitations} carries the qualifying detail for the nine it holds.
-\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=1.5pt,topsep=3pt,parsep=0pt]
-\item The phenomenon and its causal attribution lie in \emph{different regimes}: the paradox is where the model operates, the attribution rests on infinite-dilution activity data alone, and transfer between them is a conjecture and the principal open question here (\S\ref{sec:si-limitations}).
 
-\item What the convention rule costs the aggregate (\S\ref{sec:estimator}).
-\item That other cells of the map keep their sign as well (\S\ref{sec:broad}).
-\item $\Binsuf$ is upper-bounded rather than point-identified, the design holding no replicates at
+% GROUPED 2026-08-30 on review: sixteen flat items are a list a reader skims and forgets.
+% Four headings, and the NUMERALS ARE EXPLICIT rather than generated -- (i), (vi), (ix), (x),
+% (xii), (xiii) and (xv) are cited by numeral from the body and from the SI, so regrouping may
+% not renumber them. If an item moves between groups its numeral travels with it.
+
+\smallskip\noindent\textit{What the fixed model leaves out.} Properties of the closure and of what it is asked to do, not of the measurement.
+\begin{enumerate}[leftmargin=*,itemsep=1.5pt,topsep=3pt,parsep=0pt]
+\item[(xvi)] The fixed model is COSMO-SAC at its $2002$ parameterisation, whose kernel cannot move, so a sign that turned on kernel mobility lies outside what these measurements reach (\S\ref{sec:si-limitations}).
+\item[(xv)] Two terms the thermodynamics asks for are set to zero in the deployed model, $\Delta C_p$ in the ideal term and the Staverman--Guggenheim combinatorial term, and both are absorbed at training time by the same learned $\sigma$ head (\S\ref{sec:si-limitations}).
+\item[(xiv)] One trained COSMO-SAC head survives in the deposit and it is a poor model, so the four quantities read off it are properties of a parameterisation rather than of a trained network, each stated with that scope where it prints (\S\ref{sec:si-limitations}).
+\item[(iv)] $\Binsuf$ is upper-bounded rather than point-identified, the design holding no replicates at
 fixed $\zstar$. $\Bclos$ is the error of a composite, the fixed map together with the calculation
 that produced $\zstar$, and the measurements here leave it undivided between the two and its share
 unbounded (\S\ref{sec:badclosure}).
-\item The constant-offset bound's convention-specificity (\S\ref{sec:estimator}).
-\item The stratification reads structure alone, so every cell was fixed before its outcome was seen; cells from different axes share rows and are counted once, and the per-cell bootstrap frequencies carry no multiplicity control (\S\ref{sec:si-limitations}).
+\end{enumerate}
 
-\item The accuracy ceiling standing a factor of five above the label-noise floor (\S\ref{sec:data}).
-\item What the three-seed latent-departure result establishes and where it stops
-(\S\ref{sec:surrogate}).
-\item What bounds the black-box probe (the probe paragraph above).
-\item What the closure-fidelity contrast leaves unmeasured, and what would settle it
+\smallskip\noindent\textit{What the instrument can and cannot resolve.} The estimator, its analyst choices and the multiplicity the search carries.
+\begin{enumerate}[leftmargin=*,itemsep=1.5pt,topsep=3pt,parsep=0pt]
+\item[(ii)] What the convention rule costs the aggregate (\S\ref{sec:estimator}).
+\item[(iii)] That other cells of the map keep their sign as well (\S\ref{sec:broad}).
+\item[(v)] The constant-offset bound's convention-specificity (\S\ref{sec:estimator}).
+\item[(vi)] The stratification reads structure alone, so every cell was fixed before its outcome was seen; cells from different axes share rows and are counted once, and the per-cell bootstrap frequencies carry no multiplicity control (\S\ref{sec:si-limitations}).
+\item[(x)] What the closure-fidelity contrast leaves unmeasured, and what would settle it
 (\S\ref{sec:notdecided}).
-\item No accuracy difference between the arms is attributable to the bottleneck, the two sides being separately tuned with no hyperparameter-matched control (\S\ref{sec:si-limitations}).
+\end{enumerate}
 
-\item The scaffold-leak guard is a property of the released stream builder rather than a certified property of the runs \S\ref{sec:paradox} reports; the certified leak-free re-run returns the supervision gain without a sign, so no reported number rests on the uncertified build (\S\ref{sec:si-limitations}).
+\smallskip\noindent\textit{What the data and the runs bound.} Provenance, scale and the ceiling the labels themselves impose.
+\begin{enumerate}[leftmargin=*,itemsep=1.5pt,topsep=3pt,parsep=0pt]
+\item[(xii)] The scaffold-leak guard is a property of the released stream builder rather than a certified property of the runs \S\ref{sec:paradox} reports; the certified leak-free re-run returns the supervision gain without a sign, so no reported number rests on the uncertified build (\S\ref{sec:si-limitations}).
+\item[(vii)] The accuracy ceiling standing a factor of five above the label-noise floor (\S\ref{sec:data}).
+\item[(xiii)] What the deposit leaves uncheckable (the data-availability statement).
+\item[(viii)] What the three-seed latent-departure result establishes and where it stops
+(\S\ref{sec:surrogate}).
+\item[(ix)] What bounds the black-box probe (the probe paragraph above).
+\end{enumerate}
 
-\item What the deposit leaves uncheckable (the data-availability statement).
-\item One trained COSMO-SAC head survives in the deposit and it is a poor model, so the four quantities read off it are properties of a parameterisation rather than of a trained network, each stated with that scope where it prints (\S\ref{sec:si-limitations}).
-
-\item Two terms the thermodynamics asks for are set to zero in the deployed model, $\Delta C_p$ in the ideal term and the Staverman--Guggenheim combinatorial term, and both are absorbed at training time by the same learned $\sigma$ head (\S\ref{sec:si-limitations}).
-
-\item The fixed model is COSMO-SAC at its $2002$ parameterisation, whose kernel cannot move, so a sign that turned on kernel mobility lies outside what these measurements reach (\S\ref{sec:si-limitations}).
+\smallskip\noindent\textit{How far any of it generalises.} The two limits on carrying these results past the setting they were measured in.
+\begin{enumerate}[leftmargin=*,itemsep=1.5pt,topsep=3pt,parsep=0pt]
+\item[(i)] The phenomenon and its causal attribution lie in \emph{different regimes}: the paradox is where the model operates, the attribution rests on infinite-dilution activity data alone, and transfer between them is a conjecture and the principal open question here (\S\ref{sec:si-limitations}).
+\item[(xi)] No accuracy difference between the arms is attributable to the bottleneck, the two sides being separately tuned with no hyperparameter-matched control (\S\ref{sec:si-limitations}).
 \end{enumerate}
 
 % CONCLUSIONS.  Two paragraphs, no numbers, no section references, and NOT a restatement of the
@@ -1681,23 +1705,41 @@ unbounded (\S\ref{sec:badclosure}).
 % DO NOT print the +0.41 / +0.11 pair.  Sec. 2.2 withholds the ordering of the two operations'
 % magnitudes and the graphic for the table of contents is forbidden the same pair; a conclusion is
 % not where the withholding lapses.  The signs are what carry, and they print.
-Grounding a learned physical intermediate in reference values is two operations rather than one,
-and only one of them carried a sign. Substituting the reference profile for the learned one at
-prediction time raised solubility error at every one of five seeds, and moved the ranking of
-solvents for a solute against the practitioner at every one of them. Supervising the same head
-against the same database during training carried no established sign. The operation that failed is
-the one a practitioner reaches for, because it is the one that runs without retraining.
+% REWRITTEN 2026-08-30 on review. Three changes were asked for and all three are here: the opening
+% names who did what rather than reporting a property of the world; the two headline effects print
+% with their sizes; and the contrast with TeNNet-SAC is stated as a difference in setting rather
+% than as a correction, and does not close the section.
+% ONE THING IN THE SUGGESTED DRAFT IS NOT ADOPTED, and deliberately. It attributed the glycol-ether
+% result to "strong hydrogen-bonding interactions poorly captured by the single-parameter kernel".
+% This paper's own hydrogen-bond sweep declines that: the three solvent classes move in three
+% directions under the coefficient, and SECT 3.4.1 says in as many words that they are consistent
+% with the error sitting in the hydrogen-bond kernel but do not localise it there. The sentence
+% below says what was measured and stops.
+In this work we tested whether supplying a physics-informed solubility model with tabulated values
+for its own physical intermediate improves it, and found that grounding is not one operation but
+two, with divergent outcomes. Substituting reference $\sigma$-profiles into a fixed COSMO-SAC
+closure at prediction time \emph{degraded} accuracy: over five seeds the mean absolute error rose
+from $1.93$ to $2.34$ in \lnx, about $21\%$, with no per-seed overlap between the two arms, and the
+mean per-solute Spearman correlation over solvents fell by $0.185$ --- a loss in the ranking the
+model is used to produce. Supervising the same intermediate against the same reference during
+training gave no consistent improvement, its gains straddling zero. The operation that failed is
+the one available in practice, because it is the one that needs no retraining.
 
-What generalises is a diagnostic rather than a design rule. Wherever a predictor composes a fixed
-physical model over a learned intermediate for which an external reference exists, that reference
-measures whether the fixed model itself limits accuracy; where it does, the remedy is a more
-faithful physical model and not a better input. The answer comes chemistry by chemistry rather than
-once for a field. For anyone building on this, the fixed model's own target and the downstream property want
-measuring on the same pairs, which is a laboratory programme and not a data-assembly task. And a
-learned intermediate that must feed a fixed physical model is better frozen against its reference
-and fine-tuned only downstream: the one published construction that does so reports the opposite
-sign to ours \cite{yang2025tennet}.
+For a fixed-closure architecture, this says the binding constraint is often the misspecification of
+the physical map rather than the quality of the input. Where the closure's own error dominates, a
+more accurate input exposes that error instead of correcting it. The effect is chemistry-specific:
+we resolve it on glycol-ether solvents and not on the other classes the same instrument bounds, so
+whether grounding helps depends on the chemical regime and has to be asked one regime at a time.
 
+Our result differs from work reporting gains from a frozen, externally supervised intermediate
+\cite{yang2025tennet}, and the two are not in contradiction: that construction leaves the closure's
+kernel free to move and ours does not, and the chemical scopes differ. What follows for practice is
+that external reference data are best treated as a diagnostic for locating a model's limits rather
+than as a remedy that can be assumed to work. The measurement that would settle the mechanism is a
+laboratory one --- the fixed model's own target and the downstream property on the same pairs,
+which no public database currently supplies. Until then, freezing a learned intermediate against
+its reference and fine-tuning only downstream is the safer construction, revalidated for each
+chemical domain before it is relied on.
 
 \section*{Author contributions}
 \noindent

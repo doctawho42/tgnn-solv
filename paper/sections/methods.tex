@@ -66,7 +66,8 @@ parameter. Write $\zstar$ for the \emph{reference} latent, a tabulated $\sigma$-
 $\hat z$ for the head's own prediction. \textbf{Two profile databases supply $\zstar$ below and they are never interchangeable.}
 \emph{VT-2005} is the Virginia Tech 2005 tabulation \cite{mullins2006}: the $\sigma$ head is
 supervised against it, and it is what replaces $\hat z$ at prediction time. \emph{UD} is the
-University of Delaware successor, and the activity-coefficient rows of \S\ref{sec:broad} are
+University of Delaware successor \cite{fingerhut2017}, redistributed with the NIST reference
+implementation \cite{bell2020cosmosac}, and the activity-coefficient rows of \S\ref{sec:broad} are
 matched to it. Every set, margin and figure below names which it is computed on,
 and we read no quantity across them; the one place they are deliberately set against each other is
 the database-to-database bracket of \S\ref{sec:badclosure}. Feeding $\zstar$ in place of $\hat z$ (a
@@ -168,78 +169,15 @@ more. Over-estimating $\Binsuf$ therefore produces no artifact in what is report
 cluster-bootstrap frequency is loss of resolution rather than evidence for the inputs
 (\S\ref{sec:si-proofs}).
 
-\subsubsection{The decomposition and the grounding gap}
-\label{sec:gap}
-The decomposition is the measurement the conclusions rest on: assumption-light, needing neither a
-representable encoder nor a lossless bottleneck. Beside it we report a directly observable quantity,
-the \emph{grounding gap} $\Ggap:=R_{\mathrm{orc}}-R_{\mathrm{e2e}}$, the oracle risk minus the best
-end-to-end risk; the paradox is $\Ggap>0$. Under a representable encoder (A1) and a lossless
-bottleneck (A2) it is sandwiched $0\le\Ggap\le\Bclos$, so $\Ggap>0$ would certify $\Bclos>0$
-(Theorem~\ref{thm:gap}, \S\ref{sec:si-proofs}). A1 is unverified: the linear probe of
-\S\ref{sec:supporting} scores an untrained encoder of the same architecture within its own spread,
-so it does not bear on A1. A2 is unverifiable and physically dubious, and when it fails $\Ggap>0$
-conflates closure misspecification with input insufficiency, a well-specified closure with a lossy
-latent giving $\Bclos=0$ yet $\Ggap>0$. We therefore read $\Ggap$ as corroborating evidence and rest
-the model-dominance conclusion on the decomposition.
-
-% PROPOSITION 1 MOVED TO \S\ref{sec:si-proofs} ON 2026-08-07 (page-reduction pass), where its proof
-% and the limiting refinement already were, so the statement now sits with what proves it.
-%
-% AND THE STATEMENT CAME BACK ON 2026-08-10 (referee 1, must-fix), while the proof stayed there.
-% The reason the earlier move was wrong: this paragraph gave the reader T(n) = Delta_infty - D(n)
-% and nothing else, and SEVEN symbols in that line -- R_e2e, R_direct_infty, V_phys, V_direct,
-% Delta_infty, D, n^star -- appear in no display, no definition and no row of Table 1, while three
-% later sections (\S\ref{sec:pka-main}, \S\ref{sec:discussion}, \S\ref{sec:data-efficiency}) cite
-% the proposition as an A PRIORI PREDICTION the measurements are then read against.  A prediction
-% a reader cannot state cannot be checked against a measurement.
-% WHAT COMES BACK AND WHAT DOES NOT.  The STATEMENT is here: the two asymptote-plus-variance
-% expansions that define every one of those symbols, and the two parts (i) and (ii).  The PROOF
-% stays in \S\ref{sec:si-proofs} together with the limiting refinement (iii) -- referee 3's trade,
-% and the same trade Lemma 1 now takes.  The label prop:tax is DEFINED HERE from this date; the
-% Supporting Information's proof header refers to it by \ref and must not redefine it, which
-% scripts/analysis/check_split_refs.py enforces.
-% THE SCOPE SENTENCES STAY WHERE THEY WERE, after the statement -- a penalty at the budget actually
-% trained, no optimal-grounding theorem, no out-of-distribution claim -- because
-% \S\ref{sec:pka-main} and \S\ref{sec:discussion} both read the rule and would otherwise read it
-% unscoped.  Do not move a scope into the proposition body: the proposition is a statement about
-% two risk expansions and says nothing about what this paper measured.
-\paragraph{The sign rule, and scope.}\label{sec:tax} Whether the \emph{trained} physics model
-outperforms the \emph{trained} black box at sample size $n$ follows a sign rule.
-
-\begin{remark}[Sign of the physics penalty]\label{prop:tax}
-Write $\Ex[\hat R_{\mathrm{phys}}(n)]\approx R_{\mathrm{e2e}}+V_{\mathrm{phys}}(n)$ and
-$\Ex[\hat R_{\mathrm{direct}}(n)]\approx R_{\mathrm{direct},\infty}+V_{\mathrm{direct}}(n)$, with
-$R_{\mathrm{e2e}}$ and $R_{\mathrm{direct},\infty}$ the two asymptotic risks, $V(n)\downarrow0$ the
-estimation variance of each estimator at budget $n$, so that the \emph{physics penalty at budget
-$n$} is
-$\mathcal{T}(n)\approx\Delta_\infty+[V_{\mathrm{phys}}(n)-V_{\mathrm{direct}}(n)]$ with
-$\Delta_\infty:=R_{\mathrm{e2e}}-R_{\mathrm{direct},\infty}$ its \emph{asymptotic} part and
-$D(n):=V_{\mathrm{direct}}(n)-V_{\mathrm{phys}}(n)$ the variance a constrained prior saves. Then
-\emph{(i)}~$\mathcal{T}(n)<0$ (physics helps) if and only if $D(n)>\Delta_\infty$: the variance a
-constrained prior saves must exceed its asymptotic bias. \emph{(ii)}~If $\Delta_\infty>0$ and the
-variance gap vanishes ($D(n)\to0$), there is a critical budget $n^\star$ beyond which
-$\mathcal{T}(n)>0$ for all $n>n^\star$.
-\end{remark}
-
-\noindent Both clauses are rearrangements of the definitions above, which is why we state this as a
-remark: given the two expansions, \emph{(i)} is an identity and \emph{(ii)} its limit. It supplies
-vocabulary---a name for the asymptotic part, a name for what a constrained prior saves, and the
-budget at which they change places---and no prediction that any measurement below is tested against.
-The limiting refinement in which $\Delta_\infty=\Bclos-\Ggap$ when the control is asymptotically
-Bayes goes beyond a rearrangement, and is in \S\ref{sec:si-proofs} with the working of both clauses.
-The consequence used below is that a prior is predicted to hurt precisely in the mature-data,
-low-noise, well-covered regime, and every physics-versus-control difference here is a penalty at the
-budget actually trained. We prove no ``optimal grounding'' theorem, and the decomposition leaves
-out-of-distribution accuracy where it was. Its variance term $D(n)$ carries the semiparametric
-phenomenon in which an estimated propensity outperforms the known-true one
-\cite{hirano2003,robins1997}. A fitted nuisance can be the more \emph{efficient} estimator even when
-its bias is as large, so a true-valued input can miss the lower total risk at finite $n$.
-
-% THE TERMINOLOGY TABLE MOVED TO THE SUPPORTING INFORMATION, 2026-08-19 review (Table 1 to the
-% appendix). It is a lookup table, not an argument: nothing in the body reads it in sequence, and
-% of its eight cross-references six were already in the Supporting Information and two here, so the
-% move puts it where it is used. Every term it collects is still defined in the text at its first
-% use, which is what the table says of itself and what the review requires independently.
+% SECT 2.1.2 MOVED TO THE SI 2026-08-30 on review. What the body needs from it is one sentence:
+% which of the two measurements the conclusions rest on, and that the other is corroboration. The
+% grounding gap's definition, the two assumptions under which it certifies anything, the sign rule
+% and its remark are the working, and the working goes to \S\ref{sec:si-gap}.
+The decomposition is the measurement the conclusions rest on: it is assumption-light, needing
+neither a representable encoder nor a lossless bottleneck. Beside it we report the directly
+observable \emph{grounding gap}, which certifies $\Bclos>0$ only under two assumptions this work
+cannot verify, so we read it as corroborating evidence and rest the model-dominance conclusion on
+the decomposition (\S\ref{sec:si-gap}).
 
 \subsection{Data curation: sources, splits, and labels}
 \label{sec:data}
@@ -399,7 +337,8 @@ so the $\sigma$ stream enters the warm-up only.
 % profiles carry exactly zero area in the bin it concerns.
 The dispersion-off closures in the fidelity measurement (\S\ref{sec:fidelity}) are our own
 differentiable implementations, so those arms share one code path, and each consumes its own
-model-prescribed $\sigma$-averaging (Mullins for 2002, Hsieh for 2010). Our 2002 layer (the
+model-prescribed $\sigma$-averaging (Mullins \emph{et al.} for 2002 \cite{mullins2006},
+Hsieh \emph{et al.} for 2010 \cite{hsieh2010}). Our 2002 layer (the
 \emph{2002, all channels} arm wherever the kernels are compared, so named because it sums the
 segment contributions of all three profile channels rather than the nonpolar one
 alone) reproduces the NIST reference COSMO-SAC-2002~\cite{bell2020cosmosac} to RMSE
@@ -410,7 +349,8 @@ $\sigma$-profiles per molecule in place of one, reproduces the NIST 2010 referen
 being $1.7\times10^{-3}$
 (\S\ref{sec:si-methods}). The dispersion term is \emph{not} validated to that standard, so we compute every
 dispersion-off contrast on our layers and quote the \emph{2010, dispersion on} runs
-from \texttt{cCOSMO}, that reference implementation itself.
+from \texttt{cCOSMO}, the C++ library that is that reference implementation
+\cite{bell2020cosmosac} and not a variant of the model.
 
 \paragraph{The same closure against a published evaluation.}
 % Artifacts: results/published_idac_check/{summary.json,scored_records.csv,table_closure_anchor.tex}
@@ -455,7 +395,9 @@ In the \emph{oracle substitution} we replace the predicted $\sigma$-profile $\ha
 reference VT-2005 profile $\zstar$ before the closure, matching by canonical SMILES. One object is
 replaced, not two. The $\sigma$-head emits a normalised $51$-bin shape and a cavity area whose
 product is the area-weighted profile the closure reads, and the tabulated pair stands in the same
-relation. The reference area therefore reaches the residual term's $A_2/a_{\mathrm{eff}}$ prefactor
+relation. The reference area therefore reaches the residual term's $A_2/a_{\mathrm{eff}}$ prefactor,
+in which $A_2$ is the solute's cavity surface area and $a_{\mathrm{eff}}$ the closure's
+effective segment area, the constant patch size its segment-activity sum is written over,
 as part of that single replacement (\S\ref{sec:si-methods}).
 
 % ADDED 2026-08-11.  A referee of the first round named this and it was not disclosed.  Verified

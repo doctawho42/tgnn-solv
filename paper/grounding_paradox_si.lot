@@ -26,9 +26,9 @@
 \contentsline {table}{\numberline {S26}{\ignorespaces The data-efficiency sweep}}{S-73}{table.26}%
 \contentsline {table}{\numberline {S27}{\ignorespaces The deployed closure against a published evaluation of the same closure, and this paper's own two sets through it. AAD is the mean absolute error in $\ln \gamma ^\infty $, $n$ the number of scored records.}}{S-76}{table.27}%
 \contentsline {table}{\numberline {S28}{\ignorespaces The fixed substituent list behind the Hammett constant}}{S-89}{table.28}%
-\contentsline {table}{\numberline {S29}{\ignorespaces Run families: which runs produced which numbers, and at how many seeds}}{S-91}{table.29}%
-\contentsline {table}{\numberline {S30}{\ignorespaces Solubility accuracy in two blocks that may not be read across: this work on the solute-scaffold split, external models re-run here on an easier by-solute split. Two sample sizes appear where a row's two metric columns are scored on different rows, one where they coincide. The grounded, ungrounded and $\sigma $-oracle arms of the first block come from the five-seed leak-free re-run.}}{S-94}{table.30}%
-\contentsline {table}{\numberline {S31}{\ignorespaces Data Set S2 in full: the VT-2005-matched set, row by row}}{S-101}{table.31}%
-\contentsline {table}{\numberline {S32}{\ignorespaces Crystal-term decodability per seed, with its nulls}}{S-103}{table.32}%
-\contentsline {table}{\numberline {S33}{\ignorespaces The model's temperature response against the empirical slope}}{S-103}{table.33}%
-\contentsline {table}{\numberline {S34}{\ignorespaces Share of representation variance per organising factor}}{S-103}{table.34}%
+\contentsline {table}{\numberline {S29}{\ignorespaces Run families: which runs produced which numbers, and at how many seeds}}{S-92}{table.29}%
+\contentsline {table}{\numberline {S30}{\ignorespaces Solubility accuracy in two blocks that may not be read across: this work on the solute-scaffold split, external models re-run here on an easier by-solute split. Two sample sizes appear where a row's two metric columns are scored on different rows, one where they coincide. The grounded, ungrounded and $\sigma $-oracle arms of the first block come from the five-seed leak-free re-run.}}{S-95}{table.30}%
+\contentsline {table}{\numberline {S31}{\ignorespaces Data Set S2 in full: the VT-2005-matched set, row by row}}{S-102}{table.31}%
+\contentsline {table}{\numberline {S32}{\ignorespaces Crystal-term decodability per seed, with its nulls}}{S-104}{table.32}%
+\contentsline {table}{\numberline {S33}{\ignorespaces The model's temperature response against the empirical slope}}{S-104}{table.33}%
+\contentsline {table}{\numberline {S34}{\ignorespaces Share of representation variance per organising factor}}{S-104}{table.34}%

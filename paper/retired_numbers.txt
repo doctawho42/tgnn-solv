@@ -440,3 +440,28 @@
 2.5     same churn, same pass; see 3.5 above.
 1.1     same churn, same pass; see 3.5 above.
 3.8     same churn, same pass; see 3.5 above.
+
+6.9     section-number churn, 2026-09-01 supervisor-letter pass. Sec. 2.1.2 moved out of the
+        article and into the SI as a new subsection, which pushed every SI subsection after it
+        down by one: S6.9 -> S6.10, S6.11 -> S6.12, and so on. Every affected numeral is a \ref,
+        LaTeX renumbered both sides together, and the article now reports 0 undefined references
+        and the SI 0. Verified as a class, the same way as the 2026-08-28 block above: the
+        tier-A "gone from the document entirely" group is empty, and the article's citation set
+        lost exactly one key, robins1997, which is cited twice in the SI because it travelled
+        with the moved section. The four citations the letter asked for (mullins2006, hsieh2010,
+        fingerhut2017, bell2020cosmosac) added call sites, not keys -- all four were already in
+        the bibliography.
+6.11    same churn, same pass; see 6.9 above.
+6.8     same churn, same pass; see 6.9 above.
+2.2     same churn, same pass; see 6.9 above.
+
+1.6     matcher artifact, not a loss, same pass. The COSMO-SAC2010/dsp validation sentence is
+        intact at sections/methods.tex:348 and still reads "RMSE 1.6e-4 ln gamma over 400 pairs,
+        the largest single departure being 1.7e-3". What changed is the page count, 25 -> 24, so
+        a value the conservation pass counts once per page it prints on comes back one lower.
+        The checker's own excerpt of the target prints both numerals.
+1.7     same artifact, same sentence; see 1.6 above.
+-0.99   matcher artifact, not a loss, same pass. Read the source: grounding_paradox.tex:1366
+        still carries "the withholding is -0.99 at P ~ 0.2, which is not a measured equality
+        either", whole. The gate's context window cuts the display at the clause boundary and
+        reports the tail as missing; the occurrence count is unchanged at 2.
