@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software or the deposited artifacts, please cite the article."
+title: "tgnn-solv: a thermodynamically structured graph network for solid-liquid solubility"
+abstract: >-
+  Code and analysis for "Ground Truth That Does Not Ground: Substituting Reference Solvent
+  sigma-Profiles Degrades COSMO-SAC Solubility Prediction". Contains the model, the fixed
+  COSMO-SAC closure, the decomposition that separates a deployed thermodynamic model's own
+  error from what its inputs leave unresolved, and every gate that binds a printed number to
+  the artifact it came from.
+type: software
+license: MIT
+repository-code: "https://github.com/doctawho42/tgnn-solv"
+version: 1.0.0
+authors:
+  - family-names: Polomoshnov
+    given-names: "Nikita L."
+    orcid: "https://orcid.org/0009-0001-4342-8539"
+    affiliation: "Faculty of Bioengineering and Bioinformatics, Lomonosov Moscow State University"
+  - family-names: Rudik
+    given-names: "A. V."
+    affiliation: "V. N. Orekhovich Institute of Biomedical Chemistry"
+keywords:
+  - solubility prediction
+  - physics-informed machine learning
+  - COSMO-SAC
+  - infinite-dilution activity coefficients
+  - model misspecification

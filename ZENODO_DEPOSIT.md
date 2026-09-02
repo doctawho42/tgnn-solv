@@ -13,22 +13,37 @@ every reported number is computed from.
 
 ## What to upload
 
-| item | source | approx. size |
-|---|---|---|
-| trained checkpoints, current split | `checkpoints/e5_current_split/*.pt` | 3 x 22 MB |
-| COSMO-SAC reference checkpoint | `checkpoints/cosmo_sac/tgnn_cosmo.pt` | 42 MB |
-| closure-fix arm checkpoints | `results/closure_fix/ckpt/*.pt` | 2 x 21 MB |
-| per-arm predictions, three seeds | `results/e5_sigma_grounding/seed_4{2,3,4}/*.csv` | ~60 MB |
-| decomposition and robustness artifacts | `results/b_insuff/*.json` | < 1 MB |
-| surrogate and compensation artifacts | `results/compensation/*.json`, `results/sur/` | < 1 MB |
-| black-box probe artifacts | `results/blackbox/*` | < 1 MB |
-| the matched sets | `results/b_insuff/matched_pairs.csv`, `results/sigma_profile_artifact/sigma_profiles.csv` | < 1 MB |
+Do not maintain the list by hand. Build it:
 
-Total on the order of 200 MB, well inside Zenodo's 50 GB per-record limit.
+```bash
+python scripts/release/build_zenodo_bundle.py --dry-run   # the plan and the total size
+python scripts/release/build_zenodo_bundle.py             # stage it under dist/zenodo
+```
 
-**Do not upload** the raw solubility corpus or the VT-2005 profile database. Both are third-party
-and redistributable only under their own terms; the paper cites them and the repository documents
-how to fetch them.
+The analysis half of the deposit is **derived from `DEPOSITS.md`**, the file that maps every
+printed claim to the artifact it was computed from; the weights and the processed split are named
+explicitly in the script, each with the reason it is there. Today that comes to about **685 MB in
+385 files**, well inside Zenodo's 50 GB per-record limit. `MANIFEST.sha256` and a `README.md`
+describing the contents are written into the staging tree, so a reader can check a download rather
+than trust its byte count.
+
+**The hand-written table that used to live here was wrong, and that is why it is gone.** Written on
+2026-07-27, it named `results/e5_sigma_grounding/seed_4{2,3,4}` — the three-seed family — as the
+per-arm predictions to deposit. Every headline number in the manuscript had since moved to the
+five-seed leak-free family in `results/e5_sigma_grounding_leakfree/`. Uploading from that table
+would have archived arms the paper's numbers are not computed from, and a referee who downloaded
+it would have found a different run behind the number. A list that has to be remembered rots; a
+list derived from the claims does not.
+
+**Do not upload** the raw solubility corpus or the VT-2005 profile database; the builder excludes
+them by name. Both are third-party and the paper cites them instead. The **processed split** is a
+different case and *is* deposited: it is derived from BigSolDB 2.0
+([10.5281/zenodo.15094979](https://doi.org/10.5281/zenodo.15094979)), which is released under
+CC-BY-4.0, so redistribution is permitted with attribution. The archive's description must
+therefore credit BigSolDB, and the record's licence field must say that the split carries CC-BY-4.0
+even though the code is MIT. The split cannot simply be regenerated instead: the seeded
+`solute_scaffold` split is not stable across pipeline versions, so the files themselves are the
+only way for a reader to land on the same rows.
 
 ## Metadata to enter
 
@@ -38,30 +53,40 @@ how to fetch them.
   Biomedical Chemistry).
 - **Upload type.** Dataset. (Use *Software* instead only if the code is deposited here rather than
   linked to GitHub.)
-- **Licence.** MIT, matching `LICENSE` at the repository root.
+- **Licence.** MIT for the code and the derived artifacts, matching `LICENSE` at the repository
+  root, with the BigSolDB-derived split attributed under CC-BY-4.0 as above.
 - **Related identifiers.** `isSupplementTo` the article DOI once ACS issues it, and
   `isSupplementedBy` / `isDerivedFrom` `https://github.com/doctawho42/tgnn-solv` at the frozen
   commit.
 - **Version.** `v1.0.0`, matching the git tag cut for submission.
-- **Funding.** None. The manuscript states no external funding, and the two records must agree.
+- **Funding.** Russian Science Foundation, project No. 25-25-00148,
+  <https://rscf.ru/project/25-25-00148/>. Zenodo has an RSF funder entry; use it rather than free
+  text so the grant is machine-readable. This line previously read "None", which the manuscript
+  agreed with until the grant was added on 2026-09-03; the two records must not diverge again.
+
+`.zenodo.json` at the repository root carries the machine-readable form of the above, and is what
+the GitHub–Zenodo integration reads when a release is cut. `CITATION.cff` carries the same
+identity for anyone citing the software directly.
 
 ## Order of operations
 
 The commit hash and the DOI are mutually entangled, so the sequence matters:
 
 1. Freeze the repository: `git tag -a v1.0.0 -m "submission to JCIM"` and push the tag.
-2. Take the hash of that tag and put it in the manuscript's `\pending[hash]`.
-3. Build the archive from **that** commit, upload, publish, and take the DOI.
-4. Put the DOI in the manuscript's two `\pending[Zenodo DOI]` sites (main text and SI).
+2. Take the hash **that tag points at** and put it in the manuscript's `\pending[hash]`. This lands
+   in a commit *after* the tag, which is correct and intended: the tag freezes the analysis code —
+   the tree the reported numbers were produced from, which is what the sentence in the manuscript
+   claims — and not the manuscript text.
+3. Build the archive from that commit, upload, publish, and take the DOI.
+4. Put the DOI in the manuscript's `\pending[Zenodo DOI]` sites.
 5. Recompile, confirm no `\pending` remains, and only then submit.
-
-Step 4 changes the source after step 1's tag, which is expected: the tag freezes the *analysis*
-code, not the manuscript text. If you would rather have one immutable object, cut a second tag
-`v1.0.1` after step 4 and note in the archive description that it differs only in the DOI strings.
 
 ## GitHub's Zenodo integration
 
 Enabling the Zenodo–GitHub webhook and cutting a release mints a DOI automatically, which is the
-least error-prone route for the code half. It will not carry the checkpoints, since those are
-gitignored, so the large files still need a manual upload — either as a second record or as extra
-files on the same one.
+least error-prone route for the code half. **It will not carry the archive this file describes.**
+A release archives the git tree only — 22 MB, against the deposit's 685 MB — because the
+checkpoints, the processed split and the bulk of `results/` are gitignored. The large files
+therefore need a manual upload, either as extra files on the same record or as a second record.
+If a second record is used, the manuscript's sentence must name the one that actually holds the
+checkpoints and predictions, since that is what it promises a reader.

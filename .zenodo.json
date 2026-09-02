@@ -1,0 +1,43 @@
+{
+  "title": "Ground Truth That Does Not Ground: Substituting Reference Solvent σ-Profiles Degrades COSMO-SAC Solubility Prediction — code and data",
+  "upload_type": "dataset",
+  "license": "mit",
+  "version": "v1.0.0",
+  "creators": [
+    {
+      "name": "Polomoshnov, Nikita L.",
+      "orcid": "0009-0001-4342-8539",
+      "affiliation": "Faculty of Bioengineering and Bioinformatics, Lomonosov Moscow State University, Moscow, Russia"
+    },
+    {
+      "name": "Rudik, A. V.",
+      "affiliation": "V. N. Orekhovich Institute of Biomedical Chemistry, Moscow, Russia"
+    }
+  ],
+  "keywords": [
+    "solubility prediction",
+    "physics-informed machine learning",
+    "COSMO-SAC",
+    "infinite-dilution activity coefficients",
+    "model misspecification"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/doctawho42/tgnn-solv",
+      "relation": "isDerivedFrom",
+      "scheme": "url"
+    },
+    {
+      "identifier": "10.5281/zenodo.15094979",
+      "relation": "isDerivedFrom",
+      "scheme": "doi",
+      "resource_type": "dataset"
+    }
+  ],
+  "notes": "The processed train/val/test split is derived from BigSolDB 2.0 (doi:10.5281/zenodo.15094979), released under CC-BY-4.0, and is redistributed here with attribution. All other contents are MIT-licensed, matching LICENSE at the repository root. The raw solubility corpus and the VT-2005 and UD sigma-profile databases are NOT redistributed; the manuscript cites them. Funding: Russian Science Foundation, project No. 25-25-00148 (https://rscf.ru/project/25-25-00148/), Crossref funder 10.13039/501100006769. It is repeated here because Zenodo's machine-readable grants field only resolves funders present in OpenAIRE, and the entry may have to be added by hand in the web form.",
+  "grants": [
+    {
+      "id": "10.13039/501100006769::25-25-00148"
+    }
+  ]
+}
