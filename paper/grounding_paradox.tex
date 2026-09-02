@@ -231,16 +231,24 @@ $\sigma$-Profiles Degrades COSMO-SAC Solubility Prediction}
 % NOTE: achemso re-typesets the arguments of \affiliation and \email, so anything outstanding here is
 % written as a plain comment rather than through \pending.
 % ===================== PRE-SUBMISSION CHECKLIST =====================
-% Five items are outstanding. None can be settled from the manuscript; all are author input.
+% Four items are outstanding. None can be settled from the manuscript; all are author input.
 %   1. ORCID for A. V. Rudik. N. L. Polomoshnov is 0009-0001-4342-8539. ORCIDs are entered in the
 %      ACS submission form, not typeset here, so this blocks the form and not the PDF.
 %   2. Street address and postcode of the Faculty of Bioengineering and Bioinformatics, MSU.
 %   3. Street address and postcode of the V. N. Orekhovich Institute of Biomedical Chemistry.
 %   4. Whether A. V. Rudik also corresponds; if so, add a second \email under her \author block.
-%   5. The AI-use disclosure, removed from the acknowledgement at the author's request and to be
-%      rewritten. ACS asks contributors to declare generative-AI use and the manuscript now carries
-%      none, so this is the one outstanding item a reviewer would notice.
-% CONFIRMED, do not re-flag: the Author contributions block is correct as printed.
+% ITEM 5 WAS STALE AND IS RETIRED, 2026-09-01. It read that the AI-use disclosure had been removed
+% and that "the manuscript now carries none". The manuscript carries it: the paragraph beginning
+% "Generative-AI use:" is in the acknowledgement, which is where ACS asks for it. What is still
+% outstanding is the AUTHORS' confirmation of that paragraph, and that is flagged at the paragraph
+% itself rather than counted twice here.
+% UNRESOLVED, and not ours to resolve: this block used to end "CONFIRMED, do not re-flag: the
+% Author contributions block is correct as printed", while the Author contributions block itself
+% is headed "PROVISIONAL, for both authors to confirm before submission". Two comments in one file
+% disagreeing about whether the CRediT roles are agreed is a question for the authors, so both are
+% left standing and the claim of confirmation is not repeated here.
+% The submission FORM has its own outstanding items -- preprint declaration, previous submissions,
+% the Funder Registry entry, reviewer suggestions. They are in paper/cover_letter.md, Part 3.
 % Two more, of a different kind, are in the Data availability statement and are handled by \pending:
 % the archive commit hash and the Zenodo DOI.
 % ==================================================================================
@@ -689,7 +697,8 @@ in a graph network for its temperature dependence. All three make the activity c
 regression target. A second line keeps a mechanistic model and learns its
 \emph{input}. COSMO-SAC \cite{lin2002} is a segment-activity reformulation of Klamt's
 conductor-like screening model for real solvents (COSMO-RS), and
-the $\sigma$-profile it consumes---the screening-charge density over a molecule's cavity---is that
+the $\sigma$-profile it consumes---the distribution of screening-charge density over a
+molecule's cavity surface---is that
 framework's construct, tabulated from quantum chemistry \cite{mullins2006}. Predicting it from
 % THE LINE HAD ONE EXAMPLE, 2026-08-19.  "Predicting it from structure" describes a literature
 % that starts with group contribution in 2007 and runs through four neural models before the 2025
@@ -716,8 +725,8 @@ through the closure with neither safeguard.
 A third design removes the intermediate. HANNA \cite{specht2024hanna} parameterises the excess
 Gibbs energy directly from SMILES with no quantum chemistry, hard-coding the pure-component limit,
 the Gibbs--Duhem relation and permutation symmetry in the architecture rather than the loss. It
-reports higher accuracy than UNIFAC, the group-contribution activity-coefficient method standard
-in process design, over $317{,}421$ mixture points. The two published designs bracket what
+reports higher accuracy than UNIFAC \cite{fredenslund1975}, the group-contribution
+activity-coefficient method standard in process design, over $317{,}421$ mixture points. The two published designs bracket what
 this work measures: admissibility can be bought with quantum labels or built into the functional
 form, and this model does neither.
 
@@ -785,8 +794,8 @@ accurate input exposes the model's bias instead of removing it. The learned dist
 meanwhile drifts from its tabulated counterpart along a direction shared across molecules, and stops
 reporting the quantity it is named after. Tabulated substituent constants behave the same way inside
 a fixed Hammett relation, the linear equation predicting how readily an acid gives up its proton
-from the constants tabulated for its substituents. We use the VT-2005 profiles not as ground
-truth for solubility prediction as such, but as an external physical reference against which
+from the constants tabulated for its substituents. We use the VT-2005 profiles---the Virginia Tech
+2005 tabulation \cite{mullins2006}---not as ground truth for solubility prediction as such, but as an external physical reference against which
 to diagnose whether the learned intermediate keeps its physical meaning or has drifted to
 compensate for the closure's errors.
 
@@ -1752,8 +1761,18 @@ A.~V. Rudik: Writing -- review \& editing.
 %% Funding acquisition; Investigation; Methodology; Project administration; Resources; Software;
 %% Supervision; Validation; Visualization; Writing -- original draft; Writing -- review \& editing.
 
-\section*{Conflicts of interest}
-\noindent There are no conflicts to declare.
+% ACS, NOT RSC, 2026-09-01.  This section used to read "Conflicts of interest / There are no
+% conflicts to declare", which is the Royal Society of Chemistry's boilerplate in an ACS submission.
+% JCIM's guidelines fix both the heading and the sentence: the disclosure prints under Notes, and
+% where nothing is declared the published wording is the one below, verbatim.
+\section*{Funding}
+\noindent The study was supported by the Russian Science Foundation, project No.~25-25-00148,
+\url{https://rscf.ru/project/25-25-00148/}.
+%% The same grant must also be entered in the Funder Registry Tool during submission: JCIM requires
+%% funding in BOTH the manuscript and that tool, and the manuscript half alone does not satisfy it.
+
+\section*{Notes}
+\noindent The authors declare no competing financial interest.
 
 \section*{Data and Software Availability}
 The analysis code, and those intermediate artifacts small enough to version, are available at
@@ -1801,8 +1820,30 @@ per-row file has been recovered complete and now stands in the deposit
 % the deposit is described.  Do not delete this on the ground that the SI carries (xiii).
 \emph{The audit in one place.} Twelve defects and limits are disclosed in this submission, each described where its numbers print. \S\ref{sec:si-repro} lists all twelve in one place, of five kinds: four properties of the deposit, disclosed rather than repaired; two errors in this work's own numbers, repaired with the withdrawn values kept beside the corrected ones; three cases where a check this work built refuted or weakened something this work had claimed; two properties of the model, disclosed and then bounded; and one limit of the checking apparatus itself. None of the twelve is reported by anyone but us.
 
+% ORDER AND FORM ARE THE JOURNAL'S, 2026-09-01.  Two things were wrong for an ACS submission.  This
+% note printed AFTER the acknowledgement, and the guidelines put it before both the acknowledgement
+% and the references; and its contents were given as prose, where what is asked for is "a brief,
+% nonsentence description of the actual contents of each file, including the file type extension".
+% The non-sentence list now leads and carries the extensions.  The paragraph that follows it is not
+% padding: it is where this article tells a reader how to resolve an S-number, and every pointer
+% from the body into that document is one.
+% VERIFY AT UPLOAD: the two data sets are deposited as CSV.  If they go up in another format, the
+% extensions below are what a reader is promised and must be changed with them.
+\begin{suppinfo}
+Supplementary methods; proofs of Lemma~\ref{prop:decomp} and Remark~\ref{prop:tax} and three
+further results; per-arm tables and decomposition robustness; the map's $59$ strata in full,
+including the $44$ the estimator cannot bound; further external ablations; supplementary mechanism
+results; supplementary diagnostics and broad negatives; the second-domain pKa construction; data
+provenance and reproducibility; the black-box probe tables; the synthetic closure-fidelity family;
+the positioning against adjacent literatures (PDF). Broad IDAC set, $477$ rows, Data Set~S1 (CSV).
+VT-2005-matched set, $60$ rows, Data Set~S2 (CSV).
+
+The Supporting Information is a separate document. Its sections, tables, figures and equations are
+numbered S1, S2, \ldots, and every reference above that carries an S is to it; the columns of both
+data sets are listed in \S\ref{sec:si-repro}.
+\end{suppinfo}
+
 \begin{acknowledgement}
-This research received no external funding.
 Computations were carried out on commercial cloud services (Google Colab Pro+, Modal, and Google Cloud Platform) using NVIDIA T4 and L4 GPUs.
 % CONDENSED 2026-08-19, and the commit-count sentence went for a reason beyond length. It read
 % "the public history records it as a co-author on 377 of the repository's 449 commits" -- a claim
@@ -1823,22 +1864,6 @@ all of the content.
 % a \pending so that it prints in red on every draft instead of sitting in a comment: item 5 of the
 % pre-submission checklist above, and the last of the five to be settled.
 \end{acknowledgement}
-
-% The Supporting Information is a separate document, grounding_paradox_si.tex. This paragraph is what
-% ACS prints as the "Supporting Information Available" note, and it is also where this article tells
-% its reader how to read an S-number, since every pointer from here into that document resolves to one.
-\begin{suppinfo}
-The Supporting Information is a separate document. Its sections, tables, figures and equations are
-numbered S1, S2, \ldots, and every reference above that carries an S is to it. It contains
-supplementary methods; the proofs of Lemma~\ref{prop:decomp} and Remark~\ref{prop:tax} and
-three further results; per-arm tables and decomposition robustness; the map's
-$59$ strata in full, including the $44$ the estimator cannot bound. It also contains further external ablations;
-supplementary mechanism results; supplementary diagnostics and broad negatives; the second-domain
-pKa construction; data provenance and reproducibility; the black-box probe tables; the synthetic
-closure-fidelity family; and the positioning against adjacent literatures. We deposit two machine-readable
-tables with it: the $477$-row broad IDAC set (Data Set~S1) and the $60$-row
-VT-2005-matched set (Data Set~S2), and their columns are listed in \S\ref{sec:si-repro}.
-\end{suppinfo}
 
 % DO NOT \input sections/SI here. It is the SI document's body now, it declares S-numbered
 % floats, and pulling it back in would restore the reading-order defect (the reference list

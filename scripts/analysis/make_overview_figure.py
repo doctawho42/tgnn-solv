@@ -535,7 +535,12 @@ axa.text(bxa(SIG_R + 6.0), bya(S_MID), "substituted at\nprediction time", ha="le
 # the same name, glossed at first mention, and it binds UD for every later use.  The name itself
 # is not droppable -- (a) and (b) are measured on DIFFERENT tabulated databases and the 2026-08-07
 # note above is what stops the two halves being read as one table.
-say(L, 23.5, "$59$ strata, Delaware (UD) profiles ($n{=}477$), $(\\ln\\gamma)^2$", fs=FS_NAME)
+# THE UNIT CARRIES ITS INDICES, 2026-09-01.  The bars are a mean squared error on the
+# INFINITE-DILUTION activity coefficient -- the estimator reads results/b_insuff/stratified_map_table.csv,
+# built from the column ln_gamma_inf -- and the panel used to print the unit as (ln gamma)^2,
+# which names a different quantity: the paper writes the finite-dilution one \lng and this one
+# \lngi.  A supervisor read the panel and asked whether the label was wrong.  It was.
+say(L, 23.5, "$59$ strata, Delaware (UD) profiles ($n{=}477$), $(\\ln\\gamma_2^\\infty)^2$", fs=FS_NAME)
 
 # ---- the whole search: REMOVED FROM THE PANEL 2026-08-24, MOVED INTO THE CAPTION ------------
 # A strip of fifty-nine ticks used to run above the bars, outlined where no bound exists and

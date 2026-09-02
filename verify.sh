@@ -64,9 +64,12 @@ if bad:
 [ "$MODE" = fast ] || stage "test suite" "$PY" -m pytest tests/ -q --no-header
 
 echo "== manuscript gates"
+# check_supplement_pointers runs the direction check_cross_document_attributions does not: article
+# into the SI. It reads grounding_paradox_si.aux, so it is only meaningful after a build -- in fast
+# mode it checks against whatever the last build left, which is the common case while editing.
 for g in check_hand_transcribed_displays check_deviation_paragraph check_vt2005_leverage_counts \
          check_donor_window_caption check_split_refs check_cross_document_attributions \
-         check_no_scored_self_pairs; do
+         check_supplement_pointers check_no_scored_self_pairs; do
   stage "$g" "$PY" "scripts/analysis/$g.py"
 done
 stage "check_number_conservation" "$PY" scripts/analysis/check_number_conservation.py \
