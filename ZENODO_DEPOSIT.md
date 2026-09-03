@@ -1,13 +1,30 @@
 # Zenodo deposit: what goes in, and how to mint the DOI
 
-> **State on 2026-09-03.** The DOIs exist. The manuscript prints the **concept DOI**
-> `10.5281/zenodo.22263434`, which always resolves to the latest version; today that is
-> `10.5281/zenodo.22263435`. **The record is not finished.** It holds two files, 18 MB — the
-> source archive a GitHub release produces — and not the 685 MB deposit this file describes.
-> Until that is uploaded as a new version, the manuscript's Data and Software Availability
-> statement promises a reader something the record does not contain.
-> `scripts/analysis/check_zenodo_record.py` fails while that is true; run it before submitting.
-> Metadata still to fix on the record is listed at the end.
+> **BLOCKED ON ZENODO, 2026-09-03.** The upload cannot proceed and the reason is server-side.
+>
+> The published version `10.5281/zenodo.22263435` is healthy and the citation printed in the
+> manuscript works: `https://doi.org/10.5281/zenodo.22263434` resolves, end to end, to that
+> record's landing page. **But its parent — the concept record `22263434` — answers
+> `HTTP 410 "The record has been deleted"` on the API.** Every operation that has to serialise a
+> draft against that parent therefore fails: `POST /api/records/22263435/versions` returns
+> HTTP 500 (error ids `a742591d07324c81b739016707d95ad0`, `3d7bf901918e400cb85bfdfa3431ff15`) and
+> a draft that does get created cannot be read back. Two such drafts were created and have been
+> deleted again; nothing is left orphaned.
+>
+> **This needs Zenodo support** (<https://zenodo.org/support>). What to tell them: concept record
+> 22263434 returns 410 while its version 22263435 is published and readable, so new-version
+> creation 500s with those error ids. Note that the parent answered a normal 302 redirect before
+> the first write attempt against it, which was a call to the deprecated
+> `/api/deposit/depositions/{id}/actions/newversion` endpoint; that call failed with a validation
+> error and the parent has answered 410 since. The two facts may or may not be connected.
+>
+> **If support is slow**, the fallback is a separate record for the 685 MB, with the manuscript's
+> DOI corrected at revision — the paper is under review, so that sentence can still be changed.
+> Prefer waiting: the concept DOI in print is the right identifier and a second record splits the
+> deposit across two DOIs for good.
+>
+> `scripts/analysis/check_zenodo_record.py` fails until the deposit is on the record. That is
+> correct and it should stay failing; it is the thing that will notice when this is finally fixed.
 
 The manuscript's Data-availability statement points at two things: this repository under the MIT
 licence, and a Zenodo archive for what is too large for git. This file is the recipe for the
