@@ -129,8 +129,23 @@ rows) both carry solute and solvent SMILES, deposited as CSV with the Supporting
 
 Every name below is drawn from the manuscript's own bibliography or from work directly on its
 question, and each affiliation was checked against the institution's or the group's current page
-rather than taken from the citation. **No email addresses are given here**, because none should be
-guessed: take each from the corresponding-author line of the paper cited beside the name.
+rather than taken from the citation.
+
+**On the addresses.** Each is marked with where it comes from, because two of the first five that
+were collected for this list were real addresses at the wrong institution — a researcher's earlier
+post and a doctoral student account — and an editor cannot reach a reviewer at either:
+
+| mark | meaning |
+|---|---|
+| *listed* | printed on the institution's own staff page, quoted from it |
+| *supplied* | provided by the authors; consistent with that institution's pattern, not independently confirmed |
+| *inferred* | matches the institution's confirmed convention but is not printed anywhere reachable; confirm before use |
+
+Two corrections carried into the list below. **Ian Bell** was collected as `ian.bell@ulg.ac.be`,
+which is the Université de Liège, where he worked before NIST; his papers through 2025 give the
+Applied Chemicals and Materials Division at NIST Boulder. **Chieh-Ming Hsieh** was collected as
+`f93524068@ntu.edu.tw` — a National Taiwan University student account from his doctorate, not the
+National Central University address he has held as a professor since.
 
 **Conflicts.** Neither author appears as a co-author of any work in the manuscript's bibliography,
 and no cited work shares their institutions, so none of the people below is a collaborator of ours.
@@ -141,51 +156,61 @@ why the last section exists.
 
 ### First choices
 
-1. **Fabian Jirasek** — Laboratory of Engineering Thermodynamics, RPTU Kaiserslautern-Landau,
+1. **Fabian Jirasek** — `fabian.jirasek@rptu.de` *(supplied; matches the pattern printed on the
+   department's own staff page for Hasse below)* — Laboratory of Engineering Thermodynamics, RPTU Kaiserslautern-Landau,
    Germany. Builds machine-learning models for activity coefficients under thermodynamic
    constraints: HANNA, matrix completion for activity coefficients, UNIFAC 2.0. He is the closest
    match to what this manuscript actually asks — what a fixed physical structure buys or costs a
    learned model. *Chem. Sci.* 2024, [10.1039/D4SC05115G](https://doi.org/10.1039/D4SC05115G).
 
-2. **André Bardow** — Energy and Process Systems Engineering, ETH Zürich, Switzerland. Co-author of
+2. **André Bardow** — `abardow@ethz.ch` *(supplied; ETH does not print addresses on its people
+   pages, so this one could not be checked against a primary source)* — Energy and Process Systems Engineering, ETH Zürich, Switzerland. Co-author of
    the SMILES/language-model predictor for limiting activity coefficients cited in the manuscript,
    and of SPT-NRTL, a physics-guided model constrained to thermodynamic consistency. Expert in
    precisely the split the paper draws between learning the coefficient and learning the fixed
    model's input. *Digital Discovery* 2022,
    [10.1039/D2DD00058J](https://doi.org/10.1039/D2DD00058J).
 
-3. **Ian H. Bell** — Applied Chemicals and Materials Division, NIST, Boulder, Colorado, USA. Author
+3. **Ian H. Bell** — `ian.bell@nist.gov` *(inferred: this is the convention printed for ten
+   colleagues on NIST's own group page, but he has no reachable staff page of his own — confirm it,
+   or take the address from the corresponding-author line of the paper below)* — Applied Chemicals and Materials Division, NIST, Boulder, Colorado, USA. Author
    of the open-source reference COSMO-SAC implementation that this manuscript validates its own
    layer against and quotes the dispersion-on runs from. Well placed to check the closure's
    numerics and the reproducibility apparatus, which is a large part of what is being submitted.
    *J. Chem. Theory Comput.* 2020,
    [10.1021/acs.jctc.9b01016](https://doi.org/10.1021/acs.jctc.9b01016).
 
-4. **Chieh-Ming Hsieh** — Department of Chemical and Materials Engineering, National Central
+4. **Chieh-Ming Hsieh** — `hsiehcm@ncu.edu.tw` *(listed on the NCU faculty page, with office E-201
+   and +886-3-4227151#34220)* — Department of Chemical and Materials Engineering, National Central
    University, Taoyuan City, Taiwan. Author of COSMO-SAC-2010 and of the dispersion term the
    manuscript implements, and co-author of the benchmark open-source implementation. See the note
    at the end: he is a frequent co-author of Shiang-Tai Lin, though not of the paper this work is
    contrasted with. *Fluid Phase Equilib.* 2010,
    [10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011).
 
-5. **William H. Green** — Department of Chemical Engineering, MIT, Cambridge, Massachusetts, USA.
+5. **William H. Green** — `whgreen@mit.edu` *(listed on the MIT ChemE profile page, office E17-504H)*
+   — Department of Chemical Engineering, MIT, Cambridge, Massachusetts, USA.
    SolProp and FastSolv, the two external points of comparison the manuscript uses for solubility
    prediction and the source of its statement about where the field's accuracy actually sits.
    *Nat. Commun.* 2025,
    [10.1038/s41467-025-62717-7](https://doi.org/10.1038/s41467-025-62717-7).
 
-6. **Hans Hasse** — Laboratory of Engineering Thermodynamics, RPTU Kaiserslautern-Landau, Germany.
+6. **Hans Hasse** — `hans.hasse@rptu.de` *(listed on the RPTU staff page, with +49 631 205-3497)* —
+   Laboratory of Engineering Thermodynamics, RPTU Kaiserslautern-Landau, Germany.
    Senior thermodynamicist and HANNA co-author; would read the thermodynamic claims rather than the
    machine learning, which is the half a referee is most likely to skip.
    *Chem. Sci.* 2024, [10.1039/D4SC05115G](https://doi.org/10.1039/D4SC05115G).
 
-7. **Kai Sundmacher** — Chair for Process Systems Engineering, Otto-von-Guericke University
+7. **Kai Sundmacher** — `sundmacher@mpi-magdeburg.mpg.de` *(supplied; matches the surname-only
+   pattern the institute uses)* — Chair for Process Systems Engineering, Otto-von-Guericke University
    Magdeburg, and Max Planck Institute for Dynamics of Complex Technical Systems, Germany.
    Gibbs–Helmholtz graph network for the temperature dependence of activity coefficients, cited in
    the manuscript. *Digital Discovery* 2023,
    [10.1039/D2DD00142J](https://doi.org/10.1039/D2DD00142J).
 
 ### Alternates
+
+No address found yet for either; both have public pages that carry one.
 
 8. **Edgar Ivan Sanchez Medina** — Otto-von-Guericke University Magdeburg / Max Planck Institute,
    Magdeburg, Germany. His 2025 dissertation is on hybrid graph neural networks for activity
