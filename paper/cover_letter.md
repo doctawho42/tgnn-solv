@@ -50,9 +50,10 @@ decomposition sets are deposited as row-level machine-readable tables so a reade
 central claim without running our code. Twelve defects and limits of the work are disclosed by us,
 each where its numbers print, and none of them is reported by anyone else.
 
-The manuscript is original, is not under consideration elsewhere, and all authors have approved the
-submission. We declare no competing financial interest. This study was supported by the Russian
-Science Foundation, project No. 25-25-00148.
+This manuscript has not been published elsewhere and is not under consideration by any other
+journal. All authors have read and approved the final version of the manuscript. We declare no
+conflicts of interest. This study was supported by the Russian Science Foundation, project
+No. 25-25-00148.
 
 We would be glad to answer any questions.
 
