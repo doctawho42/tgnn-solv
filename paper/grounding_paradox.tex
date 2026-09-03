@@ -249,8 +249,11 @@ $\sigma$-Profiles Degrades COSMO-SAC Solubility Prediction}
 % left standing and the claim of confirmation is not repeated here.
 % The submission FORM has its own outstanding items -- preprint declaration, previous submissions,
 % the Funder Registry entry, reviewer suggestions. They are in paper/cover_letter.md, Part 3.
-% Two more, of a different kind, are in the Data availability statement and are handled by \pending:
-% the archive commit hash and the Zenodo DOI.
+% BOTH DATA-AVAILABILITY PLACEHOLDERS ARE CLOSED, 2026-09-03. The archive commit is
+% fb568bca64 (tag v1.0.0) and the Zenodo concept DOI is 10.5281/zenodo.22263434. No \pending
+% remains in either document. What is NOT closed is the record behind that DOI: it holds the
+% 18 MB release archive and not the 685 MB the statement promises, and
+% scripts/analysis/check_zenodo_record.py fails until the deposit is uploaded as a new version.
 % ==================================================================================
 \author{N.~L. Polomoshnov}
 \affiliation[MSU]{Faculty of Bioengineering and Bioinformatics, Lomonosov Moscow State
@@ -1779,8 +1782,15 @@ The analysis code, and those intermediate artifacts small enough to version, are
 \url{https://github.com/doctawho42/tgnn-solv} (commit \texttt{fb568bca64}, tag
 \texttt{v1.0.0}) under the MIT licence, that commit being the one the reported numbers were
 produced from. The model checkpoints, the processed split, the full per-arm
-prediction files and the larger analysis artifacts will be deposited in a Zenodo archive,
-\pending[whose DOI is registered at submission]. The data sources are public. Solubility is
+prediction files and the larger analysis artifacts are deposited in the Zenodo archive
+\texttt{10.5281/zenodo.22263434}.
+% CONCEPT DOI, NOT THE VERSION DOI, 2026-09-03. Zenodo mints two: 22263435 names the
+% version that exists today and 22263434 names "all versions" and always resolves to the
+% latest. The concept one is what belongs in print, because the record is not finished --
+% today it holds only the 18 MB source archive the GitHub release produced, and the 685 MB
+% this sentence promises goes up as a new version. Printing the version DOI would freeze a
+% reader onto the incomplete one. scripts/analysis/check_zenodo_record.py fails while the
+% record does not hold what this sentence says it does. The data sources are public. Solubility is
 BigSolDB~2.0 \cite{krasnov2025bigsoldb}; the reference $\sigma$-profiles are the VT-2005 database,
 and the UD profiles Ref.~\cite{fingerhut2017} as redistributed with
 Ref.~\cite{bell2020cosmosac}; the infinite-dilution activity coefficients are ThermoML, with the
@@ -1852,17 +1862,21 @@ Computations were carried out on commercial cloud services (Google Colab Pro+, M
 % whether any reported quantity came from it; that is what is left, and none of it depends on how
 % the version-control history is written.
 % THE AUTHORS MUST STILL CONFIRM THIS AND ADD ANY TOOL USED OUTSIDE THIS WORK before submission.
-% It no longer prints a red \pending because two already stand a paragraph above -- the commit
-% hash and the Zenodo DOI -- and those force the same final pass.
+% THAT FORCING FUNCTION IS GONE, 2026-09-03. This used to say it needed no red marker of its
+% own because the commit hash and the Zenodo DOI stood in red a paragraph above and would
+% force the same final pass. Both are now filled in, so nothing red is left in the manuscript
+% and nothing in the PDF forces this confirmation any more. It is item 4 of
+% paper/cover_letter.md Part 3, which is the list the submission is worked from.
 Generative-AI use: the authors used Anthropic's Claude for analysis and verification code, for
 the figures that code generates, and for drafting and editing. It generated and altered no
 measurement: every number in both documents is produced by a deposited script from a deposited
 artifact, and the checks of \S\ref{sec:si-repro} bind them there. The authors are responsible for
 all of the content.
 % The disclosure ACS requires names the tools and the stages they were used at, and that is author
-% knowledge, not manuscript content -- it cannot be written here without being invented.  It is now
-% a \pending so that it prints in red on every draft instead of sitting in a comment: item 5 of the
-% pre-submission checklist above, and the last of the five to be settled.
+% knowledge, not manuscript content -- it cannot be written here without being invented.
+% THIS COMMENT SAID "it is now a \pending so that it prints in red", which the comment six lines
+% above it flatly contradicted, and the paragraph is not a \pending and never was. Corrected
+% 2026-09-03 rather than left for a reader to arbitrate between two comments in one file.
 \end{acknowledgement}
 
 % DO NOT \input sections/SI here. It is the SI document's body now, it declares S-numbered

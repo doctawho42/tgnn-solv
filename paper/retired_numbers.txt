@@ -465,3 +465,17 @@
         still carries "the withholding is -0.99 at P ~ 0.2, which is not a measured equality
         either", whole. The gate's context window cuts the display at the clause boundary and
         reports the tail as missing; the occurrence count is unchanged at 2.
+
+2.24199 page-boundary churn, not a loss, 2026-09-03. Writing the Zenodo DOI into the SI reflowed
+        the paragraph that had been straddling the S-125/S-126 break, so the conservation pass,
+        which counts a value once per page it prints on, sees the sentence move rather than stay.
+        Read the source: sections/SI.tex still carries the whole clause, "MAE 2.24199, RMSE
+        2.96058, R^2 = 0.01768, bias 1.00945, and the matched-subset block's n = 5571 with MAE
+        2.24373 -- recomputes from it to the last printed digit, at zero absolute difference in
+        float64". The occurrence counts are unchanged at 1, and the values still print on S-125.
+        Checked one at a time against the file, not as a class.
+2.96058 same reflow, same sentence; see 2.24199 above.
+0.01768 same reflow, same sentence; see 2.24199 above.
+0.41    same reflow, adjacent paragraph, 2026-09-03. "Table S4 and the +0.41 were aggregated from
+        the in-memory predictions before any file was written, and they are unchanged" is intact
+        in sections/SI.tex; the count is unchanged at 18 and the value prints on eight pages.

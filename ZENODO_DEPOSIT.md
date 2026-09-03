@@ -1,5 +1,14 @@
 # Zenodo deposit: what goes in, and how to mint the DOI
 
+> **State on 2026-09-03.** The DOIs exist. The manuscript prints the **concept DOI**
+> `10.5281/zenodo.22263434`, which always resolves to the latest version; today that is
+> `10.5281/zenodo.22263435`. **The record is not finished.** It holds two files, 18 MB — the
+> source archive a GitHub release produces — and not the 685 MB deposit this file describes.
+> Until that is uploaded as a new version, the manuscript's Data and Software Availability
+> statement promises a reader something the record does not contain.
+> `scripts/analysis/check_zenodo_record.py` fails while that is true; run it before submitting.
+> Metadata still to fix on the record is listed at the end.
+
 The manuscript's Data-availability statement points at two things: this repository under the MIT
 licence, and a Zenodo archive for what is too large for git. This file is the recipe for the
 archive. Only the upload and the DOI minting need a Zenodo account; everything else is prepared.
@@ -70,16 +79,48 @@ identity for anyone citing the software directly.
 
 ## Order of operations
 
-The commit hash and the DOI are mutually entangled, so the sequence matters:
+The commit hash and the DOI are mutually entangled, so the sequence matters. Steps 1, 2 and 4 are
+done; step 3 is not.
 
-1. Freeze the repository: `git tag -a v1.0.0 -m "submission to JCIM"` and push the tag.
-2. Take the hash **that tag points at** and put it in the manuscript's `\pending[hash]`. This lands
-   in a commit *after* the tag, which is correct and intended: the tag freezes the analysis code —
-   the tree the reported numbers were produced from, which is what the sentence in the manuscript
-   claims — and not the manuscript text.
-3. Build the archive from that commit, upload, publish, and take the DOI.
-4. Put the DOI in the manuscript's `\pending[Zenodo DOI]` sites.
-5. Recompile, confirm no `\pending` remains, and only then submit.
+1. ~~Freeze the repository: `git tag -a v1.0.0` and push the tag.~~ Done, the tag points at
+   `fb568bca64`.
+2. ~~Take the hash that tag points at and put it in the manuscript.~~ Done. It lands in a commit
+   *after* the tag, which is correct and intended: the tag freezes the analysis code, the tree the
+   reported numbers were produced from, which is what the sentence claims, and not the manuscript
+   text.
+3. **Outstanding.** Stage the archive and upload it as a **new version** of the existing record:
+
+   ```bash
+   python scripts/release/build_zenodo_bundle.py
+   ```
+
+   It writes 685 MB in 385 files under the staging directory. Use *New version* on the record
+   rather than a new upload: a new version keeps the concept DOI the manuscript already prints, so
+   no text changes when it is published, while a separate record would mint a DOI the manuscript
+   does not name. Upload the staged tree together with its `MANIFEST.sha256` and `README.md`.
+4. ~~Put the DOI in the manuscript.~~ Done, the concept DOI is in both documents.
+5. Run `python scripts/analysis/check_zenodo_record.py`. It reads the DOI out of the manuscript,
+   resolves it, and fails while the record does not carry the checkpoints, the split and the
+   per-arm predictions. Recompile, confirm no `\pending` remains, and only then submit.
+
+## Metadata still to correct on the record
+
+The published record took Zenodo's defaults rather than `.zenodo.json`; that file is read by the
+GitHub-Zenodo integration and does not apply to an upload made another way. What is wrong today:
+
+| field | on the record | should be |
+|---|---|---|
+| licence | `cc-by-4.0` | MIT, matching `LICENSE`, with the BigSolDB-derived split attributed under CC-BY-4.0 |
+| type | Publication | Dataset, or Software |
+| version | empty | `v1.0.0` |
+| title | the manuscript title | the same, with "-- code and data" appended |
+| creators | names only | add ORCID 0009-0001-4342-8539 and both affiliations |
+| description | empty | the archive `README.md` the builder writes |
+| related identifiers | none | `isSupplementTo` the article DOI once ACS issues it; `isDerivedFrom` the repository and BigSolDB `10.5281/zenodo.15094979` |
+| grant | none | Russian Science Foundation 25-25-00148 |
+
+The licence line matters beyond tidiness: the manuscript says the code is available "under the MIT
+licence", and a record labelling the same content CC-BY-4.0 contradicts the sentence that cites it.
 
 ## GitHub's Zenodo integration
 
