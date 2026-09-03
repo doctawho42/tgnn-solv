@@ -1,30 +1,39 @@
 # Zenodo deposit: what goes in, and how to mint the DOI
 
-> **BLOCKED ON ZENODO, 2026-09-03.** The upload cannot proceed and the reason is server-side.
+> **DONE, 2026-09-03.** The deposit is published and the manuscript's promise is true.
 >
-> The published version `10.5281/zenodo.22263435` is healthy and the citation printed in the
-> manuscript works: `https://doi.org/10.5281/zenodo.22263434` resolves, end to end, to that
-> record's landing page. **But its parent — the concept record `22263434` — answers
-> `HTTP 410 "The record has been deleted"` on the API.** Every operation that has to serialise a
-> draft against that parent therefore fails: `POST /api/records/22263435/versions` returns
-> HTTP 500 (error ids `a742591d07324c81b739016707d95ad0`, `3d7bf901918e400cb85bfdfa3431ff15`) and
-> a draft that does get created cannot be read back. Two such drafts were created and have been
-> deleted again; nothing is left orphaned.
+> The concept DOI in print, `10.5281/zenodo.22263434`, resolves to version
+> `10.5281/zenodo.22280328`: 7 files, 413 MB. Uploaded through the Zenodo website by the author
+> after the API route stayed blocked — see the note below on what broke there, because it will
+> break again for anyone who tries the API on this record.
 >
-> **This needs Zenodo support** (<https://zenodo.org/support>). What to tell them: concept record
-> 22263434 returns 410 while its version 22263435 is published and readable, so new-version
-> creation 500s with those error ids. Note that the parent answered a normal 302 redirect before
-> the first write attempt against it, which was a call to the deprecated
-> `/api/deposit/depositions/{id}/actions/newversion` endpoint; that call failed with a validation
-> error and the parent has answered 410 since. The two facts may or may not be connected.
+> Verified rather than assumed. `MANIFEST.sha256` fetched back from the record is byte-identical
+> to the locally staged one and indexes all 385 original files: 9 model checkpoints, 3 processed
+> split files, 37 per-arm prediction files. `doi.org/10.5281/zenodo.22263434` was followed end to
+> end and lands on the record's page, HTTP 200, carrying the title and the archives.
+> `scripts/analysis/check_zenodo_record.py` passes.
 >
-> **If support is slow**, the fallback is a separate record for the 685 MB, with the manuscript's
-> DOI corrected at revision — the paper is under review, so that sentence can still be changed.
-> Prefer waiting: the concept DOI in print is the right identifier and a second record splits the
-> deposit across two DOIs for good.
+> **Metadata still on Zenodo's defaults**, and none of it blocks a referee, but the first line
+> contradicts the manuscript and is worth a minute in the web form:
 >
-> `scripts/analysis/check_zenodo_record.py` fails until the deposit is on the record. That is
-> correct and it should stay failing; it is the thing that will notice when this is finally fixed.
+> | field | on the record | should be |
+> |---|---|---|
+> | licence | `cc-by-4.0` | MIT — the manuscript says "under the MIT licence" |
+> | type | Publication | Dataset |
+> | version | empty | `v1.0.0` |
+> | affiliations | Institute of Biomedical Chemistry only | add MSU for N. L. Polomoshnov |
+> | related identifiers | none | the repository at `v1.0.0`, and BigSolDB `10.5281/zenodo.15094979` |
+> | grant | none | Russian Science Foundation 25-25-00148 |
+>
+> Both ORCIDs are on the record, which closes the pre-submission item that was open on
+> A. V. Rudik's: `0000-0002-8916-9675`.
+>
+> **What broke on the API, for whoever comes back to this.** The concept record `22263434`
+> answers `HTTP 410 "The record has been deleted"` while its versions are published and readable,
+> so everything that serialises a draft against that parent returns HTTP 500
+> (error ids `a742591d07324c81b739016707d95ad0`, `3d7bf901918e400cb85bfdfa3431ff15`). The website
+> path is unaffected. Use the website for this record until Zenodo fixes the parent.
+
 
 The manuscript's Data-availability statement points at two things: this repository under the MIT
 licence, and a Zenodo archive for what is too large for git. This file is the recipe for the
@@ -96,8 +105,8 @@ identity for anyone citing the software directly.
 
 ## Order of operations
 
-The commit hash and the DOI are mutually entangled, so the sequence matters. Steps 1, 2 and 4 are
-done; step 3 is not.
+The commit hash and the DOI are mutually entangled, so the sequence matters. All five steps are
+done.
 
 1. ~~Freeze the repository: `git tag -a v1.0.0` and push the tag.~~ Done, the tag points at
    `fb568bca64`.
@@ -105,7 +114,10 @@ done; step 3 is not.
    *after* the tag, which is correct and intended: the tag freezes the analysis code, the tree the
    reported numbers were produced from, which is what the sentence claims, and not the manuscript
    text.
-3. **Outstanding, and one command away.** Stage the archive, then upload it as a **new version**
+3. ~~Upload the archive as a new version.~~ Done via the website on 2026-09-03; the
+   scripted route below is kept because it is what stages and packs the deposit, and
+   because the API blocker described at the top may be fixed later.
+   **Originally:** Stage the archive, then upload it as a **new version**
    of the existing record:
 
    ```bash
