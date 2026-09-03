@@ -117,6 +117,97 @@ rows) both carry solute and solvent SMILES, deposited as CSV with the Supporting
    used outside what is described there added to it.
 5. **The two submission placeholders** in the Data and Software Availability section: the repository
    commit hash the reported numbers were produced from, and the Zenodo DOI.
-6. **Reviewer suggestions or exclusions**, if any. None are proposed here.
+6. **Reviewer suggestions or exclusions.** Seven suggestions and two alternates are in Part 4,
+   with the one name that is a judgment call and why.
 7. **Funder Registry Tool.** The grant must be entered there as well as in the manuscript; the
    manuscript statement alone does not satisfy the requirement.
+
+---
+
+## Part 4 — Suggested reviewers
+
+Every name below is drawn from the manuscript's own bibliography or from work directly on its
+question, and each affiliation was checked against the institution's or the group's current page
+rather than taken from the citation. **No email addresses are given here**, because none should be
+guessed: take each from the corresponding-author line of the paper cited beside the name.
+
+**Conflicts.** Neither author appears as a co-author of any work in the manuscript's bibliography,
+and no cited work shares their institutions, so none of the people below is a collaborator of ours.
+Note that the COSMO-SAC literature is a small field and Shiang-Tai Lin co-authors much of it: he is
+on both the reference-implementation paper cited for Bell and the 2010 paper cited for Hsieh. That
+is ordinary in a field this size and is not a conflict with this manuscript's authors, but it is
+why the last section exists.
+
+### First choices
+
+1. **Fabian Jirasek** — Laboratory of Engineering Thermodynamics, RPTU Kaiserslautern-Landau,
+   Germany. Builds machine-learning models for activity coefficients under thermodynamic
+   constraints: HANNA, matrix completion for activity coefficients, UNIFAC 2.0. He is the closest
+   match to what this manuscript actually asks — what a fixed physical structure buys or costs a
+   learned model. *Chem. Sci.* 2024, [10.1039/D4SC05115G](https://doi.org/10.1039/D4SC05115G).
+
+2. **André Bardow** — Energy and Process Systems Engineering, ETH Zürich, Switzerland. Co-author of
+   the SMILES/language-model predictor for limiting activity coefficients cited in the manuscript,
+   and of SPT-NRTL, a physics-guided model constrained to thermodynamic consistency. Expert in
+   precisely the split the paper draws between learning the coefficient and learning the fixed
+   model's input. *Digital Discovery* 2022,
+   [10.1039/D2DD00058J](https://doi.org/10.1039/D2DD00058J).
+
+3. **Ian H. Bell** — Applied Chemicals and Materials Division, NIST, Boulder, Colorado, USA. Author
+   of the open-source reference COSMO-SAC implementation that this manuscript validates its own
+   layer against and quotes the dispersion-on runs from. Well placed to check the closure's
+   numerics and the reproducibility apparatus, which is a large part of what is being submitted.
+   *J. Chem. Theory Comput.* 2020,
+   [10.1021/acs.jctc.9b01016](https://doi.org/10.1021/acs.jctc.9b01016).
+
+4. **Chieh-Ming Hsieh** — Department of Chemical and Materials Engineering, National Central
+   University, Taoyuan City, Taiwan. Author of COSMO-SAC-2010 and of the dispersion term the
+   manuscript implements, and co-author of the benchmark open-source implementation. See the note
+   at the end: he is a frequent co-author of Shiang-Tai Lin, though not of the paper this work is
+   contrasted with. *Fluid Phase Equilib.* 2010,
+   [10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011).
+
+5. **William H. Green** — Department of Chemical Engineering, MIT, Cambridge, Massachusetts, USA.
+   SolProp and FastSolv, the two external points of comparison the manuscript uses for solubility
+   prediction and the source of its statement about where the field's accuracy actually sits.
+   *Nat. Commun.* 2025,
+   [10.1038/s41467-025-62717-7](https://doi.org/10.1038/s41467-025-62717-7).
+
+6. **Hans Hasse** — Laboratory of Engineering Thermodynamics, RPTU Kaiserslautern-Landau, Germany.
+   Senior thermodynamicist and HANNA co-author; would read the thermodynamic claims rather than the
+   machine learning, which is the half a referee is most likely to skip.
+   *Chem. Sci.* 2024, [10.1039/D4SC05115G](https://doi.org/10.1039/D4SC05115G).
+
+7. **Kai Sundmacher** — Chair for Process Systems Engineering, Otto-von-Guericke University
+   Magdeburg, and Max Planck Institute for Dynamics of Complex Technical Systems, Germany.
+   Gibbs–Helmholtz graph network for the temperature dependence of activity coefficients, cited in
+   the manuscript. *Digital Discovery* 2023,
+   [10.1039/D2DD00142J](https://doi.org/10.1039/D2DD00142J).
+
+### Alternates
+
+8. **Edgar Ivan Sanchez Medina** — Otto-von-Guericke University Magdeburg / Max Planck Institute,
+   Magdeburg, Germany. His 2025 dissertation is on hybrid graph neural networks for activity
+   coefficients, which is the nearest thesis-length match to this manuscript's construction. Early
+   career, so better as a second reviewer than a first.
+
+9. **Chau-Chyun Chen** — Department of Chemical Engineering, Texas Tech University, Lubbock, Texas,
+   USA. Activity-coefficient models, and a co-author of the VT-2005 σ-profile database this
+   manuscript substitutes from. *Ind. Eng. Chem. Res.* 2006,
+   [10.1021/ie060370h](https://doi.org/10.1021/ie060370h).
+
+### The one judgment call: Shiang-Tai Lin
+
+The manuscript contrasts its result with TeNNet-SAC — Yue Yang and Shiang-Tai Lin, *J. Chem. Inf.
+Model.* **2025**, [10.1021/acs.jcim.5c01804](https://doi.org/10.1021/acs.jcim.5c01804) — published
+in this journal. Lin is also the author of COSMO-SAC itself. He is by some distance the most
+qualified reader of this manuscript, and he has a direct stake in one of its comparisons.
+
+**Recommendation: neither suggest him nor exclude him.** Suggesting a reviewer whose headline
+result the paper qualifies reads as courting a verdict. Excluding the field's leading expert from a
+paper about his own model reads worse, and would be hard to justify: the manuscript's treatment of
+TeNNet-SAC is a reconciliation and not a refutation — it argues the two works score different
+operations, that his construction leaves the segment-activity kernel free to move while this one
+does not, and that the chemical scopes differ. An editor of this journal will very likely route the
+manuscript past him regardless, and the paper is written to survive that reading. Leave the field
+blank and let the editor decide.
