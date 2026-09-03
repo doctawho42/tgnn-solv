@@ -88,16 +88,36 @@ done; step 3 is not.
    *after* the tag, which is correct and intended: the tag freezes the analysis code, the tree the
    reported numbers were produced from, which is what the sentence claims, and not the manuscript
    text.
-3. **Outstanding.** Stage the archive and upload it as a **new version** of the existing record:
+3. **Outstanding, and one command away.** Stage the archive, then upload it as a **new version**
+   of the existing record:
 
    ```bash
+   export ZENODO_TOKEN=...
    python scripts/release/build_zenodo_bundle.py
+   python scripts/release/upload_zenodo_version.py --dry-run
+   python scripts/release/upload_zenodo_version.py
    ```
 
-   It writes 685 MB in 385 files under the staging directory. Use *New version* on the record
-   rather than a new upload: a new version keeps the concept DOI the manuscript already prints, so
-   no text changes when it is published, while a separate record would mint a DOI the manuscript
-   does not name. Upload the staged tree together with its `MANIFEST.sha256` and `README.md`.
+   The token comes from zenodo.org/account/settings/applications and needs the `deposit:write` and
+   `deposit:actions` scopes. It is read from the environment and sent in an Authorization header:
+   the uploader refuses to take it as a command-line argument, because argv is visible in `ps` and
+   lands in shell history, and never puts it in a URL.
+
+   The uploader packs the 385 staged files into three archives plus `MANIFEST.sha256` and
+   `README.md` loose at the top level — 395 MB compressed from 685 MB. A record listing 385 entries
+   is unusable in a browser, and the manifest still carries the sha256 of every original file, so a
+   reader who unpacks can verify each one. The files the new version inherits, the 18 MB GitHub
+   release archive, are kept unless `--drop-inherited` is passed; the record is more useful with
+   the source beside the artifacts.
+
+   It stops at a **draft** so the record can be inspected in the browser first. Add `--publish` to
+   publish it, and note that publishing a Zenodo version is irreversible: it can be superseded but
+   never withdrawn. *New version* rather than a new upload, because a new version keeps the concept
+   DOI the manuscript already prints, while a separate record would mint a DOI the manuscript does
+   not name.
+
+   The uploader also sets the metadata, which closes the table at the end of this file in the same
+   call.
 4. ~~Put the DOI in the manuscript.~~ Done, the concept DOI is in both documents.
 5. Run `python scripts/analysis/check_zenodo_record.py`. It reads the DOI out of the manuscript,
    resolves it, and fails while the record does not carry the checkpoints, the split and the
