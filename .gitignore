@@ -219,3 +219,10 @@ results/charge_conjugation/*
 results/role_asymmetry/*
 !results/role_asymmetry/self_pair.json
 !results/role_asymmetry/self_pair_channels.json
+
+# Secrets. .env carries a live Zenodo token; this repository is PUBLIC and the release
+# workflow here uses `git add -A`, so an unignored .env is one command away from a
+# published credential. Added 2026-09-03, before that command was next run.
+.env
+.env.*
+!.env.example
