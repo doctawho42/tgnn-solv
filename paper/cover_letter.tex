@@ -1,0 +1,133 @@
+% The cover letter as ACS wants it: one PDF.
+%
+% SOURCE OF RECORD for the letter that is uploaded.  paper/cover_letter.md is the working
+% document -- it also carries the text for JCIM's own submission form, the pre-submission
+% checklist, and the reasoning behind the reviewer list, none of which belongs in a letter to an
+% editor.  What is here is Part 1 of that file plus the reviewer names, and the two must be kept
+% in step by hand: if you edit the letter in one, edit it in the other.
+%
+%   xelatex cover_letter.tex
+%
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=25mm]{geometry}
+\usepackage{fontspec}
+% NOT STIX HERE, and for a reason worth writing down.  The manuscript is set in STIX Two Text,
+% but on this machine that family ships as one variable font whose Bold is a named instance
+% XeTeX will not select, and whose Italic lives in a second file under the same family name.
+% \setmainfont{STIX Two Text} therefore compiles happily and silently renders every \textbf at
+% regular weight -- the manuscript title and the reviewer names came out unbolded, and pdffonts
+% confirmed no bold face was embedded at all.  Naming the faces explicitly fails outright,
+% because "STIX Two Text Bold" is not a font name.  Times New Roman resolves all four faces,
+% which pdffonts confirms, and a cover letter in Times is unremarkable.
+\setmainfont{Times New Roman}
+\usepackage{unicode-math}
+\setmathfont{STIX Two Math}   % text is Times; the maths would otherwise be Computer Modern
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{parskip}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.2em,itemsep=2pt,topsep=3pt}
+\pagestyle{empty}
+
+\begin{document}
+
+\noindent
+{\large Nikita L. Polomoshnov}\\[2pt]
+Faculty of Bioengineering and Bioinformatics, Lomonosov Moscow State University\\
+V.~N. Orekhovich Institute of Biomedical Chemistry, Moscow, Russia\\
+\href{mailto:nikitapol@fbb.msu.ru}{nikitapol@fbb.msu.ru}
+
+\vspace{4mm}
+\noindent 3 September 2026
+
+\vspace{4mm}
+\noindent
+To the Editors\\
+\emph{Journal of Chemical Information and Modeling}
+
+\vspace{4mm}
+\noindent Dear Editors,
+
+We submit for consideration as an \textbf{Article} the manuscript \textbf{``Ground Truth That Does
+Not Ground: Substituting Reference Solvent $\sigma$-Profiles Degrades COSMO-SAC Solubility
+Prediction''} by N.~L. Polomoshnov and A.~V. Rudik.
+
+Physics-informed models are built so that a prediction passes through a quantity chemistry already
+tabulates, and the design carries an assumption that is rarely tested: that handing the model the
+tabulated value, in place of the one it learned, should improve it. We test that assumption
+directly. A graph neural network predicts the $\sigma$-profiles a fixed COSMO-SAC layer consumes,
+and quantum chemistry tabulates the same profiles independently, so the substitution can be made
+without retraining anything.
+
+It makes the model worse. Over five seeds the mean absolute error on solid--liquid solubility rises
+from $1.93$ to $2.34$ in $\ln x_2$, about $21\%$, with no overlap between the per-seed values of the
+two arms, and the mean per-solute Spearman correlation over solvents falls by $0.185$, a loss in the
+ranking that solvent selection actually uses. Supervising the same network against the same
+database during training, the other operation the word ``grounding'' covers, gives gains that
+straddle zero, and we report it as having no established sign rather than as a benefit. The
+operation that fails is the one available in practice, because it is the one that needs no
+retraining.
+
+The constructive half of the paper is a way to tell in advance where this will happen. Using
+infinite-dilution activity coefficients we separate a deployed thermodynamic model's own error from
+what its inputs leave unresolved, search fifty-nine chemical strata, and find the model's own error
+dominant on one solvent chemistry. We state plainly which of those bounds are established and which
+are the instrument's output on a set too small to certify, including one that an independent set
+reproduces at half its size without meeting our own stability rule.
+
+We think this belongs in JCIM for two reasons. It concerns how a widely used cheminformatics
+construction behaves when a learned component meets a fixed physical map, which is a modelling
+question rather than a chemistry-specific one; and it is written to the standard of the Journal's
+editorial on method and data sharing (\emph{J. Chem. Inf. Model.} \textbf{2015}, \emph{55}, 719).
+Every number in the manuscript and the Supporting Information is produced by a deposited script
+from a deposited artifact; the code, checkpoints, processed splits and per-arm predictions are
+released; and the two decomposition sets are deposited as row-level machine-readable tables so a
+reader can recompute the central claim without running our code. Twelve defects and limits of the
+work are disclosed by us, each where its numbers print, and none of them is reported by anyone
+else.
+
+This manuscript has not been published elsewhere and is not under consideration by any other
+journal. All authors have read and approved the final version of the manuscript. We declare no
+conflicts of interest. This study was supported by the Russian Science Foundation, project
+No.~25-25-00148.
+
+\vspace{2mm}
+\noindent
+We would be glad to answer any questions.
+
+\vspace{4mm}
+\noindent
+Sincerely,\\[2pt]
+Nikita L. Polomoshnov, on behalf of both authors
+
+\vspace{6mm}
+\noindent\textbf{Suggested reviewers}
+
+\begin{itemize}
+\item \textbf{Fabian Jirasek}, Laboratory of Engineering Thermodynamics, RPTU
+      Kaiserslautern-Landau, Germany. \href{mailto:fabian.jirasek@rptu.de}{fabian.jirasek@rptu.de}
+      \\ Machine-learning models for activity coefficients under thermodynamic constraints.
+\item \textbf{André Bardow}, Energy and Process Systems Engineering, ETH Zürich, Switzerland.
+      \href{mailto:abardow@ethz.ch}{abardow@ethz.ch}
+      \\ Learned predictors for limiting activity coefficients, and physics-guided models
+      constrained to thermodynamic consistency.
+\item \textbf{Ian H. Bell}, Applied Chemicals and Materials Division, NIST, Boulder, Colorado, USA.
+      \href{mailto:ian.bell@nist.gov}{ian.bell@nist.gov}
+      \\ Author of the open-source reference COSMO-SAC implementation this work validates against.
+\item \textbf{Chieh-Ming Hsieh}, Department of Chemical and Materials Engineering, National Central
+      University, Taoyuan City, Taiwan. \href{mailto:hsiehcm@ncu.edu.tw}{hsiehcm@ncu.edu.tw}
+      \\ Author of COSMO-SAC-2010 and of the dispersion term the manuscript implements.
+\item \textbf{William H. Green}, Department of Chemical Engineering, Massachusetts Institute of
+      Technology, USA. \href{mailto:whgreen@mit.edu}{whgreen@mit.edu}
+      \\ SolProp and FastSolv, the external points of comparison used here.
+\item \textbf{Hans Hasse}, Laboratory of Engineering Thermodynamics, RPTU Kaiserslautern-Landau,
+      Germany. \href{mailto:hans.hasse@rptu.de}{hans.hasse@rptu.de}
+      \\ Engineering thermodynamics of mixtures, and hard-constrained models for activity
+      coefficients.
+\item \textbf{Kai Sundmacher}, Otto-von-Guericke University Magdeburg and Max Planck Institute for
+      Dynamics of Complex Technical Systems, Germany.
+      \href{mailto:sundmacher@mpi-magdeburg.mpg.de}{sundmacher@mpi-magdeburg.mpg.de}
+      \\ Graph networks for the temperature dependence of activity coefficients.
+\end{itemize}
+
+\end{document}
