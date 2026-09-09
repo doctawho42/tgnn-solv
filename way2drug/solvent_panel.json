@@ -1,0 +1,227 @@
+{
+  "reference_temperature_K": 298.15,
+  "min_distinct_solutes": 100,
+  "built_from": "notebooks/data/processed/train.csv",
+  "n_solvents": 27,
+  "solvents_without_density": [
+    "DMSO"
+  ],
+  "solvents": [
+    {
+      "smiles": "O",
+      "name": "water",
+      "molar_mass_g_per_mol": 18.015,
+      "density_g_per_cm3_298K": 0.99692,
+      "train_rows": 19978,
+      "train_distinct_solutes": 15035
+    },
+    {
+      "smiles": "CCO",
+      "name": "ethanol",
+      "molar_mass_g_per_mol": 46.069,
+      "density_g_per_cm3_298K": 0.7855,
+      "train_rows": 8812,
+      "train_distinct_solutes": 906
+    },
+    {
+      "smiles": "CO",
+      "name": "methanol",
+      "molar_mass_g_per_mol": 32.042,
+      "density_g_per_cm3_298K": 0.78633,
+      "train_rows": 7317,
+      "train_distinct_solutes": 784
+    },
+    {
+      "smiles": "CC(C)O",
+      "name": "isopropanol",
+      "molar_mass_g_per_mol": 60.096,
+      "density_g_per_cm3_298K": 0.78136,
+      "train_rows": 6638,
+      "train_distinct_solutes": 696
+    },
+    {
+      "smiles": "CCOC(C)=O",
+      "name": "ethyl acetate",
+      "molar_mass_g_per_mol": 88.106,
+      "density_g_per_cm3_298K": 0.8946,
+      "train_rows": 6376,
+      "train_distinct_solutes": 680
+    },
+    {
+      "smiles": "CCCO",
+      "name": "n-propanol",
+      "molar_mass_g_per_mol": 60.096,
+      "density_g_per_cm3_298K": 0.7993,
+      "train_rows": 6198,
+      "train_distinct_solutes": 641
+    },
+    {
+      "smiles": "CC(C)=O",
+      "name": "acetone",
+      "molar_mass_g_per_mol": 58.08,
+      "density_g_per_cm3_298K": 0.7852,
+      "train_rows": 5529,
+      "train_distinct_solutes": 591
+    },
+    {
+      "smiles": "CCCCO",
+      "name": "n-butanol",
+      "molar_mass_g_per_mol": 74.123,
+      "density_g_per_cm3_298K": 0.805845,
+      "train_rows": 5491,
+      "train_distinct_solutes": 586
+    },
+    {
+      "smiles": "CC#N",
+      "name": "acetonitrile",
+      "molar_mass_g_per_mol": 41.053,
+      "density_g_per_cm3_298K": 0.77653,
+      "train_rows": 5037,
+      "train_distinct_solutes": 529
+    },
+    {
+      "smiles": "CC(C)CO",
+      "name": "isobutanol",
+      "molar_mass_g_per_mol": 74.123,
+      "density_g_per_cm3_298K": 0.79808,
+      "train_rows": 2559,
+      "train_distinct_solutes": 274
+    },
+    {
+      "smiles": "Cc1ccccc1",
+      "name": "toluene",
+      "molar_mass_g_per_mol": 92.141,
+      "density_g_per_cm3_298K": 0.86224,
+      "train_rows": 2534,
+      "train_distinct_solutes": 250
+    },
+    {
+      "smiles": "CN(C)C=O",
+      "name": "DMF",
+      "molar_mass_g_per_mol": 73.095,
+      "density_g_per_cm3_298K": 0.9445,
+      "train_rows": 2391,
+      "train_distinct_solutes": 244
+    },
+    {
+      "smiles": "C1COCCO1",
+      "name": "1,4-dioxane",
+      "molar_mass_g_per_mol": 88.106,
+      "density_g_per_cm3_298K": 1.02792,
+      "train_rows": 2019,
+      "train_distinct_solutes": 238
+    },
+    {
+      "smiles": "COC(C)=O",
+      "name": "methyl acetate",
+      "molar_mass_g_per_mol": 74.079,
+      "density_g_per_cm3_298K": 0.9285,
+      "train_rows": 2056,
+      "train_distinct_solutes": 229
+    },
+    {
+      "smiles": "CCCCCO",
+      "name": "n-pentanol",
+      "molar_mass_g_per_mol": 88.15,
+      "density_g_per_cm3_298K": 0.81096,
+      "train_rows": 1453,
+      "train_distinct_solutes": 168
+    },
+    {
+      "smiles": "C1CCOC1",
+      "name": "THF",
+      "molar_mass_g_per_mol": 72.107,
+      "density_g_per_cm3_298K": 0.882403,
+      "train_rows": 1442,
+      "train_distinct_solutes": 161
+    },
+    {
+      "smiles": "CCC(C)O",
+      "name": "sec-butanol",
+      "molar_mass_g_per_mol": 74.123,
+      "density_g_per_cm3_298K": 0.802373,
+      "train_rows": 1261,
+      "train_distinct_solutes": 155
+    },
+    {
+      "smiles": "CCC(C)=O",
+      "name": "2-butanone",
+      "molar_mass_g_per_mol": 72.107,
+      "density_g_per_cm3_298K": 0.799891,
+      "train_rows": 1502,
+      "train_distinct_solutes": 154
+    },
+    {
+      "smiles": "CCCCCC",
+      "name": "n-hexane",
+      "molar_mass_g_per_mol": 86.178,
+      "density_g_per_cm3_298K": 0.65485,
+      "train_rows": 969,
+      "train_distinct_solutes": 150
+    },
+    {
+      "smiles": "CCCCOC(C)=O",
+      "name": "n-butyl acetate",
+      "molar_mass_g_per_mol": 116.16,
+      "density_g_per_cm3_298K": 0.8748,
+      "train_rows": 1225,
+      "train_distinct_solutes": 141
+    },
+    {
+      "smiles": "CCCCCCCCO",
+      "name": "n-octanol",
+      "molar_mass_g_per_mol": 130.231,
+      "density_g_per_cm3_298K": 0.8218,
+      "train_rows": 804,
+      "train_distinct_solutes": 125
+    },
+    {
+      "smiles": "C1CCCCC1",
+      "name": "cyclohexane",
+      "molar_mass_g_per_mol": 84.162,
+      "density_g_per_cm3_298K": 0.77397,
+      "train_rows": 1031,
+      "train_distinct_solutes": 122
+    },
+    {
+      "smiles": "OCCO",
+      "name": "ethylene glycol",
+      "molar_mass_g_per_mol": 62.068,
+      "density_g_per_cm3_298K": 1.10977,
+      "train_rows": 999,
+      "train_distinct_solutes": 121
+    },
+    {
+      "smiles": "CS(C)=O",
+      "name": "DMSO",
+      "molar_mass_g_per_mol": 78.136,
+      "density_g_per_cm3_298K": null,
+      "train_rows": 942,
+      "train_distinct_solutes": 113
+    },
+    {
+      "smiles": "CCCOC(C)=O",
+      "name": "n-propyl acetate",
+      "molar_mass_g_per_mol": 102.133,
+      "density_g_per_cm3_298K": 0.88261,
+      "train_rows": 1007,
+      "train_distinct_solutes": 113
+    },
+    {
+      "smiles": "ClC(Cl)Cl",
+      "name": "chloroform",
+      "molar_mass_g_per_mol": 119.378,
+      "density_g_per_cm3_298K": 1.4788,
+      "train_rows": 897,
+      "train_distinct_solutes": 105
+    },
+    {
+      "smiles": "CN1CCCC1=O",
+      "name": "NMP",
+      "molar_mass_g_per_mol": 99.133,
+      "density_g_per_cm3_298K": 1.027794,
+      "train_rows": 1017,
+      "train_distinct_solutes": 103
+    }
+  ]
+}

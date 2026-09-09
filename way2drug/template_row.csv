@@ -1,0 +1,2 @@
+solute_smiles,solvent_smiles,temperature,ln_x2,source,solute_name,solvent_name,fda_approved,has_solubility,T_m,has_T_m,dH_fus,has_dH_fus,hansen_d,hansen_p,hansen_h,has_hansen,ln_gamma_inf,has_gamma_inf
+,,293.15,0.0,BigSolDBv2.1,"1,3,3-trinitroazetidine",ethanol,No,True,0.0,False,0.0,False,0.0,0.0,0.0,False,0.0,False

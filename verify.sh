@@ -44,7 +44,7 @@ stage "imports" "$PY" -c "import tgnn_solv, tgnn_solv.model, tgnn_solv.layers, t
 # Notebooks are excluded from F811 on purpose: a cell that re-imports json is normal notebook
 # style, not a redefinition bug, and the only hit in this tree is exactly that.
 stage "lint: undefined names (F821/F811)" \
-      ruff check src tests scripts --select F821,F811 --exclude "*.ipynb"
+      ruff check src tests scripts way2drug --select F821,F811 --exclude "*.ipynb"
 # ONE INTERPRETER, NOT ONE PER FILE.  The first version spawned python once per tracked module and
 # took over two minutes, which is long enough that the check gets skipped, which is the same as not
 # having it.
