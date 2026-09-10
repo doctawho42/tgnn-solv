@@ -36,6 +36,7 @@ CONTENTS = {
     HERE / "tests": "tests",
     HERE / "README.md": "README.md",
     HERE / "MODEL_CARD.md": "MODEL_CARD.md",
+    HERE / "ИНТЕГРАЦИЯ.md": "ИНТЕГРАЦИЯ.md",
     HERE / "solvent_panel.json": "solvent_panel.json",
     HERE / "train_domain.npz": "train_domain.npz",
     HERE / "template_row.csv": "template_row.csv",
@@ -121,8 +122,9 @@ python -m w2d_solubility.cli "CC(=O)Nc1ccc(O)cc1"
 
 ## Что дальше читать
 
-- `README.md` — три способа использования, формат ответа, что выводить в интерфейсе.
+- `ИНТЕГРАЦИЯ.md` — развёртывание, схемы подключения, ресурсы, чеклист. **Начните отсюда.**
 - `MODEL_CARD.md` — точность, область применимости, чего модель не умеет. **До интеграции.**
+- `README.md` — API и формат ответа.
 
 ## Проверить, что всё доехало
 
