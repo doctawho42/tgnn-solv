@@ -1,39 +1,45 @@
 #!/usr/bin/env python3
 """fig_donor_window -- the learned sigma-profile's area in the window COSMO-SAC's hydrogen-bond
-term reads, against the reference tabulation's.
+term reads, against the reference tabulation's, ON THE ARMS OF RECORD.
 
 WHY THIS FIGURE EXISTS
 ----------------------
-Sec. 3.3 carries the manuscript's most chemistry-legible result and carried it in prose alone:
-cyclohexane, acetone, toluene and tetrahydrofuran each hold EXACTLY zero area in the donor window
-of the reference tabulation, and the learned profile puts 24 to 51 A^2 there -- between 23% and 36%
-of each molecule's total surface.  Because the 2002 kernel assigns a segment to the donor side by
-the threshold |sigma| > sigma_hb alone, with no atom typing, that mass makes the hydrogen-bond term
-live on every pair of the scored set regardless of chemistry.
+Sec. 3.3 carries the manuscript's most chemistry-legible result and carried it in prose alone.
+Because the 2002 kernel assigns a segment to the donor side by the threshold |sigma| > sigma_hb
+alone, with no atom typing, mass there makes the hydrogen-bond term live on a pair whose chemistry
+does not call for it.  A reader can check "the reference is exactly zero and the learned profile is
+not" in one glance and cannot check it in a sentence, which is what the figure is for.
 
-A reader can check "exactly zero against a third of the surface" in one glance and cannot check it
-in a sentence, which is what the figure is for.  The manuscript ran three numbered figures against a
-JCIM median of seven, and Sec. 3.3 had none.
+WHICH ARM, AND WHY IT CHANGED (2026-09-28)
+------------------------------------------
+This figure was first drawn from results/closure_ladder/placebo_profile_diagnosis.csv, a RETIRED
+run whose sigma-supervision stream ran for zero steps.  Sec. 3.3 named that scope, and also named
+the control it lacked: "a supervised arm separates the two".  That arm has now been measured --
+grounded_a, seeds 42-46, the arms that carry the 1.93 -> 2.34 substitution contrast -- and it moves
+the quantity by more than an order of magnitude:
+
+    median donor-window area where the reference is exactly 0   36.9 -> 2.3 A^2
+    median donor-window share of surface                        31.0% -> 1.5%
+    Spearman(learned, reference) over the 31 solvents           -0.055 (p=0.77) -> +0.649 (p=8e-05)
+
+So supervision recovers the ORDERING the unsupervised head did not have at all, and shrinks the
+mass twentyfold, without closing the window.  Drawing the retired head would overstate the defect
+by that factor, so the default table is now the rescore deposit.  Producer:
+scripts/analysis/run_donor_window_rescore.py, which reproduces the retired schema row for row.
 
 WHAT IS DRAWN
 -------------
 One row per solvent, ordered by how many scored rows it carries, so the solvents the substitution
 contrast actually rests on are at the top.
 
-  left of the axis   the REFERENCE tabulation's donor-window area, drawn in teal.  For 29 of the 31
-                     solvents this is exactly 0.000 A^2 and the bar has no length at all; the two
-                     that are non-zero are drawn and labelled, because "the reference is empty" is
-                     a claim about this corpus and not a law.
-  right of the axis  the LEARNED profile's area in the same window, in salmon, with the fraction of
-                     that molecule's total surface printed at the bar end.
+  left of the axis   the REFERENCE tabulation's donor-window area, drawn in teal, labelled where it
+                     is non-zero, because "the reference is empty" is a claim about this corpus and
+                     not a law.
+  right of the axis  the LEARNED profile's area in the same window, in salmon, seed-averaged over
+                     42-46, with the fraction of that molecule's total surface printed at the bar
+                     end.
 
-Everything is read from results/closure_ladder/placebo_profile_diagnosis.csv, the same deposit
-Sec. 3.3 quotes.  Nothing is hard-coded, including which solvents are non-zero on the reference
-side.
-
-SCOPE, WHICH THE CAPTION MUST CARRY.  These areas are read off the one trained COSMO-SAC head the
-tree retains -- a retired run trained at 8 segment iterations and scored at 30, scoring MAE 2.61 at
-R^2 = -0.31 on the scaffold split.  They price the quantity and not the arms of Fig. 2.
+Nothing is hard-coded, including which solvents are non-zero on the reference side.
 
 Usage
 -----
@@ -76,6 +82,14 @@ NAMES = {
     "COC(C)=O": "methyl acetate", "CN1CCCC1=O": "N-methyl-2-pyrrolidone",
     "CCCOC(C)=O": "propyl acetate", "ClC(Cl)(Cl)Cl": "carbon tetrachloride",
     "CCOCC": "diethyl ether", "CC(C)=CC": "2-methyl-2-butene",
+    "CCC(C)=O": "butan-2-one", "CCCCOC(C)=O": "butyl acetate", "ClCCCl": "1,2-dichloroethane",
+    "CC(=O)OC(C)C": "isopropyl acetate", "Clc1ccccc1": "chlorobenzene",
+    "CC(C)OC(C)C": "diisopropyl ether", "CC(=O)CC(C)=O": "pentane-2,4-dione",
+    "CC(=O)c1ccccc1": "acetophenone", "O=C1CCCCC1": "cyclohexanone",
+    "O=C1CCCO1": "gamma-butyrolactone", "COCOC": "dimethoxymethane",
+    "CC1COC(=O)O1": "propylene carbonate", "CCCCCOC(C)=O": "pentyl acetate",
+    # CCC(C)(C)C(C)C НАМЕРЕННО без названия: разбор его локантов от руки -- не то место, где
+    # стоит рисковать, а SMILES и есть честное умолчание этой таблицы.
 }
 
 
@@ -103,7 +117,7 @@ def draw(d: pd.DataFrame, out_dir: Path, stem: str) -> list[str]:
 
     for i, r in d.iterrows():
         ax.text(r["learned_donor_window_area"] + 1.4, i,
-                f"{100 * r['learned_donor_fraction']:.0f}%", va="center", ha="left",
+                f"{100 * r['learned_donor_fraction']:.1f}%", va="center", ha="left",
                 fontsize=6.8, color=INK)
         if r["reference_donor_window_area"] > 0:
             ax.text(-r["reference_donor_window_area"] - 1.4, i,
@@ -116,16 +130,22 @@ def draw(d: pd.DataFrame, out_dir: Path, stem: str) -> list[str]:
                   r"($\leftarrow$ reference tabulation $\;|\;$ learned profile $\rightarrow$)",
                   fontsize=8.2)
     ax.tick_params(axis="x", labelsize=7.2)
-    lo = -max(4.0, float(d["reference_donor_window_area"].max()) * 1.9)
-    ax.set_xlim(lo, float(d["learned_donor_window_area"].max()) * 1.20)
+    # ОДНА шкала на обе половины. На отозванной голове выученные бары были в 4-5 раз длиннее
+    # эталонных, и левой половине давался свой множитель просто чтобы поместились подписи. На
+    # плечах записи величины сравнимы (5.4 против 9.8 A^2), и раздельные шкалы теперь искажали бы
+    # ровно то сравнение, ради которого рисунок back-to-back.
+    m = max(float(d["reference_donor_window_area"].max()),
+            float(d["learned_donor_window_area"].max()))
+    ax.set_xlim(-m * 1.45, m * 1.45)
     ax.set_ylim(-0.8, n - 0.2)
     for side in ("top", "right", "left"):
         ax.spines[side].set_visible(False)
     ax.legend(loc="lower right", fontsize=7.4, frameon=False)
 
     n_zero = int((d["reference_donor_window_area"] == 0).sum())
-    ax.set_title(f"The window the hydrogen-bond term reads is empty in the reference "
-                 f"for {n_zero} of these {n} solvents",
+    n_occ = int((d["learned_donor_window_area"] > 0).sum())
+    ax.set_title(f"Exactly empty in the reference for {n_zero} of these {n} solvents, "
+                 f"occupied in the learned profile for {n_occ}",
                  fontsize=8.6, color=INK, pad=7)
     fig.tight_layout()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -142,7 +162,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--table", type=Path,
-                    default=Path("results/closure_ladder/placebo_profile_diagnosis.csv"))
+                    default=Path("results/donor_window_rescore/per_solvent.csv"))
     ap.add_argument("--out-dir", type=Path, default=Path("paper/figs"))
     ap.add_argument("--stem", default="fig_donor_window")
     ap.add_argument("--top", type=int, default=16, help="solvents to draw, by scored-row count")
@@ -152,7 +172,7 @@ def main() -> None:
     print(f"{len(d)} solvents drawn, of {len(pd.read_csv(a.table))} in the deposit")
     print(f"reference exactly zero in {(d['reference_donor_window_area'] == 0).sum()} of them; "
           f"learned fraction spans "
-          f"{100 * d['learned_donor_fraction'].min():.0f}-{100 * d['learned_donor_fraction'].max():.0f}%")
+          f"{100 * d['learned_donor_fraction'].min():.1f}-{100 * d['learned_donor_fraction'].max():.1f}%")
     for p in draw(d, a.out_dir, a.stem):
         print("wrote", p)
 

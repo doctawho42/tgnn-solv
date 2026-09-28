@@ -103,8 +103,8 @@ arise: TeNNet-SAC in \S\ref{sec:intro} and the ill-conditioning reading in \S\re
 both with their working in \S\ref{sec:si-adjacent-constructions}. \S\ref{sec:gateb} is the gated
 output correction that fails to recover the accuracy.
 
-\paragraph{The learned profile is chemically inadmissible in the window the closure's
-hydrogen-bond term reads.}
+\paragraph{The learned profile keeps mass in the window the closure's hydrogen-bond term
+reads, where the reference tabulation is exactly zero.}
 % CORRECTED 2026-08-12, round four.  The sentence claimed that a molecule with no hydrogen-bond
 % donor MUST have an empty donor window.  It must not: the 2002 kernel assigns a segment to the
 % donor side by the threshold |sigma| > sigma_hb alone, with no atom typing anywhere in the layer
@@ -123,24 +123,32 @@ hydrogen-bond-donor count. Of the $1003$ molecules in the reference tabulation t
 O--H or S--H, $264$ have area there, and acetonitrile's $6.71$\,\AA$^2$ stands above ethanol's
 $6.20$. The molecule-matched comparison carries the argument. Cyclohexane, acetone, toluene and
 tetrahydrofuran each carry $0.000$\,\AA$^2$ of donor-window area in the reference tabulation,
-exactly zero and not merely small, against $15.75$ for water. The learned profile carries $44.0$,
-$32.4$, $24.5$ and $50.7$\,\AA$^2$ in that same window, between $23\%$ and $36\%$ of each
-molecule's total surface. Figure~\ref{fig:donor-window} draws that comparison over the
-sixteen solvents carrying the most scored rows; the reference is exactly zero in twelve of them. We read those areas off the one trained COSMO-SAC head the
-tree holds, the retired run of \S\ref{sec:si-mech}'s two-MSE check, scoring MAE $2.61$ at
-$R^2=-0.31$ on the
-scaffold split. A null arm in the same deposit separates architecture from training. As a fraction of profile mass
-in the same extreme bins, where the reference tabulation's median is $0.000$, an \emph{untrained}
-network of this architecture reaches $0.212$ against the trained head's $0.189$. The
-window is full before any training, and training emptied it slightly.
+exactly zero and not merely small, against $15.75$ for water. On the arms that carry the
+substitution contrast---grounded, seeds $42$ to $46$---the learned profile carries $0.22$, $1.96$,
+$1.33$ and $2.40$\,\AA$^2$ in that same window, between $0.1\%$ and $1.5\%$ of each molecule's
+total surface, and the median over the twenty-five solvents whose reference is exactly zero is
+$2.3$\,\AA$^2$. Figure~\ref{fig:donor-window} draws that comparison over the sixteen solvents
+carrying the most scored rows; the reference is exactly zero in twelve of them and the learned
+profile is occupied in all sixteen. Supervision has recovered the window's \emph{ordering}: across
+the thirty-one scored solvents the learned donor-window area ranks with the reference at
+$\rho=+0.65$ ($p=8\times10^{-5}$). What it has not done is close the window, and the shortfall is
+not spread evenly over the profile. Against the share of profile area the same window holds, the
+learned-minus-tabulated residual is over-represented there by a factor of $2.2$ (IQR $1.6$ to
+$3.0$), exceeding one for $94\%$ of molecules, over $126$ molecules and five seeds; the figure is
+quoted on the $48$ whose reference tabulation carries donor area at all, so the comparison is not
+against a baseline of zeros.
 
 % THE FIGURE, added 2026-08-19.  Sec. 3.3 carried the corpus's most chemistry-legible result in
-% prose alone, and "exactly zero against a third of the surface" is a claim a reader checks in one
-% glance and cannot check in a sentence.  Regenerate with
-% scripts/analysis/make_donor_window_figure.py, which reads
-% results/closure_ladder/placebo_profile_diagnosis.csv and hard-codes nothing, including which
-% solvents are non-zero on the reference side.  The caption carries the scope because the areas come
-% off the retired head, not off the arms of Fig. 2 -- do not restate them as an arm measurement.
+% prose alone, and "the reference is exactly zero and the learned profile is not" is a claim a
+% reader checks in one glance and cannot check in a sentence.  Regenerate with
+% scripts/analysis/make_donor_window_figure.py, which hard-codes nothing, including which solvents
+% are non-zero on the reference side.
+% REPOINTED 2026-09-28 to results/donor_window_rescore/per_solvent.csv.  It read
+% results/closure_ladder/placebo_profile_diagnosis.csv, a RETIRED run whose sigma-supervision stream
+% ran for zero steps; the caption carried that scope, but the paragraph's topic sentence did not
+% survive measurement on the arms of Fig. 2.  Those arms put 1.5% of surface in the window against
+% the retired head's 31.0%, and rank with the reference at rho=+0.65 where the retired head ranked
+% at -0.055.  Do NOT restore the old table: it overstates the quantity by a factor of twenty.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_donor_window.pdf}
@@ -149,20 +157,27 @@ reads, in the reference tabulation and in the learned profile.} The sixteen solv
 most scored rows, ordered by that count. Left of the axis, the reference tabulation's donor-window
 area, which is exactly $0.000$\,\AA$^2$ in twelve of them and is drawn with its value where it is
 not; right of the axis, the learned profile's area in the same window, annotated with the fraction of
-that molecule's total surface. Areas are read off the one trained COSMO-SAC head the tree
-holds---a retired run fit at $8$ segment iterations and scored at $30$, at MAE $2.61$ and
-$R^2=-0.31$ on the scaffold split. They price the quantity, not the arms of
-Fig.~\ref{fig:paradox}.}
+that molecule's total surface. Both halves are on one scale. The learned areas are seed-averaged
+over the grounded arms of Fig.~\ref{fig:paradox}, seeds $42$ to $46$, so the figure prices the arms
+the substitution contrast rests on. The reference is empty in twelve of the sixteen and the learned
+profile is occupied in all sixteen, while over the thirty-one scored solvents the two rank together
+at $\rho=+0.65$: the window's ordering is learned and its floor is not.}
 \label{fig:donor-window}
 \end{figure}
 
-Two causes stay entangled. This head's $\sigma$-supervision stream ran for zero steps, and
-\S\ref{sec:ident} is why that matters. Solubility alone underdetermines the profile's shape, leaving
-an unsupervised profile free in exactly the bins that carry no constraint, which accounts for a
-quantity of this size. The parameterisation accounts for far less. The profile is emitted through a
+Two causes separate here that an unsupervised arm holds together. The one trained COSMO-SAC head
+the tree retains outside these arms---the retired run of \S\ref{sec:si-mech}'s two-MSE check,
+scoring MAE $2.61$ at $R^2=-0.31$ on the scaffold split, whose $\sigma$-supervision stream ran for
+zero steps---puts $31.0\%$ of surface in the same window and does not rank with the reference at all
+($\rho=-0.055$, $p=0.77$). \S\ref{sec:ident} is why. Solubility alone underdetermines the profile's
+shape, leaving an unsupervised profile free in exactly the bins that carry no constraint, and that
+freedom carries the bulk of the quantity: supervision removes all but a twentieth of it, and
+supplies the ordering. The parameterisation carries what survives. The profile is emitted through a
 softmax over the $51$ bins, strictly positive where $57\%$ of the reference table's bins are exactly
-zero, so supervision at any strength leaves the window occupied. But a softmax reaches $10^{-6}$ at a
-logit gap of ten, four orders below what is measured. The measurement establishes that the window is
-occupied in a trained arm, and that the closure's hydrogen-bond term is consequently live on every
-pair of the scored set, a defect whichever cause carries it. A supervised arm separates the two, and a head able to emit zeros removes the
-architectural half.
+zero, so supervision at any strength leaves the window occupied. A null arm prices that half
+directly: as a fraction of profile mass in the same extreme bins, where the reference tabulation's
+median is $0.000$, an \emph{untrained} network of this architecture reaches $0.212$ against the
+retired head's $0.189$, so the window is full before any training. What the supervised arms leave is
+$0.015$, four orders above the $10^{-6}$ a softmax reaches at a logit gap of ten, so the closure's
+hydrogen-bond term is live on every pair of the scored set at that level. A head able to emit zeros
+removes the architectural half.

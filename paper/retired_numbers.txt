@@ -479,3 +479,28 @@
 0.41    same reflow, adjacent paragraph, 2026-09-03. "Table S4 and the +0.41 were aggregated from
         the in-memory predictions before any file was written, and they are unchanged" is intact
         in sections/SI.tex; the count is unchanged at 18 and the value prints on eight pages.
+
+# ------------------------------------------------------------------------------------------
+# 2026-09-28: Sec. 3.3's donor-window paragraph and Fig. fig:donor-window repointed from the
+# RETIRED head (results/closure_ladder/placebo_profile_diagnosis.csv, a run whose sigma-supervision
+# stream ran for zero steps) to the arms of record (grounded_a, seeds 42-46,
+# results/donor_window_rescore/per_solvent.csv).  The old numerals were correct FOR THAT HEAD and
+# the manuscript said so; what did not survive is the paragraph's topic sentence, which was a claim
+# about the arms the substitution contrast rests on.  Measured there, the quantity is smaller by a
+# factor of twenty and the rank correlation with the reference goes from -0.055 to +0.65.  Every
+# value below left the document through that one edit; all of them printed on p. 105 and nowhere
+# else.  Producer: scripts/analysis/run_donor_window_rescore.py.  Gate:
+# scripts/analysis/check_donor_window_caption.py, which now binds 27 numerals to the new deposits.
+# ------------------------------------------------------------------------------------------
+50.7    retired with the head it was measured on. Tetrahydrofuran's learned donor-window area on
+        the retired unsupervised head; on the arms of record it is 2.40 A^2, which the paragraph
+        now prints and the gate now binds.
+32.4    same edit, same sentence; acetone, 1.96 A^2 on the arms of record. See 50.7 above.
+24.5    same edit, same sentence; toluene, 1.33 A^2 on the arms of record. See 50.7 above.
+36%     the upper end of "between 23% and 36% of each molecule's total surface", and separately a
+        bar annotation in the old Fig. fig:donor-window. Both came off the retired head. The
+        paragraph now prints 0.1% to 1.5% and the figure's annotations are redrawn from the
+        rescore deposit at one decimal.
+33%     bar annotation, old Fig. fig:donor-window, redrawn from the rescore deposit. See 36%.
+41%     bar annotation, old Fig. fig:donor-window, redrawn from the rescore deposit. See 36%.
+26%     bar annotation, old Fig. fig:donor-window, redrawn from the rescore deposit. See 36%.
