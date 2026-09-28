@@ -208,6 +208,16 @@ def main() -> int:
                    "hellinger_reference_to_delta": hellinger_to_delta(rp, grid),
                    # расхождение РОЛЕЙ: у эталона его нет по построению, у выученного есть
                    "hellinger_solute_vs_solvent": hellinger(sol_p[i], slv_p[i])}
+            # БАЗОВАЯ ЛИНИЯ -- ДОЛЯ ПЛОЩАДИ, А НЕ ДОЛЯ БИНОВ. Первая версия сравнивала
+            # долю остатка с долей бинов сетки (1/3 на окно) и объявляла остаток
+            # «сконцентрированным в центре». Это неверная база: sigma-профиль органической
+            # молекулы резко пикован около нуля, у половины этих растворителей донорная
+            # площадь эталона ровно 0.00, то есть площадь и так почти вся в центре.
+            # Правильный вопрос -- обогащение: доля остатка, делённая на долю ПЛОЩАДИ в том
+            # же окне. Обогащение около 1 означает, что остаток пропорционален площади,
+            # то есть НЕ структурирован; это слабее и честнее, чем «сконцентрирован».
+            for reg, msk in (("donor", donor), ("nonpolar", nonpolar), ("acceptor", acceptor)):
+                rec[f"area_frac_reference_{reg}"] = float(rp[msk].sum() / (rp.sum() or np.nan))
             for role, lp in (("solute", sol_p[i]), ("solvent", slv_p[i])):
                 resid = lp - rp
                 tot = float(np.abs(resid).sum()) or float("nan")
@@ -215,11 +225,17 @@ def main() -> int:
                     f"hellinger_{role}_vs_reference": hellinger(lp, rp),
                     f"hellinger_{role}_to_delta": hellinger_to_delta(lp, grid),
                     f"area_{role}": float(lp.sum()),
-                    f"donor_area_{role}": float(lp[donor].sum()),
-                    f"resid_frac_donor_{role}": float(np.abs(resid[donor]).sum() / tot),
-                    f"resid_frac_nonpolar_{role}": float(np.abs(resid[nonpolar]).sum() / tot),
-                    f"resid_frac_acceptor_{role}": float(np.abs(resid[acceptor]).sum() / tot),
                 })
+                for reg, msk in (("donor", donor), ("nonpolar", nonpolar),
+                                 ("acceptor", acceptor)):
+                    rf = float(np.abs(resid[msk]).sum() / tot)
+                    # база: средняя доля площади двух профилей, которые и вычитаются
+                    af = 0.5 * (float(lp[msk].sum() / (lp.sum() or np.nan))
+                                + float(rp[msk].sum() / (rp.sum() or np.nan)))
+                    rec[f"area_{reg}_{role}"] = float(lp[msk].sum())
+                    rec[f"area_frac_{reg}_{role}"] = af
+                    rec[f"resid_frac_{reg}_{role}"] = rf
+                    rec[f"enrichment_{reg}_{role}"] = float(rf / af) if af else float("nan")
             records.append(rec)
 
     df = pd.DataFrame(records)
@@ -244,20 +260,32 @@ def main() -> int:
         "median_resid_frac": {
             r: {reg: float(df[f"resid_frac_{reg}_{r}"].median())
                 for reg in ("donor", "nonpolar", "acceptor")} for r in ("solute", "solvent")},
+        "median_area_frac": {
+            r: {reg: float(df[f"area_frac_{reg}_{r}"].median())
+                for reg in ("donor", "nonpolar", "acceptor")} for r in ("solute", "solvent")},
+        "median_enrichment": {
+            r: {reg: float(df[f"enrichment_{reg}_{r}"].median())
+                for reg in ("donor", "nonpolar", "acceptor")} for r in ("solute", "solvent")},
         "donor_free_reference_molecules": int(df.loc[donor_free, "smiles"].nunique()),
         "median_donor_area_where_reference_is_zero": {
-            r: float(df.loc[donor_free, f"donor_area_{r}"].median()) for r in ("solute", "solvent")},
+            r: float(df.loc[donor_free, f"area_donor_{r}"].median()) for r in ("solute", "solvent")},
     }
     (OUT_DIR / "summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf8")
 
-    print(f"\n{'':34s}{'донор':>9}{'неполярн':>10}{'акцептор':>10}")
-    print(f"  {'доля бинов сетки':32s}{base['donor']:>9.3f}{base['nonpolar']:>10.3f}"
-          f"{base['acceptor']:>10.3f}")
+    print(f"\n{'':30s}{'донор':>10}{'неполярн':>11}{'акцептор':>11}")
+    print(f"  {'доля бинов сетки':28s}{base['donor']:>10.3f}{base['nonpolar']:>11.3f}"
+          f"{base['acceptor']:>11.3f}")
     for r in ("solute", "solvent"):
+        a = summary["median_area_frac"][r]
         m = summary["median_resid_frac"][r]
-        print(f"  {'доля |остатка|, роль ' + r:32s}{m['donor']:>9.3f}{m['nonpolar']:>10.3f}"
-              f"{m['acceptor']:>10.3f}")
+        e = summary["median_enrichment"][r]
+        print(f"  {'доля ПЛОЩАДИ, ' + r:28s}{a['donor']:>10.3f}{a['nonpolar']:>11.3f}"
+              f"{a['acceptor']:>11.3f}")
+        print(f"  {'доля |остатка|, ' + r:28s}{m['donor']:>10.3f}{m['nonpolar']:>11.3f}"
+              f"{m['acceptor']:>11.3f}")
+        print(f"  {'ОБОГАЩЕНИЕ, ' + r:28s}{e['donor']:>10.2f}{e['nonpolar']:>11.2f}"
+              f"{e['acceptor']:>11.2f}")
     print(f"\n  H(выученный, эталон): растворяемое "
           f"{summary['median_hellinger_to_reference']['solute']:.3f}, растворитель "
           f"{summary['median_hellinger_to_reference']['solvent']:.3f}")
@@ -269,7 +297,7 @@ def main() -> int:
     print(f"\n  молекул с НУЛЕВОЙ донорной площадью в эталоне: "
           f"{summary['donor_free_reference_molecules']}")
     z = summary["median_donor_area_where_reference_is_zero"]
-    print(f"  у них медианная донорная площадь выученного: "
+    print("  у них медианная донорная площадь выученного: "
           f"{z['solute']:.2f} / {z['solvent']:.2f} A^2 (растворяемое / растворитель)")
     print(f"\nзаписано: {OUT_DIR}")
     return 0
