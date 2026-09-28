@@ -232,3 +232,12 @@ results/role_asymmetry/*
 # а не просто "не коммитить руками": релизный процесс здесь ходит через `git add -A`,
 # и одного забытого раза достаточно.
 outreach/
+# Отделение РОЛИ от ЗНАЧЕНИЙ в подстановочном штрафе (2026-09-28). Пред-декларация отслеживается,
+# потому что незафиксированная пред-декларация не доказывает ничего; per_row.csv (17 МБ) -- нет,
+# он пересчитывается скриптом из чекпойнтов.
+!results/sigma_role_injection
+results/sigma_role_injection/*
+!results/sigma_role_injection/PRE_DECLARATION.md
+!results/sigma_role_injection/RESULTS.md
+!results/sigma_role_injection/summary.json
+!results/sigma_role_injection/per_seed.csv
