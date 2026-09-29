@@ -97,8 +97,15 @@ PROFILES = ROOT / "results/sigma_profile_artifact/sigma_profiles.csv"
 TEST = ROOT / "notebooks/data/processed/test.csv"
 OUT = ROOT / "results/sigma_role_injection"
 
-ARMS = ["control", "identity_solvent", "roleswap_solvent",
-        "random_matched_solvent", "oracle_solvent", "oracle_both"]
+#: Детерминированные плечи. Случайные добавляются по --random-draws как random_matched_solvent_d{k}
+#: и усредняются в синтетическое random_matched_solvent на стадии анализа.
+FIXED_ARMS = ["control", "identity_solvent", "roleswap_solvent", "oracle_solvent", "oracle_both"]
+RANDOM_ARM = "random_matched_solvent"
+
+
+def arm_names(draws: int) -> list[str]:
+    """Порядок плеч прогона: сначала детерминированные, потом розыгрыши."""
+    return FIXED_ARMS[:3] + [f"{RANDOM_ARM}_d{k}" for k in range(draws)] + FIXED_ARMS[3:]
 
 
 def matched_random_profile(p_own: np.ndarray, target_h: float, rng: np.random.Generator,
@@ -131,13 +138,21 @@ def matched_random_profile(p_own: np.ndarray, target_h: float, rng: np.random.Ge
 
 
 def build_injection_tables(model, cfg, solvents: list[str], template: pd.DataFrame,
-                           boot_seed: int) -> tuple[dict, float]:
-    """SMILES -> (p_sigma, area) для каждого небазового плеча, по собственным профилям модели."""
+                           boot_seed: int, draws: int) -> tuple[dict, float]:
+    """SMILES -> (p_sigma, area) для каждого небазового плеча, по собственным профилям модели.
+
+    НЕСКОЛЬКО РОЗЫГРЫШЕЙ, И ПОРЯДОК ИХ ВЫЧЕРПЫВАНИЯ ВЫБРАН НЕ СЛУЧАЙНО. Один генератор на сид,
+    внешний цикл по розыгрышу, внутренний по молекуле, ровно один вызов dirichlet на молекулу.
+    Поэтому розыгрыш d0 вычерпывает ту же последовательность, что вычерпывал единственный розыгрыш
+    прогона 2026-09-28, и обязан воспроизвести его число. Это не изящество, а проверка: если d0
+    разойдётся со старым депозитом, значит изменился не счёт розыгрышей, а что-то ещё.
+    """
     as_solute, as_solvent = learned_profiles(model, cfg, solvents, template)
     rng = np.random.default_rng(boot_seed)
     tables: dict[str, dict[str, tuple[np.ndarray, float]]] = {
-        "identity_solvent": {}, "roleswap_solvent": {}, "random_matched_solvent": {}}
-    gaps = []
+        "identity_solvent": {}, "roleswap_solvent": {}}
+    gaps: list[float] = []
+    prof: list[tuple[str, np.ndarray, np.ndarray, float]] = []
     for i, smi in enumerate(solvents):
         key = canonicalize(smi)
         if key is None:
@@ -147,8 +162,13 @@ def build_injection_tables(model, cfg, solvents: list[str], template: pd.DataFra
         gaps.append(h)
         tables["identity_solvent"][key] = (p_v, float(p_v.sum()))
         tables["roleswap_solvent"][key] = (p_u, float(p_u.sum()))
-        p_r = matched_random_profile(p_v, h, rng)
-        tables["random_matched_solvent"][key] = (p_r, float(p_r.sum()))
+        prof.append((key, p_u, p_v, h))
+    for k in range(draws):
+        name = f"{RANDOM_ARM}_d{k}"
+        tables[name] = {}
+        for key, _p_u, p_v, h in prof:
+            p_r = matched_random_profile(p_v, h, rng)
+            tables[name][key] = (p_r, float(p_r.sum()))
     return tables, float(np.median(gaps)) if gaps else float("nan")
 
 
@@ -191,8 +211,13 @@ def score_arm(model, cfg, df: pd.DataFrame, arm: str, oracle_table, inj_tables,
     return pd.DataFrame(rows)
 
 
-def cluster_bootstrap(per_row: pd.DataFrame, arm: str, draws: int, boot_seed: int) -> tuple:
-    """Перцентильный бутстрап штрафа arm-минус-control, КЛАСТЕР -- РАСТВОРИТЕЛЬ.
+def cluster_bootstrap(per_row: pd.DataFrame, arm: str, draws: int, boot_seed: int,
+                      base: str = "control") -> tuple:
+    """Перцентильный бутстрап контраста arm-минус-base, КЛАСТЕР -- РАСТВОРИТЕЛЬ.
+
+    База -- параметр, потому что решающая величина пред-декларации это r - m, контраст ДВУХ
+    плеч, а не плеча с контролем. Считать его вычитанием двух краевых оценок нельзя: их
+    интервалы перекрываются, а парный контраст -- нет, и наоборот.
 
     ПАРА БЕРЁТСЯ ПО ПОЗИЦИИ СТРОКИ, А НЕ ПО SMILES. Первая версия сводила таблицу по
     (растворяемое, растворитель, сид) -- и на дымовом прогоне напечатала штраф +0.0528 там, где
@@ -205,8 +230,8 @@ def cluster_bootstrap(per_row: pd.DataFrame, arm: str, draws: int, boot_seed: in
     """
     w = per_row.pivot_table(index=["seed", "row_idx"], columns="arm", values="abs_err",
                             aggfunc="first")
-    w = w.dropna(subset=["control", arm])
-    diff = (w[arm] - w["control"]).to_numpy()
+    w = w.dropna(subset=[base, arm])
+    diff = (w[arm] - w[base]).to_numpy()
     solvents = per_row.drop_duplicates(["seed", "row_idx"]).set_index(
         ["seed", "row_idx"]).loc[w.index, "solvent_smiles"].to_numpy()
     uniq = np.unique(solvents)
@@ -229,11 +254,15 @@ def main() -> int:
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--max-rows", type=int, default=None,
                     help="только для дымового прогона; на усечённом тесте числа бессмысленны")
-    ap.add_argument("--draws", type=int, default=4000)
+    ap.add_argument("--random-draws", type=int, default=5,
+                    help="случайных розыгрышей на сид; d0 воспроизводит прогон 2026-09-28")
+    ap.add_argument("--draws", type=int, default=4000, help="розыгрышей БУТСТРАПА")
     ap.add_argument("--boot-seed", type=int, default=0)
     ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
 
+    arms = arm_names(a.random_draws)
+    draw_arms = [x for x in arms if x.startswith(f"{RANDOM_ARM}_d")]
     device = torch.device(a.device)
     test = pd.read_csv(TEST, low_memory=False)
     df = test[test["ln_x2"].notna()].reset_index(drop=True)
@@ -261,46 +290,82 @@ def main() -> int:
                        if canonicalize(s) in oracle_table})
         print(f"сид {seed}: {len(subs)} подставляемых растворителей, {len(df)} размеченных строк",
               flush=True)
-        inj, gap = build_injection_tables(model, cfg, subs, template, a.boot_seed + seed)
+        inj, gap = build_injection_tables(model, cfg, subs, template, a.boot_seed + seed,
+                                          a.random_draws)
         role_gaps[seed] = gap
         print(f"  медианный ролевой зазор по Хеллингеру: {gap:.3f}", flush=True)
-        for arm in ARMS:
+        for arm in arms:
             r = score_arm(model, cfg, df, arm, oracle_table, inj, n_bins, a.batch_size, device)
             r["arm"], r["seed"] = arm, seed
             frames.append(r)
-            print(f"  {arm:24s} MAE {r.abs_err.mean():.4f}  (n={len(r)})", flush=True)
+            print(f"  {arm:26s} MAE {r.abs_err.mean():.4f}  (n={len(r)})", flush=True)
 
     per_row = pd.concat(frames, ignore_index=True)
+
+    # СИНТЕТИЧЕСКОЕ ПЛЕЧО: построчное среднее по розыгрышам. Пред-декларация определяет m как цену
+    # «случайного смещения такого размера» -- это ОЖИДАНИЕ, а не конкретный розыгрыш, и усреднение
+    # оценивает его лучше. Один розыгрыш прошлого прогона остаётся в депозите как d0.
+    avg = (per_row[per_row.arm.isin(draw_arms)]
+           .groupby(["seed", "row_idx", "solute_smiles", "solvent_smiles"], as_index=False)
+           .abs_err.mean())
+    avg["arm"] = RANDOM_ARM
+    per_row = pd.concat([per_row, avg], ignore_index=True)
+
     a.out.mkdir(parents=True, exist_ok=True)
     per_row.to_csv(a.out / "per_row.csv", index=False)
-
     per_seed = per_row.groupby(["seed", "arm"]).abs_err.mean().unstack()
     per_seed.to_csv(a.out / "per_seed.csv")
 
-    summary = {"arms": ARMS, "seeds": sorted(per_seed.index.tolist()),
+    reported = FIXED_ARMS[:3] + [RANDOM_ARM] + FIXED_ARMS[3:]
+    summary = {"arms_run": arms, "arms_reported": reported,
+               "seeds": sorted(per_seed.index.tolist()),
                "n_rows_per_arm": int(per_row.groupby(["seed", "arm"]).size().median()),
                "n_solvent_clusters": int(per_row.solvent_smiles.nunique()),
                "median_role_hellinger_gap": role_gaps,
-               "cluster_unit": "solvent_smiles", "draws": a.draws, "boot_seed": a.boot_seed,
+               "cluster_unit": "solvent_smiles",
+               "random_draws": a.random_draws, "bootstrap_draws": a.draws,
+               "boot_seed": a.boot_seed,
                "mae": {arm: {"per_seed": per_seed[arm].round(6).to_dict(),
                              "mean": float(per_seed[arm].mean()),
-                             "sd": float(per_seed[arm].std(ddof=1))} for arm in ARMS},
-               "penalty_vs_control": {}}
-    print(f"\n{'плечо':<24}{'MAE':>9}{'штраф':>9}{'CI95 (кластер=растворитель)':>32}")
-    for arm in ARMS[1:]:
+                             "sd": float(per_seed[arm].std(ddof=1))} for arm in per_seed.columns},
+               "random_draw_spread": {
+                   "per_draw_mae_mean": {d: float(per_seed[d].mean()) for d in draw_arms},
+                   "sd_across_draws": float(np.std([per_seed[d].mean() for d in draw_arms],
+                                                   ddof=1)) if len(draw_arms) > 1 else None},
+               "penalty_vs_control": {}, "paired_contrasts": {}}
+
+    print(f"\n{'плечо':<26}{'MAE':>9}{'штраф':>9}{'CI95 (кластер=растворитель)':>32}")
+    for arm in reported[1:]:
         point, lo, hi = cluster_bootstrap(per_row, arm, a.draws, a.boot_seed)
-        per_seed_pen = (per_seed[arm] - per_seed["control"])
-        summary["penalty_vs_control"][arm] = {
-            "point": point, "ci95": [lo, hi],
-            "per_seed": per_seed_pen.round(6).to_dict(),
-            "seed_sd": float(per_seed_pen.std(ddof=1))}
-        print(f"{arm:<24}{per_seed[arm].mean():>9.4f}{point:>9.4f}"
+        pen = per_seed[arm] - per_seed["control"]
+        summary["penalty_vs_control"][arm] = {"point": point, "ci95": [lo, hi],
+                                              "per_seed": pen.round(6).to_dict(),
+                                              "seed_sd": float(pen.std(ddof=1))}
+        print(f"{arm:<26}{per_seed[arm].mean():>9.4f}{point:>9.4f}"
               f"{f'[{lo:+.4f}, {hi:+.4f}]':>32}")
-    print(f"{'control':<24}{per_seed['control'].mean():>9.4f}")
+    print(f"{'control':<26}{per_seed['control'].mean():>9.4f}")
+
+    # РЕШАЮЩИЙ КОНТРАСТ пред-декларации и остаток за пределами ролевого масштаба -- считаются
+    # ЗДЕСЬ, а не сниппетом в оболочке: заранее объявленную величину производит производитель.
+    print(f"\n{'парный контраст':<26}{'оценка':>9}{'CI95':>32}")
+    for name, arm, base in [("roleswap - random (РЕШАЮЩИЙ)", "roleswap_solvent", RANDOM_ARM),
+                            ("oracle_both - roleswap", "oracle_both", "roleswap_solvent")]:
+        point, lo, hi = cluster_bootstrap(per_row, arm, a.draws, a.boot_seed, base=base)
+        excl = (lo > 0) or (hi < 0)
+        summary["paired_contrasts"][f"{arm}__minus__{base}"] = {
+            "point": point, "ci95": [lo, hi], "ci_excludes_zero": bool(excl),
+            "per_seed": (per_seed[arm] - per_seed[base]).round(6).to_dict()}
+        print(f"{name:<26}{point:>+9.4f}{f'[{lo:+.4f}, {hi:+.4f}]':>32}"
+              f"  {'исключает 0' if excl else 'СОДЕРЖИТ 0'}")
+
+    o = summary["penalty_vs_control"]["oracle_both"]["point"]
+    r = summary["penalty_vs_control"]["roleswap_solvent"]["point"]
+    summary["role_share_of_published_penalty"] = float(r / o) if o else None
+    print(f"\n  доля роли в опубликованном штрафе: {100 * r / o:.1f}%")
 
     # ВОРОТА, ОБЪЯВЛЕННЫЕ ДО ЧИСЕЛ -- см. PRE_DECLARATION.md рядом с депозитом.
     ident = abs(summary["penalty_vs_control"]["identity_solvent"]["point"])
-    power = abs(summary["penalty_vs_control"]["random_matched_solvent"]["point"])
+    power = abs(summary["penalty_vs_control"][RANDOM_ARM]["point"])
     summary["gates"] = {
         "identity_is_noop": {"threshold": 1e-6, "value": ident, "passed": ident <= 1e-6},
         "instrument_has_power_at_role_scale": {"threshold": 0.05, "value": power,
