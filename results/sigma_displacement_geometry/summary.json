@@ -1,0 +1,126 @@
+{
+  "arms": [
+    "control",
+    "identity_solvent",
+    "random_oracle_size",
+    "core_to_core",
+    "core_to_corner",
+    "oracle_solvent"
+  ],
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "cluster_unit": "solvent_smiles",
+  "bootstrap_draws": 4000,
+  "geometry": {
+    "core_to_core": {
+      "H_target_median": 3.0840939454287435,
+      "H_achieved_median": 3.0020760497600834,
+      "reached_fraction": 0.903125
+    },
+    "core_to_corner": {
+      "H_target_median": 3.0840939454287435,
+      "H_achieved_median": 3.0832443102119487,
+      "reached_fraction": 1.0
+    },
+    "random_oracle_size": {
+      "H_target_median": 3.0840939454287435,
+      "H_achieved_median": 3.084116328334342,
+      "reached_fraction": 0.996875
+    }
+  },
+  "penalty_vs_control": {
+    "identity_solvent": {
+      "point": -1.5894062657669166e-08,
+      "ci95": [
+        -4.498219376073001e-08,
+        1.2669794070680566e-08
+      ],
+      "per_seed": {
+        "42": -0.0,
+        "43": -0.0,
+        "44": -0.0,
+        "45": -0.0,
+        "46": 0.0
+      }
+    },
+    "random_oracle_size": {
+      "point": 0.6542878408850572,
+      "ci95": [
+        0.4308357066375719,
+        0.9130946623376927
+      ],
+      "per_seed": {
+        "42": 0.479218,
+        "43": 0.392165,
+        "44": 1.405887,
+        "45": 0.608212,
+        "46": 0.385958
+      }
+    },
+    "core_to_core": {
+      "point": 0.21647610059191094,
+      "ci95": [
+        0.11540299785651316,
+        0.34097528972719404
+      ],
+      "per_seed": {
+        "42": 0.123576,
+        "43": 0.179713,
+        "44": 0.482702,
+        "45": 0.199406,
+        "46": 0.096983
+      }
+    },
+    "core_to_corner": {
+      "point": 1.2876344480562034,
+      "ci95": [
+        0.7159418385738141,
+        2.089609317402972
+      ],
+      "per_seed": {
+        "42": 1.125757,
+        "43": 1.115198,
+        "44": 2.028202,
+        "45": 1.474397,
+        "46": 0.694618
+      }
+    },
+    "oracle_solvent": {
+      "point": 0.41858195484745064,
+      "ci95": [
+        0.2696572127186014,
+        0.5766196185006763
+      ],
+      "per_seed": {
+        "42": 0.25767,
+        "43": 0.541376,
+        "44": 0.572253,
+        "45": 0.412263,
+        "46": 0.309348
+      }
+    }
+  },
+  "paired_contrasts": {
+    "core_to_corner__minus__core_to_core": {
+      "point": 1.0711583474642925,
+      "ci95": [
+        0.5596560029245865,
+        1.7639676169223035
+      ],
+      "ci_excludes_zero": true
+    },
+    "oracle_solvent__minus__random_oracle_size": {
+      "point": -0.23570588603760656,
+      "ci95": [
+        -0.5754033490382406,
+        -3.875579206230058e-05
+      ],
+      "ci_excludes_zero": true
+    }
+  }
+}
