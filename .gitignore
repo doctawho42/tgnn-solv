@@ -253,3 +253,8 @@ results/idac_learned_vs_reference/*
 results/segment_convergence/*
 !results/segment_convergence/summary.json
 !results/segment_convergence/RESULTS.md
+# Внешний набор IDAC (Brouwer 2021) и его прогон: репликация на независимых данных.
+!results/idac_brouwer
+results/idac_brouwer/*
+!results/idac_brouwer/summary.json
+!results/idac_brouwer/records.csv

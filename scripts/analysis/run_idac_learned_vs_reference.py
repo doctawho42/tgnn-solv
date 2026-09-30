@@ -107,13 +107,15 @@ def score(layer, p2, A2, p1, A1, T, batch: int = 2048) -> np.ndarray:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--records", type=Path, default=RECORDS,
+                    help="таблица записей; нужны solute_smiles, solvent_smiles, T_K, m")
     ap.add_argument("--ckpt-dir", type=Path, default=CKPT_DIR)
     ap.add_argument("--arm-glob", default="grounded_a_seed*.pt")
     ap.add_argument("--seeds", type=int, nargs="*", default=None)
     ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
 
-    d = pd.read_csv(RECORDS)
+    d = pd.read_csv(a.records)
     template = pd.read_csv(TEST, nrows=1, low_memory=False)
     layer = CosmoSacLayer()
     layer.eval()
@@ -145,8 +147,17 @@ def main() -> int:
     # транс-формы делят SMILES без стереохимии, но несут разные InChIKey и разные профили.
     # Выученная голова тоже читает SMILES, поэтому на такой строке её профиль неоднозначен ровно
     # так же. Строка выбрасывается из ОБЕИХ сторон, и её число печатается.
-    delta = np.abs(g_ref - d["g_res"].to_numpy(float))
-    amb = delta > 1e-6
+    # ВОРОТА ЕСТЬ ТОЛЬКО ТАМ, ГДЕ ЕСТЬ С ЧЕМ СВЕРЯТЬСЯ. У депозита PGL6ed есть столбец g_res,
+    # посчитанный run_published_idac_closure_check.py, и пересчёт обязан его воспроизвести. У
+    # внешнего набора (Brouwer) такого столбца нет; тогда ворота не «пройдены», а ОТСУТСТВУЮТ, и
+    # это печатается, а не замалчивается.
+    has_gate = "g_res" in d.columns
+    ambiguous: list[str] = []
+    gate = float("nan")
+    amb = np.zeros(len(d), dtype=bool) if not has_gate else (
+        np.abs(g_ref - d["g_res"].to_numpy(float)) > 1e-6)
+    if not has_gate:
+        print("  ВОРОТА ОТСУТСТВУЮТ: столбца g_res в наборе нет, пересчёт эталона сверять не с чем")
     if amb.any():
         names = sorted({f"{r.solute_smiles} | {r.solvent_smiles}"
                         for r in d[amb].itertuples()})
@@ -162,14 +173,13 @@ def main() -> int:
         T = d["T_K"].to_numpy(float)
         m = d["m"].to_numpy(float)
         ambiguous = names
-    else:
-        ambiguous = []
 
-    gate = float(np.nanmax(np.abs(g_ref - d["g_res"].to_numpy(float))))
-    print(f"  ВОРОТА: пересчёт эталона против депонированного g_res, max|d| = {gate:.2e}"
-          f"  {'ok' if gate < 1e-6 else 'РАСХОДИТСЯ -- читать выученное плечо нельзя'}")
-    if gate >= 1e-6:
-        return 1
+    if has_gate:
+        gate = float(np.nanmax(np.abs(g_ref - d["g_res"].to_numpy(float))))
+        print(f"  ВОРОТА: пересчёт эталона против депонированного g_res, max|d| = {gate:.2e}"
+              f"  {'ok' if gate < 1e-6 else 'РАСХОДИТСЯ -- читать выученное плечо нельзя'}")
+        if gate >= 1e-6:
+            return 1
 
     mols = sorted(set(d.solute_smiles.astype(str)) | set(d.solvent_smiles.astype(str)))
     print(f"  уникальных молекул для выученной головы: {len(mols)}")
