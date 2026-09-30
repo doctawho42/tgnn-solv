@@ -241,3 +241,10 @@ results/sigma_role_injection/*
 !results/sigma_role_injection/RESULTS.md
 !results/sigma_role_injection/summary.json
 !results/sigma_role_injection/per_seed.csv
+
+# IDAC на выученном профиле против депонированного (2026-09-30): ответ на вопрос рецензента 2,
+# тест без кристаллической ветви. per_row.csv пересчитывается скриптом из чекпойнтов.
+!results/idac_learned_vs_reference
+results/idac_learned_vs_reference/*
+!results/idac_learned_vs_reference/RESULTS.md
+!results/idac_learned_vs_reference/summary.json
