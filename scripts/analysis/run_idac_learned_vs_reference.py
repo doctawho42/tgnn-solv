@@ -77,6 +77,10 @@ OUT = ROOT / "results/idac_learned_vs_reference"
 ARMS = ["reference_vt2005", "learned", "learned_role_solute", "learned_role_solvent"]
 
 
+def per_seed_index(df: pd.DataFrame) -> list[int]:
+    return sorted(int(s) for s in df["seed"].unique())
+
+
 def metrics(m: np.ndarray, g: np.ndarray) -> dict:
     ok = np.isfinite(m) & np.isfinite(g)
     m, g = np.asarray(m, float)[ok], np.asarray(g, float)[ok]
@@ -113,6 +117,8 @@ def main() -> int:
     ap.add_argument("--arm-glob", default="grounded_a_seed*.pt")
     ap.add_argument("--seeds", type=int, nargs="*", default=None)
     ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--force", action="store_true",
+                    help="разрешить замену депозита с бОльшим набором сидов")
     a = ap.parse_args()
 
     d = pd.read_csv(a.records)
@@ -221,6 +227,23 @@ def main() -> int:
         print("нет чекпойнтов")
         return 1
     per_row = pd.concat(rows, ignore_index=True)
+
+    # НЕ ЗАТИРАТЬ МНОГОСИДОВЫЙ ДЕПОЗИТ ОДНОСИДОВЫМ ПРОГОНОМ. Регрессионная проверка с --seeds 42
+    # после правки ворот записалась в тот же --out и уничтожила пятисидовый депозит; числа из него
+    # потом едва не были прочитаны как пятисидовые. Односидовый прогон -- это проверка тракта, а
+    # депозит он заменять не должен: либо --out в отдельную папку, либо --force.
+    prev = a.out / "summary.json"
+    if prev.exists() and not a.force:
+        try:
+            old_seeds = set(json.loads(prev.read_text(encoding="utf8")).get("seeds", []))
+        except Exception:
+            old_seeds = set()
+        new_seeds = set(int(s) for s in per_seed_index(per_row))
+        if old_seeds - new_seeds:
+            print(f"ОТКАЗ: в {a.out} лежит депозит на сидах {sorted(old_seeds)}, "
+                  f"а этот прогон несёт {sorted(new_seeds)}. Затирать не буду.\n"
+                  f"  либо --out в другую папку, либо --force, если замена намеренна.")
+            return 1
     a.out.mkdir(parents=True, exist_ok=True)
     per_row.to_csv(a.out / "per_row.csv", index=False)
 
