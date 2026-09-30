@@ -258,3 +258,8 @@ results/segment_convergence/*
 results/idac_brouwer/*
 !results/idac_brouwer/summary.json
 !results/idac_brouwer/records.csv
+# Убийца вывода «функционал величины»: геометрия смещения при согласованном расстоянии.
+!results/sigma_displacement_geometry
+results/sigma_displacement_geometry/*
+!results/sigma_displacement_geometry/summary.json
+!results/sigma_displacement_geometry/RESULTS.md
