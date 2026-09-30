@@ -248,3 +248,8 @@ results/sigma_role_injection/*
 results/idac_learned_vs_reference/*
 !results/idac_learned_vs_reference/RESULTS.md
 !results/idac_learned_vs_reference/summary.json
+# Аудит сходимости сегментной неподвижной точки (2026-09-30), ответ на вопрос рецензента 2.
+!results/segment_convergence
+results/segment_convergence/*
+!results/segment_convergence/summary.json
+!results/segment_convergence/RESULTS.md

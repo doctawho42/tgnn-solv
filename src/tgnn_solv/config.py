@@ -184,6 +184,14 @@ class TGNNSolvConfig:
     cosmo_sac_wire_volume: bool = False  # feed (detached) molar volume so the SG combinatorial term is active
     cosmo_sac_gamma_iter_train: int = 16  # bumped from 8: n=8 failed convergence test (gap 5.86 ln-units at 273K); n=16 converges to within 6e-5 of n=30
     cosmo_sac_gamma_iter_eval: int = 30
+    # ПРОВЕРКА СХОДИМОСТИ, ВЫКЛЮЧЕНА ПО УМОЛЧАНИЮ. Счётчики выше фиксированы, и до 2026-09-30
+    # сходимость к неподвижной точке нигде не проверялась -- она ПРЕДПОЛАГАЛАСЬ. Комментарий у
+    # iter_train («n=16 сходится с точностью 6e-5 до n=30») сравнивает два счётчика МЕЖДУ СОБОЙ,
+    # а не с пределом. Измерено (results/segment_convergence): предел достигается к n~300, а при
+    # n=30 медианная строка сошлась до машинной точности, но 39% строк несут >0.01 ln-единиц
+    # ошибки итерации, худшая 0.073 на депонированном профиле и 0.162 на выученном.
+    # Флаг включает запись невязки в layer.last_convergence и НЕ меняет арифметику.
+    cosmo_sac_track_convergence: bool = False
     # Tier-3 closure-fix crossover experiment (constructive complement to the grounding paradox).
     cosmo_sac_kernel_residual_rank: int = 0         # Arm C: R>0 enables the LR-SKR learnable delta_w residual (K=52R)
     cosmo_sac_kernel_residual_penalty: float = 0.0  # optional 2nd-difference smoothness on columns of kernel_B

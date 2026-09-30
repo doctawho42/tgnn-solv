@@ -1486,6 +1486,9 @@ class CosmoSacLayer(nn.Module):
         self.damping = g("damping", 0.7)
         self.exp_clamp = g("tau_clamp", 30.0)
         self.eps = g("eps", 1e-10)
+        self.track_convergence = gb("cosmo_sac_track_convergence", False)
+        #: Заполняется только при track_convergence; см. _segment_ln_gamma.
+        self.last_convergence: dict[str, float] | None = None
 
         sigma_grid = torch.linspace(sigma_min, sigma_max, n_bins)
         self.register_buffer("sigma_grid", sigma_grid, persistent=False)
@@ -1537,7 +1540,31 @@ class CosmoSacLayer(nn.Module):
             gamma_new = 1.0 / (denom + self.eps)
             gamma = self.damping * gamma_new + (1.0 - self.damping) * gamma
             gamma = gamma.clamp(1e-8, 1e8)
+        if self.track_convergence:
+            self.last_convergence = self._fixed_point_residual(p_norm, E, gamma, n_iter)
         return torch.log(gamma + self.eps)
+
+    @staticmethod
+    def _weighted(x: Tensor, w: Tensor) -> Tensor:
+        return (w * x).sum(-1) / w.sum(-1).clamp_min(1e-30)
+
+    def _fixed_point_residual(self, p_norm: Tensor, E: Tensor, gamma: Tensor,
+                              n_iter: int) -> dict[str, float]:
+        """Невязка неподвижной точки, ВЗВЕШЕННАЯ ПО МАССЕ профиля.
+
+        В точке решения Gamma_m * sum_n p_n Gamma_n E_mn = 1 для каждого бина. Брать максимум
+        этого выражения ПО ВСЕМ бинам бессмысленно и даёт ~1.0 даже после 20000 итераций: в
+        пустых бинах Gamma вырождена (делится на ~eps, упирается в clamp 1e8), а в итоговую
+        свёртку она входит с весом p и потому на результат не влияет. Диагностика 2026-09-30
+        сначала мерила именно так и читалась как «не сходится» -- ошибка была в метрике, а не в
+        решателе. Поэтому невязка взвешивается тем же весом, с каким бин входит в ответ.
+        """
+        with torch.no_grad():
+            den = torch.bmm(E, (p_norm * gamma).unsqueeze(-1)).squeeze(-1)
+            r = (gamma * den - 1.0).abs()
+            per_row = self._weighted(r, p_norm)
+        return {"n_iter": int(n_iter), "residual_mean": float(per_row.mean()),
+                "residual_max": float(per_row.max())}
 
     def _effective_delta_w(self) -> Tensor:
         """Exchange-energy kernel with the optional Arm-C low-rank residual folded in."""
