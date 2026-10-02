@@ -59,7 +59,8 @@ for batch in {batches}:
         cmd = [sys.executable, "scripts/train.py", "--config", "configs/cosmo_sac.yaml",
                "--device", "cuda", "--num-workers", "2", "--seed", "42",
                "--train-data", str(sub / "train.csv"), "--val-data", str(sub / "val.csv"),
-               "--epochs-phase1", "1", "--epochs-phase2", "0", "--epochs-phase3", "0",
+               "--epochs-phase1", str({p1}), "--epochs-phase2", str({p2}),
+               "--epochs-phase3", "0",
                "--set", f"batch_size={{batch}}",
                "--experiment-name", f"probe_b{{batch}}_c{{int(comp)}}"]
         t0 = time.perf_counter()
@@ -71,7 +72,8 @@ for batch in {batches}:
             print((p.stderr or p.stdout)[-1200:])
             rows.append({{"batch": batch, "compile": comp, "rc": p.returncode}})
             continue
-        epoch_min = dt / 60.0 * EPOCH_SCALE
+        n_ep = {p1} + {p2}
+        epoch_min = dt / 60.0 * EPOCH_SCALE / n_ep
         arm_h = 1.8 * epoch_min
         print(f"  батч {{batch:>4}} {{tag:>8}}: {{dt:6.1f}} с на подвыборку  ->  "
               f"{{epoch_min:5.2f}} мин/эпоха  ->  {{arm_h:5.1f}} ч/плечо")
@@ -110,11 +112,15 @@ def main() -> int:
     ap.add_argument("--sub-rows", type=int, default=24000,
                     help="строк подвыборки на замер; 24000 даёт ~20 минут на четыре режима")
     ap.add_argument("--batches", type=int, nargs="+", default=[64, 512])
+    ap.add_argument("--phase1", type=int, default=1, help="эпох фазы 1 на замер")
+    ap.add_argument("--phase2", type=int, default=0,
+                    help="эпох фазы 2 (с решателем SLE) -- именно они дороги")
     a = ap.parse_args()
 
     nb = {
         "cells": [cell(ENV), cell(INSTALL), cell(STAGE),
-                  cell(PROBE.format(sub_rows=a.sub_rows, batches=tuple(a.batches)))],
+                  cell(PROBE.format(sub_rows=a.sub_rows, batches=tuple(a.batches),
+                                      p1=a.phase1, p2=a.phase2))],
         "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python",
                                     "name": "python3"},
                      "language_info": {"name": "python"}},
@@ -123,7 +129,8 @@ def main() -> int:
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf8")
     print(f"записан {a.out}")
-    print(f"  подвыборка {a.sub_rows} строк, батчи {a.batches}, по эпохе фазы 1 на режим")
+    print(f"  подвыборка {a.sub_rows} строк, батчи {a.batches}, "
+          f"фаза1={a.phase1} фаза2={a.phase2} эпох на режим")
     return 0
 
 

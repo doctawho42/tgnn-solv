@@ -163,6 +163,17 @@ class TGNNSolvConfig:
     solver_tol_train: float = 1e-5
     solver_tol_eval: float = 1e-7
     solver_adaptive_damping: bool = True
+    # Early exit on solver_tol, COSMO-SAC path ONLY. OFF because its residual.max().item()
+    # is a blocking CUDA host sync n_iter times per forward and it never fires there:
+    # run_solver_break_audit.py traced 8103 real profile pairs and all 144 non-degenerate
+    # cells finish 3-6 orders of magnitude above tol, so turning it off is bit-identical
+    # (tests/test_solver_launch_cost_rewrites.py). The NRTL path KEEPS its break: at the
+    # shipped counts it does not fire there either (nearest cell 4.8x tol), but it DOES at the
+    # non-default n_iter_eval=30 / tol=1e-8 that test_physics_verification.py uses -- iteration
+    # 16 of 30, moving x2 by 2.3e-09. A NRTL outer step has no segment solve in it, so the
+    # sync is cheap relative to the loop, and leaving it keeps every NRTL number bit-exact
+    # even off the default counts. Not worth trading that for a saving measured elsewhere.
+    solver_cosmo_break_on_tol: bool = False
     use_implicit_diff: bool = True
 
     # --- COSMO-SAC activity model (activity_model="cosmo_sac") ---

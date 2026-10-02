@@ -1449,6 +1449,26 @@ class NRTLLayer(nn.Module):
         }
 
 
+def _segment_matvec(p: Tensor, E: Tensor) -> Tensor:
+    """``sum_n E[m,n] * p[...,n]`` for ``p`` of shape (B,G) or (B,K,G), ``E`` of (B,G,G).
+
+    The (B,K,G) form solves K segment profiles that SHARE one exchange matrix per row in a
+    single kernel. That is what makes the mixture and pure-solute solves of
+    ``_residual_ln_gamma2`` one launch instead of two: the segment fixed point is independent
+    per row, so stacking is exact rather than an approximation. ``E`` is symmetric by
+    construction here, but the transpose is written out instead of relied upon.
+
+    Why it matters: a COSMO-SAC forward is launch-bound, not flop-bound. Measured on a Kaggle
+    T4 (``scripts/kaggle/make_bottleneck_notebook.py``, 2026-10-02) the loader delivers
+    648-714 rows/s while the compute ceiling is 193 rows/s at 331 ms/step for batch 64 -- with
+    the GPU only 25% busy (p90 34%). The work per kernel is tiny (64x51x51); the cost is
+    issuing ~1.8k of them per step from Python.
+    """
+    if p.dim() == 3:
+        return torch.matmul(p, E.transpose(-1, -2))
+    return torch.bmm(E, p.unsqueeze(-1)).squeeze(-1)
+
+
 class CosmoSacLayer(nn.Module):
     """
     Differentiable COSMO-SAC activity-coefficient model (Lin & Sandler 2002 /
@@ -1531,12 +1551,13 @@ class CosmoSacLayer(nn.Module):
         """Solve the segment activity-coefficient fixed point; return ln Gamma (B,51).
 
         Gamma(sigma_m) = 1 / sum_n p_norm(sigma_n) Gamma(sigma_n) exp(-dW/RT).
-        ``p_norm`` (B,51) sums to 1; ``E`` (B,51,51) = exp(-delta_w/RT).
+        ``p_norm`` (B,51) -- or (B,K,51) for K profiles sharing one E -- sums to 1 over the
+        last axis; ``E`` (B,51,51) = exp(-delta_w/RT). Shape in, same shape out.
         """
         gamma = torch.ones_like(p_norm)
         for _ in range(n_iter):
             # sum_n E[m,n] * p_norm[n] * gamma[n]
-            denom = torch.bmm(E, (p_norm * gamma).unsqueeze(-1)).squeeze(-1)
+            denom = _segment_matvec(p_norm * gamma, E)
             gamma_new = 1.0 / (denom + self.eps)
             gamma = self.damping * gamma_new + (1.0 - self.damping) * gamma
             gamma = gamma.clamp(1e-8, 1e8)
@@ -1560,7 +1581,7 @@ class CosmoSacLayer(nn.Module):
         решателе. Поэтому невязка взвешивается тем же весом, с каким бин входит в ответ.
         """
         with torch.no_grad():
-            den = torch.bmm(E, (p_norm * gamma).unsqueeze(-1)).squeeze(-1)
+            den = _segment_matvec(p_norm * gamma, E)
             r = (gamma * den - 1.0).abs()
             per_row = self._weighted(r, p_norm)
         return {"n_iter": int(n_iter), "residual_mean": float(per_row.mean()),
@@ -1604,8 +1625,13 @@ class CosmoSacLayer(nn.Module):
         A_mix = (x2 * A2 + x1 * A1).clamp_min(self.eps)
         p_mix = (x2.unsqueeze(-1) * p2 + x1.unsqueeze(-1) * p1) / A_mix.unsqueeze(-1)
         p2_pure = p2 / A2.clamp_min(self.eps).unsqueeze(-1)
-        ln_gamma_mix = self._segment_ln_gamma(p_mix, E, n_iter)
-        ln_gamma_2pure = self._segment_ln_gamma(p2_pure, E, n_iter)
+        # One stacked solve, not two sequential ones: both profiles share E and the
+        # fixed point is row-independent, so this is exact and halves the inner loop's
+        # kernel launches -- see _segment_matvec for why launches are the binding cost.
+        ln_gamma_both = self._segment_ln_gamma(
+            torch.stack((p_mix, p2_pure), dim=1), E, n_iter
+        )
+        ln_gamma_mix, ln_gamma_2pure = ln_gamma_both[:, 0], ln_gamma_both[:, 1]
         # ln gamma2_res = (A2/a_eff) * sum_m p2_pure(m) (ln Gamma_mix - ln Gamma_2pure)
         contrib = p2_pure * (ln_gamma_mix - ln_gamma_2pure)
         return (A2 / self.a_eff) * contrib.sum(dim=-1)
@@ -1790,10 +1816,13 @@ class CosmoSac2010Layer(nn.Module):
         return c_ES * self.sumsq.unsqueeze(0) - hb
 
     def _segment_ln_gamma(self, p_norm: Tensor, E: Tensor, n_iter: int) -> Tensor:
-        """Segment activity-coefficient fixed point on the 153-grid; return ln Gamma."""
+        """Segment fixed point on the 153-grid; return ln Gamma.
+
+        ``p_norm`` is (B,153), or (B,K,153) for K profiles sharing one E; same shape out.
+        """
         gamma = torch.ones_like(p_norm)
         for _ in range(n_iter):
-            denom = torch.bmm(E, (p_norm * gamma).unsqueeze(-1)).squeeze(-1)
+            denom = _segment_matvec(p_norm * gamma, E)
             gamma_new = 1.0 / (denom + self.eps)
             gamma = self.damping * gamma_new + (1.0 - self.damping) * gamma
             gamma = gamma.clamp(1e-8, 1e8)
@@ -1807,8 +1836,13 @@ class CosmoSac2010Layer(nn.Module):
         A_mix = (x2 * A2 + x1 * A1).clamp_min(self.eps)
         p_mix = (x2.unsqueeze(-1) * p2 + x1.unsqueeze(-1) * p1) / A_mix.unsqueeze(-1)
         p2_pure = p2 / A2.clamp_min(self.eps).unsqueeze(-1)
-        ln_gamma_mix = self._segment_ln_gamma(p_mix, E, n_iter)
-        ln_gamma_2pure = self._segment_ln_gamma(p2_pure, E, n_iter)
+        # One stacked solve, not two sequential ones: both profiles share E and the
+        # fixed point is row-independent, so this is exact and halves the inner loop's
+        # kernel launches -- see _segment_matvec for why launches are the binding cost.
+        ln_gamma_both = self._segment_ln_gamma(
+            torch.stack((p_mix, p2_pure), dim=1), E, n_iter
+        )
+        ln_gamma_mix, ln_gamma_2pure = ln_gamma_both[:, 0], ln_gamma_both[:, 1]
         contrib = p2_pure * (ln_gamma_mix - ln_gamma_2pure)
         return (A2 / self.AEFFPRIME) * contrib.sum(dim=-1)
 

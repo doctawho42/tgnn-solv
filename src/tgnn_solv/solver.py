@@ -166,8 +166,38 @@ def _iterate_cosmo_sac_fixed_point(
     min_damping: float,
     tol: float,
     adaptive_damping: bool,
+    break_on_tol: bool,
 ) -> tuple[Tensor, Tensor]:
-    """Solve the SLE fixed point with a COSMO-SAC activity coefficient."""
+    """Solve the SLE fixed point with a COSMO-SAC activity coefficient.
+
+    ``break_on_tol`` gates the early exit, and ``config.solver_cosmo_break_on_tol`` turns it
+    OFF by default FOR THIS PATH ONLY. On CUDA the ``residual.max().item()`` it needs is a
+    BLOCKING host synchronisation -- the CPU stalls until the queued GPU work drains, n_iter
+    times per forward -- and that flush destroys the CPU run-ahead which is the only thing
+    hiding this path's Python dispatch cost. A COSMO-SAC forward issues on the order of a
+    thousand tiny kernels (5 outer x 14 segment solves x 16 segment iterations), so the
+    run-ahead is exactly what it cannot afford to lose: measured on a Kaggle T4 (2026-10-02),
+    331 ms/step at batch 64 with the GPU 25% busy while the loader was delivering 648-714
+    rows/s against a 193 rows/s compute ceiling -- latency-bound inside the step, not starved.
+
+    Here the exit buys nothing to pay for that. ``scripts/analysis/run_solver_break_audit.py``
+    traced the batch-max residual on 8103 real learned profile pairs and it never once reached
+    the tolerance in 144 non-degenerate batch-cells, finishing 3 to 6 orders of magnitude
+    above it (train Phi=2: 4.9e+04x tol; eval Phi=8, the closest call: 2.8e+03x). The only
+    cell where it fires is Phi=0 -- T exactly at the melting point, where pure solute is an
+    exact fixed point with residual 0.0, so further iterations move nothing. Turning it off is
+    therefore bit-identical, not an approximation, and that is pinned by
+    ``tests/test_solver_launch_cost_rewrites.py``.
+
+    ``_iterate_fixed_point`` (NRTL) keeps its exit unconditionally, and the audit says why
+    rather than assuming: at the shipped counts the NRTL exit does not fire either -- the
+    nearest cell, a near-ideal pair at eval, lands 4.8x above tol -- but at the non-default
+    n_iter_eval=30 / tol=1e-8 of ``test_physics_verification.py`` it does, at iteration 16 of
+    30, and disabling it there moves x2 by 2.3e-09 instead of zero. Negligible as physics, yet
+    it is the difference between an audited no-op and an undeclared operator change. A NRTL
+    outer iteration carries no segment solve, so its sync is cheap next to the loop, and the
+    whole 331 ms/step problem being fixed here lives on the COSMO-SAC side anyway.
+    """
     x2 = torch.exp((-Phi).clamp(_SLE_EXP_ARG_MIN, _SLE_EXP_ARG_MAX)).clamp(
         1e-10, 1.0 - 1e-10
     )
@@ -193,7 +223,7 @@ def _iterate_cosmo_sac_fixed_point(
         x2 = damping_tensor * x2_candidate + (1.0 - damping_tensor) * x2
         prev_residual = residual
 
-        if residual.max().item() < tol:
+        if break_on_tol and residual.max().item() < tol:
             break
 
     x1 = 1.0 - x2
@@ -453,6 +483,8 @@ class SLESolver(nn.Module):
         min_damping = self.cfg.solver_min_damping
         tol = self.cfg.solver_tol_train if self.training else self.cfg.solver_tol_eval
         adaptive_damping = self.cfg.solver_adaptive_damping
+        # Only the COSMO-SAC path drops the early exit; see _iterate_cosmo_sac_fixed_point.
+        cosmo_break = getattr(self.cfg, "solver_cosmo_break_on_tol", False)
         use_impl = use_implicit if use_implicit is not None else self.cfg.use_implicit_diff
 
         # COSMO-SAC activity path (sigma-profiles instead of NRTL params).
@@ -466,7 +498,7 @@ class SLESolver(nn.Module):
             x2, lng2 = _iterate_cosmo_sac_fixed_point(
                 Phi, self.cosmo_sac_layer, p2, p1, A2, A1, V2, V1, T,
                 n_iter=n_iter, damping=damping, min_damping=min_damping,
-                tol=tol, adaptive_damping=adaptive_damping,
+                tol=tol, adaptive_damping=adaptive_damping, break_on_tol=cosmo_break,
             )
             ln_x2 = torch.log(x2 + self.cfg.eps)
             x_ideal = torch.exp(-Phi)

@@ -263,3 +263,9 @@ results/idac_brouwer/*
 results/sigma_displacement_geometry/*
 !results/sigma_displacement_geometry/summary.json
 !results/sigma_displacement_geometry/RESULTS.md
+
+# Аудит раннего выхода решателя: на него ссылаются config.py, solver.py и
+# test_solver_launch_cost_rewrites.py, поэтому сводка должна лежать в репозитории.
+!results/solver_break_audit
+results/solver_break_audit/*
+!results/solver_break_audit/summary.json
