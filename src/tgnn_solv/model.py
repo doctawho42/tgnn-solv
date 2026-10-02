@@ -12,6 +12,7 @@ from typing import Dict, List, Optional
 import torch
 import torch.nn as nn
 from torch_geometric.data import Batch
+from torch_geometric.utils import to_dense_batch
 
 from .config import TGNNSolvConfig
 from .data.solvent_types import SOLVENT_TYPE_COUNT, SOLVENT_TYPE_OTHER_ID
@@ -38,9 +39,7 @@ from .layers import (
     PhysicsAwareReadout,
     SoluteSolventCrossAttention,
     build_graph_encoder,
-    build_batch_from_lists,
     make_temperature_features,
-    pad_atom_features,
 )
 from .solver import SLESolver
 
@@ -394,10 +393,75 @@ class TGNNSolv(nn.Module):
             return temp_feat
         return None
 
+    @staticmethod
+    def _graph_count(data) -> int:
+        """B без синхронизации хоста.
+
+        ``batch.max().item()`` -- чтение значения тензора на CPU, то есть полный останов
+        конвейера; ``ptr.numel()`` -- запрос формы, он бесплатен. Запасной путь оставлен для
+        данных без ``ptr`` (не ``Batch``), где синхронизация неизбежна, как и раньше.
+        """
+        ptr = getattr(data, "ptr", None)
+        if ptr is not None:
+            return int(ptr.numel()) - 1
+        return int(data.batch.max().item()) + 1
+
+    def _to_dense_with_token(self, h_atoms: torch.Tensor, data, token: torch.Tensor):
+        """Плоское (N,D) -> плотное (B, N_max+1, D) с глобальным токеном сразу за атомами.
+
+        ЧТО ЭТО ЗАМЕНЯЕТ И ПОЧЕМУ. Раньше тот же результат собирался четырьмя питоновскими
+        циклами по графам: ``_split_atoms_by_graph`` резал плоский тензор B булевыми
+        индексациями, ``_append_global_token`` делал B вызовов ``cat``, ``pad_atom_features``
+        присваивала B срезов в нулевой тензор, а ``build_batch_from_lists`` собирала вектор
+        принадлежности из B вызовов ``full``. Профиль настоящего шага на T4 (2026-10-02,
+        results/real_step_profile/summary.json) показал, что именно этот класс операций и
+        составляет цену шага: 63% диспатчей растут РОВНО пропорционально батчу, то есть
+        платятся за каждую молекулу отдельно -- ``lift_fresh`` 49.2 на граф, ``detach_`` 46.3,
+        ``slice`` 19.5, ``Memcpy DtoD`` 14.5. Крупный батч такую цену не амортизирует по
+        построению: батч x8 дал всего x1.39 строк в секунду, а загрузка карты даже упала с
+        22% до 17%. Булева индексация вдобавок лоуэрится через ``nonzero`` (268 вызовов за
+        шаг при батче 64) и копирует счётчик на хост -- отсюда часть из 531.5 синхронизаций.
+
+        Возвращает ``(dense, atom_mask, full_mask, counts)``: плотный тензор, маску только по
+        атомам, маску вместе с токеном и позиции токенов. ``atom_mask`` важна тем, что
+        выбирает атомы в ИСХОДНОМ плоском порядке, поэтому обратный путь не восстанавливает
+        вектор принадлежности графам -- он уже есть в ``data.batch``.
+        """
+        B = self._graph_count(data)
+        dense, atom_mask = to_dense_batch(h_atoms, data.batch, batch_size=B)
+        counts = atom_mask.sum(dim=1)                                  # (B,) атомов в графе
+        # Один столбец под токен; его слот гарантированно нулевой (to_dense_batch заполняет
+        # нулями, и дополненный столбец тоже), поэтому index_put записывает, а не смешивает.
+        dense = torch.nn.functional.pad(dense, (0, 0, 0, 1))
+        atom_mask = torch.nn.functional.pad(atom_mask, (0, 1))
+        rows = torch.arange(B, device=dense.device)
+        dense = dense.index_put(
+            (rows, counts), token[0].to(dense).expand(B, -1)
+        )
+        full_mask = atom_mask.index_put(
+            (rows, counts), torch.ones(B, dtype=atom_mask.dtype, device=atom_mask.device)
+        )
+        return dense, atom_mask, full_mask, counts
+
+    @staticmethod
+    def _gather_tokens(padded: torch.Tensor, counts: torch.Tensor) -> torch.Tensor:
+        """Глобальные токены из плотного тензора по их позициям.
+
+        Заменяет ``_extract_tokens``, которая строила индекс через ``torch.tensor`` из
+        питоновского списка длин -- то есть копировала B чисел с хоста на устройство каждый
+        шаг. ``counts`` уже лежит на устройстве.
+        """
+        rows = torch.arange(padded.shape[0], device=padded.device)
+        return padded[rows, counts]
+
     def _split_atoms_by_graph(
         self, h_atoms: torch.Tensor, batch: torch.Tensor
     ) -> List[torch.Tensor]:
-        """Split flat atom tensor into per-graph list."""
+        """Split flat atom tensor into per-graph list.
+
+        Оставлено для ``ablation.py``, который им ещё пользуется; горячий путь
+        ``forward`` перешёл на ``_to_dense_with_token``.
+        """
         graphs = []
         for i in range(batch.max().item() + 1):
             mask = batch == i
@@ -1101,25 +1165,14 @@ class TGNNSolv(nn.Module):
         aux_slv = {"V_m": aux_slv_parts["V_m"]}
 
         # ---- 3. Cross-attention / Bipartite MP ----
-        sol_atoms_list = self._split_atoms_by_graph(
-            h_sol_atoms, solute_data.batch
+        # Плоское -> плотное с глобальным токеном одним вызовом вместо четырёх питоновских
+        # циклов по графам; см. _to_dense_with_token о том, сколько эти циклы стоили.
+        h_sol_padded, sol_atom_mask, sol_mask, sol_counts = self._to_dense_with_token(
+            h_sol_atoms, solute_data, self.sol_token
         )
-        slv_atoms_list = self._split_atoms_by_graph(
-            h_slv_atoms, solvent_data.batch
+        h_slv_padded, slv_atom_mask, slv_mask, slv_counts = self._to_dense_with_token(
+            h_slv_atoms, solvent_data, self.slv_token
         )
-
-        # Append global tokens for co-attention
-        sol_atoms_list = self._append_global_token(
-            sol_atoms_list, self.sol_token
-        )
-        slv_atoms_list = self._append_global_token(
-            slv_atoms_list, self.slv_token
-        )
-        sol_lengths = [h.shape[0] for h in sol_atoms_list]
-        slv_lengths = [h.shape[0] for h in slv_atoms_list]
-
-        h_sol_padded, sol_mask = pad_atom_features(sol_atoms_list)
-        h_slv_padded, slv_mask = pad_atom_features(slv_atoms_list)
 
         attn_maps = []
         if self.interaction_mode == "cross_attn":
@@ -1152,35 +1205,27 @@ class TGNNSolv(nn.Module):
                 )
 
         # ---- 4. Post-cross-attention readout for solute ----
-        sol_no_token = self._slice_padded(
-            h_sol_padded, sol_lengths, drop_last=True
-        )
-        slv_no_token = self._slice_padded(
-            h_slv_padded, slv_lengths, drop_last=True
-        )
-        sol_batch = build_batch_from_lists(
-            sol_no_token, dtype=solute_data.batch.dtype
-        )
-        slv_batch = build_batch_from_lists(
-            slv_no_token, dtype=solvent_data.batch.dtype
-        )
+        # Маска по атомам выбирает их в ИСХОДНОМ плоском порядке, поэтому вектор
+        # принадлежности графам восстанавливать нечем и незачем: это и есть data.batch.
+        sol_batch = solute_data.batch
+        slv_batch = solvent_data.batch
 
         g_sol_post_parts = self._readout_payload(
-            torch.cat(sol_no_token, dim=0),
+            h_sol_padded[sol_atom_mask],
             sol_batch,
             a_disp=sol_a_disp,
             a_polar=sol_a_polar,
         )
         g_slv_post_parts = self._readout_payload(
-            torch.cat(slv_no_token, dim=0),
+            h_slv_padded[slv_atom_mask],
             slv_batch,
             a_disp=slv_a_disp,
             a_polar=slv_a_polar,
         )
         g_sol_post = g_sol_post_parts["value"]
         g_slv_post = g_slv_post_parts["value"]
-        g_sol_tok = self._extract_tokens(h_sol_padded, sol_lengths)
-        g_slv_tok = self._extract_tokens(h_slv_padded, slv_lengths)
+        g_sol_tok = self._gather_tokens(h_sol_padded, sol_counts)
+        g_slv_tok = self._gather_tokens(h_slv_padded, slv_counts)
         g_sol_post = g_sol_post + self.sol_token_gate * self.token_proj(g_sol_tok)
         g_slv_post = g_slv_post + self.slv_token_gate * self.token_proj(g_slv_tok)
         if self.cfg.use_morgan_features:
