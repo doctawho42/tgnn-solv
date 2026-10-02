@@ -269,3 +269,8 @@ results/sigma_displacement_geometry/*
 !results/solver_break_audit
 results/solver_break_audit/*
 !results/solver_break_audit/summary.json
+
+# A/B двух правок ради скорости: на него ссылаются solver.py и config.py.
+!results/solver_speedup_ab
+results/solver_speedup_ab/*
+!results/solver_speedup_ab/summary.json

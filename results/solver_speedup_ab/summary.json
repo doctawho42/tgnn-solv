@@ -1,0 +1,62 @@
+{
+  "hw": {
+    "cpu_count": 4,
+    "gpus": [
+      "Tesla T4",
+      "Tesla T4"
+    ]
+  },
+  "arms": {
+    "baseline (как было)": {
+      "s_per_step": 0.3848686764333346,
+      "rows_per_s": 166.29048794799962,
+      "gpu_util_mean": 28.575,
+      "lnx2_sum_after_warmup": -80.95386505126953,
+      "stacked": false,
+      "break_on_tol": true,
+      "compile_segment": false,
+      "speedup": 1.0
+    },
+    "только стопка": {
+      "s_per_step": 0.28552241863333355,
+      "rows_per_s": 224.15052487415525,
+      "gpu_util_mean": 30.233333333333334,
+      "lnx2_sum_after_warmup": -80.95390319824219,
+      "stacked": true,
+      "break_on_tol": true,
+      "compile_segment": false,
+      "speedup": 1.3479455598461465
+    },
+    "только без синхр.": {
+      "s_per_step": 0.37293675599999954,
+      "rows_per_s": 171.61086691063534,
+      "gpu_util_mean": 29.333333333333332,
+      "lnx2_sum_after_warmup": -80.95386505126953,
+      "stacked": false,
+      "break_on_tol": false,
+      "compile_segment": false,
+      "speedup": 1.0319944876480212
+    },
+    "обе (новое по умолч.)": {
+      "s_per_step": 0.2822783123666663,
+      "rows_per_s": 226.7265928558727,
+      "gpu_util_mean": 30.0,
+      "lnx2_sum_after_warmup": -80.9539566040039,
+      "stacked": true,
+      "break_on_tol": false,
+      "compile_segment": false,
+      "speedup": 1.3634369328856135
+    },
+    "обе + компиляция сегм.": {
+      "s_per_step": 0.22040507583333238,
+      "rows_per_s": 290.37443787545084,
+      "gpu_util_mean": 29.91304347826087,
+      "lnx2_sum_after_warmup": -80.95408630371094,
+      "stacked": true,
+      "break_on_tol": false,
+      "compile_segment": true,
+      "speedup": 1.7461878996124736
+    }
+  },
+  "lnx2_spread": 0.00022125244140625
+}

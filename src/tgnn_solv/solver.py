@@ -172,15 +172,20 @@ def _iterate_cosmo_sac_fixed_point(
 
     ``break_on_tol`` gates the early exit, and ``config.solver_cosmo_break_on_tol`` turns it
     OFF by default FOR THIS PATH ONLY. On CUDA the ``residual.max().item()`` it needs is a
-    BLOCKING host synchronisation -- the CPU stalls until the queued GPU work drains, n_iter
-    times per forward -- and that flush destroys the CPU run-ahead which is the only thing
-    hiding this path's Python dispatch cost. A COSMO-SAC forward issues on the order of a
-    thousand tiny kernels (5 outer x 14 segment solves x 16 segment iterations), so the
-    run-ahead is exactly what it cannot afford to lose: measured on a Kaggle T4 (2026-10-02),
-    331 ms/step at batch 64 with the GPU 25% busy while the loader was delivering 648-714
-    rows/s against a 193 rows/s compute ceiling -- latency-bound inside the step, not starved.
+    BLOCKING host synchronisation: the CPU stalls until the queued GPU work drains, n_iter
+    times per forward.
 
-    Here the exit buys nothing to pay for that. ``scripts/analysis/run_solver_break_audit.py``
+    HOW MUCH THAT COSTS, MEASURED RATHER THAN REASONED: 1.03x, and the first version of this
+    comment claimed much more. The argument was that the flush destroys the CPU run-ahead
+    which hides this path's Python dispatch cost -- but the A/B on a Kaggle T4
+    (``scripts/kaggle/make_speedup_notebook.py``, 2026-10-02) put the sync-only arm at 372.9
+    against 384.9 ms/step. The reasoning was self-defeating: if the binding constraint IS the
+    CPU issuing kernels, then the CPU never gets ahead of the GPU in the first place, so there
+    is no run-ahead for a sync to destroy and the flush only drains a short queue. The real
+    win in that A/B came from the stacked segment solve (1.35x) and from compiling the segment
+    loop (1.75x together); this flag contributes the remaining few percent.
+
+    It is still worth having, because the exit buys nothing to pay even that. ``scripts/analysis/run_solver_break_audit.py``
     traced the batch-max residual on 8103 real learned profile pairs and it never once reached
     the tolerance in 144 non-degenerate batch-cells, finishing 3 to 6 orders of magnitude
     above it (train Phi=2: 4.9e+04x tol; eval Phi=8, the closest call: 2.8e+03x). The only
