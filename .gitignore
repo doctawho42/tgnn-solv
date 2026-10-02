@@ -274,3 +274,8 @@ results/solver_break_audit/*
 !results/solver_speedup_ab
 results/solver_speedup_ab/*
 !results/solver_speedup_ab/summary.json
+
+# Профиль НАСТОЯЩЕГО шага обучения (train_epoch): на него ссылается CLAUDE.md.
+!results/real_step_profile
+results/real_step_profile/*
+!results/real_step_profile/summary.json
