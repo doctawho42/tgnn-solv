@@ -28,6 +28,7 @@
 #   CKPT_DIR         checkpoints/e5
 #   SEEDS            "42 43 44"      space-separated list of random seeds
 #   ARMS             all six         space-separated arm subset (smoke: ARMS="ungrounded")
+#                                    E2 (кристалл закреплён снаружи): ARMS="grounded_a grounded_a_detachcrystal"
 #   DIRECT_EPOCHS    "" (config 110) directgnn --epochs override; smoke: DIRECT_EPOCHS=1
 #                                    (EXTRA_TRAIN_ARGS is TGNN phase-epochs — directgnn ignores it)
 #   NUM_WORKERS      "" (0)          DataLoader workers for every training arm (e.g. 8 on a many-core box)
@@ -181,6 +182,28 @@ for SEED in ${SEEDS}; do
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
           --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
           "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} --set cosmo_sac_wire_volume=true
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;
+      grounded_a_detachcrystal)
+        # E2: кристаллическая ветвь ЗАКРЕПЛЕНА СНАРУЖИ -- параметры T_m и dH_fus не получают
+        # градиента из решателя SLE, то есть растворимость больше не может прятать ошибку
+        # активностной ветви в кристаллическом члене. Контроль -- плечо grounded_a, то есть
+        # ровно та же конфигурация без одного флага.
+        #
+        # ОСНОВАНИЕ -- ТЕОРЕМА, А НЕ ДОГАДКА. При dCp = 0 член Phi аффинен по 1/T,
+        # активностный класс эту плоскость натягивает, и профилированная информация Фишера по
+        # dH_fus равна НУЛЮ (SI.tex:697). Эмпирически на оценочной поверхности dH_fus измерен
+        # у ОДНОГО растворяемого, T_m у 31 из 147, и ветвь на двух сидах из пяти хуже
+        # константы. Бесплатные ворота пройдены (коммит 8126156): градиентное давление из
+        # потери растворимости на T_m превышает давление кристаллической супервизии в 4.7
+        # раза, то есть замораживать есть что.
+        #
+        # --set обязан идти ПОСЛЕДНИМ: argparse с nargs='*' съедает всё до конца строки.
+        "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
+          "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} --set detach_crystal_params_in_sle=true
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
           --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;
