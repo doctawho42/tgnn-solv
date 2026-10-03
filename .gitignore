@@ -318,3 +318,9 @@ results/shape_vs_area/*
 results/g5_floor_granularity/*
 !results/g5_floor_granularity/summary.json
 !results/g5_floor_granularity/per_arm.csv
+
+# Оконное разложение дефекта формы, с нулями по расположению.
+!results/shape_window_decomposition
+results/shape_window_decomposition/*
+!results/shape_window_decomposition/summary.json
+!results/shape_window_decomposition/per_arm.csv
