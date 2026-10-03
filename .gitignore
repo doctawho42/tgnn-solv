@@ -284,3 +284,8 @@ results/real_step_profile/*
 !results/bridge_workers_ab
 results/bridge_workers_ab/*
 !results/bridge_workers_ab/summary.json
+
+# Зонд задачного параллелизма на двух T4: депонирован вместе с дефектом его устройства.
+!results/dualgpu_probe
+results/dualgpu_probe/*
+!results/dualgpu_probe/summary.json
