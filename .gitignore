@@ -306,3 +306,9 @@ results/g4_descent_depth/*
 !results/e2_crystal_detach
 results/e2_crystal_detach/*
 !results/e2_crystal_detach/PRE_DECLARATION.md
+
+# Разложение дефекта IDAC на форму и площадь, пять сидов, с воротами против g_res.
+!results/shape_vs_area
+results/shape_vs_area/*
+!results/shape_vs_area/summary.json
+!results/shape_vs_area/per_arm.csv
