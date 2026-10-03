@@ -923,7 +923,7 @@ class TGNNSolvTrainer:
         return float(loss.item()), loss_dict
 
     def _sigma_forward_loss(
-        self, batch, *, role: str = "solute"
+        self, batch, *, role: str = "solute", floored: bool = True
     ) -> tuple[Tensor, dict[str, float]]:
         """Encode the pure component (in sol_batch) under ``role`` and score its
         predicted sigma-profile against the external label. Returns the unscaled
@@ -954,7 +954,14 @@ class TGNNSolvTrainer:
         loss_val, comps = sigma_profile_emd_loss(
             sig["p_shape"], target_shape, sig["area"], target_area, mask,
             mode=self.cfg.sigma_profile_loss, area_scale=self.cfg.sigma_area_scale,
-            shape_weight=self.cfg.sigma_shape_weight, return_components=True,
+            shape_weight=self.cfg.sigma_shape_weight,
+            # Пол применяется ТОЛЬКО на обучении. validate_sigma зовёт с floored=False, чтобы
+            # критерий раннего останова и выбора best_state в pretrain_pipeline остался ТЕМ ЖЕ
+            # функционалом, что у контрольного плеча: иначе плечи отличались бы ещё и выбранной
+            # точкой разогрева, то есть переставали бы быть контрастом одного отличия.
+            shape_floor=(float(getattr(self.cfg, "sigma_shape_floor", 0.0))
+                         if floored else 0.0),
+            return_components=True,
         )
         # Add the aggregate sigma_profile key so callers don't have to re-derive it.
         comps = {**comps, "sigma_profile": float(loss_val.item())}
@@ -1872,9 +1879,9 @@ class TGNNSolvTrainer:
         tot = {"sigma_profile": 0.0, "sigma_shape": 0.0, "sigma_area": 0.0}
         area_abs, n_area, n = 0.0, 0, 0
         for batch in loader:
-            loss_val, comps = self._sigma_forward_loss(batch, role="solute")
+            loss_val, comps = self._sigma_forward_loss(batch, role="solute", floored=False)
             if self.cfg.sigma_aux_symmetrize:
-                _, comps_slv = self._sigma_forward_loss(batch, role="solvent")
+                _, comps_slv = self._sigma_forward_loss(batch, role="solvent", floored=False)
                 comps = {k: 0.5 * (comps[k] + comps_slv[k]) for k in comps}
             for k in tot:
                 tot[k] += comps[k]

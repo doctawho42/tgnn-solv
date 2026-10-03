@@ -29,6 +29,7 @@
 #   SEEDS            "42 43 44"      space-separated list of random seeds
 #   ARMS             all six         space-separated arm subset (smoke: ARMS="ungrounded")
 #                                    E2 (кристалл закреплён снаружи): ARMS="grounded_a grounded_a_detachcrystal"
+#                                    G4 (пол на глубине sigma): ARMS="grounded_a grounded_a_shapefloor"
 #   DIRECT_EPOCHS    "" (config 110) directgnn --epochs override; smoke: DIRECT_EPOCHS=1
 #                                    (EXTRA_TRAIN_ARGS is TGNN phase-epochs — directgnn ignores it)
 #   NUM_WORKERS      "" (0)          DataLoader workers for every training arm (e.g. 8 on a many-core box)
@@ -182,6 +183,38 @@ for SEED in ${SEEDS}; do
           --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
           --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
           "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} --set cosmo_sac_wire_volume=true
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;
+      grounded_a_shapefloor)
+        # G4: sigma-супервизия спускается до ЗАДАННОЙ ГЛУБИНЫ и останавливается.
+        # shape_loss := relu(shape_loss - 0.40); выше пола градиент прежний, на полу и ниже --
+        # ровно нуль. Контроль -- плечо grounded_a, то есть та же конфигурация без одного флага.
+        #
+        # ОТКУДА 0.40. results/g4_descent_depth, пять сидов: спуск к депонированному профилю
+        # улучшает AAD на IDAC с 1.3142 до 0.8201, но внутренний оптимум по глубине есть у всех
+        # пяти сидов (ни одного на краю сетки), и дальше оценка портится. Выигрыш от глубины
+        # +0.5490 +- 0.1129, положителен 5/5 -- это 3.6 сид-sd. Оптимум при EMD 0.3986 +- 0.0442;
+        # перенос через долю снятого даёт 0.4457, внутри собственного разброса порога.
+        # Единицы сверены: в обучающем потоке мишень нормирована на сумму 1 (все строки ровно
+        # 1.0), предсказание есть softmax, и G4 мерил ровно эту величину.
+        #
+        # НАПРАВЛЕНИЕ ПРОВЕРЕНО НУЛЯМИ ПО МИШЕНИ: спуск на то же расстояние к мишени с той же
+        # гистограммой масс и перемешанными бинами портит AAD монотонно (до 2.6987), случайная
+        # мишень тоже; у обоих нулей лучшее -- не двигаться. Значит работает РАСПОЛОЖЕНИЕ массы
+        # в депозите, а не факт смещения.
+        #
+        # ЧЕГО ЭТО ПЛЕЧО НЕ ЗНАЕТ ЗАРАНЕЕ. G4 мерил только ось ФИЗИЧНОСТИ (AAD на IDAC) на
+        # подвыборке в 2875 записей. Ось ЗАДАЧИ (ln x2 MAE) из спуска по логитам недостижима --
+        # она требует обучения, то есть ровно этого прогона. Поэтому ln x2 здесь измеряется
+        # ПЕРВЫЙ раз, и ухудшение задачи -- допустимый исход, который надо прочитать, а не
+        # объявить неудачей.
+        #
+        # --set обязан идти ПОСЛЕДНИМ: argparse с nargs='*' съедает всё до конца строки.
+        "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
+          "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} --set sigma_shape_floor=0.40
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
           --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;

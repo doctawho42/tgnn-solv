@@ -45,4 +45,8 @@ def test_empty_mask_returns_zero_with_components():
         return_components=True,
     )
     assert total.item() == 0.0
-    assert comps == {"sigma_shape": 0.0, "sigma_area": 0.0}
+    # sigma_shape_raw добавлен вместе с полом на члене формы (config.sigma_shape_floor):
+    # он несёт НЕобрезанное значение, по которому идёт отбор чекпойнта разогрева. Ключ обязан
+    # присутствовать и в этой ветке: trainer симметризует словари растворяемого и растворителя
+    # по ключам, и расхождение набора уронило бы обучение по KeyError на смешанном батче.
+    assert comps == {"sigma_shape": 0.0, "sigma_shape_raw": 0.0, "sigma_area": 0.0}

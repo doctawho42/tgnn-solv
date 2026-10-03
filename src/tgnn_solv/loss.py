@@ -66,6 +66,7 @@ def sigma_profile_emd_loss(
     mode: str = "emd",
     area_scale: float = 75.0,
     shape_weight: float = 1.0,
+    shape_floor: float = 0.0,
     eps: float = 1e-8,
     return_components: bool = False,
 ) -> Tensor | tuple[Tensor, dict[str, float]]:
@@ -79,12 +80,21 @@ def sigma_profile_emd_loss(
     should track the pool's sigma_area std (~75 Å²). Both are averaged over the
     masked single-component rows. With ``return_components=True`` also returns the
     detached scalar shape/area terms for logging.
+
+    ``shape_floor`` > 0 replaces the shape term with ``relu(shape - floor)``: the gradient is
+    bit-identical above the floor and exactly zero at or below it, i.e. the supervision
+    descends to a set depth and stops. See ``config.sigma_shape_floor`` for where the number
+    comes from and which nulls established that the direction, not the displacement, is what
+    the deposited profile contributes. ``sigma_shape_raw`` is always reported alongside
+    ``sigma_shape`` so the floored and unfloored values are both visible in a run's log; the
+    key is present in BOTH branches on purpose, because ``trainer`` symmetrises solute and
+    solvent component dicts key-by-key and a missing key would raise there on mixed batches.
     """
     m = mask.bool()
     if not bool(m.any()):
         zero = pred_shape.sum() * 0.0
         if return_components:
-            return zero, {"sigma_shape": 0.0, "sigma_area": 0.0}
+            return zero, {"sigma_shape": 0.0, "sigma_shape_raw": 0.0, "sigma_area": 0.0}
         return zero
     ps = pred_shape[m]
     ts = target_shape[m]
@@ -94,11 +104,19 @@ def sigma_profile_emd_loss(
         shape_loss = (
             torch.cumsum(ps, dim=-1) - torch.cumsum(ts, dim=-1)
         ).abs().sum(dim=-1).mean()
+    shape_raw = shape_loss
+    if shape_floor > 0.0:
+        # torch.relu, а НЕ clamp_min(0.0): на самом полу их производные различаются, и это
+        # проверено, а не предположено. clamp_min пропускает градиент при x == 0 (его backward
+        # сравнивает >=), relu даёт ровно нуль (сравнивает > 0). Для "дошёл до глубины и
+        # встал" нужна вторая семантика, иначе ровно на полу супервизия продолжает давить.
+        shape_loss = torch.relu(shape_loss - shape_floor)
     area_loss = (((pred_area[m] - target_area[m]) / area_scale) ** 2).mean()
     total = shape_weight * shape_loss + area_loss
     if return_components:
         return total, {
             "sigma_shape": shape_loss.item(),
+            "sigma_shape_raw": shape_raw.item(),
             "sigma_area": area_loss.item(),
         }
     return total
