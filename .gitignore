@@ -279,3 +279,8 @@ results/solver_speedup_ab/*
 !results/real_step_profile
 results/real_step_profile/*
 !results/real_step_profile/summary.json
+
+# A/B моста и свёртка по воркерам: на них ссылается model.py и README Kaggle.
+!results/bridge_workers_ab
+results/bridge_workers_ab/*
+!results/bridge_workers_ab/summary.json

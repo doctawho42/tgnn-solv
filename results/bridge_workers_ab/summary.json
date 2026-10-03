@@ -1,0 +1,278 @@
+{
+  "hw": {
+    "cpu_count": 4,
+    "gpus": [
+      "Tesla T4",
+      "Tesla T4"
+    ],
+    "torch": "2.11.0+cu128"
+  },
+  "arms": {
+    "старый мост, воркеров 0": {
+      "s_per_step": 0.30650162008333365,
+      "rows_per_s": 208.80803169196713,
+      "gpu_util_mean": 22.5,
+      "peak_gb": 0.2043781280517578,
+      "bridge": "старый",
+      "workers": 0,
+      "speedup": 1.0,
+      "arm_hours_110ep": 16.342496104165527
+    },
+    "новый мост,  воркеров 0": {
+      "s_per_step": 0.26475173891666753,
+      "rows_per_s": 241.73590043971137,
+      "gpu_util_mean": 22.789473684210527,
+      "peak_gb": 0.2042841911315918,
+      "bridge": "векторизованный",
+      "workers": 0,
+      "speedup": 1.1576944549542965,
+      "arm_hours_110ep": 14.116415634737315
+    },
+    "новый мост,  воркеров 2": {
+      "s_per_step": 0.1953592785833346,
+      "rows_per_s": 327.6015373526242,
+      "gpu_util_mean": 13.571428571428571,
+      "peak_gb": 0.2044229507446289,
+      "bridge": "векторизованный",
+      "workers": 2,
+      "speedup": 1.568912530318282,
+      "arm_hours_110ep": 10.416448201130855
+    },
+    "новый мост,  воркеров 4": {
+      "s_per_step": 3.6316639743333354,
+      "rows_per_s": 17.622775799831118,
+      "gpu_util_mean": 2.472049689440994,
+      "peak_gb": 0.2044229507446289,
+      "bridge": "векторизованный",
+      "workers": 4,
+      "speedup": 0.08439702082833755,
+      "arm_hours_110ep": 193.63830552035657
+    },
+    "старый мост, воркеров 4": {
+      "s_per_step": 0.30907368216666953,
+      "rows_per_s": 207.07036442361238,
+      "gpu_util_mean": 19.884615384615383,
+      "peak_gb": 0.20451688766479492,
+      "bridge": "старый",
+      "workers": 4,
+      "speedup": 0.9916781588606794,
+      "arm_hours_110ep": 16.479637025525616
+    }
+  },
+  "profile": {
+    "старый мост": {
+      "totals": {
+        "self_cpu_us": 435207.4695000013,
+        "self_cuda_us": 127479.0120000006,
+        "cuda_op_launches": 22777.5,
+        "cpu_over_cuda": 3.413953894622271
+      },
+      "watched": {
+        "aten::lift_fresh": 3150.75,
+        "aten::detach_": 2964.75,
+        "aten::slice": 863.0,
+        "aten::nonzero": 272.5,
+        "aten::full": 128.0,
+        "aten::copy_": 1515.0,
+        "aten::empty": 5155.25,
+        "aten::to": 4544.25,
+        "Memcpy DtoD (Device -> Device)": 676.25,
+        "Memcpy DtoH (Device -> Pageable)": 128.0,
+        "cudaLaunchKernel": 8682.0,
+        "aten::as_strided": 7703.5,
+        "aten::_index_put_impl_": 188.5
+      },
+      "top_by_count": [
+        {
+          "name": "cudaLaunchKernel",
+          "count": 8682.0
+        },
+        {
+          "name": "aten::as_strided",
+          "count": 7703.5
+        },
+        {
+          "name": "aten::empty",
+          "count": 5155.25
+        },
+        {
+          "name": "aten::to",
+          "count": 4544.25
+        },
+        {
+          "name": "aten::unsqueeze",
+          "count": 3314.75
+        },
+        {
+          "name": "aten::lift_fresh",
+          "count": 3150.75
+        },
+        {
+          "name": "aten::detach_",
+          "count": 2964.75
+        },
+        {
+          "name": "detach_",
+          "count": 2964.75
+        },
+        {
+          "name": "cudaPeekAtLastError",
+          "count": 2008.0
+        },
+        {
+          "name": "aten::item",
+          "count": 1564.75
+        },
+        {
+          "name": "aten::_local_scalar_dense",
+          "count": 1564.75
+        },
+        {
+          "name": "aten::copy_",
+          "count": 1515.0
+        },
+        {
+          "name": "cudaMemcpyAsync",
+          "count": 1213.75
+        },
+        {
+          "name": "aten::select",
+          "count": 1144.25
+        },
+        {
+          "name": "aten::empty_strided",
+          "count": 1094.25
+        },
+        {
+          "name": "aten::mul",
+          "count": 1045.25
+        },
+        {
+          "name": "aten::view",
+          "count": 982.5
+        },
+        {
+          "name": "aten::transpose",
+          "count": 971.5
+        },
+        {
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, std::array<char*, 3ul> >(int, at::native::CUDAFunctor_add<float>, std::array<char*, 3ul>)",
+          "count": 946.5
+        },
+        {
+          "name": "aten::fill_",
+          "count": 927.75
+        }
+      ]
+    },
+    "новый мост": {
+      "totals": {
+        "self_cpu_us": 354630.4789999979,
+        "self_cuda_us": 102943.47425001077,
+        "cuda_op_launches": 16948.25,
+        "cpu_over_cuda": 3.444904901293059
+      },
+      "watched": {
+        "aten::lift_fresh": 3022.75,
+        "aten::detach_": 2962.75,
+        "aten::slice": 505.5,
+        "aten::nonzero": 16.5,
+        "aten::full": 128.0,
+        "aten::copy_": 1021.0,
+        "aten::empty": 4413.25,
+        "aten::to": 4168.25,
+        "Memcpy DtoD (Device -> Device)": 172.25,
+        "Memcpy DtoH (Device -> Pageable)": 128.0,
+        "cudaLaunchKernel": 6190.0,
+        "aten::as_strided": 6232.0,
+        "aten::_index_put_impl_": 68.5
+      },
+      "top_by_count": [
+        {
+          "name": "aten::as_strided",
+          "count": 6232.0
+        },
+        {
+          "name": "cudaLaunchKernel",
+          "count": 6190.0
+        },
+        {
+          "name": "aten::empty",
+          "count": 4413.25
+        },
+        {
+          "name": "aten::to",
+          "count": 4168.25
+        },
+        {
+          "name": "aten::unsqueeze",
+          "count": 3318.75
+        },
+        {
+          "name": "aten::lift_fresh",
+          "count": 3022.75
+        },
+        {
+          "name": "aten::detach_",
+          "count": 2962.75
+        },
+        {
+          "name": "detach_",
+          "count": 2962.75
+        },
+        {
+          "name": "aten::item",
+          "count": 1436.75
+        },
+        {
+          "name": "aten::_local_scalar_dense",
+          "count": 1436.75
+        },
+        {
+          "name": "aten::copy_",
+          "count": 1021.0
+        },
+        {
+          "name": "aten::empty_strided",
+          "count": 974.25
+        },
+        {
+          "name": "aten::mul",
+          "count": 919.25
+        },
+        {
+          "name": "aten::view",
+          "count": 758.5
+        },
+        {
+          "name": "aten::transpose",
+          "count": 715.5
+        },
+        {
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, std::array<char*, 3ul> >(int, at::native::CUDAFunctor_add<float>, std::array<char*, 3ul>)",
+          "count": 694.5
+        },
+        {
+          "name": "aten::select",
+          "count": 632.25
+        },
+        {
+          "name": "aten::t",
+          "count": 631.5
+        },
+        {
+          "name": "aten::add_",
+          "count": 582.75
+        },
+        {
+          "name": "aten::fill_",
+          "count": 561.75
+        }
+      ]
+    }
+  },
+  "dispatch_delta": {
+    "old_total": 22777.5,
+    "new_total": 16948.25
+  }
+}
