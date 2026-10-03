@@ -289,3 +289,9 @@ results/bridge_workers_ab/*
 !results/dualgpu_probe
 results/dualgpu_probe/*
 !results/dualgpu_probe/summary.json
+
+# G3: достижимость взвешивания при идеально оптимизируемой голове.
+!results/g3_weight_reachability
+results/g3_weight_reachability/*
+!results/g3_weight_reachability/summary.json
+!results/g3_weight_reachability/per_arm.csv
