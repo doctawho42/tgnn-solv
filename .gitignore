@@ -295,3 +295,9 @@ results/dualgpu_probe/*
 results/g3_weight_reachability/*
 !results/g3_weight_reachability/summary.json
 !results/g3_weight_reachability/per_arm.csv
+
+# G4: глубина спуска как отдельный рычаг, с нулями по мишени.
+!results/g4_descent_depth
+results/g4_descent_depth/*
+!results/g4_descent_depth/summary.json
+!results/g4_descent_depth/per_arm.csv

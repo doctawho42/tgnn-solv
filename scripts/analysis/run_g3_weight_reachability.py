@@ -86,6 +86,31 @@ def emd_shape(p: torch.Tensor, t: torch.Tensor,
     return d.sum(-1).mean()
 
 
+def shuffled_target(ref: np.ndarray, seed: int) -> np.ndarray:
+    """Мишень с ПЕРЕМЕШАННЫМИ бинами: та же гистограмма масс, неверное РАСПОЛОЖЕНИЕ.
+
+    Сильный нуль. Если спуск к перемешанной мишени улучшает AAD так же, как к настоящей, то
+    расположение массы в депонированном профиле информации не несёт, и под вопросом не
+    глубина спуска, а сама sigma-супервизия. Перестановка одна на молекулу, не общая: общая
+    сохранила бы соседство бинов и была бы слабее.
+    """
+    rng = np.random.default_rng(seed)
+    out = ref.copy()
+    for i in range(len(out)):
+        rng.shuffle(out[i])
+    return out
+
+
+def random_target(ref: np.ndarray, seed: int) -> np.ndarray:
+    """Случайная мишень той же площади: чистый шум как направление.
+
+    Отличает «сближение с депозитом помогает» от «любое смещение плохого профиля помогает».
+    """
+    rng = np.random.default_rng(seed + 10_000)
+    u = rng.dirichlet(np.ones(ref.shape[1]), size=len(ref))
+    return u * ref.sum(-1, keepdims=True)
+
+
 def descend(p0: np.ndarray, target: np.ndarray, weight: np.ndarray | None,
             budgets: list[float], *, lr: float, max_steps: int) -> dict[float, np.ndarray]:
     """Спуск по логитам до каждого бюджета пройденного расстояния ||p-p0||_1.
@@ -241,11 +266,17 @@ def main() -> int:
         print(f"  исходный: AAD {base.get('aad')}, записей {base.get('n')}, "
               f"H до эталона {base['h_to_ref_solute']:.4f}")
 
-        ARMS = (("невзвешенный", None), ("по чувствительности", sens),
-                ("перемешанный вес", shuffled))
-        for tag, w in ARMS:
-            got_sol = descend(p_sol, ref, w, a.budgets, lr=a.lr, max_steps=a.max_steps)
-            got_slv = descend(p_slv, ref, w, a.budgets, lr=a.lr, max_steps=a.max_steps)
+        # (метка, мишень, вес). Первые три -- вопрос о ВЕСЕ (G3). Последние два -- вопрос о
+        # МИШЕНИ: нужны затем, чтобы «глубина спуска» не оказалась просто «любое смещение
+        # плохого профиля улучшает оценку замыкания».
+        ARMS = (("невзвешенный", ref, None),
+                ("по чувствительности", ref, sens),
+                ("перемешанный вес", ref, shuffled),
+                ("ПЕРЕМЕШАННАЯ мишень", shuffled_target(ref, seed), None),
+                ("СЛУЧАЙНАЯ мишень", random_target(ref, seed), None))
+        for tag, tgt, w in ARMS:
+            got_sol = descend(p_sol, tgt, w, a.budgets, lr=a.lr, max_steps=a.max_steps)
+            got_slv = descend(p_slv, tgt, w, a.budgets, lr=a.lr, max_steps=a.max_steps)
             for b in a.budgets:
                 ps, pv = got_sol.get(b), got_slv.get(b)
                 if ps is None or pv is None:
@@ -278,19 +309,33 @@ def main() -> int:
     # --- Чтение: сколько купил каждый вес ПРИ РАВНОМ пройденном расстоянии ---
     if "aad" in df.columns:
         base_aad = df[df.arm.eq("исходный выученный")].aad.mean()
-        print(f"\nAAD исходного выученного: {base_aad:.4f}")
-        print(f"{'бюджет':>8}  {'невзвеш.':>10}  {'по чувств.':>11}  {'перемеш.':>10}  "
-              f"{'выигрыш взвеш.':>15}  {'нуль располож.':>15}")
+        arms = [t for t in df.arm.unique() if t != "исходный выученный"]
+        print(f"\nAAD исходного выученного: {base_aad:.4f}  (сидов {df.seed.nunique()})")
+        head = "".join(f"{t[:19]:>20}" for t in arms)
+        print(f"{'бюджет':>8}{head}")
         for b in a.budgets:
             cut = df[df.budget.eq(b)]
-            g = {t: cut[cut.arm.eq(t)].aad.mean() for t in
-                 ("невзвешенный", "по чувствительности", "перемешанный вес")}
-            if any(pd.isna(v) for v in g.values()):
-                continue
-            print(f"{b:>8}  {g['невзвешенный']:>10.4f}  {g['по чувствительности']:>11.4f}  "
-                  f"{g['перемешанный вес']:>10.4f}  "
-                  f"{g['невзвешенный'] - g['по чувствительности']:>+15.4f}  "
-                  f"{g['невзвешенный'] - g['перемешанный вес']:>+15.4f}")
+            vals = [cut[cut.arm.eq(t)].aad.mean() for t in arms]
+            print(f"{b:>8}" + "".join(f"{v:>20.4f}" if np.isfinite(v) else f"{'--':>20}"
+                                      for v in vals))
+        print("\nМИНИМУМ ПО ГЛУБИНЕ, по сидам -- воспроизводится ли ОПТИМУМ:")
+        piv = df[df.budget.gt(0)].pivot_table(index=["seed", "arm"], columns="budget",
+                                              values="aad")
+        for arm in arms:
+            sub = piv.xs(arm, level="arm", drop_level=False)
+            argmins = [float(r.idxmin()) for _, r in sub.iterrows()]
+            best = [float(r.min()) for _, r in sub.iterrows()]
+            edge = sum(1 for x in argmins if x >= max(a.budgets) - 1e-9)
+            print(f"  {arm:<22} минимумы на {argmins}  (на краю сетки {edge}/{len(argmins)}), "
+                  f"AAD {np.mean(best):.3f} +- {np.std(best, ddof=1):.3f}")
+        print("\nПРИРОСТ ОТ ГЛУБИНЫ против НУЛЕЙ ПО МИШЕНИ (чем меньше AAD, тем лучше):")
+        for b in a.budgets:
+            cut = df[df.budget.eq(b)]
+            real = cut[cut.arm.eq("невзвешенный")].aad.mean()
+            shuf = cut[cut.arm.eq("ПЕРЕМЕШАННАЯ мишень")].aad.mean()
+            rand = cut[cut.arm.eq("СЛУЧАЙНАЯ мишень")].aad.mean()
+            print(f"  бюджет {b:<5}: настоящая {real:.4f}  перемешанная {shuf:.4f} "
+                  f"({shuf - real:+.4f})  случайная {rand:.4f} ({rand - real:+.4f})")
     return 0
 
 
