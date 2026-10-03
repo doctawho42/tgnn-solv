@@ -301,3 +301,8 @@ results/g3_weight_reachability/*
 results/g4_descent_depth/*
 !results/g4_descent_depth/summary.json
 !results/g4_descent_depth/per_arm.csv
+
+# Предобъявление чтения E2: написано ДО получения чисел, в этом вся его ценность.
+!results/e2_crystal_detach
+results/e2_crystal_detach/*
+!results/e2_crystal_detach/PRE_DECLARATION.md
