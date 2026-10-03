@@ -49,6 +49,15 @@ from tgnn_solv.model import TGNNSolv                   # noqa: E402
 from tgnn_solv.sigma_oracle import load_sigma_profiles  # noqa: E402
 
 CKPT_DIR = ROOT / "checkpoints/e5_leakfree"
+#: Обучающий sigma-поток. Нужен НЕ для счёта, а для РАССЛОЕНИЯ: 51 из 126 молекул прибора
+#: лежат в пуле супервизии (измерено 2026-10-03), и все 51 -- как РАСТВОРИТЕЛИ теста, ноль
+#: как растворяемые. Это не утечка относительно оценки по скаффолдам солютов: гард
+#: build_sigma_profile_aux_stream.py исключает скаффолды из колонки solute_smiles отложенных
+#: сплитов, а растворители в корпусе общие (их ~227, отложить нельзя), и оценка никогда не
+#: спрашивает об этих молекулах как о растворяемых. Но для ПРИБОРА это смешивание: пулёвая
+#: медиана есть пропорция 40/60, а страты расходятся почти на весь сид-пол, поэтому обе
+#: печатаются отдельно.
+SIGMA_POOL = ROOT / "notebooks/data/processed_sigma_aux_stream_rebuilt/sigma_train.csv"
 PROFILES = ROOT / "results/sigma_profile_artifact/sigma_profiles.csv"
 TEST = ROOT / "notebooks/data/processed/test.csv"
 OUT_DIR = ROOT / "results/sigma_profile_residual"
@@ -189,7 +198,20 @@ def main() -> int:
     mols = sorted({s for s in seen if (c := canonicalize(str(s))) is not None and c in table})
     if args.limit:
         mols = mols[:args.limit]
+    supervised: set[str] = set()
+    if SIGMA_POOL.exists():
+        pool = pd.read_csv(SIGMA_POOL, low_memory=False)
+        if "has_sigma_profile" in pool.columns:
+            pool = pool[pool["has_sigma_profile"].astype(bool)]
+        supervised = {c for s_ in pool["solute_smiles"].dropna().astype(str)
+                      if (c := canonicalize(s_)) is not None}
+    else:
+        print(f"ВНИМАНИЕ: пул {SIGMA_POOL} не найден -- расслоения по супервизии не будет")
+    in_pool = {m: (canonicalize(str(m)) in supervised) for m in mols}
+    n_sup = sum(in_pool.values())
     print(f"молекул со сверяемым профилем, встречающихся в размеченном тесте: {len(mols)}")
+    print(f"  из них В ПУЛЕ супервизии: {n_sup} ({n_sup / max(len(mols), 1):.1%}), "
+          f"отложено {len(mols) - n_sup}")
     if not mols:
         print("пересечение пусто -- сверять нечего")
         return 1
@@ -207,6 +229,7 @@ def main() -> int:
         for i, smi in enumerate(mols):
             rp = ref[i]
             rec = {"seed": seed, "smiles": smi,
+                   "in_sigma_pool": bool(in_pool[smi]),
                    "area_reference": float(rp.sum()),
                    "donor_area_reference": float(rp[donor].sum()),
                    "hellinger_reference_to_delta": hellinger_to_delta(rp, grid),
@@ -251,8 +274,42 @@ def main() -> int:
     base = {"donor": float(donor.mean()), "nonpolar": float(nonpolar.mean()),
             "acceptor": float(acceptor.mean())}
     donor_free = df["donor_area_reference"] <= 1e-9
+    # РАССЛОЕНИЕ ПО СУПЕРВИЗИИ, и это не украшение сводки. Пулёвая медиана считается по смеси
+    # 40% супервизированных и 60% отложенных молекул, то есть она есть ПРОПОРЦИЯ СМЕШИВАНИЯ, а
+    # не свойство модели: страты расходятся почти на весь межсидовый пол (измерено 2026-10-03 --
+    # Хеллингер растворителя 3.0385 внутри пула против 3.4173 вне, при поле 0.421). Любое
+    # чтение «профиль стал ближе к эталону» обязано идти по стратам, иначе оно частично читает
+    # посадку на обучающую выборку. Пул при этом НЕ является утечкой относительно оценки по
+    # скаффолдам солютов: все супервизированные молекулы прибора стоят в тесте растворителями.
+    strata = {}
+    for tag, sel in (("in_pool", df["in_sigma_pool"].astype(bool)),
+                     ("held_out", ~df["in_sigma_pool"].astype(bool))):
+        sub = df[sel]
+        if sub.empty:
+            strata[tag] = {"n_rows": 0}
+            continue
+        strata[tag] = {
+            "n_rows": int(len(sub)),
+            "n_molecules": int(sub["smiles"].nunique()),
+            "median_hellinger_to_reference": {
+                r: float(sub[f"hellinger_{r}_vs_reference"].median())
+                for r in ("solute", "solvent")},
+            "seed_sd_hellinger_to_reference": {
+                r: (float(sub.groupby("seed")[f"hellinger_{r}_vs_reference"].median().std(ddof=1))
+                    if sub["seed"].nunique() > 1 else None)
+                for r in ("solute", "solvent")},
+        }
+    for r in ("solute", "solvent"):
+        a = strata.get("in_pool", {}).get("median_hellinger_to_reference", {}).get(r)
+        b = strata.get("held_out", {}).get("median_hellinger_to_reference", {}).get(r)
+        sd = strata.get("held_out", {}).get("seed_sd_hellinger_to_reference", {}).get(r)
+        if a is not None and b is not None:
+            print(f"  {r}: Хеллингер в пуле {a:.4f} против отложенных {b:.4f} "
+                  f"(разрыв {b - a:+.4f}" + (f", сид-пол отложенных {sd:.4f})" if sd else ")"))
+
     summary = {
         "n_molecules": len(mols), "seeds": sorted(per_seed),
+        "supervision_strata": strata,
         "sigma_hb": s_hb, "bin_fraction_by_region": base,
         "median_hellinger_to_reference": {
             r: float(df[f"hellinger_{r}_vs_reference"].median()) for r in ("solute", "solvent")},
