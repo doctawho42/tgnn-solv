@@ -205,20 +205,75 @@ print("the sigma stream is the REBUILT one -- same pool, same split sizes, unver
 """
 
 RESTORE = """
-import shutil
+import os, shutil
 from pathlib import Path
 
 # Carry a previous session's work forward, if its output dataset is attached.
+#
+# TWO LAYOUTS, AND THE SECOND ONE COST A SESSION.  `kaggle datasets create -p <dir> -r zip
+# --dir-mode zip` zips each TOP-LEVEL directory and Kaggle extracts its CONTENTS at the
+# dataset root -- so a staged tree of `out/checkpoints/...` arrives as `checkpoints/...`,
+# with the `out/` wrapper GONE.  Verified 2026-10-04 with `kaggle datasets files`:
+# tgnn-solv-e2-out lists `checkpoints/grounded_a_seed42.pt`, not `out/checkpoints/...`.
+# The old glob looked only for `*/out`, found nothing, printed nothing alarming, and the
+# arm restarted FROM SCRATCH -- the same silent-restart failure that had already burned
+# 21.5 GPU-hours the day before.  Both layouts are accepted now.
+# AND THE MOUNT POINT IS NOT WHERE THE SLUG SAYS EITHER.  Measured 2026-10-04 in the log of
+# tgnn-solv-e2rb: the bundle mounted at `/kaggle/input/datasets/polomoshnov/tgnn-solv-e5`, i.e.
+# `/kaggle/input/datasets/<owner>/<slug>/`, two levels BELOW `/kaggle/input`.  BUNDLE above
+# survived that only because it searches recursively for a sentinel file; this cell walked one
+# level, saw a directory called `datasets`, looked for `datasets/out` and `datasets/checkpoints`,
+# found neither, and the guard fired.  So discovery is by CONTENT at any depth, never by position:
+# Kaggle owns the mount path and has already changed it, while `checkpoints/` inside the dataset
+# is ours.
 OUT = Path("/kaggle/working/out")
 OUT.mkdir(parents=True, exist_ok=True)
-prev = [p for p in Path("/kaggle/input").glob("*/out") if p.is_dir()]
-for p in prev:
-    print("restoring from", p)
-    shutil.copytree(p, OUT, dirs_exist_ok=True)
+MARKERS = ("checkpoints", "results")
+ROOT = Path("/kaggle/input")
+bundle = globals().get("BUNDLE")
+cands, seen = [], set()
+for marker in MARKERS:
+    for d in sorted(ROOT.rglob(marker)) if ROOT.is_dir() else []:
+        if not d.is_dir():
+            continue
+        base = d.parent
+        # The code/data bundle also carries a `results/` tree (the sigma-profile artifact).  It is
+        # an INPUT, not a previous session's output, and copying it here would be a second source
+        # of confusion in the same cell.
+        if bundle is not None and (base == bundle or bundle in base.parents or base in bundle.parents):
+            continue
+        if base in seen:
+            continue
+        seen.add(base)
+        cands.append(base)
+for src in cands:
+    print("restoring from", src)
+    shutil.copytree(src, OUT, dirs_exist_ok=True)
+if not cands:
+    # Print the tree instead of only asserting, so the NEXT layout change is diagnosable from the
+    # notebook itself rather than from a log round-trip.
+    print("nothing found under", ROOT, "-- what is actually mounted:")
+    for d in sorted(ROOT.rglob("*"))[:60] if ROOT.is_dir() else []:
+        print("   ", d, "/" if d.is_dir() else "")
+
+ckpts = sorted(OUT.glob("checkpoints/*.pt"))
 done = sorted(OUT.glob("results/seed_*/*_predictions.csv"))
-print(f"{len(done)} prediction files carried forward")
-for d in done:
-    print("  ", d.relative_to(OUT))
+print(f"{len(ckpts)} checkpoints and {len(done)} prediction files carried forward")
+for f in ckpts + done:
+    print("  ", f.relative_to(OUT))
+
+# A GUARD, because its absence is what made the failure silent.  A first session legitimately
+# restores nothing; a RESUME session that restores nothing would quietly retrain from zero and
+# spend the whole budget finding out.  Set TGNN_EXPECT_RESUME=1 in the notebook's env cell for
+# any session that is meant to continue earlier work.
+if os.environ.get("TGNN_EXPECT_RESUME", "").strip() not in ("", "0", "false", "False"):
+    assert ckpts or done, (
+        "TGNN_EXPECT_RESUME is set but nothing was restored. This cell searches /kaggle/input "
+        "recursively for any directory containing `checkpoints/` or `results/`, so neither the "
+        "mount depth nor a stripped `out/` wrapper can cause this -- the output dataset is not "
+        "attached, or it holds neither of those directories. The mounted tree is printed above; "
+        "cross-check it against `kaggle datasets files <slug>`."
+    )
 """
 
 RUN = """
@@ -274,6 +329,12 @@ def main() -> None:
                          "this number rather than given away. Kaggle kills at twelve; the runner "
                          "stops itself before that and resumes next session. Set it to the quota "
                          "actually left, not to twelve.")
+    ap.add_argument("--expect-resume", action="store_true",
+                    help="сессия ПРОДОЛЖАЕТ прежнюю работу: ячейка восстановления падает, если "
+                         "восстановить оказалось нечего. Без этого флага пустое восстановление "
+                         "выглядит нормально, плечо тихо начинается с нуля и тратит весь бюджет "
+                         "на то, чтобы это выяснить -- так 2026-10-04 было потеряно ядро, и так "
+                         "же 2026-10-03 сгорели 21.5 часа.")
     ap.add_argument("--batch-size", type=int, default=None,
                     help="override the config batch size for every arm. UNSET IS NOT NEUTRAL "
                          "HERE: at the config's 64 an arm costs about 20 h on a T4 (measured -- "
@@ -289,7 +350,9 @@ def main() -> None:
         md("## 2 — dependencies"), code(INSTALL),
         md("## 3 — stage code and data"), code(STAGE),
         md("## 4 — verify the inputs against the published digests"), code(VERIFY),
-        md("## 5 — carry forward a previous session"), code(RESTORE),
+        md("## 5 — carry forward a previous session"),
+        code(('import os\nos.environ["TGNN_EXPECT_RESUME"] = "1"\n'
+              if a.expect_resume else "") + RESTORE),
         md(f"## 6 — run\n\n`{' '.join(a.arms)}` × seeds `{a.seeds}` "
            f"= **{len(a.arms) * len(a.seeds)} arms**.\n\n"
            + (f"Batch size **{a.batch_size}**, overriding the config's. These arms are comparable "
