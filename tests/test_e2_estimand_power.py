@@ -114,3 +114,82 @@ def test_oracle_is_not_a_second_training_so_its_zeros_are_not_a_contrast() -> No
         "Это ЕДИНСТВЕННЫЙ подлинный контраст двух обучений, на который опираются все парные полы; "
         "если он выродился, у поправки не осталось ни одной опоры."
     )
+
+
+# --------------------------------------------------------------------------------------------
+# РЕДУКЦИЯ ОСИ -- то, на чём читатель пары уже один раз сломался.
+#
+# `scripts/analysis/read_e2_pair.py` сравнивает сдвиг с порогом из
+# `measure_paired_seed_floor.py`. Пороги измерены в РАЗНЫХ редукциях: `ln x2` MAE и
+# `delta_phi_mean` построчно, смещение `T_m` -- по растворяемым. Первая версия читателя считала
+# все три по растворяемым, и на известном контрасте это дало 0.1319 вместо 0.1487, то есть
+# сравнение с порогом шло бы для величины, к которой порог не относится. Поймал дымовой тест;
+# держит -- этот.
+# --------------------------------------------------------------------------------------------
+
+import importlib.util  # noqa: E402
+import sys as _sys  # noqa: E402
+
+
+def _reader():
+    spec = importlib.util.spec_from_file_location(
+        "read_e2_pair", Path("scripts/analysis/read_e2_pair.py"))
+    mod = importlib.util.module_from_spec(spec)
+    _sys.modules["read_e2_pair"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _keys(mod, frames):
+    return set(mod.lock(frames))
+
+
+def test_the_reader_reproduces_the_deposited_mae_which_pins_the_row_reduction() -> None:
+    """Построчная редукция `ln x2` MAE -- та же, что в депонированной сводке, до 1e-9.
+
+    Это и есть проверка редукции: среднее по растворяемым дало бы 2.12 вместо 1.887, и сравнение
+    с порогом 0.0744 стало бы сравнением с чужим числом.
+    """
+    mod = _reader()
+    import json
+    frames = {"control": mod._load(DEPOSIT / f"seed_{SEED}" / "grounded_a_predictions.csv"),
+              "treated": mod._load(DEPOSIT / f"seed_{SEED}" / "ungrounded_predictions.csv")}
+    keys = _keys(mod, frames)
+    assert len(keys) == 1 * DECLARED_ROWS["ln_x2_mae"], (
+        f"замок {len(keys)} против {DECLARED_ROWS['ln_x2_mae']}: все пороги измерены на этом наборе")
+    dep = json.loads((DEPOSIT / f"seed_{SEED}" / "grounded_a_predictions.summary.json").read_text())
+    got = mod.headline(frames["control"], "ln_x2_mae", keys)
+    assert abs(got - dep["mae"]) < 1e-9, (
+        f"построчная редукция даёт {got!r} против депонированного {dep['mae']!r}. Порог 0.0744 "
+        f"измерен в ЭТОЙ редукции, поэтому расхождение означает, что читатель сравнивает с чужим "
+        f"числом -- см. read_e2_pair.headline()")
+
+
+def test_the_two_reductions_are_provably_different_so_a_silent_swap_cannot_pass() -> None:
+    """Без этого предыдущий тест прошёл бы и в мире, где обе редукции совпадают по совпадению."""
+    mod = _reader()
+    frames = {"control": mod._load(DEPOSIT / f"seed_{SEED}" / "grounded_a_predictions.csv"),
+              "treated": mod._load(DEPOSIT / f"seed_{SEED}" / "ungrounded_predictions.csv")}
+    keys = _keys(mod, frames)
+    row = mod.headline(frames["control"], "ln_x2_mae", keys)
+    clust = float(mod.per_solute(frames["control"], "ln_x2_mae", keys).mean())
+    assert abs(row - clust) > 0.1, (
+        f"построчная {row:.4f} и покластерная {clust:.4f} редукции сошлись -- тогда предыдущий "
+        f"тест не различает их, и подмена редукции прошла бы молча")
+
+
+def test_the_crystal_axis_bootstrap_is_marked_unquotable() -> None:
+    """Запрет из второй поправки живёт в КОДЕ, а не только в прозе.
+
+    Измерено: на кристаллической страте сидовая дисперсия превышает кластерную, и единственный
+    сид с уверенным внутрисидовым CI -- 42, тот самый, на котором идёт E2, причём по знаку он
+    неверен. Если кто-нибудь снимет этот флаг, читатель начнёт докладывать уверенный эффект там,
+    где поперёк сидов его нет.
+    """
+    mod = _reader()
+    assert mod.AXES["T_m_bias_K"]["bootstrap_quotable"] is False
+    assert mod.AXES["delta_phi_mean"]["bootstrap_quotable"] is False
+    assert mod.AXES["ln_x2_mae"]["bootstrap_quotable"] is True
+    assert mod.AXES["ln_x2_mae"]["reduction"] == "построчно"
+    assert mod.AXES["delta_phi_mean"]["reduction"] == "построчно"
+    assert mod.AXES["T_m_bias_K"]["reduction"] == "по растворяемым"
