@@ -26,6 +26,15 @@
 (2) Смещение ``T_m`` в кельвинах на страте с ИЗМЕРЕННЫМ ``T_m`` запертых строк, агрегированное
 СНАЧАЛА по растворяемому -- потому что эффективное n это число кластеров, а не строк.
 (3) ``ln x2`` MAE на запертых строках -- ось задачи и единственная, для которой порог уже заявлен.
+
+ВТОРАЯ ЧАСТЬ: КАКУЮ НЕОПРЕДЕЛЁННОСТЬ ОДНА ПАРА ВПРАВЕ ЦИТИРОВАТЬ. Между-сидовый sd отвечает на
+вопрос «дал бы другой сид другой ответ» -- и ОДНОЙ паре он недоступен, потому что сид у неё один.
+Доступен ей бутстрэп по кластерам растворяемых внутри своего сида. Это РАЗНЫЕ величины, и
+подменять одну другой нельзя. Поэтому для каждой оси считаются обе и печатается, на скольких сидах
+внутрисидовый CI исключает нуль -- то есть как часто одна пара доложила бы уверенный эффект там,
+где поперёк сидов его нет. Если такие сиды есть и знаки среди них расходятся, внутрисидовый
+бутстрэп не просто занижает неопределённость, а производит уверенные ответы противоположного знака,
+и цитировать его в одиночку нельзя.
 """
 
 from __future__ import annotations
@@ -75,6 +84,48 @@ def arm_axes(path: Path) -> dict[str, float | int]:
         "locked_rows": int(len(locked)),
         "locked_solutes": int(locked["solute_canonical"].nunique()),
     }
+
+
+#: Бутстрэп детерминирован по сиду: иначе артефакт не воспроизводится, а в этом проекте
+#: воспроизводимый артефакт -- выше всякой прозы.
+BOOTSTRAP_SEED = 20261004
+BOOTSTRAP_DRAWS = 20000
+
+
+def per_solute_values(path: Path, axis: str) -> pd.Series:
+    """Значение оси ПО РАСТВОРЯЕМОМУ -- единица репликации для бутстрэпа по кластерам."""
+    df = pd.read_csv(path)
+    ann = annotate_compensation_frame(df, label=path.stem)
+    if axis == "delta_phi_mean":
+        sub = ann[compensation_row_mask(ann)]
+        return sub.groupby("solute_canonical")["delta_phi"].mean()
+    if axis == "T_m_bias_K":
+        sub = ann[_bool(ann, "has_solubility") & _bool(ann, "has_T_m")]
+        g = sub.groupby("solute_canonical").agg(m=("T_m", "mean"), p=("T_m_solver", "mean"))
+        return g["p"] - g["m"]
+    if axis == "ln_x2_mae":
+        sub = ann[_bool(ann, "has_solubility")].copy()
+        sub["ae"] = (sub["ln_x2_pred"] - sub["ln_x2_true"]).abs()
+        return sub.groupby("solute_canonical")["ae"].mean()
+    raise ValueError(axis)
+
+
+def cluster_bootstrap(diff: np.ndarray, rng: np.random.Generator) -> dict:
+    """95% CI среднего парной разности, ресэмпл по КЛАСТЕРАМ.
+
+    При одном кластере CI вырожден в точку. Это не ошибка, а главная находка про заявленную ось
+    E2: неопределённость, доступная одной паре, там равна нулю по построению, то есть её нет.
+    """
+    n = len(diff)
+    if n < 2:
+        return {"n": n, "mean": float(diff.mean()) if n else float("nan"),
+                "ci95": [float("nan"), float("nan")], "excludes_zero": False,
+                "degenerate": True}
+    idx = rng.integers(0, n, size=(BOOTSTRAP_DRAWS, n))
+    means = diff[idx].mean(axis=1)
+    lo, hi = (float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5)))
+    return {"n": n, "mean": float(diff.mean()), "sd_across_clusters": float(diff.std(ddof=1)),
+            "ci95": [lo, hi], "excludes_zero": bool(lo > 0 or hi < 0), "degenerate": False}
 
 
 def main() -> None:
@@ -127,12 +178,54 @@ def main() -> None:
                   f"= {d.std(ddof=1) / entry['marginal_sd']:.0%} маргинального{note}")
         floors[key] = entry
 
+    # ===== какую неопределённость одна пара вправе цитировать =====
+    rng = np.random.default_rng(BOOTSTRAP_SEED)
+    within: dict[str, dict] = {}
+    for axis in ("delta_phi_mean", "T_m_bias_K", "ln_x2_mae"):
+        print(f"\n=== {axis}: внутрисидовый бутстрэп по кластерам против между-сидового sd ===")
+        print(f"{'сид':>4} {'кластеров':>10} {'средняя Δ':>12} {'bootstrap 95% CI':>26} "
+              f"{'исключает 0':>12}")
+        rows, signs = [], []
+        for seed in SEEDS:
+            base_v = per_solute_values(
+                a.pred_dir / f"seed_{seed}" / f"{BASE}_predictions.csv", axis)
+            out_rows = {}
+            for arm in TRUE_CONTRASTS:
+                arm_v = per_solute_values(
+                    a.pred_dir / f"seed_{seed}" / f"{arm}_predictions.csv", axis)
+                common = base_v.index.intersection(arm_v.index)
+                d = (arm_v[common] - base_v[common]).to_numpy(float)
+                bs = cluster_bootstrap(d, rng)
+                out_rows[arm] = bs
+                ci = ("вырожден" if bs["degenerate"]
+                      else f"[{bs['ci95'][0]:9.3f}, {bs['ci95'][1]:9.3f}]")
+                print(f"{seed:>4} {bs['n']:>10} {bs['mean']:12.3f} {ci:>26} "
+                      f"{('ДА' if bs['excludes_zero'] else 'нет'):>12}")
+                if bs["excludes_zero"]:
+                    signs.append((seed, float(np.sign(bs["mean"]))))
+            rows.append({"seed": seed, **out_rows})
+        between = floors[axis]["paired"][TRUE_CONTRASTS[0]]["sd"]
+        confident = len(signs)
+        conflict = len({sg for _, sg in signs}) > 1
+        print(f"  между-сидовый sd той же парной разности : {between:.4f}")
+        print(f"  сидов, где внутрисидовый CI исключает нуль: {confident} из {len(SEEDS)}"
+              + (f"  -> {signs}" if signs else ""))
+        if conflict:
+            print("  ЗНАКИ СРЕДИ УВЕРЕННЫХ СИДОВ РАСХОДЯТСЯ: внутрисидовый бутстрэп производит "
+                  "уверенные ответы ПРОТИВОПОЛОЖНОГО знака. Цитировать его в одиночку нельзя.")
+        within[axis] = {"per_seed": rows, "between_seed_paired_sd": between,
+                        "seeds_with_confident_nonzero": confident,
+                        "confident_signs_conflict": conflict,
+                        "confident_seeds": [{"seed": s_, "sign": sg} for s_, sg in signs]}
+
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(
         {"surface": shape, "seeds": list(SEEDS), "arms": list(ARMS), "base": BASE,
          "true_contrasts": list(TRUE_CONTRASTS),
+         "bootstrap": {"seed": BOOTSTRAP_SEED, "draws": BOOTSTRAP_DRAWS},
          "per_seed": {f"{s}|{arm}": table[(s, arm)] for s in SEEDS for arm in ARMS},
-         "floors": floors}, indent=2, ensure_ascii=False) + "\n")
+         "floors": floors, "within_seed_vs_between_seed": within},
+        indent=2, ensure_ascii=False) + "\n")
     print(f"\nзаписано {a.out}")
 
 
