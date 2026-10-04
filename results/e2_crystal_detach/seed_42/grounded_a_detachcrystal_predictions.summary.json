@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/kaggle/working/out/checkpoints/grounded_a_detachcrystal_seed42.pt",
+  "data": "/kaggle/working/repo/notebooks/data/processed/test.csv",
+  "output": "/kaggle/working/out/results/seed_42/grounded_a_detachcrystal_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 2.0994869993781777,
+  "rmse": 2.7537965407734615,
+  "r2": 0.15011182747207508,
+  "bias": 0.7661996530778183,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.3769477716788106,
+  "pred_std_ratio": 0.7957354051098883
+}

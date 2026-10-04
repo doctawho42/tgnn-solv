@@ -324,3 +324,20 @@ results/g5_floor_granularity/*
 results/shape_window_decomposition/*
 !results/shape_window_decomposition/summary.json
 !results/shape_window_decomposition/per_arm.csv
+
+# E2, закрепление кристаллической ветви снаружи. Та же форма, что у двух семейств выше: сводки и
+# поранная запись версионируются, многомегабайтные предсказательные CSV -- никогда.
+# И comparison.json здесь НЕ межплечевое сравнение: на 2026-10-05 доучилось только плечо
+# grounded_a_detachcrystal, а контроль остался на фазе 2 эпохе 49, поэтому файл описывает ОДНО
+# плечо. Он намеренно не отслеживается, ровно по той же причине, что и в блоке Gate A1 выше.
+!results/e2_crystal_detach
+results/e2_crystal_detach/*
+!results/e2_crystal_detach/*.md
+!results/e2_crystal_detach/*.json
+results/e2_crystal_detach/pair_reading.json
+!results/e2_crystal_detach/seed_4?
+results/e2_crystal_detach/seed_4?/*
+!results/e2_crystal_detach/seed_4?/*.summary.json
+!results/e2_crystal_detach/seed_4?/*.manifest.json
+!results/e2_crystal_detach/seed_4?/*.model_card.json
+!results/e2_crystal_detach/seed_4?/kaggle_progress.json
