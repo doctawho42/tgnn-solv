@@ -76,7 +76,11 @@ EXPECTED_ROWS_MIN = 8000
 #: on it (see the block at the arm loop); when it did, an honest 20 here would have refused
 #: everything. A constant that can veto must be a ceiling; one that only informs must be the truth.
 #: --batch-size 256 is the lever that moves it, at a cost stated on that flag.
-ARM_HOURS_ASSUMED = 20.0
+#: ИЗМЕРЕНО 2026-10-03, а не предположено: два плеча прошли 74 и 79 эпохи из 110 за 10.73 ч,
+#: то есть 8.70 и 8.15 мин на эпоху и 15.9/14.9 ч на полное плечо при батче из конфига.
+#: Прежние 20 были оценкой; 15.5 -- середина замеренного. Оставлено ВЫШЕ замера на запас,
+#: потому что эта константа может наложить вето, а такая должна быть потолком, не истиной.
+ARM_HOURS_ASSUMED = 17.0
 #: Applied to the median of arms this run has already timed. Wider while that median rests on one
 #: or two observations, because a single arm is not a distribution.
 ARM_TIME_MARGIN = 1.25
@@ -91,6 +95,41 @@ SAVE_RESERVE_HOURS = 0.25
 #: Deliberately small: this is the only thing standing between the runner and a useful partial
 #: session, and demanding a WHOLE arm here is what made two twelve-hour sessions return nothing.
 MIN_USEFUL_SLICE_HOURS = 0.75
+
+
+def remaining_fraction(ckpt: Path, phase_epochs: tuple[int, int, int] = (30, 70, 10)) -> float | None:
+    """Какая ДОЛЯ плеча осталась, по курсору в чекпойнте. None -- если курсора нет.
+
+    ЗАЧЕМ. Прикидка «влезет ли плечо» ниже брала медиану УСПЕШНЫХ записей журнала, а у
+    снятого по бюджету плеча ok=False -- список пустой, и в дело шла константа
+    ARM_HOURS_ASSUMED. Для ВОЗОБНОВЛЯЕМОГО плеча это грубо вдвое-втрое: 2026-10-03 два
+    плеча встали на 74 и 79 эпохе из 110, и каждому оставалось около пяти часов, а раннер
+    в следующей сессии считал бы, что нужно двадцать. Курсор лежит прямо в чекпойнте, и
+    читать его дешевле, чем угадывать.
+
+    Разогрев sigma в долю НЕ входит, и это не упущение: train.py пропускает его на
+    возобновлении ("Skipping sigma-warmup on resume"), проверено прогоном 2026-10-04.
+    Поэтому остаток -- это только фазовые эпохи, и они дороже средней эпохи первого
+    прогона, в которую разогрев входил. Доля поэтому СЛЕГКА занижает остаток по времени,
+    что здесь безопасно: ошибка в сторону «начать» а не «отказаться».
+    """
+    try:
+        import torch
+        ck = torch.load(ckpt, map_location="cpu", weights_only=False)
+    except Exception as exc:                       # битый или недокачанный файл
+        print(f"   [resume] не удалось прочитать {ckpt.name}: {exc}", flush=True)
+        return None
+    st = ck.get("resume_state")
+    if not isinstance(st, dict) or st.get("status") != "in_progress":
+        return None
+    phase = int(st.get("phase", 1))
+    nxt = int(st.get("next_epoch_in_phase", 0))
+    total = sum(phase_epochs)
+    done = sum(phase_epochs[: phase - 1]) + min(nxt, phase_epochs[phase - 1])
+    left = max(total - done, 0)
+    print(f"   [resume] {ckpt.name}: фаза {phase}, следующая эпоха {nxt}; "
+          f"пройдено {done}/{total}, осталось {left} эпох ({left / total:.0%})", flush=True)
+    return left / total
 
 
 def _session_start(path: Path) -> tuple[float, str]:
@@ -359,6 +398,12 @@ def main() -> None:
                 need, need_src = statistics.median(timed) * margin, f"median of {len(timed)} timed"
             else:
                 need, need_src = ARM_HOURS_ASSUMED, "assumed, unmeasured on this hardware"
+            # ВОЗОБНОВЛЯЕМОМУ плечу нужна только ОСТАВШАЯСЯ доля, и курсор лежит в чекпойнте.
+            # Без этого раннер оценивает частично обученное плечо как полное и может отказаться
+            # начинать то, которому остался час.
+            frac = remaining_fraction(ck) if ck.exists() else None
+            if frac is not None:
+                need, need_src = need * frac, f"{need_src} x остаток {frac:.0%}"
             left = (deadline - time.time()) / 3600 - SAVE_RESERVE_HOURS
             if left < MIN_USEFUL_SLICE_HOURS:
                 print(f"\n== stopping before seed {seed} arm {arm}: {left:.2f} h of usable budget "
