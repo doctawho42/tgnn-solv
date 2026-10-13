@@ -122,3 +122,30 @@ def test_output_dataset_restored_while_bundle_is_attached(tmp_path):
     ns = _run(tmp_path, expect_resume=True, bundle=bundle)
     assert len(ns["ckpts"]) == 1
     assert not (tmp_path / "working/out/results/sigma_profile_artifact").exists()
+
+def test_two_output_datasets_both_restore_into_one_tree(tmp_path):
+    """Репликат пишет ДВА выходных датасета -- по одному на плечо, и восстановить надо оба.
+
+    Плечи сида 43 идут параллельными ядрами, каждое со своим выходным датасетом, и следующая
+    сессия подключает оба. Это НОВОЕ условие: прежние тесты покрывали один выходной датасет рядом
+    с бандлом. Если цикл по кандидатам возьмёт только первый, одно плечо тихо начнётся с нуля --
+    та же форма отказа, что дважды стоила ядра.
+    """
+    bundle = tmp_path / "input/datasets/polomoshnov/tgnn-solv-e5"
+    (bundle / "code").mkdir(parents=True)
+    a = tmp_path / "input/datasets/polomoshnov/tgnn-solv-e2r43a"
+    b = tmp_path / "input/datasets/polomoshnov/tgnn-solv-e2r43b"
+    for root, arm in ((a, "grounded_a"), (b, "grounded_a_detachcrystal")):
+        (root / "checkpoints").mkdir(parents=True)
+        (root / "checkpoints" / f"{arm}_seed43.pt").write_bytes(arm.encode())
+        (root / "results" / "seed_43").mkdir(parents=True)
+        (root / "results" / "seed_43" / f"{arm}_predictions.csv").write_text("x\n")
+    ns = _run(tmp_path, expect_resume=True, bundle=bundle)
+    names = sorted(p.name for p in ns["ckpts"])
+    assert names == ["grounded_a_detachcrystal_seed43.pt", "grounded_a_seed43.pt"], (
+        f"восстановлено {names}: из двух выходных датасетов подхвачен не оба, и плечо, чей "
+        f"чекпойнт потерян, начнёт обучение с нуля")
+    assert len(ns["done"]) == 2
+    out = tmp_path / "working/out/checkpoints"
+    assert (out / "grounded_a_seed43.pt").read_bytes() == b"grounded_a"
+    assert (out / "grounded_a_detachcrystal_seed43.pt").read_bytes() == b"grounded_a_detachcrystal"
