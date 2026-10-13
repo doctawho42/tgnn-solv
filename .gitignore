@@ -334,7 +334,10 @@ results/shape_window_decomposition/*
 results/e2_crystal_detach/*
 !results/e2_crystal_detach/*.md
 !results/e2_crystal_detach/*.json
-results/e2_crystal_detach/pair_reading.json
+# pair_reading.json ВЕРСИОНИРУЕТСЯ: это чтение записи, выданное предзаявленным читателем
+# scripts/analysis/read_e2_pair.py. Исключён он был, пока существовал только как вывод
+# дымового теста на чужом контрасте; с 2026-10-13 это настоящая пара сида 42.
+!results/e2_crystal_detach/pair_reading.json
 !results/e2_crystal_detach/seed_4?
 results/e2_crystal_detach/seed_4?/*
 !results/e2_crystal_detach/seed_4?/*.summary.json

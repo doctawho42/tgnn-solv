@@ -42,5 +42,16 @@
     "batch_size": "config",
     "schedule_matched_to_published_family": true,
     "ok": false
+  },
+  {
+    "seed": 42,
+    "arm": "grounded_a",
+    "returncode": 0,
+    "hours": 4.183,
+    "rows": 8103,
+    "timed_out": false,
+    "batch_size": "config",
+    "schedule_matched_to_published_family": true,
+    "ok": true
   }
 ]

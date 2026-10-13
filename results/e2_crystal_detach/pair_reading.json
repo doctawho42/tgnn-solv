@@ -1,0 +1,90 @@
+{
+  "n_locked": 5608,
+  "strata": {
+    "control": {
+      "measured_T_m_rows": 1318,
+      "measured_T_m_solutes": 31,
+      "joback_T_m_rows": 4290,
+      "joback_T_m_solutes": 116
+    },
+    "treated": {
+      "measured_T_m_rows": 1318,
+      "measured_T_m_solutes": 31,
+      "joback_T_m_rows": 4290,
+      "joback_T_m_solutes": 116
+    }
+  },
+  "axes": {
+    "ln_x2_mae": {
+      "label": "ln x2 MAE на запертых строках (ось задачи)",
+      "threshold": 0.0744,
+      "unit": "",
+      "reduction": "построчно",
+      "bootstrap_quotable": true,
+      "note": "парный sd пяти выложенных сидов; внутри подсемейства 42/43/44 равен 0.0267, поэтому порог консервативен. Бутстрэп здесь консервативен и его уверенные вызовы по знаку верны -- цитировать можно.",
+      "control": 1.8232338314387049,
+      "treated": 2.0994869993781777,
+      "shift": 0.27625316793947285,
+      "exceeds_threshold": true,
+      "cluster_mean_shift_for_reference": 0.28007390571261803,
+      "bootstrap": {
+        "n": 147,
+        "mean": 0.28007390571261803,
+        "sd_clusters": 1.4301619294518872,
+        "ci95": [
+          0.045737825784740456,
+          0.511159192911954
+        ],
+        "excludes_zero": true,
+        "degenerate": false
+      }
+    },
+    "delta_phi_mean": {
+      "label": "delta_phi_mean под штатной маской (ЗАЯВЛЕННАЯ ось)",
+      "threshold": 0.36,
+      "unit": "",
+      "reduction": "построчно",
+      "bootstrap_quotable": false,
+      "note": "ОДИН кластер: измеренный dH_fus есть у одного растворяемого, 18 строк. Порог ЗАИМСТВОВАН -- собственной неопределённости у пары здесь нет, бутстрэп вырожден.",
+      "control": 0.08843738489732045,
+      "treated": 0.9365712469159058,
+      "shift": 0.8481338620185853,
+      "exceeds_threshold": true,
+      "cluster_mean_shift_for_reference": 0.8481338620185853,
+      "bootstrap": {
+        "n": 1,
+        "mean": 0.8481338620185853,
+        "degenerate": true
+      }
+    },
+    "T_m_bias_K": {
+      "label": "смещение T_m на страте ИЗМЕРЕННОГО T_m, по растворяемым (поддерживающая)",
+      "threshold": 13.94,
+      "unit": " K",
+      "reduction": "по растворяемым",
+      "bootstrap_quotable": false,
+      "note": "сидовая дисперсия ПРЕВЫШАЕТ кластерную (13.94 K против SE ~8.2 K); единственный сид с уверенным внутрисидовым CI -- 42, и по знаку он неверен. Внутрисидовый CI здесь НЕЗАКОНЕН к одиночному цитированию.",
+      "control": 31.994208516620006,
+      "treated": 14.51687588388421,
+      "shift": -17.477332632735795,
+      "exceeds_threshold": true,
+      "cluster_mean_shift_for_reference": -17.4773326327358,
+      "bootstrap": {
+        "n": 31,
+        "mean": -17.4773326327358,
+        "sd_clusters": 48.096873771769324,
+        "ci95": [
+          -33.91768943053752,
+          -0.6059304324526659
+        ],
+        "excludes_zero": true,
+        "degenerate": false
+      }
+    }
+  },
+  "matched_predeclared_outcome": "4 (delta_phi_mean РАСТЁТ -- непредусмотренный исход, докладывается как есть)",
+  "bootstrap": {
+    "seed": 20261004,
+    "draws": 20000
+  }
+}
