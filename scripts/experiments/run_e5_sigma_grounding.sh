@@ -240,6 +240,36 @@ for SEED in ${SEEDS}; do
         "${PY}" scripts/analysis/export_checkpoint_predictions.py \
           --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
           --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;
+      grounded_a_detachencoder)
+        # КОНТРОЛЬ НА АТРИБУЦИЮ ЦЕНЫ E2. E2 забанковал цену внешнего закрепления кристаллической
+        # ветви (+0.2763 и +0.9275 ln x2 на двух парах против парного пола 0.0744), но приписать
+        # её компенсации НЕ УДАЛОСЬ: заявленная ось delta_phi_mean сменила знак между парами
+        # (+0.8481 против -1.0791, обе за порогом), а разрез по давлению не сосредоточен и точечно
+        # смотрит против компенсации. Остаётся возражение, которое иначе назовёт референт: цена
+        # может быть ценой отрезания ЛЮБОГО кристаллического градиентного пути, а не именно
+        # идентифицируемости.
+        #
+        # ЭТОТ ФЛАГ РЕЖЕТ ДРУГОЕ РЕБРО, и это ИЗМЕРЕНО, а не предположено:
+        # g_sol_for_crystal = g_sol_pre.detach() (model.py:1267) -- кристаллическая голова читает
+        # отцеплённое вложение, то есть её потеря больше не формирует общий энкодер, НО путь
+        # растворимость -> параметры кристалла остаётся ОТКРЫТ. tests/test_e2_detach_encoder_gate.py
+        # прибивает все четыре условия, включая решающее: при этом флаге градиент из ln_x2 в
+        # параметры головы НЕ нуль, тогда как при detach_crystal_params_in_sle он ровно нуль.
+        # Без этого утверждения контроль был бы дубликатом арма записи, и 16 GPU-часов ушли бы на
+        # повторение известного.
+        #
+        # Контроль для сравнения -- УЖЕ ОБУЧЕННОЕ плечо grounded_a сида 42 из того же бандла:
+        # тот же поток (sha 7721b661), тот же сплит, то же расписание, совпадение входов по
+        # sha256 проверено. Поэтому это ОДНО плечо, а не пара.
+        #
+        # --set обязан идти ПОСЛЕДНИМ: argparse с nargs='*' съедает всё до конца строки.
+        "${PY}" scripts/train.py --config configs/cosmo_sac.yaml \
+          --train-data "${TRAIN}" --val-data "${VAL}" --test-data "${TEST}" \
+          --seed "${SEED}" ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} "${CKPT_ARGS[@]}" \
+          "${COSMO_GROUND[@]}" ${EXTRA_TRAIN_ARGS} --set detach_crystal_from_encoder=true
+        "${PY}" scripts/analysis/export_checkpoint_predictions.py \
+          --checkpoint "${ckpt}" --data "${TEST}" --output "${pred}" \
+          --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} ;;
       grounded_a_truetrain)
         # DISAMBIGUATOR: inject TRUE (VT-2005) σ during TRAINING so the crystal/correction
         # branches co-adapt to correct σ (not the σ-head's prediction). Export WITH oracle σ
