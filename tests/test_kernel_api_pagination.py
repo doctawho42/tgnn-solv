@@ -214,3 +214,47 @@ def test_a_missing_content_length_does_not_block_the_download(tmp_path) -> None:
     out = tmp_path / "f.bin"
     n = m.download("u", out, get=lambda *a, **k: _Stream([b"q" * 7]), attempts=1)
     assert n == 7 and out.read_bytes() == b"q" * 7
+
+def test_the_listing_retries_a_broken_connection_like_the_download_does(tmp_path) -> None:
+    """Перечисление выгрузки обязано повторять обрыв -- как это уже делает загрузка файла.
+
+    2026-10-19 первая попытка перечисления упала на SSLEOFError и НЕ повторилась: выгрузку
+    пришлось запускать заново вручную, тогда как ``download()`` рядом повторы уже умел.
+    Асимметрия «файл повторяем, список нет» просто ждала своего обрыва, и дождалась в тот самый
+    момент, когда надо было прочитать, почему упало ядро.
+    """
+    m = _mod()
+    calls = {"n": 0}
+
+    def broken_then_ok(url, params=None, auth=None, timeout=None):
+        calls["n"] += 1
+        if calls["n"] <= 2:
+            raise ConnectionError("SSL оборван")
+        return _Resp({"files": [{"fileName": "a"}], "hasNextPageToken": False,
+                      "nextPageToken": None, "log": "L"})
+
+    m.time.sleep = lambda *_: None
+    printed: list[str] = []
+    m.print = lambda *args, **kwargs: printed.append(" ".join(str(x) for x in args))
+    files, log, pages = m.list_output("s", user="u", auth=("u", "k"), get=broken_then_ok)
+    assert calls["n"] == 3, f"попыток {calls['n']}: перечисление не повторилось"
+    assert len(files) == 1 and log == "L" and pages == 1
+    assert any("перечисление" in x for x in printed), "о повторе не сказано вслух"
+
+
+def test_the_listing_gives_up_loudly_after_its_attempts(tmp_path) -> None:
+    """Исчерпав попытки, перечисление ПАДАЕТ, а не возвращает пустой список.
+
+    Пустой список здесь был бы худшим исходом: он читается как «в выгрузке нет нужных файлов»,
+    то есть превращает отказ связи в ложный вывод о содержимом ядра.
+    """
+    m = _mod()
+
+    def always_broken(url, params=None, auth=None, timeout=None):
+        raise ConnectionError("сеть мертва")
+
+    m.time.sleep = lambda *_: None
+    m.print = lambda *a, **k: None
+    import pytest as _pt
+    with _pt.raises(ConnectionError):
+        m.list_output("s", user="u", auth=("u", "k"), get=always_broken)

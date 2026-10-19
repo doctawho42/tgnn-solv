@@ -90,9 +90,28 @@ def list_output(slug: str, *, user: str, auth: tuple[str, str],
         params = {"userName": user, "kernelSlug": slug}
         if token:
             params["pageToken"] = token
-        r = get(f"{BASE}/kernels/output", params=params, auth=auth, timeout=timeout)
-        r.raise_for_status()
-        d = r.json()
+        # ПОВТОРЫ НУЖНЫ И ЗДЕСЬ, НЕ ТОЛЬКО НА ЗАГРУЗКЕ ФАЙЛА. 2026-10-19 первая попытка
+        # перечисления упала на SSLEOFError и не повторилась -- выгрузку пришлось запускать
+        # заново вручную, тогда как download() рядом уже умел повторять. Связь до kaggle.com
+        # здесь выпадает регулярно, и асимметрия «файл повторяем, список нет» просто ждала
+        # своего обрыва.
+        last: Exception | None = None
+        d = None
+        for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+            try:
+                r = get(f"{BASE}/kernels/output", params=params, auth=auth, timeout=timeout)
+                r.raise_for_status()
+                d = r.json()
+                break
+            except Exception as exc:
+                last = exc
+                if attempt < DOWNLOAD_ATTEMPTS:
+                    print(f"  .. перечисление страницы {pages + 1}: попытка {attempt} "
+                          f"оборвалась ({type(exc).__name__}), повтор", flush=True)
+                    time.sleep(2.0 * attempt)
+        if d is None:
+            assert last is not None
+            raise last
         files += d.get("files") or []
         log = log or d.get("log")
         pages += 1
