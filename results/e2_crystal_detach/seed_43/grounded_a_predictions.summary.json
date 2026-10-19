@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/kaggle/working/out/checkpoints/grounded_a_seed43.pt",
+  "data": "/kaggle/working/repo/notebooks/data/processed/test.csv",
+  "output": "/kaggle/working/out/results/seed_43/grounded_a_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 1.8547715022170201,
+  "rmse": 2.3856562220057835,
+  "r2": 0.3621569797198403,
+  "bias": 0.49015219965763657,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.5607287006044066,
+  "pred_std_ratio": 0.857260102317178
+}

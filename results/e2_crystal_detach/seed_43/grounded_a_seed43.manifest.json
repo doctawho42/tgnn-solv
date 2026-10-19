@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0",
+  "run_type": "training_run",
+  "model_name": "grounded_a_seed43.pt",
+  "model_family": "tgnn_solv",
+  "command": null,
+  "runtime": {
+    "created_at": "2026-10-17T09:52:27+00:00",
+    "python": "/usr/bin/python3",
+    "python_version": "3.13.15",
+    "platform": "Linux-6.18.48+-x86_64-with-glibc2.39",
+    "git_commit": null,
+    "git_branch": null,
+    "git_dirty": null,
+    "repo_root": "/kaggle/working/repo"
+  },
+  "inputs": [
+    {
+      "role": "config",
+      "path": "/kaggle/working/repo/configs/cosmo_sac.yaml",
+      "relative_path": "configs/cosmo_sac.yaml",
+      "sha256": "1e9d45e9ea48459830edf178d9923ef1a91c3bb0f9bf42f8c501c7c3b72bf044",
+      "size_bytes": 2534,
+      "modified_at": "2026-10-17T06:10:38+00:00"
+    },
+    {
+      "role": "train_data",
+      "path": "/kaggle/working/repo/notebooks/data/processed/train.csv",
+      "relative_path": "notebooks/data/processed/train.csv",
+      "sha256": "419b3b2ec7f1aba09e7cba444796c74d924d8c7c4d71f03f1ab232d57b3d4e81",
+      "size_bytes": 18239286,
+      "modified_at": "2026-10-17T06:10:59+00:00"
+    },
+    {
+      "role": "val_data",
+      "path": "/kaggle/working/repo/notebooks/data/processed/val.csv",
+      "relative_path": "notebooks/data/processed/val.csv",
+      "sha256": "974ea451aace832e406b72751d85694ff1866643f657afad8c17b63781193610",
+      "size_bytes": 1404962,
+      "modified_at": "2026-10-17T06:10:50+00:00"
+    },
+    {
+      "role": "test_data",
+      "path": "/kaggle/working/repo/notebooks/data/processed/test.csv",
+      "relative_path": "notebooks/data/processed/test.csv",
+      "sha256": "7871e8a9f4f92eab083f5517fb804b530a12bed43c199805974475453ab75117",
+      "size_bytes": 1385743,
+      "modified_at": "2026-10-17T06:10:50+00:00"
+    },
+    {
+      "role": "sigma_train_data",
+      "path": "/kaggle/working/repo/notebooks/data/processed_sigma_aux_stream_rebuilt/sigma_train.csv",
+      "relative_path": "notebooks/data/processed_sigma_aux_stream_rebuilt/sigma_train.csv",
+      "sha256": "7721b6614d2eb9c764b380fb53cf2ca0d74bc0e778d18e806831e9ec89e21872",
+      "size_bytes": 863672,
+      "modified_at": "2026-10-17T06:10:50+00:00"
+    },
+    {
+      "role": "sigma_val_data",
+      "path": "/kaggle/working/repo/notebooks/data/processed_sigma_aux_stream_rebuilt/sigma_val.csv",
+      "relative_path": "notebooks/data/processed_sigma_aux_stream_rebuilt/sigma_val.csv",
+      "sha256": "cbccee68dd5e978c913010a0dcefe7b3c9a7129003587c578c4e0e6cd73a7b0d",
+      "size_bytes": 96782,
+      "modified_at": "2026-10-17T06:10:50+00:00"
+    },
+    {
+      "role": "resume_checkpoint",
+      "path": "/kaggle/working/out/checkpoints/grounded_a_seed43.pt",
+      "relative_path": "/kaggle/working/out/checkpoints/grounded_a_seed43.pt",
+      "sha256": "baa77630bdc8f53a6aa7e653703a8d21e3e3d348363f2bf2de04bbb4103ca2bc",
+      "size_bytes": 43110368,
+      "modified_at": "2026-10-17T09:51:39+00:00"
+    }
+  ],
+  "outputs": [
+    {
+      "role": "checkpoint",
+      "path": "/kaggle/working/out/checkpoints/grounded_a_seed43.pt",
+      "relative_path": "/kaggle/working/out/checkpoints/grounded_a_seed43.pt",
+      "sha256": "baa77630bdc8f53a6aa7e653703a8d21e3e3d348363f2bf2de04bbb4103ca2bc",
+      "size_bytes": 43110368,
+      "modified_at": "2026-10-17T09:51:39+00:00"
+    }
+  ],
+  "metadata": {
+    "experiment_name": "20261013_082158",
+    "log_dir": "logs/20261013_082158",
+    "seed": 43,
+    "device": "cuda",
+    "pretrain_info": null,
+    "grounding_streams": [
+      {
+        "role": "sigma_train",
+        "path": "/kaggle/working/repo/notebooks/data/processed_sigma_aux_stream_rebuilt/sigma_train.csv",
+        "sha256": "7721b6614d2eb9c764b380fb53cf2ca0d74bc0e778d18e806831e9ec89e21872",
+        "n_rows": 1187,
+        "n_distinct_solutes": 1185,
+        "held_out_checked": [
+          "/kaggle/working/repo/notebooks/data/processed/val.csv",
+          "/kaggle/working/repo/notebooks/data/processed/test.csv"
+        ],
+        "n_held_out_smiles": 5101,
+        "n_held_out_scaffolds": 2702,
+        "leak_by_canonical_smiles": 0,
+        "leak_by_murcko_scaffold": 0,
+        "leak_examples_smiles": [],
+        "leak_examples_scaffold": [],
+        "certified_no_leak": true,
+        "present": true,
+        "override_allowed": false
+      },
+      {
+        "role": "sigma_val",
+        "path": "/kaggle/working/repo/notebooks/data/processed_sigma_aux_stream_rebuilt/sigma_val.csv",
+        "sha256": "cbccee68dd5e978c913010a0dcefe7b3c9a7129003587c578c4e0e6cd73a7b0d",
+        "n_rows": 132,
+        "n_distinct_solutes": 132,
+        "held_out_checked": [
+          "/kaggle/working/repo/notebooks/data/processed/val.csv",
+          "/kaggle/working/repo/notebooks/data/processed/test.csv"
+        ],
+        "n_held_out_smiles": 5101,
+        "n_held_out_scaffolds": 2702,
+        "leak_by_canonical_smiles": 0,
+        "leak_by_murcko_scaffold": 0,
+        "leak_examples_smiles": [],
+        "leak_examples_scaffold": [],
+        "certified_no_leak": true,
+        "present": true,
+        "override_allowed": false
+      },
+      {
+        "role": "crystal_train",
+        "path": null,
+        "present": false,
+        "certified_no_leak": null
+      },
+      {
+        "role": "idac_train",
+        "path": null,
+        "present": false,
+        "certified_no_leak": null
+      }
+    ],
+    "stream_scaffold_overlap_override": false
+  }
+}

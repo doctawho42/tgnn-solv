@@ -1,0 +1,46 @@
+[
+  {
+    "seed": 43,
+    "arm": "grounded_a",
+    "returncode": -15,
+    "hours": 10.731,
+    "rows": -1,
+    "timed_out": true,
+    "batch_size": "config",
+    "schedule_matched_to_published_family": true,
+    "ok": false
+  },
+  {
+    "seed": 43,
+    "arm": "grounded_a_detachcrystal",
+    "returncode": -15,
+    "hours": 10.73,
+    "rows": -1,
+    "timed_out": true,
+    "batch_size": "config",
+    "schedule_matched_to_published_family": true,
+    "ok": false
+  },
+  {
+    "seed": 43,
+    "arm": "grounded_a",
+    "returncode": 0,
+    "hours": 3.691,
+    "rows": 8103,
+    "timed_out": false,
+    "batch_size": "config",
+    "schedule_matched_to_published_family": true,
+    "ok": true
+  },
+  {
+    "seed": 43,
+    "arm": "grounded_a_detachcrystal",
+    "returncode": 0,
+    "hours": 5.591,
+    "rows": 8103,
+    "timed_out": false,
+    "batch_size": "config",
+    "schedule_matched_to_published_family": true,
+    "ok": true
+  }
+]

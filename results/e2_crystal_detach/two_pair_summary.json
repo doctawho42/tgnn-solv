@@ -1,0 +1,74 @@
+{
+  "pairs": {
+    "42": {
+      "ln_x2_mae": 0.27625316793947285,
+      "delta_phi_mean": 0.8481338620185853,
+      "T_m_bias_K": -17.477332632735795
+    },
+    "43": {
+      "ln_x2_mae": 0.9274529870595407,
+      "delta_phi_mean": -1.0790744490093656,
+      "T_m_bias_K": -16.383212147620455
+    }
+  },
+  "two_pair_verdicts": {
+    "ln_x2_mae": {
+      "shifts": [
+        0.27625316793947285,
+        0.9274529870595407
+      ],
+      "threshold": 0.0744,
+      "sign_agrees": true,
+      "both_exceed_threshold": true,
+      "ratio_of_magnitudes": 0.29786217931684544
+    },
+    "delta_phi_mean": {
+      "shifts": [
+        0.8481338620185853,
+        -1.0790744490093656
+      ],
+      "threshold": 0.36,
+      "sign_agrees": false,
+      "both_exceed_threshold": true,
+      "ratio_of_magnitudes": 0.7859827121263105
+    },
+    "T_m_bias_K": {
+      "shifts": [
+        -17.477332632735795,
+        -16.383212147620455
+      ],
+      "threshold": 13.94,
+      "sign_agrees": true,
+      "both_exceed_threshold": true,
+      "ratio_of_magnitudes": 1.066783026140222
+    }
+  },
+  "physics_abandonment": {
+    "what": "Уверенность в физическом пути (correction_gate) и отклонение итога от физического предсказания (ln_x2_final - ln_x2_physics), измерено на выложенных предсказаниях",
+    "42": {
+      "control": {
+        "confidence_median": 1.0,
+        "deviation_mean": 0.0,
+        "rows_over_0.01": 0.0
+      },
+      "treated": {
+        "confidence_median": 0.0257,
+        "deviation_mean": 0.5288,
+        "rows_over_0.01": 0.951
+      }
+    },
+    "43": {
+      "control": {
+        "confidence_median": 1.0,
+        "deviation_mean": 0.0,
+        "rows_over_0.01": 0.0
+      },
+      "treated": {
+        "confidence_median": 0.0,
+        "deviation_mean": 0.509,
+        "rows_over_0.01": 0.917
+      }
+    },
+    "status": "ПОСТ-ХОК. Воспроизводится на обеих доступных парах и у контроля даёт ровные 1.0/0.0 в обеих, то есть не шум. Но наблюдение найдено ПОСЛЕ взгляда на числа, поэтому механизмом не объявляется и требует своей предзаявки."
+  }
+}
