@@ -1,0 +1,35 @@
+{
+  "checkpoint": "/private/tmp/claude-501/-Users-nikitapolomosnov-PycharmProjects-tgnn-solv/c85ff2aa-71ef-40d5-81eb-4d129e72b7b7/scratchpad/e2ckpt/out/checkpoints/grounded_a_seed42.pt",
+  "data": "notebooks/data/processed/test.csv",
+  "cross_shares_removed": {
+    "head": {
+      "by_detach_params_in_sle": 0.8056392221526042,
+      "by_detach_from_encoder": 0.0
+    },
+    "encoder": {
+      "by_detach_params_in_sle": 0.4918276844529866,
+      "by_detach_from_encoder": 0.5420878917303972
+    }
+  },
+  "encoder_perturbation_matched": true,
+  "batches": 6,
+  "batch_size": 24,
+  "grad_sums": {
+    "no_flags": {
+      "head": 3008.6614875793457,
+      "encoder": 13978.36193789728
+    },
+    "detach_params_in_sle": {
+      "head": 584.7657870054245,
+      "encoder": 7103.416553535499
+    },
+    "detach_from_encoder": {
+      "head": 3008.6614875793457,
+      "encoder": 6400.861185138114
+    }
+  },
+  "edge_A_share_of_head_gradient_removed": 0.8056392221526042,
+  "edge_B_share_of_encoder_gradient_removed": 0.5420878917303972,
+  "thickness_ratio_A_over_B": 1.486178227631917,
+  "what_this_does_not_say": "Толщина взята в ОБУЧЕННОМ состоянии контрольного плеча, одна точка траектории. Флаги меняют динамику обучения, поэтому это не толщина на протяжении обучения."
+}
