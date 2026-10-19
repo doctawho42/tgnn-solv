@@ -103,6 +103,39 @@ def tracked(tree: str) -> list[str]:
     return [line for line in out.stdout.split("\n") if line.strip()]
 
 
+def code_provenance() -> dict:
+    """Коммит и чистота дерева, из которого собран бандл.
+
+    ЗАЧЕМ. Ядро Kaggle копирует код ИЗ БАНДЛА, а не из git-чекаута, поэтому манифесты обученных
+    там плеч несут ``git_commit = None`` -- в отличие от десяти прогонов опубликованной пятёрки,
+    которые несут один коммит ``621bf71f08d7``. 2026-10-19 это стоило запуска и трёх с половиной
+    часов: плечо ``grounded_a_detachencoder`` было в репозитории, но не в бандле от 2026-10-03,
+    ``case`` провалился молча, и обучение не шло. Со штампом вопрос «каким кодом это обучено»
+    отвечается по манифесту, а вопрос «а бандл-то свежий?» -- сравнением с ``git rev-parse HEAD``.
+
+    ``dirty`` важен не меньше коммита: бандл собирается из РАБОЧЕГО ДЕРЕВА, поэтому при незакоммиченных
+    правках коммит один, а байты другие.
+    """
+    def git(*args: str) -> str | None:
+        try:
+            return subprocess.run(["git", *args], cwd=ROOT, capture_output=True,
+                                  text=True, check=True).stdout.strip()
+        except Exception:
+            return None
+
+    status = git("status", "--porcelain")
+    return {
+        "git_commit": git("rev-parse", "HEAD"),
+        "git_branch": git("rev-parse", "--abbrev-ref", "HEAD"),
+        "git_dirty": None if status is None else bool(status),
+        # Путь берётся РАЗБОРОМ ПО ПРОБЕЛУ, а не срезом line[3:]: префиксы `git status --porcelain`
+        # бывают разной длины, и фиксированный срез уже съел первый символ имени файла
+        # («cripts/experiments/...»). Для переименований остаётся «old -> new», и это приемлемо.
+        "dirty_files": [] if not status else sorted(
+            line.split(None, 1)[-1] for line in status.splitlines() if line.strip())[:40],
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -119,7 +152,7 @@ def main() -> None:
 
     ref = published_digests()
     manifest: dict = {"data": {}, "code_files": 0, "published_digests": ref,
-                      "mismatches": []}
+                      "mismatches": [], "code_provenance": code_provenance()}
 
     for rel in DATA:
         src = ROOT / rel

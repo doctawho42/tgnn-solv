@@ -345,6 +345,26 @@ for SEED in ${SEEDS}; do
           --model-type tgnn ${DEV_ARGS[@]+"${DEV_ARGS[@]}"} \
           --sigma-oracle --sigma-oracle-side both \
           --sigma-artifact "${SIGMA_ARTIFACT}" ;;
+      *)
+        # ИМЯ ПЛЕЧА НЕ СОВПАЛО НИ С ОДНОЙ ВЕТВЬЮ -- ЭТО ОШИБКА, А НЕ ПРОПУСК.
+        #
+        # 2026-10-19 отсутствие этой ветви стоило запуска и трёх с половиной часов ожидания.
+        # Плечо grounded_a_detachencoder было добавлено в ЭТОТ файл локально, но ядро Kaggle
+        # копирует код из БАНДЛА (датасет tgnn-solv-e5, снимок от 2026-10-03), где его нет.
+        # case провалился молча, обучение не запускалось (hours 0.0), и упал только агрегатор --
+        # на отсутствующем CSV, то есть в двух шагах от настоящей причины. В логе между строкой
+        # «-- seed=42 arm=...» и агрегатором не было НИЧЕГО, и прочитать это можно было только
+        # заметив пустоту.
+        #
+        # Это тот же класс, что уже дважды стоил ядра: недостача, читаемая как норма.
+        echo "run_e5: НЕИЗВЕСТНОЕ ПЛЕЧО '${arm}'." >&2
+        echo "  Ветви case в этом файле: nrtl directgnn ungrounded grounded_a grounded_b" >&2
+        echo "  grounded_a_shapefloor grounded_a_detachcrystal grounded_a_detachencoder" >&2
+        echo "  grounded_a_truetrain grounded_a_truetrain_residual channel_swap oracle" >&2
+        echo "  ЕСЛИ ПЛЕЧО ЕСТЬ В РЕПОЗИТОРИИ, НО НЕ ЗДЕСЬ -- запущен СТАРЫЙ КОД: ядро Kaggle" >&2
+        echo "  берёт его из бандла, и бандл надо пересобрать" >&2
+        echo "  (scripts/kaggle/build_kaggle_bundle.py) и выложить новой версией датасета." >&2
+        exit 2 ;;
     esac
 
     RUN_ARGS+=("--run" "${arm}=${pred}")
