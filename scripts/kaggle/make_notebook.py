@@ -167,7 +167,7 @@ print("repo:", REPO, "| files:", sum(1 for _ in REPO.rglob("*") if _.is_file()))
 """
 
 VERIFY = """
-import hashlib, json
+import hashlib, json, os
 from pathlib import Path
 
 # THE ONE CHECK THAT MATTERS.  A run whose split files differ from the ones the published family
@@ -200,6 +200,27 @@ SPLITS = [r for r in man["data"] if "/processed/" in r]
 assert all(man["data"][r].get("matches_published") for r in SPLITS), (
     "The SPLIT files do not match the digests the published runs recorded. Stop: seeds trained on "
     "them cannot be pooled with the published five.")
+# КОД В ЯДРЕ -- ИЗ БАНДЛА, А НЕ ИЗ GIT, и 2026-10-19 это стоило запуска и трёх с половиной
+# часов. Плечо grounded_a_detachencoder было в репозитории и запушено, но бандл был снимком от
+# 2026-10-03: `case` в драйвере провалился МОЛЧА, обучение не шло (hours 0.0), и упал только
+# агрегатор на отсутствующем CSV -- в двух шагах от причины. Теперь ожидаемый коммит передаётся
+# при сборке ноутбука и сверяется ЗДЕСЬ, на первой минуте сессии.
+_want = os.environ.get("TGNN_EXPECT_COMMIT", "").strip()
+_prov = (man.get("code_provenance") or {})
+_got = str(_prov.get("git_commit") or "")
+print(f"\\nбандл собран из коммита {_got[:12] or '-'} "
+      f"(ветка {_prov.get('git_branch') or '-'}, dirty={_prov.get('git_dirty')})")
+if _want:
+    assert _got.startswith(_want), (
+        f"БАНДЛ НЕ ТОТ: ожидался коммит {_want}, в MANIFEST {_got[:12] or 'его нет вовсе'}. "
+        f"Ядро копирует код ИЗ БАНДЛА, поэтому старая версия датасета означает старый драйвер и "
+        f"старый src: плечи, добавленные после сборки, молча не запустятся. Пересобери "
+        f"scripts/kaggle/build_kaggle_bundle.py и выложи новой версией датасета.")
+    print(f"ожидаемый коммит {_want} подтверждён")
+elif not _got:
+    print("!! в MANIFEST нет code_provenance -- бандл собран до появления штампа; "
+          "какой код здесь исполняется, проверить нечем")
+
 print(f"\\nthe {len(SPLITS)} split files match the published runs exactly")
 print("the sigma stream is the REBUILT one -- same pool, same split sizes, unverifiable assignment")
 """
@@ -335,6 +356,11 @@ def main() -> None:
                          "выглядит нормально, плечо тихо начинается с нуля и тратит весь бюджет "
                          "на то, чтобы это выяснить -- так 2026-10-04 было потеряно ядро, и так "
                          "же 2026-10-03 сгорели 21.5 часа.")
+    ap.add_argument("--expect-commit", default=None,
+                    help="префикс коммита, из которого ОБЯЗАН быть собран бандл. Ячейка проверки "
+                         "сверяет его с MANIFEST.code_provenance и падает на первой минуте, если "
+                         "приложена старая версия датасета. Без этого старый бандл означает "
+                         "старый драйвер: плечо, добавленное после сборки, молча не запустится.")
     ap.add_argument("--batch-size", type=int, default=None,
                     help="override the config batch size for every arm. UNSET IS NOT NEUTRAL "
                          "HERE: at the config's 64 an arm costs about 20 h on a T4 (measured -- "
@@ -349,7 +375,9 @@ def main() -> None:
         md("## 1 — environment"), code(ENV),
         md("## 2 — dependencies"), code(INSTALL),
         md("## 3 — stage code and data"), code(STAGE),
-        md("## 4 — verify the inputs against the published digests"), code(VERIFY),
+        md("## 4 — verify the inputs against the published digests"),
+        code((f'import os\nos.environ["TGNN_EXPECT_COMMIT"] = "{a.expect_commit}"\n'
+              if a.expect_commit else "") + VERIFY),
         md("## 5 — carry forward a previous session"),
         code(('import os\nos.environ["TGNN_EXPECT_RESUME"] = "1"\n'
               if a.expect_resume else "") + RESTORE),
