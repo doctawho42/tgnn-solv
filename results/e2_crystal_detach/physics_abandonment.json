@@ -1,0 +1,121 @@
+{
+  "pairs": [
+    {
+      "seed": "42",
+      "n_locked_rows": 5608,
+      "n_solutes": 147,
+      "null_arm": {
+        "control_gate_min": 0.987620770931244,
+        "control_gate_max": 1.0,
+        "control_gate_sd": 0.0004476592204929346,
+        "control_max_abs_dev": 0.0001201629638671875,
+        "control_mean_e_final_minus_e_phys": -1.2720258808166037e-07,
+        "gate_saturated": false,
+        "deviation_identically_zero": false
+      },
+      "A_gate_selectivity": {
+        "spearman_gate_vs_e_phys": -0.12196180908357447,
+        "zone": "неизбирательный обвал",
+        "e_phys_spread": {
+          "mean": 2.235164990545207,
+          "sd": 1.92935052926301,
+          "p10": 0.33990545272827183,
+          "p50": 1.6852073669433594,
+          "p90": 4.960607719421388,
+          "cv": 0.863180363608146,
+          "readable": true
+        }
+      },
+      "B_does_abandonment_buy_anything": {
+        "mean_e_final_minus_e_phys": -0.13567799116702914,
+        "ci95": [
+          -0.20555022758137564,
+          -0.06690349519938946
+        ],
+        "excludes_zero": true,
+        "verdict": "отход СНИЖАЕТ ошибку"
+      },
+      "C_constant_or_structure": {
+        "mean_signed_dev": -0.3168034431889286,
+        "sd_signed_dev": 0.5983640239310365,
+        "sd_over_abs_mean": 1.8887547998466565,
+        "verdict": "структура"
+      }
+    },
+    {
+      "seed": "43",
+      "n_locked_rows": 5608,
+      "n_solutes": 147,
+      "null_arm": {
+        "control_gate_min": 0.997775375843048,
+        "control_gate_max": 1.0,
+        "control_gate_sd": 0.0001070135487359459,
+        "control_max_abs_dev": 1.52587890625e-05,
+        "control_mean_e_final_minus_e_phys": 1.1138671134876485e-08,
+        "gate_saturated": false,
+        "deviation_identically_zero": false
+      },
+      "A_gate_selectivity": {
+        "spearman_gate_vs_e_phys": -0.3109360424337912,
+        "zone": "НЕ РАЗРЕШЕНО",
+        "e_phys_spread": {
+          "mean": 2.818749960089274,
+          "sd": 2.374820951113505,
+          "p10": 0.42105772197246555,
+          "p50": 2.181237578392029,
+          "p90": 6.4658772468566905,
+          "cv": 0.8425085533440827,
+          "readable": true
+        }
+      },
+      "B_does_abandonment_buy_anything": {
+        "mean_e_final_minus_e_phys": -0.03652547081271279,
+        "ci95": [
+          -0.11963521709573001,
+          0.05314200887551194
+        ],
+        "excludes_zero": false,
+        "verdict": "отход СНИЖАЕТ ошибку"
+      },
+      "C_constant_or_structure": {
+        "mean_signed_dev": -0.34162465534323555,
+        "sd_signed_dev": 0.6671994628679442,
+        "sd_over_abs_mean": 1.9530190588779333,
+        "verdict": "структура"
+      }
+    }
+  ],
+  "agreement": {
+    "A": {
+      "zones": [
+        "НЕ РАЗРЕШЕНО",
+        "неизбирательный обвал"
+      ],
+      "agrees": false
+    },
+    "B": {
+      "zones": [
+        "отход СНИЖАЕТ ошибку"
+      ],
+      "agrees": true
+    },
+    "C": {
+      "zones": [
+        "структура"
+      ],
+      "agrees": true
+    }
+  },
+  "null_arm_behaves_as_declared": false,
+  "thresholds": {
+    "rho_indiscriminate": 0.2,
+    "rho_working_gate": 0.4,
+    "const_shift_limit": 0.25
+  },
+  "bootstrap": {
+    "seed": 20261019,
+    "draws": 4000,
+    "note": "кластерный по растворяемым запертого набора; часть вторая измерила его консервативность на этом наборе"
+  },
+  "rules": "results/e2_crystal_detach/PRE_DECLARATION.md, раздел о пост-хок наблюдении"
+}
