@@ -1,0 +1,55 @@
+{
+  "pairs": [
+    {
+      "seed": "42",
+      "n_solutes": 31,
+      "n_high": 15,
+      "n_low": 16,
+      "pressure_median_cut": 5.559918063492219,
+      "mean_delta_high": -2.083597536131352,
+      "mean_delta_low": -31.908959285802464,
+      "D": 29.82536174967111,
+      "null_p95_abs": 33.69852986339067,
+      "exceeds_null": false,
+      "bootstrap_ci_width_not_significance": 65.54034114581022,
+      "spearman_ratio_vs": {
+        "rows": 0.21883535545757227,
+        "T_m_meas": -0.054838709677419356,
+        "dH_meas": 0.16329931618554522
+      },
+      "proxy_violations": {},
+      "mean_delta_abs_high": 20.6852234223368,
+      "mean_delta_abs_low": -14.970301623845547
+    },
+    {
+      "seed": "43",
+      "n_solutes": 31,
+      "n_high": 15,
+      "n_low": 16,
+      "pressure_median_cut": 4.393568620862453,
+      "mean_delta_high": -6.46781434023928,
+      "mean_delta_low": -25.6788975920403,
+      "D": 19.21108325180102,
+      "null_p95_abs": 41.40832891351807,
+      "exceeds_null": false,
+      "bootstrap_ci_width_not_significance": 79.21964075761801,
+      "spearman_ratio_vs": {
+        "rows": 0.4834969338753557,
+        "T_m_meas": -0.0963709677419355,
+        "dH_meas": -0.265361388801511
+      },
+      "proxy_violations": {},
+      "mean_delta_abs_high": 5.524955743872462,
+      "mean_delta_abs_low": -24.258744510567332
+    }
+  ],
+  "sign_agrees": true,
+  "both_exceed_null": false,
+  "any_proxy_violation": false,
+  "verdict": "НЕ СОСРЕДОТОЧЕНО: знак совпал, но нуль не превышен в обеих парах -- направления нет",
+  "null": {
+    "draws": 2000,
+    "seed": 20261019
+  },
+  "rules": "results/e2_crystal_detach/PRE_DECLARATION.md, раздел о разрезе по давлению"
+}
