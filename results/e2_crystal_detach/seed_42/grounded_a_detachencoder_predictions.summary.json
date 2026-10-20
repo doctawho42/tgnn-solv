@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/kaggle/working/out/checkpoints/grounded_a_detachencoder_seed42.pt",
+  "data": "/kaggle/working/repo/notebooks/data/processed/test.csv",
+  "output": "/kaggle/working/out/results/seed_42/grounded_a_detachencoder_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 2.076052278638396,
+  "rmse": 2.722855885330658,
+  "r2": 0.16910260622916373,
+  "bias": 0.5432406958218732,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.645470689673188,
+  "pred_std_ratio": 0.8856293419802934
+}
