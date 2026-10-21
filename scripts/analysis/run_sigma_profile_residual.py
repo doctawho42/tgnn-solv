@@ -191,7 +191,14 @@ def main() -> int:
 
     table = load_sigma_profiles(str(PROFILES), n_bins=n_bins)
     test = pd.read_csv(TEST, low_memory=False)
-    scored = test[test["ln_x2"].notna()]
+    # НЕ `ln_x2.notna()`: вспомогательные строки (`source=aux_only`, несут has_T_m) лежат в том же
+    # файле с ln_x2 РОВНО 0.0, а не NaN, поэтому notna() их пропускает -- 8103 строки вместо 5608.
+    # has_solubility даёт тот же САМЫЙ набор 5608 строк (проверено поэлементно, не по числу).
+    if "has_solubility" in test.columns:
+        scored = test[test["has_solubility"].astype(bool)]
+    else:
+        scored = test[test["ln_x2"].notna()]
+    assert not (scored["ln_x2"] == 0.0).all(), "отобраны строки-заполнители, а не измерения"
     seen = set(scored["solute_smiles"].astype(str)) | set(scored["solvent_smiles"].astype(str))
 
     from tgnn_solv.data.utils import canonicalize

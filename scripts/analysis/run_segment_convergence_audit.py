@@ -148,7 +148,14 @@ def part_a(seed_ckpt: Path) -> dict:
 
 def part_b(ckpts: list[Path], batch_size: int, device: torch.device) -> dict:
     test = pd.read_csv(TEST, low_memory=False)
-    df = test[test["ln_x2"].notna()].reset_index(drop=True)
+    # НЕ `ln_x2.notna()`: вспомогательные строки (`source=aux_only`, несут has_T_m) лежат в том же
+    # файле с ln_x2 РОВНО 0.0, а не NaN, поэтому notna() их пропускает -- 8103 строки вместо 5608.
+    # has_solubility даёт тот же САМЫЙ набор 5608 строк (проверено поэлементно, не по числу).
+    if "has_solubility" in test.columns:
+        df = test[test["has_solubility"].astype(bool)].reset_index(drop=True)
+    else:
+        df = test[test["ln_x2"].notna()].reset_index(drop=True)
+    assert not (df["ln_x2"] == 0.0).all(), "отобраны строки-заполнители, а не измерения"
     out: dict = {"counts": COUNTS_B, "per_seed": {}}
     frames = []
     for ck in ckpts:

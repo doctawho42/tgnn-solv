@@ -265,7 +265,14 @@ def main() -> int:
     draw_arms = [x for x in arms if x.startswith(f"{RANDOM_ARM}_d")]
     device = torch.device(a.device)
     test = pd.read_csv(TEST, low_memory=False)
-    df = test[test["ln_x2"].notna()].reset_index(drop=True)
+    # НЕ `ln_x2.notna()`: вспомогательные строки (`source=aux_only`, несут has_T_m) лежат в том же
+    # файле с ln_x2 РОВНО 0.0, а не NaN, поэтому notna() их пропускает -- 8103 строки вместо 5608.
+    # has_solubility даёт тот же САМЫЙ набор 5608 строк (проверено поэлементно, не по числу).
+    if "has_solubility" in test.columns:
+        df = test[test["has_solubility"].astype(bool)].reset_index(drop=True)
+    else:
+        df = test[test["ln_x2"].notna()].reset_index(drop=True)
+    assert not (df["ln_x2"] == 0.0).all(), "отобраны строки-заполнители, а не измерения"
     if a.max_rows:
         df = df.head(a.max_rows).reset_index(drop=True)
         print(f"ДЫМОВОЙ ПРОГОН на {len(df)} строках -- числа не являются результатом")

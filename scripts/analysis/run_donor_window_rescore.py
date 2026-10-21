@@ -82,7 +82,14 @@ def main() -> int:
         print(f"  без эталонного профиля: {len(missing_ref)} -> {missing_ref[:4]}")
 
     test = pd.read_csv(TEST, low_memory=False)
-    scored = test[test["ln_x2"].notna()]
+    # НЕ `ln_x2.notna()`: вспомогательные строки (`source=aux_only`, несут has_T_m) лежат в том же
+    # файле с ln_x2 РОВНО 0.0, а не NaN, поэтому notna() их пропускает -- 8103 строки вместо 5608.
+    # has_solubility даёт тот же САМЫЙ набор 5608 строк (проверено поэлементно, не по числу).
+    if "has_solubility" in test.columns:
+        scored = test[test["has_solubility"].astype(bool)]
+    else:
+        scored = test[test["ln_x2"].notna()]
+    assert not (scored["ln_x2"] == 0.0).all(), "отобраны строки-заполнители, а не измерения"
     n_rows = scored["solvent_smiles"].astype(str).value_counts()
 
     template = pd.read_csv(TEST, nrows=1, low_memory=False)
@@ -145,7 +152,7 @@ def main() -> int:
               f"{r.retired_learned_donor_window_area:>9.1f}{r.learned_donor_window_area:>9.2f}"
               f"{100*r.learned_donor_fraction:>10.1f}")
     nf, rf = summary["named_fraction_range"], summary["retired_named_fraction_range"]
-    print(f"\n  доля донорной площади по четырём поимённым:")
+    print("\n  доля донорной площади по четырём поимённым:")
     print(f"    Sec. 3.3 (отозванный):  {100*rf[0]:.0f}-{100*rf[1]:.0f}%")
     print(f"    плечи записи:           {100*nf[0]:.1f}-{100*nf[1]:.1f}%")
     print(f"  медиана по всем {len(df)}:   отозв. {100*summary['retired_median_learned_donor_fraction']:.1f}%"
