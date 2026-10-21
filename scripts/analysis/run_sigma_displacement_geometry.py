@@ -125,7 +125,15 @@ def main() -> int:
 
     device = torch.device(a.device)
     test = pd.read_csv(TEST, low_memory=False)
-    df = test[test["ln_x2"].notna()].reset_index(drop=True)
+    # НЕ `ln_x2.notna()`: вспомогательные строки (`source=aux_only`, несут has_T_m) лежат в том же
+    # файле с ln_x2 РОВНО 0.0, а не NaN, поэтому notna() пропускает их -- 8103 строки вместо 5608,
+    # то есть 31% заполнителей молча попадают в MAE. Депозит 2026-09-30 спасся только тем, что его
+    # запускали с `--max-rows 5608`, что случайно совпало с границей источника.
+    if "has_solubility" in test.columns:
+        df = test[test["has_solubility"].astype(bool)].reset_index(drop=True)
+    else:
+        df = test[test["ln_x2"].notna()].reset_index(drop=True)
+    assert not (df["ln_x2"] == 0.0).all(), "отобраны строки-заполнители, а не измерения"
     if a.max_rows:
         df = df.head(a.max_rows).reset_index(drop=True)
         print(f"ДЫМОВОЙ ПРОГОН на {len(df)} строках -- числа не результат")
