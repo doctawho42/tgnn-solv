@@ -120,6 +120,12 @@ def main() -> int:
     ap.add_argument("--max-rows", type=int, default=None, help="только дымовой прогон")
     ap.add_argument("--draws", type=int, default=4000)
     ap.add_argument("--boot-seed", type=int, default=0)
+    ap.add_argument("--corner-threshold", type=float, default=0.016,
+                    help="граница угла |sigma| >= X; депозит 2026-09-30 считан при 0.016")
+    ap.add_argument("--score-arms", nargs="*", default=None,
+                    help="оценивать только эти плечи. Конструкция инъекции ВСЕГДА полная: "
+                         "ГПСЧ расходуется тремя плечами смещения последовательно, и "
+                         "пропуск любого из них изменил бы розыгрыши у остальных.")
     ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
 
@@ -166,7 +172,7 @@ def main() -> int:
         n_bins = int(cfg.cosmo_sac_n_bins)
         grid = np.linspace(cfg.cosmo_sac_sigma_min, cfg.cosmo_sac_sigma_max, n_bins)
         core = np.abs(grid) <= float(cfg.cosmo_sac_sigma_hb)
-        corner = np.abs(grid) >= 0.016
+        corner = np.abs(grid) >= float(a.corner_threshold)
         oracle_table = load_sigma_profiles(str(PROFILES), n_bins=n_bins)
         subs = sorted({s for s in df["solvent_smiles"].astype(str)
                        if canonicalize(s) in oracle_table})
@@ -190,7 +196,12 @@ def main() -> int:
                 seed_geo.append({"seed": seed, "smiles": s, "arm": arm, "H_target": h_or,
                                  "H_achieved": hellinger(lv, q), "reached": bool(hit)})
         seed_rows = []
-        for arm in ARMS:
+        # Ограничивается ОЦЕНИВАНИЕ, не конструкция: inj выше построен по всем плечам, поэтому
+        # розыгрыши ГПСЧ у core_to_corner те же, что в депозите, при любом --score-arms.
+        score_arms = ARMS if a.score_arms is None else [x for x in ARMS if x in set(a.score_arms)]
+        if not score_arms:
+            raise SystemExit(f"--score-arms не выбрал ни одного плеча из {ARMS}")
+        for arm in score_arms:
             r = score_arm(model, cfg, df, arm, oracle_table, inj, n_bins, a.batch_size, device)
             r["arm"], r["seed"] = arm, seed
             seed_rows.append(r)
@@ -222,17 +233,31 @@ def main() -> int:
                                   "reached_fraction": float(s.reached.mean())}
                             for arm, s in g.groupby("arm")},
                "penalty_vs_control": {}}
-    for arm in ARMS[1:]:
-        pt, lo, hi = cluster_bootstrap(per_row, arm, a.draws, a.boot_seed)
+    # При --score-arms часть плеч отсутствует; штраф против control тогда не определён здесь и
+    # считается снаружи против ДЕПОНИРОВАННОГО control (он от порога угла не зависит).
+    present = [x for x in ARMS if x in per_seed.columns]
+    summary["arms_scored"] = present
+    have_control = "control" in present
+    for arm in [x for x in present if x != "control"]:
+        pt, lo, hi = cluster_bootstrap(per_row, arm, a.draws, a.boot_seed) if have_control else (
+            float("nan"), float("nan"), float("nan"))
         summary["penalty_vs_control"][arm] = {
             "point": pt, "ci95": [lo, hi],
-            "per_seed": (per_seed[arm] - per_seed["control"]).round(6).to_dict()}
+            "per_seed": ((per_seed[arm] - per_seed["control"]).round(6).to_dict()
+                         if have_control else per_seed[arm].round(6).to_dict()),
+            "is_raw_mae_not_penalty": not have_control}
         print(f"{arm:<22}{per_seed[arm].mean():>9.4f}{pt:>9.4f}{f'[{lo:+.4f}, {hi:+.4f}]':>32}")
-    print(f"{'control':<22}{per_seed['control'].mean():>9.4f}")
+    if have_control:
+        print(f"{'control':<22}{per_seed['control'].mean():>9.4f}")
+    else:
+        print("  (control не оценивался: штраф считается снаружи против депозита)")
 
     print(f"\n{'парный контраст':<26}{'оценка':>9}{'CI95':>32}")
     for nm, arm, base in (("угол минус ядро (РЕШАЮЩИЙ)", "core_to_corner", "core_to_core"),
                           ("оракул минус случайное", "oracle_solvent", "random_oracle_size")):
+        if arm not in per_seed.columns or base not in per_seed.columns:
+            print(f"{nm:<26}  пропущен: нет плеча {arm if arm not in per_seed.columns else base}")
+            continue
         pt, lo, hi = cluster_bootstrap(per_row, arm, a.draws, a.boot_seed, base=base)
         excl = (lo > 0) or (hi < 0)
         summary["paired_contrasts"] = summary.get("paired_contrasts", {})
