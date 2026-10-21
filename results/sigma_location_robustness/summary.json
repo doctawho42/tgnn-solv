@@ -1,0 +1,170 @@
+{
+  "source": "results/sigma_displacement_geometry",
+  "bootstrap": {
+    "seed": 20261021,
+    "draws": 4000,
+    "cluster_unit": "solvent_smiles"
+  },
+  "survive_fraction_predeclared": 0.5,
+  "reproduction_gate": {
+    "D_all": 1.0711583474642925,
+    "per_seed": [
+      1.002181242465514,
+      0.9354853257862386,
+      1.545499353046488,
+      1.2749907177542146,
+      0.5976350982690071
+    ],
+    "deposit_D": 1.0712,
+    "deposit_per_seed": [
+      1.002,
+      0.935,
+      1.545,
+      1.275,
+      0.598
+    ],
+    "matches": true
+  },
+  "null_arm": {
+    "rowwise_all": -1.5894062599386417e-08,
+    "eqweight_nowater": -2.4873861770021016e-08,
+    "eqweight_all": -2.3237372561118224e-08
+  },
+  "null_arm_is_zero_everywhere": true,
+  "composition": {
+    "n_solvents": 70,
+    "n_rows": 5608,
+    "kish_effective_n": 17.022343078841622,
+    "water_row_fraction": 0.07774607703281027,
+    "top5_fraction": 0.4482881597717546,
+    "kish_effective_n_nowater": 16.138940641561526
+  },
+  "D_nowater": {
+    "D": 0.7523844745083517,
+    "per_seed": [
+      0.7008857728775402,
+      0.47077963748271157,
+      1.2817218187715276,
+      0.7888809339491232,
+      0.5196542094608558
+    ],
+    "ci95": [
+      0.5202098230515302,
+      1.0271336165929466
+    ],
+    "excludes_zero": true,
+    "signs_positive": 5,
+    "ratio_to_D_all": 0.7024026618374766
+  },
+  "D_eqweight": {
+    "D": 0.29271864689731125,
+    "per_seed": [
+      0.21138558256805176,
+      0.17692329830161982,
+      0.6110825333170634,
+      0.23969923068642385,
+      0.22450258961339736
+    ],
+    "ci95": [
+      0.011468711641453066,
+      0.5730935947303754
+    ],
+    "excludes_zero": true,
+    "signs_positive": 5,
+    "ratio_to_D_all": 0.2732729923547267
+  },
+  "jackknife": {
+    "n_solvents": 70,
+    "max_abs_shift": 0.31877387295594084,
+    "most_influential_solvent": "O",
+    "most_influential_shift": -0.31877387295594084,
+    "any_single_solvent_moves_more_than_half": false,
+    "top10_by_influence": {
+      "O": {
+        "D_without": 0.7523844745083517,
+        "shift": -0.31877387295594084
+      },
+      "CO": {
+        "D_without": 0.9937660450916859,
+        "shift": -0.07739230237260664
+      },
+      "CCOC(C)=O": {
+        "D_without": 1.1213652758568586,
+        "shift": 0.05020692839256613
+      },
+      "CCO": {
+        "D_without": 1.1212345819085712,
+        "shift": 0.05007623444427867
+      },
+      "CCCO": {
+        "D_without": 1.114025433089,
+        "shift": 0.042867085624707535
+      },
+      "CC(C)O": {
+        "D_without": 1.1122296677367962,
+        "shift": 0.04107132027250371
+      },
+      "CCCCO": {
+        "D_without": 1.1097583380885545,
+        "shift": 0.038599990624262004
+      },
+      "CC(C)=O": {
+        "D_without": 1.1089110931445165,
+        "shift": 0.03775274568022402
+      },
+      "ClC(Cl)Cl": {
+        "D_without": 1.0393054600666187,
+        "shift": -0.03185288739767378
+      },
+      "Cc1ccccc1": {
+        "D_without": 1.0871420753528775,
+        "shift": 0.015983727888585042
+      }
+    }
+  },
+  "matching_control": {
+    "question": "идёт ли штраф за РАЗНИЦЕЙ достигнутого H, а не за расположением",
+    "per_seed_spearman_penalty_vs_dH": {
+      "42": {
+        "rho": 0.07298534798534798,
+        "p": 0.5665497922171505,
+        "n_solvents": 64
+      },
+      "43": {
+        "rho": 0.012225274725274723,
+        "p": 0.9236173545148992,
+        "n_solvents": 64
+      },
+      "44": {
+        "rho": 0.1854395604395604,
+        "p": 0.1423665044771892,
+        "n_solvents": 64
+      },
+      "45": {
+        "rho": -0.01130952380952381,
+        "p": 0.9293236860906062,
+        "n_solvents": 64
+      },
+      "46": {
+        "rho": 0.17660256410256409,
+        "p": 0.1627221695793799,
+        "n_solvents": 64
+      }
+    },
+    "median_dH": 0.00010510926726348124,
+    "note": "ядро достигает чуть МЕНЬШЕГО H (депозит печатает 2.6%), что завышает контраст; если штраф идёт за dH, контраст не про «куда»"
+  },
+  "predeclared_conditions": {
+    "D_nowater_at_least_half": true,
+    "D_eqweight_at_least_half": false,
+    "nowater_ci_excludes_zero": true,
+    "eqweight_ci_excludes_zero": true,
+    "nowater_signs_at_least_4of5": true,
+    "eqweight_signs_at_least_4of5": true,
+    "no_single_solvent_carries_it": true
+  },
+  "verdict": "НЕ ДЕРЖИТСЯ: обобщение «расположение, а не величина» снимается",
+  "failed_conditions": [
+    "D_eqweight_at_least_half"
+  ]
+}

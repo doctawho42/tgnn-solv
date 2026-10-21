@@ -1,0 +1,59 @@
+{
+  "thresholds_predeclared": {
+    "min_gap_over_null": 0.15,
+    "strong_null_rho": 0.5,
+    "no_gradient_rho": 0.2
+  },
+  "per_seed": {
+    "42": {
+      "n_solvents": 64,
+      "rho_penalty_vs_hb": 0.11803450228847973,
+      "p_penalty": 0.35293168347075854,
+      "rho_control_mae_vs_hb": 0.07394932673495115,
+      "p_control": 0.5614219032253555,
+      "gap_abs": 0.044085175553528574
+    },
+    "43": {
+      "n_solvents": 64,
+      "rho_penalty_vs_hb": -0.17023942401575914,
+      "p_penalty": 0.17865302872804711,
+      "rho_control_mae_vs_hb": 0.29164568530859303,
+      "p_control": 0.019373601371395443,
+      "gap_abs": -0.12140626129283388
+    },
+    "44": {
+      "n_solvents": 64,
+      "rho_penalty_vs_hb": 0.147187602251297,
+      "p_penalty": 0.2457934159189965,
+      "rho_control_mae_vs_hb": 0.18347415153625132,
+      "p_control": 0.14671989731388208,
+      "gap_abs": -0.03628654928495431
+    },
+    "45": {
+      "n_solvents": 64,
+      "rho_penalty_vs_hb": 0.028166803111203478,
+      "p_penalty": 0.8251414387396656,
+      "rho_control_mae_vs_hb": 0.28322775636574965,
+      "p_control": 0.023340252473770667,
+      "gap_abs": -0.2550609532545462
+    },
+    "46": {
+      "n_solvents": 64,
+      "rho_penalty_vs_hb": 0.0427318845245701,
+      "p_penalty": 0.7374209784219256,
+      "rho_control_mae_vs_hb": -0.2677910637811894,
+      "p_control": 0.032407675785163584,
+      "gap_abs": -0.22505917925661928
+    }
+  },
+  "summary": {
+    "median_rho_penalty": 0.0427318845245701,
+    "median_rho_control_null": 0.18347415153625132,
+    "median_gap": -0.12140626129283388,
+    "seeds_rho_penalty_positive": 4,
+    "seeds_gap_over_threshold": 0,
+    "n_seeds": 5
+  },
+  "verdict": "ЭТО ПРО ТРУДНОСТЬ РАСТВОРИТЕЛЯ, НЕ ПРО ЗАМЫКАНИЕ: нулевое плечо коррелирует не хуже",
+  "instrument_is_weak_by_construction": "64-70 растворителей, Kish n ~17: отрицательный исход механизм НЕ закрывает"
+}
