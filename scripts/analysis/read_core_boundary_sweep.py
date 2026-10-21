@@ -55,6 +55,24 @@ def main() -> int:
     geom = pd.read_csv(a.dir / "geometry.csv")
     meta = json.loads((a.dir / "run_meta.json").read_text())
 
+    # ЗАМОК (поправка 1 предзаявки): годен растворитель, взявший цель во ВСЕХ окнах и на ВСЕХ сидах.
+    # Применяется ДО ворот, и ворота пересчитываются здесь, а не берутся из run_meta прогона.
+    lock_file = a.dir / "locked_solvents.csv"
+    if lock_file.exists():
+        locked = set(pd.read_csv(lock_file).solvent_smiles.astype(str))
+        n_before = geom.smiles.nunique()
+        geom = geom[geom.smiles.astype(str).isin(locked)]
+        per_row = per_row[per_row.solvent_smiles.astype(str).isin(locked)]
+        meta = dict(meta)
+        meta["locked_solvents"] = len(locked)
+        meta["excluded_solvents"] = n_before - len(locked)
+        tol = meta.get("tv_tolerance", 0.5)
+        meta["tv_gate_passed"] = bool(
+            geom.groupby("window_k0").tv_achieved.apply(lambda x: x.max() - x.min()).max() <= tol)
+        meta["dst_bins_constant"] = bool(geom.n_dst_bins.nunique() == 1)
+        print(f"ЗАМОК применён: {len(locked)} растворителей, исключено "
+              f"{meta['excluded_solvents']}; ворота пересчитаны на запертом наборе")
+
     inside = sorted(geom[geom.inside_core].window_k0.unique().tolist())
     outside = sorted(geom[~geom.inside_core].window_k0.unique().tolist())
     ladder = inside + outside
