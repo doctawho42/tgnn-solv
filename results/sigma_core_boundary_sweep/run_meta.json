@@ -1,0 +1,25 @@
+{
+  "ladder_k0": [
+    1,
+    5,
+    9,
+    13,
+    17,
+    21
+  ],
+  "window_width_k": 4,
+  "target_tv": 20.82,
+  "tv_tolerance": 0.5,
+  "tv_gate_passed": false,
+  "dst_bins_constant": true,
+  "identity_null": -1.5244129736302625e-08,
+  "boot_seed": 0,
+  "n_rows_per_arm": 5608,
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ]
+}
