@@ -161,10 +161,29 @@ def main() -> int:
             layer = getattr(model.sle_solver, "cosmo_sac_layer", None)
             if layer is None:
                 raise SystemExit("нет cosmo_sac_layer -- сдвигать sigma_hb негде")
+            # ПРИСВОЕНИЯ АТРИБУТА НЕ ХВАТАЕТ. Матрица обменной энергии delta_w_base
+            # предвычисляется один раз в __init__ (layers.py: "depends only on the fixed grid ->
+            # precompute once") и лежит буфером, поэтому forward читает СТАРОЕ значение. Первая
+            # версия этого опыта так и прошла: при sigma_hb 0.0060 все шесть окон дали числа,
+            # совпавшие с опорными до 0.0000 -- невозможное для настоящего эффекта совпадение,
+            # которое и вскрыло отсоединённую ручку. Пересобираем буфер и ПРОВЕРЯЕМ, что он изменился.
+            before = layer.delta_w_base.detach().clone()
             layer.sigma_hb = float(a.sigma_hb_score)
+            grid_t = layer.sigma_grid
+            sm, sn = grid_t.view(-1, 1), grid_t.view(1, -1)
+            misfit = 0.5 * layer.alpha_prime * (sm + sn) ** 2
+            acc, don = torch.maximum(sm, sn), torch.minimum(sm, sn)
+            hb_term = layer.c_hb * torch.clamp(acc - layer.sigma_hb, min=0.0) * torch.clamp(
+                don + layer.sigma_hb, max=0.0)
+            layer.delta_w_base = misfit + hb_term
+            moved = float((layer.delta_w_base - before).abs().max())
             sigma_hb_used = float(a.sigma_hb_score)
             print(f"  sigma_hb при ОЦЕНИВАНИИ = {sigma_hb_used} (источник и окна -- по "
                   f"{float(cfg.cosmo_sac_sigma_hb)})", flush=True)
+            print(f"  ядро пересобрано, максимум изменения delta_w_base = {moved:.4f}", flush=True)
+            if abs(sigma_hb_used - float(cfg.cosmo_sac_sigma_hb)) > 1e-12 and moved <= 0.0:
+                raise SystemExit("ВОРОТА: sigma_hb сдвинут, а ядро НЕ изменилось -- ручка "
+                                 "отсоединена, чтение было бы бессмысленным")
         table = load_sigma_profiles(str(PROFILES), n_bins=n_bins)
         subs = sorted({s for s in df["solvent_smiles"].astype(str) if canonicalize(s) in table})
         print(f"\nсид {seed}: {len(subs)} подставляемых растворителей, ядро {int(core.sum())} бинов, "
