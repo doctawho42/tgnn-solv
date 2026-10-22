@@ -115,6 +115,11 @@ def main() -> int:
     ap.add_argument("--max-rows", type=int, default=None, help="только дымовой прогон")
     ap.add_argument("--boot-seed", type=int, default=0)
     ap.add_argument("--target-tv", type=float, default=TARGET_TV)
+    ap.add_argument("--sigma-hb-score", type=float, default=None,
+                    help="оценивать при ДРУГОМ sigma_hb. Инъекции строятся по ИСХОДНОМУ из "
+                         "конфига, поэтому стимул побитово тот же и меняется только оператор "
+                         "оценивания. Веса обучены при исходном -- асимметрия силы объявлена "
+                         "в results/sigma_hb_shift/PRE_DECLARATION.md")
     ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
 
@@ -149,6 +154,17 @@ def main() -> int:
         step = (cfg.cosmo_sac_sigma_max - cfg.cosmo_sac_sigma_min) / (n_bins - 1)
         k_hb = int(np.floor(float(cfg.cosmo_sac_sigma_hb) / step))
         core = window_mask(n_bins, 0, k_hb + 1)
+        # Сдвиг порога ЗАМЫКАНИЯ применяется ПОСЛЕ вычисления core: источник и окна остаются на
+        # исходном sigma_hb, поэтому инъекции не меняются и сравнение изолирует оператор.
+        sigma_hb_used = float(cfg.cosmo_sac_sigma_hb)
+        if a.sigma_hb_score is not None:
+            layer = getattr(model.sle_solver, "cosmo_sac_layer", None)
+            if layer is None:
+                raise SystemExit("нет cosmo_sac_layer -- сдвигать sigma_hb негде")
+            layer.sigma_hb = float(a.sigma_hb_score)
+            sigma_hb_used = float(a.sigma_hb_score)
+            print(f"  sigma_hb при ОЦЕНИВАНИИ = {sigma_hb_used} (источник и окна -- по "
+                  f"{float(cfg.cosmo_sac_sigma_hb)})", flush=True)
         table = load_sigma_profiles(str(PROFILES), n_bins=n_bins)
         subs = sorted({s for s in df["solvent_smiles"].astype(str) if canonicalize(s) in table})
         print(f"\nсид {seed}: {len(subs)} подставляемых растворителей, ядро {int(core.sum())} бинов, "
@@ -172,7 +188,10 @@ def main() -> int:
                                  "inside_core": bool(k0 + WINDOW_WIDTH - 1 <= k_hb),
                                  "tv_target": a.target_tv, "tv_achieved": tv, "reached": bool(hit),
                                  "hellinger_floating": hellinger(lv, q),
-                                 "profile_area": float(lv.sum())})
+                                 "profile_area": float(lv.sum()),
+                                 "sigma_hb_scoring": sigma_hb_used,
+                                 "sigma_hb_construction": float(cfg.cosmo_sac_sigma_hb),
+                                 "k_hb_construction": k_hb})
         seed_rows = []
         for arm in ["control", "identity_solvent"] + arm_names:
             r = score_arm(model, cfg, df, arm, table, inj, n_bins, a.batch_size, device)
@@ -213,6 +232,7 @@ def main() -> int:
     (a.out / "run_meta.json").write_text(json.dumps({
         "ladder_k0": LADDER, "window_width_k": WINDOW_WIDTH,
         "target_tv": a.target_tv, "tv_tolerance": TV_TOL,
+        "sigma_hb_scoring": float(a.sigma_hb_score) if a.sigma_hb_score is not None else None,
         "tv_gate_passed": bool(gate_ok), "dst_bins_constant": bool(bins_const),
         "identity_null": float(nulls), "boot_seed": a.boot_seed,
         "n_rows_per_arm": int(len(per_row[per_row.arm == 'control']) // max(1, per_row.seed.nunique())),
