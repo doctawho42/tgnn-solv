@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
+import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -101,6 +104,61 @@ def _records_from_mapping(paths: Mapping[str, str | Path | None] | None) -> list
     return records
 
 
+#: Момент импорта модуля. `train.py` импортирует его на старте, поэтому разница до записи
+#: манифеста близка к настенному времени прогона -- но это НЕ оно, и ключ назван буквально.
+_IMPORTED_AT = time.monotonic()
+
+
+def compute_snapshot() -> dict[str, Any]:
+    """Чем именно считали: версия torch, карта, драйвер, ПИК VRAM.
+
+    ЗАЧЕМ. В манифестах депонированных армов (`checkpoints/e5_leakfree/*.manifest.json`) записаны
+    `python_version` и `platform`, а версии torch, имени карты, драйвера и пика памяти НЕТ. Поэтому
+    про те чекпойнты нельзя сказать, на каком torch они обучены, -- а при переносе на другую машину
+    это первое, что спрашивают. Снимок добавлен 2026-10-22 при переезде на кластер.
+
+    Функция обязана быть безопасной там, где torch или `nvidia-smi` отсутствуют: `runtime_snapshot`
+    вызывают и чисто процессорные скрипты.
+    """
+    out: dict[str, Any] = {
+        "elapsed_since_module_import_s": round(time.monotonic() - _IMPORTED_AT, 1),
+        "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+    }
+    try:
+        import torch
+    except ImportError:
+        out["torch"] = None
+        out["note"] = "torch не импортируется -- снимок вычислителя пуст"
+        return out
+    out["torch"] = torch.__version__
+    out["torch_cuda_build"] = torch.version.cuda
+    try:
+        out["cuda_available"] = bool(torch.cuda.is_available())
+    except Exception:                                    # драйвер может отвалиться на ходу
+        out["cuda_available"] = False
+    if out["cuda_available"]:
+        try:
+            out["device_count"] = int(torch.cuda.device_count())
+            out["gpu_name"] = torch.cuda.get_device_name(0)
+            out["gpu_capability"] = list(torch.cuda.get_device_capability(0))
+            out["gpu_mem_total_gib"] = round(torch.cuda.mem_get_info(0)[1] / 2**30, 2)
+            # ПИК -- главное из того, чего не было: он отвечает на «влезет ли на другую карту».
+            out["peak_vram_allocated_gib"] = round(torch.cuda.max_memory_allocated() / 2**30, 3)
+            out["peak_vram_reserved_gib"] = round(torch.cuda.max_memory_reserved() / 2**30, 3)
+        except Exception as exc:                         # не ронять манифест из-за провенанса
+            out["gpu_probe_error"] = f"{type(exc).__name__}: {exc}"
+    exe = shutil.which("nvidia-smi")
+    if exe:
+        try:
+            out["driver"] = subprocess.run(
+                [exe, "--query-gpu=driver_version", "--format=csv,noheader"],
+                capture_output=True, text=True, timeout=20, check=True
+            ).stdout.strip().splitlines()[0]
+        except (subprocess.SubprocessError, OSError, IndexError):
+            out["driver"] = None
+    return out
+
+
 def runtime_snapshot() -> dict[str, Any]:
     """Capture the current runtime and repo state."""
     return {
@@ -112,6 +170,7 @@ def runtime_snapshot() -> dict[str, Any]:
         "git_branch": git_branch(),
         "git_dirty": git_is_dirty(),
         "repo_root": str(_repo_root()),
+        "compute": compute_snapshot(),
     }
 
 

@@ -43,6 +43,14 @@ cd "$(dirname "$0")/../.."
 export KMP_DUPLICATE_LIB_OK=TRUE   # rdkit/torch/sklearn libomp clash on macOS
 
 PY="${PY:-$HOME/anaconda3/envs/tgnn-solv/bin/python}"
+# Путь к интерпретатору вшит по умолчанию и на другой машине промахивается. При промахе шелл печатал
+# "No such file or directory" и шёл дальше, а наружу уходил код 0 -- то есть десятичасовой арм мог
+# "закончиться" мгновенно и успешно. Проверяем ОДИН раз, здесь, и падаем громко.
+if ! "${PY}" -c 'import sys' >/dev/null 2>&1; then
+  echo "ОСТАНОВ: интерпретатор '${PY}' не исполняется." >&2
+  echo "  Задайте PY=<путь к python> -- например PY=/mnt/storage/\$USER/tgnn-solv/env/bin/python" >&2
+  exit 2
+fi
 # DEVICE is a demand, not a default. Unset, --device is not passed at all and each child
 # reads this box through tgnn_solv.device.default_device(); set, the string reaches every
 # child, where resolve_device refuses to substitute CPU for an accelerator you named. That
