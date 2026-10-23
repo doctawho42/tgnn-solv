@@ -1,0 +1,1952 @@
+{
+  "results/ablation_proxy": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/ablation_proxy/tgnn_structural_rescue_smoke_p1-1-0_diagnostics": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/ablation_proxy/tgnn_structural_rescue_smoke_p1-1-0_intermediates": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/ablation_proxy/tgnn_tuned_smoke_p1-1-0_diagnostics": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/ablation_proxy/tgnn_tuned_smoke_p1-1-0_intermediates": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/b_insuff": {
+    "claims": [
+      "crossfit_verdict.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/bridge_workers_ab": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/chemical_space_projection": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/closure_conditioning": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/closure_fix_dial": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/closure_headroom": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/closure_ladder": {
+    "claims": [
+      "RESULTS.md"
+    ],
+    "machine": [],
+    "level": "ПРОЗА",
+    "checkpoints_named": [
+      "checkpoints/cosmo_sac/tgnn_cosmo.pt",
+      "checkpoints/e5/",
+      "checkpoints/e5/grounded_a_seed"
+    ],
+    "dates_named": [
+      "2026-06-21",
+      "2026-07-13"
+    ]
+  },
+  "results/closure_sensitivity_map": {
+    "claims": [
+      "RESULTS.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-10-02"
+    ]
+  },
+  "results/cluster_certification": {
+    "claims": [
+      "RESULTS.md"
+    ],
+    "machine": [],
+    "level": "ПРОЗА",
+    "checkpoints_named": [
+      "checkpoints/e5_leakfree/"
+    ],
+    "dates_named": [
+      "2026-08-10",
+      "2026-08-11"
+    ]
+  },
+  "results/compensation_diagnostics_smoke": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/compositional_generalization/directgnn_latest": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/compositional_generalization/tgnn_mpnn_latest": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/cosmors_builder_smoke": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/crystal_known_probe/compensation_diagnostics": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/crystal_known_probe/cosmors_full_train": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/crystal_known_probe/cosmors_full_train/compensation_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/crystal_known_probe/cosmors_full_train/compensation_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/crystal_known_probe/cosmors_pilot/compensation_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/crystal_known_probe/cosmors_pilot/compensation_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/crystal_known_probe/cosmors_pilot_subset": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/crystal_known_probe/decorr_ablation": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/crystal_known_probe/splits": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/crystal_pressure_gate": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/data_efficiency": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/data_efficiency_multiseed/data_efficiency_seed42": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/dcp_correction_audit": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/diagnostic_experiments": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/diagnostic_experiments/logs/directgnn_descriptors_proxy/20260328_190432": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/diagnostic_experiments/logs/directgnn_descriptors_proxy_fixed/20260328_201127": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/diagnostic_experiments/logs/tgnn_combined_proxy/20260328_190656": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/diagnostic_experiments/logs/tgnn_combined_proxy_configcheck": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/diagnostic_experiments/logs/tgnn_combined_proxy_frozenresid": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/diagnostic_experiments/logs/tgnn_combined_proxy_gcfix": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/diagnostic_experiments/logs/tgnn_tuned_proxy/20260328_190226": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/difficult_systems_audit": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/directgnn_error_structure": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/donor_window_rescore": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/dualgpu_probe": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/e0_compensation/tgnn_mpnn_full": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/e2_crystal_detach": {
+    "claims": [
+      "attribution_verdict.json"
+    ],
+    "machine": [],
+    "level": "ПРОЗА",
+    "checkpoints_named": [
+      "checkpoints/e5_leakfree/",
+      "checkpoints/e5_leakfree/grounded_a_seed4"
+    ],
+    "dates_named": [
+      "2026-08-10",
+      "2026-10-03"
+    ]
+  },
+  "results/e5_sigma_grounding": {
+    "claims": [
+      "THREE_SEED_SUMMARY.md"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-07-10"
+    ]
+  },
+  "results/e5_sigma_grounding/seed_42": {
+    "claims": [
+      "comparison.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/e5_sigma_grounding/seed_43": {
+    "claims": [
+      "comparison.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/e5_sigma_grounding/seed_44": {
+    "claims": [
+      "comparison.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/e5_sigma_grounding_leakfree/seed_42": {
+    "claims": [
+      "comparison.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/e5_sigma_grounding_leakfree/seed_43": {
+    "claims": [
+      "comparison.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/e5_sigma_grounding_leakfree/seed_44": {
+    "claims": [
+      "comparison.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/e5_sigma_grounding_leakfree/seed_45": {
+    "claims": [
+      "comparison.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/e5_sigma_grounding_leakfree/seed_46": {
+    "claims": [
+      "comparison.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/embedding_geometry/tgnn_mpnn_proxy": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/embedding_geometry/tgnn_tuned_medium": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/embedding_interpretability/tgnn_tuned_medium": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/extended_split_diagnostics": {
+    "claims": [
+      "SUMMARY.md"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-04-16"
+    ]
+  },
+  "results/external_baseline_comparison": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/external_crystal_substitution/scaffold_tgnn_mpnn_proxy": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/external_crystal_substitution/temperature_extrapolation_proxy": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/fragment_coverage/scaffold_test": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/fusion_supervision_audit": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/g3_weight_reachability": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/g4_descent_depth": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/g5_floor_granularity": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/idac_brouwer": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/idac_expansion_audit": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/idac_learned_vs_reference": {
+    "claims": [
+      "RESULTS.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "ПРОЗА",
+    "checkpoints_named": [
+      "checkpoints/e5_leakfree/grounded_a_seed{42..46}"
+    ],
+    "dates_named": [
+      "2026-09-29",
+      "2026-09-30"
+    ]
+  },
+  "results/identifiability_audit": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/medium_budget/per_model/tgnn_tuned/descriptor_probe": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/metric_diagnosis": {
+    "claims": [
+      "SUMMARY.md"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/metric_diagnosis_bundle": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/metric_diagnosis_scaffold_bias": {
+    "claims": [
+      "SUMMARY.md"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_gamma_inf_activity/bias_diagnostics": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_gamma_inf_activity/bias_diagnostics_bias_aux05": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_gamma_inf_activity/bias_diagnostics_bias_aux05_predbin": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_gamma_inf_activity/bias_diagnostics_tail_weighted_aux05": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_gamma_inf_activity/correction_audit_gamma_inf": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_gamma_inf_activity/offline_diagnostics": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_gamma_inf_activity/offline_diagnostics_bias_aux05": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_gamma_inf_activity/offline_diagnostics_tail_weighted_aux05": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue/offline_diagnostics": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue/offline_diagnostics_rdkit": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue/unifac_finite_activity_aux": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_baseline_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_baseline_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_cosmors42_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_cosmors42_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_cosmors42_steps2_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_cosmors42_steps2_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_cosmors42_w005_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_cosmors42_w005_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_cosmors42_w010_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_cosmors42_w010_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_exactjoint42_plus_cosmors42_w005_fixscale_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_exactjoint42_plus_cosmors42_w005_fixscale_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_exactjoint42_w010_fixscale_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_exactjoint42_w010_fixscale_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_exactjoint42_w025_fixscale_coordinate_descent_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_exactjoint42_w025_fixscale_coordinate_descent_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_exactjoint42_w025_fixscale_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_exactjoint42_w025_fixscale_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_exactjoint42_w100_oracle": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/compensation_exactjoint42_w100_standard": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/cosmors_aux": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/cosmors_aux_w005": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/cosmors_aux_w010": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/exact_joint_aux_w010": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/exact_joint_aux_w025": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/exact_joint_aux_w100": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/mps_small_rescue_crystal_holdout/exactjoint42_plus_cosmors42_w005_fixscale_aux": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/multifragment_stratum": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/noise_floor": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/offline_prediction_diagnostics": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/open_crystal_artifact": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/pairwise_contrastive_refresh": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/physics_bottleneck_diagnostics": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/physics_bottleneck_diagnostics/tgnn_checkpoint_intermediates": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/physics_bottleneck_diagnostics/tgnn_medium_budget_intermediates": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/physics_bottleneck_diagnostics/tgnn_mpnn_proxy_intermediates": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/physics_bottleneck_diagnostics_medium": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/physics_bottleneck_diagnostics_proxy": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/physics_supervision_audit": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [
+      "checkpoints/idac_expanded_train_aux_tgnn.pt"
+    ],
+    "dates_named": []
+  },
+  "results/prediction_error_slices": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/prediction_error_slices/DirectGNN": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/prediction_error_slices/RF_hybrid": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/prediction_error_slices/TGNN_MPNN": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/prediction_error_slices_latest": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/prediction_error_slices_latest/DirectGNN": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/prediction_error_slices_latest/RF_hybrid": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/prediction_error_slices_latest/TGNN_MPNN": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/proxy_comparison": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [
+      "directgnn_desc.manifest.json",
+      "directgnn_tuned.manifest.json",
+      "tgnn_desc.manifest.json",
+      "tgnn_desc_oracle.manifest.json",
+      "tgnn_mpnn.manifest.json",
+      "tgnn_mpnn_oracle.manifest.json",
+      "tgnn_timp.manifest.json",
+      "tgnn_timp_hc.manifest.json",
+      "tgnn_timp_hc_oracle.manifest.json",
+      "tgnn_timp_oracle.manifest.json"
+    ],
+    "level": "МАШИННЫЙ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/proxy_comparison/tgnn_mpnn_descriptor_probe": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [
+      "checkpoints/proxy/tgnn_mpnn.pt"
+    ],
+    "dates_named": []
+  },
+  "results/proxy_comparison/tgnn_timp_descriptor_probe": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [
+      "checkpoints/proxy/tgnn_timp.pt"
+    ],
+    "dates_named": []
+  },
+  "results/proxy_comparison/tgnn_timp_hc_descriptor_probe": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [
+      "checkpoints/proxy/tgnn_timp_hc.pt"
+    ],
+    "dates_named": []
+  },
+  "results/published_idac_check": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/real_step_profile": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/regime_diagnostics/mps_small_gamma_inf": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/regime_diagnostics/scaffold_current": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/row_filter_audit": {
+    "claims": [
+      "RESULTS.md"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-10-21"
+    ]
+  },
+  "results/scaffold_distance_analysis/directgnn_latest": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/scaffold_distance_analysis/tgnn_mpnn_latest": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/segment_convergence": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/shape_vs_area": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/shape_window_decomposition": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/sigma_core_boundary_sweep": {
+    "claims": [
+      "RESULTS.md",
+      "reading.json"
+    ],
+    "machine": [
+      "run_meta.json"
+    ],
+    "level": "МАШИННЫЙ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-10-21"
+    ]
+  },
+  "results/sigma_core_boundary_water": {
+    "claims": [
+      "RESULTS.md"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-10-22"
+    ]
+  },
+  "results/sigma_corner_threshold_sweep": {
+    "claims": [
+      "RESULTS.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-10-21"
+    ]
+  },
+  "results/sigma_displacement_geometry": {
+    "claims": [
+      "RESULTS.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "ПРОЗА",
+    "checkpoints_named": [
+      "checkpoints/e5_leakfree/grounded_a_seed{42..46}"
+    ],
+    "dates_named": [
+      "2026-09-29",
+      "2026-09-30"
+    ]
+  },
+  "results/sigma_hb_shift": {
+    "claims": [
+      "RESULTS.md"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-10-22"
+    ]
+  },
+  "results/sigma_location_robustness": {
+    "claims": [
+      "RESULTS.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-10-21"
+    ]
+  },
+  "results/sigma_profile_artifact": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/sigma_profile_residual": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/sigma_role_injection": {
+    "claims": [
+      "RESULTS.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "ПРОЗА",
+    "checkpoints_named": [
+      "checkpoints/e5_leakfree/grounded_a_seed",
+      "checkpoints/e5_leakfree/grounded_a_seed{42..46}.pt"
+    ],
+    "dates_named": [
+      "2026-09-28",
+      "2026-09-29"
+    ]
+  },
+  "results/solubility_cliffs/train_sampled": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/solver_break_audit": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/solver_speedup_ab": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/source_uncertainty_audit": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/source_uncertainty_audit_metadata": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/source_uncertainty_audit_reviewed": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/source_uncertainty_audit_reviewed_cached_smoke": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/source_uncertainty_audit_top20_meta": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/source_weighted_proxy_subset": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/structural_extrapolation_cause2_cpu_checks": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/structural_extrapolation_diagnosis": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-04-18"
+    ]
+  },
+  "results/structural_extrapolation_diagnostics": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/substitution_mechanism": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [
+      "gate.json"
+    ],
+    "level": "МАШИННЫЙ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/synthetic_dial": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/tail_diagnostics_fast_v2": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/temperature_extrapolation_baselines": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [
+      "checkpoints/temperature_extrapolation/directgnn_lowT_highT.pt",
+      "checkpoints/temperature_extrapolation/tgnn_solv_lowT_highT.pt"
+    ],
+    "dates_named": []
+  },
+  "results/temperature_extrapolation_enhanced_proxy": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": [
+      "2026-04-18"
+    ]
+  },
+  "results/temperature_extrapolation_failure_diagnostics": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/temperature_extrapolation_neural_proxy": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "ПРОЗА",
+    "checkpoints_named": [
+      "checkpoints/temperature_extrapolation/directgnn_lowT_highT_proxy_seed42_ep10.pt",
+      "checkpoints/temperature_extrapolation/tgnn_solv_lowT_highT_proxy_seed42_p1-8-1.pt"
+    ],
+    "dates_named": [
+      "2026-04-17"
+    ]
+  },
+  "results/temperature_extrapolation_slope_diagnostics": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [
+      "checkpoints/temperature_extrapolation/directgnn_lowT_highT_proxy_seed42_ep10.pt",
+      "checkpoints/temperature_extrapolation/tgnn_solv_lowT_highT_proxy_seed42_p1-8-1.pt"
+    ],
+    "dates_named": []
+  },
+  "results/temperature_extrapolation_slope_diagnostics/baselines_test": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/temperature_extrapolation_slope_diagnostics/baselines_test_min3": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/temperature_extrapolation_slope_diagnostics/directgnn_proxy_slopes": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/temperature_extrapolation_slope_diagnostics/directgnn_proxy_slopes_min3": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/temperature_extrapolation_slope_diagnostics/tgnn_proxy_intermediates": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/temperature_extrapolation_slope_diagnostics/tgnn_proxy_slopes": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/temperature_extrapolation_slope_diagnostics/tgnn_proxy_slopes_min3": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/temperature_interpolation_baselines": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [
+      "checkpoints/temperature_interpolation/directgnn_inpair.pt",
+      "checkpoints/temperature_interpolation/tgnn_solv_inpair.pt"
+    ],
+    "dates_named": []
+  },
+  "results/temperature_interpretability_bundle": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/temperature_rescue_plumbing_smoke": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/thermoml_activity": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/thermoml_crystal": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/thermoml_property_inventory": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/thermoml_targeted_coverage": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/unifac_coverage/current_priors": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/unifac_finite_activity_coverage": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/unifac_finite_activity_coverage_fallback": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/unifac_gamma2_tiny/unifac_finite_activity_aux": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/unit_conversion_audit": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/water_small_molecule_audit": {
+    "claims": [
+      "SUMMARY.md",
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  },
+  "results/weight_analysis_smoke": {
+    "claims": [
+      "summary.json"
+    ],
+    "machine": [],
+    "level": "НЕТ",
+    "checkpoints_named": [],
+    "dates_named": []
+  }
+}
