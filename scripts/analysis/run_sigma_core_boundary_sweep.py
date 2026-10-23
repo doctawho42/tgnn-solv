@@ -115,6 +115,10 @@ def main() -> int:
     ap.add_argument("--max-rows", type=int, default=None, help="только дымовой прогон")
     ap.add_argument("--boot-seed", type=int, default=0)
     ap.add_argument("--target-tv", type=float, default=TARGET_TV)
+    ap.add_argument("--core-k", type=int, default=None,
+                    help="закрепить |k| границы ИСТОЧНИКА (ядра) вручную. Нужно, когда арм "
+                         "обучен при другом cosmo_sac_sigma_hb: иначе ядро поедет вместе с "
+                         "порогом и стимул перестанет быть сравнимым с опорным опытом.")
     ap.add_argument("--sigma-hb-score", type=float, default=None,
                     help="оценивать при ДРУГОМ sigma_hb. Инъекции строятся по ИСХОДНОМУ из "
                          "конфига, поэтому стимул побитово тот же и меняется только оператор "
@@ -152,7 +156,11 @@ def main() -> int:
         model.to(device)
         n_bins = int(cfg.cosmo_sac_n_bins)
         step = (cfg.cosmo_sac_sigma_max - cfg.cosmo_sac_sigma_min) / (n_bins - 1)
-        k_hb = int(np.floor(float(cfg.cosmo_sac_sigma_hb) / step))
+        k_hb_native = int(np.floor(float(cfg.cosmo_sac_sigma_hb) / step))
+        k_hb = a.core_k if a.core_k is not None else k_hb_native
+        if a.core_k is not None and a.core_k != k_hb_native:
+            print(f"  ИСТОЧНИК закреплён на |k| <= {k_hb} (у этого арма sigma_hb даёт "
+                  f"{k_hb_native}) -- стимул держится сравнимым с опорным опытом", flush=True)
         core = window_mask(n_bins, 0, k_hb + 1)
         # Сдвиг порога ЗАМЫКАНИЯ применяется ПОСЛЕ вычисления core: источник и окна остаются на
         # исходном sigma_hb, поэтому инъекции не меняются и сравнение изолирует оператор.
@@ -210,7 +218,8 @@ def main() -> int:
                                  "profile_area": float(lv.sum()),
                                  "sigma_hb_scoring": sigma_hb_used,
                                  "sigma_hb_construction": float(cfg.cosmo_sac_sigma_hb),
-                                 "k_hb_construction": k_hb})
+                                 "k_hb_construction": k_hb,
+                                 "k_hb_native": k_hb_native})
         seed_rows = []
         for arm in ["control", "identity_solvent"] + arm_names:
             r = score_arm(model, cfg, df, arm, table, inj, n_bins, a.batch_size, device)
