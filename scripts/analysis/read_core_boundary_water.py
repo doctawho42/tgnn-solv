@@ -90,6 +90,16 @@ def main() -> int:
     inside = sorted(geom[geom.inside_core].window_k0.unique().tolist())
     outside = sorted(geom[~geom.inside_core].window_k0.unique().tolist())
 
+    # ТОЛЬКО ПОДСТАВЛЯЕМЫЕ. `per_row` содержит все растворители тестовых строк (их 70), но
+    # депонированный профиль есть лишь у части (64): остальные НЕ возмущаются вовсе, их разности
+    # нулевые по построению, и они разбавляют знаковую долю к 50%. Опыт ступеньки читался на 63
+    # подставляемых, поэтому без этого ограничения числа несравнимы.
+    substituted = set(geom.smiles.astype(str))
+    n_before = per_row.solvent_smiles.nunique()
+    per_row = per_row[per_row.solvent_smiles.astype(str).isin(substituted)]
+    print(f"ограничено подставляемыми: {per_row.solvent_smiles.nunique()} из {n_before} "
+          f"растворителей тестовых строк")
+
     spread = geom.groupby("window_k0").tv_achieved.apply(lambda x: x.max() - x.min())
     gates = {
         "target_tv": meta.get("target_tv"),
