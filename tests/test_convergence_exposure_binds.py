@@ -35,6 +35,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SI = ROOT / "paper/sections/SI.tex"
 DEPOSIT = ROOT / "results/segment_convergence/summary.json"
+ORACLE = ROOT / "results/oracle_segment_sweep/summary.json"
+READING = ROOT / "results/oracle_segment_sweep/reading.json"
 CKPTS = ROOT / "checkpoints/e5_leakfree"
 
 CONTRAST = 0.41  # the +0.41 the paragraph measures its step against; printed in the same sentence
@@ -49,7 +51,7 @@ def prose() -> str:
     t = _typeset()
     i = t.find("Re-scoring the\nretained grounded weights at other counts")
     assert i > 0, "the re-scoring sentence is gone; rewrite this gate with the paragraph"
-    return t[i : i + 2600]
+    return t[i : i + 5200]
 
 
 @pytest.fixture(scope="module")
@@ -146,3 +148,107 @@ def test_the_checkpoint_inventory_the_paragraph_asserts(prose: str) -> None:
         f"supervision contrast as unsweepable; found {[p.name for p in ungrounded_w]}"
     )
     assert len(ungrounded_m) == 5, f"paragraph says five ungrounded manifests; found {len(ungrounded_m)}"
+
+
+# ---------------------------------------------------------------------------------------------
+# The substituted arm, added 2026-10-25 when the sweep closed the disclosure this file guards.
+# ---------------------------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def orc() -> dict:
+    if not ORACLE.exists():
+        pytest.skip("oracle sweep absent")
+    return json.load(ORACLE.open())
+
+
+@pytest.fixture(scope="module")
+def reading() -> dict:
+    if not READING.exists():
+        pytest.skip("oracle reading absent")
+    return json.load(READING.open())
+
+
+def test_the_substituted_arm_s_five_means_bind(prose: str, orc: dict) -> None:
+    printed = re.search(
+        r"seed-mean MAE runs \$([\d.]+)\$, \$([\d.]+)\$, \$([\d.]+)\$,\s*\n"
+        r"\$([\d.]+)\$ and \$([\d.]+)\$",
+        prose,
+    )
+    assert printed is not None, "the substituted arm's five-value list no longer matches"
+    want = [float(x) for x in printed.groups()]
+    got = [round(orc["part_b"]["mae_mean"][c], 4) for c in ("8", "16", "30", "100", "300")]
+    assert want == got, f"substituted means: paragraph {want}, deposit {got}"
+
+
+def test_the_five_contrasts_bind(prose: str, reading: dict) -> None:
+    printed = re.search(
+        r"the contrast \$\+([\d.]+)\$, \$\+([\d.]+)\$, \$\+([\d.]+)\$, \$\+([\d.]+)\$ "
+        r"and \$\+([\d.]+)\$",
+        prose,
+    )
+    assert printed is not None, "the contrast list no longer matches"
+    want = [float(x) for x in printed.groups()]
+    got = [round(reading["delta_by_count"][c]["delta_mean"], 4)
+           for c in ("8", "16", "30", "100", "300")]
+    assert want == got, f"contrasts: paragraph {want}, reading {got}"
+
+
+def test_the_shift_its_share_and_the_undercount_bind(prose: str, reading: dict) -> None:
+    sh = reading["contrast_shift_30_to_converged"]
+    printed_shift = float(re.search(r"the contrast moves \$-([\d.]+)\$", prose).group(1))
+    assert round(abs(sh["mean"]), 3) == printed_shift, (
+        f"shift: paragraph -{printed_shift}, reading {sh['mean']:.5f}"
+    )
+    printed_share = float(re.search(r"\$([\d.]+)\\%\$ of itself", prose).group(1))
+    d30 = reading["delta_by_count"]["30"]["delta_mean"]
+    assert round(100 * abs(sh["mean"]) / d30, 1) == printed_share, (
+        f"share: paragraph {printed_share}%, reading {100 * abs(sh['mean']) / d30:.2f}%"
+    )
+    printed_under = float(re.search(r"understating it by \$([\d.]+)\$", prose).group(1))
+    under = d30 - reading["delta_by_count"]["8"]["delta_mean"]
+    assert round(under, 3) == printed_under, (
+        f"undercount: paragraph {printed_under}, reading {under:.4f}"
+    )
+
+
+def test_the_movement_is_still_not_a_direction(prose: str, reading: dict) -> None:
+    """The paragraph refuses to call the shift a direction. That refusal is a measured claim."""
+    sh = reading["contrast_shift_30_to_converged"]
+    assert sh["seeds_same_direction"] == 3, (
+        f"the paragraph says three of five seeds carry the sign; reading says "
+        f"{sh['seeds_same_direction']}"
+    )
+    assert sh["straddles_zero"], (
+        "the per-seed range no longer spans zero, so 'not a direction' has stopped being true"
+    )
+    lo, hi = (float(x) for x in re.search(
+        r"range\s*\n\$\[-([\d.]+),\+([\d.]+)\]\$ spans zero", prose).groups())
+    assert round(abs(sh["range"][0]), 3) == lo and round(sh["range"][1], 3) == hi, (
+        f"printed range [-{lo},+{hi}] against measured {sh['range']}"
+    )
+
+
+def test_the_gate_that_licenses_the_denominator_still_holds(reading: dict) -> None:
+    """Without this the +0.41 the contrast is divided by belongs to another instrument."""
+    assert all(g["pass"] for g in reading["gate"].values()), reading["gate"]
+    worst = max(g["abs_diff"] for g in reading["gate"].values())
+    assert worst < 1e-3, f"worst gate difference {worst:.2e} against the pre-declared 1e-3"
+
+
+def test_the_two_per_row_medians_and_p95_bind(prose: str, dep: dict, orc: dict) -> None:
+    lrn = dep["part_b"]["ln_x2_shift_vs_converged"]["30"]
+    sub = orc["part_b"]["ln_x2_shift_vs_converged"]["30"]
+    m = re.search(
+        r"smaller median \(\$([\d.]+)\\times10\^\{-4\}\$ against \$([\d.]+)\\times10\^\{-3\}\$\) "
+        r"and the larger ninety-fifth\s*\npercentile \(\$([\d.]+)\$ against \$([\d.]+)\$\)",
+        prose,
+    )
+    assert m is not None, "the two-statistic sentence no longer matches"
+    lm, sm, lp, sp = (float(x) for x in m.groups())
+    assert round(lrn["median"] * 1e4, 1) == lm
+    assert round(sub["median"] * 1e3, 1) == sm
+    assert round(lrn["p95"], 3) == lp
+    assert round(sub["p95"], 3) == sp
+    # The ordering the sentence exists to warn about: it reverses between the two statistics.
+    assert lrn["median"] < sub["median"] and lrn["p95"] > sub["p95"]

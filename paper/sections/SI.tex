@@ -123,10 +123,21 @@ the one the asymmetry predicts: at $30$ iterations the segment fixed point's own
 median $9.7\times10^{-4}$, a ninety-fifth percentile of $0.038$ and a worst case of $0.073$ in \lngi\
 on the tabulation, against $2.4\times10^{-3}$, $0.077$ and $0.162$ on the learned profile, so the
 broad softmax is the slower of the two by roughly a factor of two wherever the residual is large.
-Two gaps remain and neither is closed by the above. The ungrounded arm's weights are not retained,
-so the supervision contrast cannot be swept at all; and the sweep above scores the learned profile,
-so the substituted arm's own MAE at other counts is unmeasured---the tabulation's faster convergence
-makes a large opposing shift there unlikely without bounding it.
+The substituted arm sweeps the same way, through the same code on the same weights and rows, so the
+contrast itself can be read at each count: its seed-mean MAE runs $2.2300$, $2.3061$, $2.3356$,
+$2.3370$ and $2.3368$, and the contrast $+0.3145$, $+0.3866$, $+0.4081$, $+0.4008$ and $+0.4004$.
+Between the evaluation count and the fixed point the contrast moves $-0.008$, $1.9\%$ of itself, and
+that movement is not a direction: three of the five seeds carry its sign, the per-seed range
+$[-0.031,+0.002]$ spans zero, and one seed carries almost all of it. What the count does reach is
+\emph{under}-counting. At eight iterations the contrast reads $+0.31$, understating it by $0.094$,
+so the exposure is a head scored below the count it was fitted at and not one scored above it---
+which is the configuration of the retired run above, fitted at $8$ and read at $30$. The slower
+segment convergence of the learned profile should not be carried over to \lnx\ by inspection,
+either: at $30$ iterations the learned arm's per-row shift against the converged solve has the
+smaller median ($5.9\times10^{-4}$ against $3.6\times10^{-3}$) and the larger ninety-fifth
+percentile ($0.136$ against $0.056$), so which profile is the better behaved depends on which
+statistic is asked for. One gap remains, and it is not closed by any of the above: the ungrounded
+arm's weights are not retained, so the supervision contrast cannot be swept at all.
 % REWRITTEN 2026-10-25.  Two statements here had gone stale, both in the direction of disclosing
 % MORE ignorance than the tree holds.  (1) "the tree retaining the three DirectGNN checkpoints and
 % none of the COSMO-SAC ones" was true when written on 2026-08-11 and false two days later:
@@ -142,10 +153,23 @@ makes a large opposing shift there unlikely without bounding it.
 % THE NEGATIVE WAS NEVER CROSS-DATED, which is the finding behind this edit: the measurement landed
 % 27 days after submission and nothing re-read the sentence it answers.  Artifacts and the arithmetic
 % behind every numeral: results/paper_revision/REVISION_LEDGER.md, item R2.
-% WHAT IS DELIBERATELY STILL DISCLOSED: the substituted arm's own MAE at other counts.  The sweep
-% scores the learned profile; the oracle scoring is an inference pass on these same weights and is
-% runnable, so if it is run this paragraph gains a number and loses its last clause.  Do not soften
-% that clause before it is.
+% RUN 2026-10-25, the same day, and the clause above is accordingly gone.  results/oracle_segment_
+% sweep/ sweeps the substituted scoring over the same five counts on the same five checkpoints,
+% through part_b with --oracle-side both, i.e. ONE code path for both arms -- scoring the two arms
+% through different scripts would have put the difference of paths into the difference of arms.
+% GATE BEFORE READING: at n=30 the sweep reproduces the deposited oracle arm on all five seeds, the
+% worst |diff| being 3.2e-5 against a pre-declared tolerance of 1e-3, and the substitution coverage
+% matches the runner's documented 99.3% solvent / 5.3% solute, so the +0.41 denominator is this
+% instrument's own.  Pre-declared rule (results/oracle_segment_sweep/PRE_DECLARATION.md, committed
+% 2e314cc BEFORE any number): |delta(300) - delta(30)| >= 0.05 would have made the contrast
+% count-sensitive and that a limitation on the headline.  Measured 0.008, so it is not.
+% THE SCRIPT APPLIED THE RULE, not the author: read_oracle_segment_sweep.py was written before the
+% numbers existed and printed the 3/5 agreement warning itself.  That is why the sentence says the
+% movement is not a direction even though its mean has a sign.
+% WHAT THE PRE-DECLARATION DID NOT ANTICIPATE: under-counting is the real exposure (+0.31 at n=8,
+% 0.094 below the evaluation count, twice the threshold), and the ln x2 propagation does NOT inherit
+% the ln gamma ordering.  Both are in the text because leaving them out would make the closed
+% disclosure read cleaner than the measurement is.
 % ADDED 2026-08-11 (round 7, referee CHEM item 1).  "Unmeasured" was the whole disclosure, and the
 % lever is not small.  Artifacts: results/softmax_floor/gate.json (the reproduction and both
 % counts' supervised MAE) and results/softmax_floor/ladder_table.csv (substitute_reference_both,
