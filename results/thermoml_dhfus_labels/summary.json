@@ -1,0 +1,22 @@
+{
+  "usage": "diagnostic_only -- это строки ТЕСТА; обучать на них было бы утечкой",
+  "source": "results/thermoml_crystal/thermoml_crystal_aggregated.csv",
+  "thermoml_joint_solutes_total": 473,
+  "locked_solutes": 147,
+  "already_measured_solutes": 1,
+  "already_measured_rows": 18,
+  "candidates": 8,
+  "accepted": 7,
+  "rejected_entropy": 1,
+  "rejected_agreement": 1,
+  "single_source_among_accepted": 6,
+  "solutes_after": 7,
+  "rows_after": 298,
+  "gates": {
+    "dS_window_J_per_mol_K": [
+      20.0,
+      110.0
+    ],
+    "rel_std_max": 0.15
+  }
+}
