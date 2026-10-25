@@ -104,23 +104,56 @@ row by $9.20$, and the seed-mean MAE by $+0.0025$. Carrying the same rows to the
 moves that mean a further $+0.017$, against this arm's own $+0.093$ physics penalty over DirectGNN:
 the operator that arm is scored through is neither the one it was fitted
 against nor a converged one. The COSMO-SAC arms carry the same two counts and cannot be re-solved
-this way, their kernel being a $\sigma$-profile pair the deposit does not carry; nor can the weights
-be re-run, the tree retaining the three DirectGNN checkpoints of Fig.~\ref{fig:paradox} and none of
-the COSMO-SAC ones. On tabulated profiles at $298$\,K the count is worth $0.014$ in $\mathrm{MSE}$
-over the low-$\gamma$ $n{=}60$ set, and that is the only bound available: the substituted arm produces
-$174$ rows above $\lng=10$ where the learned arm produces none, and no bound measured on a low-$\gamma$
-set at one temperature carries to those rows. The convergence exposure on the substitution contrast
-is therefore unmeasured on these arms, and the two profiles it compares---a broad softmax against a
-tabulation with
-$57\%$ exactly-zero bins---need not reach the fixed point at the same rate.
+this way, their kernel being a $\sigma$-profile pair the deposit does not carry; the weights, however, are
+retained for the grounded arm: the tree holds the three DirectGNN checkpoints of
+Fig.~\ref{fig:paradox} and the five grounded COSMO-SAC ones, while the five ungrounded carry a
+manifest and no weights. On tabulated profiles at $298$\,K the count is worth $0.014$ in
+$\mathrm{MSE}$ over the low-$\gamma$ $n{=}60$ set, and that bound does not reach the rows at issue:
+the substituted arm produces $174$ rows above $\lng=10$ where the learned arm produces none, and no
+bound measured on a low-$\gamma$ set at one temperature carries to those rows. Re-scoring the
+retained grounded weights at other counts bounds the exposure directly. Over $8$, $16$, $30$, $100$
+and $300$ segment iterations, rows and weights held fixed, the seed-mean \lnx\ MAE runs $1.9155$,
+$1.9195$, $1.9275$, $1.9362$ and $1.9364$: an interval $0.021$ wide, in which converging the solver
+makes the arm slightly \emph{worse} rather than better, and the step from the evaluation count of
+$30$ to the fixed point is $+0.009$, $2.2\%$ of the $+0.41$ this axis reports. That
+aggregate is insensitive because the per-row shifts cancel and not because they are small---at $30$
+the median row moves $5.9\times10^{-4}$ against the converged solve, its ninety-fifth percentile
+$0.136$ and its worst row $2.03$ in \lnx. The two profiles do differ in rate, and the direction is
+the one the asymmetry predicts: at $30$ iterations the segment fixed point's own residual is a
+median $9.7\times10^{-4}$, a ninety-fifth percentile of $0.038$ and a worst case of $0.073$ in \lngi\
+on the tabulation, against $2.4\times10^{-3}$, $0.077$ and $0.162$ on the learned profile, so the
+broad softmax is the slower of the two by roughly a factor of two wherever the residual is large.
+Two gaps remain and neither is closed by the above. The ungrounded arm's weights are not retained,
+so the supervision contrast cannot be swept at all; and the sweep above scores the learned profile,
+so the substituted arm's own MAE at other counts is unmeasured---the tabulation's faster convergence
+makes a large opposing shift there unlikely without bounding it.
+% REWRITTEN 2026-10-25.  Two statements here had gone stale, both in the direction of disclosing
+% MORE ignorance than the tree holds.  (1) "the tree retaining the three DirectGNN checkpoints and
+% none of the COSMO-SAC ones" was true when written on 2026-08-11 and false two days later:
+% checkpoints/e5_leakfree/grounded_a_seed4{2,3,4,5,6}.pt are dated 2026-08-13 14:10-14:22.  The
+% ungrounded arm is the one with no weights -- five manifests, no .pt -- which is also why the
+% supervision contrast cannot be swept and the substitution one can.  (2) "the convergence exposure
+% on the substitution contrast is therefore unmeasured on these arms" was answered on 2026-09-30 by
+% results/segment_convergence/ (part_b), which sweeps n_iter_eval over 8/16/30/100/300 on those five
+% retained checkpoints with rows and weights fixed.  Seed 42 at count 30 returns 1.8871313, matching
+% the deposited arm's own 1.88713 to five decimals, so it is the same weights and the same rows.
+% CLASS 1 under results/crossdating_audit/AUDIT.md: a within-checkpoint re-score, so the cluster
+% certification gap of 0.20 does not reach it and this edit did not wait on a GPU.
+% THE NEGATIVE WAS NEVER CROSS-DATED, which is the finding behind this edit: the measurement landed
+% 27 days after submission and nothing re-read the sentence it answers.  Artifacts and the arithmetic
+% behind every numeral: results/paper_revision/REVISION_LEDGER.md, item R2.
+% WHAT IS DELIBERATELY STILL DISCLOSED: the substituted arm's own MAE at other counts.  The sweep
+% scores the learned profile; the oracle scoring is an inference pass on these same weights and is
+% runnable, so if it is run this paragraph gains a number and loses its last clause.  Do not soften
+% that clause before it is.
 % ADDED 2026-08-11 (round 7, referee CHEM item 1).  "Unmeasured" was the whole disclosure, and the
 % lever is not small.  Artifacts: results/softmax_floor/gate.json (the reproduction and both
 % counts' supervised MAE) and results/softmax_floor/ladder_table.csv (substitute_reference_both,
 % solvent_substitutable, iter 8 and 30).  THE SCOPING CLAUSE IS THE POINT: this head does not
 % reproduce the phenomenon -- opposite direction, ten times the size -- so the two counts bound the
 % lever's size on a COSMO-SAC head of this architecture and say nothing about the +0.41 itself.
-Where it can be measured it is large. The one trained COSMO-SAC head the tree retains---the retired
-$8$-iteration run of \S\ref{sec:si-mech}---scores $2.61$ at $30$ against $1.92$ at $8$ on the same
+Where training and scoring counts disagree it is large. The retired
+$8$-iteration run of \S\ref{sec:si-mech}, trained at $8$ and scored at $30$, scores $2.61$ at $30$ against $1.92$ at $8$ on the same
 labelled rows, and its substitution penalty over the $5571$ rows whose solvent carries a reference
 profile is $+4.32$ at $8$ against $+6.43$ at $30$, a movement of half the penalty's own size. That
 head's penalty is fifteen times the one reported here, at the count that one is measured at, and its predictions move the other way under the

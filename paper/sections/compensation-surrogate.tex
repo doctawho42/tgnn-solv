@@ -116,6 +116,23 @@ reads, where the reference tabulation is exactly zero.}
 % molecules stay and the rule goes.
 % THE 264-OF-1003 EVIDENCE STAYS, checked 2026-08-18: it is this correction's own support and it is
 % deposited nowhere else in either document.  A length pass that drops it undoes the repair.
+% CORRECTED 2026-10-25, and it is the FOURTH defect in this paragraph.  The over-representation
+% figure was read from results/sigma_profile_residual/per_molecule.csv at a revision whose molecule
+% pool was built with `ln_x2.notna()`.  That filter admits the 2495 auxiliary rows carrying ln_x2
+% EXACTLY 0.0 rather than NaN (results/row_filter_audit/RESULTS.md), and 55 of the deposit's 126
+% molecules appear in no labelled test row at all.  Restricted to the 71 that do -- of which 33
+% carry reference donor area -- the factor falls 2.2 -> 2.1 and the interval becomes [1.7, 2.4].
+% THE PRINTED IQR OF [1.6, 3.0] BOUND TO NEITHER AGGREGATION: 240 pooled seed-rows give
+% [1.70, 2.86] and 48 per-molecule medians [1.71, 2.49], so the convention is named in the sentence
+% now and was not before.  The defect ran in the flattering direction -- the molecules the filter
+% admitted were enriched MORE (median 2.30, every one of the fifteen above one) -- which is the same
+% direction as the 4.38 -> 3.97 the audit found for the deposit's headline.  The three sub-unity
+% exceptions all survive the filter, so 94% -> 91% is the denominator halving and not a molecule
+% crossing one; that is why the sentence reports the count.
+% THE DEPOSIT STILL PUBLISHES 4.381 over the unfiltered 126.  results/sigma_profile_residual/
+% SUPERSEDED.md carries the correction, and tests/test_donor_window_claim_binds.py recomputes this
+% sentence's four numerals from the CSV and the labelled test rows -- the enrolled-display checker
+% cannot see them, this paragraph carrying no \label.
 COSMO-SAC's hydrogen-bonding contribution acts on segments beyond $|\sigma|=\sigma_{\mathrm{hb}}$,
 and the $2002$ kernel assigns a segment to the donor side by that threshold alone, with no atom
 typing. Donor-window area is therefore a statement about surface charge density and not a
@@ -133,10 +150,14 @@ profile is occupied in all sixteen. Supervision has recovered the window's \emph
 the thirty-one scored solvents the learned donor-window area ranks with the reference at
 $\rho=+0.65$ ($p=8\times10^{-5}$). What it has not done is close the window, and the shortfall is
 not spread evenly over the profile. Against the share of profile area the same window holds, the
-learned-minus-tabulated residual is over-represented there by a factor of $2.2$ (IQR $1.6$ to
-$3.0$), exceeding one for $94\%$ of molecules, over $126$ molecules and five seeds; the figure is
-quoted on the $48$ whose reference tabulation carries donor area at all, so the comparison is not
-against a baseline of zeros.
+learned-minus-tabulated residual is over-represented there by a factor of $2.1$ (IQR $1.7$ to
+$2.4$), the molecule being the unit and each molecule a median over the five seeds, quoted on the
+$33$ that both carry donor area in the reference tabulation at all and appear in a labelled test
+row---so the comparison is neither against a baseline of zeros nor over molecules the scored set
+never reaches. Three of the thirty-three fall below one: formamide and water, the two whose
+reference carries the most donor area of the set, and acetonitrile. They are the same three
+exceptions the unfiltered pool of $48$ carries, so the count of exceptions is three either way and
+the share moves with the size of the pool alone.
 
 % THE FIGURE, added 2026-08-19.  Sec. 3.3 carried the corpus's most chemistry-legible result in
 % prose alone, and "the reference is exactly zero and the learned profile is not" is a claim a
