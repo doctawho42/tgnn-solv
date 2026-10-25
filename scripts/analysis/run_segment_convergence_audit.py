@@ -60,7 +60,7 @@ from export_checkpoint_predictions import build_loader, forward_batch      # noq
 from run_sigma_profile_residual import build_model, learned_profiles       # noqa: E402
 from tgnn_solv.data.utils import canonicalize                              # noqa: E402
 from tgnn_solv.layers import CosmoSacLayer                                 # noqa: E402
-from tgnn_solv.sigma_oracle import load_sigma_profiles                     # noqa: E402
+from tgnn_solv.sigma_oracle import build_oracle_tensors, load_sigma_profiles  # noqa: E402
 
 CKPT_DIR = ROOT / "checkpoints/e5_leakfree"
 PROFILES = ROOT / "results/sigma_profile_artifact/sigma_profiles.csv"
@@ -146,7 +146,14 @@ def part_a(seed_ckpt: Path) -> dict:
     return res
 
 
-def part_b(ckpts: list[Path], batch_size: int, device: torch.device) -> dict:
+def part_b(ckpts: list[Path], batch_size: int, device: torch.device,
+           oracle_side: str | None = None, sigma_artifact: Path = PROFILES) -> dict:
+    """Развёртка счётчика на фиксированных весах.
+
+    ``oracle_side`` включает ПОДСТАНОВКУ ссылочного профиля при счёте -- ровно то, чем прогонщик
+    делает арм ``oracle`` (``run_e5_sigma_grounding.sh:344-354``): те же веса, меняется только путь
+    счёта.  Оба плеча проходят через ЭТОТ код, иначе разность плеч несла бы ещё и разницу путей.
+    """
     test = pd.read_csv(TEST, low_memory=False)
     # НЕ `ln_x2.notna()`: вспомогательные строки (`source=aux_only`, несут has_T_m) лежат в том же
     # файле с ln_x2 РОВНО 0.0, а не NaN, поэтому notna() их пропускает -- 8103 строки вместо 5608.
@@ -156,8 +163,14 @@ def part_b(ckpts: list[Path], batch_size: int, device: torch.device) -> dict:
     else:
         df = test[test["ln_x2"].notna()].reset_index(drop=True)
     assert not (df["ln_x2"] == 0.0).all(), "отобраны строки-заполнители, а не измерения"
-    out: dict = {"counts": COUNTS_B, "per_seed": {}}
+    out: dict = {"counts": COUNTS_B, "per_seed": {}, "oracle_side": oracle_side}
+    sigma_table = None
+    if oracle_side is not None:
+        sigma_table = load_sigma_profiles(str(sigma_artifact), n_bins=51)
+        print(f"ПОДСТАНОВКА ссылочного профиля, сторона={oracle_side}, "
+              f"таблица={sigma_artifact.name} ({len(sigma_table)} молекул)")
     frames = []
+    oracle_cover: list[dict] = []
     for ck in ckpts:
         model, ckd, cfg = build_model(ck)
         seed = int(ckd.get("seed", -1))
@@ -173,7 +186,29 @@ def part_b(ckpts: list[Path], batch_size: int, device: torch.device) -> dict:
             loader = build_loader(df, cfg, batch_size, 0)
             with torch.no_grad():
                 for sol_b, slv_b, targets in loader:
-                    o, _ = forward_batch("tgnn", model, sol_b, slv_b, targets, device)
+                    forced = False
+                    if sigma_table is not None:
+                        n_bins = getattr(cfg, "cosmo_sac_n_bins", 51)
+                        if oracle_side in {"solute", "both"}:
+                            pp, aa, mm = build_oracle_tensors(
+                                targets["solute_smiles"], sigma_table, n_bins=n_bins)
+                            targets["sigma_oracle_p_solute"] = pp
+                            targets["sigma_oracle_area_solute"] = aa
+                            targets["sigma_oracle_mask_solute"] = mm
+                            oracle_cover.append({"side": "solute", "n": int(mm.numel()),
+                                                 "hit": int(mm.sum())})
+                        if oracle_side in {"solvent", "both"}:
+                            pp, aa, mm = build_oracle_tensors(
+                                targets["solvent_smiles"], sigma_table, n_bins=n_bins)
+                            targets["sigma_oracle_p_solvent"] = pp
+                            targets["sigma_oracle_area_solvent"] = aa
+                            targets["sigma_oracle_mask_solvent"] = mm
+                            oracle_cover.append({"side": "solvent", "n": int(mm.numel()),
+                                                 "hit": int(mm.sum())})
+                        targets["__force_sigma_oracle__"] = True
+                        forced = True
+                    o, _ = forward_batch("tgnn", model, sol_b, slv_b, targets, device,
+                                         force_sigma_oracle=forced)
                     pred = o["ln_x2"].detach().cpu().numpy().astype(float)
                     true = targets["ln_x2"].detach().cpu().numpy().astype(float)
                     has = targets["has_solubility"].detach().cpu().numpy().astype(bool)
@@ -196,6 +231,11 @@ def part_b(ckpts: list[Path], batch_size: int, device: torch.device) -> dict:
     for c in COUNTS_B[:-1]:
         d = (w[c] - w[ref]).abs()
         out["ln_x2_shift_vs_converged"][int(c)] = spread(torch.tensor(d.to_numpy(float)))
+    if oracle_cover:
+        cov = pd.DataFrame(oracle_cover).groupby("side")[["n", "hit"]].sum()
+        out["oracle_coverage"] = {str(k): {"rows_seen": int(r.n), "substituted": int(r.hit),
+                                           "fraction": float(r.hit / r.n) if r.n else None}
+                                  for k, r in cov.iterrows()}
     out["per_row_csv"] = "per_row_lnx2.csv"
     return out, per_row
 
@@ -208,25 +248,39 @@ def main() -> int:
     ap.add_argument("--batch-size", type=int, default=64)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--skip-b", action="store_true", help="только решатель, без прогонов модели")
+    ap.add_argument("--skip-a", action="store_true",
+                    help="только развёртка по весам; часть A не зависит от неё и не пересчитывается")
+    ap.add_argument("--oracle-side", choices=["solute", "solvent", "both"], default=None,
+                    help="подставлять ссылочный профиль при счёте (арм oracle); по умолчанию -- нет")
+    ap.add_argument("--sigma-artifact", type=Path, default=PROFILES)
+    ap.add_argument("--counts", type=int, nargs="+", default=None,
+                    help="счётчики части B; по умолчанию 8 16 30 100 300.  Последний служит "
+                         "сошедшейся опорой для построчных сдвигов, так что порядок возрастающий")
     ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
 
+    if a.counts:
+        global COUNTS_B
+        COUNTS_B = list(a.counts)
     cks = sorted(a.ckpt_dir.glob(a.arm_glob))
     if not cks:
         print(f"нет чекпойнтов в {a.ckpt_dir}/{a.arm_glob}")
         return 1
     a.out.mkdir(parents=True, exist_ok=True)
 
-    print("=" * 78)
-    print("ЧАСТЬ A -- сходимость сегментной неподвижной точки (IDAC, ln gamma_inf)")
-    print("=" * 78)
-    summary = {"part_a": part_a(cks[0])}
+    summary: dict = {}
+    if not a.skip_a:
+        print("=" * 78)
+        print("ЧАСТЬ A -- сходимость сегментной неподвижной точки (IDAC, ln gamma_inf)")
+        print("=" * 78)
+        summary["part_a"] = part_a(cks[0])
 
     if not a.skip_b:
         print("\n" + "=" * 78)
         print("ЧАСТЬ B -- распространение в ln x2 (те же веса, меняется только счётчик)")
         print("=" * 78)
-        b, per_row = part_b(cks, a.batch_size, torch.device(a.device))
+        b, per_row = part_b(cks, a.batch_size, torch.device(a.device),
+                            oracle_side=a.oracle_side, sigma_artifact=a.sigma_artifact)
         summary["part_b"] = b
         per_row.to_csv(a.out / "per_row_lnx2.csv", index=False)
 
@@ -238,7 +292,12 @@ def main() -> int:
         for c, s in b["ln_x2_shift_vs_converged"].items():
             print(f"{c:>6}{s['median']:>12.3e}{s['p95']:>12.3e}{s['max']:>12.3e}")
 
-        # РАЗДЕЛЕНИЕ (A) от (B) -- то, ради чего аудит и делается.
+        # РАЗДЕЛЕНИЕ (A) от (B) -- то, ради чего аудит и делается.  Без части A не считается.
+        if "part_a" not in summary:
+            (a.out / "summary.json").write_text(
+                json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf8")
+            print(f"\nчасть A пропущена -- РАЗДЕЛЕНИЕ не считается\nзаписано: {a.out}")
+            return 0
         solver_max = max(v["counts"][30]["max"] for v in summary["part_a"]["by_source"].values())
         mae_shift = abs(b["mae_mean"][30] - b["mae_mean"][COUNTS_B[-1]])
         summary["separation"] = {
