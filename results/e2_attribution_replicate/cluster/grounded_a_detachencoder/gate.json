@@ -1,0 +1,17 @@
+{
+  "torch": "2.14.1+cu130",
+  "torch_cuda_build": "13.0",
+  "python": "3.12.15",
+  "cuda_visible_devices": "2",
+  "device_count": 1,
+  "gpu_name": "NVIDIA GeForce RTX 2080 Ti",
+  "gpu_capability": [
+    7,
+    5
+  ],
+  "gpu_mem_total_gib": 10.57,
+  "gpu_mem_free_gib": 10.41,
+  "driver": "595.99.02",
+  "gate_passed": true,
+  "failures": []
+}

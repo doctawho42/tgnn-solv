@@ -1,0 +1,45 @@
+{
+  "n_locked": 5608,
+  "n_ring_bearing": 5608,
+  "n_acyclic": 0,
+  "per_arm": {
+    "grounded_a": {
+      "r2": 0.395322327432134,
+      "mae": 1.6856772560917224,
+      "lngamma_std": 1.4376398844936882,
+      "n": 5608
+    }
+  },
+  "stratified": {
+    "grounded_a": {
+      "ring_bearing": {
+        "r2": 0.395322327432134,
+        "mae": 1.6856772560917224,
+        "lngamma_std": 1.4376398844936882,
+        "n": 5608
+      },
+      "acyclic": {
+        "r2": NaN,
+        "mae": NaN,
+        "lngamma_std": NaN,
+        "n": 0
+      }
+    }
+  },
+  "criteria": {
+    "rescue": {
+      "grounded_a": null
+    },
+    "keeps_constraint": {
+      "grounded_a": true
+    },
+    "matched_direct_r2": NaN,
+    "criteria_not_evaluated": {
+      "rescue.grounded_a": "no 'directgnn' arm in this run, so there is no comparator R^2"
+    }
+  },
+  "lngamma_band": [
+    1.0,
+    2.0
+  ]
+}

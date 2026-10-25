@@ -1,0 +1,22 @@
+{
+  "base_mae": 1.6856772560917224,
+  "detachcrystal_mae": 2.2766835704404653,
+  "detachencoder_mae": 1.9319958548811496,
+  "P_sle": 0.591006314348743,
+  "P_enc": 0.2463185987894272,
+  "ratio": 0.41677828613533,
+  "floor_predeclared": 0.0744,
+  "boundary_predeclared": 0.5,
+  "cancel_branch_fired": false,
+  "verdict": "NOT_CONFIRMED",
+  "deposited": {
+    "P_sle": 0.2763,
+    "P_enc": 0.2528,
+    "ratio": 0.915
+  },
+  "n_locked": 5608,
+  "seeds": [
+    42
+  ],
+  "sigma_hb_012_arm_mae": 1.8818811724090236
+}

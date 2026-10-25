@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/mnt/storage/doctawho42/tgnn-solv/replicate/grounded_a_detachencoder/ckpt/grounded_a_detachencoder_seed42.pt",
+  "data": "/mnt/storage/doctawho42/tgnn-solv/repo/notebooks/data/processed/test.csv",
+  "output": "/mnt/storage/doctawho42/tgnn-solv/replicate/grounded_a_detachencoder/out/seed_42/grounded_a_detachencoder_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 1.9319958548811496,
+  "rmse": 2.514318923982522,
+  "r2": 0.29150169837943474,
+  "bias": 0.2269350150102502,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.6178729325595995,
+  "pred_std_ratio": 0.8763903874274994
+}
