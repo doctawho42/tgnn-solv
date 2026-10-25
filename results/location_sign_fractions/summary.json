@@ -1,0 +1,302 @@
+{
+  "sigma_displacement_geometry:core_to_corner-core_to_core": {
+    "n_pairs": 320,
+    "n_solvents": 64,
+    "n_seeds": 5,
+    "mean": 0.32016102004393415,
+    "median": 0.2243873512217448,
+    "iqr": [
+      -0.6706866633711442,
+      1.179960640390282
+    ],
+    "iqr_straddles_zero": true,
+    "fraction_positive": 0.590625,
+    "per_seed": {
+      "42": {
+        "fraction_positive": 0.609375,
+        "median": 0.2574134854234569,
+        "n": 64
+      },
+      "43": {
+        "fraction_positive": 0.53125,
+        "median": 0.06842840830895464,
+        "n": 64
+      },
+      "44": {
+        "fraction_positive": 0.609375,
+        "median": 0.785583835314722,
+        "n": 64
+      },
+      "45": {
+        "fraction_positive": 0.625,
+        "median": 0.29879058024691063,
+        "n": 64
+      },
+      "46": {
+        "fraction_positive": 0.578125,
+        "median": 0.13537783514369606,
+        "n": 64
+      }
+    },
+    "seeds_above_60pct": 3,
+    "deposit": "sigma_displacement_geometry",
+    "arm": "core_to_corner",
+    "base": "core_to_core",
+    "label": "угол минус ядро при согласованном H (РЕШАЮЩИЙ)",
+    "published_mean_row_weighted": 1.0712,
+    "mean_row_weighted": 1.0711583474642925,
+    "mean_equal_weight": 0.32016102004393415,
+    "reproduces_published": true,
+    "weighting_ratio_equal_over_row": 0.29889233538798227
+  },
+  "sigma_displacement_geometry:core_to_corner-control": {
+    "n_pairs": 320,
+    "n_solvents": 64,
+    "n_seeds": 5,
+    "mean": 0.5243552472589621,
+    "median": 0.3341180682182314,
+    "iqr": [
+      -0.410666910931468,
+      1.2771582253277303
+    ],
+    "iqr_straddles_zero": true,
+    "fraction_positive": 0.64375,
+    "per_seed": {
+      "42": {
+        "fraction_positive": 0.625,
+        "median": 0.2569275320157456,
+        "n": 64
+      },
+      "43": {
+        "fraction_positive": 0.5625,
+        "median": 0.1711591839790343,
+        "n": 64
+      },
+      "44": {
+        "fraction_positive": 0.734375,
+        "median": 0.9258967616275449,
+        "n": 64
+      },
+      "45": {
+        "fraction_positive": 0.65625,
+        "median": 0.3989011323324725,
+        "n": 64
+      },
+      "46": {
+        "fraction_positive": 0.640625,
+        "median": 0.17825738847001915,
+        "n": 64
+      }
+    },
+    "seeds_above_60pct": 4,
+    "deposit": "sigma_displacement_geometry",
+    "arm": "core_to_corner",
+    "base": "control",
+    "label": "ядро -> угол против контроля",
+    "published_mean_row_weighted": 1.2876,
+    "mean_row_weighted": 1.2876344480562036,
+    "mean_equal_weight": 0.5243552472589621,
+    "reproduces_published": true,
+    "weighting_ratio_equal_over_row": 0.4072236868550092
+  },
+  "sigma_displacement_geometry:core_to_core-control": {
+    "n_pairs": 320,
+    "n_solvents": 64,
+    "n_seeds": 5,
+    "mean": 0.20419422721502795,
+    "median": 0.08591179417684702,
+    "iqr": [
+      -0.06124443457828882,
+      0.38818050603397536
+    ],
+    "iqr_straddles_zero": true,
+    "fraction_positive": 0.65,
+    "per_seed": {
+      "42": {
+        "fraction_positive": 0.734375,
+        "median": 0.048311495775914204,
+        "n": 64
+      },
+      "43": {
+        "fraction_positive": 0.625,
+        "median": 0.042571094289321154,
+        "n": 64
+      },
+      "44": {
+        "fraction_positive": 0.734375,
+        "median": 0.35666880824349145,
+        "n": 64
+      },
+      "45": {
+        "fraction_positive": 0.59375,
+        "median": 0.1134997010231018,
+        "n": 64
+      },
+      "46": {
+        "fraction_positive": 0.5625,
+        "median": 0.0522292789647103,
+        "n": 64
+      }
+    },
+    "seeds_above_60pct": 3,
+    "deposit": "sigma_displacement_geometry",
+    "arm": "core_to_core",
+    "base": "control",
+    "label": "ядро -> ядро против контроля",
+    "published_mean_row_weighted": 0.2165,
+    "mean_row_weighted": 0.2164761005919109,
+    "mean_equal_weight": 0.20419422721502795,
+    "reproduces_published": true,
+    "weighting_ratio_equal_over_row": 0.9432645296949611
+  },
+  "sigma_displacement_geometry:oracle_solvent-random_oracle_size": {
+    "n_pairs": 320,
+    "n_solvents": 64,
+    "n_seeds": 5,
+    "mean": -0.03626544472274623,
+    "median": -0.040346143248289335,
+    "iqr": [
+      -0.8243255497685501,
+      0.6339785555998483
+    ],
+    "iqr_straddles_zero": true,
+    "fraction_positive": 0.471875,
+    "per_seed": {
+      "42": {
+        "fraction_positive": 0.453125,
+        "median": -0.08386453353756962,
+        "n": 64
+      },
+      "43": {
+        "fraction_positive": 0.5625,
+        "median": 0.22111237086124308,
+        "n": 64
+      },
+      "44": {
+        "fraction_positive": 0.390625,
+        "median": -0.3987685007838411,
+        "n": 64
+      },
+      "45": {
+        "fraction_positive": 0.4375,
+        "median": -0.16381888730185373,
+        "n": 64
+      },
+      "46": {
+        "fraction_positive": 0.515625,
+        "median": 0.05210735096883934,
+        "n": 64
+      }
+    },
+    "seeds_above_60pct": 0,
+    "deposit": "sigma_displacement_geometry",
+    "arm": "oracle_solvent",
+    "base": "random_oracle_size",
+    "label": "оракул минус случайное того же размера",
+    "published_mean_row_weighted": -0.2357,
+    "mean_row_weighted": -0.2357058860376064,
+    "mean_equal_weight": -0.03626544472274623,
+    "reproduces_published": true,
+    "weighting_ratio_equal_over_row": 0.15385888461419311
+  },
+  "sigma_role_injection:roleswap_solvent-control": {
+    "n_pairs": 320,
+    "n_solvents": 64,
+    "n_seeds": 5,
+    "mean": 0.011343648759113784,
+    "median": 0.003664110631785067,
+    "iqr": [
+      -0.12514993292944765,
+      0.1268566689508801
+    ],
+    "iqr_straddles_zero": true,
+    "fraction_positive": 0.515625,
+    "per_seed": {
+      "42": {
+        "fraction_positive": 0.625,
+        "median": 0.027837499739631705,
+        "n": 64
+      },
+      "43": {
+        "fraction_positive": 0.359375,
+        "median": -0.026642844482337336,
+        "n": 64
+      },
+      "44": {
+        "fraction_positive": 0.5625,
+        "median": 0.02274790568785251,
+        "n": 64
+      },
+      "45": {
+        "fraction_positive": 0.515625,
+        "median": 0.0067410889181118705,
+        "n": 64
+      },
+      "46": {
+        "fraction_positive": 0.515625,
+        "median": 0.0021333082302197326,
+        "n": 64
+      }
+    },
+    "seeds_above_60pct": 1,
+    "deposit": "sigma_role_injection",
+    "arm": "roleswap_solvent",
+    "base": "control",
+    "label": "ролевая подмена против контроля (29.1% от +0.4081)",
+    "published_mean_row_weighted": 0.1187,
+    "mean_row_weighted": 0.11872462388047081,
+    "mean_equal_weight": 0.011343648759113784,
+    "reproduces_published": true,
+    "weighting_ratio_equal_over_row": 0.09554588078151593
+  },
+  "sigma_role_injection:roleswap_solvent-random_matched_solvent": {
+    "n_pairs": 320,
+    "n_solvents": 64,
+    "n_seeds": 5,
+    "mean": -0.0035328390899614925,
+    "median": 0.010719000897674857,
+    "iqr": [
+      -0.1984065826105723,
+      0.2261119780757207
+    ],
+    "iqr_straddles_zero": true,
+    "fraction_positive": 0.5125,
+    "per_seed": {
+      "42": {
+        "fraction_positive": 0.609375,
+        "median": 0.026690177822429995,
+        "n": 64
+      },
+      "43": {
+        "fraction_positive": 0.5,
+        "median": 0.009263574213221437,
+        "n": 64
+      },
+      "44": {
+        "fraction_positive": 0.40625,
+        "median": -0.12733064461000576,
+        "n": 64
+      },
+      "45": {
+        "fraction_positive": 0.5,
+        "median": 0.012765433447701535,
+        "n": 64
+      },
+      "46": {
+        "fraction_positive": 0.546875,
+        "median": 0.041158505569804715,
+        "n": 64
+      }
+    },
+    "seeds_above_60pct": 1,
+    "deposit": "sigma_role_injection",
+    "arm": "roleswap_solvent",
+    "base": "random_matched_solvent",
+    "label": "роль минус случайное при согласованном H (r - m)",
+    "published_mean_row_weighted": 0.027,
+    "mean_row_weighted": 0.027020425769396894,
+    "mean_equal_weight": -0.0035328390899614925,
+    "reproduces_published": true,
+    "weighting_ratio_equal_over_row": -0.13074698082525243
+  }
+}
