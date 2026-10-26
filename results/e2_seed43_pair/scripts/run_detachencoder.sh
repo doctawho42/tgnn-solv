@@ -1,11 +1,11 @@
 #!/bin/bash
-# Сид 43, арм grounded_a_detachencoder, карта 1. Правило и ворота: results/e2_seed43_pair/PRE_DECLARATION.md
+# Сид 43, арм grounded_a_detachencoder, карта 2 (подселён к арму записи; см. запись от 07:45). Правило и ворота: results/e2_seed43_pair/PRE_DECLARATION.md
 # КОД ДЕРЕВА НЕ ОБНОВЛЯЛСЯ: 78ec0cfe83, тот же, что у армов сида 42 (ворота 6).
 set -u
 B=/mnt/storage/doctawho42/tgnn-solv; R=$B/repo; PY=$B/env/bin/python; D=$B/seed43/detachencoder
 mkdir -p "$D"
 cd "$R"; ulimit -n 65536
-export CUDA_VISIBLE_DEVICES=1 KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src
+export CUDA_VISIBLE_DEVICES=2 KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src
 
 echo "=== ВОРОТА 6: коммит дерева ==="
 H=$(git rev-parse HEAD)
@@ -19,7 +19,7 @@ echo; echo "=== соседство на старте (печатается, а �
 nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
 nvidia-smi --query-compute-apps=pid,used_memory,process_name --format=csv,noheader | sed 's|/mnt/storage/doctawho42/|~/|'
 
-bash $B/seed43/vram_probe.sh 1 "$D/vram.json" $$ &
+bash $B/seed43/vram_probe.sh 2 "$D/vram.json" $$ &
 PROBE=$!
 
 echo; echo "=== ОБУЧЕНИЕ grounded_a_detachencoder, сид 43, старт $(date -Is) ==="
