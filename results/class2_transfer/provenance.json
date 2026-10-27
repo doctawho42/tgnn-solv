@@ -1,0 +1,42 @@
+{
+  "deposit": "results/class2_transfer",
+  "what": "перескор трёх утверждений класса 2 на армах текущего кода; инференс на замороженных весах",
+  "predeclaration": "results/class2_transfer/PRE_DECLARATION.md",
+  "run_date": "2026-10-27",
+  "host": "gpu (vsb.fbb.msu.ru jump)",
+  "device": "cpu (CUDA_VISIBLE_DEVICES=\"\"); карты были заняты сторонними задачами",
+  "git_commit": "78ec0cfe830a2ecd84c46bb6c0c73636e798e591",
+  "git_commit_note": "дерево кластера; под src/ правок нет, анализные скрипты перенесены с HEAD",
+  "checkpoints": {
+    "grounded_a_seed42": {
+      "path": "certification/ckpt/grounded_a_seed42.pt",
+      "seed_from_manifest": 42,
+      "manifest_commit": "78ec0cfe83"
+    },
+    "grounded_a_seed43": {
+      "path": "seed43/base/ckpt/grounded_a_seed43.pt",
+      "seed_from_manifest": 43,
+      "manifest_commit": "78ec0cfe83"
+    }
+  },
+  "environment": {
+    "python": "3.12.15",
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "torch": "2.14.1+cu130",
+    "rdkit": "2026.09.1",
+    "pandas": "3.1.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  },
+  "LIBRARY_VERSIONS_ARE_LOAD_BEARING_HERE": "RDKit входит в провенанс не формально: на этом прогоне 2026.09.1 против 2022.09.5 локально сняла 1204 строки из набора idac_learned_vs_reference (7888 -> 6684) и сдвинула AAD эталона 0.7650 -> 0.7213 при том, что эталон от весов не зависит вовсе. Чтение того депозита по предзаявке ОТМЕНЕНО. См. RESULTS.md.",
+  "analysis_scripts_sha256_16": {
+    "run_sigma_profile_residual.py": "eb000c45e4339292",
+    "run_donor_window_rescore.py": "828e368575f8a73b",
+    "run_idac_learned_vs_reference.py": "562da9f65aae4de4"
+  },
+  "verdicts": {
+    "sigma_profile_residual": "ПЕРЕНОСИТСЯ по направлению",
+    "donor_window_rescore": "ПЕРЕНОСИТСЯ по направлению; ro +0.51 против +0.65",
+    "idac_learned_vs_reference": "ОТМЕНЕНО воротами набора (RDKit)"
+  }
+}
