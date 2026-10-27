@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/mnt/storage/doctawho42/tgnn-solv/seed43/detachcrystal/ckpt/grounded_a_detachcrystal_seed43.pt",
+  "data": "/mnt/storage/doctawho42/tgnn-solv/repo/notebooks/data/processed/test.csv",
+  "output": "/mnt/storage/doctawho42/tgnn-solv/seed43/detachcrystal/out/seed_43/grounded_a_detachcrystal_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 2.2204596997837505,
+  "rmse": 2.9839816847614204,
+  "r2": 0.0020922587623561917,
+  "bias": 0.8614582804561393,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.7946186329989398,
+  "pred_std_ratio": 0.9355598875807127
+}

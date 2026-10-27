@@ -1,0 +1,16 @@
+{
+  "checkpoint": "/mnt/storage/doctawho42/tgnn-solv/seed43/base/ckpt/grounded_a_seed43.pt",
+  "data": "/mnt/storage/doctawho42/tgnn-solv/repo/notebooks/data/processed/test.csv",
+  "output": "/mnt/storage/doctawho42/tgnn-solv/seed43/base/out/seed_43/grounded_a_predictions.csv",
+  "model_type": "tgnn",
+  "device": "cuda",
+  "n_rows": 8103,
+  "n_supervised": 5608,
+  "mae": 1.926507328329714,
+  "rmse": 2.541365014348119,
+  "r2": 0.2761773330896554,
+  "bias": 0.3814551737886879,
+  "target_std": 2.9871082226758108,
+  "pred_std": 2.6312584054723165,
+  "pred_std_ratio": 0.8808714680964556
+}
