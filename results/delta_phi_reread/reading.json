@@ -1,0 +1,64 @@
+{
+  "floor_predeclared": 0.282,
+  "labels_source": "ThermoML only",
+  "n_accepted_labels": 7,
+  "gate1_mask": true,
+  "pipeline_check_phenanthrene": {
+    "median": 0.28192390396515754,
+    "max": 0.36594953474032965,
+    "n_rows": 18
+  },
+  "seed_42": {
+    "base": 0.8006589111795895,
+    "treated": -0.5508326688938759,
+    "shift": -1.3514915800734655
+  },
+  "seed_43": {
+    "base": 1.3149380761035072,
+    "treated": -0.9396300768375343,
+    "shift": -2.2545681529410415
+  },
+  "conditions": {
+    "42": {
+      "ci95": [
+        -2.0685695968216935,
+        -0.9545194905737171
+      ],
+      "excludes_zero": true,
+      "above_floor": true,
+      "jackknife": {
+        "C1=Cc2cccc3cccc1c23": -1.3269740169824555,
+        "CC(=O)O[C@H]1CC[C@@]2(C)C(=CC[C@@H]3[C@@H]2CC[C@]2(C)C(=O)CC[C@@H]32)C1": -1.4787507561120117,
+        "COC(=O)N(OC)c1ccccc1COc1ccn(-c2ccc(Cl)cc2)n1": -1.404605921524674,
+        "COc1cc(O)c2c(c1)oc(=O)c1c3cc(O)c(O)cc3oc21": -1.2492079362273216,
+        "Cc1cc(C)c(C(=O)P(=O)(c2ccccc2)c2ccccc2)c(C)c1": -1.4825178975359017,
+        "O=C1OC[C@H]2[C@@H]1N(Cc1ccccc1)C(=O)N2Cc1ccccc1": -1.1405478892847896,
+        "c1ccc2c(c1)ccc1ccccc12": -1.4193108875836646
+      },
+      "jackknife_sign_holds": true,
+      "n_clusters": 7
+    },
+    "43": {
+      "ci95": [
+        -2.9013365746358915,
+        -1.5714757639459114
+      ],
+      "excludes_zero": true,
+      "above_floor": true,
+      "jackknife": {
+        "C1=Cc2cccc3cccc1c23": -2.517947613917266,
+        "CC(=O)O[C@H]1CC[C@@]2(C)C(=CC[C@@H]3[C@@H]2CC[C@]2(C)C(=O)CC[C@@H]32)C1": -2.129534139093118,
+        "COC(=O)N(OC)c1ccccc1COc1ccn(-c2ccc(Cl)cc2)n1": -2.1151428796032117,
+        "COc1cc(O)c2c(c1)oc(=O)c1c3cc(O)c(O)cc3oc21": -2.176134723095149,
+        "Cc1cc(C)c(C(=O)P(=O)(c2ccccc2)c2ccccc2)c(C)c1": -2.3674160298969333,
+        "O=C1OC[C@H]2[C@@H]1N(Cc1ccccc1)C(=O)N2Cc1ccccc1": -2.1878799323008025,
+        "c1ccc2c(c1)ccc1ccccc12": -2.297360047485147
+      },
+      "jackknife_sign_holds": true,
+      "n_clusters": 7
+    }
+  },
+  "sign_agrees_across_pairs": true,
+  "verdict": "INFORMATIVE",
+  "bootstrap_honesty": "7 кластеров: честность НЕ ИЗМЕРЕНА; проект мерил на 147 (консервативен), 31 (антиконсервативен ~3x) и 1 (вырожден). Вероятно антиконсервативен, степень неизвестна."
+}
