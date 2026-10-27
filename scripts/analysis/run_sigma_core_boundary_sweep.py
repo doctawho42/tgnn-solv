@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from run_sigma_profile_residual import build_model, hellinger, learned_profiles  # noqa: E402
 from run_sigma_role_injection import score_arm                                   # noqa: E402
 from tgnn_solv.data.utils import canonicalize                                    # noqa: E402
+from tgnn_solv.device import resolve_device  # noqa: E402
 from tgnn_solv.sigma_oracle import load_sigma_profiles                           # noqa: E402
 
 CKPT_DIR = ROOT / "checkpoints/e5_leakfree"
@@ -127,7 +128,12 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
 
-    device = torch.device(a.device)
+    # resolve_device, а не torch.device: единственный путь, который ОТКАЗЫВАЕТСЯ подменить
+    # недоставленный ускоритель на ЦПУ и уважает TGNN_ALLOW_CPU_FALLBACK. Прямой
+    # torch.device молча отдавал бы прогон на ЦПУ -- отказ, который проект ловил четырежды
+    # (project-gpu-gate-silent-cpu-fallback), и тем более важный здесь: скрипт получает
+    # --device от кластерного драйвера.
+    device = resolve_device(a.device)
     test = pd.read_csv(TEST, low_memory=False)
     # НЕ ln_x2.notna(): вспомогательные строки несут ln_x2 = 0.0, не NaN (см. results/row_filter_audit).
     if "has_solubility" in test.columns:
