@@ -1,0 +1,134 @@
+=== на ЦПУ намеренно: карты заняты сторонними задачами, это инференс ===
+
+################ run_sigma_profile_residual ################
+2026-10-27T10:36:02+00:00
+[10:36:10] ~^
+[10:36:10] SMILES Parse Error: Failed parsing SMILES 'nan' for input: 'nan'
+[10:36:10] SMILES Parse Error: syntax error while parsing: nan
+[10:36:10] SMILES Parse Error: check for mistakes around position 2:
+[10:36:10] nan
+[10:36:10] ~^
+[10:36:10] SMILES Parse Error: Failed parsing SMILES 'nan' for input: 'nan'
+[10:36:10] SMILES Parse Error: syntax error while parsing: nan
+[10:36:10] SMILES Parse Error: check for mistakes around position 2:
+[10:36:10] nan
+[10:36:10] ~^
+[10:36:10] SMILES Parse Error: Failed parsing SMILES 'nan' for input: 'nan'
+[10:36:10] WARNING: not removing hydrogen atom without neighbors
+сетка: 51 бинов, sigma в [-0.025, 0.025], порог ядра 0.0084; донор 17 бинов, неполярная 17, акцептор 17
+молекул со сверяемым профилем, встречающихся в размеченном тесте: 71
+  из них В ПУЛЕ супервизии: 51 (71.8%), отложено 20
+  сид 42: прогоняю 71 молекул ...
+  Dataset: 71 valid (0 dropped, 71 cached graphs)
+  сид 43: прогоняю 71 молекул ...
+  Dataset: 71 valid (0 dropped, 71 cached graphs)
+  solute: Хеллингер в пуле 2.5571 против отложенных 2.7938 (разрыв +0.2367, сид-пол отложенных 0.2409)
+  solvent: Хеллингер в пуле 2.5071 против отложенных 2.8078 (разрыв +0.3007, сид-пол отложенных 0.1643)
+
+                                   донор   неполярн   акцептор
+  доля бинов сетки                 0.333      0.333      0.333
+  доля ПЛОЩАДИ, solute             0.019      0.871      0.100
+  доля |остатка|, solute           0.064      0.772      0.149
+  ОБОГАЩЕНИЕ, solute                3.16       0.91       1.70
+  доля ПЛОЩАДИ, solvent            0.014      0.876      0.096
+  доля |остатка|, solvent          0.065      0.747      0.162
+  ОБОГАЩЕНИЕ, solvent               4.13       0.88       1.90
+
+  H(выученный, эталон): растворяемое 2.630, растворитель 2.614
+  H между РОЛЯМИ одной молекулы:     1.069   (у эталона роли нет вовсе)
+  H до delta (шкала Salih): выученный 9.668/10.062, эталон 9.975
+
+  молекул с НУЛЕВОЙ донорной площадью в эталоне: 38
+  у них медианная донорная площадь выученного: 1.72 / 1.85 A^2 (растворяемое / растворитель)
+
+записано: /mnt/storage/doctawho42/tgnn-solv/repo/results/sigma_profile_residual
+--- код 0 ---
+
+################ run_donor_window_rescore ################
+2026-10-27T10:36:15+00:00
+[10:36:22] SMILES Parse Error: check for mistakes around position 2:
+[10:36:22] nan
+[10:36:22] ~^
+[10:36:22] SMILES Parse Error: Failed parsing SMILES 'nan' for input: 'nan'
+[10:36:22] SMILES Parse Error: syntax error while parsing: nan
+[10:36:22] SMILES Parse Error: check for mistakes around position 2:
+[10:36:22] nan
+[10:36:22] ~^
+[10:36:22] SMILES Parse Error: Failed parsing SMILES 'nan' for input: 'nan'
+растворителей в отозванном депозите: 31
+  сид 42 ...
+  Dataset: 31 valid (0 dropped, 31 cached graphs)
+  сид 43 ...
+  Dataset: 31 valid (0 dropped, 31 cached graphs)
+
+растворитель        n   эталон   отозв.   запись   доля, %
+  CCOC(C)=O       393     0.00     36.8     2.32       1.5
+  CC(C)=O         375     0.00     32.4     2.70       2.3
+  CC#N            252     6.71     31.7     4.96       4.4
+  CN(C)C=O        214     0.00     26.6     4.28       3.4
+  Cc1ccccc1       142     0.00     24.5     1.02       0.7
+  C1COCCO1        103     0.00     61.8     4.57       3.2
+  CS(C)=O          86     0.42     34.4     4.59       4.1
+  CCCCCC           85     0.00     36.9     0.26       0.2
+  ClC(Cl)Cl        78     7.44     36.5     3.08       3.4
+  C1CCOC1          74     0.00     50.7     2.26       1.5
+  COC(C)=O         71     0.00     33.1     2.54       1.9
+  C1CCCCC1         68     0.00     44.0     0.13       0.1
+  ClCCl            61     9.83     36.5     3.53       3.9
+  CCC(C)=O         43     0.00     36.5     2.27       1.9
+  CN1CCCC1=O       33     0.00     30.2     3.76       2.5
+  CCCOC(C)=O       24     0.00     34.7     1.82       1.1
+
+  доля донорной площади по четырём поимённым:
+    Sec. 3.3 (отозванный):  23-36%
+    плечи записи:           0.1-2.3%
+  медиана по всем 31:   отозв. 31.0%  ->  запись 1.7%
+  в топ-16 с ПУСТЫМ эталоном: 12 (в подписи к фигуре стоит 12 из 16)
+
+записано: /mnt/storage/doctawho42/tgnn-solv/repo/results/donor_window_rescore
+--- код 0 ---
+
+################ run_idac_learned_vs_reference ################
+2026-10-27T10:36:24+00:00
+[10:36:31] SMILES Parse Error: check for mistakes around position 2:
+[10:36:31] nan
+[10:36:31] ~^
+[10:36:31] SMILES Parse Error: Failed parsing SMILES 'nan' for input: 'nan'
+записей 7889, слой COSMO-SAC-2002, сегментных итераций при eval: 30
+  эталонный профиль с обеих сторон по SMILES: 7889 из 7889
+  стерео-неоднозначных строк отброшено: 1205 из 7889
+      C(=C(Cl)Cl)(Cl)Cl | O
+      C(=C(Cl)Cl)Cl | CC(=O)N(C)C
+      C(=S)=S | CC(=O)C
+      C(=S)=S | O
+      C(Br)Br | O
+      C(C(Br)Br)(Br)Br | O
+  ВОРОТА: пересчёт эталона против депонированного g_res, max|d| = 1.00e-06  ok
+  уникальных молекул для выученной головы: 366
+
+сид 42 ...
+  Dataset: 366 valid (0 dropped, 366 cached graphs)
+  reference_vt2005       AAD 0.7213  RMSE 1.0466  R2 +0.9186  смещение -0.0039
+  learned                AAD 1.5631  RMSE 2.4281  R2 +0.5616  смещение -1.4695
+  learned_role_solute    AAD 1.6614  RMSE 2.5712  R2 +0.5084  смещение -1.5409
+  learned_role_solvent   AAD 1.4192  RMSE 2.1608  R2 +0.6528  смещение -1.1770
+
+сид 43 ...
+  Dataset: 366 valid (0 dropped, 366 cached graphs)
+  reference_vt2005       AAD 0.7213  RMSE 1.0466  R2 +0.9186  смещение -0.0039
+  learned                AAD 1.3161  RMSE 1.9696  R2 +0.7115  смещение -1.1524
+  learned_role_solute    AAD 1.3213  RMSE 2.0021  R2 +0.7019  смещение -1.1377
+  learned_role_solvent   AAD 1.1887  RMSE 1.8166  R2 +0.7546  смещение -0.9643
+
+плечо                       AAD     RMSE       R2   смещение
+reference_vt2005         0.7213   1.0466  +0.9186    -0.0039
+learned                  1.4396   2.1989  +0.6366    -1.3109
+learned_role_solute      1.4913   2.2867  +0.6052    -1.3393
+learned_role_solvent     1.3039   1.9887  +0.7037    -1.0707
+
+  выученный минус эталон, AAD: +0.7182  (2.00x)
+  для масштаба: опубликованный COSMO-SAC-2002 на HF-TZVP даёт AAD 1.7457
+
+записано: /mnt/storage/doctawho42/tgnn-solv/class2/idac_learned_vs_reference
+--- код 0 ---
+########## КЛАСС2 ЗАВЕРШЕНО ##########

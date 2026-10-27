@@ -123,8 +123,8 @@ def main() -> int:
                 old.loc[old.solvent_smiles == s, "learned_donor_fraction"].iloc[0]),
         })
     df = pd.DataFrame(rows).sort_values("n_rows", ascending=False).reset_index(drop=True)
-    OUT.mkdir(parents=True, exist_ok=True)
-    df.to_csv(OUT / "per_solvent.csv", index=False)
+    args.out.mkdir(parents=True, exist_ok=True)
+    df.to_csv(args.out / "per_solvent.csv", index=False)
 
     top = df.head(args.top)
     named_frac = [float(df.loc[df.solvent_smiles == s, "learned_donor_fraction"].iloc[0])
@@ -146,7 +146,7 @@ def main() -> int:
         "median_learned_donor_fraction": float(df["learned_donor_fraction"].median()),
         "retired_median_learned_donor_fraction": float(old["learned_donor_fraction"].median()),
     }
-    (OUT / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2),
+    (args.out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2),
                                       encoding="utf8")
 
     print(f"\n{'растворитель':<16}{'n':>5}{'эталон':>9}{'отозв.':>9}{'запись':>9}{'доля, %':>10}")
@@ -162,7 +162,7 @@ def main() -> int:
           f"  ->  запись {100*summary['median_learned_donor_fraction']:.1f}%")
     print(f"  в топ-{args.top} с ПУСТЫМ эталоном: {summary['empty_reference_count_in_top']} "
           f"(в подписи к фигуре стоит 12 из 16)")
-    print(f"\nзаписано: {OUT}")
+    print(f"\nзаписано: {args.out}")
     return 0
 
 

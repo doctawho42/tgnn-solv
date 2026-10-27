@@ -1,0 +1,46 @@
+{
+  "arms": "e5_leakfree/grounded_a",
+  "seeds": [
+    42,
+    43
+  ],
+  "n_solvents": 31,
+  "figure_top": 16,
+  "empty_reference_count_in_top": 12,
+  "named_solvents": {
+    "cyclohexane": {
+      "learned_area": 0.12909412756562233,
+      "retired_area": 43.951023,
+      "reference_area": 0.0,
+      "learned_fraction": 0.0008770489666003729
+    },
+    "acetone": {
+      "learned_area": 2.6969975233078003,
+      "retired_area": 32.3695,
+      "reference_area": 0.0,
+      "learned_fraction": 0.02272763971474548
+    },
+    "toluene": {
+      "learned_area": 1.0169892013072968,
+      "retired_area": 24.486012,
+      "reference_area": 0.0,
+      "learned_fraction": 0.006826041367879581
+    },
+    "THF": {
+      "learned_area": 2.2636343240737915,
+      "retired_area": 50.732002,
+      "reference_area": 0.0,
+      "learned_fraction": 0.014863407398643225
+    }
+  },
+  "named_fraction_range": [
+    0.0008770489666003729,
+    0.02272763971474548
+  ],
+  "retired_named_fraction_range": [
+    0.23265779270329096,
+    0.35552440687491804
+  ],
+  "median_learned_donor_fraction": 0.01745079606560224,
+  "retired_median_learned_donor_fraction": 0.31029020217401926
+}

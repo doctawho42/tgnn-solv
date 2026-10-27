@@ -1,0 +1,90 @@
+{
+  "n_molecules": 71,
+  "seeds": [
+    42,
+    43
+  ],
+  "supervision_strata": {
+    "in_pool": {
+      "n_rows": 102,
+      "n_molecules": 51,
+      "median_hellinger_to_reference": {
+        "solute": 2.55708420625905,
+        "solvent": 2.5070774669181204
+      },
+      "seed_sd_hellinger_to_reference": {
+        "solute": 0.4318170484325596,
+        "solvent": 0.417635864941699
+      }
+    },
+    "held_out": {
+      "n_rows": 40,
+      "n_molecules": 20,
+      "median_hellinger_to_reference": {
+        "solute": 2.7937955127655707,
+        "solvent": 2.807802669427107
+      },
+      "seed_sd_hellinger_to_reference": {
+        "solute": 0.2409051294543962,
+        "solvent": 0.16428629112156884
+      }
+    }
+  },
+  "sigma_hb": 0.0084,
+  "bin_fraction_by_region": {
+    "donor": 0.3333333333333333,
+    "nonpolar": 0.3333333333333333,
+    "acceptor": 0.3333333333333333
+  },
+  "median_hellinger_to_reference": {
+    "solute": 2.6297814277157747,
+    "solvent": 2.6140372706865156
+  },
+  "median_hellinger_role_gap": 1.0690433979034424,
+  "median_hellinger_to_delta": {
+    "solute": 9.667728900909424,
+    "solvent": 10.061768054962158,
+    "reference": 9.975272598088251
+  },
+  "median_resid_frac": {
+    "solute": {
+      "donor": 0.06406926345872213,
+      "nonpolar": 0.7721680546798668,
+      "acceptor": 0.14914339229751827
+    },
+    "solvent": {
+      "donor": 0.06455569686775464,
+      "nonpolar": 0.7467857205164833,
+      "acceptor": 0.1615546736379179
+    }
+  },
+  "median_area_frac": {
+    "solute": {
+      "donor": 0.018830986693501472,
+      "nonpolar": 0.871194128089588,
+      "acceptor": 0.09999557885026172
+    },
+    "solvent": {
+      "donor": 0.014463010566323868,
+      "nonpolar": 0.8755868797672206,
+      "acceptor": 0.09640211839185216
+    }
+  },
+  "median_enrichment": {
+    "solute": {
+      "donor": 3.1614040866124764,
+      "nonpolar": 0.9120716043066543,
+      "acceptor": 1.70312821392851
+    },
+    "solvent": {
+      "donor": 4.12890156419637,
+      "nonpolar": 0.8775987702547452,
+      "acceptor": 1.8963499483369022
+    }
+  },
+  "donor_free_reference_molecules": 38,
+  "median_donor_area_where_reference_is_zero": {
+    "solute": 1.719093143939972,
+    "solvent": 1.8533281087875366
+  }
+}
