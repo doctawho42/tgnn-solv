@@ -11,6 +11,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 When these disagree, trust reproducible artifacts in `results/`/`logs/` and the maintained source over the narrative docs.
 
+**Declare where each threshold was MEASURED, not just its value.** Added 2026-10-27, after four
+pre-declared thresholds in three days turned out to gate a surface other than the one they were
+measured on. `sigma_hb_retrained`'s rule was pinned to `out_mean`, a quantity not fixed between arms,
+and run against the reference arm it returned the *same verdict* — 16.5 GPU hours bought an arm whose
+reading could not discriminate. `e2_attribution_replicate`'s condition was written over a **ratio**,
+so it reported "stable" through a sign flip in its own numerator (any negative `P_enc` satisfies
+`ratio <= 0.5` at any magnitude). `delta_phi_reread`'s floor was measured on per-arm **levels** and
+applied to their **difference**, where the label source cancels identically — verified, both label
+sources give the same shift to four decimals. `cluster_certification`'s floor was derived as a
+**paired** within-environment quantity and applied to an **unpaired** single-seed comparison *between*
+environments. So every pre-declaration carries a `<!-- ПОРОГИ -->` block, one row per numeric
+threshold: its value, the surface it was measured on, the surface it gates, and whether those agree.
+A threshold whose two surfaces differ does not belong in the rule. `tests/test_predeclarations_declare_threshold_surfaces.py`
+is the ratchet; `results/class2_transfer/PRE_DECLARATION.md` is the worked example, including the
+case where the honest answer is to declare **no** threshold on magnitude and say why. And run the
+rule against data already on disk before buying the arm it will read — that check costs a minute.
+
 **A negative gets the same audit as a positive.** Added 2026-08-06, after four of this project's
 refuted claims were re-examined and all four came back *never established* rather than refuted — a
 probe that scores an untrained network like a trained one, a grounding pool that was 97.8%
