@@ -167,15 +167,18 @@ def learned_profiles(model: TGNNSolv, cfg: TGNNSolvConfig,
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--ckpt-dir", type=Path, default=CKPT_DIR,
+                    help="каталог весов; по умолчанию депонированное семейство e5_leakfree")
+    ap.add_argument("--out", type=Path, default=OUT_DIR, help="куда писать")
     ap.add_argument("--limit", type=int, default=0, help="взять только N молекул")
     ap.add_argument("--seeds", type=int, nargs="*", default=None)
     args = ap.parse_args()
 
-    cks = sorted(CKPT_DIR.glob("grounded_a_seed*.pt"))
+    cks = sorted(args.ckpt_dir.glob("grounded_a_seed*.pt"))
     if args.seeds:
         cks = [p for p in cks if any(f"seed{s}" in p.name for s in args.seeds)]
     if not cks:
-        print(f"нет чекпойнтов в {CKPT_DIR}")
+        print(f"нет чекпойнтов в {args.ckpt_dir}")
         return 1
 
     _, _, cfg0 = build_model(cks[0])
@@ -273,8 +276,8 @@ def main() -> int:
             records.append(rec)
 
     df = pd.DataFrame(records)
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    df.to_csv(OUT_DIR / "per_molecule.csv", index=False)
+    args.out.mkdir(parents=True, exist_ok=True)
+    df.to_csv(args.out / "per_molecule.csv", index=False)
 
     # Доля бинов в каждой области -- база сравнения. Без неё «40% остатка в доноре»
     # ничего не значит: если донор и есть 40% сетки, это ровно ожидание.
@@ -338,7 +341,7 @@ def main() -> int:
         "median_donor_area_where_reference_is_zero": {
             r: float(df.loc[donor_free, f"area_donor_{r}"].median()) for r in ("solute", "solvent")},
     }
-    (OUT_DIR / "summary.json").write_text(
+    (args.out / "summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf8")
 
     print(f"\n{'':30s}{'донор':>10}{'неполярн':>11}{'акцептор':>11}")

@@ -51,6 +51,9 @@ NAMED = {"C1CCCCC1": "cyclohexane", "CC(C)=O": "acetone",
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--ckpt-dir", type=Path, default=CKPT_DIR,
+                    help="каталог весов; по умолчанию депонированное семейство e5_leakfree")
+    ap.add_argument("--out", type=Path, default=OUT, help="куда писать")
     ap.add_argument("--top", type=int, default=16, help="сколько рисует фигура")
     args = ap.parse_args()
 
@@ -58,9 +61,9 @@ def main() -> int:
     solvents = [str(s) for s in old["solvent_smiles"]]
     print(f"растворителей в отозванном депозите: {len(solvents)}")
 
-    cks = sorted(CKPT_DIR.glob("grounded_a_seed*.pt"))
+    cks = sorted(args.ckpt_dir.glob("grounded_a_seed*.pt"))
     if not cks:
-        print(f"нет чекпойнтов в {CKPT_DIR}")
+        print(f"нет чекпойнтов в {args.ckpt_dir}")
         return 1
 
     _, _, cfg0 = build_model(cks[0])
