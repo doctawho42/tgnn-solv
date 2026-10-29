@@ -129,6 +129,17 @@ reads, where the reference tabulation is exactly zero.}
 % direction as the 4.38 -> 3.97 the audit found for the deposit's headline.  The three sub-unity
 % exceptions all survive the filter, so 94% -> 91% is the denominator halving and not a molecule
 % crossing one; that is why the sentence reports the count.
+% RHO CORRECTED 2026-10-29, and this is the FIFTH defect in this paragraph.  The printed +0.65 was
+% the Spearman of the SEED-AVERAGED donor-window areas, and per seed the five deposited arms give
+% +0.451 / +0.284 / +0.436 / +0.545 / +0.555 -- i.e. the printed figure exceeds EVERY arm.  Averaging
+% five profiles suppresses noise in the areas, which inflates a rank correlation; the caption did say
+% "seed-averaged", so the number was not false, but the sentence invited reading it as the ordering an
+% arm learns, and an arm learns about 0.45.  Measured with scripts/analysis/run_donor_window_rescore.py
+% --arm-glob one seed at a time (the flag was added for this).
+% IT ALSO SETTLES THE TRANSFER QUESTION the class-2 re-measurement left open: on current-code arms the
+% per-seed values are +0.449 and +0.440, squarely inside the deposited per-seed spread, so the
+% apparent drop 0.65 -> 0.51 between code versions was ENTIRELY the averaging base (five seeds against
+% two) and not the code.  Record: results/class2_transfer/RESULTS.md.
 % THE DEPOSIT STILL PUBLISHES 4.381 over the unfiltered 126.  results/sigma_profile_residual/
 % SUPERSEDED.md carries the correction, and tests/test_donor_window_claim_binds.py recomputes this
 % sentence's four numerals from the CSV and the labelled test rows -- the enrolled-display checker
@@ -148,7 +159,12 @@ $2.3$\,\AA$^2$. Figure~\ref{fig:donor-window} draws that comparison over the six
 carrying the most scored rows; the reference is exactly zero in twelve of them and the learned
 profile is occupied in all sixteen. Supervision has recovered the window's \emph{ordering}: across
 the thirty-one scored solvents the learned donor-window area ranks with the reference at
-$\rho=+0.65$ ($p=8\times10^{-5}$). What it has not done is close the window, and the shortfall is
+$\rho=+0.45$ in the median seed, positive at all five and individually significant at four
+($+0.451$, $+0.284$, $+0.436$, $+0.545$, $+0.555$; $p$ from $0.0012$ to $0.12$). Ranking the
+\emph{seed-averaged} areas instead gives $\rho=+0.65$, which exceeds every per-seed value: averaging
+five profiles suppresses noise in the areas and inflates a rank correlation, so that figure is a
+property of the averaged profile and not of what an arm learns. The per-seed number is the one
+quoted here for that reason. What it has not done is close the window, and the shortfall is
 not spread evenly over the profile. Against the share of profile area the same window holds, the
 learned-minus-tabulated residual is over-represented there by a factor of $2.1$ (IQR $1.7$ to
 $2.4$), the molecule being the unit and each molecule a median over the five seeds, quoted on the
@@ -182,7 +198,9 @@ that molecule's total surface. Both halves are on one scale. The learned areas a
 over the grounded arms of Fig.~\ref{fig:paradox}, seeds $42$ to $46$, so the figure prices the arms
 the substitution contrast rests on. The reference is empty in twelve of the sixteen and the learned
 profile is occupied in all sixteen, while over the thirty-one scored solvents the two rank together
-at $\rho=+0.65$: the window's ordering is learned and its floor is not.}
+at $\rho=+0.45$ in the median seed, positive at all five ($\rho=+0.65$ on the seed-averaged areas
+drawn here, which exceeds every per-seed value because averaging suppresses area noise): the
+window's ordering is learned and its floor is not.}
 \label{fig:donor-window}
 \end{figure}
 
