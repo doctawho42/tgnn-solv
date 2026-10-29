@@ -140,6 +140,23 @@ reads, where the reference tabulation is exactly zero.}
 % per-seed values are +0.449 and +0.440, squarely inside the deposited per-seed spread, so the
 % apparent drop 0.65 -> 0.51 between code versions was ENTIRELY the averaging base (five seeds against
 % two) and not the code.  Record: results/class2_transfer/RESULTS.md.
+% PER-SEED PASS 2026-10-29, the SIXTH defect here and the same cause as the fifth.  Every printed
+% quantity in this paragraph was read off the SEED-AVERAGED profile, and the per-seed spreads are
+% wide: cyclohexane's donor-window area runs 0.07..0.34 A^2 over the five arms (4.9x), toluene
+% 0.40..2.28 (5.7x), and the median over the 25 zero-reference solvents 1.53..2.84.  Printing 0.22
+% and 1.33 to two decimals implied a precision the arms do not have.
+% ONE OF THEM WAS SIMPLY WRONG: "between 0.1% and 1.5% of each molecule's total surface" is the range
+% on the averaged profile, and per seed the four named solvents run 0.04% to 2.04% -- the printed
+% interval EXCLUDES observed values at both ends (cyclohexane 0.04% at seed 46, acetone 2.04% at
+% seed 43).  A range is the one statistic that cannot be averaged and still mean what it says.
+% AND I THEN MADE THE SAME MISTAKE IN THE REPLACEMENT.  The first correction printed 0.04% to 2.04%,
+% rounded to NEAREST -- but the true extremes are 0.038336% and 2.041615%, so rounding inward excluded
+% both observations exactly as the original range had.  tests/test_donor_window_per_seed_binds.py
+% caught it; a reread would not have.  An interval's bounds round OUTWARD: floor the lower, ceil the
+% upper.  Printed 0.03% to 2.05%, the sentence says the bounds are outward, and the gate requires it
+% rather than merely checking the digits.
+% The averaged numbers are kept, attached to the figure they actually draw, and the text now carries
+% the per-seed medians and spreads.  Measured with run_donor_window_rescore.py --arm-glob per seed.
 % THE DEPOSIT STILL PUBLISHES 4.381 over the unfiltered 126.  results/sigma_profile_residual/
 % SUPERSEDED.md carries the correction, and tests/test_donor_window_claim_binds.py recomputes this
 % sentence's four numerals from the CSV and the labelled test rows -- the enrolled-display checker
@@ -152,10 +169,16 @@ O--H or S--H, $264$ have area there, and acetonitrile's $6.71$\,\AA$^2$ stands a
 $6.20$. The molecule-matched comparison carries the argument. Cyclohexane, acetone, toluene and
 tetrahydrofuran each carry $0.000$\,\AA$^2$ of donor-window area in the reference tabulation,
 exactly zero and not merely small, against $15.75$ for water. On the arms that carry the
-substitution contrast---grounded, seeds $42$ to $46$---the learned profile carries $0.22$, $1.96$,
-$1.33$ and $2.40$\,\AA$^2$ in that same window, between $0.1\%$ and $1.5\%$ of each molecule's
-total surface, and the median over the twenty-five solvents whose reference is exactly zero is
-$2.3$\,\AA$^2$. Figure~\ref{fig:donor-window} draws that comparison over the sixteen solvents
+substitution contrast---grounded, seeds $42$ to $46$---the learned profile carries area in that same
+window at every one of the five, with per-seed medians of $0.28$, $2.23$, $1.50$ and
+$2.35$\,\AA$^2$; the seed spread is wide, from $0.07$ to $0.34$\,\AA$^2$ on cyclohexane and $0.40$
+to $2.28$ on toluene, so these are quantities of order one \AA$^2$ and not to two decimals. As a
+share of each molecule's total surface the four run from $0.03\%$ to $2.05\%$ across solvents and
+seeds, the bounds rounded outward so that the interval contains every observation. Over the twenty-five solvents whose reference is exactly zero the per-seed median area is
+$2.0$\,\AA$^2$, itself spanning $1.53$ to $2.84$ between seeds. Figure~\ref{fig:donor-window} draws
+the seed-averaged profile, on which the same four read $0.22$, $1.96$, $1.33$ and $2.40$ and the
+median over the twenty-five is $2.3$: averaging suppresses area noise, so the averaged figures are
+tighter than any arm's and are quoted only for the figure they draw. Figure~\ref{fig:donor-window} draws that comparison over the sixteen solvents
 carrying the most scored rows; the reference is exactly zero in twelve of them and the learned
 profile is occupied in all sixteen. Supervision has recovered the window's \emph{ordering}: across
 the thirty-one scored solvents the learned donor-window area ranks with the reference at
