@@ -1,0 +1,150 @@
+{
+  "inside_windows": [
+    1,
+    5
+  ],
+  "outside_windows": [
+    9,
+    13,
+    17,
+    21
+  ],
+  "thresholds_predeclared": {
+    "step_min": 0.15,
+    "rho_smooth": 0.8,
+    "rho_within_outside": 0.5,
+    "rho_immaterial": 0.5,
+    "sign_min": 0.6,
+    "min_seeds": 4
+  },
+  "run_meta": {
+    "ladder_k0": [
+      1,
+      5,
+      9,
+      13,
+      17,
+      21
+    ],
+    "window_width_k": 4,
+    "target_tv": 20.82,
+    "tv_tolerance": 0.5,
+    "sigma_hb_scoring": null,
+    "tv_gate_passed": true,
+    "dst_bins_constant": true,
+    "identity_null": -7.940820445639929e-09,
+    "boot_seed": 0,
+    "n_rows_per_arm": 5608,
+    "seeds": [
+      42
+    ],
+    "locked_solvents": 63,
+    "excluded_solvents": 1
+  },
+  "gates": {
+    "tv_gate_passed": true,
+    "tv_spread": 0.0019710191426298707,
+    "dst_bins_constant": true,
+    "identity_null_is_zero": true,
+    "reachability_all_windows": {
+      "1": 1.0,
+      "5": 1.0,
+      "9": 1.0,
+      "13": 1.0,
+      "17": 1.0,
+      "21": 1.0
+    },
+    "all_windows_reachable": true
+  },
+  "D_eq": {
+    "1": {
+      "seed_mean": 0.09370358228089172,
+      "per_seed": {
+        "42": 0.09370358228089172
+      }
+    },
+    "5": {
+      "seed_mean": 0.06464529675675776,
+      "per_seed": {
+        "42": 0.06464529675675776
+      }
+    },
+    "9": {
+      "seed_mean": 0.21095956685406717,
+      "per_seed": {
+        "42": 0.21095956685406717
+      }
+    },
+    "13": {
+      "seed_mean": 0.34034279178760796,
+      "per_seed": {
+        "42": 0.34034279178760796
+      }
+    },
+    "17": {
+      "seed_mean": 0.7805906418981248,
+      "per_seed": {
+        "42": 0.7805906418981248
+      }
+    },
+    "21": {
+      "seed_mean": 0.7482905088216272,
+      "per_seed": {
+        "42": 0.7482905088216272
+      }
+    }
+  },
+  "H_floating_median": {
+    "1": 1.7697160498893616,
+    "5": 1.9976191884433123,
+    "9": 2.041712011087526,
+    "13": 2.5833547430938286,
+    "17": 2.9425311173676763,
+    "21": 3.113368647008415
+  },
+  "delta_per_seed": {
+    "42": 0.44087143782153193
+  },
+  "delta_seed_mean": 0.44087143782153193,
+  "delta_sign_seeds": 1,
+  "monotonicity": {
+    "spearman_all_six": 0.8857142857142858,
+    "p_all": 0.01884548104956266,
+    "spearman_within_outside": 0.7999999999999999,
+    "p_within": 0.20000000000000007
+  },
+  "per_solvent_sign": {
+    "42": {
+      "fraction_outside_dearer": 0.7619047619047619,
+      "median_diff": 0.3685040976437468,
+      "iqr": [
+        0.03395163394942155,
+        0.8842072924400899
+      ],
+      "n_solvents": 63
+    }
+  },
+  "seeds_sign_above_threshold": 1,
+  "delta_ci95": [
+    0.28449240181507573,
+    0.5976669913937417
+  ],
+  "delta_excludes_zero": true,
+  "conditions": {
+    "step": {
+      "delta_at_least_min": true,
+      "sign_holds_in_4_of_5_seeds": false,
+      "no_trend_within_outside": false,
+      "per_solvent_sign_above_60pct_in_4_seeds": false
+    },
+    "smooth": {
+      "spearman_all_six_at_least_0.8": true,
+      "spearman_within_outside_positive": true
+    },
+    "immaterial": {
+      "abs_delta_below_min": false,
+      "abs_spearman_below_0.5": false
+    }
+  },
+  "verdict": "ПЛАВНЫЙ РОСТ С РАССТОЯНИЕМ: дело в расстоянии, а НЕ в пороге замыкания; гипотеза про sigma_hb не поддержана"
+}

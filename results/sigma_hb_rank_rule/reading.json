@@ -1,0 +1,55 @@
+{
+  "lock_predeclared_size": 63,
+  "cancelled_on_predeclared_lock": [
+    43
+  ],
+  "reading_A": {
+    "lock_size": 63,
+    "reference_p": {
+      "42": 0.5327209815665295,
+      "43": 0.3147038327392869,
+      "44": 0.4288365020100668,
+      "45": 0.37224721014856027,
+      "46": 0.5905326900632822
+    },
+    "treated_p": {
+      "42": 0.24229651947330968,
+      "44": 0.452786071108144
+    },
+    "n_reference": 5,
+    "m_treated": 2,
+    "treated_all_below_reference": false,
+    "treated_all_above_reference": false,
+    "p_exact_if_fully_separated": 0.047619047619047616,
+    "separated": false,
+    "verdict": "МАССА ЗАДАЁТ ГРАНИЦУ (обменимость не отвергнута)"
+  },
+  "intersection_dropped": [
+    "CN1CCCC1=O",
+    "COCCO",
+    "CS(C)=O"
+  ],
+  "reading_B": {
+    "lock_size": 60,
+    "reference_p": {
+      "42": 0.5501428158820522,
+      "43": 0.29964410750813103,
+      "44": 0.39971627298934137,
+      "45": 0.43106607948488107,
+      "46": 0.6123831909900432
+    },
+    "treated_p": {
+      "42": 0.2552163272784697,
+      "43": 0.3474104204274702,
+      "44": 0.47395624223720323
+    },
+    "n_reference": 5,
+    "m_treated": 3,
+    "treated_all_below_reference": false,
+    "treated_all_above_reference": false,
+    "p_exact_if_fully_separated": 0.017857142857142856,
+    "separated": false,
+    "verdict": "МАССА ЗАДАЁТ ГРАНИЦУ (обменимость не отвергнута)"
+  },
+  "readings_agree": true
+}

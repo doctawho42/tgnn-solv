@@ -1,0 +1,60 @@
+{
+  "inside_windows": [
+    1,
+    5
+  ],
+  "outside_windows": [
+    9,
+    13,
+    17,
+    21
+  ],
+  "thresholds_predeclared": {
+    "step_min": 0.15,
+    "rho_smooth": 0.8,
+    "rho_within_outside": 0.5,
+    "rho_immaterial": 0.5,
+    "sign_min": 0.6,
+    "min_seeds": 4
+  },
+  "run_meta": {
+    "ladder_k0": [
+      1,
+      5,
+      9,
+      13,
+      17,
+      21
+    ],
+    "window_width_k": 4,
+    "target_tv": 20.82,
+    "tv_tolerance": 0.5,
+    "sigma_hb_scoring": null,
+    "tv_gate_passed": false,
+    "dst_bins_constant": true,
+    "identity_null": 7.254052936112032e-08,
+    "boot_seed": 0,
+    "n_rows_per_arm": 5608,
+    "seeds": [
+      43
+    ],
+    "locked_solvents": 63,
+    "excluded_solvents": 1
+  },
+  "gates": {
+    "tv_gate_passed": false,
+    "tv_spread": 4.266261901466638,
+    "dst_bins_constant": true,
+    "identity_null_is_zero": true,
+    "reachability_all_windows": {
+      "1": 0.9523809523809523,
+      "5": 1.0,
+      "9": 1.0,
+      "13": 1.0,
+      "17": 1.0,
+      "21": 1.0
+    },
+    "all_windows_reachable": true
+  },
+  "verdict": "ЧТЕНИЕ ОТМЕНЕНО: ворота не пройдены"
+}
