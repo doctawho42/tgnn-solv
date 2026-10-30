@@ -17,8 +17,9 @@ It follows that the assumption set out in the Introduction is not a property of 
 models as such but a property of how the internal quantity is trained. The design choice that
 matters is whether the gradient of the target reaches the intermediate. Where it does not, as in a
 model whose profile predictor is supervised externally and then frozen \cite{yang2025tennet}, the
-intermediate remains what it is named after, to within its own fit error, and substitution is a
-sensible operation. Where it does, the intermediate becomes a free internal coordinate that happens
+intermediate should remain what it is named after to within its own fit error, and substitution
+should be a sensible operation. That expectation is not tested here, since the model in question
+was not retrained. Where it does, the intermediate becomes a free internal coordinate that happens
 to be initialised and regularised toward a physical quantity, and the operations the physical
 reading licenses stop being safe. The present pipeline sits between the two, with both influences
 acting, and the measurements show which one wins.
@@ -49,6 +50,37 @@ rather than as an argument against building physics into a model.
 
 The evidence comes from one pipeline, one closure and one reference tabulation. Every departure reported above is measured against the VT-2005 table. How far that table itself moves with the electronic structure and solvation treatment behind it is a separate question \cite{salih2025sigma}. A different tabulation would shift the reference against which the learned profile is scored, but not the comparisons between arms, which all use one table.
 
+A zero in that table is a tabulated zero. The $\sigma$-profile is built by binning a finite set of
+surface segments, so a bin can be empty because no segment of the molecule falls in it as well as
+because the molecule cannot carry charge density of that value. The distinction does not affect the
+comparisons reported here, all of which treat the tabulation as the reference. It does bound how
+strongly the finding may be stated: what is measured is a departure from the tabulated
+distribution, not a departure from a proven absence of density.
+
+The profile head reads a role-dependent representation, so a molecule receives two profiles. That
+is a choice made in this pipeline, and a reader is entitled to ask whether the defects reported
+above are consequences of it. For two of them the question is settled by measurement. The window
+displacement of Section~\ref{sec:windows} and the residual population of
+Section~\ref{sec:pedestal} are the same on each of the two profiles taken separately, with the
+difference between roles no larger than the spread across seeds. The violation of the reference
+state in Section~\ref{sec:refstate} is a direct consequence of the choice and would disappear under
+a role-independent head, at a cost in accuracy that is not measured here. The non-additivity of
+Section~\ref{sec:nonadditive} is a property of the segment-activity calculation rather than of the
+head, since it concerns how the closure responds to an internally inconsistent profile. An arm
+trained with a role-independent head would settle the remaining cases directly, and has not been
+run.
+
+Equation~\eqref{eq:sle} omits the heat-capacity difference between the solid and the subcooled
+liquid, as is usual. Where the temperature lies far below the melting point that term is not
+negligible, and it adds a further source of indeterminacy to the crystal contribution beyond the
+collinearity reported in Section~\ref{sec:ident}.
+
+The activity coefficients used to score the closure are at infinite dilution, while the solubility
+the pipeline predicts is a finite mole fraction at saturation. The two are the same functional of
+the same profiles evaluated at different compositions. The comparison in
+Section~\ref{sec:twosided} therefore reports the direction of the substitution's effect on each,
+not a single error carried between them.
+
 This work does not report a more accurate solubility model. On the scaffold-disjoint split used
 throughout, the physics path trails a matched direct control sharing the same encoder in the mean
 over seeds, and both sit near a random-forest baseline. Both are well behind the leading direct
@@ -62,7 +94,12 @@ asymmetry of the cost map between the two sides of the charge-density axis depen
 molecule pairs it is computed over, and is reported for both.
 
 The closure is the 2002 formulation of COSMO-SAC with a single hydrogen-bonding term, run without
-the combinatorial contribution, which requires molar volumes the pipeline does not supply. Later
+the combinatorial contribution. That term needs molar volumes, which the source database carries
+but the extracted table used here does not, and which the network could supply with a second scalar
+head beside the one that already predicts cavity area. Its omission is a choice made when the table
+was extracted rather than a constraint. The term vanishes for a pair of a molecule with itself, so
+Section~\ref{sec:refstate} is unaffected; it would change the magnitudes in
+Sections~\ref{sec:cost} and~\ref{sec:attribution}, where the size of the effect is the result. Later
 formulations split the hydrogen-bonding term by segment type and would change where on the
 charge-density axis the cost steps, though not the existence of a step. The segment calculation is
 iterated to a fixed count; the count used at training and at scoring is recorded with each run,
@@ -77,7 +114,9 @@ requires training such a model rather than measuring this one.
 \label{sec:conclusions}
 
 A network trained inside a fixed thermodynamic relation fills the relation's input slot with values
-that are not the physical quantity the slot names. The learned $\sigma$-profile places screening-charge density where quantum chemistry puts none, concentrating in the windows that trigger the model's hydrogen-bonding term. It differs depending on whether the molecule is treated as solute or solvent, so a molecule is not predicted to be ideal in itself. And it cannot be corrected in parts: replacing a fraction of it with reference values is often worse than replacing none. The output layer is not the cause, and the error that reaches the thermodynamics
+that are not the physical quantity the slot names. The learned $\sigma$-profile places
+screening-charge density where the reference tabulation carries none, concentrating in the windows
+that trigger the model's hydrogen-bonding term. It differs depending on whether the molecule is treated as solute or solvent, so a molecule is not predicted to be ideal in itself. And it cannot be corrected in parts: replacing a fraction of it with reference values is often worse than replacing none. The output layer is not the cause, and the error that reaches the thermodynamics
 lies in the magnitude of the profile where it is populated rather than in the spurious density
 where it should be empty.
 

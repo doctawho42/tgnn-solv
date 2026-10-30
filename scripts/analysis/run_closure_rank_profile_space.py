@@ -1,0 +1,205 @@
+#!/usr/bin/env python
+"""Ранг и нуль-пространство замыкания ПРЯМО в пространстве σ-профиля.
+
+ЗАЧЕМ. results/identifiability_audit считает информацию Фишера для ЧЕТЫРЁХПАРАМЕТРИЧЕСКОЙ подгонки
+(dH_fus, T_m и температурный наклон активности). Это убедительно для кристаллического члена и
+ничего не говорит о 51 числе профиля: переход от четырёх параметров к пятидесяти одному там был
+риторическим, а не измеренным. Здесь он измеряется.
+
+ЧТО СЧИТАЕТСЯ. Для каждой молекулы-растворителя собираются строки, где она выступает
+растворителем, и для каждой берётся якобиан d ln gamma_2^inf / d p (вектор длины n_bins,
+автоградом через сам слой). Сложенные по строкам, они дают матрицу J размера (n_rows, n_bins), а
+информация о профиле этой молекулы при независимом шуме наблюдений есть J^T J. Её спектр
+показывает, СКОЛЬКО направлений в пространстве профиля замыкание вообще выставляет наружу, и
+сколько остаётся в нуль-пространстве, то есть может двигаться, не меняя ни одного предсказания.
+
+ПОЧЕМУ ЭТО ПРАВИЛЬНАЯ ПОВЕРХНОСТЬ. Растворимость читает профиль ТОЛЬКО через ln gamma (уравнение
+SLE), поэтому нуль-пространство замыкания по ln gamma есть нуль-пространство и для растворимости:
+монотонное преобразование наблюдаемой не добавляет направлений. Считать по ln gamma честнее, потому
+что решатель SLE добавил бы множитель неявной функции, который к рангу отношения не имеет.
+
+ОДНО НАПРАВЛЕНИЕ ЗАКРЫТО ПО ПОСТРОЕНИЮ: профиль нормирован, поэтому постоянный сдвиг по всем бинам
+не является свободой. Эффективная размерность n_bins - 1, и это вычитается, а не замалчивается.
+
+НУЛЕВОЕ ПЛЕЧО И ЕГО ПРАВИЛЬНОЕ ЧТЕНИЕ. Тот же счёт на СЛУЧАЙНЫХ профилях той же площади.
+Первая редакция этого скрипта трактовала совпадение рангов как провал ворот ("ранг про сетку") --
+это ошибка постановки, и она исправлена здесь, а не замазана. Утверждение раздела 3.1 относится к
+ЗАМЫКАНИЮ, а не к обученной голове: растворимость не определяет профиль. Если ранг одинаков и на
+выученных, и на случайных профилях, значит недостаточность структурна, то есть держится для любого
+профиля, а не является свойством конкретного чекпойнта. Это утверждение СИЛЬНЕЕ, чем если бы ранг
+зависел от головы. Нулевое плечо здесь отвечает на вопрос "не артефакт ли это чекпойнта", и ответ
+"нет" есть прохождение, а не провал.
+
+ЧТО ВХОДИТ В РАНГ, КРОМЕ ЗАМЫКАНИЯ. Внутри одного растворителя профиль ОДИН на все его строки, и
+строки различаются только партнёром и температурой. Поэтому измеренный ранг есть совместное
+свойство замыкания и РАЗНООБРАЗИЯ доступных наблюдений, а не одного замыкания. Это и есть нужная
+величина: свобода профиля берётся из обоих источников, и разделять их значило бы отвечать на другой
+вопрос.
+
+    KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src python scripts/analysis/run_closure_rank_profile_space.py
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import torch
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "scripts/analysis"))
+
+from run_sigma_profile_residual import build_model, learned_profiles  # noqa: E402
+from tgnn_solv.data.utils import canonicalize                  # noqa: E402
+from tgnn_solv.layers import CosmoSacLayer                      # noqa: E402
+from tgnn_solv.sigma_oracle import load_sigma_profiles          # noqa: E402
+
+PROFILES = ROOT / "results/sigma_profile_artifact/sigma_profiles.csv"
+RECORDS = ROOT / "results/published_idac_check/scored_records.csv"
+CKPT_DIR = ROOT / "checkpoints/e5_leakfree"
+OUT = ROOT / "results/closure_rank_profile_space"
+
+
+def jacobian(layer, p2, A2, p1, A1, T, batch: int = 256) -> np.ndarray:
+    """d ln gamma_2^inf / d p_solvent, (n_rows, n_bins)."""
+    out = []
+    for i in range(0, len(T), batch):
+        sl = slice(i, i + batch)
+        q = torch.tensor(p1[sl], dtype=torch.double, requires_grad=True)
+        g = layer.ln_gamma_inf(torch.tensor(p2[sl], dtype=torch.double), q,
+                               torch.tensor(A2[sl], dtype=torch.double),
+                               torch.tensor(A1[sl], dtype=torch.double), None, None,
+                               torch.tensor(T[sl], dtype=torch.double))
+        g.sum().backward()
+        out.append(q.grad.detach().numpy().copy())
+    return np.concatenate(out)
+
+
+def spectrum(J: np.ndarray, n_bins: int, tol_rel: float = 1e-8) -> dict:
+    """Спектр J^T J с вычетом направления нормировки."""
+    # Проекция вне постоянного вектора: нормировка профиля закрывает это направление
+    one = np.ones((n_bins, 1)) / np.sqrt(n_bins)
+    Jp = J - (J @ one) @ one.T
+    s = np.linalg.svd(Jp, compute_uv=False)
+    ev = s ** 2
+    ev = ev[ev > 0]
+    rank = int((ev > tol_rel * ev.max()).sum())
+    c = np.cumsum(ev) / ev.sum()
+    return {
+        "n_rows": int(J.shape[0]), "n_bins": n_bins,
+        "effective_dim": n_bins - 1,
+        "eigenvalue_max": float(ev.max()), "eigenvalue_min": float(ev.min()),
+        "condition_number": float(ev.max() / ev.min()),
+        "numerical_rank": rank,
+        "dirs_for_99pct": int(np.searchsorted(c, 0.99) + 1),
+        "dirs_for_999pct": int(np.searchsorted(c, 0.999) + 1),
+        "spectrum_head": ev[:8].tolist(),
+    }
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44, 45, 46])
+    ap.add_argument("--min-rows", type=int, default=40,
+                    help="минимум строк на растворитель, иначе ранг ограничен числом строк")
+    ap.add_argument("--max-solvents", type=int, default=25)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--out", type=Path, default=OUT)
+    a = ap.parse_args()
+
+    layer = CosmoSacLayer()
+    layer.eval().double()
+    n_bins = int(layer.n_bins)
+    table = load_sigma_profiles(str(PROFILES), n_bins=n_bins)
+    d = pd.read_csv(RECORDS)
+    k2 = [canonicalize(str(s)) for s in d.solute_smiles]
+    ok = np.array([x in table for x in k2])
+    d = d[ok].reset_index(drop=True)
+    counts = d.solvent_smiles.astype(str).value_counts()
+    solvents = [s for s, n in counts.items() if n >= a.min_rows][:a.max_solvents]
+    print(f"растворителей с >= {a.min_rows} строк: {len(solvents)}; бинов {n_bins}, "
+          f"эффективная размерность {n_bins - 1}")
+
+    tpl = pd.read_csv(ROOT / "notebooks/data/processed/test.csv", nrows=1, low_memory=False)
+    res: dict = {"n_bins": n_bins, "min_rows": a.min_rows, "solvents": solvents,
+                 "seeds": [], "per_seed": {}}
+
+    for s in a.seeds:
+        ck = CKPT_DIR / f"grounded_a_seed{s}.pt"
+        if not ck.exists():
+            continue
+        model, _, cfg = build_model(ck)
+        _, as_solvent = learned_profiles(model, cfg, solvents, tpl)
+        V = {m: np.asarray(as_solvent[i], float) for i, m in enumerate(solvents)}
+        per = {}
+        for sv in solvents:
+            rows = d[d.solvent_smiles.astype(str) == sv]
+            k2r = [canonicalize(str(x)) for x in rows.solute_smiles]
+            p2 = np.stack([table[k][0] for k in k2r])
+            A2 = np.array([table[k][1] for k in k2r], float)
+            p1 = np.repeat(V[sv][None, :], len(rows), axis=0)
+            A1 = p1.sum(1)
+            T = rows["T_K"].to_numpy(float)
+            per[sv] = spectrum(jacobian(layer, p2, A2, p1, A1, T), n_bins)
+        res["per_seed"][str(s)] = per
+        res["seeds"].append(s)
+        rk = np.array([v["numerical_rank"] for v in per.values()])
+        d99 = np.array([v["dirs_for_99pct"] for v in per.values()])
+        print(f"  сид {s}: ранг {rk.min()}..{rk.max()} (медиана {int(np.median(rk))}); "
+              f"направлений на 99% информации {int(np.median(d99))}")
+
+    # --- НУЛЕВОЕ ПЛЕЧО: случайные профили той же площади --------------------------------
+    rng = np.random.default_rng(a.seed)
+    nullp = {}
+    for sv in solvents:
+        rows = d[d.solvent_smiles.astype(str) == sv]
+        k2r = [canonicalize(str(x)) for x in rows.solute_smiles]
+        p2 = np.stack([table[k][0] for k in k2r])
+        A2 = np.array([table[k][1] for k in k2r], float)
+        area = float(np.mean([table[k][1] for k in k2r]))
+        base = rng.dirichlet(np.ones(n_bins)) * area
+        p1 = np.repeat(base[None, :], len(rows), axis=0)
+        nullp[sv] = spectrum(jacobian(layer, p2, A2, p1, p1.sum(1),
+                                      rows["T_K"].to_numpy(float)), n_bins)
+    res["random_profile_null"] = nullp
+    rkn = np.array([v["numerical_rank"] for v in nullp.values()])
+    d99n = np.array([v["dirs_for_99pct"] for v in nullp.values()])
+    print(f"  НУЛЬ (случайные профили): ранг медиана {int(np.median(rkn))}; "
+          f"направлений на 99% {int(np.median(d99n))}")
+
+    if res["seeds"]:
+        d99 = np.array([v["dirs_for_99pct"] for p in res["per_seed"].values()
+                        for v in p.values()])
+        cond = np.array([v["condition_number"] for p in res["per_seed"].values()
+                         for v in p.values()])
+        res["summary"] = {
+            "dirs_for_99pct_median": int(np.median(d99)),
+            "dirs_for_99pct_range": [int(d99.min()), int(d99.max())],
+            "condition_number_median": float(np.median(cond)),
+            "effective_dim": n_bins - 1,
+            "null_dirs_for_99pct_median": int(np.median(d99n)),
+        }
+        print(f"\n{'=' * 72}\nСВОДКА")
+        print(f"  из {n_bins - 1} доступных направлений профиля замыкание выставляет наружу "
+              f"{int(np.median(d99))} (размах {d99.min()}..{d99.max()}) при 99% информации")
+        print(f"  медианное число обусловленности J^T J: {np.median(cond):.2e}")
+        same = abs(np.median(d99) - np.median(d99n)) < 2
+        verdict = ("ТО ЖЕ, значит недостаточность структурна, а не свойство чекпойнта" if same
+                   else "отличается, значит ранг зависит от того, где линеаризуем")
+        print(f"  нулевое плечо (случайные профили) даёт {int(np.median(d99n))} -- {verdict}")
+        res["summary"]["deficiency_is_structural"] = bool(same)
+
+    a.out.mkdir(parents=True, exist_ok=True)
+    (a.out / "summary.json").write_text(json.dumps(res, ensure_ascii=False, indent=2),
+                                        encoding="utf8")
+    print(f"\nзаписано: {a.out}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

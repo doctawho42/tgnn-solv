@@ -7,8 +7,8 @@
 \input{preamble}
 \externaldocument[][nocite]{grounding_paradox_si}
 
-\title{When a Learned $\sigma$-Profile Is Not One: Diagnosing the Intermediate in
-Physics-Embedded Solubility Models}
+\title{When a Learned $\sigma$-Profile Is Not One: Diagnosing the Intermediate of a
+Physics-Embedded Solubility Model}
 
 \author{N.~L. Polomoshnov}
 \affiliation[MSU]{Faculty of Bioengineering and Bioinformatics, Lomonosov Moscow State
@@ -31,18 +31,19 @@ model interpretability, concept bottleneck}
 
 \begin{abstract}
 Physics-informed predictors combine learned physical quantities through a fixed thermodynamic
-relation. The arrangement is attractive because a prediction made through named quantities can be
-audited, and because a better value for one of them can be looked up and supplied without
-retraining. We ask whether the values such a network places in the slot of a physical quantity are
-that quantity. The system is a graph network supplying the $\sigma$-profile consumed by COSMO-SAC
-to predict the solubility of solids, and every measurement is reported against a control. Solubility
-data do not determine the quantities the relation composes. The network places screening-charge
-density where quantum chemistry places none, concentrating in the windows that activate the model's
-hydrogen-bonding term, and the output layer is not the cause. A molecule's profile depends on
-whether it enters as solute or as solvent, so the model does not return the reference state. The
-intermediate does not decompose: replacing part of it with reference values is frequently worse
-than replacing none. Supplying the reference profile improves the activity coefficients the profile
-exists to produce and degrades the solubility predicted from them.
+relation, which allows a prediction to be audited and a better value for one quantity to be
+supplied without retraining. We ask whether the values such a network places in the slot of a
+physical quantity are that quantity. The system is a graph network supplying the $\sigma$-profile
+consumed by COSMO-SAC to predict the solubility of solids, and every measurement is read against a
+control. The observations determine two of the fifty directions in which a profile can move. The
+network places screening-charge density where the reference tabulation carries none, concentrating
+in the windows that activate the model's hydrogen-bonding term, and the output layer is not the
+cause; that departure is the most visible and the least consequential, since removing it leaves the
+thermodynamics unchanged. What the thermodynamics responds to is the magnitude of the profile where
+it is populated. The intermediate also does not decompose: replacing part of it with reference
+values is frequently worse than replacing none. Supplying the whole reference profile improves the
+activity coefficients the profile exists to produce and degrades the solubility predicted from
+them.
 \end{abstract}
 
 \maketitle

@@ -6,83 +6,102 @@ against. The order follows the question rather than the chronology: first whethe
 determine the internal quantity at all, then what the network does with the freedom that remains,
 then what that costs the thermodynamics.
 
-\subsection{Solubility does not determine the quantities the model composes}
+\subsection{The observable determines two of fifty directions of the profile}
 \label{sec:ident}
 
-Equation~\eqref{eq:sle} is a sum of two terms, and a solubility measurement constrains the sum. The
-question is whether a set of such measurements separates them. For a fit of the four parameters
-that govern the crystal term and the temperature dependence of the activity coefficient, the
-information a solubility series carries is strongly concentrated: the smallest eigenvalue of the
-information matrix is five orders of magnitude below the largest. The consequence is quantitative
-rather than abstract. No estimator can determine the enthalpy of fusion from such a series to
-better than about $\pm 20$~kJ\,mol$^{-1}$, which is wider than the range the quantity takes across
-the compounds in the data. Supplying the melting temperature and the enthalpy of fusion as
-independent labels reduces that bound by an order of magnitude.
+A $\sigma$-profile is a point in a $51$-dimensional space, and normalisation fixes one direction, so
+a profile can move in $50$. The question is how many of those the closure exposes. For each
+solvent we collected the rows in which it appears, differentiated the predicted activity
+coefficient with respect to its profile, and took the spectrum of the resulting information matrix.
+Over $25$ solvents and five seeds, the number of directions carrying $99\%$ of the information is
+$2$, with a range of $1$ to $5$; the median condition number is $1.4\times10^{33}$. The remaining
+directions are not merely poorly determined. They are flat to numerical precision, so a profile can
+move along them without changing any prediction the closure makes.
 
-The crystal enthalpy and the temperature slope of the activity coefficient are collinear because
-each enters equation~\eqref{eq:sle} through $1/T$. A fit can trade one against the other and
-reproduce the measurements equally well. The same argument applies with more force to the $\sigma$-profile, which enters through fifty-one numbers rather than one. A solubility measurement constrains what the profile produces after the closure has acted on it. It leaves the profile itself undetermined in every direction the closure does not expose. What the network places in
-those directions is not decided by the data, and the remainder of this section measures what it
-places there.
+The same calculation on random profiles of equal area returns the same count. The deficiency is
+therefore structural, a property of the exchange kernel and of the diversity of partners available,
+rather than something the trained head produced. That is the stronger of the two readings: it holds
+wherever the profile is linearised, not only at the point this network happens to occupy.
+
+The crystal term is underdetermined in the same way and for a reason that is easier to picture. The
+enthalpy of fusion and the temperature slope of the activity coefficient both enter
+equation~\eqref{eq:sle} through $1/T$, so a fit can trade one against the other. For the
+four-parameter fit the condition number of the information matrix is $2.3\times10^{5}$, and no
+estimator can determine the enthalpy of fusion from a solubility series to better than about
+$\pm20$~kJ\,mol$^{-1}$, which is wider than the range the quantity takes across these compounds.
+Supplying the melting temperature and the enthalpy of fusion as independent labels reduces that
+bound to $\pm1.7$~kJ\,mol$^{-1}$.
+
+What the network places in the undetermined directions is not decided by the data. The rest of this
+section measures what it places there.
 
 \subsection{The network places charge density where the reference carries none}
 \label{sec:windows}
 
-The reference tabulation is sparse by construction. A molecule with no hydrogen-bond donor has no
-cavity surface carrying donor-side charge density, and the tabulated profile is exactly zero there.
-Across the compounds examined here, well over half of the reference profile's bins are exactly
-zero.
+The reference tabulation is sparse. A molecule with no hydrogen-bond donor is tabulated with no
+cavity surface carrying donor-side charge density, and $58\%$ of all reference cells across the
+compounds examined here are exactly zero, a median of $29$ bins of $51$ per molecule.
 
 The learned profiles are not sparse anywhere. Figure~\ref{fig:windows} shows the donor-window area
 for sixteen common solvents. Twelve of the sixteen are exactly empty in that window in the
-reference; all sixteen carry area there in the learned profile. The amounts are small as a
-fraction of the molecule's surface, between a tenth of a percent and about five percent, and the
-hydrogen-bonding term reads them regardless, because a segment qualifies for that term by its
-charge density alone.
+reference; all sixteen carry area there in the learned profile, between $0.1\%$ and $5.2\%$ of the
+molecule's surface. The hydrogen-bonding term reads that area regardless of how small it is,
+because a segment qualifies for the term by its charge density alone.
 
-Where the misfit lands is not uniform across the charge-density axis. Take the residual between the learned and the reference profile, and express it relative to the share of surface area each window holds. The donor window is then over-represented by about a factor of four and the acceptor window by a factor of two, while the nonpolar core is under-represented. The displacement is
-therefore oriented: the network's departure from the tabulation concentrates in exactly the regions
-that switch on the model's hydrogen-bonding term, and thins in the region that does not.
+Where the misfit lands is not uniform across the charge-density axis. Take the residual between the
+learned and the reference profile over the $71$ molecules that appear in a labelled test row, and
+express it relative to the share of surface area each window holds. The donor window is then
+over-represented by a factor of $4.0$ and the acceptor window by $2.0$, while the nonpolar core is
+under-represented at $0.88$. The profiles a molecule receives as solvent give $3.8$, $2.0$ and
+$0.89$ for the same three windows, so the orientation of the displacement does not depend on which
+role the molecule plays. The network's departure from the tabulation concentrates in the regions
+that switch on the model's hydrogen-bonding term and thins in the region that does not.
 
 \subsection{The output layer is not the cause}
 \label{sec:pedestal}
 
 An obvious explanation is architectural. The head ends in a normalisation that cannot return an
 exact zero, so a profile that should be empty in a bin will instead be slightly populated there,
-and the appearance of a defect would be an artefact of the parameterisation. The explanation is
-testable, and it fails.
+and the defect would be an artefact of the parameterisation. The explanation is testable, and it
+fails.
 
 Figure~\ref{fig:pedestal}a shows, for every bin in which the reference is exactly zero, how much
-mass the trained head actually places there. The distribution reaches $10^{-11}$, and between a
-third and a half of those bins already lie below $10^{-5}$. A layer that can reach $10^{-11}$ is
+mass the trained head places there. The distribution reaches $1.0\times10^{-11}$, and between
+$34\%$ and $51\%$ of those bins already lie below $10^{-5}$. A layer that can reach $10^{-11}$ is
 not what holds the remaining bins at $10^{-5}$. Figure~\ref{fig:pedestal}b makes the same point
-from the other direction: an untrained network of the same architecture places about $0.57$ of the
-profile's mass in the bins where the reference is empty, and training reduces that to about
-$0.02$. The residual population is something training arrives at, not something the parameterisation
-imposes.
+from the other direction. An untrained network of the same architecture places a median of $0.571$
+of the profile's mass in the bins where the reference is empty; after training the figure is
+$0.022\pm0.004$ over five seeds and both roles. The residual population is something training
+arrives at, not something the parameterisation imposes.
 
-This matters beyond the present pipeline. A recent physics-embedded model uses a rectified output
-with the same normalisation and can therefore emit exact zeros \cite{yang2025tennet}. The
+The two roles agree. The pedestal is $0.024\pm0.004$ on the profiles a molecule receives as solute
+and $0.020\pm0.003$ on those it receives as solvent, a difference of $0.004$ against a
+seed-to-seed spread of the same size. This measurement and the one in
+Section~\ref{sec:windows} therefore hold separately for each of the two profiles a molecule is
+given, and do not depend on the fact that it is given two.
+
+The point extends beyond the present pipeline. A recent physics-embedded model uses a rectified
+output with the same normalisation and can therefore emit exact zeros \cite{yang2025tennet}. The
 measurement above indicates that the difference between the two output layers is not what decides
-whether the learned profile resembles the tabulated one.
+whether a learned profile resembles the tabulated one.
 
 \subsection{A molecule is not ideal in itself}
 \label{sec:refstate}
 
-Any activity coefficient model must return unity for a pure component: a molecule surrounded by
-copies of itself is, by definition, in its reference state. In COSMO-SAC the property holds
-identically, because the residual term is a difference between a segment's activity in the mixture
-and in the pure compound, and the two coincide when one profile is used on both sides. Supplying a
-single profile to both sides of the calculation returns exactly zero here, which confirms that the
-implementation carries the property.
+Any activity coefficient model must return unity for a pure component, since a molecule surrounded
+by copies of itself is in its reference state by definition. In COSMO-SAC the property holds
+identically: the residual term is a difference between a segment's activity in the mixture and in
+the pure compound, and the two coincide when one profile is used on both sides. Supplying a single
+profile to both sides returns exactly zero here, which confirms that the implementation carries the
+property.
 
 The pipeline does not. Because the head reads a role-dependent representation, a compound receives
-one profile when it enters as solute and a different one when it enters as solvent. Pairing a
-molecule with itself therefore pairs two different profiles, and the activity coefficient departs
-from unity. The median departure is a few hundredths in $\ln\gamma$ and the largest exceeds $0.8$.
-The violation is a property of the learned intermediate rather than of the thermodynamic relation,
-and it is invisible in any evaluation that never pairs a compound with itself, which is every
-evaluation on solubility or on mixture data.
+one profile as solute and a different one as solvent, so pairing a molecule with itself pairs two
+different profiles. The median departure from ideality is between $0.012$ and $0.044$ in
+$\ln\gamma$ across the five seeds, the ninety-fifth percentile between $0.09$ and $0.34$, and the
+largest single value is $0.80$. The violation belongs to the learned intermediate rather than to
+the thermodynamic relation. It is also invisible in any evaluation that never pairs a compound with
+itself, which is every evaluation on solubility or on mixture data.
 
 \subsection{What misplaced density costs, and where}
 \label{sec:cost}
@@ -90,24 +109,31 @@ evaluation on solubility or on mixture data.
 The preceding measurements establish that density sits where the reference says it should not. They
 do not say what that costs, and the cost is not uniform. Figure~\ref{fig:costmap}a reports, for
 each bin, the mean change in the predicted activity coefficient produced by moving a fixed amount
-of mass from the core into that bin. Moving mass within the core is almost free. Moving the same mass into the outer windows is more than an order of magnitude more expensive. The ratio between the two is far larger than it is for random profiles of the same total area, so the structure reflects the chemistry of the exchange rather than the geometry of the grid.
+of mass from the core into that bin. Moving mass within the core is almost free. Moving the same
+mass into the outer windows costs $21$ times as much as a median over seeds, with a range of $21$
+to $30$; computed over the rows used for scoring rather than for training the ratio is $15$, with a
+range of $13$ to $25$. Random profiles of the same total area give $1.6$ and $1.5$, so the
+structure reflects the chemistry of the exchange rather than the geometry of the grid.
 
 The cost does not grow smoothly with distance along the axis. It is flat across the core, rises
-steeply as the hydrogen-bonding threshold is crossed, and then saturates: once mass is inside the
+steeply as the hydrogen-bonding threshold is crossed, and then saturates. Once mass is inside the
 bonding region, pushing it further out changes the prediction comparatively little. The consequence
 is shown in Figure~\ref{fig:costmap}b. Reading the measured cost as a potential and taking its
 gradient gives the weight under which the usual transport distance between two profiles would price
-their difference correctly. That weight peaks at the boundary, not deep in the outer window. A
-treatment that weighted the far corner most heavily, which is what the geometry of the grid would
-suggest, would weight the wrong place.
+their difference correctly, and that weight peaks at the boundary rather than deep in the outer
+window. A treatment that weighted the far corner most heavily, which is what the geometry of the
+grid would suggest, would weight the wrong place.
 
 \subsection{The intermediate does not decompose}
 \label{sec:nonadditive}
 
 If the learned profile were a $\sigma$-profile carrying a per-bin error, then correcting part of it
 should help in proportion to the part corrected. It does not. Replacing the learned shape with the
-reference shape over the whole grid improves the predicted activity coefficients on every seed.
-Replacing it over a randomly chosen third of the bins makes the prediction worse than leaving the profile entirely alone in a fifth of the draws. The outcome ranges from a large improvement to a loss several times the size of the whole gap being closed.
+reference shape over the whole grid improves the predicted activity coefficients on all five seeds.
+Replacing it over a randomly chosen third of the bins makes the prediction worse than leaving the
+profile entirely alone in $20\%$ of draws, taken over twenty random thirds at each of five seeds and
+ranging from $5\%$ to $30\%$ by seed. Recovery of the gap across those draws runs from $-213\%$ to
+$+152\%$.
 
 A profile assembled from correct values in some bins and learned values in the rest is not
 intermediate between the two. The segment-activity calculation is a self-consistent solution over
@@ -116,24 +142,57 @@ it was built from. Two things follow. The first is methodological: the share of 
 attributable to any subset of bins is not defined on this surface, so an analysis that partitions
 the grid and attributes error to the parts cannot be carried out, whatever the partition. The
 second concerns the premise under test. Partial correctness of the intermediate is not partially
-useful; it is frequently worse than consistent incorrectness.
+useful, and is frequently worse than consistent incorrectness.
 
 \subsection{The error that reaches the thermodynamics is in the occupied bins}
 \label{sec:attribution}
 
 One partition is well posed, because both of its parts are substituted in full: the bins where the
 reference is nonzero, and the bins where it is zero. Figure~\ref{fig:attribution}a reports both.
-Supplying the reference values in the bins the reference actually occupies recovers close to ninety
-percent of the gap between the learned profile and the reference, on every seed. Setting exact
-zeros in the bins the reference leaves empty recovers nothing: the mean is slightly negative and
-the sign changes from seed to seed, and the result sits inside the spread of a control that zeroes
-the same number of randomly chosen cells.
+Supplying the reference values in the bins the reference occupies recovers $89\%$ of the gap
+between the learned and the reference profile, positive on all five seeds and ranging from $68\%$
+to $109\%$. Setting exact zeros in the bins the reference leaves empty recovers $-9\%$ on average,
+with a per-seed range from $-36\%$ to $+34\%$, and the result sits inside the spread of a control
+that zeroes the same number of randomly chosen cells.
 
-The spurious density is therefore not what the thermodynamics is responding to. The error that
+The spurious density is therefore not what the thermodynamics responds to. The error that
 propagates through the closure lives in the magnitude of the profile where the profile is
-populated. The cost map of Section~\ref{sec:cost} does not localise this error either. Figure~\ref{fig:attribution}b shows that substituting the reference into the third of the grid the closure is most sensitive to recovers no more of the gap than substituting into a randomly chosen third, and that the sign varies across seeds. Sensitivity per unit of displaced mass and total contribution to the
-error are different quantities, and the core carries most of the mass.
+populated. The cost map of Section~\ref{sec:cost} does not localise this error either.
+Figure~\ref{fig:attribution}b shows that substituting the reference into the third of the grid the
+closure is most sensitive to recovers no more of the gap than substituting into a randomly chosen
+third, and that the sign varies across seeds. Sensitivity per unit of displaced mass and total
+contribution to the error are different quantities, and the core carries most of the mass.
 
-Separating the profile's shape from the molecule's cavity area, which COSMO-SAC consumes as a
-separate scalar, splits the gap unevenly: about two thirds of it is carried by the shape and the
-remainder by the area.
+The profile's shape and the molecule's cavity area, which COSMO-SAC consumes as a separate scalar,
+split the gap unevenly. Replacing the whole shape while keeping the learned area moves the mean
+error from $1.75$ to $1.08$, against $0.76$ when the reference profile is supplied with its own
+area, so the shape accounts for $0.68$ of the gap and the area for the rest. This is a
+decomposition of two full substitutions rather than an attribution over bins, and is not subject to
+the objection raised in Section~\ref{sec:nonadditive}.
+
+\subsection{Supplying the reference improves one quantity and degrades the other}
+\label{sec:twosided}
+
+The substitution the premise licenses can be scored on two quantities at once: the activity
+coefficient the profile exists to produce, and the solubility the pipeline is built to predict.
+Both are measured on the same checkpoints.
+
+On the activity coefficients, replacing the learned profiles with the reference profiles moves the
+mean absolute deviation from $1.751\pm0.063$ to $0.765$, an improvement on every one of the five
+seeds and more than fourteen times the seed-to-seed spread of the arm. On the solubility, the same
+replacement at prediction time moves the error in the opposite direction, by
+$0.431\pm0.044$ in mean absolute error over the $5274$ test rows in which a reference profile was
+available for the solvent, with per-seed values of $0.456$, $0.381$ and $0.457$.
+
+The control is internal to the same comparison. No reference profile exists for either component in $37$ test
+rows, so nothing is substituted in them, and across those rows the two arms differ by at most
+$4\times10^{-6}$ in mean absolute error. The effect is therefore carried by the rows in
+which the substitution actually happened, and not by any difference in how the two arms were
+scored. The substitution is a solvent-side substitution throughout: of the $147$ distinct solutes
+in the test rows only seven are tabulated, so no row exists in which the solute profile alone is
+replaced. What is reported is what the available reference data permit, and the solvent channel is
+where the comparison lives.
+
+The two directions are the result this work was undertaken to obtain. A better value for the
+internal quantity makes the thermodynamic model it feeds more accurate and makes the pipeline less
+accurate.

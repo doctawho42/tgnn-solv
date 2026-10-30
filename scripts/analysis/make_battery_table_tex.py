@@ -35,6 +35,10 @@ def load(rel: str) -> dict:
 
 def main() -> int:
     ident = load("results/identifiability_audit/summary.json")["base_regimes"]
+    rank = load("results/closure_rank_profile_space/summary.json")
+    attrib = load("results/per_bin_sensitivity_weights/closure_error_attribution.json")
+    idac = load("results/idac_learned_vs_reference/summary.json")
+    chan = load("results/e5_sigma_grounding/section_s1_channel_split.json")["summary"]["classes"]
     resid = load("results/sigma_profile_residual/clean_pool.json")
     floor = load("results/t2_softmax_floor/summary.json")
     costs = load("results/t2_softmax_floor/pedestal_costs.json")["per_seed"]
@@ -72,11 +76,35 @@ def main() -> int:
     fixnz = 100 * np.mean([r["recovered_fix_nonzero"] for r in costs.values()])
     zerop = 100 * np.mean([r["recovered_zero_pedestal"] for r in costs.values()])
     full_helps = sum(r["base_aad"] > r["aad_full"] for r in costs.values())
+    # ВНИМАНИЕ НА ДЕПОЗИТ. Эта строка описывает подстановку ЭТАЛОНА в случайную треть бинов, и
+    # читаться обязана из closure_error_attribution. Первая редакция брала долю из
+    # pedestal_costs, где нуль -- ОБНУЛЕНИЕ случайных клеток, и печатала 94% там, где
+    # описанная операция даёт 20%. Текст и таблица расходились на одном и том же измерении.
+    ap_ = attrib["per_seed"]
     worse = 100 * np.mean([np.mean(np.asarray(r["null_aad"]) > r["base_aad"])
-                           for r in costs.values()])
+                           for r in ap_.values()])
+    n_draw, n_seed = int(attrib["n_null"]), len(ap_)
+    # --- 8: две стороны одной подстановки, с собственным плацебо --------------------------
+    g_lrn = np.array([v["aad"] for v in idac["arms"]["learned"]["per_seed"].values()])
+    g_ref = float(idac["arms"]["reference_vt2005"]["aad_mean"])
+    x_pen = chan["solvent_only"]["mean"]
+    x_sd = chan["solvent_only"]["sd_sample"]
+    x_n = chan["solvent_only"]["n_per_seed"][0]
+    pl_n = chan["neither"]["n_per_seed"][0]
+    pl_max = chan["neither"]["max_abs_mae_difference"]
 
     rows = [
-        (r"Does solubility determine the factors it composes?",
+        (r"Does the observable determine the $\sigma$-profile?",
+         rf"spectrum of the closure's Jacobian over the {rank['n_bins']} bins, "
+         rf"{len(rank['solvents'])} solvents $\times$ {len(rank['seeds'])} seeds, against the "
+         r"same spectrum on random profiles of equal area",
+         rf"${rank['summary']['dirs_for_99pct_median']}$ of {rank['summary']['effective_dim']} "
+         rf"profile directions carry $99\%$ of the information "
+         rf"(range {rank['summary']['dirs_for_99pct_range'][0]}--"
+         rf"{rank['summary']['dirs_for_99pct_range'][1]}); random profiles give "
+         rf"{rank['summary']['null_dirs_for_99pct_median']}",
+         r"No, and the deficiency is structural rather than a property of the trained head."),
+        (r"Does it determine the crystal term?",
          r"Fisher information of the four-parameter fit; Cram\'er--Rao bound on the enthalpy of "
          r"fusion, against the same bound with external labels supplied",
          rf"condition number ${cond0 / 10 ** int(np.log10(cond0)):.1f}\times"
@@ -87,7 +115,8 @@ def main() -> int:
          r"residual of learned minus reference profile by charge-density window, "
          rf"{resid['n_molecules_clean']} molecules, against each window's share of surface area",
          rf"donor window ${en['donor']:.1f}\times$, acceptor ${en['acceptor']:.1f}\times$, "
-         rf"nonpolar core ${en['nonpolar']:.2f}\times$",
+         rf"nonpolar core ${en['nonpolar']:.2f}\times$; {zshare:.0f}\% of reference cells are "
+         rf"exactly zero",
          r"Yes, and into the windows the hydrogen-bonding term reads."),
         (r"Is the output layer responsible?",
          r"mass in bins where the reference is exactly zero, against the smallest bin the same "
@@ -95,7 +124,7 @@ def main() -> int:
          rf"head reaches $10^{{{int(np.floor(np.log10(mn)))}}}$; "
          rf"{100 * min(below):.0f}--{100 * max(below):.0f}\% of those bins already below "
          rf"$10^{{-5}}$; pedestal {min(ped):.2f}--{max(ped):.2f} against {ped0:.2f} untrained",
-         rf"No. The pedestal is learned. {zshare:.0f}\% of reference cells are exactly zero."),
+         r"No. The pedestal is learned, and it is the same in both roles."),
         (r"Is the reference state preserved?",
          r"activity of a molecule in itself, against the one-profile control that must return "
          r"zero identically",
@@ -112,13 +141,21 @@ def main() -> int:
          r"reference shape substituted into part of the grid, against a randomly chosen part of "
          r"the same size",
          rf"the whole shape helps on {full_helps} of 5 seeds; a random third is worse than the "
-         rf"fully learned profile in {worse:.0f}\% of draws",
+         rf"fully learned profile in {worse:.0f}\% of {n_draw}$\times${n_seed} draws",
          r"No. The parts do not add, so per-bin attribution is undefined."),
         (r"Where does the error that reaches the closure live?",
          r"reference shape in the bins where it is nonzero, against exact zeros in the bins "
          r"where it is zero",
          rf"${fixnz:+.0f}\%$ of the gap recovered against ${zerop:+.0f}\%$",
          r"In the magnitude of the occupied bins, not in the pedestal."),
+        (r"What does supplying the reference profile do?",
+         rf"the same substitution scored on both quantities, against the ${pl_n}$ rows in which "
+         r"no profile is replaced because neither component is tabulated",
+         rf"activity coefficients ${g_lrn.mean():.2f}\pm{g_lrn.std(ddof=1):.2f}\to{g_ref:.2f}$; "
+         rf"solubility worsens by ${x_pen:.2f}\pm{x_sd:.2f}$ over ${x_n}$ rows; placebo "
+         rf"$<{pl_max:.0e}$",
+         r"It improves the quantity the profile produces and degrades the quantity the "
+         r"pipeline predicts."),
     ]
 
     body = "\n".join(
