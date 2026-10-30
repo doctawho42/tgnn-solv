@@ -19,7 +19,10 @@ SEED="${2:?сид}"
 CARD="${3:?номер карты}"
 
 B=/mnt/storage/doctawho42/tgnn-solv; R=$B/repo; PY=$B/env/bin/python
-WANT_COMMIT=75ce246          # все три плеча обязаны идти с одного дерева
+# Объявленный коммит КОДА. Ворота ниже проверяют не равенство HEAD (коммит не может знать свой
+# хеш, и правки в results/ или paper/ код не меняют), а что src/, scripts/ и configs/ НЕ ОТЛИЧАЮТСЯ
+# от него и что он является предком HEAD. Так все три плеча гарантированно идут одним кодом.
+WANT_COMMIT=75ce246
 
 case "$ARM" in
   control)  EXTRA="" ;;
@@ -41,10 +44,13 @@ export CUDA_VISIBLE_DEVICES="$CARD" KMP_DUPLICATE_LIB_OK=TRUE PYTHONPATH=src
 
 echo "=== ВОРОТА: коммит дерева ==="
 H=$(git rev-parse HEAD)
-echo "  HEAD = $H"
-if [ "${H:0:7}" != "$WANT_COMMIT" ]; then
-  echo "  РАСХОЖДЕНИЕ с объявленным $WANT_COMMIT -- НЕ ЗАПУСКАЮСЬ"
-  exit 2
+echo "  HEAD = $H, объявленный код = $WANT_COMMIT"
+if ! git merge-base --is-ancestor "$WANT_COMMIT" HEAD 2>/dev/null; then
+  echo "  объявленный коммит НЕ предок HEAD -- НЕ ЗАПУСКАЮСЬ"; exit 2
+fi
+DIFF=$(git diff --name-only "$WANT_COMMIT" HEAD -- src scripts configs)
+if [ -n "$DIFF" ]; then
+  echo "  КОД ОТЛИЧАЕТСЯ от объявленного -- НЕ ЗАПУСКАЮСЬ:"; echo "$DIFF" | head -5; exit 2
 fi
 if [ -n "$(git status --porcelain src/ scripts/ configs/)" ]; then
   echo "  ДЕРЕВО ГРЯЗНОЕ в src/scripts/configs -- НЕ ЗАПУСКАЮСЬ"
