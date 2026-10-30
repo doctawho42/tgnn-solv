@@ -67,6 +67,7 @@ def sigma_profile_emd_loss(
     area_scale: float = 75.0,
     shape_weight: float = 1.0,
     shape_floor: float = 0.0,
+    shape_bin_weights: Tensor | None = None,
     eps: float = 1e-8,
     return_components: bool = False,
 ) -> Tensor | tuple[Tensor, dict[str, float]]:
@@ -89,6 +90,25 @@ def sigma_profile_emd_loss(
     ``sigma_shape`` so the floored and unfloored values are both visible in a run's log; the
     key is present in BOTH branches on purpose, because ``trainer`` symmetrises solute and
     solvent component dicts key-by-key and a missing key would raise there on mixed batches.
+
+    ``shape_bin_weights`` -- вектор длины n_bins, которым взвешиваются ПО-БИНОВЫЕ слагаемые
+    форменного члена. Это не косметика, а смена метрики: взвешенная сумма
+    ``sum_k w_k |C_k(pred) - C_k(target)|`` есть ровно 1-D Вассерштейн по сетке, в которой
+    расстояние между соседними узлами равно ``w_k``, поэтому вес с положительными компонентами
+    оставляет член метрикой, а невзвешенный EMD оказывается частным случаем ``w = const``, то есть
+    предположением, что цена замыкания растёт по сетке равномерно. Измерение этого предположения
+    не подтверждает (``results/per_bin_sensitivity_weights``, ступень на ``cosmo_sac_sigma_hb``),
+    и вектор оттуда берётся как дискретный градиент измеренного потенциала размещения.
+
+    ВНИМАНИЕ НА ПОВЕРХНОСТЬ. В режиме ``"emd"`` слагаемое с индексом k оценивает массу,
+    ПЕРЕСЕКАЮЩУЮ границу между бинами k и k+1, а в режиме ``"mse"`` -- массу, ЛЕЖАЩУЮ в бине k.
+    Это две разные поверхности, и один и тот же вектор весов означает в них разное: в ``"emd"``
+    это цена переноса через границу, в ``"mse"`` -- цена размещения. Вектор, выведенный под один
+    режим, в другом стоит не на своей поверхности.
+
+    ``w = None`` и ``w`` из одних единиц дают БИТОВО тот же член, что и до появления крюка:
+    умножение на ровно 1.0 в IEEE754 точное, а порядок суммирования не меняется. Это
+    зафиксировано тестом, а не предположено.
     """
     m = mask.bool()
     if not bool(m.any()):
@@ -99,11 +119,21 @@ def sigma_profile_emd_loss(
     ps = pred_shape[m]
     ts = target_shape[m]
     if mode == "mse":
-        shape_loss = ((ps - ts) ** 2).sum(dim=-1).mean()
+        per_bin = (ps - ts) ** 2
     else:
-        shape_loss = (
-            torch.cumsum(ps, dim=-1) - torch.cumsum(ts, dim=-1)
-        ).abs().sum(dim=-1).mean()
+        per_bin = (torch.cumsum(ps, dim=-1) - torch.cumsum(ts, dim=-1)).abs()
+    if shape_bin_weights is None:
+        shape_loss = per_bin.sum(dim=-1).mean()
+    else:
+        w = shape_bin_weights
+        if w.ndim != 1 or w.shape[0] != per_bin.shape[-1]:
+            # Громко, а не широковещательно: вектор длины 1 или n_rows молча прошёл бы
+            # бродкастом и обучал бы не тот функционал.
+            raise ValueError(
+                f"shape_bin_weights must be 1-D of length {per_bin.shape[-1]}, "
+                f"got shape {tuple(w.shape)}"
+            )
+        shape_loss = (w.to(per_bin) * per_bin).sum(dim=-1).mean()
     shape_raw = shape_loss
     if shape_floor > 0.0:
         # torch.relu, а НЕ clamp_min(0.0): на самом полу их производные различаются, и это

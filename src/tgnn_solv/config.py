@@ -236,6 +236,20 @@ class TGNNSolvConfig:
     sigma_aux_phase3_weight: Optional[float] = None
     sigma_aux_symmetrize: bool = True  # ground solute AND solvent role embeddings
     sigma_profile_loss: str = "emd"  # "emd" (1-D Wasserstein) or "mse"
+    # T1: путь к .npy с вектором ПО-БИНОВЫХ весов форменного члена sigma-супервизии (длина
+    # n_bins). None -- невзвешенный член, битово прежний.
+    #
+    # ОТКУДА ВЕКТОР. results/per_bin_sensitivity_weights: цена замыкания за размещение массы
+    # измерена ПО КОНЕЧНОЙ РАЗНОСТИ по каждому бину (градиентная карта для этого запрещена её
+    # же выводом -- завышает вчетверо и сидонеустойчива), и вес есть дискретный градиент этого
+    # потенциала. Взвешенный член остаётся 1-D Вассерштейном -- по метрике, в которой
+    # расстояние между соседними узлами сетки равно w_k, -- а невзвешенный оказывается частным
+    # случаем w = const.
+    #
+    # ПОВЕРХНОСТЬ ВЕСА И ПОВЕРХНОСТЬ ЧЛЕНА. Вектор выведен под режим "emd" (цена ПЕРЕНОСА через
+    # границу бинов). В режиме "mse" слагаемые живут на другой поверхности -- цене РАЗМЕЩЕНИЯ в
+    # бине, -- и тот же вектор там стоит не на своей поверхности.
+    sigma_shape_bin_weights: Optional[str] = None
     sigma_val_data: Optional[str] = None  # path to sigma-profile val set for warmup early-stop
     freeze_sigma_head_during_sle: bool = False  # freeze head_sigma in SLE phases 2/3 to hold the σ-manifold
     # Train-time TRUE-σ injection (disambiguates the eval-only oracle floor: does the

@@ -922,6 +922,44 @@ class TGNNSolvTrainer:
         self._maybe_release_device_cache()
         return float(loss.item()), loss_dict
 
+    def _sigma_bin_weights(self) -> Tensor | None:
+        """Вектор по-биновых весов форменного члена sigma-лосса, загруженный один раз.
+
+        ГРОМКО, А НЕ МОЛЧА. Если конфиг называет файл, которого нет, здесь поднимается
+        исключение, а не возвращается None: молчаливый откат на невзвешенный член означал бы, что
+        плечо T1 обучилось тем же функционалом, что контрольное, и разница читалась бы как
+        "перевзвешивание не помогает". Это ровно тот сорт отказа, из-за которого в проекте
+        появилось правило про громкое умолчание у таблиц диспетчеризации.
+        """
+        if getattr(self, "_sigma_bin_w_cache", "unset") != "unset":
+            return self._sigma_bin_w_cache
+        path = getattr(self.cfg, "sigma_shape_bin_weights", None)
+        if not path:
+            self._sigma_bin_w_cache = None
+            return None
+        import hashlib
+        from pathlib import Path as _Path
+
+        import numpy as _np
+        f = _Path(path)
+        if not f.exists():
+            raise FileNotFoundError(
+                f"sigma_shape_bin_weights={path!r} не существует; невзвешенное обучение под "
+                f"видом взвешенного сделало бы плечо неотличимым от контроля"
+            )
+        arr = _np.load(f).astype(_np.float64).reshape(-1)
+        if not _np.all(_np.isfinite(arr)) or float(arr.min()) <= 0.0:
+            raise ValueError(
+                f"sigma_shape_bin_weights из {path!r}: вес обязан быть конечным и строго "
+                f"положительным (иначе член перестаёт быть метрикой), получено "
+                f"min={arr.min()!r}, finite={bool(_np.all(_np.isfinite(arr)))}"
+            )
+        sha = hashlib.sha256(arr.tobytes()).hexdigest()[:16]
+        print(f"  sigma bin weights: {f.name} n={arr.size} mean={arr.mean():.6f} "
+              f"min={arr.min():.4f} max={arr.max():.4f} sha256:{sha}")
+        self._sigma_bin_w_cache = torch.tensor(arr, dtype=torch.float, device=self.device)
+        return self._sigma_bin_w_cache
+
     def _sigma_forward_loss(
         self, batch, *, role: str = "solute", floored: bool = True
     ) -> tuple[Tensor, dict[str, float]]:
@@ -955,6 +993,7 @@ class TGNNSolvTrainer:
             sig["p_shape"], target_shape, sig["area"], target_area, mask,
             mode=self.cfg.sigma_profile_loss, area_scale=self.cfg.sigma_area_scale,
             shape_weight=self.cfg.sigma_shape_weight,
+            shape_bin_weights=self._sigma_bin_weights(),
             # Пол применяется ТОЛЬКО на обучении. validate_sigma зовёт с floored=False, чтобы
             # критерий раннего останова и выбора best_state в pretrain_pipeline остался ТЕМ ЖЕ
             # функционалом, что у контрольного плеча: иначе плечи отличались бы ещё и выбранной
