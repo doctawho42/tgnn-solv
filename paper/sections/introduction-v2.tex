@@ -2,110 +2,80 @@
 \label{sec:intro}
 
 How much of a solid dissolves in a given liquid decides whether a drug is formulated as a tablet or
-an injection, which solvent a crystallisation runs in, and how a product is purified. Each value is
-measured one solute, one solvent and one temperature at a time, so most combinations of industrial
-interest have never been measured, and a laboratory that needs one is choosing between running an
-experiment and trusting a prediction.
+an injection, which solvent a crystallisation runs in, and how a product is purified. The value is
+measured one solute, one solvent and one temperature at a time. Most combinations of industrial
+interest have therefore never been measured, and a laboratory that needs one is choosing between
+running an experiment and trusting a prediction. The same is true across process chemistry, where
+a solvent is selected for a separation long before anyone measures the relevant phase behaviour.
 
-Predictors divide by how much physical structure they impose. A direct model regresses solubility
-from descriptors or from a representation learned off the molecular graph, and on extrapolation to
-unseen solutes the direct models lead; FastSolv \cite{osanloo2024} reports the lowest errors
-on that task. What such a model returns is a single number, silent about which part of the
-chemistry produced it. A physics-informed model instead predicts the quantities the physical
-picture names: an activity coefficient for the solute--solvent interaction, a melting temperature
-and an enthalpy of fusion for the crystal. A fixed thermodynamic relation then combines them.
-SolProp \cite{vermeire2022solprop} assembles such a cycle from separately learned components. The fixed relation costs accuracy and buys three things. A prediction made
-through it can be taken apart, because each intermediate is a quantity chemists tabulate on its
-own. Each intermediate can be supervised against reference data that a direct regressor has no way
-to use. And the relation is itself a prior, asserting for free what a purely statistical model
-would have to learn from data it does not have, which is the situation whenever the molecule in
-question is unlike anything in the training set.
+Two kinds of prediction are on offer. A direct model regresses solubility from molecular
+descriptors or from a representation learned off the molecular graph, and returns a number. A
+physics-informed model predicts the quantities a thermodynamic argument names, then combines them
+through a fixed relation taken from that argument. The second kind has become popular for reasons
+that have little to do with accuracy, on which it usually trails
+\cite{osanloo2024,vermeire2022solprop}. Its internal quantities are things chemistry already knows
+how to measure and tabulate, so a prediction can be taken apart and checked piece by piece. Each
+piece can be trained against reference data that a direct regressor has no way to use. And the
+fixed relation supplies, for free, structure that a purely statistical model would have to learn
+from data it does not have, which is the situation whenever the molecule in question resembles
+nothing in the training set.
 
-Among those intermediates the $\sigma$-profile is the one most often learned. In the
-conductor-like screening model for real solvents and in its segment-activity reformulation
-COSMO-SAC \cite{lin2002}, a molecule enters the thermodynamics only through the distribution of
-screening-charge density over its cavity surface: how much of that surface carries charge density
-of each value. The distribution comes from a quantum-chemical calculation with a continuum
-solvation treatment and is tabulated once per molecule \cite{mullins2006}, after which a
-closed-form segment-activity expression consumes it and knows nothing else about the compound.
-That makes it an unusually clean target for learning. It is a fixed-length vector, it is tabulated
-for thousands of molecules, and supplying it from structure removes the only expensive step in the
-pipeline. Group-contribution schemes supplied it first \cite{mu2007gc,mu2009gc}, and learned
-predictors followed, taking the profile from a line notation or a molecular graph
-\cite{kang2022surrogate,chen2021transformer,zhang2022mpnn}. How far the tabulated reference itself
-moves with the quantum chemistry and solvation treatment behind it is a separate and live question
-\cite{salih2025sigma}. An older line regresses an \emph{apparent} profile from phase-equilibrium
-data instead \cite{islam2015apparent}, which is the pre-neural form of the effective profile
-measured here.
+That design rests on an assumption so natural it is rarely written down. If the quantity inside the
+model is a real physical quantity, then a better value for it can be looked up and handed to the
+model, and the prediction should improve. The assumption is what makes the internal quantity worth
+having, because it is the difference between a model that can be audited and repaired piece by
+piece and an elaborate curve fit with suggestive variable names. It also carries direct practical
+weight: it is the reason a laboratory would pay for a quantum-chemical calculation on a new
+compound, or curate a table of measured melting properties, rather than spend the same effort on
+more solubility measurements.
 
-All of this rests on a premise rarely written down, because it reads as though it needs no writing.
-If the quantity in the slot is a $\sigma$-profile, then a network that fills the slot has learned a
-$\sigma$-profile. The usual consequences follow: it can be read as chemistry, and it can be
-compared against tabulation. The strongest consequence is that a better value can be looked up and
-handed back to the model without retraining, and the prediction should improve. The premise is what makes the
-intermediate worth having, since it is the difference between a physical model and an elaborate
-parameterisation. The recent literature states it in close to those words. The physics-embedded
-phase-equilibrium model closest to the work reported here argues that its intermediate carries
-clear physical significance because it appears directly in the thermodynamic formulation
-\cite{yang2025tennet}. That argument is about the equations. Whether the values a network places in
-the slot are the physical quantity is a different question, and it takes a different kind of
-answer.
+The quantity this work examines is the $\sigma$-profile. In the conductor-like screening model for
+real solvents and in its segment-activity reformulation COSMO-SAC \cite{lin2002}, a molecule enters
+the thermodynamics only through the distribution of screening-charge density over its cavity
+surface, that is, through how much of that surface carries charge density of each value. Everything
+else about the compound is discarded. The distribution comes from a quantum-chemical calculation
+with a continuum solvation treatment and is tabulated once per molecule \cite{mullins2006}. It is
+an unusually attractive thing to learn: it is a fixed-length vector, it is tabulated for thousands
+of compounds, and supplying it from structure removes the only expensive step in the pipeline.
 
-There is reason to expect that they are not. In machine learning the same construction is called a
-concept bottleneck \cite{koh2020cbm}. A network is required to predict named, human-meaningful
-concepts, and the target is predicted from those concepts alone, in the expectation that the
-prediction becomes interpretable and that intervening on a concept behaves as its name implies. The
-concepts leak. A bottleneck trained end to end carries information its labels do not name, the
-downstream model reads it for more than its nominal content, and both the interpretation and the
-interventions then fail in ways the names do not predict
-\cite{margeloiu2021,mahinpei2021,havasi2022}. A $\sigma$-profile head inside a fixed closure is
-that construction with a thermodynamic decoder in place of a learned one, and it differs in one
-respect that matters: the concept has a ground truth. A $\sigma$-profile is not a human label but a
-computable quantity, so leakage can be measured against the quantity itself rather than inferred
-from downstream behaviour. The structural reason for leakage is also sharper here. A solubility
-measurement constrains the \emph{composition} of the intermediate with the fixed relation, not the
-intermediate itself. Where different intermediates compose to the same target, the data cannot
-choose between them, and the combinations it leaves undetermined are where a flexible network is
-free to move. This is the familiar predicament of a model whose parameters are weakly constrained
-by its observables \cite{gutenkunst2007,transtrum2015,raue2009}, compounded by calibration against
-a relation that is itself only approximate \cite{kennedy2001,brynjarsdottir2014}.
+Group-contribution schemes supplied it first \cite{mu2007gc,mu2009gc}, and learned predictors
+followed, taking the profile from a line notation or a molecular graph
+\cite{kang2022surrogate,chen2021transformer,zhang2022mpnn}. More recent work embeds the learning
+deeper, replacing both the profile and the segment-activity calculation with networks trained
+inside the thermodynamic structure, and reports accuracy beyond the model it is built from
+\cite{yang2025tennet}. Others keep the thermodynamics and dispense with the named intermediate
+altogether \cite{specht2024hanna}, or learn a thermodynamic potential directly from phase
+behaviour. Across this literature the internal quantity is described as physically meaningful on
+the grounds that it appears in the thermodynamic formulation. Validation, where it is reported for
+the intermediate at all, compares averaged predicted profiles against averaged reference profiles,
+or rests on the accuracy of the final prediction.
 
-The literature has, without saying so, already taken a position on this. In the physics-embedded
-model nearest to the present work, the $\sigma$-profile predictor is trained against
-quantum-chemical profiles and then held fixed. At the fine-tuning stage every component and layer
-is frozen except the output head of the segment-activity network, so no gradient from the
-experimental phase-equilibrium data reaches the intermediate \cite{yang2025tennet}. At the
-other end of the same axis sit models that learn a thermodynamic potential from equilibrium
-compositions with no supervision on the intermediate at all, and models that dispense with the
-named intermediate and impose the thermodynamics in the architecture instead
-\cite{specht2024hanna}. The axis is a design choice about how far the intermediate is allowed to
-move under the target's gradient. It is made differently in nearly every paper and argued for in
-none of them. The pipeline studied here sits in the middle by construction: its $\sigma$-profile
-head is supervised against the same tabulated reference, and the closure's gradient also reaches
-it. That is what makes it a place where the cost of the choice can be read.
+What has not been asked is whether the values a network places in that slot are the physical
+quantity. The question is not rhetorical. A solubility measurement constrains the combination of
+the intermediate with the fixed relation, not the intermediate on its own, so different internal
+values can reproduce the same measurements equally well; the directions the data leave undetermined
+are where a flexible network is free to move. Machine learning has met this before under a different name. In models that predict human-meaningful concepts and then predict the target from the concepts alone, the concepts leak. They carry information their labels do not name, and interventions on them behave in ways the names do not predict
+\cite{koh2020cbm,margeloiu2021,mahinpei2021,havasi2022}. The thermodynamic case differs in one
+respect that makes it tractable. A $\sigma$-profile is not a human label but a computable quantity,
+so the leak can be measured against the quantity itself.
 
-This paper asks what a network puts in that slot, on one pipeline and one intermediate, and reports
-a battery of measurements rather than a model. The first asks whether solubility determines the
-profile at all, and answers through the curvature of the likelihood in the directions the closure
-exposes. The second asks whether the head uses the freedom the first one finds, and where on the
-charge-density axis it goes. The third asks whether the architecture is responsible, by testing
-whether the output layer that cannot represent an exact zero is the reason the learned profile
-carries charge density where the reference carries none. The fourth asks whether the resulting
-profile still respects the reference state, that is whether a molecule dissolved in itself is
-predicted to be ideal. The fifth asks what the misfit costs the closure and where on the grid that
-cost is located. The sixth asks whether the intermediate decomposes at all, by replacing parts of
-the learned profile with the reference and asking whether the parts add up. The last asks when
-supplying a faithful intermediate helps, using a second and better-specified closure for contrast.
-Each test is stated with the result that would refute its reading before it is run, because several
-of them return negatives, and a negative that is wrong closes a direction instead of correcting
-it.
+This work measures it. We examine a pipeline that predicts the solubility of a solid through
+COSMO-SAC, with a graph network supplying the $\sigma$-profile, trained both against tabulated
+reference profiles and through the closure. Solubility data do not determine the quantities the
+model composes. The network places screening-charge density where the reference carries none, and
+does so preferentially in the windows the hydrogen-bonding term reads. The output layer is not the
+cause: the same network reaches far smaller values elsewhere in the same profile, and an untrained
+network of the same architecture is worse by more than an order of magnitude. A molecule's profile
+depends on whether it enters as solute or as solvent, so the predicted activity of a molecule in
+itself departs from unity. What misplaced density costs the prediction varies by more than an order
+of magnitude along the charge-density axis and steps at the hydrogen-bonding threshold. The learned
+profile does not decompose: replacing part of it with the reference values is frequently worse than
+replacing none. And the error that reaches the thermodynamics lives in the magnitude of the profile
+where it is populated, not in the spurious density where it should be empty.
 
-Three things the paper does not claim. It does not report a more accurate solubility model. On the
-scaffold-disjoint split used throughout, the physics path trails a matched direct control in the
-seed mean, and both sit near a random-forest baseline. Both are also well behind the external state
-of the art on extrapolation to new solutes, and the absolute errors are within reach of the
-disagreement between independent measurements of the same system. It is not a benchmark against any published
-model, because no published model was retrained here; the comparison with prior art is a comparison
-of design choices and of what each design leaves unmeasured. And it does not show that learning a
-$\sigma$-profile is a poor design. It shows what has to be measured before the learned profile is
-read as one.
+This article is organised as follows. Section~\ref{sec:system} describes the thermodynamic relation
+being closed, the network that supplies its input, the reference profiles and the data.
+Section~\ref{sec:results} reports the measurements, each against the control that would refute it.
+Section~\ref{sec:discussion} draws out what they imply for the design of models of this kind, and
+Section~\ref{sec:limitations} states the limits of the evidence. Section~\ref{sec:conclusions}
+summarises.

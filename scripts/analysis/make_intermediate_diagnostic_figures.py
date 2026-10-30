@@ -165,7 +165,9 @@ def fig_attribution(plt) -> None:
     c = json.loads(COSTS.read_text(encoding="utf8"))["per_seed"]
     a = json.loads(ATTRIB.read_text(encoding="utf8"))["per_seed"]
     fig, (axa, axb) = plt.subplots(
-        1, 2, figsize=(DOUBLE_COL_PT / 72.0, 2.15),
+        # 6.5 in, а не полные 7.0: общая подпись оси лежит ВНЕ осей, и при bbox_inches="tight"
+        # холст в 7.0 даёт 515 pt против предела спецификации в 504.
+        1, 2, figsize=(6.5, 2.15),
         gridspec_kw={"width_ratios": [1.0, 1.0], "wspace": 0.60})
 
     def strip(ax, rows, nulls, title, nulltext):
