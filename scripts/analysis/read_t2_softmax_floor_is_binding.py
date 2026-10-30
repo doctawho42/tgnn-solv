@@ -97,6 +97,9 @@ def main() -> int:
                  "share_reference_zero_cells": float(zero.mean()),
                  "median_zero_bins_per_molecule": int(np.median(zero.sum(1))),
                  "per_seed": {}}
+    # Массивы масс выгружаются рядом со сводкой: рисунок должен рисоваться ИЗ ДЕПОЗИТА, а не
+    # пересчитывать пять чекпойнтов у себя внутри, иначе он и сводка расходятся молча.
+    dists: dict[str, np.ndarray] = {}
 
     for s in a.seeds:
         ck = CKPT_DIR / f"grounded_a_seed{s}.pt"
@@ -109,6 +112,12 @@ def main() -> int:
             p = p / np.maximum(p.sum(1, keepdims=True), 1e-30)
             st = stats(p, zero)
             res["per_seed"].setdefault(str(s), {})[role] = st
+            dists[f"zero_bins_seed{s}_{role}"] = np.concatenate(
+                [p[i, zero[i]] for i in range(len(p))]).astype(np.float32)
+            dists[f"nonzero_bins_seed{s}_{role}"] = np.concatenate(
+                [p[i, ~zero[i]] for i in range(len(p))]).astype(np.float32)
+            dists[f"pedestal_seed{s}_{role}"] = np.array(
+                [p[i, zero[i]].sum() for i in range(len(p))], np.float32)
             print(f"  сид {s} {role:8s}: пьедестал медиана {st['pedestal_median']:.4f}  "
                   f"мин.масса бина {st['min_bin_mass_anywhere']:.2e}  "
                   f"медиана в нулевых бинах {st['median_bin_mass_in_zero_bins']:.2e}  "
@@ -125,6 +134,10 @@ def main() -> int:
         g = torch.randn(len(mols), 256)
         p0 = head(g)["p_shape"].numpy().astype(float)
     res["untrained_null"] = stats(p0, zero)
+    dists["zero_bins_untrained"] = np.concatenate(
+        [p0[i, zero[i]] for i in range(len(p0))]).astype(np.float32)
+    dists["pedestal_untrained"] = np.array(
+        [p0[i, zero[i]].sum() for i in range(len(p0))], np.float32)
     n0 = res["untrained_null"]
     print(f"\n  НУЛЬ, необученная голова: пьедестал медиана {n0['pedestal_median']:.4f}  "
           f"мин.масса {n0['min_bin_mass_anywhere']:.2e}")
@@ -161,7 +174,8 @@ def main() -> int:
     a.out.mkdir(parents=True, exist_ok=True)
     (a.out / "summary.json").write_text(json.dumps(res, ensure_ascii=False, indent=2),
                                         encoding="utf8")
-    print(f"\nзаписано: {a.out}")
+    np.savez_compressed(a.out / "bin_mass_distributions.npz", **dists)
+    print(f"\nзаписано: {a.out} (+ bin_mass_distributions.npz, {len(dists)} массивов)")
     return 0
 
 
