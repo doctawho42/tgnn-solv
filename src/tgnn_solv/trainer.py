@@ -981,12 +981,17 @@ class TGNNSolvTrainer:
         # receives at SLE/inference time. _encoder_temp_features returns None when
         # use_temperature_in_encoder is off, so the default path is unchanged.
         enc_t_feat = model._encoder_temp_features(make_temperature_features(targets["T"]))
-        _, g_payload, _, _ = model._encode_and_readout(sol_batch, role, temp_feat=enc_t_feat)
+        # Под роль-инвариантным плечом замыкание видит профиль, посчитанный с ОДНОЙ ролью.
+        # Супервизия обязана идти через то же представление, иначе голова обучается через одно,
+        # а читается через другое, и плечо перестаёт быть контрастом одного отличия.
+        enc_role = "solute" if getattr(self.cfg, "sigma_role_invariant", False) else role
+        _, g_payload, _, _ = model._encode_and_readout(sol_batch, enc_role, temp_feat=enc_t_feat)
         g = g_payload["value"]
         if model.cfg.use_morgan_features:
             fp = targets.get("solute_morgan_fp")
             if isinstance(fp, Tensor):
-                adapter = model.solute_fp_adapter if role == "solute" else model.solvent_fp_adapter
+                adapter = (model.solute_fp_adapter if enc_role == "solute"
+                           else model.solvent_fp_adapter)
                 g = g + model.fp_pre_scale * adapter(fp.to(g))
         sig = model.head_sigma(g)
         loss_val, comps = sigma_profile_emd_loss(

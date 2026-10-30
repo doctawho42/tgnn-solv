@@ -624,6 +624,12 @@ class TGNNSolv(nn.Module):
                 m = sm.to(p_slv.device).bool()
                 p_slv = torch.where(m.unsqueeze(-1), sp.to(p_slv), p_slv)
                 a_slv = torch.where(m, sa.to(a_slv), a_slv)
+        if getattr(self.cfg, "sigma_detached_from_closure", False):
+            # Режется ПУТЬ, а не параметры: в замыкание уходят значения без истории, поэтому
+            # градиент потери по растворимости до σ-головы не доходит. sigma_shape_* ниже
+            # остаются присоединёнными, так что внешняя σ-супервизия продолжает её обучать.
+            p_sol, a_sol = p_sol.detach(), a_sol.detach()
+            p_slv, a_slv = p_slv.detach(), a_slv.detach()
         if getattr(self.cfg, "cosmo_sac_wire_volume", False):
             # Grounded size factor: use the aux-head molar volume (cm^3/mol),
             # converted to A^3/molecule, DETACHED so the combinatorial term cannot
@@ -1290,8 +1296,17 @@ class TGNNSolv(nn.Module):
                 isinstance(targets, dict)
                 and bool(targets.get("__force_sigma_oracle__", False))
             )
+            g_slv_for_sigma = g_slv_pre
+            if getattr(self.cfg, "sigma_role_invariant", False):
+                # Второй проход энкодера по растворителю С РОЛЬЮ РАСТВОРЯЕМОГО: обе стороны
+                # пары попадают в σ-голову через одну и ту же функцию молекулы, поэтому
+                # соединение получает один профиль независимо от стороны.
+                _, g_slv_sigma_parts, _, _ = self._encode_and_readout(
+                    solvent_data, "solute", temp_feat=encoder_t_feat)
+                g_slv_for_sigma = g_slv_sigma_parts["value"]
             nrtl_params = self._build_sigma_activity_params(
-                g_sol_pre, g_slv_pre, targets=targets, force_sigma_oracle=_force_oracle)
+                g_sol_pre, g_slv_for_sigma, targets=targets,
+                force_sigma_oracle=_force_oracle)
         else:
             nrtl_params = self.head_nrtl(
                 g_pair,

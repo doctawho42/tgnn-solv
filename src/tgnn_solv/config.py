@@ -252,6 +252,24 @@ class TGNNSolvConfig:
     sigma_shape_bin_weights: Optional[str] = None
     sigma_val_data: Optional[str] = None  # path to sigma-profile val set for warmup early-stop
     freeze_sigma_head_during_sle: bool = False  # freeze head_sigma in SLE phases 2/3 to hold the σ-manifold
+    # ПЛЕЧО "ЗАМОРОЖЕННОЕ ПРОМЕЖУТОЧНОЕ". Профиль и площадь уходят в замыкание ДЕТАЧЕННЫМИ, то
+    # есть градиент потери по растворимости до σ-головы не доходит вовсе, тогда как внешняя
+    # σ-супервизия продолжает её обучать. Это и есть конструкция ближайшего предшественника
+    # (yang2025tennet), где предсказатель профиля обучен по квантовой химии и заморожен, и
+    # единственное место, где статья даёт рекомендацию без измерения.
+    #
+    # ПОЧЕМУ НЕ freeze_sigma_head_during_sle. Тот замораживает ВЕСА головы, но энкодер под ней
+    # продолжает учиться от растворимости, так что профиль всё равно движется. Детач режет путь,
+    # а не параметры, и потому отвечает на поставленный вопрос.
+    #
+    # Прецедент в этом же файле: объём уходит в комбинаторный член детаченным по той же причине.
+    sigma_detached_from_closure: bool = False
+    # ПЛЕЧО "РОЛЬ-ИНВАРИАНТНАЯ ГОЛОВА". σ-голова читает представление, посчитанное с ОДНОЙ ролью
+    # для обеих молекул, поэтому соединение получает один профиль независимо от того, с какой
+    # стороны пары оно стоит. Закрывает возражение "нарушение референсного состояния есть
+    # следствие вашего же выбора": под этим переключателем γ(i в i) = 1 выполняется тождественно.
+    # Стоит одного лишнего прохода энкодера на батч.
+    sigma_role_invariant: bool = False
     # Train-time TRUE-σ injection (disambiguates the eval-only oracle floor: does the
     # crystal/correction branch co-adapt to correct σ, or is COSMO-SAC misspecified?).
     train_sigma_oracle: bool = False            # inject VT-2005 σ during SLE phases 2/3 (not just eval)
