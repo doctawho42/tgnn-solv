@@ -1,0 +1,49 @@
+{
+  "n_molecules": 393,
+  "n_bins": 51,
+  "share_reference_zero_cells": 0.5821483809808911,
+  "median_zero_bins_per_molecule": 29,
+  "per_seed": {
+    "42": {
+      "solute": {
+        "pedestal_median": 0.025091562281685836,
+        "pedestal_mean": 0.031827386646343776,
+        "pedestal_p95": 0.07305782008151554,
+        "pedestal_max": 0.4932094947428171,
+        "min_bin_mass_anywhere": 9.688311748703091e-09,
+        "median_bin_mass_in_zero_bins": 6.43008931978684e-05,
+        "p01_bin_mass_in_zero_bins": 2.1630600203767006e-07,
+        "median_bin_mass_in_nonzero_bins": 0.03168228584056464,
+        "orders_between_min_and_zero_bin_median": 3.821968900704003,
+        "share_of_zero_bins_below_1e_5": 0.320363387041481,
+        "share_of_zero_bins_below_1e_3": 0.8111930065135413
+      },
+      "solvent": {
+        "pedestal_median": 0.025091562281685836,
+        "pedestal_mean": 0.031827386646343776,
+        "pedestal_p95": 0.07305782008151554,
+        "pedestal_max": 0.4932094947428171,
+        "min_bin_mass_anywhere": 9.688311748703091e-09,
+        "median_bin_mass_in_zero_bins": 6.43008931978684e-05,
+        "p01_bin_mass_in_zero_bins": 2.1630600203767006e-07,
+        "median_bin_mass_in_nonzero_bins": 0.03168228584056464,
+        "orders_between_min_and_zero_bin_median": 3.821968900704003,
+        "share_of_zero_bins_below_1e_5": 0.320363387041481,
+        "share_of_zero_bins_below_1e_3": 0.8111930065135413
+      }
+    }
+  },
+  "untrained_null": {
+    "pedestal_median": 0.5710657555609941,
+    "pedestal_mean": 0.5826057605706061,
+    "pedestal_p95": 0.8047211233526468,
+    "pedestal_max": 0.8600563742220402,
+    "min_bin_mass_anywhere": 0.014818988740444183,
+    "median_bin_mass_in_zero_bins": 0.019567761570215225,
+    "p01_bin_mass_in_zero_bins": 0.016428273543715476,
+    "median_bin_mass_in_nonzero_bins": 0.019401410594582558,
+    "orders_between_min_and_zero_bin_median": 0.12072257986716305,
+    "share_of_zero_bins_below_1e_5": 0.0,
+    "share_of_zero_bins_below_1e_3": 0.0
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "n_molecules_deposit": 71,
+  "n_molecules_clean": 71,
+  "seeds": [
+    42
+  ],
+  "median_enrichment": {
+    "solute": {
+      "donor": 3.8024384800121216,
+      "acceptor": 2.064859848367946,
+      "nonpolar": 0.8746360447073986
+    },
+    "solvent": {
+      "donor": 3.8024384800121216,
+      "acceptor": 2.064859848367946,
+      "nonpolar": 0.8746360447073986
+    }
+  }
+}

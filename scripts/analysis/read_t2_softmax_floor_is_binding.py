@@ -77,6 +77,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44, 45, 46])
+    ap.add_argument("--ckpt-dir", type=Path, default=CKPT_DIR,
+                    help="каталог с grounded_a_seed*.pt; по умолчанию референсное плечо")
     ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args()
 
@@ -102,7 +104,7 @@ def main() -> int:
     dists: dict[str, np.ndarray] = {}
 
     for s in a.seeds:
-        ck = CKPT_DIR / f"grounded_a_seed{s}.pt"
+        ck = a.ckpt_dir / f"grounded_a_seed{s}.pt"
         if not ck.exists():
             print(f"сид {s}: чекпойнта нет, пропуск")
             continue
