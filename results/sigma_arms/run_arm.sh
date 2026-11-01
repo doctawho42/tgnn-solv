@@ -14,7 +14,7 @@
 # его только если он пуст, то есть если обучение так и не начало ничего писать.
 set -u
 
-ARM="${1:?плечо: control|detached|roleinv}"
+ARM="${1:?плечо: control|detached|detached2|roleinv}"
 SEED="${2:?сид}"
 CARD="${3:?номер карты}"
 
@@ -27,6 +27,10 @@ WANT_COMMIT=75ce246
 case "$ARM" in
   control)  EXTRA="" ;;
   detached) EXTRA="--set sigma_detached_from_closure=true" ;;
+  # Исправленная конструкция: профиль недостижим для градиента цели, но ядро сегментной
+  # активности обучаемо -- то есть "дообучать только выходную голову Г". Ранг 1 по прецеденту
+  # results/fix_g. См. поправку в PRE_DECLARATION.md от 2026-11-01.
+  detached2) EXTRA="--set sigma_detached_from_closure=true --set cosmo_sac_kernel_residual_rank=1" ;;
   roleinv)  EXTRA="--set sigma_role_invariant=true" ;;
   *) echo "неизвестное плечо: $ARM"; exit 3 ;;
 esac
