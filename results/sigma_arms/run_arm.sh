@@ -17,6 +17,10 @@ set -u
 ARM="${1:?плечо: control|detached|detached2|roleinv}"
 SEED="${2:?сид}"
 CARD="${3:?номер карты}"
+# Необязательная метка каталога. Нужна, когда то же плечо и тот же сид запускаются на ДРУГОЙ
+# машине: архитектура карты и версия драйвера есть своя ось, и прогон-зонд обязан лежать отдельно
+# от прогона записи, а не затирать его и не упираться в его замок.
+TAG="${4:-}"
 
 B=/mnt/storage/doctawho42/tgnn-solv; R=$B/repo; PY=$B/env/bin/python
 # Объявленный коммит КОДА. Ворота ниже проверяют не равенство HEAD (коммит не может знать свой
@@ -35,7 +39,7 @@ case "$ARM" in
   *) echo "неизвестное плечо: $ARM"; exit 3 ;;
 esac
 
-D=$B/sigma_arms/$ARM/seed$SEED
+D=$B/sigma_arms/${ARM}${TAG:+_$TAG}/seed$SEED
 mkdir -p "$(dirname "$D")"
 if ! mkdir "$D" 2>/dev/null; then
   echo "каталог $D уже существует -- НЕ ЗАПУСКАЮСЬ (повтор обёртки или прерванный прогон)"
@@ -82,7 +86,10 @@ nvidia-smi --query-compute-apps=pid,used_memory,process_name --format=csv,nohead
   | sed 's|/mnt/storage/doctawho42/|~/|'
 
 cat > "$D/provenance.json" <<EOF
-{"arm": "$ARM", "seed": $SEED, "card": "$CARD", "commit": "$H",
+{"arm": "$ARM", "tag": "${TAG:-}", "host": "$(hostname)",
+ "gpu": "$(nvidia-smi --query-gpu=name --format=csv,noheader -i "$CARD" | head -1)",
+ "driver": "$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1)",
+ "seed": $SEED, "card": "$CARD", "commit": "$H",
  "extra_train_args": "$EXTRA", "started_at": "$(date -Is)",
  "python": "$($PY -c 'import sys,torch;print(sys.version.split()[0]+" torch "+torch.__version__)')",
  "rule": "results/sigma_arms/PRE_DECLARATION.md"}
@@ -90,7 +97,7 @@ EOF
 
 [ -f "$B/seed43/vram_probe.sh" ] && { bash "$B/seed43/vram_probe.sh" "$CARD" "$D/vram.json" $$ & PROBE=$!; }
 
-echo; echo "=== ОБУЧЕНИЕ плечо=$ARM сид=$SEED карта=$CARD старт $(date -Is) ==="
+echo; echo "=== ОБУЧЕНИЕ плечо=$ARM${TAG:+ метка=$TAG} сид=$SEED карта=$CARD узел=$(hostname) старт $(date -Is) ==="
 echo "    EXTRA_TRAIN_ARGS=[$EXTRA]"
 S=$(date +%s)
 PY=$PY DEVICE=cuda SEEDS="$SEED" ARMS=grounded_a OUT_DIR="$D/out" CKPT_DIR="$D/ckpt" \
