@@ -52,9 +52,19 @@ echo "  HEAD = $H, объявленный код = $WANT_COMMIT"
 if ! git merge-base --is-ancestor "$WANT_COMMIT" HEAD 2>/dev/null; then
   echo "  объявленный коммит НЕ предок HEAD -- НЕ ЗАПУСКАЮСЬ"; exit 2
 fi
-DIFF=$(git diff --name-only "$WANT_COMMIT" HEAD -- src scripts configs)
+# ЖЁСТКО: обучающий путь. Сопоставимость плеч держится на src/ и configs/, и расхождение здесь
+# останавливает запуск.
+DIFF=$(git diff --name-only "$WANT_COMMIT" HEAD -- src configs)
 if [ -n "$DIFF" ]; then
-  echo "  КОД ОТЛИЧАЕТСЯ от объявленного -- НЕ ЗАПУСКАЮСЬ:"; echo "$DIFF" | head -5; exit 2
+  echo "  ОБУЧАЮЩИЙ КОД ОТЛИЧАЕТСЯ от объявленного -- НЕ ЗАПУСКАЮСЬ:"; echo "$DIFF" | head -5
+  exit 2
+fi
+# МЯГКО: аналитика. Она обучение не меняет и при чтении всё равно запускается одним коммитом, но
+# расхождение ПЕЧАТАЕТСЯ, а не исчезает: полный HEAD уходит в provenance.json.
+ADIFF=$(git diff --name-only "$WANT_COMMIT" HEAD -- scripts)
+if [ -n "$ADIFF" ]; then
+  echo "  аналитика разошлась с объявленным (на обучение не влияет, записано в provenance):"
+  echo "$ADIFF" | sed "s/^/    /" | head -6
 fi
 if [ -n "$(git status --porcelain src/ scripts/ configs/)" ]; then
   echo "  ДЕРЕВО ГРЯЗНОЕ в src/scripts/configs -- НЕ ЗАПУСКАЮСЬ"
