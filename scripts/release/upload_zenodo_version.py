@@ -184,12 +184,15 @@ def patch_metadata(md: dict) -> dict:
                            "identifiers": [{"scheme": "orcid",
                                             "identifier": "0009-0001-4342-8539"}]},
          "affiliations": [{"name": "Faculty of Bioengineering and Bioinformatics, Lomonosov "
-                                   "Moscow State University, Moscow, Russia"},
-                          {"name": "V. N. Orekhovich Institute of Biomedical Chemistry, Moscow, "
+                                   "Moscow State University, Leninskie Gory 1-73, "
+                                   "Moscow 119234, Russia"},
+                          {"name": "Department of Bioinformatics, Institute of Biomedical "
+                                   "Chemistry, Pogodinskaya Str. 10-8, Moscow 119121, "
                                    "Russia"}]},
         {"person_or_org": {"type": "personal", "family_name": "Rudik",
                            "given_name": "Anastasiya V."},
-         "affiliations": [{"name": "V. N. Orekhovich Institute of Biomedical Chemistry, Moscow, "
+         "affiliations": [{"name": "Department of Bioinformatics, Institute of Biomedical "
+                                   "Chemistry, Pogodinskaya Str. 10-8, Moscow 119121, "
                                    "Russia"}]},
     ]
     md["subjects"] = [{"subject": s} for s in
