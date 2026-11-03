@@ -344,3 +344,6 @@ results/e2_crystal_detach/seed_4?/*
 !results/e2_crystal_detach/seed_4?/*.manifest.json
 !results/e2_crystal_detach/seed_4?/*.model_card.json
 !results/e2_crystal_detach/seed_4?/kaggle_progress.json
+
+# Отдельный репозиторий воспроизведения: своя история, свой гейт чистоты
+/repro/
