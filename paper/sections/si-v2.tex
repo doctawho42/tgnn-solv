@@ -95,6 +95,17 @@ $\sigma$-profile earth-mover term, which is applied outside the registry when th
 is on. Per-phase weight overrides are pinned in each run's resolved configuration, which is
 deposited with the checkpoint.
 
+One entry in that table is a diagnostic rather than a penalty. The monotonicity term
+differentiates \lnx\ with respect to temperature without retaining a graph, so it enters
+the reported objective and no gradient: varying only its weight moves the reported total
+and leaves every parameter gradient unchanged. Its logged value was $0$ at every
+evaluation, and a randomly initialised model scores $0$ as well, so that zero records the
+construction and not the training --- $\lnx = -\Phicry(T) - \lng$ is non-decreasing in $T$
+along the solver path wherever $\Phicry$ falls with $T$. Monotonicity in $T$ is carried
+instead by the same-pair temperature-ranking and local van't Hoff terms, which are zero by
+registry default and enabled only by the per-phase overrides, so they do not appear among
+the defaults above.
+
 \begin{table*}[t]
 \centering
 {\footnotesize
@@ -109,18 +120,19 @@ activity grounding    & infinite-dilution \lngi                   & $0.5$ \\
                       & finite-composition \lng                   & $0.5$ \\
                       & Hansen parameters                         & $0.2$ \\
                       & $\sigma$-profile earth-mover              & stream \\
-regulariser           & solubility monotonicity in $T$            & $0.1$ \\
-                      & physics preference                        & $0.1$ \\
+regulariser           & physics preference                        & $0.1$ \\
                       & adaptive-correction residual              & $0.01$ \\
                       & NRTL $\tau$                               & $0.01$ \\
 control coupling      & direct-arm negative log-likelihood        & $0.2$ \\
                       & direct-arm regulariser                    & $0.05$ \\
 architecture          & mixture-of-experts balance                & $0.02$ \\
+diagnostic            & solubility monotonicity in $T$            & $0.1$ \\
 \bottomrule
 \end{tabular}}
 \caption{Loss terms with a non-zero default weight. The $\sigma$-profile earth-mover term is not a
 registry entry and is active only while the grounding stream is on. A further $17$ registered terms
-are hard-wired to zero.}
+are hard-wired to zero. The monotonicity entry carries a weight but no gradient, and is listed as a
+diagnostic for that reason.}
 \label{tab:si-loss}
 \end{table*}
 
