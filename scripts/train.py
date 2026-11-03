@@ -1417,6 +1417,32 @@ def main() -> None:
                 f"to {checkpoint_path}"
             )
 
+        def save_phase_entry_state(phase: int) -> None:
+            """Deposit the weights Phase 3 starts from, under a name of their own.
+
+            The end-of-run checkpoint already holds these weights whenever Phase 3 fails
+            to beat them, because the trainer restores its best state before saving. It
+            holds them by coincidence: the first time Phase 3 does improve, the state it
+            was handed is overwritten and the cost of the phase stops being computable.
+            One write makes the comparison available either way.
+            """
+            if phase != 2:
+                return
+            payload = build_checkpoint_payload(
+                model=model,
+                config=config,
+                seed=args.seed,
+                experiment_name=logger.experiment_name,
+                trainer=trainer,
+                resume_state=None,
+                pretrain_info=pretrain_info,
+            )
+            path = checkpoint_path.with_name(
+                f"{checkpoint_path.stem}_pre_phase3.pt"
+            )
+            atomic_torch_save(payload, path)
+            print(f"  Deposited the Phase 3 entry state to {path}")
+
         probe_phases = parse_probe_phases(args.probe_phases)
         probe_evolution_csv = (
             Path(args.probe_evolution_output).expanduser().resolve()
@@ -1495,6 +1521,7 @@ def main() -> None:
                 sigma_val_loader=sigma_val_loader,
                 resume_state=resume_state,
                 on_epoch_end=on_epoch_end,
+                on_phase_end=save_phase_entry_state,
             )
 
         # Save checkpoint

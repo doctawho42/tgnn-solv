@@ -1965,6 +1965,7 @@ class TGNNSolvTrainer:
         optimizer_state_dict: dict | None = None,
         scheduler_state_dict: dict | None = None,
         on_epoch_end: Callable[[ResumeStateDict], None] | None = None,
+        on_phase_end: Callable[[int], None] | None = None,
     ) -> None:
         """Run a single training phase."""
         self._configure_phase_branch_training(phase)
@@ -2174,6 +2175,11 @@ class TGNNSolvTrainer:
                 f"(val MAE = {self.best_val_loss:.4f} at epoch {best_epoch_str})"
             )
 
+        # After the restore above, not before: a consumer sees exactly the weights the
+        # next phase will start from, rather than wherever this phase happened to stop.
+        if on_phase_end is not None:
+            on_phase_end(phase)
+
     # -------------------------------------------------------------- #
     #  Full training pipeline                                         #
     # -------------------------------------------------------------- #
@@ -2189,6 +2195,7 @@ class TGNNSolvTrainer:
         sigma_val_loader: DataLoader | None = None,
         resume_state: ResumeStateDict | None = None,
         on_epoch_end: Callable[[ResumeStateDict], None] | None = None,
+        on_phase_end: Callable[[int], None] | None = None,
     ) -> None:
         """Run all three training phases sequentially."""
         self._sigma_val_loader = sigma_val_loader
@@ -2238,6 +2245,7 @@ class TGNNSolvTrainer:
                 optimizer_state_dict=optimizer_state_dict,
                 scheduler_state_dict=scheduler_state_dict,
                 on_epoch_end=on_epoch_end,
+                on_phase_end=on_phase_end,
             )
             optimizer_state_dict = None
             scheduler_state_dict = None
