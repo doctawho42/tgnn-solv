@@ -156,14 +156,27 @@ itself.
 
 \paragraph{Coverage, and why the matched set is small.}
 The set on which a learned profile and a reference profile can both be scored against a measured
-activity coefficient is limited by the intersection of the two, not by either alone. Of the
-ThermoML pairs at $298$\,K, only two solutes lack a VT-2005 profile while their solvent has one, so
-enlarging the profile database would not materially grow the matched set; the binding constraint is
-joint coverage. Matching by RDKit canonical SMILES on both components gives $60$ pairs at $298$\,K
-over $41$ solutes and $17$ solvents. Matching by InChIKey instead admits $85$ pairs, at the cost of
-importing a profile across a tautomer or protonation variant, which is the same mismatch named
-above; the article uses the stricter rule, so that the profile charged against a label is the one
-the pipeline would actually supply.
+activity coefficient is limited by the intersection of the two, not by either alone. At $298$\,K it
+holds $85$ pairs over $46$ solutes and $19$ solvents, and matching on RDKit canonical SMILES and on
+InChIKey return the same set. They did not always. A standard InChI whose mobile-hydrogen layer
+leaves the tautomer open was being resolved to a minor form, so formamide entered as the imidic
+acid, N-methylformamide likewise and caprolactam as the lactim, and $27$ records then failed to
+match a profile that was present under the amide form. That is not a tautomer crossed in the
+matching but one introduced in our own conversion, since the records' InChI identifies the amide;
+the conversion is corrected, the two rules agree, and this work therefore reports no trade-off
+between them. The article uses the canonical-SMILES rule because it is the rule the deployed
+$\sigma$-oracle uses.
+
+Whether a larger database would enlarge that set is measured here rather than inferred from the
+solute margin alone. Against PubChemQC COSMO, the largest open $\sigma$-profile database at
+$334714$ distinct molecules, which is $148$ times the deposited compound list, joint coverage of
+the $5608$ labelled test rows grows from $437$ rows over $11$ of the $147$ test solutes to $941$
+rows over $23$. A pool $148$ times larger buys a matched set $2.2$ times larger, and the limit is
+structural rather than accidental: that database stops below $250$\,Da and $19$ heavy atoms, while
+the $124$ test solutes it does not hold carry a median of $25$ heavy atoms against $14$ for the
+$23$ it does. The binding side is the solute. Of the labelled rows $4496$ fail on the solute alone
+while $60$ of the $70$ test solvents are covered, so a database of this kind supplies the solvent
+channel and leaves the drug-like solutes to be computed.
 
 \paragraph{The split.}
 The split is by Bemis--Murcko scaffold \cite{bemis1996}: molecules are grouped by ring system plus

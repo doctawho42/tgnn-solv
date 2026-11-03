@@ -27,6 +27,12 @@ checkpoints/*.pt
 logs/
 results/*
 !results/.gitkeep
+# What a larger reference-profile database buys. The Supporting Information's coverage
+# paragraph is bound to this file by tests/test_manuscript_numbers_bind.py, so a clone
+# without it cannot check the numbers it quotes.
+!results/profile_pool_coverage
+results/profile_pool_coverage/*
+!results/profile_pool_coverage/summary.json
 # Keystone reproducibility artifact (paper Table 2 / sec:measure); tracked on purpose.
 !results/b_insuff
 results/b_insuff/*
