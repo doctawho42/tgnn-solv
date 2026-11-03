@@ -147,3 +147,29 @@ def test_on_phase_end_is_optional() -> None:
     trainer.train_full(None, None)
 
     assert calls == [1, 2, 3]
+
+
+def test_zero_epoch_phase_is_skipped_entirely_and_never_fires_the_hook() -> None:
+    """configs/cosmo_sac.yaml now runs Phase 3 at zero epochs, so the skip must stay a skip.
+
+    A loop that entered a zero-length phase would train nothing, reach the tail with the
+    phase's own best unset, and deposit that under a Phase 3 name. The config change rests
+    entirely on this branch, so the branch gets a test rather than a reading of the loop.
+    """
+    cfg = make_small_config()
+    cfg.epochs_phase3 = 0
+    trainer = TGNNSolvTrainer(TGNNSolv(cfg=cfg), cfg)
+    trained: list[int] = []
+    hooked: list[int] = []
+
+    def fake_train_phase(self, phase, train_loader, val_loader, n_epochs, **kwargs):
+        trained.append(phase)
+        hook = kwargs.get("on_phase_end")
+        if hook is not None:
+            hook(phase)
+
+    trainer.train_phase = types.MethodType(fake_train_phase, trainer)
+    trainer.train_full(None, None, on_phase_end=hooked.append)
+
+    assert trained == [1, 2], "a phase configured for zero epochs must not be entered"
+    assert hooked == [1, 2], "the hook must not fire for a phase that never ran"

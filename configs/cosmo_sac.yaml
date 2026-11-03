@@ -45,7 +45,15 @@ model:
 training:
   epochs_phase1: 30
   epochs_phase2: 70
-  epochs_phase3: 10
+  # Phase 3 is off, and its result was already being discarded. It never improved val on
+  # any of the ten finished sigma_arms runs (+0.032 to +0.210, median +0.046), and the
+  # trainer restores its best state -- which is the state it was handed -- before saving
+  # and before the test evaluation, so none of those epochs reached a reported number. Its
+  # one exclusive term is the monotonicity penalty (mono: 0.0 in phases 1-2, 0.1 below),
+  # and that term measured exactly 0.0000 in all 27 occurrences across every arm.
+  # Re-enabling it is one number, but read mono_raw first: a term that is identically zero
+  # is either satisfied or dead, and the logs cannot tell those apart.
+  epochs_phase3: 0
   phase2_correction_unfreeze_epoch: 20
   batch_size: 64
   use_pair_temperature_batching: true
