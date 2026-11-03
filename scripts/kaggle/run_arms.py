@@ -97,7 +97,29 @@ SAVE_RESERVE_HOURS = 0.25
 MIN_USEFUL_SLICE_HOURS = 0.75
 
 
-def remaining_fraction(ckpt: Path, phase_epochs: tuple[int, int, int] = (30, 70, 10)) -> float | None:
+def _declared_phase_epochs(
+    config: Path = Path("configs/cosmo_sac.yaml"),
+    fallback: tuple[int, int, int] = (30, 70, 10),
+) -> tuple[int, int, int]:
+    """Расписание читается ИЗ конфига, а не держится второй копией.
+
+    Копия разошлась в тот момент, когда Phase 3 выключили: (30, 70, 10) против конфига
+    (30, 70, 0) завышает знаменатель, и доля выходит процентов на девять ниже. Сам по себе
+    этот сдвиг безопасен -- докстринг ниже объявляет занижение остатка допустимым, ошибка
+    идёт в сторону «начать», -- но второй копии значения здесь быть не должно. Fallback
+    нужен только для чекаута без конфига под рукой.
+    """
+    try:
+        import yaml
+        t = (yaml.safe_load(config.read_text(encoding="utf8")) or {}).get("training", {})
+        return (int(t["epochs_phase1"]), int(t["epochs_phase2"]), int(t["epochs_phase3"]))
+    except Exception:
+        return fallback
+
+
+def remaining_fraction(
+    ckpt: Path, phase_epochs: tuple[int, int, int] | None = None
+) -> float | None:
     """Какая ДОЛЯ плеча осталась, по курсору в чекпойнте. None -- если курсора нет.
 
     ЗАЧЕМ. Прикидка «влезет ли плечо» ниже брала медиану УСПЕШНЫХ записей журнала, а у
@@ -113,6 +135,8 @@ def remaining_fraction(ckpt: Path, phase_epochs: tuple[int, int, int] = (30, 70,
     прогона, в которую разогрев входил. Доля поэтому СЛЕГКА занижает остаток по времени,
     что здесь безопасно: ошибка в сторону «начать» а не «отказаться».
     """
+    if phase_epochs is None:
+        phase_epochs = _declared_phase_epochs()
     try:
         import torch
         ck = torch.load(ckpt, map_location="cpu", weights_only=False)

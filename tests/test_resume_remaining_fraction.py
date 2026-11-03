@@ -28,7 +28,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts/kaggle"))
 
 from run_arms import ARM_HOURS_ASSUMED, remaining_fraction  # noqa: E402
 
-PHASES = (30, 70, 10)          # расписание configs/cosmo_sac.yaml, 110 эпох всего
+# Трёхфазное расписание как ФИКСТУРА арифметики, а не копия конфига: cosmo_sac.yaml теперь
+# несёт 30/70/0, и фазы 3 там нет. Случаи фазы 3 ниже всё равно проверяются, потому что
+# функция обязана считать для ЛЮБОГО расписания, которое ей передали.
+PHASES = (30, 70, 10)
 
 
 def _ckpt(tmp_path: Path, state: object, name: str = "arm_seed42.pt") -> Path:
