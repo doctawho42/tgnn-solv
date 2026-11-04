@@ -483,6 +483,17 @@ def atomic_torch_save(payload: dict, path: Path) -> None:
             tmp_path.unlink(missing_ok=True)
 
 
+def is_phase2_first_epoch(state: dict) -> bool:
+    """True for the one epoch-end call that closes the first epoch of Phase 2.
+
+    At module level rather than inside ``main`` so the predicate the run executes is the
+    predicate the tests exercise. ``epoch_in_phase`` is the trainer's 0-based index, which
+    its own messages print 1-based; ``next_epoch_in_phase`` is never 0, so reading that key
+    here would produce a deposit that silently never happens.
+    """
+    return int(state["phase"]) == 2 and int(state["epoch_in_phase"]) == 0
+
+
 def build_checkpoint_payload(
     *,
     model: TGNNSolv,
@@ -1443,6 +1454,39 @@ def main() -> None:
             atomic_torch_save(payload, path)
             print(f"  Deposited the Phase 3 entry state to {path}")
 
+        def save_phase2_first_epoch_state(state: dict) -> None:
+            """Deposit the weights Phase 2 holds at the end of its first epoch.
+
+            On the control arm's three seeds the best Phase 2 epoch was the 1st, the 24th
+            and the 29th, and everything the later epochs bought over the first was 0.000,
+            0.044 and 0.133 of val MAE -- against a 0.313 spread between those same three
+            seeds on test. Whether that val gain is a test gain cannot be read off any
+            artifact on disk: the only state ever written out is the best-val one, and the
+            first epoch's weights are overwritten by the second. One write per run makes
+            the comparison available.
+
+            The hook runs after the early-stopping bookkeeping and before any restore, so
+            the live model is still the epoch's own result. A run that resumes past that
+            epoch deposits nothing, because the weights the name promises no longer exist,
+            and an absent file is better than a mislabelled one.
+            """
+            if not is_phase2_first_epoch(state):
+                return
+            payload = build_checkpoint_payload(
+                model=model,
+                config=config,
+                seed=args.seed,
+                experiment_name=logger.experiment_name,
+                trainer=trainer,
+                resume_state=None,
+                pretrain_info=pretrain_info,
+            )
+            path = checkpoint_path.with_name(
+                f"{checkpoint_path.stem}_phase2_first_epoch.pt"
+            )
+            atomic_torch_save(payload, path)
+            print(f"  Deposited the Phase 2 first-epoch state to {path}")
+
         probe_phases = parse_probe_phases(args.probe_phases)
         probe_evolution_csv = (
             Path(args.probe_evolution_output).expanduser().resolve()
@@ -1453,6 +1497,7 @@ def main() -> None:
 
         def on_epoch_end(state: dict) -> None:
             maybe_save_resume_checkpoint(state)
+            save_phase2_first_epoch_state(state)
             probe_every = int(getattr(config, "probe_every", 0))
             if probe_every <= 0:
                 return
