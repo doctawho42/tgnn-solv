@@ -1,0 +1,98 @@
+{
+  "root": "/mnt/storage/doctawho42/tgnn-solv/read_a1/ripper3_d43",
+  "profiles": "/mnt/storage/doctawho42/tgnn-solv/repo/results/sigma_profile_artifact/sigma_profiles.csv",
+  "seeds": [
+    43
+  ],
+  "grounded_name": "grounded_a_predictions.csv",
+  "oracle_name": "oracle_predictions.csv",
+  "per_seed": [
+    {
+      "seed": 43,
+      "mask_provenance": "exported columns (recomputed rule agrees: True)",
+      "n_rows": 5608,
+      "n_solvent_match": 5571,
+      "n_solute_match": 297,
+      "n_applied_flag": 5571,
+      "n_distinct_solutes": 147,
+      "n_distinct_solutes_matched": 7,
+      "n_distinct_solvents": 70,
+      "n_distinct_solvents_matched": 64,
+      "classes": {
+        "neither": {
+          "n": 37,
+          "mae_grounded": 1.9800602165428367,
+          "mae_oracle": 1.979958427918924,
+          "mae_difference": -0.00010178862391274635,
+          "max_abs_row_difference": 0.001161813735961914
+        },
+        "solvent_only": {
+          "n": 5274,
+          "mae_grounded": 1.9205356778765565,
+          "mae_oracle": 2.5658933451914137,
+          "mae_difference": 0.6453576673148571,
+          "max_abs_row_difference": 9.39059829711914
+        },
+        "solute_only": {
+          "n": 0
+        },
+        "both": {
+          "n": 297,
+          "mae_grounded": 0.6525407276846945,
+          "mae_oracle": 0.8218685496811714,
+          "mae_difference": 0.1693278219964769,
+          "max_abs_row_difference": 1.3352456092834473
+        }
+      }
+    }
+  ],
+  "summary": {
+    "classes": {
+      "neither": {
+        "n_per_seed": [
+          37
+        ],
+        "n_seeds": 1,
+        "mean": -0.00010178862391274635,
+        "sd_population": 0.0,
+        "sd_sample": null,
+        "per_seed": {
+          "43": -0.00010178862391274635
+        },
+        "max_abs_mae_difference": 0.00010178862391274635
+      },
+      "solvent_only": {
+        "n_per_seed": [
+          5274
+        ],
+        "n_seeds": 1,
+        "mean": 0.6453576673148571,
+        "sd_population": 0.0,
+        "sd_sample": null,
+        "per_seed": {
+          "43": 0.6453576673148571
+        },
+        "max_abs_mae_difference": 0.6453576673148571
+      },
+      "solute_only": {
+        "n_per_seed": [
+          0
+        ],
+        "n_seeds": 0
+      },
+      "both": {
+        "n_per_seed": [
+          297
+        ],
+        "n_seeds": 1,
+        "mean": 0.1693278219964769,
+        "sd_population": 0.0,
+        "sd_sample": null,
+        "per_seed": {
+          "43": 0.1693278219964769
+        },
+        "max_abs_mae_difference": 0.1693278219964769
+      }
+    }
+  }
+}
