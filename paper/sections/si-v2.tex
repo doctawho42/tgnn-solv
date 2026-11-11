@@ -4,13 +4,49 @@
 \section{Architecture and training}
 \label{si:arch}
 
+\begin{table*}[t]
+\centering
+{\footnotesize
+\begin{tabular}{@{}llll@{}}
+\toprule
+quantity & value & quantity & value \\
+\midrule
+\multicolumn{2}{@{}l}{\itshape encoder} & \multicolumn{2}{l}{\itshape fixed points} \\
+hidden width                    & $64$            & damping $\lambda$                      & $0.7$ \\
+message-passing layers          & $3$             & segment activity, train / eval         & $16$ / $30$ \\
+node / edge feature dimension   & $35$ / $8$      & phase equilibrium, train / eval        & $5$ / $20$ \\
+set2set processing steps        & $3$             & \multicolumn{2}{l}{\itshape schedule} \\
+cross-attention layers          & $3$             & epochs, phases $1$--$3$                & $30$ / $70$ / $10$ \\
+pair representation dimension   & $512$           & learning rate, phase $1$               & $2.6\times10^{-4}$ \\
+dropout                         & $0.012$         & learning rate, phase $2$               & $8.5\times10^{-5}$ \\
+trainable parameters            & $5.40$\,M       & learning rate, phase $3$               & $8.5\times10^{-6}$ \\
+\multicolumn{2}{@{}l}{\itshape closure} & optimiser                              & Adam \\
+segment area $a_{\mathrm{eff}}$ & $7.5$           & weight decay                           & $5\times10^{-4}$ \\
+misfit constant $\alpha'$       & $16466.72$      & gradient clipping                      & $2.0$ \\
+bonding coefficient $c_{\mathrm{hb}}$ & $85580$   & batch size                             & $64$ \\
+bonding cutoff $\sigma_{\mathrm{hb}}$ & $0.0084$  & \multicolumn{2}{l}{\itshape direct control} \\
+coordination number $z$         & $10$            & dropout                                & $0.174$ \\
+normalisers $r_0$ / $q_0$       & $66.69$ / $79.53$ & phase-$2$ learning rate              & $8.6\times10^{-4}$ \\
+profile grid, bins              & $51$            & weight decay                           & $4.2\times10^{-5}$ \\
+                                &                 & gradient clipping                      & $2.54$ \\
+                                &                 & epochs                                 & $110$ \\
+\bottomrule
+\end{tabular}}
+\caption{Architecture, closure constants and training hyperparameters of the five checkpoints of
+record, and the four hyperparameters on which the direct control was tuned separately; values not
+listed for the control are shared with the physics arm. Units: $a_{\mathrm{eff}}$ in \AA$^2$, the
+misfit constant in kcal\,\AA$^4$\,mol$^{-1}$\,e$^{-2}$, the bonding cutoff in e\,\AA$^{-2}$, the
+normalisers in \AA$^3$ and \AA$^2$; the profile grid spans $\pm0.025$\,e\,\AA$^{-2}$.}
+\label{tab:si-hyper}
+\end{table*}
+
 \paragraph{The model.}
-A shared message-passing encoder embeds the solute and the solvent graphs: hidden width $64$ over
-$3$ message-passing layers on $35$-dimensional node and $8$-dimensional edge features, with a
-two-layer residual role-specific branch. A set2set readout with $3$ processing steps pools each
-graph, the two pass through a three-layer cross-attention block, and the $512$-dimensional pair
-representation $[\,g_s,\,g_v,\,g_s\!\odot g_v,\,|g_s-g_v|\,]$, with dropout $0.012$, feeds both
-heads. The model has $5.40$M trainable parameters.
+A shared message-passing encoder embeds the solute and the solvent graphs, with a two-layer
+residual role-specific branch. A set2set readout pools each graph, the two pass through a
+cross-attention block, and the pair representation
+$[\,g_s,\,g_v,\,g_s\!\odot g_v,\,|g_s-g_v|\,]$ feeds both heads. Table~\ref{tab:si-hyper} gives the
+widths, the depths, the closure constants and the training hyperparameters; it is the schedule the
+five checkpoints of record were trained under.
 
 The crystal head predicts $\Tm=100+600\,\mathrm{logistic}(\cdot)\in[100,700]$\,K and
 $\dHfus=S_H\,\mathrm{softplus}(\cdot)$, giving the ideal term $\Phicry(T)$ of
@@ -23,12 +59,8 @@ messages into dispersive, polar and hydrogen-bonding channels. Neither is used b
 here, and no accuracy comparison between backbones is claimed.
 
 \paragraph{The closure, and what it omits.}
-The differentiable COSMO-SAC layer uses the standard VT-2005 / Lin--Sandler constants: effective
-segment area $a_{\mathrm{eff}}=7.5$\,\AA$^2$, electrostatic-misfit constant
-$\alpha'=16466.72$\,kcal\,\AA$^4$\,mol$^{-1}$\,e$^{-2}$, hydrogen-bond coefficient
-$c_{\mathrm{hb}}=85580$ with cutoff $\sigma_{\mathrm{hb}}=0.0084$\,e\,\AA$^{-2}$, coordination
-number $z=10$, and Staverman--Guggenheim normalisers $r_0=66.69$\,\AA$^3$, $q_0=79.53$\,\AA$^2$. The
-$\sigma$-profile grid is $51$ bins on $[-0.025,0.025]$\,e\,\AA$^{-2}$.
+The differentiable COSMO-SAC layer uses the standard VT-2005 / Lin--Sandler constants, with the
+Staverman--Guggenheim normalisers and the profile grid as listed in Table~\ref{tab:si-hyper}.
 
 The layer runs the residual, segment-activity part of COSMO-SAC alone. The
 Staverman--Guggenheim combinatorial term, the contribution molecular size and shape make to the
@@ -37,27 +69,51 @@ the profile and so carries no information about the quantity under study. A subs
 replaces the profile and leaves the combinatorial term in place would move both terms and the
 attribution would not be clean.
 
+Restoring the term would change some of the article's magnitudes and none of its signs. It vanishes
+for a pair of a molecule with itself, so the reference-state violation of
+Section~\ref{sec:refstate} is unaffected. It would change the magnitudes in
+Sections~\ref{sec:cost} and~\ref{sec:attribution}, where the size of the effect is the result. It
+needs molar volumes, which the source database carries but the extracted table used here does not,
+and which the network could supply with a second scalar head beside the one that already predicts
+cavity area; its omission is a choice made when the table was extracted rather than a constraint.
+
 \paragraph{Two fixed points, and the iteration counts they are run at.}
 The pipeline contains two nested fixed points, each with its own iteration count, and the counts
 differ between training and evaluation.
 
-The segment-activity fixed point is damped at $\lambda=0.7$ and run for $16$ iterations at training
-time and $30$ at evaluation. The solid-liquid equilibrium fixed point is the damped map
-$x_2^{(k+1)}=\lambda\exp(-\Phicry(T)-\lng(x_2^{(k)},T))+(1-\lambda)x_2^{(k)}$, run for $5$
-iterations in training and $20$ at evaluation, at the same $\lambda$, which is one configuration
-field read by both loops.
+The two counts and the damping are in Table~\ref{tab:si-hyper}. The phase-equilibrium fixed point
+is the damped map
+$x_2^{(k+1)}=\lambda\exp(-\Phicry(T)-\lng(x_2^{(k)},T))+(1-\lambda)x_2^{(k)}$, run at the same
+$\lambda$ as the segment loop, which is one configuration field read by both.
 
 A count is a free parameter between fitting and scoring, so a checkpoint scored at a count far from
 the one it was fitted at is evaluated through an operator it was never fitted against. For the
-checkpoints reported here the exposure is bounded directly. Sweeping the segment count over $8$,
-$16$, $30$, $100$ and $300$ with weights and rows held fixed moves the seed-mean \lnx\ MAE to
-$1.9155$, $1.9195$, $1.9275$, $1.9362$ and $1.9364$, an interval $0.021$ wide in which converging
-the solver makes the arm slightly \emph{worse}. The substituted arm sweeps through the same code on
-the same weights and rows, giving $2.2300$, $2.3061$, $2.3356$, $2.3370$ and $2.3368$ and a
-contrast of $+0.3145$, $+0.3866$, $+0.4081$, $+0.4008$ and $+0.4004$. Between the evaluation count
-and the fixed point the contrast moves $-0.008$, $1.9\%$ of itself, and that movement is not a
-direction: three of five seeds carry its sign, the per-seed range $[-0.031,+0.002]$ spans zero, and
-one seed carries almost all of it.
+checkpoints reported here the exposure is bounded directly. Table~\ref{tab:si-iter} sweeps the
+segment count with weights and rows held fixed: converging the solver makes the learned arm
+slightly \emph{worse}, over an interval $0.021$ wide, and moves the contrast between the two arms
+by $-0.008$ between the evaluation count and the fixed point, $1.9\%$ of itself. That movement is
+not a direction: three of five seeds carry its sign, the per-seed range $[-0.031,+0.002]$ spans
+zero, and one seed carries almost all of it.
+
+\begin{table}[t]
+\centering
+{\footnotesize
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+segment iterations & learned & substituted & contrast \\
+\midrule
+$8$   & $1.9155$ & $2.2300$ & $+0.3145$ \\
+$16$  & $1.9195$ & $2.3061$ & $+0.3866$ \\
+$30$  & $1.9275$ & $2.3356$ & $+0.4081$ \\
+$100$ & $1.9362$ & $2.3370$ & $+0.4008$ \\
+$300$ & $1.9364$ & $2.3368$ & $+0.4004$ \\
+\bottomrule
+\end{tabular}}
+\caption{Seed-mean \lnx\ mean absolute error against the number of segment-activity iterations,
+with weights and rows held fixed. The training count is $16$ and the evaluation count $30$; the
+fixed point is reached by about $300$. Contrast is the substituted arm minus the learned one.}
+\label{tab:si-iter}
+\end{table}
 
 The aggregate is insensitive because the per-row shifts cancel, not because they are small. At $30$
 iterations the median row moves $5.9\times10^{-4}$ against the converged solve, its ninety-fifth
@@ -214,22 +270,17 @@ produces would be read as evidence that grounding does not help.
 
 \paragraph{One build violated the first guard, and the exposure it leaves.}
 A correct build of the $\sigma$-stream retains $1319$ of the $1427$ VT-2005 molecules that parse
-into the pool. The stream file was at one point rebuilt with the exclusion pointed at the splits of
-a small debug dataset, and that build carries $1425$ rows, of which $106$ have a scaffold in the
-real test and validation union. The overlap is not confined to scaffold relatives: $91$ of those
-rows are themselves held-out solutes by canonical SMILES.
-
-What a leak can act on is the labelled test set, and there the exposure is smaller than those
-counts suggest. Of the $147$ labelled test solutes, $7$ have their own reference profile in the
-defective stream and $8$, those $7$ among them, have a scaffold relative in it: $297$ and $351$ of
-the $5608$ rows, $5.3\%$ and $6.3\%$. For a scaffold split, solute coverage rather than row
-fraction is the load-bearing statistic. The correctly guarded build leaves none of either. The
-crystal stream's build on disk records the correct exclusion, so among the streams feeding these
-runs the defect is confined to the $\sigma$ one.
-
-Per-run stream provenance was not logged. The deposited artifacts therefore cannot certify which
-build fed which arm, and the disclosure above is the bound rather than an attribution. The runner
-now records the stream hash alongside the split hash so that future runs are auditable directly.
+into the pool; the stream file was at one point rebuilt with the exclusion pointed at the splits of
+a small debug dataset, and that build carries $106$ rows whose scaffold is in the real test and
+validation union, $91$ of them held-out solutes by canonical SMILES. What a leak can act on is the
+labelled test set, and there the exposure is smaller: of the $147$ labelled test solutes, $7$ have
+their own reference profile in the defective stream and $8$ have a scaffold relative in it ($297$
+and $351$ of the $5608$ rows, $5.3\%$ and $6.3\%$), and for a scaffold split that solute coverage
+rather than the row fraction is the load-bearing statistic. The correctly guarded build leaves none of either, and the crystal
+stream's build on disk records the correct exclusion, so among the streams feeding these runs the
+defect is confined to the $\sigma$ one. Per-run stream provenance was not logged, so the deposited
+artifacts cannot certify which build fed which arm and the above is a bound rather than an
+attribution; the runner now records the stream hash alongside the split hash.
 
 \paragraph{Compute and determinism.}
 The five checkpoints of record were trained on one machine from one commit, at seeds $42$ to $46$;
@@ -327,31 +378,36 @@ deviation would be the closure's. Both parts were then computed, and both came o
 \section{What the observations leave undetermined}
 \label{si:unresolved}
 
-Every measurement in the article is a statement about what the network puts in a slot the data do
-not fix. This section gives the measurements behind that premise. Both are read against a control,
-because a rank statement on a smooth object is a claim about the object only if the same statement
-fails on a comparable object without the structure asserted.
+Section~\ref{sec:determined} of the article states the result: two of the fifty directions in which
+a $\sigma$-profile can move carry $99\%$ of the information a solubility observation supplies, and
+random profiles of equal area give the same count. This section gives what the article does not:
+the protocol, the chemical locus of the directions that are resolved, an independent measurement at
+infinite dilution, and the limits that travel with it.
 
-\paragraph{The profile direction the closure can see.}
+\paragraph{Protocol, and why the control agreeing is the result.}
 Fix the weights and the rows and perturb the $\sigma$-profile along each of the $51$ grid
-coordinates in turn, recording the response of $\lng$. Over $25$ solvents and five seeds the
-resulting Jacobian spectrum has two of fifty directions carrying $99\%$ of the information, with a
-per-seed range of one to five. The control is the same spectrum computed on random profiles of
-equal total area, and it gives two as well.
+coordinates in turn, recording the response of $\lng$; the information matrix is the Gram matrix of
+the resulting Jacobian, and the reported count is the number of eigenvalues needed to carry $99\%$
+of its trace. The control is the same construction on random profiles of equal total area. Its
+agreement is the finding rather than a failure of the test: the deficiency belongs to the closure
+as a map from a $51$-bin histogram to one number, so an observation of $\lng$ constrains a
+two-dimensional shadow of the profile whatever profile is supplied, and what the head places in the
+remaining coordinates is not decided by fitting.
 
-That agreement is the result, not a failure of the test. The deficiency is a property of the
-closure as a map from a $51$-bin histogram to one number, not something the trained head does: an
-observation of $\lng$ constrains a two-dimensional shadow of the profile whatever profile is
-supplied. The remaining coordinates are not determined by the solubility data at all, and what the
-head places in them is therefore not decided by fitting.
-
+\paragraph{Which directions are resolved.}
 The resolved direction has a chemical locus as well as a rank. The dominant eigenvector
 concentrates on the extreme-$|\sigma|$ bins on which the closure's hydrogen-bonding term acts, so
 the coordinates the observation leaves free are the nonpolar and weakly polar interior of the
-profile. A complementary measurement at infinite dilution gives the same picture: the aggregate
-activity Fisher matrix $J^{\top}J$ with $J=\partial\lngi/\partial\sigma$ is rank one, and the
-per-molecule Fisher that governs an individual profile has participation ratio about $1.4$ of $51$
-even at full solvent coverage.
+profile. The two measurements in the article meet here: the free coordinates are also the ones in
+which misplaced mass is cheapest (Section~\ref{sec:cost}), so the network is least constrained
+exactly where departures matter least, and the departure that does reach the thermodynamics is a
+departure in magnitude rather than in location (Section~\ref{sec:attribution}).
+
+\paragraph{The same picture at infinite dilution.}
+A complementary measurement reaches it by another route. The aggregate activity Fisher matrix
+$J^{\top}J$ with $J=\partial\lngi/\partial\sigma$ is rank one, and the per-molecule Fisher that
+governs an individual profile has participation ratio about $1.4$ of $51$ even at full solvent
+coverage.
 
 Three limits travel with these numbers. The participation ratio is a concentration statistic and
 not an exact count of resolved directions. It must be read against a permuted control rather than
@@ -360,19 +416,13 @@ inflate it. And it is measured at infinite dilution, so its transfer to the fini
 regime is not established here. None of this says that recovering the tabulated profile is
 impossible in principle; it says the solubility observations do not require it.
 
-\paragraph{The crystal term.}
-The same question for the other head has a closed-form answer. Fit the four parameters of the
-solid-liquid relation to a solubility series and the information matrix has condition number
-$2.3\times10^{5}$: the enthalpy of fusion is collinear with the temperature slope of the activity
-term, so a change in one is absorbed by a change in the other. The Cram\'er--Rao bound that follows
-puts no estimator of $\dHfus$ from a solubility series alone inside $\pm20$\,kJ\,mol$^{-1}$, which
-is wider than the range the quantity takes across these compounds. Supplying the melting
-temperature and the enthalpy of fusion as independent labels reduces that bound to
-$\pm1.7$\,kJ\,mol$^{-1}$.
-
-This is why the crystal properties are supervised externally and why the article's question is
-about the profile rather than the crystal term: the crystal term has an external label, and the
-profile coordinates the closure cannot see do not.
+\paragraph{Why the crystal term is treated differently.}
+The article reports the condition number of the four-parameter fit and the Cram\'er--Rao bound it
+implies. What follows for the design is the asymmetry between the two heads: the crystal term is
+indeterminate from solubility alone but has an external label that closes the indeterminacy, which
+is why it is supervised externally, whereas the profile coordinates the closure cannot see have no
+such label. That asymmetry is the reason the article's question is about the profile rather than
+the crystal term.
 
 
 \section{A second system: a linear free-energy relation}

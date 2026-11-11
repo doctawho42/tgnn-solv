@@ -33,19 +33,18 @@ model interpretability, concept bottleneck}
 
 \begin{abstract}
 Physics-informed predictors combine learned physical quantities through a fixed thermodynamic
-relation, which allows a prediction to be audited and a better value for one quantity to be
-supplied without retraining. We ask whether the values such a network places in the slot of a
-physical quantity are that quantity. The system is a graph network supplying the $\sigma$-profile
-consumed by COSMO-SAC to predict the solubility of solids, and every measurement is read against a
-control. The observations determine two of the fifty directions in which a profile can move. The
-network places screening-charge density where the reference tabulation carries none, concentrating
-in the windows that activate the model's hydrogen-bonding term, and the output layer is not the
-cause; that departure is the most visible and the least consequential, since removing it leaves the
-thermodynamics unchanged. What the thermodynamics responds to is the magnitude of the profile where
-it is populated. The intermediate also does not decompose: replacing part of it with reference
-values is frequently worse than replacing none. Supplying the whole reference profile improves the
-activity coefficients the profile exists to produce and degrades the solubility predicted from
-them.
+relation. Their appeal is that the prediction can be taken apart and audited, and that a better
+value for any one of those quantities can be looked up and supplied without retraining. The promise
+holds only if the value a network places in the slot of a physical quantity is that quantity. We
+test it on a graph network that supplies the $\sigma$-profile consumed by COSMO-SAC to predict the
+solubility of solids, reading every measurement against a control. The solubility observations
+determine two of the fifty directions in which a profile can move, and in the directions they leave
+free the learned profile places screening-charge density where the reference carries none,
+concentrated in the windows that activate the model's hydrogen-bonding term. That departure is the most visible and the least consequential, because the error reaching
+the thermodynamics is in the magnitude of the profile where it is populated. The intermediate also
+does not decompose, so replacing part of it with reference values is frequently worse than
+replacing none. Supplying the whole reference profile improves the activity coefficients the
+profile exists to produce and degrades the solubility predicted from them.
 \end{abstract}
 
 \maketitle

@@ -100,7 +100,7 @@ def main() -> int:
     pl_max = chan["neither"]["max_abs_mae_difference"]
 
     rows = [
-        (r"Does the observable determine the $\sigma$-profile?",
+        (r"Does the observable determine the $\sigma$-profile?", "sec:determined",
          rf"spectrum of the closure's Jacobian over the {rank['n_bins']} bins, "
          rf"{len(rank['solvents'])} solvents $\times$ {len(rank['seeds'])} seeds, against the "
          r"same spectrum on random profiles of equal area",
@@ -110,51 +110,51 @@ def main() -> int:
          rf"{rank['summary']['dirs_for_99pct_range'][1]}); random profiles give "
          rf"{rank['summary']['null_dirs_for_99pct_median']}",
          r"No, and the deficiency is structural rather than a property of the trained head."),
-        (r"Does it determine the crystal term?",
+        (r"Does it determine the crystal term?", "sec:determined",
          r"Fisher information of the four-parameter fit; Cram\'er--Rao bound on the enthalpy of "
          r"fusion, against the same bound with external labels supplied",
          rf"condition number ${cond0 / 10 ** int(np.log10(cond0)):.1f}\times"
          rf"10^{{{int(np.log10(cond0))}}}$; bound $\pm{crlb0:.0f}$\,kJ\,mol$^{{-1}}$, "
          rf"falling to $\pm{crlb1:.1f}$ with the labels",
          r"No. The crystal enthalpy is collinear with the activity's temperature slope."),
-        (r"Does the head use the freedom?",
+        (r"Does the head use the freedom?", "sec:windows",
          r"residual of learned minus reference profile by charge-density window, "
          rf"{resid['n_molecules_clean']} molecules, against each window's share of surface area",
          rf"donor window ${en['donor']:.1f}\times$, acceptor ${en['acceptor']:.1f}\times$, "
          rf"nonpolar core ${en['nonpolar']:.2f}\times$; {zshare:.0f}\% of reference cells are "
          rf"exactly zero",
          r"Yes, and into the windows the hydrogen-bonding term reads."),
-        (r"Is the output layer responsible?",
+        (r"Is the output layer responsible?", "sec:pedestal",
          r"mass in bins where the reference is exactly zero, against the smallest bin the same "
          r"head reaches anywhere and against an untrained head",
          rf"head reaches $10^{{{int(np.floor(np.log10(mn)))}}}$; "
          rf"{100 * min(below):.0f}--{100 * max(below):.0f}\% of those bins already below "
          rf"$10^{{-5}}$; pedestal {min(ped):.2f}--{max(ped):.2f} against {ped0:.2f} untrained",
          r"No. The pedestal is learned, and it is the same in both roles."),
-        (r"Is the reference state preserved?",
+        (r"Is the reference state preserved?", "sec:refstate",
          r"activity of a molecule in itself, against the one-profile control that must return "
          r"zero identically",
          rf"control ${ctrl:.0f}$ exactly; median $|\ln\gamma|$ {min(med):.3f}--{max(med):.3f}, "
          rf"largest {mx:.2f}",
          r"No. A molecule's two role profiles do not coincide."),
-        (r"What does misplaced mass cost, and where?",
+        (r"What does misplaced mass cost, and where?", "sec:cost",
          r"mean $|\Delta\ln\gamma|$ from moving a fixed mass into each bin, against random "
          r"profiles of the same area",
          rf"edge-to-core ratio ${cc['train']:.0f}\times$ and ${cc['idac']:.0f}\times$ on the two "
          rf"row sets, against ${ccn:.1f}\times$ for random profiles",
          r"Strongly non-uniform, with a step at the bonding threshold."),
-        (r"Does the intermediate decompose?",
+        (r"Does the intermediate decompose?", "sec:nonadditive",
          r"reference shape substituted into part of the grid, against a randomly chosen part of "
          r"the same size",
          rf"the whole shape helps on {full_helps} of 5 seeds; a random third is worse than the "
          rf"fully learned profile in {worse:.0f}\% of {n_draw}$\times${n_seed} draws",
          r"No. The parts do not add, so per-bin attribution is undefined."),
-        (r"Where does the error that reaches the closure live?",
+        (r"Where does the error that reaches the closure live?", "sec:attribution",
          r"reference shape in the bins where it is nonzero, against exact zeros in the bins "
          r"where it is zero",
          rf"${fixnz:+.0f}\%$ of the gap recovered against ${zerop:+.0f}\%$",
          r"In the magnitude of the occupied bins, not in the pedestal."),
-        (r"What does supplying the reference profile do?",
+        (r"What does supplying the reference profile do?", "sec:twosided",
          rf"the same substitution scored on both quantities, against the ${pl_n}$ rows in which "
          r"no profile is replaced because neither component is tabulated",
          rf"activity coefficients ${g_lrn.mean():.2f}\pm{g_lrn.std(ddof=1):.2f}\to{g_ref:.2f}$; "
@@ -164,25 +164,43 @@ def main() -> int:
          r"pipeline predicts."),
     ]
 
-    body = "\n".join(
-        f"{q} & {i} & {r} & {v} \\\\\n\\addlinespace[2pt]\n" for q, i, r, v in rows)
+    # ЧЕТЫРЕ БЛОКА, в порядке, в котором Раздел 3 их проходит. Границы заданы числом строк,
+    # а не метками, потому что две строки первого блока ссылаются на один и тот же раздел.
+    blocks = [
+        (2, r"What the observations fix"),
+        (3, r"What the network does with what they leave free"),
+        (3, r"What the departure costs, and where the error sits"),
+        (1, r"What supplying the reference profile does"),
+    ]
+    assert sum(n for n, _ in blocks) == len(rows), "разбиение на блоки не покрывает строки"
+    chunks, k = [], 0
+    for n, title in blocks:
+        chunks.append(f"\\multicolumn{{5}}{{@{{}}l}}{{\\itshape {title}}} \\\\\n"
+                      "\\addlinespace[1pt]\n")
+        for q, sec, i, r, v in rows[k:k + n]:
+            chunks.append(f"{q} & \\ref{{{sec}}} & {i} & {r} & {v} \\\\\n"
+                          "\\addlinespace[2pt]\n")
+        k += n
+    body = "".join(chunks)
     tex = (
         "% GENERATED by scripts/analysis/make_battery_table_tex.py. Do not edit by hand.\n"
         "% Every number is read from a deposit by key; an edit here would diverge from the\n"
         "% artefact without any warning.\n"
         "\\begin{table*}[p]\n\\centering\n\\small\n"
-        "\\caption{The diagnostic battery. Each test is read against the null named beside it; a "
-        "result without its null is not a result. Numbers are medians over five training seeds "
-        "unless a range is given.}\n"
+        "\\caption{The diagnostic battery, and a road map of Section~\\ref{sec:results}: the four "
+        "groups are the order in which that section proceeds. Each test is read against the null "
+        "named beside it; a result without its null is not a result. Numbers are medians over five "
+        "training seeds unless a range is given.}\n"
         "\\label{tab:battery}\n"
-        "\\begin{tabular}{@{}p{0.18\\linewidth}p{0.265\\linewidth}p{0.265\\linewidth}"
-        "p{0.215\\linewidth}@{}}\n\\toprule\n"
-        "Question & Instrument, and the null it is read against & Result & Reading \\\\\n"
+        "\\begin{tabular}{@{}p{0.155\\linewidth}c p{0.24\\linewidth}p{0.245\\linewidth}"
+        "p{0.19\\linewidth}@{}}\n\\toprule\n"
+        "Question & Sec. & Instrument, and the null it is read against & Result & Reading "
+        "\\\\\n"
         "\\midrule\n" + body + "\\bottomrule\n\\end{tabular}\n\\end{table*}\n")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(tex, encoding="utf8")
     print(f"записано: {OUT.relative_to(ROOT)}  ({len(rows)} строк)")
-    for q, _, r, _ in rows:
+    for q, _, _, r, _ in rows:
         print(f"  {q[:52]:54s} {r[:70]}")
     return 0
 

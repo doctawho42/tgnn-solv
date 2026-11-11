@@ -49,10 +49,19 @@ def dep(rel: str) -> dict:
 
 def find(pattern: str, text: str = RESULTS) -> re.Match:
     """Поиск по тексту с любым пробелом между словами -- переносы строк не должны мешать."""
-    rx = re.compile(r"\s+".join(pattern.split()))
-    m = rx.search(text)
+    m = maybe(pattern, text)
     assert m is not None, f"в тексте не найдено: {pattern[:70]}"
     return m
+
+
+def maybe(pattern: str, text: str = RESULTS) -> re.Match | None:
+    """То же, но отсутствие -- не провал.
+
+    Нужен там, где величина может быть НЕ напечатана: вентиль связывает прозу с артефактом, а
+    не артефакт с утверждением, поэтому убранное из текста число проверять нечем, а вернувшееся
+    обязано совпасть.
+    """
+    return re.compile(r"\s+".join(pattern.split())).search(text)
 
 
 def test_rank_of_the_closure_in_profile_space():
@@ -184,9 +193,13 @@ def test_the_two_sided_substitution_and_its_placebo():
     assert float(m.group(1)) == pytest.approx(so["mean"], abs=0.002)
     assert float(m.group(2)) == pytest.approx(so["sd_sample"], abs=0.002)
     assert int(m.group(3)) == so["n_per_seed"][0]
+    # ПОСИДОВАЯ ТРОЙКА УБРАНА ИЗ СТАТЬИ 2026-11-11: таблица 1 несёт среднее и sd из того же
+    # депозита, посидовые значения остались в депозите. Привязка оставлена условной -- если
+    # тройку вернут в текст, она обязана совпасть; пока её нет, проверять нечего.
     per = [round(v, 3) for v in so["per_seed"].values()]
-    m = find(r"per-seed values of \$([\d.]+)\$, \$([\d.]+)\$ and \$([\d.]+)\$")
-    assert sorted(float(x) for x in m.groups()) == sorted(per)
+    m = maybe(r"per-seed values of \$([\d.]+)\$, \$([\d.]+)\$ and \$([\d.]+)\$")
+    if m is not None:
+        assert sorted(float(x) for x in m.groups()) == sorted(per)
     assert int(find(r"for either component in \$(\d+)\$ test rows").group(1)) == \
         ne["n_per_seed"][0]
     assert ne["max_abs_mae_difference"] < 4e-6, "плацебо обязано оставаться плацебо"
@@ -195,10 +208,17 @@ def test_the_two_sided_substitution_and_its_placebo():
 def test_no_number_is_printed_without_the_control_beside_it():
     """Каждая строка таблицы обязана называть свой нуль: результат без него не читается."""
     body = TABLE.split(r"\midrule")[1].split(r"\bottomrule")[0]
+    # Заголовки блоков -- \multicolumn без амперсанда, поэтому фильтр по "&" их и отсеивает.
     rows = [r for r in body.split(r"\\") if r.strip() and "&" in r]
     assert len(rows) == 9, f"строк в таблице {len(rows)}, ожидалось 9"
     for r in rows:
-        instrument = r.split("&")[1]
+        cells = r.split("&")
+        # СТОЛБЦОВ ПЯТЬ С 2026-11-11: вопрос, раздел, инструмент с нулём, результат, чтение.
+        assert len(cells) == 5, f"ожидалось 5 клеток, получено {len(cells)}: {r.strip()[:70]}"
+        assert re.search(r"\\ref\{sec:[a-z]+\}", cells[1]), (
+            f"строка без ссылки на раздел: {cells[1].strip()[:60]}"
+        )
+        instrument = cells[2]
         assert re.search(r"against|control|placebo|random|untrained|no profile", instrument), (
             f"строка без названного нуля: {instrument.strip()[:80]}"
         )
