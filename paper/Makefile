@@ -1,12 +1,19 @@
-# Build the "Grounding Paradox" submission, which is TWO documents:
-#   grounding_paradox.tex     the article
-#   grounding_paradox_si.tex  the Supporting Information (ACS deposits it separately)
+# Build the live submission, which is TWO documents:
+#   learned_sigma_profile.tex     the article
+#   learned_sigma_profile_si.tex  the Supporting Information (ACS deposits it separately)
 #
 #   make            -> both PDFs
 #   make article    -> the article only        (SI cross-references may be stale)
 #   make si         -> the Supporting Information only  (ditto, the other way)
-#   make clean      -> remove LaTeX aux files of both
-#   make distclean  -> also remove both PDFs
+#   make check      -> the cross-reference gate on the live pair
+#   make old        -> the RETIRED grounding_paradox pair, which is a different frame
+#   make oldcheck   -> the same gate on the retired pair
+#   make clean      -> remove LaTeX aux files of both pairs
+#   make distclean  -> also remove the PDFs of both pairs
+#
+# UNTIL 2026-11-11 MAIN/SI BELOW NAMED THE RETIRED PAIR. The live manuscript therefore had
+# no build target at all, and `make check' gated documents nobody edits any more. The retired
+# pair is kept buildable on purpose: it is a different argument, not a revision of this one.
 #
 # XELATEX, NOT PDFLATEX. The manuscript is set in STIX Two Text through fontspec;
 # this Makefile used to say pdflatex, which is not what the documented build uses.
@@ -28,14 +35,16 @@
 #     -> results/b_insuff/decomposition.json
 # Regenerate those artifacts first, then `make' to rebuild the PDFs.
 
-MAIN  = grounding_paradox
-SI    = grounding_paradox_si
+MAIN   = learned_sigma_profile
+SI     = learned_sigma_profile_si
+OLD    = grounding_paradox
+OLD_SI = grounding_paradox_si
 LATEX = xelatex -interaction=nonstopmode
 BIBTEX = bibtex
 
 SRC = preamble.tex references_verified.bib sections/*.tex si_tables/*.tex figs/*.pdf
 
-.PHONY: all both article si check clean distclean
+.PHONY: all both article si check old oldcheck clean distclean
 all: both
 
 both: $(MAIN).tex $(SI).tex $(SRC)
@@ -65,9 +74,26 @@ si: $(SI).tex $(SRC)
 check:
 	@python3 ../scripts/analysis/check_split_refs.py
 
+# The retired pair. Same interleaving, because it cross-references itself the same way.
+old: $(OLD).tex $(OLD_SI).tex $(SRC)
+	$(LATEX) $(OLD).tex
+	$(LATEX) $(OLD_SI).tex
+	-$(BIBTEX) $(OLD)
+	-$(BIBTEX) $(OLD_SI)
+	$(LATEX) $(OLD).tex
+	$(LATEX) $(OLD_SI).tex
+	$(LATEX) $(OLD).tex
+	$(LATEX) $(OLD_SI).tex
+
+oldcheck:
+	@python3 ../scripts/analysis/check_split_refs.py --retired
+
+AUX = aux bbl blg log out toc xdv
+
 clean:
-	rm -f $(MAIN).aux $(MAIN).bbl $(MAIN).blg $(MAIN).log $(MAIN).out $(MAIN).toc $(MAIN).xdv
-	rm -f $(SI).aux $(SI).bbl $(SI).blg $(SI).log $(SI).out $(SI).toc $(SI).xdv
+	@for s in $(MAIN) $(SI) $(OLD) $(OLD_SI); do \
+	  for e in $(AUX); do rm -f $$s.$$e; done; \
+	done
 
 distclean: clean
-	rm -f $(MAIN).pdf $(SI).pdf
+	rm -f $(MAIN).pdf $(SI).pdf $(OLD).pdf $(OLD_SI).pdf

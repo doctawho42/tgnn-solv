@@ -4,9 +4,11 @@
 
 WHY THIS EXISTS
 ---------------
-Since 2026-08-02 the manuscript is two documents -- ``paper/grounding_paradox.tex``
-(the article) and ``paper/grounding_paradox_si.tex`` (the Supporting Information) --
-and 234 of their cross-references point from one into the other.  They resolve
+Since 2026-08-02 the manuscript is two documents -- by default
+``paper/learned_sigma_profile.tex`` (the article) and
+``paper/learned_sigma_profile_si.tex`` (the Supporting Information); the retired
+``grounding_paradox`` pair is checked with ``--retired`` -- and their
+cross-references point from one into the other.  They resolve
 through ``xr-hyper``, which reads the other document's ``.aux``.  That mechanism
 has one failure mode and it is quiet: if the other ``.aux`` is missing or stale,
 the reference prints ``??`` and LaTeX records
@@ -52,9 +54,17 @@ import subprocess
 import sys
 from pathlib import Path
 
-MAIN = "grounding_paradox"
-SI = "grounding_paradox_si"
-DEPOSITED = ["si_tables/broad_idac_set_477.csv", "si_tables/vt2005_matched_set_60.csv"]
+#: ЖИВАЯ ПАРА. До 2026-11-11 здесь стояла отозванная `grounding_paradox`, так что
+#: `make check` проверял документы, которые никто больше не правит, и о живой рукописи
+#: молчал. Отозванная пара достаётся флагом `--retired` и остаётся проверяемой.
+MAIN = "learned_sigma_profile"
+SI = "learned_sigma_profile_si"
+#: Файлы, которые отозванная пара кладёт рядом со своим SI. Живая пара депонирует через
+#: репозиторий, названный в её разделе о доступности, и рядом с собой не несёт ничего,
+#: поэтому по умолчанию список пуст.
+DEPOSITED: list[str] = []
+RETIRED = ("grounding_paradox", "grounding_paradox_si",
+           ["si_tables/broad_idac_set_477.csv", "si_tables/vt2005_matched_set_60.csv"])
 
 _UNDEF = re.compile(
     r"LaTeX Warning: (Reference|Citation) `([^']*)' on page (\S+) undefined")
@@ -98,14 +108,27 @@ def main(argv: list[str] | None = None) -> int:
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dir", default=None, metavar="DIR",
                    help="build directory (default: the paper/ beside this script)")
+    p.add_argument("--main", default=MAIN, metavar="STEM",
+                   help=f"article stem without .tex (default: {MAIN})")
+    p.add_argument("--si", default=SI, metavar="STEM",
+                   help=f"Supporting Information stem (default: {SI})")
+    p.add_argument("--deposited", nargs="*", default=None, metavar="REL",
+                   help="files that must sit beside the SI (default: none)")
+    p.add_argument("--retired", action="store_true",
+                   help="check the retired grounding_paradox pair instead of the live one")
     args = p.parse_args(argv)
+
+    main_stem, si_stem = args.main, args.si
+    deposited = DEPOSITED if args.deposited is None else list(args.deposited)
+    if args.retired:
+        main_stem, si_stem, deposited = RETIRED
 
     here = Path(__file__).resolve()
     paper = Path(args.dir) if args.dir else here.parents[2] / "paper"
     problems: list[str] = []
     notes: list[str] = []
 
-    for stem in (MAIN, SI):
+    for stem in (main_stem, si_stem):
         pdf = paper / f"{stem}.pdf"
         if not pdf.exists():
             problems.append(f"{stem}.pdf was not built (run `make' in {paper})")
@@ -124,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             notes.append(f"{stem}: built, no undefined references, no `??'")
 
-    a, b = _labels(paper / f"{MAIN}.aux"), _labels(paper / f"{SI}.aux")
+    a, b = _labels(paper / f"{main_stem}.aux"), _labels(paper / f"{si_stem}.aux")
     if a and b:
         clash = sorted(a & b)
         if clash:
@@ -135,11 +158,11 @@ def main(argv: list[str] | None = None) -> int:
             notes.append(f"labels: {len(a)} in the article, {len(b)} in the SI, "
                          f"no name in both")
 
-    for rel in DEPOSITED:
+    for rel in deposited:
         if not (paper / rel).exists():
             problems.append(f"deposited file missing: paper/{rel}")
-    if all((paper / r).exists() for r in DEPOSITED):
-        notes.append(f"deposited with the SI: {', '.join(DEPOSITED)}")
+    if deposited and all((paper / r).exists() for r in deposited):
+        notes.append(f"deposited with the SI: {', '.join(deposited)}")
 
     for n in notes:
         print(f"  ok   {n}")

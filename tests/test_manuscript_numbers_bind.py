@@ -66,10 +66,13 @@ def maybe(pattern: str, text: str = RESULTS) -> re.Match | None:
 
 def test_rank_of_the_closure_in_profile_space():
     d = dep("results/closure_rank_profile_space/summary.json")["summary"]
-    m = find(r"the number of directions carrying \$99\\%\$ of the information is "
-             r"\$(\d+)\$, with a range of \$?(\d+)\$? to \$?(\d+)\$?")
+    # Диапазон 1--5 ушёл из прозы в генерируемую tab:si-spread, поэтому здесь связана медиана и
+    # -- впервые -- медианное число условий, которое прежде стояло в тексте непривязанным.
+    m = find(r"the number of directions carrying \$99\\%\$ of the information is \$(\d+)\$ "
+             r"and the median condition number is \$([\d.]+)\\times10\^\{(\d+)\}\$")
     assert int(m.group(1)) == d["dirs_for_99pct_median"]
-    assert [int(m.group(2)), int(m.group(3))] == d["dirs_for_99pct_range"]
+    assert float(m.group(2)) * 10 ** int(m.group(3)) == pytest.approx(
+        d["condition_number_median"], rel=0.02)
     assert find(r"a profile can move in \$(\d+)\$").group(1) == str(d["effective_dim"])
 
 
@@ -94,44 +97,50 @@ def test_pedestal_numbers_and_the_two_roles():
     per = f["per_seed"]
     both = np.array([s[r]["pedestal_median"] for s in per.values()
                      for r in ("solute", "solvent")])
+    # ДОПУСК 0.0005, НЕ 0.001. При трёх знаках после запятой 0.001 шире последнего разряда,
+    # и статья печатала пьедестал растворённого как 0.024 там, где депозит даёт 0.0235: гейт
+    # стоял и пропускал неверное округление. Половина разряда этого не пропустит.
     m = find(r"after training the figure is \$([\d.]+)\\pm([\d.]+)\$")
-    assert float(m.group(1)) == pytest.approx(both.mean(), abs=0.001)
-    assert float(m.group(2)) == pytest.approx(both.std(ddof=1), abs=0.001)
+    assert float(m.group(1)) == pytest.approx(both.mean(), abs=0.0005)
+    assert float(m.group(2)) == pytest.approx(both.std(ddof=1), abs=0.0005)
     assert float(find(r"places a median of \$([\d.]+)\$").group(1)) == \
         pytest.approx(f["untrained_null"]["pedestal_median"], abs=0.001)
     low = min(s[r]["share_of_zero_bins_below_1e_5"] for s in per.values()
               for r in ("solute", "solvent"))
     high = max(s[r]["share_of_zero_bins_below_1e_5"] for s in per.values()
                for r in ("solute", "solvent"))
-    m = find(r"between \$(\d+)\\%\$ and \$(\d+)\\%\$ of those bins already lie below")
-    assert int(m.group(1)) == round(100 * low) and int(m.group(2)) == round(100 * high)
+    shares = [100 * s[r]["share_of_zero_bins_below_1e_5"] for s in per.values()
+              for r in ("solute", "solvent")]
+    m = find(r"a median of \$(\d+)\\%\$ of those bins already lie below")
+    assert int(m.group(1)) == round(float(np.median(shares)))
+    assert low > 0 and high < 1, "доля обязана быть долей"
     # по ролям: именно это снимает возражение "вы сами сломали объект"
     m = find(r"The pedestal is \$([\d.]+)\\pm([\d.]+)\$ on the profiles a molecule receives as "
              r"solute and \$([\d.]+)\\pm([\d.]+)\$ on those it receives as solvent")
     for off, role in ((0, "solute"), (2, "solvent")):
         v = np.array([s[role]["pedestal_median"] for s in per.values()])
-        assert float(m.group(off + 1)) == pytest.approx(v.mean(), abs=0.001), role
-        assert float(m.group(off + 2)) == pytest.approx(v.std(ddof=1), abs=0.001), role
+        assert float(m.group(off + 1)) == pytest.approx(v.mean(), abs=0.0005), role
+        assert float(m.group(off + 2)) == pytest.approx(v.std(ddof=1), abs=0.0005), role
 
 
 def test_reference_state_violation():
     per = dep("results/reference_state_violation/summary.json")["per_seed"]
     med = [v["median_abs_n30"] for v in per.values()]
-    m = find(r"between \$([\d.]+)\$ and \$([\d.]+)\$ in \$\\ln\\gamma\$")
-    assert float(m.group(1)) == pytest.approx(min(med), abs=0.001)
-    assert float(m.group(2)) == pytest.approx(max(med), abs=0.001)
+    m = find(r"is \$([\d.]+)\$ in \$\\ln\\gamma\$ as a median over the five seeds, its "
+             r"ninety-fifth percentile \$([\d.]+)\$")
+    assert float(m.group(1)) == pytest.approx(float(np.median(med)), abs=0.0005)
+    p95 = [v["p95_abs_n30"] for v in per.values()]
+    assert float(m.group(2)) == pytest.approx(float(np.median(p95)), abs=0.005)
     assert float(find(r"largest single value is \$([\d.]+)\$").group(1)) == \
         pytest.approx(max(v["max_abs_n300"] for v in per.values()), abs=0.01)
 
 
 def test_cost_map_ratios_against_the_random_profile_control():
     w = dep("results/per_bin_sensitivity_weights/summary.json")["by_rows"]
-    m = find(r"costs \$(\d+)\$ times as much as a median over seeds, with a range of \$(\d+)\$ "
-             r"to \$(\d+)\$")
+    m = find(r"costs \$(\d+)\$ times as much as a median over seeds")
     cc = np.array(w["train"]["corner_over_core_per_seed"])
     assert int(m.group(1)) == round(np.median(cc))
-    assert (int(m.group(2)), int(m.group(3))) == (round(cc.min()), round(cc.max()))
-    m = find(r"the ratio is \$(\d+)\$, with a range of \$(\d+)\$ to \$(\d+)\$")
+    m = find(r"the ratio is \$(\d+)\$\.")
     ci = np.array(w["idac"]["corner_over_core_per_seed"])
     assert int(m.group(1)) == round(np.median(ci))
     m = find(r"Random profiles of the same total area give \$([\d.]+)\$ and \$([\d.]+)\$")
@@ -154,8 +163,10 @@ def test_nonadditivity_prose_and_table_report_the_same_operation():
     m = re.search(r"in \d+\\% of (\d+)\$\\times\$(\d+) draws", TABLE)
     assert (int(m.group(1)), int(m.group(2))) == (a["n_null"], len(per)), \
         "план розыгрышей в таблице обязан совпадать с депозитом"
-    m = find(r"at each of five seeds and ranging from \$(\d+)\\%\$ to \$(\d+)\\%\$ by seed")
-    assert (int(m.group(1)), int(m.group(2))) == (round(100 * min(share)), round(100 * max(share)))
+    m = maybe(r"at each of five seeds and ranging from \$(\d+)\\%\$ to \$(\d+)\\%\$ by seed")
+    if m is not None:
+        assert (int(m.group(1)), int(m.group(2))) == (round(100 * min(share)),
+                                                      round(100 * max(share)))
 
 
 def test_attribution_and_the_shape_area_split():
@@ -164,9 +175,16 @@ def test_attribution_and_the_shape_area_split():
     zp = np.array([v["recovered_zero_pedestal"] for v in c.values()])
     m = find(r"recovers \$(\d+)\\%\$ of the gap")
     assert int(m.group(1)) == round(100 * fz.mean())
-    m = find(r"positive on all five seeds and ranging from \$(\d+)\\%\$ to \$(\d+)\\%\$")
-    assert (int(m.group(1)), int(m.group(2))) == (round(100 * fz.min()), round(100 * fz.max()))
+    # Диапазоны ушли в генерируемую tab:si-spread; вместо них связаны утверждения, которые проза делает словами.
+    find(r"positive on all five seeds")
+    assert (fz > 0).all(), "проза утверждает «positive on all five seeds»"
+    m = maybe(r"positive on all five seeds and ranging from \$(\d+)\\%\$ to \$(\d+)\\%\$")
+    if m is not None:
+        assert (int(m.group(1)), int(m.group(2))) == (round(100 * fz.min()),
+                                                      round(100 * fz.max()))
     assert int(find(r"recovers \$-(\d+)\\%\$ on average").group(1)) == round(-100 * zp.mean())
+    find(r"with the sign varying across seeds")
+    assert zp.min() < 0 < zp.max(), "проза утверждает, что знак меняется по сидам"
     base = np.array([v["base_aad"] for v in c.values()])
     full = np.array([v["aad_full"] for v in c.values()])
     ref = dep("results/idac_learned_vs_reference/summary.json")["arms"]["reference_vt2005"][
@@ -336,3 +354,25 @@ def test_si_matched_set_counts_come_from_the_inchikey_deposit():
     m = find(r"and \$(\d+)\$ records then failed to match a profile that was present under the "
              r"amide form", SI)
     assert int(m.group(1)) == 27, "the repair script reports 27 affected IDAC records"
+
+
+def test_the_generated_tables_match_their_generators():
+    """Закоммиченная таблица обязана совпадать с тем, что её генератор даёт сейчас.
+
+    Это единственный страж посидовых рядов после того, как они ушли из прозы. Диапазон,
+    убранный из текста, больше не связан построчно -- но таблица, в которой он теперь живёт,
+    не может разойтись с депозитом, пока стоит эта проверка. Сборка строки отделена от записи
+    в обоих генераторах именно ради неё: тест ничего не пишет в рабочее дерево.
+    """
+    import importlib.util
+    for mod, rel in (("make_battery_table_tex", "paper/sections/tab-battery.tex"),
+                     ("make_si_spread_table_tex", "paper/sections/tab-si-spread.tex")):
+        spec = importlib.util.spec_from_file_location(mod, ROOT / f"scripts/analysis/{mod}.py")
+        assert spec and spec.loader, mod
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        tex, rows = module.build()
+        assert rows, f"{mod}.build() не вернул ни одной строки"
+        assert tex == (ROOT / rel).read_text(encoding="utf8"), (
+            f"{rel} разошлась с выводом {mod}.py -- перегенерируйте её"
+        )

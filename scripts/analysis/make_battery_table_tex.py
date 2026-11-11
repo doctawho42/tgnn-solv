@@ -39,7 +39,12 @@ def load(rel: str) -> dict:
     return json.loads(p.read_text(encoding="utf8"))
 
 
-def main() -> int:
+def build() -> tuple[str, list]:
+    """Собрать .tex таблицы и строки, из которых она собрана.
+
+    Отделено от записи, чтобы тест мог сравнить лежащий на диске файл с тем, что
+    генератор даёт сейчас, не трогая рабочее дерево.
+    """
     ident = load("results/identifiability_audit/summary.json")["base_regimes"]
     rank = load("results/closure_rank_profile_space/summary.json")
     attrib = load("results/per_bin_sensitivity_weights/closure_error_attribution.json")
@@ -197,6 +202,11 @@ def main() -> int:
         "Question & Sec. & Instrument, and the null it is read against & Result & Reading "
         "\\\\\n"
         "\\midrule\n" + body + "\\bottomrule\n\\end{tabular}\n\\end{table*}\n")
+    return tex, rows
+
+
+def main() -> int:
+    tex, rows = build()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(tex, encoding="utf8")
     print(f"записано: {OUT.relative_to(ROOT)}  ({len(rows)} строк)")

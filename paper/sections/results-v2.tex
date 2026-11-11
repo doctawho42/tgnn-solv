@@ -7,7 +7,8 @@ themselves impose (Section~\ref{sec:determined}), through the freedom the networ
 it (Sections~\ref{sec:windows}--\ref{sec:refstate}) and the location of the resulting error
 (Sections~\ref{sec:cost}--\ref{sec:attribution}), to the two-sided outcome of supplying the
 reference profile (Section~\ref{sec:twosided}). The order follows the question rather than the
-chronology.
+chronology. Every quantity reported below as a median, a mean or a range is given seed by seed in
+Table~\ref{tab:si-spread} of the Supporting Information.
 
 \subsection{The observable determines two of fifty directions of the profile}
 \label{sec:determined}
@@ -17,7 +18,7 @@ so a profile can move in $50$. The question is how many of those the closure exp
 solvent we collected the rows in which it appears, differentiated the predicted activity
 coefficient with respect to its profile, and took the spectrum of the resulting information
 matrix. Over $25$ solvents and five seeds, the number of directions carrying $99\%$ of the
-information is $2$, with a range of $1$ to $5$; the median condition number is $1.4\times10^{33}$.
+information is $2$ and the median condition number is $1.4\times10^{33}$.
 The remaining directions are not merely poorly determined. They are flat to numerical precision,
 so a profile can move along them without changing any prediction the closure makes.
 
@@ -69,8 +70,8 @@ exact zero, so a profile that should be empty in a bin will instead be slightly 
 and the defect would be an artefact of the parameterisation. The measurements below refute it.
 
 Figure~\ref{fig:pedestal}a shows, for every bin in which the reference is exactly zero, how much
-mass the trained head places there. The distribution reaches $1.0\times10^{-11}$, and between
-$34\%$ and $51\%$ of those bins already lie below $10^{-5}$. A layer that can reach $10^{-11}$ is
+mass the trained head places there. The distribution reaches $1.0\times10^{-11}$, and a median of
+$45\%$ of those bins already lie below $10^{-5}$. A layer that can reach $10^{-11}$ is
 not what holds the remaining bins at $10^{-5}$. Figure~\ref{fig:pedestal}b makes the same point
 from the other direction. An untrained network of the same architecture places a median of $0.571$
 of the profile's mass in the bins where the reference is empty; after training the figure is
@@ -78,7 +79,7 @@ $0.022\pm0.004$ over five seeds and both roles. This residual mass in the bins t
 leaves empty is what the rest of the article calls the \emph{pedestal}, and it is something
 training arrives at rather than something the parameterisation imposes.
 
-The two roles agree. The pedestal is $0.024\pm0.004$ on the profiles a molecule receives as solute
+The two roles agree. The pedestal is $0.023\pm0.004$ on the profiles a molecule receives as solute
 and $0.020\pm0.003$ on those it receives as solvent, a difference of $0.004$ against a
 seed-to-seed spread of the same size. This measurement and the one in Section~\ref{sec:windows}
 therefore hold separately for each of the two profiles a molecule is given, and do not depend on
@@ -101,9 +102,9 @@ the property.
 
 The pipeline does not. Because the head reads a role-dependent representation, a compound receives
 one profile as solute and a different one as solvent, so pairing a molecule with itself pairs two
-different profiles. The median departure from ideality is between $0.012$ and $0.044$ in
-$\ln\gamma$ across the five seeds, the ninety-fifth percentile between $0.09$ and $0.34$, and the
-largest single value is $0.80$. The violation belongs to the learned intermediate rather than to
+different profiles. The median departure from ideality is $0.034$ in $\ln\gamma$ as a
+median over the five seeds, its ninety-fifth percentile $0.25$, and the largest single value is
+$0.80$. The violation belongs to the learned intermediate rather than to
 the thermodynamic relation. It is also invisible in any evaluation that never pairs a compound
 with itself, which is every evaluation on solubility or on mixture data.
 
@@ -115,8 +116,8 @@ thermodynamic cost of that misplaced density is strongly non-uniform along the c
 axis. Figure~\ref{fig:costmap}a reports, for each bin, the mean change in the predicted activity
 coefficient produced by moving a fixed amount of mass from the core into that bin. Moving mass
 within the core is almost free. Moving the same mass into the outer windows costs $21$ times as
-much as a median over seeds, with a range of $21$ to $30$; computed over the rows used for scoring
-rather than for training the ratio is $15$, with a range of $13$ to $25$. Random profiles of the
+much as a median over seeds; computed over the rows used for scoring rather than for training the
+ratio is $15$. Random profiles of the
 same total area give $1.6$ and $1.5$, so the structure reflects the chemistry of the exchange
 rather than the geometry of the grid.
 
@@ -137,8 +138,8 @@ it should help in proportion to the part corrected. It does not. Replacing the l
 the reference shape over the whole grid improves the predicted activity coefficients on all five
 seeds. Replacing it over a randomly chosen third of the bins makes the prediction worse than
 leaving the profile entirely alone in $20\%$ of draws, taken over twenty random thirds at each of
-five seeds and ranging from $5\%$ to $30\%$ by seed. Recovery of the gap across those draws runs
-from $-213\%$ to $+152\%$.
+five seeds. Recovery of the gap across those draws takes both signs and spans more than three
+times the gap itself.
 
 A profile assembled from correct values in some bins and learned values in the rest is not
 intermediate between the two. The segment-activity calculation is a self-consistent solution over
@@ -155,10 +156,10 @@ useful, and is frequently worse than consistent incorrectness.
 One partition is well posed, because both of its parts are substituted in full: the bins where the
 reference is nonzero, and the bins where it is zero. Figure~\ref{fig:attribution}a reports both.
 Supplying the reference values in the bins the reference occupies recovers $89\%$ of the gap
-between the learned and the reference profile, positive on all five seeds and ranging from $68\%$
-to $109\%$. Setting exact zeros in the bins the reference leaves empty recovers $-9\%$ on average,
-with a per-seed range from $-36\%$ to $+34\%$, and the result sits inside the spread of a control
-that zeroes the same number of randomly chosen cells.
+between the learned and the reference profile, positive on all five seeds. Setting exact zeros in
+the bins the reference leaves empty recovers $-9\%$ on average, with the sign varying across
+seeds, and the result sits inside the spread of a control that zeroes the same number of randomly
+chosen cells.
 
 The spurious density is therefore not what the thermodynamics responds to. The error that
 propagates through the closure lives in the magnitude of the profile where the profile is
