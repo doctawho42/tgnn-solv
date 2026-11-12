@@ -16,7 +16,9 @@ the reference prints ``??`` and LaTeX records
     LaTeX Warning: Reference `sec:si-repro' on page 7 undefined
 
 as a WARNING.  ``xelatex`` still exits 0, ``make`` still succeeds, and a PDF full
-of ``??`` is produced.  Building only one of the two documents from a clean
+of ``??`` is produced.  ``Float too large for page`` is the same shape of failure and is
+checked here for the same reason: a table that does not fit its page is a warning, not an
+error, and greps for ``^!``, ``Overfull`` and ``undefined`` all miss it.  Building only one of the two documents from a clean
 directory does exactly this.  So the exit status of the build is not evidence
 that the submission is sound, and this script is what is.
 
@@ -68,19 +70,26 @@ RETIRED = ("grounding_paradox", "grounding_paradox_si",
 
 _UNDEF = re.compile(
     r"LaTeX Warning: (Reference|Citation) `([^']*)' on page (\S+) undefined")
+#: ФЛОАТ, НЕ ВЛЕЗАЮЩИЙ НА СТРАНИЦУ. Тоже Warning, тоже не роняет сборку, и 2026-11-12 именно так
+#: таблица 1 поехала за край: добавленный столбец сузил текстовые колонки, четыре заголовка блоков
+#: добавили высоты, и флоат перестал влезать на 112pt. Проверялись `^!`, Overfull и undefined --
+#: ни одно из трёх этого не видит.
+_BIGFLOAT = re.compile(r"(?:LaTeX )?Warning: Float too large for page by (\S+) on input line (\d+)")
 _LABEL = re.compile(r"\\newlabel\{([^}]*)\}")
 _PDFTOTEXT = "pdftotext"
 
 
 def _log_findings(path: Path) -> tuple[list[str], list[str]]:
-    """(errors, undefined) read out of a LaTeX log."""
+    """(errors, warnings) read out of a LaTeX log, each message self-describing."""
     if not path.exists():
-        return [f"no log: {path}"], []
+        return [f"no build log: {path.name}"], []
     text = path.read_text(encoding="utf-8", errors="replace")
     errors = [ln.strip() for ln in text.splitlines() if ln.startswith("!")]
-    undef = sorted({f"{kind} `{key}' (p. {page})"
-                    for kind, key, page in _UNDEF.findall(text)})
-    return errors, undef
+    warnings = sorted({f"undefined {kind} `{key}' (p. {page})"
+                       for kind, key, page in _UNDEF.findall(text)})
+    warnings += sorted({f"float too large for page by {by} (input line {line})"
+                        for by, line in _BIGFLOAT.findall(text)})
+    return errors, warnings
 
 
 def _labels(aux: Path) -> set[str]:
@@ -133,19 +142,19 @@ def main(argv: list[str] | None = None) -> int:
         if not pdf.exists():
             problems.append(f"{stem}.pdf was not built (run `make' in {paper})")
             continue
-        errors, undef = _log_findings(paper / f"{stem}.log")
+        errors, warnings = _log_findings(paper / f"{stem}.log")
         for e in errors:
             problems.append(f"{stem}: LaTeX error: {e[:120]}")
-        for u in undef:
-            problems.append(f"{stem}: undefined {u}")
+        for w in warnings:
+            problems.append(f"{stem}: {w}")
         qm = _question_marks(pdf)
         if qm > 0:
             problems.append(f"{stem}.pdf prints `??' {qm} time(s): a "
                             f"cross-reference did not resolve")
         elif qm < 0:
             notes.append(f"{stem}: pdftotext unavailable, `??' not checked")
-        else:
-            notes.append(f"{stem}: built, no undefined references, no `??'")
+        if not errors and not warnings and qm == 0:
+            notes.append(f"{stem}: built, no undefined references, every float fits, no `??'")
 
     a, b = _labels(paper / f"{main_stem}.aux"), _labels(paper / f"{si_stem}.aux")
     if a and b:
@@ -172,8 +181,8 @@ def main(argv: list[str] | None = None) -> int:
     if problems:
         print(f"VERDICT: {len(problems)} problem(s) in the split submission.")
         return 1
-    print("VERDICT: both documents build, every cross-reference resolves, "
-          "no label collides.")
+    print("VERDICT: both documents build, every cross-reference resolves, every float fits "
+          "its page, no label collides.")
     return 0
 
 

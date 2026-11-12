@@ -197,11 +197,16 @@ def build() -> tuple[str, list]:
         "named beside it; a result without its null is not a result. Numbers are medians over five "
         "training seeds unless a range is given.}\n"
         "\\label{tab:battery}\n"
-        "\\begin{tabular}{@{}p{0.155\\linewidth}c p{0.24\\linewidth}p{0.245\\linewidth}"
-        "p{0.19\\linewidth}@{}}\n\\toprule\n"
+        "{\\footnotesize\n"
+        # Колонка вопроса самая узкая, и выключка по формату рвала её межсловными провалами;
+        # \raggedright (пакет array загружен преамбулой) их убирает, \arraybackslash возвращает
+        # \\ табличный смысл. ТОЛЬКО ЭТА КОЛОНКА: та же правка на всех четырёх добавляет строк
+        # и выдавливает флоат за страницу -- проверено, не влезало на 1.85pt.
+        "\\begin{tabular}{@{}>{\\raggedright\\arraybackslash}p{0.155\\linewidth}c"
+        "p{0.25\\linewidth}p{0.25\\linewidth}p{0.20\\linewidth}@{}}\n\\toprule\n"
         "Question & Sec. & Instrument, and the null it is read against & Result & Reading "
         "\\\\\n"
-        "\\midrule\n" + body + "\\bottomrule\n\\end{tabular}\n\\end{table*}\n")
+        "\\midrule\n" + body + "\\bottomrule\n\\end{tabular}}\n\\end{table*}\n")
     return tex, rows
 
 
