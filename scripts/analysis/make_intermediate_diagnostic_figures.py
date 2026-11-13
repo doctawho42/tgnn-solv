@@ -171,6 +171,13 @@ def fig_attribution(plt) -> None:
         gridspec_kw={"width_ratios": [1.0, 1.0], "wspace": 0.60})
 
     def strip(ax, rows, nulls, title, nulltext):
+        # ПОЛОСА ПОД ПОДПИСЬ КОНТРОЛЯ. Линия нуля и серая полоса шли во всю высоту осей, а
+        # подпись правым краем доходит левее x=0, так что она ложилась прямо на линию в обоих
+        # подграфиках. Низ осей опущен, и вертикальные элементы в отведённую полосу не заходят:
+        # ymin/ymax у axvline и axvspan задаются долей высоты осей, поэтому граница считается
+        # из того же (y_lo, y_hi), который ставится ниже.
+        y_lo, y_hi = -1.45, len(rows) - 0.4
+        floor = (-0.62 - y_lo) / (y_hi - y_lo)
         for i, (_, vals) in enumerate(rows):
             ax.scatter(100 * np.asarray(vals), [i] * len(vals), s=13, facecolors="none",
                        edgecolors=INK, linewidths=0.7, zorder=3)
@@ -178,13 +185,13 @@ def fig_attribution(plt) -> None:
         n = 100 * np.concatenate(nulls)
         lo, hi = np.percentile(n, [5, 95])
         ax.axvspan(lo, hi, color=GREY, zorder=0)
-        ax.axvline(100 * n.mean(), color=NULLC, lw=0.8, ls="--", zorder=1)
-        ax.axvline(0.0, color=INK, lw=0.6, zorder=2)
+        ax.axvline(100 * n.mean(), ymin=floor, ymax=1.0, color=NULLC, lw=0.8, ls="--", zorder=1)
+        ax.axvline(0.0, ymin=floor, ymax=1.0, color=INK, lw=0.6, zorder=2)
         ax.set_yticks(range(len(rows)))
         ax.set_yticklabels([lab for lab, _ in rows], fontsize=5.8)
-        ax.set_ylim(-0.6, len(rows) - 0.4)
+        ax.set_ylim(y_lo, y_hi)
         ax.set_title(title, loc="left", fontsize=6.5)
-        ax.text(0.98, 0.04, nulltext, transform=ax.transAxes, ha="right", va="bottom",
+        ax.text(0.98, 0.02, nulltext, transform=ax.transAxes, ha="right", va="bottom",
                 fontsize=5.3, color="#6a6a6a")
 
     strip(axa,
