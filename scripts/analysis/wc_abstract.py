@@ -66,7 +66,9 @@ import re
 import sys
 from pathlib import Path
 
-DEFAULT_TEX = Path(__file__).resolve().parents[2] / "paper" / "grounding_paradox.tex"
+#: ЖИВАЯ ПАРА. До 2026-11-13 здесь стояла отозванная `grounding_paradox`, и проверка
+#: каждый день проходила зелёной на документе, который никто не правит.
+DEFAULT_TEX = Path(__file__).resolve().parents[2] / "paper" / "learned_sigma_profile.tex"
 
 #: Macros that reach the page as a word of their own.  TeX sets an operator name upright and
 #: follows it with a thin space, so ``$\ln x_2$`` is two page tokens ("ln x2") where the source

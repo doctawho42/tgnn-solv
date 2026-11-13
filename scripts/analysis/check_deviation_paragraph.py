@@ -62,7 +62,13 @@ def glycol_cells(blob: dict) -> list[dict]:
     return out
 
 
+#: ОСТАЁТСЯ НА ОТОЗВАННОЙ ПАРЕ, И ЭТО РЕШЕНИЕ, А НЕ НЕДОСМОТР (2026-11-13).
+#: Гейт привязан к абзацу об отступлении от хешированной предзаявки -- тексту отозванного
+#: довода. У живой рукописи такого абзаца нет, и перенаправление сделало бы проверку
+#: пустой, а не строгой.
 def main() -> None:
+    print("ГЕЙТ ОТОЗВАННОЙ ПАРЫ: проверяется grounding_paradox, не живая рукопись. "
+          "Его 'ok' не говорит ничего о learned_sigma_profile.")
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--article", type=Path, default=ARTICLE)

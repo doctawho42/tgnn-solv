@@ -66,7 +66,12 @@ def _uncommented(path: Path) -> str:
                      if not l.lstrip().startswith("%"))
 
 
+#: ОСТАЁТСЯ НА ОТОЗВАННОЙ ПАРЕ, И ЭТО РЕШЕНИЕ, А НЕ НЕДОСМОТР (2026-11-13).
+#: Карта PROMISED перечисляет одиннадцать разделов отозванного SI. У живого их пять, и
+#: соответствие надо писать заново, а не переназначать путь.
 def main() -> int:
+    print("ГЕЙТ ОТОЗВАННОЙ ПАРЫ: проверяется grounding_paradox, не живая рукопись. "
+          "Его 'ok' не говорит ничего о learned_sigma_profile.")
     if not SI_AUX.exists():
         print(f"FAIL: {SI_AUX} is missing -- build the SI first (it is what xr reads)")
         return 1

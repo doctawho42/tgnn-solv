@@ -263,7 +263,9 @@ from typing import Iterable, Sequence
 # The submission, in reading order.  Both are built and their numbers pooled; see
 # "A SUBMISSION, NOT A FILE" above.  A root absent from a revision is skipped and
 # reported, which is how a baseline predating the 2026-08-02 split still compares.
-DEFAULT_TEX = ["paper/grounding_paradox.tex", "paper/grounding_paradox_si.tex"]
+#: ЖИВАЯ ПАРА. До 2026-11-13 здесь стояла отозванная `grounding_paradox`, и проверка
+#: каждый день проходила зелёной на документе, который никто не правит.
+DEFAULT_TEX = ["paper/learned_sigma_profile.tex", "paper/learned_sigma_profile_si.tex"]
 XELATEX = os.environ.get("XELATEX", "xelatex")
 BIBTEX = os.environ.get("BIBTEX", "bibtex")
 PDFTOTEXT = os.environ.get("PDFTOTEXT", "pdftotext")

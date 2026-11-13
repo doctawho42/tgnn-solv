@@ -70,7 +70,12 @@ def inchikeys(smiles: pd.Series) -> pd.Series:
     return smiles.map(one)
 
 
+#: ОСТАЁТСЯ НА ОТОЗВАННОЙ ПАРЕ, И ЭТО РЕШЕНИЕ, А НЕ НЕДОСМОТР (2026-11-13).
+#: Скрипт даёт числа для предложения §3.4 отозванной статьи про пересечение UD и BigSolDB.
+#: В живой рукописи этого утверждения нет.
 def main() -> None:
+    print("ГЕЙТ ОТОЗВАННОЙ ПАРЫ: проверяется grounding_paradox, не живая рукопись. "
+          "Его 'ok' не говорит ничего о learned_sigma_profile.")
     a = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     a.add_argument("--ud", type=Path, default=UD)

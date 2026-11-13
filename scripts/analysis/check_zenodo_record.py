@@ -32,8 +32,10 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+import _manuscript as _m  # одно место, где назван документ записи
+
 ROOT = Path(__file__).resolve().parents[2]
-ARTICLE = ROOT / "paper/grounding_paradox.tex"
+ARTICLE = _m.tex(_m.LIVE[0])
 
 #: What the manuscript's sentence promises the archive contains, as regexes over the paths of the
 #: ORIGINAL files -- read from the record's own MANIFEST.sha256, not from the names of the files

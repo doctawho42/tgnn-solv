@@ -216,6 +216,9 @@ def main() -> None:
 
     if a.check_article:
         import re
+        # ОТОЗВАННАЯ ПАРА НАМЕРЕННО (2026-11-13), и привязка УЖЕ МЕРТВА: "There the margin is"
+        # не встречается ни в отозванной рукописи, ни в живой -- предложение переписали, а
+        # гейт об этом молчит, потому что включается только флагом --check-article.
         tex = (ROOT / "paper/grounding_paradox.tex").read_text()
         # The sentence was split in the 2026-08-19 readability pass ("..., and there the margin
         # is" -> ". There the margin is"), and this gate reported it as reworded, which is what it

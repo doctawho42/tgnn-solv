@@ -26,6 +26,10 @@ ROOT = Path(__file__).resolve().parents[1]
 LOAD_BEARING = (
     "CLAUDE.md",
     "PROJECT_DESCRIPTION.md",
+    # Живая пара и отозванная: ссылка из любой делает депозит несущим, потому что обе
+    # поданы наружу -- одна подана, другая подаётся.
+    "paper/learned_sigma_profile.tex",
+    "paper/learned_sigma_profile_si.tex",
     "paper/grounding_paradox.tex",
     "paper/grounding_paradox_si.tex",
     "results/PAPER_PHASE0_FINDINGS.md",

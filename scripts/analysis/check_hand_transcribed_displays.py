@@ -2100,7 +2100,12 @@ LEDGER_DECLARED_ROWS: dict[str, list[DisplayRow]] = {
 }
 
 
+#: ОСТАЁТСЯ НА ОТОЗВАННОЙ ПАРЕ, И ЭТО РЕШЕНИЕ, А НЕ НЕДОСМОТР (2026-11-13).
+#: PROSE_BINDS -- регулярные выражения по предложениям отозванной рукописи. Для живой пары
+#: ту же работу делает tests/test_manuscript_numbers_bind.py, и дублировать её здесь не нужно.
 def main(argv: Sequence[str] | None = None) -> int:
+    print("ГЕЙТ ОТОЗВАННОЙ ПАРЫ: проверяется grounding_paradox, не живая рукопись. "
+          "Его 'ok' не говорит ничего о learned_sigma_profile.")
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", default=str(rel(RERUN_ROOT)),

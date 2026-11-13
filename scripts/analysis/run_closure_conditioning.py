@@ -285,6 +285,9 @@ def check_article(result: dict, section: Path) -> int:
     # the working stayed in the Supporting Information. Two numerals in running prose with no
     # producer between them and the deposit is the position all of this manuscript's stale values
     # were found in, so they are bound here rather than trusted.
+    # ОТОЗВАННАЯ ПАРА НАМЕРЕННО (2026-11-13): связываемое предложение про размер шага стоит
+    # дважды в grounding_paradox и ни разу в learned_sigma_profile, так что перенаправление
+    # сделало бы привязку пустой.
     art = re.sub(r"\s+", " ", (ROOT / "paper/grounding_paradox.tex").read_text())
     am = re.search(r"The reference profile stands \$([\d.]+)\$ \$\[([\d.]+),([\d.]+)\]\$ times the "
                    r"learned profile's own norm away from it", art)

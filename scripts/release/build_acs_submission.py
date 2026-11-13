@@ -43,9 +43,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PAPER = ROOT / "paper"
-ARTICLE = PAPER / "grounding_paradox.tex"
-SI_AUX = PAPER / "grounding_paradox_si.aux"
-REFERENCE_PDF = PAPER / "grounding_paradox.pdf"
+sys.path.insert(0, str(ROOT / "scripts" / "analysis"))
+import _manuscript as _m  # noqa: E402  -- одно место, где назван документ записи
+
+#: ПАРА ДОКУМЕНТА ЗАПИСИ. До 2026-11-13 здесь стояла отозванная `grounding_paradox`, то есть
+#: сборщик подачи паковал не ту рукопись.
+STEM, SI_STEM = _m.LIVE
+ARTICLE = PAPER / f"{STEM}.tex"
+SI_AUX = PAPER / f"{SI_STEM}.aux"
+REFERENCE_PDF = PAPER / f"{STEM}.pdf"
 
 #: Notation macros with no arguments: expanded into the text, definitions dropped.  Longest name
 #: first at substitution time, or \lng eats the head of \lngi.
@@ -204,11 +210,11 @@ def main() -> int:
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True)
-    tex_name = "grounding_paradox.tex"
+    tex_name = f"{STEM}.tex"
     (stage / tex_name).write_text(text, encoding="utf8")
     for f in figs:
         shutil.copy2(PAPER / f, stage / Path(f).name)
-    for extra in ("references_verified.bib", "grounding_paradox.bbl"):
+    for extra in ("references_verified.bib", f"{STEM}.bbl"):
         src = PAPER / extra
         if not src.exists():
             raise SystemExit(f"{extra} is missing -- run bibtex on the article first")

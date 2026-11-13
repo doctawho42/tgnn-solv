@@ -23,9 +23,12 @@ import sys
 import unicodedata
 from pathlib import Path
 
+import _manuscript as _m  # одно место, где назван документ записи
+
 REPO = Path(__file__).resolve().parents[2]
-TEX = REPO / "paper" / "grounding_paradox.tex"
-SI = REPO / "paper" / "grounding_paradox_si.tex"
+#: Пара документа записи приходит из _manuscript, чтобы имя не жило здесь второй копией.
+TEX = REPO / "paper" / f"{_m.LIVE[0]}.tex"
+SI = REPO / "paper" / f"{_m.LIVE[1]}.tex"
 PAGE = REPO / "web" / "index.html"
 #: How much of each end of the abstract must appear verbatim. Long enough that a real edit is
 #: caught, short enough that the page may keep its own paragraph breaks.
@@ -47,8 +50,19 @@ def _title(path: Path) -> str:
     return _norm(re.sub(r"\\[a-zA-Z]+|[${}]", " ", m.group(1)))
 
 
+#: Приставка, которой ACS требует озаглавливать Supporting Information. Отозванная пара её не
+#: несла, и правило «заголовки совпадают буквально» было для неё верным; у живой пары SI
+#: называется «Supporting Information: <тот же заголовок>», и буквальное сравнение падало на
+#: соглашении, а не на расхождении. Сравнивается то, что остаётся после приставки.
+_SI_PREFIX = "supporting information"
+
+
+def _without_si_prefix(title: str) -> str:
+    return title[len(_SI_PREFIX):].strip() if title.startswith(_SI_PREFIX) else title
+
+
 def main() -> int:
-    art, si = _title(TEX), _title(SI)
+    art, si = _title(TEX), _without_si_prefix(_title(SI))
     if art != si:
         print("FAIL: the article and the SI carry different titles.")
         print(f"  article: {art}\n  SI:      {si}")

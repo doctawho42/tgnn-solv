@@ -39,10 +39,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PAPER = ROOT / "paper"
-MAIN = "grounding_paradox.tex"
+#: ЖИВАЯ ПАРА. До 2026-11-13 здесь стояла отозванная `grounding_paradox`, и проверка
+#: каждый день проходила зелёной на документе, который никто не правит.
+MAIN = "learned_sigma_profile.tex"
 #: --root points the same instrument at the Supporting Information, which is a separate document
 #: with its own section numbering and had never been measured.
-ROOTS = {"article": "grounding_paradox.tex", "si": "grounding_paradox_si.tex"}
+ROOTS = {"article": "learned_sigma_profile.tex", "si": "learned_sigma_profile_si.tex",
+         "retired": "grounding_paradox.tex", "retired_si": "grounding_paradox_si.tex"}
 
 #: environments whose contents are not running prose
 DROP_ENVS = ("equation", "equation*", "align", "align*", "gather", "gather*", "eqnarray",

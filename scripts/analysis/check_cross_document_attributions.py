@@ -52,7 +52,12 @@ def uncommented(path: Path) -> str:
     return re.sub(r"(?m)^%.*$", "", path.read_text())
 
 
+#: ОСТАЁТСЯ НА ОТОЗВАННОЙ ПАРЕ, И ЭТО РЕШЕНИЕ, А НЕ НЕДОСМОТР (2026-11-13).
+#: Таблица SECTIONS перечисляет подразделы ОТОЗВАННОЙ статьи по их названиям. Подмена путей
+#: оставила бы таблицу чужих имён, то есть проверку, которой нечего находить.
 def main() -> None:
+    print("ГЕЙТ ОТОЗВАННОЙ ПАРЫ: проверяется grounding_paradox, не живая рукопись. "
+          "Его 'ok' не говорит ничего о learned_sigma_profile.")
     bodies = {}
     for label, (path, start, end) in SECTIONS.items():
         t = uncommented(path)
