@@ -110,9 +110,13 @@ def main() -> None:
 
     if args.check_article:
         tex = ARTICLE.read_text()
-        m = re.search(r"That set exists but is thin: \$(\d+)\$ of the \$(\d+)\$ labelled test\s+"
-                      r"rows carry a UD profile on both sides, over \$(\d+)\$ solutes and \$(\d+)\$ "
-                      r"pairs", tex)
+        # ПЕРЕПРИВЯЗАНО 2026-11-13. Шаблон требовал "That set exists but is thin", а статья с
+        # какой-то правки говорит "The set". Одно слово -- и гейт перестал находить что бы то ни
+        # было; молчал он потому, что включается только флагом. Указательное слово не несёт
+        # смысла привязки, поэтому допускаются оба: связываются ЧИСЛА, а не редакция фразы.
+        m = re.search(r"Th(?:at|e) set exists but is thin: \$(\d+)\$ of the \$(\d+)\$ labelled "
+                      r"test\s+rows carry a UD profile on both sides, over \$(\d+)\$ solutes and "
+                      r"\$(\d+)\$\s+pairs", tex)
         if m is None:
             raise SystemExit("the sentence this gate binds is not in the article in the form it "
                              "reads; it was reworded or removed")

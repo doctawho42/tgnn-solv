@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ground Truth That Does Not Ground — TGNN-Solv</title>
-<meta name="description" content="When a physics-informed model is given the tabulated quantity it was routed through, it gets worse. The paper, the code, and the deposits behind every number.">
+<title>When a Learned σ-Profile Is Not One — TGNN-Solv</title>
+<meta name="description" content="A graph network fills a physics model's input slot with values that are not the quantity the slot names. Supplying the reference profile improves the activity coefficients and degrades the solubility. The paper, the code, and the deposits behind every number.">
 <style>
   :root {
     --bg: #ffffff; --fg: #1a1a1a; --muted: #5b5b5b; --rule: #e2e2e2;
@@ -79,71 +79,65 @@
 <body>
 <div class="wrap">
 
-<h1>Grounding a physics-informed model can make it worse</h1>
-<p class="sub">A controlled study on solid–liquid solubility, and the apparatus that produced it.</p>
+<h1>The quantity inside a physics-informed model is not the quantity it is named after</h1>
+<p class="sub">A diagnosis of the learned intermediate in a COSMO-SAC solubility model, and the
+apparatus that produced it.</p>
 
-<p class="cite"><em>Ground Truth That Does Not Ground: Substituting Reference Solvent
-&sigma;-Profiles Degrades COSMO-SAC Solubility Prediction.</em> N.&nbsp;L. Polomoshnov.</p>
+<p class="cite"><em>When a Learned &sigma;-Profile Is Not One: Diagnosing the Intermediate of a
+Physics-Embedded Solubility Model.</em> N.&nbsp;L. Polomoshnov, A.&nbsp;V. Rudik.</p>
 
-<p class="lede">Physics-informed models route a prediction through a quantity that can be looked
-up, so supplying the tabulated value ought to improve them. It does not. Substituting the
-tabulated charge-density profile for the learned one at prediction time makes solubility
-prediction worse at every seed, and degrades the ranking of solvents for a solute — which is the
-decision the model is actually used for.</p>
+<p class="lede">Physics-informed models route a prediction through a quantity chemistry already
+knows how to tabulate, so a better value for it ought to be something you can look up and hand
+over. That holds only if the value the network puts in the slot is that quantity. It is not:
+supplying the reference &sigma;-profile improves the activity coefficients the profile exists to
+produce and degrades the solubility predicted from them.</p>
 
 <div class="links">
-  <a href="grounding_paradox.pdf">Article (PDF)</a>
-  <a href="grounding_paradox_si.pdf">Supporting information (PDF)</a>
+  <a href="learned_sigma_profile.pdf">Article (PDF)</a>
+  <a href="learned_sigma_profile_si.pdf">Supporting information (PDF)</a>
   <a href="https://github.com/doctawho42/tgnn-solv">Code</a>
 </div>
 
 <h2>Abstract</h2>
-<p>Physics-informed models route a prediction through a quantity that can be looked up, so
-supplying the tabulated value ought to improve them. We test that assumption for solid–liquid
-solubility, where a graph neural network predicts the molecular charge-density profiles a fixed
-COSMO-SAC layer consumes and quantum chemistry tabulates independently. Grounding names two
-opposite operations, and they do not behave alike. Substituting the tabulated profile for the
-learned one at prediction time makes solubility prediction worse at every seed, and degrades the
-ranking of solvents for a solute, which is the decision the model is used for. Supervising the
-same network against the same database during training carries no established sign. The operation
-that fails is the one available in practice, because it needs no retraining. Infinite-dilution
-activity data separate a deployed thermodynamic model's own error from what its inputs leave
-unresolved, and the model's error dominates on one solvent chemistry. A search over strata
-identifies that cell, and an independent set reproduces it at half its size without meeting this
-paper's own stability rule, so we report it as the instrument's output and not as an established
-effect. Where the fixed model is the binding constraint, a more accurate input exposes its
-misspecification instead of repairing it.</p>
+<p>Physics-informed predictors combine learned physical quantities through a fixed thermodynamic relation. Their appeal is that the prediction can be taken apart and audited, and that a better value for any one of those quantities can be looked up and supplied without retraining. The promise holds only if the value a network places in the slot of a physical quantity is that quantity. We test it on a graph network that supplies the &sigma;-profile consumed by COSMO-SAC to predict the solubility of solids, reading every measurement against a control. The solubility observations determine two of the fifty directions in which a profile can move, and in the directions they leave free the learned profile places screening-charge density where the reference carries none, concentrated in the windows that activate the model's hydrogen-bonding term. That departure is the most visible and the least consequential, because the error reaching the thermodynamics is in the magnitude of the profile where it is populated. The intermediate also does not decompose, so replacing part of it with reference values is frequently worse than replacing none. Supplying the whole reference profile improves the activity coefficients the profile exists to produce and degrades the solubility predicted from them.</p>
 
 <h2>What this is not</h2>
 <div class="caveat">
-<p>No arm in this work is competitive with current solubility models, and none is offered as one.
-The comparison table in the supporting information fixes the scale the work operates on; it does
-not rank anything. The substitution result is a contrast <em>within one checkpoint</em> and does
-not depend on that scale.</p>
-<p>The two arms are separately tuned, with no hyperparameter-matched control, so the difference
-between the physics path and its closure-free control is not attributable to the thermodynamic
-bottleneck alone. The paper says so wherever it quotes that gap.</p>
+<p>The focus is the diagnosis of the intermediate, not state-of-the-art solubility prediction. On
+the Bemis&ndash;Murcko scaffold-disjoint split used throughout, the physics path trails a matched
+direct control sharing the same encoder in the mean over seeds, and both sit near a random-forest
+baseline. No published model was retrained here, so the comparison with prior work is a comparison
+of design choices and not of performance.</p>
+<p>Every departure is measured against one reference tabulation, VT-2005, and a zero in that table
+is a tabulated zero rather than a proven absence of density. The profile head reads a
+role-dependent representation, so a molecule receives two profiles; for the window displacement
+and the residual population, measurement settles that the defect is not a consequence of that
+choice, and for the reference-state violation it is one.</p>
 </div>
 
 <h2>Checking a number</h2>
 <p>Every value the manuscript prints has an artifact behind it, a script that regenerates that
-artifact, and a gate that fails the build if the two stop agreeing. The map is
+artifact, and a gate that fails if the two stop agreeing. Both tables in the submission are
+generated from the deposits rather than typed, and a test refuses the build if a committed table
+stops matching its generator. The map is
 <a href="https://github.com/doctawho42/tgnn-solv/blob/main/DEPOSITS.md"><code>DEPOSITS.md</code></a>.</p>
 
 <div class="tbl-scroll">
 <table>
   <thead><tr><th>Claim</th><th>Deposit</th></tr></thead>
   <tbody>
-    <tr><td>the decomposition</td><td><code>results/b_insuff/decomposition.json</code>, <code>matched_pairs.csv</code></td></tr>
-    <tr><td>the arms</td><td><code>results/e5_sigma_grounding_leakfree/</code> (five seeds)</td></tr>
-    <tr><td>the mechanism</td><td><code>results/compensation/</code>, <code>results/sur/surrogate_seeds/</code></td></tr>
-    <tr><td>external comparison</td><td><code>results/external_baseline_comparison/</code></td></tr>
+    <tr><td>what the data fix</td><td><code>results/closure_rank_profile_space/</code></td></tr>
+    <tr><td>the window displacement</td><td><code>results/sigma_profile_residual/clean_pool.json</code></td></tr>
+    <tr><td>the pedestal</td><td><code>results/t2_softmax_floor/</code></td></tr>
+    <tr><td>the reference state</td><td><code>results/reference_state_violation/summary.json</code></td></tr>
+    <tr><td>cost map and attribution</td><td><code>results/per_bin_sensitivity_weights/</code></td></tr>
+    <tr><td>the two-sided substitution</td><td><code>results/idac_learned_vs_reference/</code>, <code>results/e5_sigma_grounding/</code></td></tr>
   </tbody>
 </table>
 </div>
 
-<p>One command re-runs the package checks, the test suite, all eight manuscript gates and both
-LaTeX builds:</p>
+<p>One command re-runs the package checks, the test suite, the manuscript, documentation and
+figure gates, and both LaTeX builds:</p>
 <pre><code>git clone https://github.com/doctawho42/tgnn-solv
 cd tgnn-solv &amp;&amp; pip install -e .
 ./verify.sh</code></pre>
@@ -151,22 +145,26 @@ cd tgnn-solv &amp;&amp; pip install -e .
 <h2>Reproducing the pipeline</h2>
 <p>Data preparation rebuilds the processed splits from cached public sources. One warning is worth
 repeating here, because it invalidates comparisons silently: <strong>a regenerated split is a new
-split.</strong> The seeded scaffold partition is not stable across pipeline versions — a rebuild
-has been observed to turn over about three quarters of which scaffolds land in test — so every
-metric computed on the previous split is orphaned by it.</p>
+split.</strong> The seeded scaffold partition is not stable across pipeline versions &mdash; a
+rebuild has been observed to turn over about three quarters of which scaffolds land in test &mdash;
+so every metric computed on the previous split is orphaned by it.</p>
 <p>Local runs are smoke configs and produce meaningless numbers; real results need a GPU run on
-the full corpus.</p>
+the full corpus. A checkpoint also carries the machine it was trained on: the same arm and seed
+retrained on another GPU does not reproduce to within the spread across seeds.</p>
 
 <h2>Data</h2>
-<p>Solubility is BigSolDB 2.0, partitioned by Bemis–Murcko scaffold. Crystal melting points and
-enthalpies of fusion come from an open melting-point pool plus a group-contribution prior.
-Reference σ-profiles are the VT-2005 tabulation. All sources are public. Per-row prediction files
-and the larger analysis artifacts are archived separately; the DOI is registered at submission.</p>
+<p>Solubility is BigSolDB 2.0, partitioned by Bemis&ndash;Murcko scaffold. Reference
+&sigma;-profiles are the VT-2005 tabulation. The infinite-dilution activity coefficients that score
+the closure directly come from ThermoML. Crystal melting points and enthalpies of fusion come from
+an open melting-point pool plus a group-contribution prior. All sources are public. Model
+checkpoints, the processed split and the larger analysis artifacts are deposited in a Zenodo
+archive, and its DOI is published with the article.</p>
 
 <footer>
-<p>MIT licence. Built from the repository, not from a generator — the previous site was
+<p>MIT licence. Built from the repository, not from a generator &mdash; the previous site was
 auto-deployed and then sat five months out of date, which is the failure this page is shaped to
-avoid.</p>
+avoid. The deploy refuses to publish if the title or the abstract here stops matching the
+manuscript.</p>
 </footer>
 
 </div>

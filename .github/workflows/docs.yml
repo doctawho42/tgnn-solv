@@ -7,14 +7,19 @@ name: Deploy page
 # 439 commits past it, and nothing said so. Pushing the new page to the gh-pages branch by hand did
 # not help either: this repository's Pages source is `build_type: workflow`, so the branch is not
 # what gets served. This file is what gets served.
+#
+# 2026-11-13: ПАРА СМЕНИЛАСЬ. Триггеры и копирование называли отозванную grounding_paradox, то
+# есть страница про живую рукопись выкладывалась бы со ссылками на PDF другой работы, а правка
+# самих PDF деплой вообще не запускала. Гейт check_site_abstract ниже теперь читает живую пару
+# и упал бы первым.
 
 on:
   push:
     branches: [main]
     paths:
       - 'web/**'
-      - 'paper/grounding_paradox.pdf'
-      - 'paper/grounding_paradox_si.pdf'
+      - 'paper/learned_sigma_profile.pdf'
+      - 'paper/learned_sigma_profile_si.pdf'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -49,8 +54,8 @@ jobs:
           set -euo pipefail
           mkdir -p _site
           cp web/index.html _site/index.html
-          cp paper/grounding_paradox.pdf _site/grounding_paradox.pdf
-          cp paper/grounding_paradox_si.pdf _site/grounding_paradox_si.pdf
+          cp paper/learned_sigma_profile.pdf _site/learned_sigma_profile.pdf
+          cp paper/learned_sigma_profile_si.pdf _site/learned_sigma_profile_si.pdf
           touch _site/.nojekyll
           ls -la _site
 

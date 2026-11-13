@@ -216,25 +216,25 @@ def main() -> None:
 
     if a.check_article:
         import re
-        # ОТОЗВАННАЯ ПАРА НАМЕРЕННО (2026-11-13), и привязка УЖЕ МЕРТВА: "There the margin is"
-        # не встречается ни в отозванной рукописи, ни в живой -- предложение переписали, а
-        # гейт об этом молчит, потому что включается только флагом --check-article.
+        # ОТОЗВАННАЯ ПАРА НАМЕРЕННО: предложение принадлежит поданной рукописи, не живой.
         tex = (ROOT / "paper/grounding_paradox.tex").read_text()
-        # The sentence was split in the 2026-08-19 readability pass ("..., and there the margin
-        # is" -> ". There the margin is"), and this gate reported it as reworded, which is what it
-        # is for.  The numerals and their order are unchanged.
-        pat = (r"supplies \$(\d+)\$ rows over \$(\d+)\$ pairs the broad set does not carry,\s+"
-               r"\$(\d+)\$ solutes in diethylene and triethylene glycol at three temperatures\.\s+"
-               r"There the margin is\s+\$\+([\d.]+)\$ \$\[\+([\d.]+),\+([\d.]+)\]\$")
+        # ПЕРЕПРИВЯЗАНО 2026-11-13. Прежний шаблон требовал шести численных значений подряд --
+        # строки, пары, солюты, запас и два конца интервала. Предложение с тех пор СОКРАТИЛОСЬ и
+        # печатает три: пары и число солютов из него ушли. Старый шаблон не находил ничего, и
+        # гейт молчал, потому что включается только флагом. Привязывается то, что печатается:
+        # требовать длинную форму значило бы сделать гейт доводом против правки текста -- ровно
+        # то, что записано в check_deviation_paragraph. Пробелы сведены к \s+: предложение
+        # переносится по строкам, и перенос не расхождение.
+        pat = (r"supplies \$(\d+)\$ rows the broad set does not carry,\s+where the margin is\s+"
+               r"\$\+([\d.]+)\$\s+\$\[\+([\d.]+),\+([\d.]+)\]\$")
         mm = re.search(pat, tex)
         if mm is None:
             raise SystemExit("the out-of-sample sentence is not in the article in the form this "
                              "gate reads; it was reworded or removed")
-        want = (str(len(d)), str(len(keys)), str(d.solute_can.nunique()),
-                f"{point:.2f}", f"{lo:.2f}", f"{hi:.2f}")
+        want = (str(len(d)), f"{point:.2f}", f"{lo:.2f}", f"{hi:.2f}")
         bad = sum(g != w for g, w in zip(mm.groups(), want))
         print("\narticle bind:")
-        for label, got, w in zip(("rows", "pairs", "solutes", "margin", "ci lo", "ci hi"),
+        for label, got, w in zip(("rows", "margin", "ci lo", "ci hi"),
                                  mm.groups(), want):
             print(f"  {'ok  ' if got == w else 'FAIL'}  {label:8s} paper {got:>7s}   "
                   f"deposit {w:>7s}")

@@ -67,6 +67,10 @@ echo "== manuscript gates"
 # check_supplement_pointers runs the direction check_cross_document_attributions does not: article
 # into the SI. It reads grounding_paradox_si.aux, so it is only meaningful after a build -- in fast
 # mode it checks against whatever the last build left, which is the common case while editing.
+# ЧАСТЬ ЭТИХ ГЕЙТОВ ПРОВЕРЯЕТ ОТОЗВАННУЮ ПАРУ, и каждый такой печатает это первой строкой:
+# check_hand_transcribed_displays, check_deviation_paragraph, check_cross_document_attributions и
+# check_supplement_pointers привязаны к предложениям поданной рукописи, не живой. Их "ok" входит
+# в VERIFIED, но говорит о другом документе.
 for g in check_hand_transcribed_displays check_deviation_paragraph check_vt2005_leverage_counts \
          check_donor_window_caption check_split_refs check_cross_document_attributions \
          check_supplement_pointers check_no_scored_self_pairs; do
@@ -90,15 +94,19 @@ if [ "$MODE" != fast ]; then
   # TWICE EACH, AND SI FIRST.  The two documents cite each other through xr-hyper, which reads the
   # OTHER document's .aux at compile time, so a single pass in the wrong order prints a stale
   # cross-document number without warning -- and that is a table pointer nobody would re-check.
+  # ЖИВАЯ ПАРА (2026-11-13). Собиралась отозванная, то есть verify.sh докладывал VERIFIED,
+  # ни разу не собрав рукопись, которую правят.
   stage "latex (SI, article, twice, xr fixed point)" bash -c '
     cd paper
     for pass in 1 2; do
-      for f in grounding_paradox_si grounding_paradox; do
+      for f in learned_sigma_profile_si learned_sigma_profile; do
         xelatex -interaction=nonstopmode "$f.tex" >/dev/null 2>&1
       done
     done
-    for f in grounding_paradox grounding_paradox_si; do
-      grep -q "Rerun to get" "paper/$f.log" 2>/dev/null && { echo "$f: needs another pass"; exit 1; }
+    for f in learned_sigma_profile learned_sigma_profile_si; do
+      # ПУТЬ БЕЗ paper/: мы уже внутри paper, и прежний "paper/$f.log" указывал на
+      # paper/paper/..., то есть проверка "нужен ещё проход" не срабатывала никогда.
+      grep -q "Rerun to get" "$f.log" 2>/dev/null && { echo "$f: needs another pass"; exit 1; }
       n=$(grep -c "Reference .* undefined" "$f.log" 2>/dev/null || true)
       [ "${n:-0}" -gt 0 ] && { echo "$f: $n undefined references"; exit 1; }
     done
